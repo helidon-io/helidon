@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.tracing.Tracer;
@@ -210,7 +210,21 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      *
      * @param config configuration to load this builder from
      * @return a new builder instance.
-     * @see io.helidon.tracing.providers.jaeger.JaegerTracerBuilder#config(io.helidon.common.config.Config)
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static JaegerTracerBuilder create(io.helidon.common.config.Config config) {
+        return create().config(config);
+    }
+
+    /**
+     * Create a new builder based on values in configuration.
+     * This requires at least a key "service" in the provided config.
+     *
+     * @param config configuration to load this builder from
+     * @return a new builder instance.
+     * @see io.helidon.tracing.providers.jaeger.JaegerTracerBuilder#config(io.helidon.config.Config)
      */
     public static JaegerTracerBuilder create(Config config) {
         return create().config(config);

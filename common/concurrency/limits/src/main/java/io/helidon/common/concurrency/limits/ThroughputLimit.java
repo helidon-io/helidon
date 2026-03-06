@@ -22,9 +22,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
-import static io.helidon.common.concurrency.limits.RateLimitingAlgorithmType.FIXED_RATE;
 import static io.helidon.common.concurrency.limits.RateLimitingAlgorithmType.TOKEN_BUCKET;
 
 /**
@@ -108,6 +107,21 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
         return builder()
             .semaphore(semaphore)
             .build();
+    }
+
+    /**
+     * Create a new instance from configuration.
+     *
+     * @param config configuration of the throughput limit
+     * @return a new limit instance configured from {@code config}
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static ThroughputLimit create(io.helidon.common.config.Config config) {
+        return builder()
+                .config(config)
+                .build();
     }
 
     /**

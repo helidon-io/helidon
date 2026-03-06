@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.NamedService;
+import io.helidon.config.Config;
+import io.helidon.config.NamedService;
 import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.jdbc.spi.JdbcConnectionPoolProvider;
 
@@ -35,6 +35,19 @@ public interface JdbcConnectionPool extends NamedService {
 
     /** Default JDBC connection pool {@link #dbType()} value. */
     String DEFAULT_DB_TYPE = "jdbc";
+
+    /**
+     * Create a JDBC connection pool from provided configuration.
+     *
+     * @param config configuration of connection pool
+     * @return a new instance configured from the provided config
+     * @deprecated {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    static JdbcConnectionPool create(io.helidon.common.config.Config config) {
+        return create(Config.config(config));
+    }
 
     /**
      * Create a JDBC connection pool from provided configuration.
@@ -147,6 +160,19 @@ public interface JdbcConnectionPool extends NamedService {
          *
          * @param config configuration
          * @return updated builder
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public B config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
+        }
+
+        /**
+         * Update builder from configuration.
+         *
+         * @param config configuration
+         * @return updated builder
          */
         public B config(Config config) {
             Map<String, String> poolConfig = config.detach().asMap().get();
@@ -212,7 +238,7 @@ public interface JdbcConnectionPool extends NamedService {
 
         /**
          * Name of the connection pool.
-         * This value is returned as {@link io.helidon.common.config.NamedService#name()} value.
+         * This value is returned as {@link io.helidon.config.NamedService#name()} value.
          *
          * @param serviceName service name
          * @return updated builder

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -62,6 +62,19 @@ public final class SignedHeadersConfig {
         this.methodConfigs = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         methodConfigs.putAll(builder.methodConfigs);
+    }
+
+    /**
+     * Load header configuration from config.
+     *
+     * @param config config instance, expecting object array as children
+     * @return signed headers configuration loaded from config
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static SignedHeadersConfig create(io.helidon.common.config.Config config) {
+        return create(Config.config(config));
     }
 
     /**
@@ -204,6 +217,19 @@ public final class SignedHeadersConfig {
          */
         public static HeadersConfig create(List<String> requiredHeaders, List<String> ifPresentHeaders) {
             return new HeadersConfig(requiredHeaders, ifPresentHeaders);
+        }
+
+        /**
+         * Create a new instance from configuration.
+         *
+         * @param config configuration located at header config
+         * @return instance configured from config
+         * @deprecated use {@link #create(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public static HeadersConfig create(io.helidon.common.config.Config config) {
+            return create(Config.config(config));
         }
 
         /**

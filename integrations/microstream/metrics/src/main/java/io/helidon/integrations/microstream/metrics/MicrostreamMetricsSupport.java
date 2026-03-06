@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.ToDoubleFunction;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
@@ -64,9 +64,10 @@ public class MicrostreamMetricsSupport {
     private final EmbeddedStorageManager embeddedStorageManager;
     private final MeterRegistry vendorRegistry;
 
+    @SuppressWarnings("removal")
     private MicrostreamMetricsSupport(Builder builder) {
         super();
-        this.config = builder.config();
+        this.config = Config.config(builder.config());
         this.embeddedStorageManager = builder.embeddedStorageManager();
 
         MetricsFactory metricsFactory;
@@ -165,7 +166,7 @@ public class MicrostreamMetricsSupport {
          * get the current configured helidon configuration.
          * @return Config
          */
-        public Config config() {
+        public io.helidon.common.config.Config config() {
             return this.config;
         }
 
@@ -178,6 +179,19 @@ public class MicrostreamMetricsSupport {
         public Builder metricsFactory(MetricsFactory metricsFactory) {
             this.metricsFactory = metricsFactory;
             return this;
+        }
+
+        /**
+         * set the helidon configuration used by the builder.
+         *
+         * @param config configuration
+         * @return MicrostreamMetricsSupport builder
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

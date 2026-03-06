@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 package io.helidon.dbclient.spi;
 
 import io.helidon.common.Builder;
+import io.helidon.common.DeprecationSupport;
 import io.helidon.common.GenericType;
-import io.helidon.common.config.Config;
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.DbMapper;
@@ -37,8 +38,32 @@ public interface DbClientBuilder<T extends DbClientBuilder<T>> extends Builder<T
      *
      * @param config {@link Config} instance with database connection attributes
      * @return database provider builder
+     * @deprecated use {@link #config(io.helidon.config.Config)} instead
      */
-    T config(Config config);
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    default T config(io.helidon.common.config.Config config) {
+        // default to avoid forcing deprecated symbols references
+        return config(Config.config(config));
+    }
+
+    /**
+     * Use database connection configuration from configuration file.
+     * <p>
+     * API Note: the default method implementation is provided for backward compatibility
+     * and <b>will be removed in the next major version</b>
+     *
+     * @param config {@link Config} instance with database connection attributes
+     * @return database provider builder
+     * @since 4.4.0
+     */
+    @SuppressWarnings("removal")
+    default T config(Config config) {
+        // default to preserve backward compatibility
+        // require the deprecated variant to be implemented
+        DeprecationSupport.requireOverride(this, DbClientBuilder.class, "config", io.helidon.common.config.Config.class);
+        return config((io.helidon.common.config.Config) config);
+    }
 
     /**
      * Set database connection string (URL).

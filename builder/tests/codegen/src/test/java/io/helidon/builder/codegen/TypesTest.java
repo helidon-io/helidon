@@ -35,7 +35,6 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Generated;
-import io.helidon.common.config.Config;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.ConfigBuilderSupport;
 import io.helidon.service.registry.GlobalServiceRegistry;
@@ -82,7 +81,7 @@ public class TypesTest {
             fields.put(name, declaredField);
         }
 
-        checkField(toCheck, checked, fields, "COMMON_CONFIG", Config.class);
+        checkField(toCheck, checked, fields, "COMMON_CONFIG", io.helidon.common.config.Config.class);
         checkField(toCheck, checked, fields, "CONFIG", io.helidon.config.Config.class);
         checkField(toCheck, checked, fields, "GENERATED", Generated.class);
         checkField(toCheck, checked, fields, "DEPRECATED", Deprecated.class);

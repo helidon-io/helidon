@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * A component is a single "layer" of the application that can trace.
@@ -141,6 +141,22 @@ public abstract class ComponentTracingConfig extends Traceable {
      * @param name name of the component
      * @param config config for a new component
      * @return a new traced component configuration
+     * @deprecated use {@link #create(String, io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static ComponentTracingConfig create(String name, io.helidon.common.config.Config config) {
+        return builder(name)
+                .config(config)
+                .build();
+    }
+
+    /**
+     * Create a new traced component configuration from {@link Config}.
+     *
+     * @param name name of the component
+     * @param config config for a new component
+     * @return a new traced component configuration
      */
     public static ComponentTracingConfig create(String name, Config config) {
         return builder(name)
@@ -183,7 +199,20 @@ public abstract class ComponentTracingConfig extends Traceable {
         }
 
         /**
-         * Update this builder from {@link io.helidon.common.config.Config}.
+         * Update this builder from configuration.
+         *
+         * @param config configuration of a traced component
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
+        }
+
+        /**
+         * Update this builder from configuration.
          *
          * @param config configuration of a traced component
          * @return updated builder instance

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * TLS configuration - common for server and client.
@@ -93,6 +93,19 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
      */
     public static TlsConfig.Builder builder() {
         return TlsConfig.builder();
+    }
+
+    /**
+     * Create TLS configuration from config.
+     *
+     * @param config located on the node of the tls configuration (usually this is {@code ssl})
+     * @return a new TLS configuration
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static Tls create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**

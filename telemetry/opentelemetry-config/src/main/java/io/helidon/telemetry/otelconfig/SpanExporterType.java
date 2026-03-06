@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ package io.helidon.telemetry.otelconfig;
  * <p>
  * See <a href="https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters">OTel exporters</a>.
  */
-public enum ExporterType {
+public enum SpanExporterType {
 
     /*
     Enum values are chosen to be the upper-case version of the OTel setting values so Helidon's built-in enum config mapping
@@ -49,6 +49,6 @@ public enum ExporterType {
      */
     LOGGING_OTLP;
 
-    static final ExporterType DEFAULT = OTLP;
+    static final SpanExporterType DEFAULT = OTLP;
 
 }

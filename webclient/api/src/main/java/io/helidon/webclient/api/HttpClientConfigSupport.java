@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,9 @@ import java.util.ServiceLoader;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
+import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.encoding.ContentEncodingContext;
@@ -114,7 +114,6 @@ class HttpClientConfigSupport {
          * @param builder builder to update
          * @param name name of the header
          * @param value value of the header
-         * @see #addHeader(io.helidon.http.Header)
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, String value) {
@@ -129,7 +128,6 @@ class HttpClientConfigSupport {
          * @param builder builder to update
          * @param name name of the header
          * @param value value of the header
-         * @see #addHeader(io.helidon.http.Header)
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, int value) {
@@ -144,7 +142,6 @@ class HttpClientConfigSupport {
          * @param builder builder to update
          * @param name name of the header
          * @param value value of the header
-         * @see #addHeader(io.helidon.http.Header)
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, long value) {

@@ -19,31 +19,21 @@ package io.helidon.telemetry.otelconfig;
 import java.util.Map;
 
 import io.helidon.builder.api.Option;
-
-import io.opentelemetry.api.common.AttributesBuilder;
+import io.helidon.builder.api.Prototype;
 
 /**
  * Abstraction of typed attributes settable on OpenTelemetry elements.
  */
-interface TypedAttributes {
-
-    static void apply(AttributesBuilder attributesBuilder,
-                      Map<String, String> stringAttributes,
-                      Map<String, Long> longAttributes,
-                      Map<String, Double> doubleAttributes,
-                      Map<String, Boolean> booleanAttributes) {
-        stringAttributes.forEach(attributesBuilder::put);
-        longAttributes.forEach(attributesBuilder::put);
-        doubleAttributes.forEach(attributesBuilder::put);
-        booleanAttributes.forEach(attributesBuilder::put);
-    }
+@Prototype.Blueprint
+@Prototype.Configured
+interface TypedAttributesBlueprint {
 
     /**
      * String attributes.
      *
      * @return string attributes
      */
-    @Option.Configured("attributes.strings")
+    @Option.Configured("strings")
     @Option.Singular
     Map<String, String> stringAttributes();
 
@@ -52,7 +42,7 @@ interface TypedAttributes {
      *
      * @return boolean attributes
      */
-    @Option.Configured("attributes.booleans")
+    @Option.Configured("booleans")
     @Option.Singular
     Map<String, Boolean> booleanAttributes();
 
@@ -61,7 +51,7 @@ interface TypedAttributes {
      *
      * @return long attributes
      */
-    @Option.Configured("attributes.longs")
+    @Option.Configured("longs")
     @Option.Singular
     Map<String, Long> longAttributes();
 
@@ -70,7 +60,7 @@ interface TypedAttributes {
      *
      * @return double attributes
      */
-    @Option.Configured("attributes.doubles")
+    @Option.Configured("doubles")
     @Option.Singular
     Map<String, Double> doubleAttributes();
 

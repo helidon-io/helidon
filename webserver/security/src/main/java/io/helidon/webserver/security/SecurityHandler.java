@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -87,7 +87,7 @@ public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityH
     private final Optional<String> auditMessageFormat;
     private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
     private final boolean combined;
-    private final Map<String, Config> configMap = new HashMap<>();
+    private final Map<String, io.helidon.common.config.Config> configMap = new HashMap<>();
 
     // lazily initialized (as it requires a context value to first create it)
     private final AtomicReference<SecurityHandler> combinedHandler = new AtomicReference<>();
@@ -145,6 +145,20 @@ public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityH
         return builder()
                 .update(consumer)
                 .build();
+    }
+
+    /**
+     * Create an instance from configuration.
+     *
+     * @param config   configuration
+     * @param defaults Default value
+     * @return an instance configured from the config
+     * @deprecated use {@link #create(io.helidon.config.Config, SecurityHandler)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static SecurityHandler create(io.helidon.common.config.Config config, SecurityHandler defaults) {
+        return create(Config.config(config), defaults);
     }
 
     /**

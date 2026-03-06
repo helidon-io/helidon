@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@ package io.helidon.dbclient.spi;
 
 import java.util.Collection;
 
-import io.helidon.common.config.Config;
+import io.helidon.common.DeprecationSupport;
+import io.helidon.config.Config;
 import io.helidon.dbclient.DbClientService;
 
 /**
@@ -46,7 +47,32 @@ public interface DbClientServiceProvider {
      *
      * @param config configuration node with additional properties that are (maybe) configured for this interceptor
      * @return an interceptor to handle DB statements
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
      */
-    Collection<DbClientService> create(Config config);
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    default Collection<DbClientService> create(io.helidon.common.config.Config config) {
+        // default to avoid forcing deprecated symbols references
+        return create(Config.config(config));
+    }
+
+    /**
+     * Create a new interceptor instance with the configuration provided.
+     * <p>
+     * API Note: the default method implementation is provided for backward compatibility
+     * and <b>will be removed in the next major version</b>
+     *
+     * @param config configuration node with additional properties that are (maybe) configured for this interceptor
+     * @return an interceptor to handle DB statements
+     * @since 4.4.0
+     */
+    @SuppressWarnings("removal")
+    default Collection<DbClientService> create(Config config) {
+        // default to preserve backward compatibility
+        // require the deprecated variant to be implemented
+        DeprecationSupport.requireOverride(this, DbClientServiceProvider.class, "create",
+                io.helidon.common.config.Config.class);
+        return create((io.helidon.common.config.Config) config);
+    }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.configurable.Resource;
 
 import io.opentelemetry.api.metrics.MeterProvider;
+import io.opentelemetry.sdk.common.InternalTelemetryVersion;
+import io.opentelemetry.sdk.common.export.MemoryMode;
 import io.opentelemetry.sdk.common.export.RetryPolicy;
 
 /**
@@ -49,6 +51,14 @@ interface OtlpExporterConfigBlueprint {
      */
     @Option.Configured
     Optional<Duration> timeout();
+
+    /**
+     * Connection timeout.
+     *
+     * @return connection timeout
+     */
+    @Option.Configured
+    Optional<Duration> connectTimeout();
 
     /**
      * Endpoint of the collector to which the exporter should transmit.
@@ -114,6 +124,22 @@ interface OtlpExporterConfigBlueprint {
     @Option.Configured
     @Option.Default("DEFAULT")
     Optional<OtlpExporterProtocolType> protocol();
+
+    /**
+     * Memory mode.
+     *
+     * @return memory mode
+     */
+    @Option.Configured
+    Optional<MemoryMode> memoryMode();
+
+    /**
+     * Self-monitoring telemetry OpenTelemetry should collect.
+     *
+     * @return telemetry version
+     */
+    @Option.Configured
+    Optional<InternalTelemetryVersion> internalTelemetryVersion();
 
     /**
      * SSL context for the exporter.

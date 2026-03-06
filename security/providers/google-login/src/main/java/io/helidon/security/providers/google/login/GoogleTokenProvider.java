@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
@@ -137,13 +137,25 @@ public final class GoogleTokenProvider implements AuthenticationProvider, Outbou
 
     /**
      * Create an instance from configuration.
+     *
+     * @param config Configuration located on the provider's key
+     * @return Instance configured from the configuration instance
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static GoogleTokenProvider create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
+    }
+
+    /**
+     * Create an instance from configuration.
      * Used by Security when configuring this provider from configuration by class name.
      *
      * @param config Configuration located on the provider's key
      * @return Instance configured from the configuration instance
      */
     public static GoogleTokenProvider create(Config config) {
-        // not covered by unit tests, as this creates a component connecting to internet
         return builder().config(config).build();
     }
 
@@ -530,6 +542,19 @@ public final class GoogleTokenProvider implements AuthenticationProvider, Outbou
         public Builder proxyPort(int port) {
             this.proxyPort = port;
             return this;
+        }
+
+        /**
+         * Update this builder from configuration.
+         *
+         * @param config Configuration at provider (security.provider.x) key
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

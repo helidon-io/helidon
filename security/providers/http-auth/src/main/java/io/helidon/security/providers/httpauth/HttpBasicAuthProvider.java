@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
@@ -87,6 +87,20 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Load this provider from configuration.
+     *
+     * @param config Configuration located at this provider's configuration (e.g. child is either http-basic-auth or
+     *               http-digest-auth)
+     * @return instance of provider configured from provided config
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static HttpBasicAuthProvider create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -310,6 +324,19 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
         private SubjectType subjectType = SubjectType.USER;
 
         private Builder() {
+        }
+
+        /**
+         * Update this builder from configuration.
+         *
+         * @param config configuration
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

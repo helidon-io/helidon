@@ -31,9 +31,9 @@ import java.util.function.Consumer;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.Config;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 import io.helidon.webserver.spi.ServerFeature;
@@ -107,6 +107,19 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
      */
     public static OpenApiFeature create() {
         return builder().build();
+    }
+
+    /**
+     * Create a new instance from typed configuration.
+     *
+     * @param config typed configuration
+     * @return new instance
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static OpenApiFeature create(io.helidon.common.config.Config config) {
+        return new OpenApiFeature(OpenApiFeatureConfig.create(config));
     }
 
     /**

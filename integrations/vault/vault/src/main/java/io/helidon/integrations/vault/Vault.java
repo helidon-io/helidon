@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ public interface Vault {
      * @see Vault.Builder#config(io.helidon.config.Config)
      * @deprecated use {@link #create(Config)} instead
      */
+    @SuppressWarnings("removal")
     @Deprecated(forRemoval = true, since = "4.3.0")
     static Vault create(io.helidon.common.config.Config config) {
         return create(Config.config(config));
@@ -246,7 +247,10 @@ public interface Vault {
          *
          * @param config configuration to use
          * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
          */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
         public Builder config(io.helidon.common.config.Config config) {
             return config(Config.config(config));
         }

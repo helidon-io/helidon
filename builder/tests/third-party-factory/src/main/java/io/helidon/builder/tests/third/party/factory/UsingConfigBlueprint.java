@@ -16,6 +16,8 @@
 
 package io.helidon.builder.tests.third.party.factory;
 
+import java.util.List;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
@@ -28,4 +30,9 @@ interface UsingConfigBlueprint {
     @Option.Configured
     @Option.PrototypedBy("LoggerConfig")
     System.Logger logger();
+
+    @Option.Configured
+    @Option.PrototypedBy("LoggerConfig")
+    @Option.Singular
+    List<System.Logger> baseLoggers();
 }

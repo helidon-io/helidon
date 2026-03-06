@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.AllowList;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -49,6 +49,19 @@ public interface RequestedUriDiscoveryContext {
      */
     static Builder builder(Config config) {
         return builder().config(config);
+    }
+
+    /**
+     * Creates a new {@code RequestedUriDiscoveryContext} from the provided discovery context config node.
+     *
+     * @param config node for the discovery context
+     * @return new discovery context instance
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    static RequestedUriDiscoveryContext create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -134,6 +147,20 @@ public interface RequestedUriDiscoveryContext {
         /**
          * Update the settings from the {@value REQUESTED_URI_DISCOVERY_CONFIG_KEY}
          * {@link io.helidon.common.config.Config} node within the socket configuration.
+         *
+         * @param config requested URI discovery configuration node
+         * @return updated builder instance
+         * @deprecated use {@link #create(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
+        }
+
+        /**
+         * Update the settings from the {@value REQUESTED_URI_DISCOVERY_CONFIG_KEY}
+         * {@link io.helidon.config.Config} node within the socket configuration.
          *
          * @param requestedUriDiscoveryConfig requested URI discovery configuration node
          * @return updated builder instance

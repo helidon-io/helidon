@@ -17,7 +17,7 @@
 package io.helidon.webserver.cors;
 
 import io.helidon.common.Weight;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**

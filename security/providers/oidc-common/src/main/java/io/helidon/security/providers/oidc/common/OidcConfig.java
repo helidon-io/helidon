@@ -28,9 +28,9 @@ import java.util.function.Supplier;
 
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.socket.SocketOptions;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
@@ -467,6 +467,21 @@ public final class OidcConfig extends TenantConfigImpl {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Create a new instance from {@link io.helidon.common.config.Config}.
+     *
+     * @param config configuration used to obtain OIDC integration values
+     * @return a new instance of this class configured from provided config
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static OidcConfig create(io.helidon.common.config.Config config) {
+        return OidcConfig.builder()
+                .config(config)
+                .build();
     }
 
     /**

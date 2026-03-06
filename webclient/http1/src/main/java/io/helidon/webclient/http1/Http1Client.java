@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.webclient.http1;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.webclient.api.HttpClient;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.Protocol;
@@ -76,6 +76,19 @@ public interface Http1Client extends HttpClient<Http1ClientRequest>, RuntimeType
      */
     static Http1Client create() {
         return create(Http1ClientConfig.create());
+    }
+
+    /**
+     * Create a new instance based on {@link Config}.
+     *
+     * @param config client config
+     * @return client
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    static Http1Client create(io.helidon.common.config.Config config) {
+        return create(it -> it.config(config));
     }
 
     /**

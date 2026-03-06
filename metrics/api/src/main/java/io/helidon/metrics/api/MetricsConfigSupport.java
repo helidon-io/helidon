@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.service.registry.Services;
 
 class MetricsConfigSupport {
@@ -41,7 +41,7 @@ class MetricsConfigSupport {
     /**
      * Looks up a single config value within the metrics configuration by config key.
      *
-     * @param metricsConfig the {@link io.helidon.common.config.Config} node containing the metrics configuration
+     * @param metricsConfig metrics configuration
      * @param key           config key to fetch
      * @return config value
      */
@@ -51,6 +51,18 @@ class MetricsConfigSupport {
                 .get(key)
                 .asString()
                 .asOptional();
+    }
+
+    /**
+     * Indicates if publishers were specified, either by the application adding any programmatically or if the config
+     * contained the {@code publishers} node.
+     *
+     * @param metricsConfig the prepared {@code MetricsConfig}
+     * @return true if publishers were assigned or configured, false otherwise
+     */
+    @Prototype.PrototypeMethod
+    static boolean publishersConfigured(MetricsConfig metricsConfig) {
+        return !metricsConfig.publishers().isEmpty() || metricsConfig.config().get("publishers").exists();
     }
 
     @Prototype.ConfigFactoryMethod("tags")

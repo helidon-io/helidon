@@ -22,8 +22,6 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
-import io.opentelemetry.api.metrics.MeterProvider;
-import io.opentelemetry.api.trace.TracerProvider;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 
@@ -80,34 +78,24 @@ interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTele
      *
      * @return tracing settings
      */
-    @Option.Access("")
     @Option.Configured("signals.tracing")
-    Optional<OpenTelemetryTracingConfig> tracingConfig();
+    Optional<OpenTelemetryTracingConfig> tracing();
 
     /**
      * OpenTelemetry metrics settings.
      *
      * @return metrics settings
      */
-    @Option.Access("")
     @Option.Configured("signals.metrics")
-    Optional<OpenTelemetryMetricsConfig> metricsConfig();
+    Optional<OpenTelemetryMetricsConfig> metrics();
 
     /**
-     * Sets the tracer provider that OpenTelemetry should use. Applications can invoke this method to set the OpenTelemetry
-     * tracer provider rather than having Helidon prepare one from the tracing-related config settings.
+     * OpenTelemetry logging settings.
      *
-     * @return OpenTelemetry tracer provider
+     * @return logging settings
      */
-    Optional<TracerProvider> tracerProvider();
-
-    /**
-     * Sets the meter provider that OpenTelemetry should use. Applications can invoke this method to set the OpenTelemetry
-     * meter provider rather than having Helidon prepare one from the metrics-releated config settings.
-     *
-     * @return OpenTelemetry meter provider
-     */
-    Optional<MeterProvider> meterProvider();
+    @Option.Configured("signals.logging")
+    Optional<OpenTelemetryLoggingConfig> logging();
 
     /**
      * The {@link io.opentelemetry.api.OpenTelemetry} instance to use for telemetry.

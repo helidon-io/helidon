@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.common.config.Config;
+import io.helidon.common.DeprecationSupport;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.config.Config;
 import io.helidon.security.ClassToInstanceStore;
 
 /**
@@ -41,8 +42,30 @@ public interface AnnotationAnalyzer {
      * Provides configuration on node "security.jersey.analyzers".
      *
      * @param config config to use to configure an analyzer, may be empty (e.g. have reasonable defaults if possible)
+     * @deprecated use {@link #init(io.helidon.config.Config)} instead
      */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    default void init(io.helidon.common.config.Config config) {
+        init(Config.config(config));
+    }
+
+    /**
+     * Provides configuration on node "security.jersey.analyzers".
+     * <p>
+     * API Note: the default method implementation is provided for backward compatibility
+     * and <b>will be removed in the next major version</b>
+     *
+     * @param config config to use to configure an analyzer, may be empty (e.g. have reasonable defaults if possible)
+     * @since 4.4.0
+     */
+    @SuppressWarnings("removal")
     default void init(Config config) {
+        // default to preserve backward compatibility
+        // only delegate if the deprecated variant is implemented
+        if (DeprecationSupport.isOverridden(this, AnnotationAnalyzer.class, "init", io.helidon.common.config.Config.class)) {
+            init((io.helidon.common.config.Config) config);
+        }
     }
 
     /**

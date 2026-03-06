@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package io.helidon.webserver.observe.spi;
 
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfiguredProvider;
+import io.helidon.config.ConfiguredProvider;
 
 /**
  * {@link java.util.ServiceLoader} provider interface for observability services.
@@ -46,14 +45,4 @@ public interface ObserveProvider extends ConfiguredProvider<Observer> {
     default String type() {
         return configKey();
     }
-
-    /**
-     * Create a new observer from the provided configuration.
-     *
-     * @param config configuration of this provider
-     * @param name name of the instance
-     * @return a new observer to be registered with routing
-     */
-    @Override
-    Observer create(Config config, String name);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package io.helidon.integrations.eureka;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 import static io.helidon.integrations.eureka.EurekaRegistrationServerFeature.EUREKA_ID;
@@ -46,7 +46,7 @@ public final class EurekaRegistrationServerFeatureProvider implements ServerFeat
      *
      * @return {@value EurekaRegistrationServerFeature#EUREKA_ID} when invoked
      *
-     * @see io.helidon.common.config.ConfiguredProvider#configKey()
+     * @see io.helidon.config.ConfiguredProvider#configKey()
      */
     @Override // ServerFeatureProvider<EurekaRegistrationServerFeature> (ConfiguredProvider<EurekaRegistrationServerFeature>
     public String configKey() {
@@ -75,7 +75,7 @@ public final class EurekaRegistrationServerFeatureProvider implements ServerFeat
      *
      * @return a non-{@code null} {@link EurekaRegistrationServerFeature}
      *
-     * @see io.helidon.common.config.ConfiguredProvider#create(Config, String)
+     * @see io.helidon.config.ConfiguredProvider#create(Config, String)
      *
      * @see EurekaRegistrationConfig
      */

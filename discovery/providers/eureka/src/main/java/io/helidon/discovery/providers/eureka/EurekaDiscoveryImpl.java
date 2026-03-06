@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 
-import io.helidon.common.config.NamedService;
+import io.helidon.config.NamedService;
 import io.helidon.discovery.DiscoveredUri;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webclient.http1.Http1Client;

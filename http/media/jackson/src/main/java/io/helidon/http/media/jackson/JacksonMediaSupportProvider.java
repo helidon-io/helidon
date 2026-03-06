@@ -17,6 +17,7 @@
 package io.helidon.http.media.jackson;
 
 import io.helidon.common.Weighted;
+import io.helidon.config.Config;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.http.media.spi.MediaSupportProvider;
 
@@ -38,9 +39,8 @@ public class JacksonMediaSupportProvider implements MediaSupportProvider, Weight
         return JacksonSupport.ID;
     }
 
-    @SuppressWarnings("removal")
     @Override
-    public MediaSupport create(io.helidon.common.config.Config config, String name) {
+    public MediaSupport create(Config config, String name) {
         return JacksonSupport.create(config, name);
     }
 

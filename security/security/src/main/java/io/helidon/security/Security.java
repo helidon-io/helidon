@@ -1184,11 +1184,7 @@ public interface Security {
             if (null == providerService) {
                 provider = SecurityUtil.instantiate(className, SecurityProvider.class, providerSpecificConfig);
             } else {
-                try {
-                    provider = providerService.create(providerSpecificConfig);
-                } catch (UnsupportedOperationException e) {
-                    provider = providerService.providerInstance(providerSpecificConfig);
-                }
+                provider = providerService.create(providerSpecificConfig);
             }
 
             if (isAuthn && (provider instanceof AuthenticationProvider)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Builder;
-import io.helidon.common.config.Config;
 import io.helidon.common.socket.SocketOptions;
+import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.webserver.http.HttpRouting;
@@ -135,7 +135,7 @@ class WebServerConfigSupport {
             }
             String name = target.name();
             if (name == null && target.config().isPresent()) {
-                Config config = target.config().get();
+                var config = target.config().get();
                 if (config.exists()) {
                     target.name(config.get("name").asString().orElse(config.name()));
                 }

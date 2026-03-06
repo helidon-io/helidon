@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 import graphql.GraphQL;
 import graphql.execution.SubscriptionExecutionStrategy;
@@ -133,6 +133,19 @@ public interface InvocationHandler {
             schemaPrinter = new SchemaPrinter(options);
 
             return new InvocationHandlerImpl(this, graphQl);
+        }
+
+        /**
+         * Update builder from configuration.
+         *
+         * @param config configuration to use
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.http.Status;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.ServerRequest;
@@ -112,6 +112,19 @@ public final class MeterRegistryFactory {
      */
     public static MeterRegistryFactory create() {
         return create(Config.empty());
+    }
+
+    /**
+     * Creates a new factory using the specified config.
+     *
+     * @param config the config to use in initializing the factory
+     * @return initialized MeterRegistryFactory
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static MeterRegistryFactory create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -254,6 +267,23 @@ public final class MeterRegistryFactory {
         @Override
         public MeterRegistryFactory build() {
             return new MeterRegistryFactory(this);
+        }
+
+        /**
+         * Override default configuration.
+         * <p>
+         * The config items supported vary from one built-in type to the next. See the documentation for the
+         * corresponding {@code MicrometerRegistryConfig} for details.
+         * </p>
+         *
+         * @param config configuration instance
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        @SuppressWarnings("removal")
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

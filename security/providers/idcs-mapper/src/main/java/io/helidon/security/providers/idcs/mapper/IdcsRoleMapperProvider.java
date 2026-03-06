@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.HeaderNames;
@@ -83,6 +83,19 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
      */
     public static Builder<?> builder() {
         return new Builder<>();
+    }
+
+    /**
+     * Creates an instance from configuration.
+     *
+     * @param config configuration of this provider
+     * @return a new instance configured from config
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static SecurityProvider create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -246,6 +259,7 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
          * @param config current node must have "oidc-config" as one of its children
          * @return updated builder instance
          */
+        @Override
         public B config(Config config) {
             super.config(config);
             config.get("cache-config").map(EvictableCache::<String, List<Grant>>create).ifPresent(this::roleCache);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.parameters.Parameters;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.Status;
@@ -101,6 +101,18 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         tenantIdFinders = List.copyOf(builder.tenantIdFinders);
 
         tenantConfigFinders.forEach(tenantConfigFinder -> tenantConfigFinder.onChange(tenantAuthHandlers::remove));
+    }
+
+    /**
+     * Load this provider from configuration.
+     *
+     * @param config configuration of this provider
+     * @return a new provider configured for OIDC
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static OidcProvider create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -340,6 +352,20 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 propagate = !outboundConfig.targets().isEmpty();
             }
             return new OidcProvider(this, new OidcOutboundConfig(outboundConfig, defaultOutboundHandler));
+        }
+
+        /**
+         * Update this builder with configuration.
+         * Only updates information that was not explicitly set.
+         *
+         * @param config OIDC provider configuration
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

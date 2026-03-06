@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.integrations.vault.spi;
 
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Vault;
 
@@ -35,5 +34,5 @@ public interface VaultAuth {
      * @param vaultBuilder vault builder
      * @return {@link io.helidon.integrations.common.rest.RestApi} in case this Vault authentication can authenticate
      */
-    Optional<RestApi> authenticate(Config config, Vault.Builder vaultBuilder);
+    Optional<RestApi> authenticate(io.helidon.common.config.Config config, Vault.Builder vaultBuilder);
 }

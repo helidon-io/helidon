@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package io.helidon.tests.integration.context.http.propagation;
 
 import java.util.Arrays;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.service.registry.Services;

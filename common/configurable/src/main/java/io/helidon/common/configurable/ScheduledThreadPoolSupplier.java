@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
 
 /**
  * Supplier of a custom scheduled thread pool.
@@ -58,6 +58,20 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
      */
     public static ScheduledThreadPoolConfig.Builder builder() {
         return ScheduledThreadPoolConfig.builder();
+    }
+
+    /**
+     * Load supplier from configuration.
+     *
+     * @param config config instance
+     * @return a new thread pool supplier configured from config
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static ScheduledThreadPoolSupplier create(io.helidon.common.config.Config config) {
+        return builder().config(config)
+                .build();
     }
 
     /**

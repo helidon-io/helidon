@@ -87,7 +87,7 @@ class TestBasicConfig {
                    retryPolicyConfig.maxBackoff(),
                    OptionalMatcher.optionalValue(is(Duration.ofMinutes(1))));
 
-        OpenTelemetryTracingConfig openTelemetryTracingConfig = openTelemetryConfig.tracingConfig().orElseThrow();
+        OpenTelemetryTracingConfig openTelemetryTracingConfig = openTelemetryConfig.tracing().orElseThrow();
         assertThat("Helidon OTel tracing", openTelemetryTracingConfig, is(notNullValue()));
 
         assertThat("Exporters",

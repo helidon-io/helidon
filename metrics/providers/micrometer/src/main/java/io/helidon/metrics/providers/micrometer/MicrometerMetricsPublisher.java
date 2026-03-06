@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,15 @@
  * limitations under the License.
  */
 
-package io.helidon.telemetry.otelconfig;
+package io.helidon.metrics.providers.micrometer;
 
-/**
- * Span Processor type. Batch is default for production.
- */
-public enum SpanProcessorType {
+import java.util.function.Supplier;
 
-    /*
-    Enum values are chosen to be the upper-case version of the OTel setting values so Helidon's built-in enum config mapping
-    works.
-     */
+import io.helidon.metrics.api.MetricsPublisher;
 
-    /**
-     * Simple Span Processor.
-     */
-    SIMPLE,
-    /**
-     * Batch Span Processor.
-     */
-    BATCH;
+import io.micrometer.core.instrument.MeterRegistry;
 
+interface MicrometerMetricsPublisher extends MetricsPublisher {
+
+    Supplier<MeterRegistry> registry();
 }
-

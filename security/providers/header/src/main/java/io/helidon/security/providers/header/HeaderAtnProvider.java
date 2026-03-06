@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
@@ -63,6 +63,19 @@ public class HeaderAtnProvider implements AuthenticationProvider, OutboundSecuri
         this.outboundConfig = builder.outboundConfig;
 
         this.defaultOutboundTokenHandler = (outboundTokenHandler == null) ? atnTokenHandler : outboundTokenHandler;
+    }
+
+    /**
+     * Create provider instance from configuration.
+     *
+     * @param config configuration of this provider
+     * @return provider instance
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static HeaderAtnProvider create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -209,6 +222,19 @@ public class HeaderAtnProvider implements AuthenticationProvider, OutboundSecuri
                 outboundTokenHandler = atnTokenHandler;
             }
             return new HeaderAtnProvider(this);
+        }
+
+        /**
+         * Load this builder from a configuration.
+         *
+         * @param config configuration to load from
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

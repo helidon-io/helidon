@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.Errors;
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.Resource;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
@@ -126,6 +126,19 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Create provider instance from configuration.
+     *
+     * @param config configuration of this provider
+     * @return provider instance
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static JwtProvider create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -447,6 +460,24 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
 
         /**
          * Load an instance from configuration.
+         *
+         * @param config         configuration to load data from
+         * @param defaultHandler default outbound token handler
+         * @return a new instance configured from config
+         * @see io.helidon.security.providers.jwt.JwtProvider.JwtOutboundTarget.Builder
+         * @deprecated use {@link #create(io.helidon.config.Config, io.helidon.security.util.TokenHandler)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public static JwtOutboundTarget create(io.helidon.common.config.Config config, TokenHandler defaultHandler) {
+            return builder()
+                    .tokenHandler(defaultHandler)
+                    .config(config)
+                    .build();
+        }
+
+        /**
+         * Load an instance from configuration.
          * Expected keys:
          * <ul>
          * <li>jwt-kid - the key id to put into JWT</li>
@@ -500,6 +531,21 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             @Override
             public JwtOutboundTarget build() {
                 return new JwtOutboundTarget(this);
+            }
+
+            /**
+             * Update builder from configuration. See
+             * {@link JwtProvider.JwtOutboundTarget#create(Config, TokenHandler)}
+             * for configuration options description.
+             *
+             * @param config to update builder from
+             * @return updated builder instance
+             * @deprecated use {@link #create(io.helidon.config.Config)} instead
+             */
+            @SuppressWarnings("removal")
+            @Deprecated(since = "4.4.0", forRemoval = true)
+            public Builder config(io.helidon.common.config.Config config) {
+                return config(Config.config(config));
             }
 
             /**
@@ -799,6 +845,18 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         public Builder issuer(String issuer) {
             this.issuer = issuer;
             return this;
+        }
+
+        /**
+         * Load this builder from a configuration.
+         *
+         * @param config configuration to load from
+         * @return updated builder instance
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

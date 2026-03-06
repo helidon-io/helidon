@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package io.helidon.security.providers.oidc.common.spi;
 
-import io.helidon.common.config.Config;
-
 /**
  * Java {@link java.util.ServiceLoader} service interface for multitenancy support.
  */
@@ -28,5 +26,5 @@ public interface TenantConfigProvider {
      * @param config configuration (may be empty)
      * @return a tenant configuration API
      */
-    TenantConfigFinder createTenantConfigFinder(Config config);
+    TenantConfigFinder createTenantConfigFinder(io.helidon.common.config.Config config);
 }

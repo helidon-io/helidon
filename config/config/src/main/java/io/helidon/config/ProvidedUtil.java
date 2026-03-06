@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,10 @@ import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.ConfiguredProvider;
-import io.helidon.common.config.NamedService;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.Services;
 
-@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+@SuppressWarnings("ALL")
 final class ProvidedUtil {
     private static final System.Logger PROVIDER_LOGGER = System.getLogger(Prototype.class.getName() + ".provider");
     /**
@@ -75,18 +73,19 @@ final class ProvidedUtil {
      * @param discoverServices whether all services from service loader should be used, or only the ones with configured
      *                         node
      * @param existingValue    value already configured, if the name is same as discovered from configuration
-     * @param <T>              type of the expected service
+     * @param <S>              type of the expected service
+     * @param <T>              type of the service provider (contract)
      * @return first service by {@link io.helidon.common.Weight}, or empty optional
      */
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    static <T extends NamedService> Optional<T>
-    discoverService(Config config,
-                    String configKey,
-                    HelidonServiceLoader<? extends ConfiguredProvider<T>> serviceLoader,
-                    Class<? extends ConfiguredProvider<T>> providerType,
-                    Class<T> configType,
-                    boolean discoverServices,
-                    Optional<T> existingValue) {
+    static <S extends io.helidon.common.config.NamedService,
+            T extends io.helidon.common.config.ConfiguredProvider<S>> Optional<S> discoverService(
+            Config config,
+            String configKey,
+            HelidonServiceLoader<T> serviceLoader,
+            Class<T> providerType,
+            Class<S> configType,
+            boolean discoverServices,
+            Optional<S> existingValue) {
 
         // there is an explicit configuration for this service, ignore configuration
         if (existingValue.isPresent()) {
@@ -103,7 +102,7 @@ final class ProvidedUtil {
             throw new ConfigException("There can only be one provider configured for " + config.key());
         }
 
-        List<T> services = discoverServices(config,
+        List<S> services = discoverServices(config,
                                             configKey,
                                             serviceLoader,
                                             providerType,
@@ -126,16 +125,19 @@ final class ProvidedUtil {
      * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
      *                             node
      * @param existingInstances    already configured instances
-     * @param <T>                  type of the expected service
+     * @param <S>                  type of the expected service
+     * @param <T>              type of the service provider (contract)
      * @return list of discovered services, ordered by {@link io.helidon.common.Weight} (highest weight first)
      */
-    static <T extends NamedService> List<T> discoverServices(Config config,
-                                                             String configKey,
-                                                             HelidonServiceLoader<? extends ConfiguredProvider<T>> serviceLoader,
-                                                             Class<? extends ConfiguredProvider<T>> providerType,
-                                                             Class<T> configType,
-                                                             boolean allFromServiceLoader,
-                                                             List<T> existingInstances) {
+    static <S extends io.helidon.common.config.NamedService,
+            T extends io.helidon.common.config.ConfiguredProvider<S>> List<S> discoverServices(
+            Config config,
+            String configKey,
+            HelidonServiceLoader<T> serviceLoader,
+            Class<T> providerType,
+            Class<S> configType,
+            boolean allFromServiceLoader,
+            List<S> existingInstances) {
 
         // type and name is a unique identification of a service - for services already defined on the builder
         // do not add them from configuration (as this would duplicate service instances)
@@ -177,13 +179,14 @@ final class ProvidedUtil {
         }
     }
 
-    static <T extends NamedService> List<T> discoverServices(Config config,
-                                                             String configKey,
-                                                             Optional<ServiceRegistry> serviceRegistry,
-                                                             Class<? extends ConfiguredProvider<T>> providerType,
-                                                             Class<T> configType,
-                                                             boolean allFromRegistry,
-                                                             List<T> existingValues) {
+    static <S extends io.helidon.common.config.NamedService,
+            T extends io.helidon.common.config.ConfiguredProvider<S>> List<S> discoverServices(Config config,
+            String configKey,
+            Optional<ServiceRegistry> serviceRegistry,
+            Class<T> providerType,
+            Class<S> configType,
+            boolean allFromRegistry,
+            List<S> existingValues) {
 
         // type and name is a unique identification of a service - for services already defined on the builder
         // do not add them from configuration (as this would duplicate service instances)
@@ -228,14 +231,15 @@ final class ProvidedUtil {
         }
     }
 
-    static <T extends NamedService> Optional<T>
-    discoverService(Config config,
-                    String configKey,
-                    Optional<ServiceRegistry> serviceRegistry,
-                    Class<? extends ConfiguredProvider<T>> providerType,
-                    Class<T> configType,
-                    boolean discoverServices,
-                    Optional<T> existingValue) {
+    static <S extends io.helidon.common.config.NamedService,
+            T extends io.helidon.common.config.ConfiguredProvider<S>> Optional<S> discoverService(
+            Config config,
+            String configKey,
+            Optional<ServiceRegistry> serviceRegistry,
+            Class<T> providerType,
+            Class<S> configType,
+            boolean discoverServices,
+            Optional<S> existingValue) {
 
         // there is an explicit configuration for this service, ignore configuration
         if (existingValue.isPresent()) {
@@ -252,7 +256,7 @@ final class ProvidedUtil {
             throw new ConfigException("There can only be one provider configured for " + config.key());
         }
 
-        List<T> services = discoverServices(config,
+        List<S> services = discoverServices(config,
                                             configKey,
                                             serviceRegistry,
                                             providerType,
@@ -263,21 +267,23 @@ final class ProvidedUtil {
         return services.isEmpty() ? Optional.empty() : Optional.of(services.getFirst());
     }
 
-    private static <T extends NamedService> List<T>
-    servicesFromObject(Config providersConfig,
-                       HelidonServiceLoader<? extends ConfiguredProvider<T>> serviceLoader,
-                       Class<? extends ConfiguredProvider<T>> providerType,
-                       Class<T> configType,
-                       List<ConfiguredService> configuredServices,
-                       boolean allFromServiceLoader,
-                       Set<TypeAndName> ignoredServices) {
+    private static <S extends io.helidon.common.config.NamedService,
+            T extends io.helidon.common.config.ConfiguredProvider<S>> List<S> servicesFromObject(
+            Config providersConfig,
+            HelidonServiceLoader<T> serviceLoader,
+            Class<T> providerType,
+            Class<S> configType,
+            List<ConfiguredService> configuredServices,
+            boolean allFromServiceLoader,
+            Set<TypeAndName> ignoredServices) {
+
         // order is determined by service loader
         Set<String> availableProviders = new HashSet<>();
         Map<String, ConfiguredService> allConfigs = new HashMap<>();
         configuredServices.forEach(it -> allConfigs.put(it.typeAndName().type, it));
         Set<String> unusedConfigs = new HashSet<>(allConfigs.keySet());
 
-        List<T> result = new ArrayList<>();
+        List<S> result = new ArrayList<>();
 
         serviceLoader.forEach(provider -> {
             ConfiguredService configuredService = allConfigs.get(provider.configKey());
@@ -321,21 +327,23 @@ final class ProvidedUtil {
         return result;
     }
 
-    private static <T extends NamedService> List<T>
-    servicesFromList(HelidonServiceLoader<? extends ConfiguredProvider<T>> serviceLoader,
-                     Class<? extends ConfiguredProvider<T>> providerType,
-                     Class<T> configType,
-                     List<ConfiguredService> configuredServices,
-                     boolean allFromServiceLoader,
-                     Set<TypeAndName> ignoredServices) {
-        Map<String, ConfiguredProvider<T>> allProvidersByType = new HashMap<>();
-        Map<String, ConfiguredProvider<T>> unusedProvidersByType = new LinkedHashMap<>();
+    private static <S extends io.helidon.common.config.NamedService,
+            T extends io.helidon.common.config.ConfiguredProvider<S>> List<S> servicesFromList(
+            HelidonServiceLoader<T> serviceLoader,
+            Class<T> providerType,
+            Class<S> configType,
+            List<ConfiguredService> configuredServices,
+            boolean allFromServiceLoader,
+            Set<TypeAndName> ignoredServices) {
+
+        Map<String, T> allProvidersByType = new HashMap<>();
+        Map<String, T> unusedProvidersByType = new LinkedHashMap<>();
         serviceLoader.forEach(it -> {
             allProvidersByType.put(it.configKey(), it);
             unusedProvidersByType.put(it.configKey(), it);
         });
 
-        List<T> result = new ArrayList<>();
+        List<S> result = new ArrayList<S>();
 
         // first add all configured
         for (ConfiguredService service : configuredServices) {
@@ -350,7 +358,7 @@ final class ProvidedUtil {
 
                 continue;
             }
-            ConfiguredProvider<T> provider = allProvidersByType.get(typeAndName.type());
+            T provider = allProvidersByType.get(typeAndName.type());
             if (provider == null) {
                 throw new ConfigException("Unknown provider configured. Expecting a provider with type \"" + typeAndName.type()
                                                   + "\", but only the following providers are supported: "
@@ -408,15 +416,17 @@ final class ProvidedUtil {
         return new ConfiguredService(new TypeAndName(type, name), serviceConfig, enabled);
     }
 
-    private static <T extends NamedService> List<T>
-    servicesFromList(RegistryWrap serviceRegistry,
-                     Class<? extends ConfiguredProvider<T>> providerType,
-                     Class<T> configType,
-                     List<ConfiguredService> configuredServices,
-                     boolean allFromServiceLoader,
-                     Set<TypeAndName> ignoredServices) {
-        Map<String, ConfiguredProvider<T>> allProvidersByType = new HashMap<>();
-        Map<String, ConfiguredProvider<T>> unusedProvidersByType = new LinkedHashMap<>();
+    private static <S extends io.helidon.common.config.NamedService,
+            T extends io.helidon.common.config.ConfiguredProvider<S>> List<S> servicesFromList(
+            RegistryWrap serviceRegistry,
+            Class<T> providerType,
+            Class<S> configType,
+            List<ConfiguredService> configuredServices,
+            boolean allFromServiceLoader,
+            Set<TypeAndName> ignoredServices) {
+
+        Map<String, T> allProvidersByType = new HashMap<>();
+        Map<String, T> unusedProvidersByType = new LinkedHashMap<>();
 
         serviceRegistry.all(providerType)
                 .forEach(provider -> {
@@ -424,7 +434,7 @@ final class ProvidedUtil {
                     unusedProvidersByType.put(provider.configKey(), provider);
                 });
 
-        List<T> result = new ArrayList<>();
+        List<S> result = new ArrayList<>();
 
         // first add all configured
         for (ConfiguredService service : configuredServices) {
@@ -439,7 +449,7 @@ final class ProvidedUtil {
 
                 continue;
             }
-            ConfiguredProvider<T> provider = allProvidersByType.get(typeAndName.type());
+            T provider = allProvidersByType.get(typeAndName.type());
             if (provider == null) {
                 throw new ConfigException("Unknown provider configured. Expecting a provider with type \"" + typeAndName.type()
                                                   + "\", but only the following providers are supported: "
@@ -465,24 +475,26 @@ final class ProvidedUtil {
         return result;
     }
 
-    private static <T extends NamedService> List<T>
-    servicesFromObject(Config providersConfig,
-                       RegistryWrap serviceRegistry,
-                       Class<? extends ConfiguredProvider<T>> providerType,
-                       Class<T> configType,
-                       List<ConfiguredService> configuredServices,
-                       boolean allFromServiceLoader,
-                       Set<TypeAndName> ignoredServices) {
+    private static <S extends io.helidon.common.config.NamedService,
+            T extends io.helidon.common.config.ConfiguredProvider<S>> List<S> servicesFromObject(
+            Config providersConfig,
+            RegistryWrap serviceRegistry,
+            Class<T> providerType,
+            Class<S> configType,
+            List<ConfiguredService> configuredServices,
+            boolean allFromServiceLoader,
+            Set<TypeAndName> ignoredServices) {
+
         // order is determined by service loader
         Set<String> availableProviders = new HashSet<>();
         Map<String, ConfiguredService> allConfigs = new HashMap<>();
         configuredServices.forEach(it -> allConfigs.put(it.typeAndName().type, it));
         Set<String> unusedConfigs = new HashSet<>(allConfigs.keySet());
 
-        List<T> result = new ArrayList<>();
+        List<S> result = new ArrayList<>();
 
-        List<? extends ConfiguredProvider<T>> all = serviceRegistry.all(providerType);
-        for (ConfiguredProvider<T> provider : all) {
+        List<T> all = serviceRegistry.all(providerType);
+        for (T provider : all) {
             ConfiguredService configuredService = allConfigs.get(provider.configKey());
             availableProviders.add(provider.configKey());
             unusedConfigs.remove(provider.configKey());

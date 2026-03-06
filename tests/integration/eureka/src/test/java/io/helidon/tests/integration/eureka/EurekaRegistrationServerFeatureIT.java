@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package io.helidon.tests.integration.eureka;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.integrations.eureka.EurekaRegistrationServerFeature;
 import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.WebClient;
@@ -33,7 +33,6 @@ import static io.helidon.http.HeaderNames.ACCEPT_ENCODING;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 
 class EurekaRegistrationServerFeatureIT {
 

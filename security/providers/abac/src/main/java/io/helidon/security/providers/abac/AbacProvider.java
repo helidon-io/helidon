@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
 import io.helidon.common.types.TypeName;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthorizationResponse;
@@ -142,6 +142,19 @@ public final class AbacProvider implements AuthorizationProvider {
      *
      * @param config configuration
      * @return ABAC provider instantiated from config
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static AbacProvider create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
+    }
+
+    /**
+     * Creates a new provider instance from configuration.
+     *
+     * @param config configuration
+     * @return ABAC provider instantiated from config
      */
     public static AbacProvider create(Config config) {
         return builder().config(config).build();
@@ -161,6 +174,7 @@ public final class AbacProvider implements AuthorizationProvider {
         return supportedAnnotationClasses;
     }
 
+    @SuppressWarnings("removal")
     @Override
     public AuthorizationResponse authorize(ProviderRequest providerRequest) {
         //let's find attributes to be validated
@@ -175,7 +189,8 @@ public final class AbacProvider implements AuthorizationProvider {
         // list all custom objects and check those that implement AttributeConfig and ...
         validateCustom(epConfig, collector);
 
-        Optional<Config> abacConfig = epConfig.config(AbacProviderService.PROVIDER_CONFIG_KEY);
+        Optional<Config> abacConfig = epConfig.config(AbacProviderService.PROVIDER_CONFIG_KEY)
+                .map(Config::config);
 
         for (var validator : validators) {
             // order of preference - explicit class, configuration, annotation
@@ -271,8 +286,10 @@ public final class AbacProvider implements AuthorizationProvider {
                 });
     }
 
+    @SuppressWarnings("removal")
     private void validateConfig(EndpointConfig config, Errors.Collector collector) {
         config.config(AbacProviderService.PROVIDER_CONFIG_KEY)
+                .map(Config::config)
                 .ifPresent(abacConfig -> validateAbacConfig(abacConfig, collector));
     }
 
@@ -437,7 +454,20 @@ public final class AbacProvider implements AuthorizationProvider {
         }
 
         /**
-         * Update builder from configuration and set the config to {@link #configuration(io.helidon.config.Config)}.
+         * Update builder from configuration.
+         *
+         * @param config configuration placed on the key of this provider
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
+        }
+
+        /**
+         * Update builder from configuration.
          *
          * @param config configuration placed on the key of this provider
          * @return updated builder instance

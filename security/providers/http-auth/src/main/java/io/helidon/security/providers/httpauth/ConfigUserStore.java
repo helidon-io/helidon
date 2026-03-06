@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -33,6 +33,19 @@ import io.helidon.config.metadata.ConfiguredOption;
  */
 public class ConfigUserStore implements SecureUserStore {
     private final Map<String, ConfigUser> users = new HashMap<>();
+
+    /**
+     * Create an instance from config.
+     *
+     * @param config to load this user store from
+     * @return {@link io.helidon.security.providers.httpauth.SecureUserStore} instance
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static SecureUserStore create(io.helidon.common.config.Config config) {
+        return create(Config.config(config));
+    }
 
     /**
      * Create an instance from config. Expects key "users" to be the current key.
@@ -60,7 +73,7 @@ public class ConfigUserStore implements SecureUserStore {
         ConfigUserStore store = new ConfigUserStore();
 
         config.asNodeList().ifPresent(configs -> configs.forEach(config1 -> {
-            ConfigUser user = config1.map(ConfigUser::create).get();
+            ConfigUser user = config1.as(ConfigUser::create).get();
             store.users.put(user.login(), user);
         }));
 

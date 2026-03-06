@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * The basic contract for implementations of the Helidon metrics API, mostly acting as a factory for
@@ -46,6 +46,11 @@ import io.helidon.common.config.Config;
 public interface MetricsFactory {
 
     /**
+     * Qualifier for context setting indicating if any pull publishers are present.
+     */
+    String PULL_PUBLISHERS_PRESENT = "io.helidon.metrics.pull-publishers";
+
+    /**
      * Returns the most-recently created implementation or, if none, a new one from a highest-weight provider available at
      * runtime and using the {@value MetricsConfigBlueprint#METRICS_CONFIG_KEY} section from the
      * current config.
@@ -58,7 +63,22 @@ public interface MetricsFactory {
 
     /**
      * Returns a new metrics factory instance from a highest-weight provider using the provided
-     * {@link io.helidon.common.config.Config} to set up the metrics factory and saving the resulting metrics factory
+     * config node to set up the metrics factory and saving the resulting metrics factory
+     * as the current one, returned by {@link #getInstance()}}.
+     *
+     * @param config config node
+     * @return new instance configured as directed
+     * @deprecated use {@link #getInstance(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    static MetricsFactory getInstance(io.helidon.common.config.Config config) {
+        return getInstance(Config.config(config));
+    }
+
+    /**
+     * Returns a new metrics factory instance from a highest-weight provider using the provided
+     * config node to set up the metrics factory and saving the resulting metrics factory
      * as the current one, returned by {@link #getInstance()}}.
      *
      * @param metricsConfigNode metrics config node
@@ -94,9 +114,9 @@ public interface MetricsFactory {
      * <p>
      * The metric factory creates its global registry on-demand using
      * {@link #getInstance()}.{@link #createMeterRegistry(MetricsConfig)} with a
-     * {@link MetricsConfig} instance derived from the root {@link io.helidon.common.config.Config} most recently passed to
-     * {@link #getInstance(io.helidon.common.config.Config)}, or if none then the config from
-     * current {@link io.helidon.common.config.Config}.
+     * {@link MetricsConfig} instance derived from the root {@link io.helidon.config.Config} most recently passed to
+     * {@link #getInstance(io.helidon.config.Config)}, or if none then the config from
+     * current {@link io.helidon.config.Config}.
      *
      * @return the global meter registry
      */
