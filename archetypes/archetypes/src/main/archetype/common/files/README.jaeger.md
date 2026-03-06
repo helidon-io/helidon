@@ -1,5 +1,7 @@
 ## Tracing
 
+> **Note:** Jaeger support is deprecated; consider using OpenTelemetry.
+
 ### Set up Jaeger
 
 First, you need to run the Jaeger tracer. Helidon will communicate with this tracer at runtime.
