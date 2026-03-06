@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.common.testing.http.junit5;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -62,6 +63,7 @@ public class SocketHttpClient implements AutoCloseable {
     private Socket socket;
     private boolean connected;
     private BufferedReader socketReader;
+    private InputStream socketInputStream;
 
     /**
      * Create a new client connecting to the specified coordinates.
@@ -285,7 +287,7 @@ public class SocketHttpClient implements AutoCloseable {
      */
     public String receive() {
         try {
-            BufferedReader br = socketReader;
+            BufferedReader br = socketReader();
             StringBuilder sb = new StringBuilder();
             String t;
             boolean ending = false;
@@ -355,7 +357,7 @@ public class SocketHttpClient implements AutoCloseable {
         String t;
         while (true) {
             try {
-                t = socketReader.readLine();
+                t = socketReader().readLine();
                 if (t == null) {
                     break;
                 }
@@ -504,6 +506,7 @@ public class SocketHttpClient implements AutoCloseable {
         }
         try {
             connected = false;
+            socketReader = null;
             socket.close();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -535,7 +538,7 @@ public class SocketHttpClient implements AutoCloseable {
         try {
             socket = new Socket(host, port);
             socket.setSoTimeout((int) timeout.toMillis());
-            socketReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            socketInputStream = socket.getInputStream();
             connected = true;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -611,7 +614,23 @@ public class SocketHttpClient implements AutoCloseable {
      * @return the reader
      */
     public BufferedReader socketReader() {
+        if (socketReader == null) {
+            socketReader = new BufferedReader(new InputStreamReader(socketInputStream, StandardCharsets.UTF_8));
+        }
         return socketReader;
+    }
+
+    /**
+     * Returns input stream. Should not be called if already using a reader.
+     *
+     * @return socket input stream
+     * @throws java.lang.IllegalStateException if socker reader already created
+     */
+    public InputStream socketInputStream() {
+        if (socketReader != null) {
+            throw new IllegalStateException("Cannot get input stream");
+        }
+        return socketInputStream;
     }
 
     /**
