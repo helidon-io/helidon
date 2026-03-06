@@ -23,6 +23,8 @@
 
 include::{rootdir}/includes/attributes.adoc[]
 
+== Introducing Helidon 
+
 Helidon is a framework for developing Java applications using a microservices architecture. It simplifies and streamlines the development, deployment, and management of cloud-native applications.
 
 At its core, Helidon provides a set of Java APIs that allow you to develop new Java applications (or migrate existing applications) that can run in more places, scale easily, and adjust swiftly as requirements change, leading to more efficient and effective applications.
@@ -36,10 +38,10 @@ Helidon is available in two flavors, Helidon SE and Helidon MP. Both flavors del
 *Helidon MP* builds on the APIs in Helidon SE by adding support for https://projects.eclipse.org/proposals/eclipse-microprofile[Eclipse MicroProfile], a project whose goal is to standardize Enterprise Java APIs for microservices development.
 
 .Which flavor should _you_ use?
-[%header,cols="1,1"]
+[cols="3,3"]
 |===
-|Use Helidon SE if
-|Use Helidon MP if
+|*Use Helidon SE if*
+|*Use Helidon MP if*
 
 a|
 * You want full transparency into and greater control over your development process.
@@ -56,26 +58,21 @@ a|
 * You plan to use CDI components or extensions, Jakarta Persistence (JPA) for data access, or Jersey (Jakarta RESTful Web Services, JAX-RS) for RESTful services.
 
 Learn more at xref:{rootdir}/mp/introduction.adoc[Helidon MP]
+|===
 
-2+|The following code examples illustrate the differences in how you would implement a simple RESTful service using either Helidon SE or Helidon MP.
+Compare the following code examples to see the differences in how you would implement a simple RESTful service using either Helidon SE or Helidon MP.
 
-a|
 .Helidon SE sample
 [source,java]
 ----
 include::{sourcedir}/about/IntroductionSnippets.java[tag=snippet_1, indent=0]
 ----
 
-a|
 .Helidon MP sample
 [source,java]
 ----
 include::{sourcedir}/about/IntroductionSnippets.java[tag=snippet_2, indent=0]
 ----
-
-|===
-
-TIP: If you're still unsure, start with Helidon MP.
 
 == Next Steps
 
