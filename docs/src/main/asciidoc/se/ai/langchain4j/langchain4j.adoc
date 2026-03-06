@@ -39,6 +39,7 @@ include::{rootdir}/includes/se.adoc[]
     ** <<Agents, Agents>>
     ** <<Agentic Workflow, Agentic Workflow>>
 * <<Tools (Callback Functions), Tools (Callback Functions)>>
+* <<Guardrails, Guardrails>>
 * <<Observability (ChatModelListeners), Observability (ChatModelListeners)>>
 * <<Additional Information, Additional Information>>
 
@@ -551,6 +552,71 @@ public class OrderService {
 NOTE: If you are using Helidon MP, to enable `@Tool`-annotated methods in CDI beans, you must annotate the CDI bean with the `@Ai.Tool` qualifier.
 
 For more details, read the https://docs.langchain4j.dev/tutorials/tools#high-level-tool-api[LangChain4j Documentation on Tools].
+
+== Guardrails
+
+LangChain4j guardrails validate input and output around model calls and help enforce application-level policies, for example:
+scope checks, prompt-injection protection, output validation, retries, or reprompts. For guardrail concepts and behavior details,
+see the https://docs.langchain4j.dev/tutorials/guardrails[LangChain4j Guardrails documentation].
+
+In Helidon, guardrails can be regular singleton declarative service beans. When a guardrail class is annotated with
+`@Service.Singleton`, Helidon can create and inject dependencies into it, and LangChain4j resolves that class instance from
+the Helidon service registry.
+
+The following snippet shows an input guardrail implemented as a Helidon singleton bean:
+
+[source,java]
+----
+@Service.Singleton
+public class ForbiddenWordsInputGuardrail implements InputGuardrail {
+
+    private final List<String> forbidden;
+
+    @Service.Inject
+    ForbiddenWordsInputGuardrail(Config config) {
+        this.forbidden = config.get("app.guardrails.forbidden").asList(String.class).orElse(List.of());
+    }
+
+    @Override
+    public InputGuardrailResult validate(UserMessage userMessage) {
+        for (String forbiddenWord : forbidden) {
+            if (userMessage.singleText().contains(forbiddenWord)) {
+                return this.fatal("Inappropriate question containing: " + forbiddenWord);
+            }
+        }
+        return this.success();
+    }
+}
+----
+
+Guardrails can be attached declaratively on an agent method using `@InputGuardrails`
+and `@OutputGuardrails` annotations:
+
+[source,java]
+----
+@Ai.Agent("helidon-se-expert")
+@Ai.ChatModel("expensive-model")
+public interface HelidonSeExpert {
+
+    @Agent("A Helidon SE expert")
+    @InputGuardrails(ForbiddenWordsInputGuardrail.class)
+    @OutputGuardrails(FooBarOutputGuardrail.class)
+    String askExpert(@V("question") String question);
+}
+----
+
+Guardrails on Agents can be overridden by a named agent configuration:
+
+[source,yaml]
+----
+langchain4j:
+  agents:
+    helidon-se-expert:
+      input-guardrails:
+        - com.example.ForbiddenWordsInputGuardrail
+      output-guardrails:
+        - com.example.FooBarOutputGuardrail
+----
 
 == Observability (ChatModelListeners)
 
