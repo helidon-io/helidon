@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,6 +108,7 @@ class SchedulingExtension implements RegistryCodegenExtension {
                 .copyright(CodegenUtil.copyright(GENERATOR, GENERATOR, generatedType))
                 .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR, GENERATOR, generatedType, "0", ""))
                 .addAnnotation(DeclarativeTypes.SINGLETON_ANNOTATION)
+                .addAnnotation(DeclarativeTypes.SUPPRESS_API)
                 .addAnnotation(runLevel)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
 

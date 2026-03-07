@@ -29,6 +29,7 @@ import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.Javadoc;
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotated;
@@ -444,8 +445,10 @@ final class FactoryPrototypeInfo {
     }
 
     private static List<Annotation> annotations(Annotated it) {
+        List<Annotation> annotations = new ArrayList<>();
+
         // annotations to be added to generated code
-        return it.findAnnotation(Types.PROTOTYPE_ANNOTATED)
+        it.findAnnotation(Types.PROTOTYPE_ANNOTATED)
                 .flatMap(Annotation::stringValues)
                 .orElseGet(List::of)
                 .stream()
@@ -453,7 +456,25 @@ final class FactoryPrototypeInfo {
                 .filter(Predicate.not(String::isBlank)) // we do not care about blank values
                 .map(io.helidon.codegen.classmodel.Annotation::parse)
                 .map(io.helidon.codegen.classmodel.Annotation::toTypesAnnotation)
-                .toList();
+                .forEach(annotations::add);
+
+        for (var annotation : it.allAnnotations()) {
+            var annotationType = annotation.typeName();
+            List<String> enclosingNames = annotationType.enclosingNames();
+            if (enclosingNames.isEmpty()) {
+                continue;
+            }
+            if (enclosingNames.size() != 1) {
+                continue;
+            }
+            if (Api.class.getSimpleName().equals(enclosingNames.getFirst())
+                    && Api.class.getPackageName().equals(annotationType.packageName())) {
+                // this is an API annotation, add them all (stability, maybe Since) to the generated prototype
+                annotations.add(annotation);
+            }
+        }
+
+        return annotations;
     }
 
     private static Optional<TypeInfo> customMethodsTypeInfo(RoundContext ctx,
