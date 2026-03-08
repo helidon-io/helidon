@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -87,30 +87,34 @@ ifdef::mp-flavor[]
 endif::mp-flavor[]
 following LangChain4j configuration for OpenAI provider.
 
-[TIP]
-Don't forget to enable your model with `enabled` set to `true`
+Model configured under `langchain4j.models` has arbitrary name `pirate-chat-model`,
+it uses `open-ai` provider defined under `langchain4j.providers`.
+With a single configured chat model, default auto-discovery resolves it automatically.
+If you configure multiple chat models, use `@Ai.ChatModel("pirate-chat-model")` to select one explicitly.
 
 ifdef::se-flavor[]
 [source,yaml]
 ----
 langchain4j:
-  open-ai:
-    chat-model:
-      enabled: true
-      model-name: "gpt-4o-mini"
+  providers:
+    open-ai:
       # Lc4j demo api key needs to be routed over lc4j proxy
       base-url: "http://langchain4j.dev/demo/openai/v1"
       api-key: "demo"
+  models:
+    pirate-chat-model:
+      provider: open-ai
+      model-name: "gpt-4o-mini"
 ----
 endif::se-flavor[]
 ifdef::mp-flavor[]
 [source,properties]
 ----
-langchain4j.open-ai.chat-model.enabled=true
-langchain4j.open-ai.chat-model.model-name=gpt-4o-mini
+langchain4j.providers.open-ai.base-url=http://langchain4j.dev/demo/openai/v1
 # Lc4j demo api key needs to be routed over lc4j proxy
-langchain4j.open-ai.chat-model.base-url=http://langchain4j.dev/demo/openai/v1
-langchain4j.open-ai.chat-model.api-key=demo
+langchain4j.providers.open-ai.api-key=demo
+langchain4j.models.pirate-chat-model.provider=open-ai
+langchain4j.models.pirate-chat-model.model-name=gpt-4o-mini
 ----
 endif::mp-flavor[]
 

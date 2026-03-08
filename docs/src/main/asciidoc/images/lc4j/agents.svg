@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  - Copyright (c) 2026 Oracle and/or its affiliates.
+  -
+  - Licensed under the Apache License, Version 2.0 (the "License");
+  - you may not use this file except in compliance with the License.
+  - You may obtain a copy of the License at
+  -
+  -     http://www.apache.org/licenses/LICENSE-2.0
+  -
+  - Unless required by applicable law or agreed to in writing, software
+  - distributed under the License is distributed on an "AS IS" BASIS,
+  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
+  -->
+
+<svg
+   width="1071.5"
+   height="226.48047"
+   viewBox="40 120 1071.5 226.48047"
+   version="1.1"
+   id="svg19"
+   sodipodi:docname="agents.svg"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview19"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.1225225"
+     inkscape:cx="535.68336"
+     inkscape:cy="155.47538"
+     inkscape:window-width="3440"
+     inkscape:window-height="1371"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg19" />
+  <defs
+     id="defs1">
+    <style
+       id="style1">
+      .title { font: 700 20px &quot;Segoe UI&quot;, Arial, sans-serif; fill: #1f2a44; }
+      .subtitle { font: 600 16px &quot;Segoe UI&quot;, Arial, sans-serif; fill: #1f2a44; }
+      .label { font: 600 13px &quot;Segoe UI&quot;, Arial, sans-serif; fill: #2b2b2b; }
+      .small { font: 500 11px &quot;Segoe UI&quot;, Arial, sans-serif; fill: #2b2b2b; }
+      .code { font: 12px &quot;Fira Mono&quot;, &quot;Courier New&quot;, monospace; fill: #1b1f23; }
+      .code-key { fill: #0969da; }
+      .code-string { fill: #0a7a45; }
+      .code-comment { fill: #6a737d; font-style: italic; }
+      .box { fill: #f8f9fb; stroke: #c8d1e0; stroke-width: 1.5; rx: 12; }
+      .note { fill: #fff4db; stroke: #f1c232; stroke-width: 1.5; rx: 10; }
+      .arrow { stroke: #4b6cb7; stroke-width: 2.5; fill: none; marker-end: url(#arrowhead); }
+      .arrow-dashed { stroke: #4b6cb7; stroke-width: 2; fill: none; stroke-dasharray: 6 6; marker-end: url(#arrowhead); }
+    </style>
+    <marker
+       id="arrowhead"
+       markerWidth="8"
+       markerHeight="8"
+       refX="7"
+       refY="4"
+       orient="auto">
+      <polygon
+         points="8,4 0,8 0,0 "
+         fill="#4b6cb7"
+         id="polygon1" />
+    </marker>
+  </defs>
+  <rect
+     x="40.649841"
+     y="120.64984"
+     width="510.09549"
+     height="225.18079"
+     class="box"
+     id="rect1" />
+  <text
+     x="60.75"
+     y="150.75"
+     class="label"
+     id="text1"
+     style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:13px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">Agents section: interface declaration (Java)</text>
+  <text
+     x="60.75"
+     y="180.75"
+     class="code"
+     id="text2"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+   class="code-key"
+   id="tspan1">@Ai.Agent</tspan>(<tspan
+   class="code-string"
+   id="tspan2">&quot;cli-expert&quot;</tspan>)</text>
+  <text
+     x="60.75"
+     y="205.75"
+     class="code"
+     id="text4"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+   class="code-key"
+   id="tspan3">@Ai.ChatModel</tspan>(<tspan
+   class="code-string"
+   id="tspan4">&quot;custom-model-name&quot;</tspan>)</text>
+  <text
+     x="60.75"
+     y="230.75"
+     class="code"
+     id="text6"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+   class="code-key"
+   id="tspan5">@Ai.McpClients</tspan>(<tspan
+   class="code-string"
+   id="tspan6">&quot;cli-tools-mcp-server&quot;</tspan>)</text>
+  <text
+     x="60.75"
+     y="255.75"
+     class="code"
+     id="text7"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace">public interface CliExpert {</text>
+  <text
+     x="80.75"
+     y="280.75"
+     class="code"
+     id="text8"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+   class="code-key"
+   id="tspan7">@Agent</tspan>(value=<tspan
+   class="code-string"
+   id="tspan8">&quot;Helidon CLI specialist&quot;</tspan>,</text>
+  <text
+     x="80.75"
+     y="302.75"
+     class="code"
+     id="text9"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace">outputKey=<tspan
+   class="code-string"
+   id="tspan9">&quot;response&quot;</tspan>)</text>
+  <text
+     x="80.75"
+     y="324.75"
+     class="code"
+     id="text10"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace">String answer(String request);</text>
+  <rect
+     x="570.74908"
+     y="120.64984"
+     width="540.10107"
+     height="225.18079"
+     class="box"
+     id="rect11" />
+  <text
+     x="590.75"
+     y="150.75"
+     class="label"
+     id="text12"
+     style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:13px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">Optional config override (application.yaml)</text>
+  <text
+     x="590.75"
+     y="180.75"
+     class="code"
+     id="text13"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+   class="code-key"
+   id="tspan12">langchain4j</tspan>:</text>
+  <text
+     x="610.75"
+     y="205.75"
+     class="code"
+     id="text14"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+   class="code-key"
+   id="tspan13">agents</tspan>:</text>
+  <text
+     x="630.75"
+     y="230.75"
+     class="code"
+     id="text15"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+   class="code-key"
+   id="tspan14">cli-expert</tspan>:</text>
+  <text
+     x="650.75"
+     y="255.75"
+     class="code"
+     id="text16"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+       class="code-comment"
+       id="tspan15"># config values override annotation values</tspan></text>
+  <text
+     x="650.75"
+     y="280.75"
+     class="code"
+     id="text17"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+   class="code-key"
+   id="tspan16">chat-model</tspan>: <tspan
+   class="code-string"
+   id="tspan17">&quot;cheaper-model&quot;</tspan></text>
+  <text
+     x="650.75"
+     y="305.75"
+     class="code"
+     id="text18"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+   class="code-key"
+   id="tspan18">mcp-clients</tspan>:</text>
+  <text
+     x="670.75"
+     y="327.75"
+     class="code"
+     id="text19"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace">- <tspan
+   class="code-string"
+   id="tspan19">&quot;cli-tools-mcp-server&quot;</tspan></text>
+  <path
+     class="arrow-dashed"
+     d="M 234.16681,177.64746 H 460.75 l 0.47114,100 h 183.66299"
+     id="path19"
+     sodipodi:nodetypes="cccc" />
+</svg>

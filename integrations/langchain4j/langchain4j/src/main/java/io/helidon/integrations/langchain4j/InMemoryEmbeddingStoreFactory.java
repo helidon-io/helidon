@@ -60,6 +60,11 @@ class InMemoryEmbeddingStoreFactory implements Service.ServicesFactory<Embedding
         if (!config.enabled()) {
             return Optional.empty();
         }
+
+        if (config.fromFile().isPresent()) {
+            return Optional.of(InMemoryEmbeddingStore.fromFile(config.fromFile().get()));
+        }
+
         return Optional.of(new InMemoryEmbeddingStore<>());
     }
 
