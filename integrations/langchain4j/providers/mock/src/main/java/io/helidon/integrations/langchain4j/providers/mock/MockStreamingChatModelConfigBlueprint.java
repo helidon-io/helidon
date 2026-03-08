@@ -22,6 +22,6 @@ import io.helidon.builder.api.Prototype;
  * Configuration blueprint for {@link MockStreamingChatModel}.
  */
 @Prototype.Blueprint
-@Prototype.Configured(MockConstants.PROVIDERS_KEY + ".helidon")
+@Prototype.Configured(MockLc4jProvider.CONFIG_ROOT)
 interface MockStreamingChatModelConfigBlueprint extends Prototype.Factory<MockStreamingChatModel>, MockCommonConfigBlueprint {
 }
