@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,58 +23,77 @@
 
 include::{rootdir}/includes/attributes.adoc[]
 
-In Helidon 4.x we have made some major changes to Helidon. Reactive engine has been removed.
-APIS and implementations are rewritten in "blocking" paradigm.
-This guide will help you upgrade a Helidon SE 3.x application to 4.x.
+Helidon 4.x introduces significant changes to APIs and runtime behavior. Use this guide to help you understand the changes required to transition a Helidon SE 3.x application to Helidon 4.x.
 
+== Significant Changes
 
-== Java 21 Runtime
+The following sections describe the changes between Helidon 3.x and Helidon 4.x that can significantly impact your development process. Review them carefully.
 
-Java 17 is no longer supported in Helidon 4. Java 21 or newer is required. Java 25 or newer is highly recommended.
-Please follow the instructions in xref:{rootdir}/about/prerequisites.adoc[Prerequisites] for proper installation.
+You can also review the https://github.com/helidon-io/helidon/blob/main/CHANGELOG.md[Helidon repository CHANGELOG] to see a detailed history of changes made to the project.
 
-Helidon 4 no longer uses Netty.
-Helidon SE is now running on Helidon WebServer which is based on virtual threads technology, available in Java 21.
+NOTE: Helidon adheres to https://semver.org/spec/v2.0.0.html[Semantic Versioning]. As such, Helidon 4.x includes changes that are not backward compatible with Helidon 3.x.
 
+TIP: The link:{helidon-github-examples-url}/[Helidon Examples repository] is a good resource for understanding how things work in Helidon 4.x.
 
-== Programming Paradigm
+=== Java SE Support
 
-Helidon SE has changed from an asynchronous style API to an imperative/blocking style API that is optimized for use with virtual threads.
-Currently, there is no compatibility API available
+Helidon 4.x removes support for Java SE 17. You must use Java SE 21 or later. If you are using Helidon 4.3.0 or later, using Java SE 25 or later is recommended.
 
-== Server Initialization and Start Up
+=== Programming Paradigm Shift
 
-In Helidon 1.x-3.x you started a server like this:
+In Helidon 4.x, Helidon SE moves from an asynchronous-style API to a blocking-style API that is optimized for use with virtual threads. Currently, there is no compatibility API available.
+
+=== New Web Server Implementation
+
+Helidon 4.x introduces Helidon WebServer, a virtual threads-based web server implementation based on the JDK Project Loom. Helidon WebServer replaces Netty, the server implementation used in previous versions of Helidon.
+
+You will need to update your existing Helidon SE 3.x code to use the new APIs but it is generally simpler to write and maintain code in Helidon SE 4.x than it was in previous versions.
+
+Here is an example of the differences between Helidon SE 3.x and Helidon SE 4.x:
+
+.Use Helidon 3.x to extract a JSON body from an HTTP request and do something
+[source,java]
+----
+include::{sourcedir}/about/IntroSnippets.java[tag=snippet_1, indent=0]
+----
+
+.Use Helidon 4.x to extract a JSON body from an HTTP request and do something
+[source,java]
+----
+include::{sourcedir}/about/IntroSnippets.java[tag=snippet_2, indent=0]
+----
+
+Learn more at xref:../webserver/webserver.adoc[WebServer].
+
+=== Server Startup
+
+Starting a server in Helidon 4.x is much simpler than in previous versions because it no longer requires asynchronous programming.
+
+In previous versions of Helidon, the server was started asynchronously and further server operations had to wait. For example:
 
 [source,java]
-.Start Helidon SE 3.x Server
+.Start Helidon SE 3.x server
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Server is started in an asynchronous way. A `Single` object is returned.
-<2> Wait for the Server to start and print the message in an asynchronous way.
+<2> Wait for the server to start and print the message in an asynchronous way.
 <3> Gracefully handle exceptions if they occur during the initialization process.
 
-Since Helidon SE in 3.x was reactive, during the start a `Single` object is returned, the server has been started in asynchronous way.
-We have to use reactive methods like `thenAccept` to wait for the server to start and then to perform the desired action.
-The exception handling should also be done in reactive way using the corresponding method.
-
-In Helidon 4.x asynchronous programming is no longer required so the server startup is much simpler:
+In Helidon 4.x, you can create and configure a server and then wait for it to start. If any exceptions happen, they are handled the traditional way using available language constructions. For example:
 
 [source,java]
-.Start Helidon SE 4.x Server
+.Start Helidon SE 4.x server
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_2, indent=0]
 ----
-<1> Configure the Server.
-<2> Start the Server. No reactive objects returned.
-<3> Print a message when the Server is started.
+<1> Configure the server.
+<2> Start the server. No reactive objects returned.
+<3> Print a message when the server is started.
 
-Just create it, configure it, and wait for it to start. If any exceptions happen, they are handled the traditional way using available language constructions.
+=== Additional Server Lifecycle Tasks
 
-== Server Lifecycle
-
-In Helidon 3.x you provided code to run after WebServer startup and after WebServer shutdown using asynchronous constructs:
+In Helidon 3.x, if you provided code to run after WebServer startup and after WebServer shutdown, you needed to use asynchronous constructs, like so:
 
 [source,java]
 .Helidon 3.x server lifecycle
@@ -82,99 +101,93 @@ In Helidon 3.x you provided code to run after WebServer startup and after WebSer
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_9, indent=0]
 ----
 
-In Helidon 4 your `HttpService` can interpose on the server lifecycle by overriding the `beforeStart` and `afterStop` methods:
+In Helidon 4.x, no special API is needed for post-server startup tasks since the server starts synchronously. Your `HttpService` can interpose on the server lifecycle by overriding the `beforeStart` and `afterStop` methods, like so:
+
 [source,java]
 .Helidon 4.x server lifecycle
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_10, indent=0]
 ----
 
-No special API is needed for after server starup since the server starts sycnhronously as described in the previous section.
+=== Server Features and Media Support Discovery
 
-== Server Features and Media Support Discovery
+In previous versions of Helidon, you had to explicitly register WebServer features (`register(MetricsSupport.create())`) and explicitly add media support (`addMediaSupport(JsonpSupport.create())`).
 
-In previous versions of Helidon you had to explicitly register WebServer features (`register(MetricsSupport.create())`) and
-explicitly add media support (`addMediaSupport(JsonpSupport.create())`). In Helidon 4 the default behavior is
-to automatically discover these components from the classpath. So all you need to do is add the
-dependencies to your pom.xml and optionally add configuration to customize them.
+Helidon 4.x automatically discovers these components from the class path. You only need to add the dependencies to your `pom.xml` file and, optionally, add configuration to customize them.
 
 If you want full control using the API, you still have that option.
 
-For more information see:
+For more information, see:
 
-* xref:../observability.adoc[Observability feature support]
-* xref:../webserver/webserver.adoc#_media_types_support[Media types support]
+* xref:../observability.adoc[Observability Feature Support]
+* xref:../webserver/webserver.adoc#_media_types_support[Media Types Support]
 
-== Routing Configuration
+=== Routing Configuration
 
-In Helidon 1.x-3.x the routing config was done the following way:
+In previous Helidon versions, the routing was configured as follows: services were created and assigned to the desired path. Observability and other features were created as usual Helidon `services`, available as part of the framework. User-defined services were also registered the same way. For example:
 
 [source,java]
-.Routing in Helidon SE 3.x Server
+.Routing in Helidon SE 3.x server
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_3, indent=0]
 ----
-<1> Create and configure `Metrics` and `Heath` support.
+<1> Create and configure `Metrics` and `Health` support.
 <2> Create a regular Helidon Service.
-<3> Register `Metrics` and `Heath` support as Helidon Services.
+<3> Register `Metrics` and `Health` support as Helidon Services.
 <4> Register the regular Greeting service.
 
-Services are created and assigned to the desired path. Observability and other features are being created as usual Helidon `services`, available as part of the framework. User-defined services are also registered the same way.
-
-In Helidon 4, the routing is configured the following way:
+In Helidon 4.x, the Metrics and Health features are automatically discovered and, assuming you added the dependencies to your project, the routing is configured in the following way:
 
 [source,java]
-.Start Helidon SE 4.x Server
+.Routing in Helidon SE 4.x server
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Register Greeting service as in previous versions of Helidon.
 
-As described previously, the Metrics and Health features will be discovered automatically as long as you have
-added the dependencies for them to your project.
+If you want to add these features to the server programmatically, you would use `WebServer.builder().addFeature()` method instead.
 
-If you wanted to add these features to the server programmatically you would do so using `WebServer.builder().addFeature()` method.
+`Feature` encapsulates a set of endpoints, services and/or filters. It is similar to `HttpService` but gives more freedom in setup. The main difference is that a feature can add `Filters` and it cannot be registered on a path. Features are not registered immediately; each feature can order features according to their weight by defining a `Weight` or implementing `Weighted` . Higher-weighted features are registered first. This allows you to order features in a meaningful way, for example Context, then Tracing, then Security, and so on.
 
-`Feature` encapsulates a set of endpoints, services and/or filters. It is similar to `HttpService` but gives more freedom in setup.
-Main difference is that a feature can add `Filters` and it cannot be registered on a path.
-Features are not registered immediately—each feature can define a `Weight` or implement `Weighted` to order features according to their weight. Higher-weighted features are registered first.
-This is to allow ordering of features in a meaningful way (e.g. Context should be first, Tracing second, Security third etc).
+==== Adding Additional Routing Criteria
 
-== Adding Additional Routing Criteria
+Helidon 4.x removes the `RequestPredicate` class, which in previous versions, was used to specify more routing criteria.
 
-In prior versions, the `RequestPredicate` class was used to specify more routing criteria. This class has been removed from Helidon 4. 
-
-So, for example, if you used the following in Helidon 3:
+So, for example, if you used the following in Helidon 3.x:
 
 [source,java]
-.Helidon 3.x using `RequestPredicate` 
+.Helidon 3.x using `RequestPredicate`
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_11, indent=0]
 ----
 
-Then, you would use the following in Helidon 4:
+Then, you would now use the following in Helidon 4.x:
 
 [source,java]
-.Helidon 4 `RequestPredicate` removed
+.Routing without RequestPredicate in Helidon 4.x
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_12, indent=0]
 ----
 
-== Services
+=== Services
 
-There are also significant changes in Helidon `Service`.
+Helidon 4.x introduces `HttpService` which you implement to process HTTP requests. To set up routing, you should now use the `routing(HttpRules rules)` method. It receives an `HttpRules` object with routes description.
 
-In prior versions, a service looks this way:
+Additionally, `ServerRequest` and `ServerResponse` are now in the `io.helidon.webserver.http` package and `Http.Status` is now `io.helidon.http.Status`.
+
+WARNING: These changes make Helidon 4.x incompatible with previous versions.
+
+In previous versions, a service looked like this:
 
 [source,java]
 .Helidon SE 3.x Service
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_5, indent=0]
 ----
-<1> Use `update()` method to set up routing.
-<2> Handle a `Request` and return a `Responce`.
+<1> Use the `update()` method to set up routing.
+<2> Handle a `Request` and return a `Response`.
 
-In Helidon 4, the same service:
+In Helidon 4.x, the same service looks like this:
 
 [source,java]
 .Helidon SE 4.x Service
@@ -183,28 +196,19 @@ include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_6, indent=0]
 ----
 <1> Implement `HttpService` for the `GreetingService`.
 <2> Use `routing(HttpRules rules)` to set up routing.
-<3> Handle a `Request` and return a `Responce`.
+<3> Handle a `Request` and return a `Response`.
 
-Helidon 4 introduced `HttpService` that should be implemented in order to process HTTP requests.
-To set up routing, the method `routing(HttpRules rules)` should now be used.
-It receives `HttpRules` object with routes description.
+Learn more about `HttpService` and `Routing` at xref:../webserver/webserver.adoc[Helidon SE WebServer].
 
-`ServerRequest` and `ServerResponse` are now in the `io.helidon.webserver.http` package;
+== Other Changes
 
-`Http.Status` is now `io.helidon.http.Status`
+The following sections describe changes between Helidon 3.x and Helidon 4.x that may impact your development process.
 
-WARNING: These changes make Helidon 4 incompatible with previous versions.
+=== Media Support
 
-Learn more about `HttpService` and `Routing` at xref:../webserver/webserver.adoc[Helidon SE WebServer]
+Media support moved from the `io.helidon.media` Java package to `io.helidon.http.media` and has the following new dependency coordinates:
 
-=== Other Significant Changes
-
-==== Media Support
-
-Media support has moved from the `io.helidon.media` Java package to `io.helidon.http.media` and has new dependency coordinates.
-For example:
-
-[source, xml]
+[source,xml]
 ----
 <dependency>
     <groupId>io.helidon.http.media</groupId>
@@ -217,12 +221,11 @@ For example:
 </dependency>
 ----
 
-In Helidon 4 media support is discovered by default, so you simply need to add the dependency.
-You no longer need to explicitly add media support using the `WebServer` builder.
+In Helidon 4.x, media support is discovered by default, so you only need to add the dependency rather than explicitly adding media support using the `WebServer` builder.
 
-Media support no long transitively brings the Jakarta API dependencies. So you might need to add these explicitly. For example:
+However, media support no longer transitively brings the Jakarta EE API dependencies, so you will need to add those dependencies explicitly. For example:
 
-[source, xml]
+[source,xml]
 ----
 <dependency>
     <groupId>jakarta.json</groupId>
@@ -230,27 +233,26 @@ Media support no long transitively brings the Jakarta API dependencies. So you m
 </dependency>
 ----
 
+=== Testing
 
-==== Testing
+Helidon 4.x adds a new testing framework for Helidon SE.
 
-There is a new testing framework for Helidon SE.
-
-[source, xml]
+[source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.microprofile.testing</groupId>
-    <artifactId>helidon-microprofile-testing-junit5</artifactId>
-    <scope>test</scope>
+     <groupId>io.helidon.webserver.testing.junit5</groupId>
+     <artifactId>helidon-webserver-testing-junit5</artifactId>
+     <scope>test</scope>
 </dependency>
 ----
 
-Find more information, see xref:../introduction.adoc[Helidon SE testing]
+For more information, see xref:../testing.adoc[Helidon SE Testing].
 
-==== Observability
+=== Observability
 
-Observability features of Helidon have now moved to different package. For `Health` and `Metrics` please use:
+Observability features moved to different packages. For `Health` and `Metrics`, you should now use:
 
-[source, xml]
+[source,xml]
 ----
 <dependencies>
     <dependency>
@@ -264,11 +266,11 @@ Observability features of Helidon have now moved to different package. For `Heal
 </dependencies>
 ----
 
-Observability has new endpoints. See them xref:../observability.adoc[here].
+Observability has new endpoints. See them at xref:../observability.adoc[hObservability].
 
-For System Metrics, please use:
+For System Metrics, you should now use:
 
-[source, xml]
+[source,xml]
 ----
 <dependency>
     <groupId>io.helidon.metrics</groupId>
@@ -277,9 +279,9 @@ For System Metrics, please use:
 ----
 
 By default, Observability features are discovered automatically if you add the above dependencies.
-If you choose to add them programmatically (using `addFeature`) you will need to add the following dependency:
+If you choose to add them programmatically (using `addFeature`), you must add the following dependency:
 
-[source, xml]
+[source,xml]
 ----
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
@@ -287,43 +289,43 @@ If you choose to add them programmatically (using `addFeature`) you will need to
 </dependency>
 ----
 
-Metrics has changed significantly in Helidon 4. See xref:../metrics/metrics.adoc[Helidon SE Metrics] for more information.
+Metrics has changed significantly in Helidon 4.x. For more information, see xref:../metrics/metrics.adoc[Helidon SE Metrics].
 
-==== Security
+=== Security
 
 * Changed modules:
+- `helidon-security-integration-grpc` was removed
 - `helidon-security-integration-jersey` moved to the module `helidon-microprofile-security`
 - `helidon-security-integration-jersey-client` moved to the module `helidon-microprofile-security`
-- `helidon-security-integration-grpc` was removed
 - `helidon-security-integration-webserver` moved to the module `helidon-webserver-security`
 
 * Significant class name changes:
-- `OidcSupport` renamed to `OidcFeature`
-- `WebSecurity` renamed to `SecurityFeature`
+- `OidcSupport` was renamed to `OidcFeature`
+- `WebSecurity` was renamed to `SecurityFeature`
 
 * Other:
 - `SynchronousProvider removed` - `SynchronousProvider` usage is no longer needed, since all security providers are synchronous.
 
 === Global Configuration
 
-The global configuration represents a single instance of the `Config` class, which is implicitly employed by certain Helidon components. Furthermore, it offers a handy approach for your application to access configuration information from any part of your code.
+Helidon 4.x adds global configuration, a singleton instance of the `Config` class, which is implicitly employed by certain Helidon components. Furthermore, it offers a handy approach for your application to access configuration information from any part of your code.
 
 [source,java]
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_8, indent=0]
 ----
 
-More information at xref:../config/introduction.adoc[Helidon SE Config].
+For more information, see xref:../config/introduction.adoc[Helidon SE Config].
 
 === Logging
 
-The class `LogConfig` has moved to the `io.helidon.logging.common` Java package.
+The class `LogConfig` moved to the `io.helidon.logging.common` Java package.
 
-The Helidon console handler has changed from `io.helidon.common.HelidonConsoleHandler` to `io.helidon.logging.jul.HelidonConsoleHandler`.
+The Helidon console handler changed from `io.helidon.common.HelidonConsoleHandler` to `io.helidon.logging.jul.HelidonConsoleHandler`.
 
-If you use this handler in your `logging.properties` you will need to update it and add the following dependency:
+If you use this handler in your `logging.properties` file, you will need to update it and add the following dependency:
 
-[source, xml]
+[source,xml]
 ----
 <dependency>
     <groupId>io.helidon.logging</groupId>
@@ -331,10 +333,3 @@ If you use this handler in your `logging.properties` you will need to update it 
     <scope>runtime</scope>
 </dependency>
 ----
-
-== Conclusion
-
-Please proceed to xref:../introduction.adoc[Helidon SE Introduction] to find more information and documentation about each module.
-
-Also, the
-link:{helidon-github-examples-url}/[Helidon examples] are a good resource for seeing how things are done in Helidon 4.
