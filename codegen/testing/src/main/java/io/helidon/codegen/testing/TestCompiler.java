@@ -18,14 +18,11 @@ package io.helidon.codegen.testing;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import javax.annotation.processing.Processor;
@@ -38,7 +35,7 @@ import javax.tools.ToolProvider;
 import org.intellij.lang.annotations.Language;
 
 /**
- * Fluent API to invoke the Java compiler programmatically for testing.
+ * Fluent facility to invoke the Java compiler programmatically for testing.
  * <p>
  * <b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
@@ -46,264 +43,33 @@ import org.intellij.lang.annotations.Language;
  * </p>
  */
 @SuppressWarnings("ALL")
-public class TestCompiler {
+public final class TestCompiler {
 
-    /**
-     * Compile result.
-     *
-     * @param success      success
-     * @param classOutput  class output location
-     * @param sourceOutput source output location
-     * @param diagnostics  rendered diagnostics
-     */
-    public record Result(boolean success,
-                         Path classOutput,
-                         Path sourceOutput,
-                         List<String> diagnostics) {
-    }
+    private final List<Supplier<Processor>> processors;
+    private final List<Path> classpath;
+    private final List<Path> modulepath;
+    private final List<String> opts;
+    private final List<JavaFileObject> sources;
+    private final Path workDir;
+    private final boolean printDiagnostics;
 
-    private final List<Supplier<Processor>> processors = new ArrayList<>();
-    private final List<Path> classpath = new ArrayList<>();
-    private final List<Path> modulepath = new ArrayList<>();
-    private final List<String> opts = new ArrayList<>();
-    private final List<JavaFileObject> sources = new ArrayList<>();
-    private Path workDir;
-    private boolean printDiagnostics = true;
-
-    /**
-     * Create a new instance.
-     */
-    public TestCompiler() {
-        opts.add("--release");
-        opts.add("21");
+    private TestCompiler(Builder builder) {
+        this.processors = List.copyOf(builder.processors);
+        this.classpath = List.copyOf(builder.classpath);
+        this.modulepath = List.copyOf(builder.modulepath);
+        this.opts = List.copyOf(builder.opts);
+        this.sources = List.copyOf(builder.sources);
+        this.workDir = builder.workDir;
+        this.printDiagnostics = builder.printDiagnostics;
     }
 
     /**
-     * Copy an existing instance.
+     * Create a new builder.
      *
-     * @param testCompiler instance to copy
+     * @return Builder
      */
-    public TestCompiler(TestCompiler testCompiler) {
-        this.processors.addAll(testCompiler.processors);
-        this.classpath.addAll(testCompiler.classpath);
-        this.modulepath.addAll(testCompiler.modulepath);
-        this.opts.addAll(testCompiler.opts);
-        this.sources.addAll(testCompiler.sources);
-        this.workDir = testCompiler.workDir;
-        this.printDiagnostics = testCompiler.printDiagnostics;
-    }
-
-    /**
-     * Add processors.
-     *
-     * @param processors processors
-     * @return this instance
-     */
-    @SafeVarargs
-    public final TestCompiler processors(Supplier<Processor>... processors) {
-        Collections.addAll(this.processors, processors);
-        return this;
-    }
-
-    /**
-     * Add processors.
-     *
-     * @param processors processors
-     * @return this instance
-     */
-    public TestCompiler processors(Processor... processors) {
-        return processors(List.of(processors));
-    }
-
-    /**
-     * Add processors.
-     *
-     * @param processors processors
-     * @return this instance
-     */
-    public TestCompiler processors(List<Processor> processors) {
-        for (var processor : processors) {
-            this.processors.add(() -> processor);
-        }
-        return this;
-    }
-
-    /**
-     * Add class-path entries.
-     *
-     * @param classes classes used to derive locations
-     * @return this instance
-     */
-    public TestCompiler classpath(Class<?>... classes) {
-        return classpath(List.of(classes));
-    }
-
-    /**
-     * Add class-path entries.
-     *
-     * @param classes classes used to derive locations
-     * @return this instance
-     */
-    public TestCompiler classpath(List<Class<?>> classes) {
-        for (var cls : classes) {
-            classpath.add(paths(cls));
-        }
-        return this;
-    }
-
-    /**
-     * Add class-path entries.
-     *
-     * @param paths paths
-     * @return this instance
-     */
-    public TestCompiler classpathEntries(Path... paths) {
-        return classpathEntries(List.of(paths));
-    }
-
-    /**
-     * Add class-path entries.
-     *
-     * @param paths paths
-     * @return this instance
-     */
-    public TestCompiler classpathEntries(List<Path> paths) {
-        classpath.addAll(paths);
-        return this;
-    }
-
-    /**
-     * Add module-path entries.
-     *
-     * @param classes classes used to derive locations
-     * @return this instance
-     */
-    public TestCompiler modulepath(Class<?>... classes) {
-        return modulepath(List.of(classes));
-    }
-
-    /**
-     * Add module-path entries.
-     *
-     * @param classes classes used to derive locations
-     * @return this instance
-     */
-    public TestCompiler modulepath(List<Class<?>> classes) {
-        for (var cls : classes) {
-            modulepath.add(paths(cls));
-        }
-        return this;
-    }
-
-    /**
-     * Add module-path entries.
-     *
-     * @param paths paths
-     * @return this instance
-     */
-    public TestCompiler modulepathEntries(Path... paths) {
-        return modulepathEntries(List.of(paths));
-    }
-
-    /**
-     * Add module-path entries.
-     *
-     * @param paths paths
-     * @return this instance
-     */
-    public TestCompiler modulepathEntries(List<Path> paths) {
-        modulepath.addAll(paths);
-        return this;
-    }
-
-    /**
-     * Do annotation processing only.
-     *
-     * @return this instance
-     */
-    public TestCompiler procOnly() {
-        return opts("-proc:only");
-    }
-
-    /**
-     * Add compiler options.
-     *
-     * @param opts options
-     * @return this instance
-     */
-    public TestCompiler opts(String... opts) {
-        return opts(List.of(opts));
-    }
-
-    /**
-     * Add compiler options.
-     *
-     * @param opts options
-     * @return this instance
-     */
-    public TestCompiler opts(List<String> opts) {
-        this.opts.addAll(opts);
-        return this;
-    }
-
-    /**
-     * Add a source to compile.
-     *
-     * @param fileName file name
-     * @param code     source code
-     * @return this instance
-     */
-    public TestCompiler source(String fileName, @Language("java") String code) {
-        var uri = URI.create("string:///" + fileName);
-        return source(new SimpleJavaFileObject(uri, JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-                return code;
-            }
-        });
-    }
-
-    /**
-     * Add a source to compile.
-     *
-     * @param source source code
-     * @return this instace
-     */
-    public TestCompiler source(JavaFileObject source) {
-        this.sources.add(source);
-        return this;
-    }
-
-    /**
-     * Set the working directory automatically based on the caller.
-     *
-     * @return this instance
-     */
-    public TestCompiler autoWorkDir() {
-        this.workDir = newWorkDir(it -> !it.getDeclaringClass().equals(TestCompiler.class));
-        return this;
-    }
-
-    /**
-     * Set the working directory.
-     *
-     * @param workDir working directory
-     * @return this instance
-     */
-    public TestCompiler workDir(Path workDir) {
-        this.workDir = workDir;
-        return this;
-    }
-
-    /**
-     * Whether to print the diagnostics to STDERR.
-     *
-     * @param printDiagnostics {@code true} to print the diagnostics to STDERR, {@code false} otherwise
-     * @return this instance
-     */
-    public TestCompiler printDiagnostics(boolean printDiagnostics) {
-        this.printDiagnostics = printDiagnostics;
-        return this;
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -313,17 +79,18 @@ public class TestCompiler {
      */
     public Result compile() {
         try {
-            if (workDir == null) {
-                throw new IllegalStateException("workDir is not set");
+            var dir = workDir;
+            if (dir == null) {
+                dir = TestPaths.newWorkDir(it -> !it.getDeclaringClass().equals(TestCompiler.class));
             }
             var compiler = ToolProvider.getSystemJavaCompiler();
             var diagnostics = new DiagnosticCollector<>();
             var manager = compiler.getStandardFileManager(diagnostics, null, null);
-            var classOutput = workDir.resolve("classes");
+            var classOutput = dir.resolve("classes");
             if (!Files.exists(classOutput)) {
                 Files.createDirectories(classOutput);
             }
-            var sourceOuput = workDir.resolve("generated-sources");
+            var sourceOuput = dir.resolve("generated-sources");
             if (!Files.exists(sourceOuput)) {
                 Files.createDirectories(sourceOuput);
             }
@@ -345,63 +112,297 @@ public class TestCompiler {
                 }
                 messages.add(msg);
             }
-            return new Result(success, classOutput, sourceOuput, messages);
+            return new ResultImpl(success, classOutput, sourceOuput, messages);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    private static Path paths(Class<?> clazz) {
-        try {
-            return Paths.get(clazz.getProtectionDomain().getCodeSource().getLocation().toURI());
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+    /**
+     * Test compilation result.
+     */
+    public interface Result {
+
+        /**
+         * Whether the compilation task was successful.
+         *
+         * @return {@code true} if successful, {@code false} otherwise
+         */
+        boolean success();
+
+        /**
+         * Get the class output location.
+         *
+         * @return location
+         */
+        Path classOutput();
+
+        /**
+         * Get the source output location.
+         *
+         * @return location
+         */
+        Path sourceOutput();
+
+        /**
+         * Get the rendered diagnostics.
+         *
+         * @return list of diagnostic messages
+         */
+        List<String> diagnostics();
+    }
+
+    /**
+     * Fluent build for {@link TestCompiler}.
+     */
+    public static final class Builder implements io.helidon.common.Builder<Builder, TestCompiler> {
+
+        private final List<Supplier<Processor>> processors = new ArrayList<>();
+        private final List<Path> classpath = new ArrayList<>();
+        private final List<Path> modulepath = new ArrayList<>();
+        private final List<String> opts = new ArrayList<>();
+        private final List<JavaFileObject> sources = new ArrayList<>();
+        private Path workDir;
+        private boolean printDiagnostics = true;
+
+        /**
+         * Populate this builder from a compiler instance.
+         *
+         * @param compiler compiler instance
+         * @return this builder
+         */
+        public Builder from(TestCompiler compiler) {
+            this.processors.addAll(compiler.processors);
+            this.classpath.addAll(compiler.classpath);
+            this.modulepath.addAll(compiler.modulepath);
+            this.opts.addAll(compiler.opts);
+            this.sources.addAll(compiler.sources);
+            this.workDir = compiler.workDir;
+            this.printDiagnostics = compiler.printDiagnostics;
+            return this;
         }
-    }
 
-    private static Path newWorkDir(Predicate<StackWalker.StackFrame> predicate) {
-        var frame = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
-                .walk(stream -> stream.filter(it -> !it.getDeclaringClass().equals(TestCompiler.class) && predicate.test(it))
-                        .findFirst())
-                .orElseThrow();
-
-        return newWorkDir(frame.getDeclaringClass(), frame.getMethodName());
-    }
-
-    private static Path newWorkDir(Class<?> declaringClass, String methodName) {
-        try {
-            var classesDir = Paths.get(declaringClass.getProtectionDomain().getCodeSource().getLocation().toURI());
-            var targetDir = classesDir.getParent();
-            if (targetDir == null) {
-                throw new IllegalStateException("Unable to derive target directory");
-            }
-
-            // ensure unique directory
-            String prefix = dirName(declaringClass.getSimpleName());
-            String suffix = dirName(methodName);
-            var workDir = targetDir.resolve(prefix).resolve(suffix);
-            for (int i = 1; Files.exists(workDir); i++) {
-                workDir = targetDir.resolve(prefix + "-" + i).resolve(suffix);
-            }
-            return Files.createDirectories(workDir);
-        } catch (URISyntaxException | IOException e) {
-            throw new RuntimeException(e);
+        /**
+         * Add processors.
+         *
+         * @param processors processors
+         * @return this builder
+         */
+        @SafeVarargs
+        public final Builder processors(Supplier<Processor>... processors) {
+            Collections.addAll(this.processors, processors);
+            return this;
         }
-    }
 
-    private static String dirName(String str) {
-        var sb = new StringBuilder();
-        for (int i = 0; i < str.length(); i++) {
-            char c = str.charAt(i);
-            if (Character.isUpperCase(c)) {
-                if (!sb.isEmpty()) {
-                    sb.append('-');
+        /**
+         * Add processors.
+         *
+         * @param processors processors
+         * @return this builder
+         */
+        public Builder processors(Processor... processors) {
+            return processors(List.of(processors));
+        }
+
+        /**
+         * Add processors.
+         *
+         * @param processors processors
+         * @return this builder
+         */
+        public Builder processors(List<Processor> processors) {
+            for (var processor : processors) {
+                this.processors.add(() -> processor);
+            }
+            return this;
+        }
+
+        /**
+         * Add class-path entries.
+         *
+         * @param classes classes used to derive locations
+         * @return this builder
+         */
+        public Builder classpath(Class<?>... classes) {
+            return classpath(List.of(classes));
+        }
+
+        /**
+         * Add class-path entries.
+         *
+         * @param classes classes used to derive locations
+         * @return this builder
+         */
+        public Builder classpath(List<Class<?>> classes) {
+            for (var cls : classes) {
+                classpath.add(TestPaths.paths(cls));
+            }
+            return this;
+        }
+
+        /**
+         * Add class-path entries.
+         *
+         * @param paths paths
+         * @return this builder
+         */
+        public Builder classpathEntries(Path... paths) {
+            return classpathEntries(List.of(paths));
+        }
+
+        /**
+         * Add class-path entries.
+         *
+         * @param paths paths
+         * @return this builder
+         */
+        public Builder classpathEntries(List<Path> paths) {
+            classpath.addAll(paths);
+            return this;
+        }
+
+        /**
+         * Add module-path entries.
+         *
+         * @param classes classes used to derive locations
+         * @return this builder
+         */
+        public Builder modulepath(Class<?>... classes) {
+            return modulepath(List.of(classes));
+        }
+
+        /**
+         * Add module-path entries.
+         *
+         * @param classes classes used to derive locations
+         * @return this builder
+         */
+        public Builder modulepath(List<Class<?>> classes) {
+            for (var cls : classes) {
+                modulepath.add(TestPaths.paths(cls));
+            }
+            return this;
+        }
+
+        /**
+         * Add module-path entries.
+         *
+         * @param paths paths
+         * @return this builder
+         */
+        public Builder modulepathEntries(Path... paths) {
+            return modulepathEntries(List.of(paths));
+        }
+
+        /**
+         * Add module-path entries.
+         *
+         * @param paths paths
+         * @return this builder
+         */
+        public Builder modulepathEntries(List<Path> paths) {
+            modulepath.addAll(paths);
+            return this;
+        }
+
+        /**
+         * Do annotation processing only.
+         *
+         * @return this builder
+         */
+        public Builder procOnly() {
+            return opts("-proc:only");
+        }
+
+        /**
+         * Add {@code --release} for the current runtime version.
+         *
+         * @return this builder
+         */
+        public Builder currentRelease() {
+            return opts("--release", String.valueOf(Runtime.version().feature()));
+        }
+
+        /**
+         * Add compiler options.
+         *
+         * @param opts options
+         * @return this builder
+         */
+        public Builder opts(String... opts) {
+            return opts(List.of(opts));
+        }
+
+        /**
+         * Add compiler options.
+         *
+         * @param opts options
+         * @return this builder
+         */
+        public Builder opts(List<String> opts) {
+            this.opts.addAll(opts);
+            return this;
+        }
+
+        /**
+         * Add a source to compile.
+         *
+         * @param fileName file name
+         * @param code     source code
+         * @return this builder
+         */
+        public Builder source(String fileName, @Language("java") String code) {
+            var uri = URI.create("string:///" + fileName);
+            return source(new SimpleJavaFileObject(uri, JavaFileObject.Kind.SOURCE) {
+                @Override
+                public CharSequence getCharContent(boolean ignoreEncodingErrors) {
+                    return code;
                 }
-                sb.append(Character.toLowerCase(c));
-            } else {
-                sb.append(c);
-            }
+            });
         }
-        return sb.toString();
+
+        /**
+         * Add a source to compile.
+         *
+         * @param source source code
+         * @return this instace
+         */
+        public Builder source(JavaFileObject source) {
+            this.sources.add(source);
+            return this;
+        }
+
+        /**
+         * Set the working directory.
+         *
+         * @param workDir working directory
+         * @return this builder
+         */
+        public Builder workDir(Path workDir) {
+            this.workDir = workDir;
+            return this;
+        }
+
+        /**
+         * Whether to print the diagnostics to STDERR.
+         *
+         * @param printDiagnostics {@code true} to print the diagnostics to STDERR, {@code false} otherwise
+         * @return this builder
+         */
+        public Builder printDiagnostics(boolean printDiagnostics) {
+            this.printDiagnostics = printDiagnostics;
+            return this;
+        }
+
+        @Override
+        public TestCompiler build() {
+            return new TestCompiler(this);
+        }
+    }
+
+    private record ResultImpl(boolean success,
+                              Path classOutput,
+                              Path sourceOutput,
+                              List<String> diagnostics) implements Result {
     }
 }

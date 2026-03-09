@@ -49,7 +49,8 @@ class TestCompilerTest {
 
     @Test
     void testCodegen() throws IOException {
-        var result = new TestCompiler()
+        var result = TestCompiler.builder()
+                .currentRelease()
                 .processors(new ProcessorImpl() {
                     @Override
                     ClassModel handle(Element element) {
@@ -81,7 +82,6 @@ class TestCompilerTest {
                 })
                 .classpath(AcmeAnnotation.class)
                 .printDiagnostics(false)
-                .autoWorkDir()
                 .source("AcmeObject.java", """
                         package io.helidon.codegen.testing;
                         
@@ -92,6 +92,7 @@ class TestCompilerTest {
                             void makeStuff();
                         }
                         """)
+                .build()
                 .compile();
         assertThat(result.success(), is(true));
         var actualFile = result.sourceOutput().resolve("com/acme/AcmeObjectHello.java");
