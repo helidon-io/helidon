@@ -19,11 +19,14 @@ package io.helidon.json;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import io.helidon.common.buffers.Bytes;
 
-class JsonGeneratorOutputStream extends AbstractJsonGenerator {
+class JsonGeneratorOutputStream extends JsonGeneratorBase {
 
     private static final byte[] HEX_DIGITS = "0123456789ABCDEF".getBytes(StandardCharsets.US_ASCII);
 
@@ -38,14 +41,14 @@ class JsonGeneratorOutputStream extends AbstractJsonGenerator {
     }
 
     @Override
-    void ensureCapacity(int extra) {
+    protected void ensureCapacity(int extra) {
         if (index + extra >= buffer.length) {
             writeBuffer();
         }
     }
 
     @Override
-    void writeString(String value) {
+    protected void writeString(String value) {
         ensureCapacity(1);
         buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
         for (int i = 0; i < value.length(); i++) {
@@ -57,7 +60,7 @@ class JsonGeneratorOutputStream extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeChar(char value) {
+    protected void writeChar(char value) {
         ensureCapacity(1);
         buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
         encodeChar(value);
@@ -66,15 +69,21 @@ class JsonGeneratorOutputStream extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeByteExact(byte value) {
+    protected void writeByteExact(byte value) {
         ensureCapacity(1);
         buffer[index++] = value;
     }
 
     @Override
-    void writeLong(long value) {
+    protected void writeInt(int value) {
+        writeLong(value);
+    }
+
+    @Override
+    protected void writeLong(long value) {
         if (value == 0) {
             writeByteExact(Bytes.ZERO_DIGIT_BYTE);
+            return;
         }
         long toProcess = value;
         int digits = 0;
@@ -95,7 +104,7 @@ class JsonGeneratorOutputStream extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeFloat(float value) {
+    protected void writeFloat(float value) {
         //Performance improvement needed
         if (Float.isNaN(value)) {
             ensureCapacity(3);
@@ -146,7 +155,7 @@ class JsonGeneratorOutputStream extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeDouble(double value) {
+    protected void writeDouble(double value) {
         //Performance improvement needed
         if (Double.isNaN(value)) {
             ensureCapacity(3);
@@ -197,7 +206,37 @@ class JsonGeneratorOutputStream extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeBoolean(boolean value) {
+    protected void writeBigDecimal(BigDecimal value) {
+        String stringValue = value.toString();
+        int len = stringValue.length();
+        ensureCapacity(1);
+        buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
+        ensureCapacity(len);
+        for (int i = 0; i < len; i++) {
+            buffer[index + i] = (byte) stringValue.charAt(i);
+        }
+        index += len;
+        ensureCapacity(1);
+        buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
+    }
+
+    @Override
+    protected void writeBigInteger(BigInteger value) {
+        String stringValue = value.toString();
+        int len = stringValue.length();
+        ensureCapacity(1);
+        buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
+        ensureCapacity(len);
+        for (int i = 0; i < len; i++) {
+            buffer[index + i] = (byte) stringValue.charAt(i);
+        }
+        index += len;
+        ensureCapacity(1);
+        buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
+    }
+
+    @Override
+    protected void writeBoolean(boolean value) {
         if (value) {
             ensureCapacity(4);
             buffer[index++] = 't';
@@ -215,7 +254,17 @@ class JsonGeneratorOutputStream extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeNullValue() {
+    protected void writeBinaryArray(byte[] value) {
+        ensureCapacity(1);
+        buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
+        writeBuffer();
+        byte[] data = Base64.getEncoder().encode(value);
+        writeData(data, 0, data.length);
+        buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
+    }
+
+    @Override
+    protected void writeNullValue() {
         ensureCapacity(4);
         buffer[index++] = 'n';
         buffer[index++] = 'u';
@@ -240,9 +289,13 @@ class JsonGeneratorOutputStream extends AbstractJsonGenerator {
         if (index == 0) {
             return;
         }
+        writeData(buffer, 0, index);
+        index = 0;
+    }
+
+    private void writeData(byte[] array, int start, int length) {
         try {
-            outputStream.write(buffer, 0, index);
-            index = 0;
+            outputStream.write(array, start, length);
         } catch (IOException e) {
             throw new JsonException("Stream write failed", e);
         }

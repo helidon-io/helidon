@@ -16,6 +16,9 @@
 
 package io.helidon.webserver.tests.sse;
 
+import java.time.Duration;
+import java.util.List;
+
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.sse.SseEvent;
 import io.helidon.webserver.WebServer;
@@ -135,8 +138,16 @@ class SseBaseTest {
     }
 
     protected void testSse(String path, String... events) throws Exception {
+        testSse(path, List.of(), events);
+    }
+
+    protected void testSse(String path, Iterable<String> headers, String... events) throws Exception {
         assert webServer != null;
-        try (SimpleSseClient sseClient = SimpleSseClient.create(webServer.port(), path)) {
+        try (SimpleSseClient sseClient = SimpleSseClient.create("localhost",
+                                                                webServer.port(),
+                                                                path,
+                                                                headers,
+                                                                Duration.ofSeconds(10))) {
             for (String e : events) {
                 assertThat(sseClient.nextEvent(), is(e));
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.processor;
+package io.helidon.json;
 
-import java.util.List;
-import java.util.Set;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 
-import io.helidon.common.types.TypeName;
-
-record AnnotationDataBlueprint(
-        boolean prototypePublic,
-        boolean builderPublic,
-        boolean createFromConfigPublic,
-        boolean createEmptyPublic,
-        boolean isFactory,
-        Set<TypeName> extendsList,
-        String javadoc,
-        List<TypeName> typeArguments) {
+class StreamParserBinaryTest extends BinaryValueTest {
+    @Override
+    JsonParser createParser(String template) {
+        return JsonParser.create(new ByteArrayInputStream(template.getBytes(StandardCharsets.UTF_8)), 6);
+    }
 }

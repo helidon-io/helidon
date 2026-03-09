@@ -18,6 +18,8 @@ package io.helidon.json;
 
 import java.io.OutputStream;
 import java.io.Writer;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 /**
  * A JSON generator interface for writing JSON data.
@@ -130,6 +132,24 @@ public interface JsonGenerator extends AutoCloseable {
     JsonGenerator write(String key, char value);
 
     /**
+     * Write a key-value pair with a {@link BigDecimal} value.
+     *
+     * @param key   the key
+     * @param value the decimal value
+     * @return this generator for method chaining
+     */
+    JsonGenerator write(String key, BigDecimal value);
+
+    /**
+     * Write a key-value pair with a {@link BigInteger} value.
+     *
+     * @param key   the key
+     * @param value the big integer value
+     * @return this generator for method chaining
+     */
+    JsonGenerator write(String key, BigInteger value);
+
+    /**
      * Write a key-value pair with a JsonValue.
      *
      * @param key   the key
@@ -137,6 +157,15 @@ public interface JsonGenerator extends AutoCloseable {
      * @return this generator for method chaining
      */
     JsonGenerator write(String key, JsonValue value);
+
+    /**
+     * Write a key-value pair with a value in a binary format.
+     *
+     * @param key   the key
+     * @param value the binary data value
+     * @return this generator for method chaining
+     */
+    JsonGenerator writeBinary(String key, byte[] value);
 
     /**
      * Write a string value.
@@ -211,12 +240,36 @@ public interface JsonGenerator extends AutoCloseable {
     JsonGenerator write(char value);
 
     /**
+     * Write a {@link BigDecimal} value.
+     *
+     * @param value the decimal value
+     * @return this generator for method chaining
+     */
+    JsonGenerator write(BigDecimal value);
+
+    /**
+     * Write a {@link BigInteger} value.
+     *
+     * @param value the big integer value
+     * @return this generator for method chaining
+     */
+    JsonGenerator write(BigInteger value);
+
+    /**
      * Write a JsonValue.
      *
      * @param value the JsonValue to write
      * @return this generator for method chaining
      */
     JsonGenerator write(JsonValue value);
+
+    /**
+     * Write a value in a binary format.
+     *
+     * @param value the binary data value
+     * @return this generator for method chaining
+     */
+    JsonGenerator writeBinary(byte[] value);
 
     /**
      * Write a null value.

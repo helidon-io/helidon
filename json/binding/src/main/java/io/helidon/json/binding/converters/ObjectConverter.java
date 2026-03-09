@@ -55,7 +55,6 @@ class ObjectConverter implements JsonConverter<Object> {
         return GenericType.OBJECT;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Object deserialize(JsonParser parser) {
         return switch (parser.currentByte()) {

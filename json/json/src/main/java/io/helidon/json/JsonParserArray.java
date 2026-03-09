@@ -16,71 +16,94 @@
 
 package io.helidon.json;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Base64;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.Bytes;
 
-import static io.helidon.json.ArrayJsonParser.BYTE_SIZE_BORDER;
-import static io.helidon.json.ArrayJsonParser.DOT_MARK;
-import static io.helidon.json.ArrayJsonParser.FNV_OFFSET_BASIS;
-import static io.helidon.json.ArrayJsonParser.FNV_PRIME;
-import static io.helidon.json.ArrayJsonParser.HEX_DIGITS;
-import static io.helidon.json.ArrayJsonParser.INT_SIZE_BORDER;
-import static io.helidon.json.ArrayJsonParser.LONG_SIZE_BORDER;
-import static io.helidon.json.ArrayJsonParser.POW10_DOUBLE_CACHE;
-import static io.helidon.json.ArrayJsonParser.POW10_DOUBLE_CACHE_SIZE;
-import static io.helidon.json.ArrayJsonParser.SHORT_SIZE_BORDER;
-import static io.helidon.json.ArrayJsonParser.VALID_NUMBER_PARTS;
-import static io.helidon.json.ArrayJsonParser.WHITESPACE_CHARS;
-import static io.helidon.json.ArrayJsonParser.WHOLE_NUMBER_PARTS;
+class JsonParserArray extends JsonParserBase {
 
-/*
-This class is having mostly the same method implementations as ArrayJsonParser does.
-I will need to think carefully about how to do the abstraction right, but for the first version,
-I have decided to leave it like this and with a duplicit code.
- */
-final class JsonStreamParser implements JsonParser {
+    static final int FNV_OFFSET_BASIS = 0x811c9dc5;
+    static final int FNV_PRIME = 0x01000193;
 
-    private static final int DEFAULT_BUFFER_SIZE = 512;
+    //We need this to check if the next number digit overflows int max capacity
+    static final byte BYTE_SIZE_BORDER = Byte.MAX_VALUE / 10;
+    static final short SHORT_SIZE_BORDER = Short.MAX_VALUE / 10;
+    static final int INT_SIZE_BORDER = Integer.MAX_VALUE / 10;
+    static final long LONG_SIZE_BORDER = Long.MAX_VALUE / 10;
 
-    private final int configuredBufferSize;
-    private final InputStream inputStream;
-    private boolean finished;
-    private boolean bufferingJsonValue;
-    private int jsonValueStart;
+    //Lookup table used for transformation of a number character in a byte form to its int equivalent
+    static final int[] WHOLE_NUMBER_PARTS = new int[256];
+    //Contains true for any number related char
+    static final boolean[] VALID_NUMBER_PARTS = new boolean[256];
+    //Lookup table for whitespace detection
+    static final boolean[] WHITESPACE_CHARS = new boolean[256];
+
+    /**
+     * Cached POW10 for double fast path calculations.
+     */
+    static final double[] POW10_DOUBLE_CACHE = {
+            1.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, 10000000.0,
+            100000000.0, 1000000000.0, 10000000000.0, 100000000000.0,
+            1000000000000.0, 10000000000000.0, 100000000000000.0,
+            1000000000000000.0, 10000000000000000.0, 100000000000000000.0,
+            1000000000000000000.0, 10000000000000000000.0, 1.0e20, 1.0e21, 1.0e22
+    };
+    static final int POW10_DOUBLE_CACHE_SIZE = POW10_DOUBLE_CACHE.length;
+    static final int DOT_MARK = -2;
+
+    static {
+        Arrays.fill(WHOLE_NUMBER_PARTS, -1);
+        for (int i = '0'; i <= '9'; ++i) {
+            WHOLE_NUMBER_PARTS[i] = i - '0';
+        }
+        //Marker for number resolving
+        //if dot has been found and we wanted just the decimal part, we need to skip the rest of the number
+        WHOLE_NUMBER_PARTS[Bytes.DOT_BYTE] = DOT_MARK;
+
+        //'e', 'E', '.', '-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
+        for (int i = '0'; i <= '9'; ++i) {
+            VALID_NUMBER_PARTS[i] = true;
+        }
+        VALID_NUMBER_PARTS['-'] = true;
+        VALID_NUMBER_PARTS['+'] = true;
+        VALID_NUMBER_PARTS['.'] = true;
+        VALID_NUMBER_PARTS['e'] = true;
+        VALID_NUMBER_PARTS['E'] = true;
+
+        // ASCII whitespace
+        WHITESPACE_CHARS[0x09] = true; // TAB
+        WHITESPACE_CHARS[0x0A] = true; // LF
+        WHITESPACE_CHARS[0x0B] = true; // VT
+        WHITESPACE_CHARS[0x0C] = true; // FF
+        WHITESPACE_CHARS[0x0D] = true; // CR
+        WHITESPACE_CHARS[0x20] = true; // SPACE
+    }
 
     private int stringBufferLength = 64;
     private char[] stringBuffer = new char[stringBufferLength];
     private boolean expectLowSurrogate = false;
 
-    private byte[] buffer;
+    private final byte[] buffer;
     private int currentIndex = 0;
-    private int bufferLength;
+    private final int bufferLength;
 
     private int mark = -1;
     private boolean replayMarked = false;
 
-    JsonStreamParser(InputStream inputStream, int bufferSize) {
-        this.configuredBufferSize = bufferSize;
-        this.inputStream = inputStream;
-        currentIndex = 0;
-        buffer = new byte[bufferSize];
-        try {
-            int read = inputStream.read(buffer);
-            bufferLength = (read == -1 ? 0 : read);
-            finished = (read == -1);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Error occurred while reading JSON to the buffer", e);
-        }
+    JsonParserArray(byte[] buffer) {
+        this.buffer = buffer;
+        this.bufferLength = buffer.length;
     }
 
-    JsonStreamParser(InputStream inputStream) {
-        this(inputStream, DEFAULT_BUFFER_SIZE);
+    JsonParserArray(byte[] buffer, int start, int length) {
+        this.buffer = buffer;
+        this.currentIndex = start;
+        this.bufferLength = length;
     }
 
     @Override
@@ -89,228 +112,108 @@ final class JsonStreamParser implements JsonParser {
     }
 
     @Override
-    public boolean hasNext() {
-        if (!finished && currentIndex + 1 >= bufferLength) {
-            fetchData();
+    public byte nextToken() {
+        byte b;
+        if (++currentIndex == bufferLength) {
+            throw createException("Unexpected end of the JSON found");
         }
+        b = buffer[currentIndex];
+        if (!WHITESPACE_CHARS[b & 0xFF]) {
+            return b;
+        }
+        if (++currentIndex == bufferLength) {
+            throw createException("Unexpected end of the JSON found");
+        }
+        b = buffer[currentIndex];
+        if (!WHITESPACE_CHARS[b & 0xFF]) {
+            return b;
+        }
+        //We dont know how many spaces, new lines etc is there present, lets start looping
+        for (int i = currentIndex + 1; i < bufferLength; i++) {
+            b = buffer[i];
+            if (!WHITESPACE_CHARS[b & 0xFF]) {
+                currentIndex = i;
+                return b;
+            }
+        }
+        throw createException("Unexpected end of the JSON found");
+    }
+
+    @Override
+    public boolean hasNext() {
         return currentIndex + 1 < bufferLength;
     }
 
     byte readNextByte() {
-        if (currentIndex + 1 == bufferLength) {
-            if (finished) {
-                throw createException("Incomplete JSON data");
-            }
-            readMoreData();
-        }
         return buffer[++currentIndex];
     }
 
-    void ensure(int amount) {
-        if (currentIndex + amount >= bufferLength) {
-            fetchData();
-            if (currentIndex + amount >= bufferLength) {
-                throw createException("There is not enough data to be read. Incomplete JSON");
-            }
-        }
-    }
-
-    void fetchData() {
-        if (finished) {
-            throw createException("There are no more data to fetch. Incomplete JSON");
-        }
-        readMoreData();
+    @Override
+    public JsonString readJsonString() {
+        int start = currentIndex + 1;
+        skipString();
+        int length = currentIndex - start;
+        return JsonString.create(buffer, start, length);
     }
 
     @Override
-    public JsonValue readJsonValue() {
-        return switch (currentByte()) {
-            case '{' -> readJsonObject();
-            case '[' -> readJsonArray();
-            case '"' -> readJsonString();
-            case '-', '.', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> readJsonNumber();
-            case 't', 'f' -> JsonBoolean.create(readBoolean());
-            case 'n' -> {
-                checkNull();
-                yield JsonNull.instance();
-            }
-            default -> throw createException("Unexpected JSON value type", currentByte());
-        };
+    public JsonNumber readJsonNumber() {
+        int start = currentIndex;
+        skipNumber();
+        return JsonNumber.create(buffer, start, currentIndex - start + 1);
     }
 
     @Override
-    public JsonObject readJsonObject() {
-        if (currentByte() != '{') {
-            throw createException("Object start expected", currentByte());
+    public String readString() {
+        if (checkNull()) {
+            return null;
+        } else if (currentByte() != '"') {
+            throw createException("Expected start of string", currentByte());
         }
-        byte b = nextToken();
-        if (b == '}') {
-            return JsonObject.EMPTY_OBJECT;
-        }
-        List<JsonObject.Pair> pairs = new ArrayList<>();
-        while (hasNext()) {
-            JsonString key;
+        int index = ++currentIndex;
+        int readableBytes = bufferLength - currentIndex;
+        int firstRun = Math.min(stringBufferLength, readableBytes);
+        byte b;
+        int stringBuffIndex = 0;
+        for (; stringBuffIndex < firstRun; stringBuffIndex++) {
+            b = this.buffer[index++];
             if (b == '"') {
-                key = readJsonString();
+                currentIndex = --index;
+                return new String(stringBuffer, 0, stringBuffIndex);
+            } else if ((b ^ '\\') < 1) { //Either \ or UTF-8 byte detected
+                //Either escaped sequence or multibyte detected
+                currentIndex = --index;
+                break;
+            }
+            stringBuffer[stringBuffIndex] = (char) b;
+        }
+        if (stringBuffIndex == firstRun) {
+            currentIndex = index;
+        }
+
+        if (stringBuffIndex == stringBufferLength) {
+            increaseStringBuffer();
+        }
+
+        for (; currentIndex < bufferLength; currentIndex++) {
+            b = buffer[currentIndex];
+            if (b == '\\') {
+                stringBuffer[stringBuffIndex++] = processEscapedSequence();
+            } else if (expectLowSurrogate) {
+                throw createException("Low surrogate must follow the high surrogate.", b);
+            } else if (b == '"') {
+                return new String(stringBuffer, 0, stringBuffIndex);
+            } else if ((b & 0x80) == 0) {
+                stringBuffer[stringBuffIndex++] = (char) b;
             } else {
-                throw createException("Key name start expected", b);
+                // Decode UTF-8 multibyte sequence starting with this byte
+                stringBuffIndex = decodeUtf8(stringBuffIndex, b);
             }
-            b = nextToken();
-            if (b != ':') {
-                throw createException("Colon expected", b);
+            if (stringBuffIndex == stringBufferLength) {
+                increaseStringBuffer();
             }
-            b = nextToken();
-            switch (b) {
-            case '"':
-                pairs.add(new JsonObject.Pair(key, readJsonString()));
-                break;
-            case '{':
-                pairs.add(new JsonObject.Pair(key, readJsonObject()));
-                break;
-            case '[':
-                pairs.add(new JsonObject.Pair(key, readJsonArray()));
-                break;
-            case '-':
-            case '.':
-            case '+':
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                pairs.add(new JsonObject.Pair(key, readJsonNumber()));
-                break;
-            case 'n':
-                checkNull();
-                pairs.add(new JsonObject.Pair(key, JsonNull.instance()));
-                break;
-            case 't':
-            case 'f':
-                pairs.add(new JsonObject.Pair(key, JsonBoolean.create(readBoolean())));
-                break;
-            default:
-                throw createException("Unexpected json value type", b);
-            }
-            b = nextToken();
-            if (b == '}') {
-                return JsonObject.create(pairs);
-            } else if (b != ',') {
-                throw createException("Comma or object end expected", b);
-            }
-            b = nextToken();
         }
-        throw createException("Unexpected end of the object. Possibly incomplete JSON");
-    }
-
-    @Override
-    public JsonArray readJsonArray() {
-        byte b = nextToken();
-        if (b == ']') {
-            return JsonArray.EMPTY_ARRAY;
-        }
-        List<JsonValue> values = new ArrayList<>();
-        while (hasNext()) {
-            switch (b) {
-            case '"':
-                values.add(readJsonString());
-                break;
-            case '{':
-                values.add(readJsonObject());
-                break;
-            case '[':
-                values.add(readJsonArray());
-                break;
-            case '-':
-            case '.':
-            case '+':
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                values.add(readJsonNumber());
-                break;
-            case 'n':
-                checkNull();
-                values.add(JsonNull.instance());
-                break;
-            case 't':
-            case 'f':
-                values.add(JsonBoolean.create(readBoolean()));
-                break;
-            default:
-                throw createException("Invalid JSON value type", b);
-            }
-            b = nextToken();
-            if (b == ']') {
-                return JsonArray.create(values);
-            } else if (b != ',') {
-                throw createException("Comma or array end expected", b);
-            }
-            b = nextToken();
-        }
-        throw createException("Unexpected end of the array. Possibly incomplete JSON");
-    }
-
-    @Override
-    public char[] readCharArray() {
-        switch (currentByte()) {
-        case '"':
-            return readStringCharArray();
-        case '{':
-            throw createException("Handling object as a character array is not supported");
-        case '[':
-            throw createException("Handling array as a character array is not supported");
-        case '-':
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-            return readNumberAsCharArray();
-        case 't':
-            ensure(3);
-            if (buffer[++currentIndex] == 'r'
-                    && buffer[++currentIndex] == 'u'
-                    && buffer[++currentIndex] == 'e') {
-                return new char[] {'t', 'r', 'u', 'e'};
-            }
-            throw createException("True value expect. Invalid JSON value");
-        case 'n':
-            ensure(3);
-            if (buffer[++currentIndex] == 'u'
-                    && buffer[++currentIndex] == 'l'
-                    && buffer[++currentIndex] == 'l') {
-                return new char[] {'n', 'u', 'l', 'l'};
-            }
-            throw createException("Null value expect. Invalid JSON value");
-        case 'f':
-            ensure(4);
-            if (buffer[++currentIndex] == 'a'
-                    && buffer[++currentIndex] == 'l'
-                    && buffer[++currentIndex] == 's'
-                    && buffer[++currentIndex] == 'e') {
-                return new char[] {'f', 'a', 'l', 's', 'e'};
-            }
-            throw createException("False value expect. Invalid JSON value");
-        default:
-            throw createException("Invalid JSON value to skip", currentByte());
-        }
+        throw createException("End of the string expected. Incomplete JSON");
     }
 
     @Override
@@ -404,6 +307,238 @@ final class JsonStreamParser implements JsonParser {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:MethodLength")
+    public double readDouble() {
+        int start = currentIndex;
+        int i = start;
+
+        // Check for sign
+        boolean negative = false;
+        byte b = buffer[i];
+        if (b == '-') {
+            negative = true;
+            i++;
+        } else if (b == '+') {
+            i++;
+        }
+        // Check for special values (NaN, Infinity)
+        b = buffer[i];
+        if (b == 'N') {
+            if (i + 2 <= bufferLength && buffer[i + 1] == 'a' && buffer[i + 2] == 'N') {
+                currentIndex = i + 2;
+                return Double.NaN;
+            }
+            throw createException("Invalid double number");
+        } else if (b == 'I' || b == 'i') {
+            if (i + 7 <= bufferLength
+                    && buffer[i + 1] == 'n'
+                    && buffer[i + 2] == 'f'
+                    && buffer[i + 3] == 'i'
+                    && buffer[i + 4] == 'n'
+                    && buffer[i + 5] == 'i'
+                    && buffer[i + 6] == 't'
+                    && buffer[i + 7] == 'y') {
+                currentIndex = i + 7;
+                return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+            }
+            throw createException("Invalid double number");
+        } else if (b < '0' || b > '9') {
+            throw createException("Invalid double number");
+        }
+
+        // Parse mantissa
+        long mantissa = 0;
+        int digitsBeforeDecimal = 0;
+        int significantDigits = 0;
+        int leadingZerosAfterDecimal = 0;
+        boolean hasDecimal = false;
+        boolean foundNonZero = false;
+        boolean delegateToJava = false;
+
+        // Parse all digits
+        while (i < bufferLength) {
+            b = buffer[i];
+            int digit = WHOLE_NUMBER_PARTS[b & 0xFF];
+            if (digit > -1) {
+                if (hasDecimal) {
+                    // After decimal point
+                    if (!foundNonZero && digit == 0) {
+                        leadingZerosAfterDecimal++;
+                    } else {
+                        foundNonZero = true;
+                        if (significantDigits < 17) {
+                            mantissa = mantissa * 10 + digit;
+                            significantDigits++;
+                        } else {
+                            delegateToJava = true;
+                            break;
+                        }
+                    }
+                } else {
+                    // Before decimal point
+                    if (digit != 0 || foundNonZero) {
+                        foundNonZero = true;
+                        digitsBeforeDecimal++;
+                        if (significantDigits < 17) {
+                            mantissa = mantissa * 10 + digit;
+                            significantDigits++;
+                        } else {
+                            delegateToJava = true;
+                            break;
+                        }
+                    }
+                }
+                i++;
+            } else if (b == '.') {
+                if (hasDecimal) {
+                    currentIndex = i;
+                    throw createException("Multiple decimal separators detected");
+                }
+                hasDecimal = true;
+                i++;
+            } else {
+                currentIndex = i - 1;
+                break;
+            }
+        }
+        if (delegateToJava) {
+            currentIndex = i;
+            skipNumber();
+            return Double.parseDouble(new String(buffer, start, currentIndex - start + 1, StandardCharsets.UTF_8));
+        }
+
+        // Calculate the base decimal exponent
+        int decimalExponent = 0;
+        if (digitsBeforeDecimal > 0) {
+            // 123.456 -> mantissa=123456, digitsBeforeDecimal=3, significantDigits=6 -> Base exponent -3
+            decimalExponent = digitsBeforeDecimal - significantDigits;
+        } else if (hasDecimal && foundNonZero) {
+            // 0.00123 -> mantissa=123, leadingZerosAfterDecimal=2, significantDigits=3 -> Base exponent -5
+            decimalExponent = -(leadingZerosAfterDecimal + significantDigits);
+        }
+
+        // Parse explicit exponent
+        int explicitExp = 0;
+        b = i < bufferLength ? buffer[i] : -1;
+        if (b == 'e' || b == 'E') {
+            i++;
+            boolean expNegative = false;
+            if (i < bufferLength) {
+                if (buffer[i] == '-') {
+                    expNegative = true;
+                    i++;
+                } else if (buffer[i] == '+') {
+                    i++;
+                }
+            } else {
+                currentIndex = i - 1;
+                throw createException("Missing exponent value");
+            }
+
+            int digit = -1;
+            while (i < bufferLength && (digit = WHOLE_NUMBER_PARTS[buffer[i] & 0xFF]) > -1) {
+                explicitExp = explicitExp * 10 + digit;
+                if (explicitExp > 1000) {
+                    break;
+                }
+                i++;
+            }
+            currentIndex = i - 1;
+            if (digit == -1) {
+                b = buffer[i];
+                if (b == 'e' || b == 'E' || b == '.') {
+                    throw createException("Duplicit exponent or decimal point detected");
+                }
+            }
+            decimalExponent += expNegative ? -explicitExp : explicitExp;
+        }
+        if (currentIndex == start) {
+            currentIndex = i;
+        }
+
+        // Handle zero
+        if (mantissa == 0) {
+            return negative ? -0.0 : 0.0;
+        }
+
+        if (decimalExponent >= POW10_DOUBLE_CACHE_SIZE || decimalExponent <= -POW10_DOUBLE_CACHE_SIZE) {
+            skipNumber();
+            // Delegate to Java for exact result
+            return Double.parseDouble(new String(buffer, start, currentIndex - start + 1, StandardCharsets.UTF_8));
+        }
+
+        // FAST PATH: Handle common cases ourselves
+        double result = mantissa;
+
+        // Apply exponent using lookup table
+        if (decimalExponent > 0) {
+            result *= POW10_DOUBLE_CACHE[decimalExponent];
+        } else if (decimalExponent < 0) {
+            result /= POW10_DOUBLE_CACHE[-decimalExponent];
+        }
+
+        return negative ? -result : result;
+    }
+
+    @Override
+    public BigInteger readBigInteger() {
+        boolean inString = false;
+        int start = currentIndex;
+        if (buffer[start] == '"') {
+            ensure(1);
+            start = ++currentIndex;
+            inString = true;
+        }
+        skipNumber();
+        int length = currentIndex - start + 1;
+        BigInteger bigInteger = new BigInteger(new String(buffer, start, length, StandardCharsets.US_ASCII));
+        if (inString) {
+            ensure(1);
+            if (buffer[++currentIndex] != '"') {
+                throw createException("Expected the end of the string", buffer[currentIndex]);
+            }
+        }
+        return bigInteger;
+    }
+
+    @Override
+    public BigDecimal readBigDecimal() {
+        boolean inString = false;
+        if (buffer[currentIndex] == '"') {
+            ensure(1);
+            currentIndex++;
+            inString = true;
+        }
+        BigDecimal bigDecimal = new BigDecimal(readNumberAsCharArray());
+        if (inString) {
+            ensure(1);
+            if (buffer[++currentIndex] != '"') {
+                throw createException("Expected the end of the string", buffer[currentIndex]);
+            }
+        }
+        return bigDecimal;
+    }
+
+    @Override
+    public byte[] readBinary() {
+        if (currentByte() != '\"') {
+            throw createException("Binary data should be in a Base64 format and enclosed with double quotes", currentByte());
+        }
+        int start = currentIndex + 1;
+        skipString();
+        int length = currentIndex - start;
+        byte[] bytes = new byte[length];
+        System.arraycopy(buffer, start, bytes, 0, length);
+        return Base64.getDecoder().decode(bytes);
+    }
+
+    void ensure(int amount) {
+        if (currentIndex + amount >= bufferLength) {
+            throw createException("There is not enough data to be read. Incomplete JSON");
+        }
+    }
+
+    @Override
     public boolean checkNull() {
         if (currentByte() == 'n') {
             ensure(3);
@@ -418,7 +553,30 @@ final class JsonStreamParser implements JsonParser {
     }
 
     @Override
+    public int readStringAsHash() {
+        int b = buffer[currentIndex] & 0xFF;
+        if (b != '"') {
+            throw createException("Hash calculation is intended only for String values");
+        }
+        // Compute FNV-1a hash of the string content (excluding quotes) using recommended offset basis and prime values.
+        // This optimized loop scans the buffer directly without calling readNextByte() for each character.
+        int fnv1aHash = FNV_OFFSET_BASIS;
+        currentIndex++;
+        for (int i = currentIndex; i < bufferLength; i++) {
+            b = buffer[i] & 0xFF;
+            if (b == '"') {
+                currentIndex = i;
+                return fnv1aHash;
+            }
+            fnv1aHash ^= b;
+            fnv1aHash *= FNV_PRIME;
+        }
+        throw createException("Unexpected end of string value. Probably incomplete JSON");
+    }
+
+    @Override
     public JsonException createException(String message) {
+        clearMark();
         int start = Math.max(currentIndex - 10, 0);
         int length = Math.min(currentIndex + 10, bufferLength - start);
         int dataIndex = currentIndex - start;
@@ -436,7 +594,7 @@ final class JsonStreamParser implements JsonParser {
         if (replayMarked) {
             throw new IllegalStateException("Parser has already been marked for replaying. "
                                                     + "Cant do it twice without consuming the mark with either "
-                                                    + "clearMark or resetToMark methods.");
+                                                    + "clearMark or resetToMark methods");
         }
         replayMarked = true;
         mark = currentIndex;
@@ -452,7 +610,6 @@ final class JsonStreamParser implements JsonParser {
     public void resetToMark() {
         if (replayMarked) {
             replayMarked = false;
-            finished = false;
             currentIndex = mark;
         } else {
             throw new IllegalStateException("Parser tried to reset to the marked place, but no mark was found");
@@ -502,6 +659,38 @@ final class JsonStreamParser implements JsonParser {
         }
     }
 
+    void skipString() {
+        boolean isEscaped = false;
+        for (int index = this.currentIndex + 1; index < this.bufferLength; index++) {
+            byte b = this.buffer[index];
+            if (b == '\\') {
+                isEscaped = !isEscaped;
+                continue;
+            } else if (b == '"') {
+                if (!isEscaped) {
+                    this.currentIndex = index;
+                    return;
+                }
+            }
+            isEscaped = false;
+        }
+        throw createException("Unexpected end of string. Incomplete JSON or incorrect use of the skip method");
+    }
+
+    void skipNumber() {
+        byte b;
+        for (int index = this.currentIndex; index < this.bufferLength; index++) {
+            b = this.buffer[index];
+            //we do not need to validate whether this is a valid number since we are not processing it.
+            //simply skip until you find any non-numeric bound character
+            if (!VALID_NUMBER_PARTS[b]) {
+                this.currentIndex = index - 1;
+                return;
+            }
+        }
+        this.currentIndex = this.bufferLength - 1;
+    }
+
     char processEscapedSequence() {
         if (!hasNext()) {
             throw createException("Error while processing an escaped string sequence. Incomplete JSON");
@@ -528,10 +717,10 @@ final class JsonStreamParser implements JsonParser {
         case 'u':
             ensure(4); // Need 4 hex digits
             char tmp = (char) (
-                    (translateHex(buffer[++currentIndex]) << 12)
-                            + (translateHex(buffer[++currentIndex]) << 8)
-                            + (translateHex(buffer[++currentIndex]) << 4)
-                            + translateHex(buffer[++currentIndex]));
+                    (Parsers.translateHex(buffer[++currentIndex], this) << 12)
+                            + (Parsers.translateHex(buffer[++currentIndex], this) << 8)
+                            + (Parsers.translateHex(buffer[++currentIndex], this) << 4)
+                            + Parsers.translateHex(buffer[++currentIndex], this));
             // Handle JSON's UTF-16 surrogate pair encoding (\\uXXXX\\uYYYY for code points > U+FFFF)
             if (Character.isHighSurrogate(tmp)) {
                 // High surrogate: must be followed by a low surrogate
@@ -625,434 +814,6 @@ final class JsonStreamParser implements JsonParser {
 
     void increaseStringBuffer() {
         increaseStringBuffer(stringBufferLength * 2);
-    }
-
-    @Override
-    public int readStringAsHash() {
-        int b = buffer[currentIndex] & 0xFF;
-        if (b != '"') {
-            throw createException("Hash calculation is intended only for String values");
-        } else if (!hasNext()) {
-            throw createException("Incomplete JSON");
-        }
-
-        int i = currentIndex + 1;
-        while (true) {
-            //Based on recommended offset basis and prime values.
-            int fnv1aHash = FNV_OFFSET_BASIS;
-            while (i < bufferLength) {
-                b = buffer[i++] & 0xFF;
-                if (b == '"') {
-                    currentIndex = i - 1;
-                    return fnv1aHash;
-                }
-                fnv1aHash ^= b;
-                fnv1aHash *= FNV_PRIME;
-            }
-            fetchData();
-            i = currentIndex;
-        }
-    }
-
-    @Override
-    public JsonNumber readJsonNumber() {
-        bufferingJsonValue = true;
-        jsonValueStart = currentIndex;
-        skipNumber();
-        int length = currentIndex - jsonValueStart + 1;
-        byte[] numberBytes = new byte[length];
-        System.arraycopy(buffer, jsonValueStart, numberBytes, 0, length);
-        bufferingJsonValue = false;
-        return JsonNumber.create(numberBytes, 0, length);
-    }
-
-    void skipNumber() {
-        byte b;
-        int index;
-        while (true) {
-            for (index = this.currentIndex; index < this.bufferLength; index++) {
-                b = this.buffer[index];
-                //we do not need to validate whether this is a valid number since we are not processing it.
-                //simply skip until you find any non-numeric bound character
-                if (!VALID_NUMBER_PARTS[b]) {
-                    this.currentIndex = index - 1;
-                    return;
-                }
-            }
-            if (!finished) {
-                currentIndex = index;
-                readMoreData();
-            } else {
-                this.currentIndex = index;
-                break;
-            }
-        }
-    }
-
-    @Override
-    public JsonString readJsonString() {
-        if (currentByte() != '"') {
-            throw createException("Reading JsonString values is allowed only for a string JSON values", currentByte());
-        }
-        bufferingJsonValue = true;
-        jsonValueStart = currentIndex + 1;
-        skipString();
-        int length = currentIndex - jsonValueStart;
-        byte[] stringBytes = new byte[length];
-        System.arraycopy(buffer, jsonValueStart, stringBytes, 0, length);
-        bufferingJsonValue = false;
-        return JsonString.create(stringBytes, 0, length);
-    }
-
-    void skipString() {
-        boolean isEscaped = false;
-        byte b;
-        while (true) {
-            int index;
-            for (index = this.currentIndex + 1; index < this.bufferLength; index++) {
-                b = this.buffer[index];
-                if (b == '\\') {
-                    isEscaped = !isEscaped;
-                } else if (b == '"' && !isEscaped) {
-                    this.currentIndex = index;
-                    return;
-                } else {
-                    isEscaped = false;
-                }
-            }
-            currentIndex = index;
-            if (finished) {
-                throw createException("Unexpected end of string. Incomplete JSON or incorrect use of the skip method");
-            }
-            readMoreData();
-        }
-    }
-
-    @Override
-    @SuppressWarnings("checkstyle:MethodLength")
-    public double readDouble() {
-        bufferingJsonValue = true;
-        jsonValueStart = currentIndex;
-
-        // Check for sign
-        boolean negative = false;
-        byte b = buffer[currentIndex];
-        if (b == '-') {
-            negative = true;
-            currentIndex++;
-        } else if (b == '+') {
-            currentIndex++;
-        }
-        if (currentIndex >= bufferLength) {
-            fetchData();
-            if (currentIndex >= bufferLength) {
-                throw createException("Empty number");
-            }
-        }
-        // Check for special values (NaN, Infinity)
-        b = buffer[currentIndex];
-        if (b == 'N') {
-            if (expectedNext('a') && expectedNext('N')) {
-                currentIndex += 2;
-                bufferingJsonValue = false;
-                return Double.NaN;
-            }
-            throw createException("Invalid double number");
-        } else if (b == 'I' || b == 'i') {
-            if (expectedNext('n')
-                    && expectedNext('f')
-                    && expectedNext('i')
-                    && expectedNext('n')
-                    && expectedNext('i')
-                    && expectedNext('t')
-                    && expectedNext('y')) {
-                currentIndex += 7;
-                bufferingJsonValue = false;
-                return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-            }
-            throw createException("Invalid double number");
-        } else if (b < '0' || b > '9') {
-            throw createException("Invalid double number");
-        }
-
-        // Parse mantissa
-        long mantissa = 0;
-        int digitsBeforeDecimal = 0;
-        int significantDigits = 0;
-        int leadingZerosAfterDecimal = 0;
-        boolean hasDecimal = false;
-        boolean foundNonZero = false;
-        boolean delegateToJava = false;
-
-        // Parse all digits
-        while (currentIndex < bufferLength) {
-            b = buffer[currentIndex];
-            int digit = WHOLE_NUMBER_PARTS[b & 0xFF];
-            if (digit > -1) {
-                if (hasDecimal) {
-                    // After decimal point
-                    if (!foundNonZero && digit == 0) {
-                        leadingZerosAfterDecimal++;
-                    } else {
-                        foundNonZero = true;
-                        if (significantDigits < 17) {
-                            mantissa = mantissa * 10 + digit;
-                            significantDigits++;
-                        } else {
-                            delegateToJava = true;
-                            break;
-                        }
-                    }
-                } else {
-                    // Before decimal point
-                    if (digit != 0 || foundNonZero) {
-                        foundNonZero = true;
-                        digitsBeforeDecimal++;
-                        if (significantDigits < 17) {
-                            mantissa = mantissa * 10 + digit;
-                            significantDigits++;
-                        } else {
-                            delegateToJava = true;
-                            break;
-                        }
-                    }
-                }
-                currentIndex++;
-                if (currentIndex == bufferLength) {
-                    fetchData();
-                }
-            } else if (b == '.') {
-                if (hasDecimal) {
-                    throw createException("Multiple decimal separators detected");
-                }
-                hasDecimal = true;
-                currentIndex++;
-                if (currentIndex == bufferLength) {
-                    fetchData();
-                }
-            } else {
-                break;
-            }
-        }
-        if (delegateToJava) {
-            skipNumber();
-            bufferingJsonValue = false;
-            return Double.parseDouble(new String(buffer, jsonValueStart, currentIndex - jsonValueStart, StandardCharsets.UTF_8));
-        }
-
-        // Calculate the base decimal exponent
-        int decimalExponent = 0;
-        if (digitsBeforeDecimal > 0) {
-            // 123.456 -> mantissa=123456, digitsBeforeDecimal=3, significantDigits=6 -> Base exponent -3
-            decimalExponent = digitsBeforeDecimal - significantDigits;
-        } else if (hasDecimal && foundNonZero) {
-            // 0.00123 -> mantissa=123, leadingZerosAfterDecimal=2, significantDigits=3 -> Base exponent -5
-            decimalExponent = -(leadingZerosAfterDecimal + significantDigits);
-        }
-
-        // Parse explicit exponent
-        int explicitExp = 0;
-        b = buffer[currentIndex];
-        if (b == 'e' || b == 'E') {
-            boolean expNegative = false;
-            if (hasNext()) {
-                b = buffer[++currentIndex];
-                if (b == '-') {
-                    expNegative = true;
-                    currentIndex++;
-                } else if (b == '+') {
-                    currentIndex++;
-                }
-            } else {
-                throw createException("Missing exponent value");
-            }
-            if (currentIndex == bufferLength) {
-                fetchData();
-            }
-
-            int digit = -1;
-            while ((currentIndex < bufferLength) && (digit = WHOLE_NUMBER_PARTS[buffer[currentIndex] & 0xFF]) > -1) {
-                explicitExp = explicitExp * 10 + digit;
-                if (explicitExp > 1000) {
-                    break;
-                }
-                currentIndex++;
-                if (currentIndex == bufferLength && !finished) {
-                    fetchData();
-                }
-            }
-            if (digit == -1) {
-                b = buffer[currentIndex];
-                if (b == 'e' || b == 'E' || b == '.') {
-                    throw createException("Duplicit exponent or decimal point detected");
-                }
-            }
-            decimalExponent += expNegative ? -explicitExp : explicitExp;
-        }
-
-        // Handle zero
-        if (mantissa == 0) {
-            bufferingJsonValue = false;
-            return negative ? -0.0 : 0.0;
-        }
-
-        if (decimalExponent >= POW10_DOUBLE_CACHE_SIZE || decimalExponent <= -POW10_DOUBLE_CACHE_SIZE) {
-            skipNumber();
-            bufferingJsonValue = false;
-            // Delegate to Java for exact result
-            return Double.parseDouble(new String(buffer,
-                                                 jsonValueStart,
-                                                 currentIndex - jsonValueStart + 1,
-                                                 StandardCharsets.UTF_8));
-        }
-
-        // FAST PATH: Handle common cases ourselves
-        double result = mantissa;
-
-        // Apply exponent using lookup table
-        if (decimalExponent > 0) {
-            result *= POW10_DOUBLE_CACHE[decimalExponent];
-        } else if (decimalExponent < 0) {
-            result /= POW10_DOUBLE_CACHE[-decimalExponent];
-        }
-
-        bufferingJsonValue = false;
-        return negative ? -result : result;
-    }
-
-    @Override
-    public String readString() {
-        if (checkNull()) {
-            return null;
-        } else if (currentByte() != '"') {
-            throw createException("Expected start of string", currentByte());
-        }
-        int index = ++currentIndex;
-        int readableBytes = bufferLength - currentIndex;
-        int firstRun = Math.min(stringBufferLength, readableBytes);
-        byte b;
-        int stringBuffIndex = 0;
-        for (; stringBuffIndex < firstRun; stringBuffIndex++) {
-            b = this.buffer[index++];
-            if (b == '"') {
-                currentIndex = --index;
-                return new String(stringBuffer, 0, stringBuffIndex);
-            } else if ((b ^ '\\') < 1) { //Either \ or UTF-8 byte detected
-                //Either escaped sequence or multibyte detected
-                currentIndex = --index;
-                break;
-            }
-            stringBuffer[stringBuffIndex] = (char) b;
-        }
-
-        if (stringBuffIndex == firstRun) {
-            currentIndex = index;
-        }
-
-        if (stringBuffIndex == stringBufferLength) {
-            increaseStringBuffer();
-        }
-
-        if (currentIndex == this.bufferLength) {
-            if (finished) {
-                throw createException("End of the string expected. Incomplete JSON");
-            }
-            readMoreData();
-            currentIndex++;
-        }
-
-        while (true) {
-            for (; currentIndex < bufferLength; currentIndex++) {
-                b = buffer[currentIndex];
-                if (b == '\\') {
-                    stringBuffer[stringBuffIndex++] = processEscapedSequence();
-                } else if (expectLowSurrogate) {
-                    throw createException("Low surrogate must follow the high surrogate.", b);
-                } else if (b == '"') {
-                    return new String(stringBuffer, 0, stringBuffIndex);
-                } else if ((b & 0x80) == 0) {
-                    stringBuffer[stringBuffIndex++] = (char) b;
-                } else {
-                    // Decode UTF-8 multibyte sequence starting with this byte
-                    stringBuffIndex = decodeUtf8(stringBuffIndex, b);
-                }
-                if (stringBuffIndex == stringBufferLength) {
-                    increaseStringBuffer();
-                }
-            }
-            if (finished) {
-                throw createException("End of the string expected. Incomplete JSON");
-            }
-            readMoreData();
-            currentIndex++;
-        }
-    }
-
-    @Override
-    public byte nextToken() {
-        //Optimization for faster reading data without a space
-        //No loop is used.
-        byte b = readNextByte();
-        if (!WHITESPACE_CHARS[b & 0xFF]) {
-            return b;
-        }
-        //If since space or why character was used between tokens, we should still try to optimize
-        b = readNextByte();
-        if (!WHITESPACE_CHARS[b & 0xFF]) {
-            return b;
-        }
-        //We don't know how many spaces, new lines etc is there present, lets start looping
-        while (true) {
-            b = readNextByte();
-            if (!WHITESPACE_CHARS[b & 0xFF]) {
-                return b;
-            }
-        }
-    }
-
-    private char[] readStringCharArray() {
-        int readableBytes = bufferLength - currentIndex - 1;
-        int firstRun = Math.min(stringBufferLength, readableBytes);
-        int stringBuffIndex = 0;
-        byte b;
-        for (; stringBuffIndex < firstRun; stringBuffIndex++) {
-            b = this.buffer[++currentIndex];
-            if (b == '"') {
-                char[] chars = new char[stringBuffIndex];
-                System.arraycopy(stringBuffer, 0, chars, 0, stringBuffIndex);
-                return chars;
-            }
-            if (b == '\\' || b < 0) {
-                //Specialized character handling is likely required
-                //Either escaped sequence or multibyte detected
-                currentIndex--;
-                break;
-            }
-            stringBuffer[stringBuffIndex] = (char) b;
-        }
-
-        if (stringBuffIndex == stringBufferLength) {
-            increaseStringBuffer();
-        }
-
-        while (hasNext()) {
-            b = readNextByte();
-            if (b == '\\') {
-                stringBuffer[stringBuffIndex++] = processEscapedSequence();
-            } else if (b == '"') {
-                char[] chars = new char[stringBuffIndex];
-                System.arraycopy(stringBuffer, 0, chars, 0, stringBuffIndex);
-                return chars;
-            } else if ((b & 0x80) == 0) {
-                stringBuffer[stringBuffIndex++] = (char) b;
-            } else {
-                stringBuffIndex = decodeUtf8(stringBuffIndex, b);
-            }
-            if (stringBuffIndex == stringBufferLength) {
-                increaseStringBuffer();
-            }
-        }
-        throw createException("End of the string expected. Incomplete JSON");
     }
 
     private char[] readNumberAsCharArray() {
@@ -2143,107 +1904,4 @@ final class JsonStreamParser implements JsonParser {
         throw createException("Comma or the end of the array expected", b);
     }
 
-    private int translateHex(byte b) {
-        int val = HEX_DIGITS[b & 0xFF];
-        if (val == -1) {
-            throw createException("Invalid hex digit found", b);
-        }
-        return val;
-    }
-
-    private boolean expectedNext(char c) {
-        return hasNext() && buffer[++currentIndex] == c;
-    }
-
-    /**
-     * Reads more data from the input stream into the buffer, handling buffering for JSON values that span multiple reads.
-     * There are two modes: bufferingJsonValue (for {@link io.helidon.json.JsonValue} related types)
-     * and non-buffering (for structural parsing).
-     */
-    private void readMoreData() {
-        try {
-            if (bufferingJsonValue || replayMarked) {
-                // When buffering a JSON value or replayability was marked (e.g., string or number),
-                // we need to preserve the value across reads
-                jsonNumberBuffering();
-            } else if (currentIndex == bufferLength) {
-                // For structural parsing, keep one byte of look-ahead to detect value boundaries
-                // Preserve the byte before currentIndex to allow backtracking
-                buffer[0] = buffer[currentIndex - 1];
-                int lastRead = inputStream.read(buffer, 1, buffer.length - 1);
-                if (lastRead == -1) {
-                    finished = true;
-                    bufferLength = 1; // Only the preserved byte
-                } else {
-                    bufferLength = lastRead + 1;
-                    finished = false;
-                }
-                currentIndex = 0; // Reset to beginning
-            } else {
-                // Previous buffer not fully drained. We are trying to read more data, if available
-                int kept = bufferLength - currentIndex;
-                System.arraycopy(buffer, currentIndex, buffer, 0, kept);
-                int lastRead = inputStream.read(buffer, kept, buffer.length - kept);
-                if (lastRead == -1) {
-                    finished = true;
-                    bufferLength = kept;
-                } else {
-                    bufferLength = lastRead + kept;
-                    finished = false;
-                }
-                currentIndex = 0;
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to read more data", e);
-        }
-    }
-
-    private void jsonNumberBuffering() throws IOException {
-        if (replayMarked && mark > 0) {
-            // Move the partial value to the beginning of the buffer to make room for more data
-            int valueLen = bufferLength - mark;
-            int freed = mark;
-            System.arraycopy(buffer, mark, buffer, 0, valueLen);
-            currentIndex = valueLen - 1; // Position at end of moved value
-            mark = 0; // Reset start position
-            int lastRead = inputStream.read(buffer, valueLen, buffer.length - valueLen);
-            if (lastRead == -1) {
-                finished = true;
-                bufferLength = valueLen; // Only the moved value remains
-            } else {
-                bufferLength = valueLen + lastRead;
-                finished = false;
-            }
-            if (jsonValueStart > 0) {
-                jsonValueStart -= freed;
-            }
-        } else if (!replayMarked && jsonValueStart > 0) {
-            // Move the partial value to the beginning of the buffer to make room for more data
-            int valueLen = bufferLength - jsonValueStart;
-            System.arraycopy(buffer, jsonValueStart, buffer, 0, valueLen);
-            currentIndex = valueLen - 1; // Position at end of moved value
-            jsonValueStart = 0; // Reset start position
-            int lastRead = inputStream.read(buffer, valueLen, buffer.length - valueLen);
-            if (lastRead == -1) {
-                finished = true;
-                bufferLength = valueLen; // Only the moved value remains
-            } else {
-                bufferLength = valueLen + lastRead;
-                finished = false;
-            }
-        } else {
-            // Buffer is full of the value, need to expand
-            int newCap = buffer.length + configuredBufferSize;
-            byte[] tmp = new byte[newCap];
-            System.arraycopy(buffer, 0, tmp, 0, bufferLength); // Copy existing data
-            int lastRead = inputStream.read(tmp, bufferLength, configuredBufferSize);
-            buffer = tmp; // Replace buffer
-            if (lastRead == -1) {
-                finished = true;
-            } else {
-                bufferLength = bufferLength + lastRead;
-                finished = false;
-            }
-        }
-    }
 }

@@ -16,7 +16,10 @@
 
 package io.helidon.json;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Set;
 
 class JsonValueParser implements JsonParser {
@@ -160,17 +163,12 @@ class JsonValueParser implements JsonParser {
     @Override
     public int readStringAsHash() {
         String key = current.asString().value();
-        int fnvHash = ArrayJsonParser.FNV_OFFSET_BASIS;
+        int fnvHash = JsonParserArray.FNV_OFFSET_BASIS;
         for (byte b : key.getBytes(StandardCharsets.UTF_8)) {
             fnvHash ^= (b & 0xFF);
-            fnvHash *= ArrayJsonParser.FNV_PRIME;
+            fnvHash *= JsonParserArray.FNV_PRIME;
         }
         return fnvHash;
-    }
-
-    @Override
-    public char[] readCharArray() {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -211,6 +209,22 @@ class JsonValueParser implements JsonParser {
     @Override
     public double readDouble() {
         return current.asNumber().doubleValue();
+    }
+
+    @Override
+    public BigInteger readBigInteger() {
+        return current.asNumber().bigDecimalValue().toBigInteger();
+    }
+
+    @Override
+    public BigDecimal readBigDecimal() {
+        return current.asNumber().bigDecimalValue();
+    }
+
+    @Override
+    public byte[] readBinary() {
+        String value = current.asString().value();
+        return Base64.getDecoder().decode(value);
     }
 
     @Override

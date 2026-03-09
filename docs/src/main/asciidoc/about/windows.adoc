@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,75 +18,25 @@
 
 = Helidon on Windows
 :description: Helidon on Windows
-:keywords: windows
+:keywords: windows, microsoft
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/attributes.adoc[]
 
-== Introduction
 
-Most of the Helidon documentation is Linux/Mac/Unix centric. This document gives
-some tips for Windows users.
+Generally, the Helidon documentation assumes that you're using a Unix-like operating system such as Linux or macOS. If you want to use Helidon on Windows, then review the following document for tips on the differences that you should be aware of.
 
-== Prerequisites
+== System Requirements
 
-Windows 10 is required.
+If you plan to develop Helidon projects and applications on Windows, make sure your environment meets the following requirements:
 
-For general pre-requisites like Java and Maven see xref:prerequisites.adoc[Getting Started].
-If you want to use the xref:cli.adoc[Helidon CLI] you'll also need to install the
-Visual C++ Redistributable Runtime:
+* All of the requirements listed in xref:prerequisites.adoc[Getting Started]
+* _If using the xref:cli.adoc[Helidon CLI] (which is recommended)_, Visual C\+\+ Redistributable Runtime. Download at https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-c-redistributable-v14[Microsoft Visual C++ Redistributable latest supported downloads]
 
-* https://aka.ms/vs/16/release/vc_redist.x64.exe[x64]
-* https://aka.ms/vs/16/release/vc_redist.x86.exe[x86]
+The following are recommended but not required:
 
-We also recommend installing the following from the Microsoft Store:
-
-* PowerShell
+* curl
+* PowerShell (_not_ Windows PowerShell)
 * Windows Terminal
 
-This document assumes you will be using PowerShell.
-
-== Maven Quickstart Archetypes
-
-=== Helidon SE
-
-[source,bash,subs="attributes+"]
-----
-mvn "-U" "archetype:generate" "-DinteractiveMode=false" `
-    "-DarchetypeGroupId=io.helidon.archetypes" `
-    "-DarchetypeArtifactId=helidon-quickstart-se" `
-    "-DarchetypeVersion={helidon-version}" `
-    "-DgroupId=io.helidon.examples" `
-    "-DartifactId=helidon-quickstart-se" `
-    "-Dpackage=io.helidon.examples.quickstart.se"
-----
-
-You can then follow the instructions in the xref:../se/guides/quickstart.adoc[Helidon SE Quickstart]. If
-you do not have `curl` installed you can use `Invoke-WebRequest`:
-
-[source,bash]
-----
-Invoke-WebRequest -Uri "http://localhost:8080/greet"
-----
-
-
-=== Helidon MP
-
-[source,bash,subs="attributes+"]
-----
-mvn "-U" "archetype:generate" "-DinteractiveMode=false" `
-    "-DarchetypeGroupId=io.helidon.archetypes" `
-    "-DarchetypeArtifactId=helidon-quickstart-mp" `
-    "-DarchetypeVersion={helidon-version}" `
-    "-DgroupId=io.helidon.examples" `
-    "-DartifactId=helidon-quickstart-mp" `
-    "-Dpackage=io.helidon.examples.quickstart.mp"
-----
-
-You can then follow the instructions in the xref:../mp/guides/quickstart.adoc[Helidon MP Quickstart]. If
-you do not have `curl` installed you can use `Invoke-WebRequest`:
-
-[source,bash]
-----
-Invoke-WebRequest -Uri "http://localhost:8080/greet"
-----
+TIP: If you do not have `curl` installed, in PowerShell, you can use `Invoke-WebRequest` instead.

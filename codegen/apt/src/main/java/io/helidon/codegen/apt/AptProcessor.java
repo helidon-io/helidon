@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,11 @@ import static java.lang.System.Logger.Level.WARNING;
 
 /**
  * Annotation processor that maps APT types to Helidon types, and invokes {@link io.helidon.codegen.Codegen}.
+ * <p>
+ * <b>This class is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or deletion without notice.</b>
+ * </p>
  */
 @SuppressWarnings("removal")
 public final class AptProcessor extends AbstractProcessor {
@@ -61,9 +66,7 @@ public final class AptProcessor extends AbstractProcessor {
     /**
      * Only for {@link java.util.ServiceLoader}, to be loaded by compiler.
      */
-    @Deprecated
     public AptProcessor() {
-        super();
     }
 
     @Override
@@ -106,18 +109,8 @@ public final class AptProcessor extends AbstractProcessor {
         try {
             return doProcess(annotations, roundEnv);
         } catch (CodegenException e) {
-            Object originatingElement = e.originatingElement()
-                    .orElse(null);
-            if (originatingElement instanceof Element element) {
-                processingEnv.getMessager().printError(e.getMessage(), element);
-            } else if (originatingElement instanceof TypeName typeName) {
-                processingEnv.getMessager().printError(e.getMessage() + ", source: " + typeName.fqName());
-            } else {
-                if (originatingElement != null) {
-                    processingEnv.getMessager().printError(e.getMessage() + ", source: " + originatingElement);
-                }
-            }
-            throw e;
+            ctx.logger().log(e.toEvent(System.Logger.Level.ERROR));
+            return true;
         } finally {
             thread.setContextClassLoader(previousClassloader);
         }

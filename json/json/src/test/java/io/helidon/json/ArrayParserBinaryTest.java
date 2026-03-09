@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.config.metadata.processor;
+package io.helidon.json;
 
-import io.helidon.common.types.TypeName;
-
-/**
- * Result of annotation processing.
- *
- * @param targetType     type that is configured (result of the builder, runtime type of a prototype)
- * @param moduleName     module of the type
- * @param configuredType collected configuration metadata
- */
-record TypeHandlerResult(TypeName targetType,
-                         String moduleName,
-                         ConfiguredType configuredType) {
+class ArrayParserBinaryTest extends BinaryValueTest {
+    @Override
+    JsonParser createParser(String template) {
+        return JsonParser.create(template);
+    }
 }

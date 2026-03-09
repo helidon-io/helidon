@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.codegen;
+
+import java.util.List;
 
 /**
  * An abstraction for logging code processing and generation events.
@@ -44,11 +46,13 @@ public interface CodegenLogger {
      *
      * @param level   log level to use
      * @param message message to log
+     * @param objects origin elements
      */
-    default void log(System.Logger.Level level, String message) {
+    default void log(System.Logger.Level level, String message, Object... objects) {
         log(CodegenEvent.builder()
-                    .level(level)
-                    .message(message)
-                    .build());
+                .level(level)
+                .message(message)
+                .objects(List.of(objects))
+                .build());
     }
 }

@@ -104,8 +104,7 @@ class StreamBufferTest {
         // Small buffer
         JsonParser parser = JsonParser.create(inputStream, 10);
 
-        BigDecimal result = new BigDecimal(parser.readCharArray());
-        assertThat(result, is(new BigDecimal(json)));
+        assertThat(parser.readBigDecimal(), is(new BigDecimal(json)));
     }
 
     @Test

@@ -16,6 +16,8 @@
 
 package io.helidon.json;
 
+import java.util.Base64;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -28,6 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * and error conditions.
  */
 abstract class JsonGeneratorTest {
+
+    private static final int LARGE_VALUE_LENGTH = 16_384;
 
     // Basic value tests
     @Test
@@ -100,6 +104,39 @@ abstract class JsonGeneratorTest {
         }
 
         assertThat(getGeneratedJson(), is("null"));
+    }
+
+    @Test
+    public void testWriteBinaryAsRootValue() throws Exception {
+        byte[] value = "my-test-value".getBytes();
+        try (JsonGenerator generator = createGenerator()) {
+            generator.writeBinary(value);
+        }
+
+        assertThat(getGeneratedJson(), is("\"" + Base64.getEncoder().encodeToString(value) + "\""));
+    }
+
+    @Test
+    public void testWriteBinaryAsObjectField() throws Exception {
+        byte[] value = "hello".getBytes();
+        try (JsonGenerator generator = createGenerator()) {
+            generator.writeObjectStart()
+                    .writeBinary("payload", value)
+                    .writeObjectEnd();
+        }
+
+        assertThat(getGeneratedJson(), is("{\"payload\":\"" + Base64.getEncoder().encodeToString(value) + "\"}"));
+    }
+
+    @Test
+    public void testWriteEmptyBinaryAsObjectField() throws Exception {
+        try (JsonGenerator generator = createGenerator()) {
+            generator.writeObjectStart()
+                    .writeBinary("payload", new byte[0])
+                    .writeObjectEnd();
+        }
+
+        assertThat(getGeneratedJson(), is("{\"payload\":\"\"}"));
     }
 
     @Test
@@ -321,6 +358,35 @@ abstract class JsonGeneratorTest {
         }
 
         assertThat(getGeneratedJson(), is("\"tab:\\tcontrol:\\u0001\""));
+    }
+
+    @Test
+    public void testWriteLargeString() throws Exception {
+        String value = "x".repeat(LARGE_VALUE_LENGTH);
+
+        try (JsonGenerator generator = createGenerator()) {
+            generator.write(value);
+        }
+
+        assertThat(getGeneratedJson(), is('"' + value + '"'));
+    }
+
+    @Test
+    public void testWriteLargeEscapedString() throws Exception {
+        String value = "prefix-" + "\\\"\n\t".repeat(4_096) + "-suffix";
+
+        try (JsonGenerator generator = createGenerator()) {
+            generator.write(value);
+        }
+
+        String expected = '"' + value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\t", "\\t")
+                + '"';
+
+        assertThat(getGeneratedJson(), is(expected));
     }
 
     // Special number cases

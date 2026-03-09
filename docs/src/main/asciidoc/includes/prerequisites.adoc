@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ ifndef::h1-prefix[:h1-prefix: SE]
 // end::prerequisites-table-rows-maven[]
 // end::prerequisites-table-rows-core[]
 |https://docs.docker.com/install/[Docker 18.09+]|If you want to build and run Docker containers.
-|https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.16.5+]|If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can xref:{rootdir}/about/kubernetes.adoc[install one on your desktop].
+|https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.16.5+]|If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can xref:{rootdir}/about/kubernetes.adoc[install one on your desktop]).
 // end::prerequisites-table-rows[]
 |=======
 
