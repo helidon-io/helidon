@@ -38,42 +38,111 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     // depth: current nesting level in objects/arrays
     private int depth = 0;
 
+    /**
+     * Protected default constructor for subclasses.
+     */
+    protected JsonGeneratorBase() {
+    }
+
+    /**
+     * Writes a structural control byte, such as a comma, colon, or bracket.
+     *
+     * @param value control byte to write
+     */
     protected void writeControlByte(byte value) {
         writeByteExact(value);
     }
 
     /**
      * Writes the byte into the output.
-     * Example: byte 47 -> -
+     * Example: byte 47 -&gt; {@code -}.
      *
      * @param value byte value
      */
     protected abstract void writeByteExact(byte value);
 
+    /**
+     * Writes an integer value.
+     *
+     * @param value integer value to write
+     */
     protected abstract void writeInt(int value);
 
+    /**
+     * Writes a long value.
+     *
+     * @param value long value to write
+     */
     protected abstract void writeLong(long value);
 
+    /**
+     * Writes a float value.
+     *
+     * @param value float value to write
+     */
     protected abstract void writeFloat(float value);
 
+    /**
+     * Writes a double value.
+     *
+     * @param value double value to write
+     */
     protected abstract void writeDouble(double value);
 
+    /**
+     * Writes a big decimal value.
+     *
+     * @param value big decimal value to write
+     */
     protected abstract void writeBigDecimal(BigDecimal value);
 
+    /**
+     * Writes a big integer value.
+     *
+     * @param value big integer value to write
+     */
     protected abstract void writeBigInteger(BigInteger value);
 
+    /**
+     * Writes an object key name.
+     *
+     * @param value key name to write
+     */
     protected void writeKeyName(String value) {
         writeString(value);
     }
 
+    /**
+     * Writes a string value.
+     *
+     * @param value string value to write
+     */
     protected abstract void writeString(String value);
 
+    /**
+     * Writes a character value.
+     *
+     * @param value character value to write
+     */
     protected abstract void writeChar(char value);
 
+    /**
+     * Writes a boolean value.
+     *
+     * @param value boolean value to write
+     */
     protected abstract void writeBoolean(boolean value);
 
+    /**
+     * Writes a binary value represented as a byte array.
+     *
+     * @param value binary value to write
+     */
     protected abstract void writeBinaryArray(byte[] value);
 
+    /**
+     * Writes the JSON {@code null} value.
+     */
     protected abstract void writeNullValue();
 
     void beforeWrite() {
@@ -93,6 +162,12 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
         }
     }
 
+    /**
+     * Ensures there is enough capacity for an upcoming write operation.
+     * Implementations with internal buffering can override this method.
+     *
+     * @param extra number of additional bytes or characters about to be written
+     */
     protected void ensureCapacity(int extra) {
         //NOOP by default
     }

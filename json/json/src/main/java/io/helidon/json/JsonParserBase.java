@@ -24,6 +24,12 @@ import java.util.List;
  */
 public abstract class JsonParserBase implements JsonParser {
 
+    /**
+     * Protected default constructor for subclasses.
+     */
+    protected JsonParserBase() {
+    }
+
     @Override
     public JsonValue readJsonValue() {
         return switch (currentByte()) {

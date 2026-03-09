@@ -31,6 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 abstract class JsonGeneratorTest {
 
+    private static final int LARGE_VALUE_LENGTH = 16_384;
+
     // Basic value tests
     @Test
     public void testWriteString() throws Exception {
@@ -356,6 +358,35 @@ abstract class JsonGeneratorTest {
         }
 
         assertThat(getGeneratedJson(), is("\"tab:\\tcontrol:\\u0001\""));
+    }
+
+    @Test
+    public void testWriteLargeString() throws Exception {
+        String value = "x".repeat(LARGE_VALUE_LENGTH);
+
+        try (JsonGenerator generator = createGenerator()) {
+            generator.write(value);
+        }
+
+        assertThat(getGeneratedJson(), is('"' + value + '"'));
+    }
+
+    @Test
+    public void testWriteLargeEscapedString() throws Exception {
+        String value = "prefix-" + "\\\"\n\t".repeat(4_096) + "-suffix";
+
+        try (JsonGenerator generator = createGenerator()) {
+            generator.write(value);
+        }
+
+        String expected = '"' + value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\t", "\\t")
+                + '"';
+
+        assertThat(getGeneratedJson(), is(expected));
     }
 
     // Special number cases
