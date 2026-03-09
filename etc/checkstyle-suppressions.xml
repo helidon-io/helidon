@@ -41,9 +41,9 @@ record here.
             checks="FileLength"/>
 
     <!-- Once the proper abstraction structure is found for the parsers, this can be removed-->
-    <suppress files="json/json/src/main/java/io/helidon/json/JsonStreamParser\.java"
+    <suppress files="json/json/src/main/java/io/helidon/json/JsonParserStream\.java"
             checks="FileLength"/>
-    <suppress files="json/json/src/main/java/io/helidon/json/ArrayJsonParser\.java"
+    <suppress files="json/json/src/main/java/io/helidon/json/JsonParserArray\.java"
             checks="FileLength"/>
 
     <suppress files="integrations/cdi/jpa-cdi/src/main/java/io/helidon/integrations/cdi/jpa/JpaExtension\.java"

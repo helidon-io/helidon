@@ -16,9 +16,15 @@
 
 package io.helidon.json;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import io.helidon.common.buffers.Bytes;
 
-abstract class AbstractJsonGenerator implements JsonGenerator {
+/**
+ * Base implementation of {@link JsonGenerator} with shared structure and state handling.
+ */
+public abstract class JsonGeneratorBase implements JsonGenerator {
 
     static final int STACK_SIZE = 64;
 
@@ -33,26 +39,111 @@ abstract class AbstractJsonGenerator implements JsonGenerator {
     private int depth = 0;
 
     /**
+     * Protected default constructor for subclasses.
+     */
+    protected JsonGeneratorBase() {
+    }
+
+    /**
+     * Writes a structural control byte, such as a comma, colon, or bracket.
+     *
+     * @param value control byte to write
+     */
+    protected void writeControlByte(byte value) {
+        writeByteExact(value);
+    }
+
+    /**
      * Writes the byte into the output.
-     * Example: byte 47 -> -
+     * Example: byte 47 -&gt; {@code -}.
      *
      * @param value byte value
      */
-    abstract void writeByteExact(byte value);
+    protected abstract void writeByteExact(byte value);
 
-    abstract void writeLong(long value);
+    /**
+     * Writes an integer value.
+     *
+     * @param value integer value to write
+     */
+    protected abstract void writeInt(int value);
 
-    abstract void writeFloat(float value);
+    /**
+     * Writes a long value.
+     *
+     * @param value long value to write
+     */
+    protected abstract void writeLong(long value);
 
-    abstract void writeDouble(double value);
+    /**
+     * Writes a float value.
+     *
+     * @param value float value to write
+     */
+    protected abstract void writeFloat(float value);
 
-    abstract void writeString(String value);
+    /**
+     * Writes a double value.
+     *
+     * @param value double value to write
+     */
+    protected abstract void writeDouble(double value);
 
-    abstract void writeChar(char value);
+    /**
+     * Writes a big decimal value.
+     *
+     * @param value big decimal value to write
+     */
+    protected abstract void writeBigDecimal(BigDecimal value);
 
-    abstract void writeBoolean(boolean value);
+    /**
+     * Writes a big integer value.
+     *
+     * @param value big integer value to write
+     */
+    protected abstract void writeBigInteger(BigInteger value);
 
-    abstract void writeNullValue();
+    /**
+     * Writes an object key name.
+     *
+     * @param value key name to write
+     */
+    protected void writeKeyName(String value) {
+        writeString(value);
+    }
+
+    /**
+     * Writes a string value.
+     *
+     * @param value string value to write
+     */
+    protected abstract void writeString(String value);
+
+    /**
+     * Writes a character value.
+     *
+     * @param value character value to write
+     */
+    protected abstract void writeChar(char value);
+
+    /**
+     * Writes a boolean value.
+     *
+     * @param value boolean value to write
+     */
+    protected abstract void writeBoolean(boolean value);
+
+    /**
+     * Writes a binary value represented as a byte array.
+     *
+     * @param value binary value to write
+     */
+    protected abstract void writeBinaryArray(byte[] value);
+
+    /**
+     * Writes the JSON {@code null} value.
+     */
+    protected abstract void writeNullValue();
 
     void beforeWrite() {
         if (depth > 0) {
@@ -62,7 +153,7 @@ abstract class AbstractJsonGenerator implements JsonGenerator {
                 keyWritten = false;
             } else {
                 ensureCapacity(1);
-                writeByteExact(Bytes.COMMA_BYTE);
+                writeControlByte(Bytes.COMMA_BYTE);
             }
         } else if (first) {
             first = false;
@@ -71,7 +162,13 @@ abstract class AbstractJsonGenerator implements JsonGenerator {
         }
     }
 
-    void ensureCapacity(int extra) {
+    /**
+     * Ensures there is enough capacity for an upcoming write operation.
+     * Implementations with internal buffering can override this method.
+     *
+     * @param extra number of additional bytes or characters about to be written
+     */
+    protected void ensureCapacity(int extra) {
         //NOOP by default
     }
 
@@ -96,7 +193,7 @@ abstract class AbstractJsonGenerator implements JsonGenerator {
     @Override
     public JsonGenerator write(String key, int value) {
         checkAndWriteKey(key);
-        writeLong(value);
+        writeInt(value);
         keyWritten = false;
         return this;
     }
@@ -142,9 +239,33 @@ abstract class AbstractJsonGenerator implements JsonGenerator {
     }
 
     @Override
+    public JsonGenerator write(String key, BigDecimal value) {
+        checkAndWriteKey(key);
+        writeBigDecimal(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(String key, BigInteger value) {
+        checkAndWriteKey(key);
+        writeBigInteger(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
     public JsonGenerator write(String key, JsonValue value) {
         checkAndWriteKey(key);
         writeJsonValue(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
+    public JsonGenerator writeBinary(String key, byte[] value) {
+        checkAndWriteKey(key);
+        writeBinaryArray(value);
         keyWritten = false;
         return this;
     }
@@ -192,7 +313,7 @@ abstract class AbstractJsonGenerator implements JsonGenerator {
             throw new JsonException("Value without key is supported only as a root or in the array");
         }
         beforeWrite();
-        writeLong(value);
+        writeInt(value);
         keyWritten = false;
         return this;
     }
@@ -253,11 +374,43 @@ abstract class AbstractJsonGenerator implements JsonGenerator {
     }
 
     @Override
+    public JsonGenerator write(BigDecimal value) {
+        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
+            throw new JsonException("Value without key is supported only as a root or in the array");
+        }
+        beforeWrite();
+        writeBigDecimal(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(BigInteger value) {
+        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
+            throw new JsonException("Value without key is supported only as a root or in the array");
+        }
+        beforeWrite();
+        writeBigInteger(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
     public JsonGenerator write(JsonValue value) {
         if (depth > 0 && structureType[depth - 1] && !keyWritten) {
             throw new JsonException("Value without key is supported only as a root or in the array");
         }
         writeJsonValue(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
+    public JsonGenerator writeBinary(byte[] value) {
+        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
+            throw new JsonException("Value without key is supported only as a root or in the array");
+        }
+        writeBinaryArray(value);
         keyWritten = false;
         return this;
     }
@@ -281,14 +434,14 @@ abstract class AbstractJsonGenerator implements JsonGenerator {
             keyWritten = false;
         }
         pushStructureType(false);
-        writeByteExact(Bytes.SQUARE_BRACKET_OPEN_BYTE);
+        writeControlByte(Bytes.SQUARE_BRACKET_OPEN_BYTE);
         return this;
     }
 
     @Override
     public JsonGenerator writeArrayEnd() {
         popStackType();
-        writeByteExact(Bytes.SQUARE_BRACKET_CLOSE_BYTE);
+        writeControlByte(Bytes.SQUARE_BRACKET_CLOSE_BYTE);
         first = false;
         return this;
     }
@@ -300,7 +453,7 @@ abstract class AbstractJsonGenerator implements JsonGenerator {
         } else {
             keyWritten = false;
         }
-        writeByteExact(Bytes.BRACE_OPEN_BYTE);
+        writeControlByte(Bytes.BRACE_OPEN_BYTE);
         pushStructureType(true);
         return this;
     }
@@ -308,7 +461,7 @@ abstract class AbstractJsonGenerator implements JsonGenerator {
     @Override
     public JsonGenerator writeObjectEnd() {
         popStackType();
-        writeByteExact(Bytes.BRACE_CLOSE_BYTE);
+        writeControlByte(Bytes.BRACE_CLOSE_BYTE);
         first = false;
         return this;
     }
@@ -326,8 +479,8 @@ abstract class AbstractJsonGenerator implements JsonGenerator {
             throw new JsonException("Key cannot be null");
         }
         beforeWrite();
-        writeString(key);
-        writeByteExact(Bytes.COLON_BYTE);
+        writeKeyName(key);
+        writeControlByte(Bytes.COLON_BYTE);
         keyWritten = true;
     }
 

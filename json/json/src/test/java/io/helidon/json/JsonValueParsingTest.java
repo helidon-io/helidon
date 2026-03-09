@@ -56,7 +56,7 @@ abstract class JsonValueParsingTest {
     public void testJsonObjectParsing() {
         String expected = "value".repeat(6);
         String json = "{\"test\":\"" + expected + "\"}";
-        JsonParser parser = JsonParser.create(json);
+        JsonParser parser = createParser(json);
         JsonValue jsonValue = parser.readJsonValue();
 
         assertThat(jsonValue.type(), is(JsonValueType.OBJECT));
@@ -69,7 +69,7 @@ abstract class JsonValueParsingTest {
     public void testJsonObjectWithNumberParsing() {
         String expected = "123".repeat(3);
         String json = "{\"test\":" + expected + "}";
-        JsonParser parser = JsonParser.create(json);
+        JsonParser parser = createParser(json);
         JsonValue jsonValue = parser.readJsonValue();
 
         assertThat(jsonValue.type(), is(JsonValueType.OBJECT));
@@ -101,7 +101,7 @@ abstract class JsonValueParsingTest {
     @Test
     public void testJsonObjectWithBooleanParsing() {
         String json = "{\"flag\":true,\"enabled\":false}";
-        JsonParser parser = JsonParser.create(json);
+        JsonParser parser = createParser(json);
         JsonValue jsonValue = parser.readJsonValue();
 
         assertThat(jsonValue.type(), is(JsonValueType.OBJECT));

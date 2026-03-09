@@ -291,7 +291,7 @@ abstract class StringValueTest {
     public void testInvalidUtf8Sequence() {
         // Invalid UTF-8: isolated continuation byte - create directly with bytes
         byte[] invalidUtf8 = new byte[] {'"', (byte) 0x80, '"'};
-        ArrayJsonParser parser = new ArrayJsonParser(invalidUtf8);
+        JsonParserArray parser = new JsonParserArray(invalidUtf8);
 
         assertThrows(JsonException.class, parser::readString);
     }
@@ -300,7 +300,7 @@ abstract class StringValueTest {
     public void testIncompleteUtf8Sequence() {
         // Incomplete 3-byte sequence: E2 82 (missing AC) - create directly with bytes
         byte[] incompleteUtf8 = new byte[] {'"', (byte) 0xE2, (byte) 0x82, '"'};
-        ArrayJsonParser parser = new ArrayJsonParser(incompleteUtf8);
+        JsonParserArray parser = new JsonParserArray(incompleteUtf8);
 
         assertThrows(JsonException.class, parser::readString);
     }

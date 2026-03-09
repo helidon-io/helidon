@@ -19,8 +19,11 @@ package io.helidon.json;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Base64;
 
-class JsonGeneratorWriter extends AbstractJsonGenerator {
+class JsonGeneratorWriter extends JsonGeneratorBase {
 
     private static final char[] TRUE = "true".toCharArray();
     private static final char[] FALSE = "false".toCharArray();
@@ -33,7 +36,7 @@ class JsonGeneratorWriter extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeByteExact(byte value) {
+    protected void writeByteExact(byte value) {
         try {
             writer.write(value);
         } catch (IOException e) {
@@ -42,7 +45,12 @@ class JsonGeneratorWriter extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeLong(long value) {
+    protected void writeInt(int value) {
+        writeLong(value);
+    }
+
+    @Override
+    protected void writeLong(long value) {
         try {
             writer.write(Long.toString(value));
         } catch (IOException e) {
@@ -51,7 +59,7 @@ class JsonGeneratorWriter extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeFloat(float value) {
+    protected void writeFloat(float value) {
         try {
             writer.write(Float.toString(value));
         } catch (IOException e) {
@@ -60,7 +68,7 @@ class JsonGeneratorWriter extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeDouble(double value) {
+    protected void writeDouble(double value) {
         try {
             writer.write(Double.toString(value));
         } catch (IOException e) {
@@ -69,7 +77,17 @@ class JsonGeneratorWriter extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeString(String value) {
+    protected void writeBigDecimal(BigDecimal value) {
+        writeString(value.toString());
+    }
+
+    @Override
+    protected void writeBigInteger(BigInteger value) {
+        writeString(value.toString());
+    }
+
+    @Override
+    protected void writeString(String value) {
         try {
             writer.write('\"');
             for (int i = 0; i < value.length(); i++) {
@@ -107,7 +125,7 @@ class JsonGeneratorWriter extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeChar(char value) {
+    protected void writeChar(char value) {
         try {
             writer.write('\"');
             writer.write(value);
@@ -118,7 +136,7 @@ class JsonGeneratorWriter extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeBoolean(boolean value) {
+    protected void writeBoolean(boolean value) {
         try {
             if (value) {
                 writer.write(TRUE);
@@ -131,7 +149,18 @@ class JsonGeneratorWriter extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeNullValue() {
+    protected void writeBinaryArray(byte[] value) {
+        try {
+            writer.write('\"');
+            writer.write(Base64.getEncoder().encodeToString(value));
+            writer.write('\"');
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to write binary data value.", e);
+        }
+    }
+
+    @Override
+    protected void writeNullValue() {
         try {
             writer.write(NULL);
         } catch (IOException e) {

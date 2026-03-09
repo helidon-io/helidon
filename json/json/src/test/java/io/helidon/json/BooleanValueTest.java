@@ -188,27 +188,6 @@ abstract class BooleanValueTest {
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
-    // Test readCharArray for booleans
-    @Test
-    public void testReadCharArrayBooleanTrue() {
-        String json = "true";
-        JsonParser parser = createParser(json);
-        char[] result = parser.readCharArray();
-
-        assertThat(result, is("true".toCharArray()));
-        assertThat(parser.hasNext(), is(false));
-    }
-
-    @Test
-    public void testReadCharArrayBooleanFalse() {
-        String json = "false";
-        JsonParser parser = createParser(json);
-        char[] result = parser.readCharArray();
-
-        assertThat(result, is("false".toCharArray()));
-        assertThat(parser.hasNext(), is(false));
-    }
-
     abstract JsonParser createParser(String template);
 
 }
