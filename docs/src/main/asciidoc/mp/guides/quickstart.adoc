@@ -149,3 +149,11 @@ Helidon also includes support for GraalVM Native Images and custom Java Runtime 
 
 * xref:graalnative.adoc[GraalVM Native Images]
 * xref:jlink-image.adoc[Custom Java Runtime Images using `jlink`]
+
+== Next Steps
+
+Learn more about Helidon MP:
+
+* xref:../introduction.adoc[Introduction to Helidon MP]
+* xref:../config/introduction.adoc[MicroProfile Configuration]
+* xref:../observability.adoc[Observability]
