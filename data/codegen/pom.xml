@@ -35,7 +35,14 @@
         <module>parser</module>
         <module>common</module>
         <module>codegen</module>
-        <module>tests</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>tests</id>
+            <modules>
+                <module>tests</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
