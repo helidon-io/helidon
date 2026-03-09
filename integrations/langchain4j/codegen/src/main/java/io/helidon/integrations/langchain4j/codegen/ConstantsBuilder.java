@@ -16,6 +16,8 @@
 
 package io.helidon.integrations.langchain4j.codegen;
 
+import java.util.function.Predicate;
+
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
@@ -53,6 +55,16 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIER;
  * The generated constants type is consumed by other generated sources to consistently locate and merge configuration.
  */
 class ConstantsBuilder {
+    private static final String LC4J_KEY = "langchain4j";
+    private static final String PROVIDERS_ROOT_KEY = "providers";
+    private static final String MODELS_ROOT_KEY = "models";
+    private static final String SERVICES_ROOT_KEY = "services";
+    private static final String AGENTS_ROOT_KEY = "agents";
+    private static final String EMBEDDING_STORES_ROOT_KEY = "embedding-stores";
+    private static final String CONTENT_RETRIEVERS_ROOT_KEY = "content-retrievers";
+    private static final String MCP_CLIENTS_ROOT_KEY = "mcp-clients";
+    private static final String PROVIDER_KEY = "provider";
+
     private static final TypeName GENERATOR = TypeName.create(ConstantsBuilder.class);
     static final TypeName INNER_CONFIG_CATEGORY_ENUM = TypeName.create("ConfigCategory");
 
@@ -77,11 +89,20 @@ class ConstantsBuilder {
                 .className(className)
                 .build();
 
-        var classModel = ClassModel.builder()
+        var classModel = constantsClassBuilder(classTypeName, triggerType, providerKey);
+        addCoreFields(classModel, classTypeName, providerKey);
+        addConfigKeyFields(classModel);
+        addGeneratedMethods(classModel);
+        context.addGeneratedType(classTypeName, classModel, triggerType.typeName());
+        return classTypeName;
+    }
+
+    private static ClassModel.Builder constantsClassBuilder(TypeName classTypeName, TypeInfo triggerType, String providerKey) {
+        return ClassModel.builder()
                 .sortStaticFields(false)
                 .classType(ElementKind.CLASS)
                 .type(classTypeName)
-                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .accessModifier(PACKAGE_PRIVATE)
                 .copyright(CodegenUtil.copyright(GENERATOR,
                                                  triggerType.typeName(),
                                                  classTypeName))
@@ -91,7 +112,9 @@ class ConstantsBuilder {
                                                                classTypeName,
                                                                "1",
                                                                ""));
+    }
 
+    private static void addCoreFields(ClassModel.Builder classModel, TypeName classTypeName, String providerKey) {
         classModel.addField(Field.builder()
                                     .name("QUALIFIER")
                                     .isStatic(true)
@@ -103,14 +126,36 @@ class ConstantsBuilder {
                                     .addContent(providerKey)
                                     .addContent("\")")
                                     .build());
+        classModel.addField(f -> f
+                .name("LOGGER")
+                .type(System.Logger.class)
+                .isStatic(true)
+                .isFinal(true)
+                .accessModifier(PRIVATE)
+                .addContent(System.class)
+                .addContent(".getLogger(")
+                .addContent(classTypeName)
+                .addContent(".class.getName())")
+                .description("Logger for incompatible configuration warnings.")
+        );
+        classModel.addField(f -> f
+                .name("INCOMPATIBLE_CONFIG_WARNING_LOGGED")
+                .type(TypeNames.PRIMITIVE_BOOLEAN)
+                .isStatic(true)
+                .accessModifier(PRIVATE)
+                .addContent("false")
+                .description("Tracks whether incompatible configuration warning has been logged.")
+        );
+    }
 
+    private static void addConfigKeyFields(ClassModel.Builder classModel) {
         classModel.addField(f -> f
                 .name("LC4J_KEY")
                 .type(STRING)
                 .isStatic(true)
                 .isFinal(true)
                 .accessModifier(PACKAGE_PRIVATE)
-                .addContentLiteral("langchain4j")
+                .addContentLiteral(LC4J_KEY)
                 .description("Root configuration key for LangChain4j.")
         );
         classModel.addField(f -> f
@@ -120,7 +165,7 @@ class ConstantsBuilder {
                 .isFinal(true)
                 .accessModifier(PACKAGE_PRIVATE)
                 .addContent("LC4J_KEY + ")
-                .addContentLiteral(".models")
+                .addContentLiteral("." + MODELS_ROOT_KEY)
                 .description("Configuration key for model definitions.")
         );
         classModel.addField(f -> f
@@ -130,7 +175,7 @@ class ConstantsBuilder {
                 .isFinal(true)
                 .accessModifier(PACKAGE_PRIVATE)
                 .addContent("LC4J_KEY + ")
-                .addContentLiteral(".providers")
+                .addContentLiteral("." + PROVIDERS_ROOT_KEY)
                 .description("Configuration key for provider definitions.")
         );
         classModel.addField(f -> f
@@ -140,7 +185,7 @@ class ConstantsBuilder {
                 .isFinal(true)
                 .accessModifier(PACKAGE_PRIVATE)
                 .addContent("LC4J_KEY + ")
-                .addContentLiteral(".services")
+                .addContentLiteral("." + SERVICES_ROOT_KEY)
                 .description("Configuration key for service definitions.")
         );
         classModel.addField(f -> f
@@ -150,7 +195,7 @@ class ConstantsBuilder {
                 .isFinal(true)
                 .accessModifier(PACKAGE_PRIVATE)
                 .addContent("LC4J_KEY + ")
-                .addContentLiteral(".agents")
+                .addContentLiteral("." + AGENTS_ROOT_KEY)
                 .description("Configuration key for agents definitions.")
         );
         classModel.addField(f -> f
@@ -160,7 +205,7 @@ class ConstantsBuilder {
                 .isFinal(true)
                 .accessModifier(PACKAGE_PRIVATE)
                 .addContent("LC4J_KEY + ")
-                .addContentLiteral(".embedding-stores")
+                .addContentLiteral("." + EMBEDDING_STORES_ROOT_KEY)
                 .description("Configuration key for embedding store definitions.")
         );
         classModel.addField(f -> f
@@ -170,12 +215,56 @@ class ConstantsBuilder {
                 .isFinal(true)
                 .accessModifier(PACKAGE_PRIVATE)
                 .addContent("LC4J_KEY + ")
-                .addContentLiteral(".content-retrievers")
+                .addContentLiteral("." + CONTENT_RETRIEVERS_ROOT_KEY)
                 .description("Configuration key for content retrievers definitions.")
         );
+        classModel.addField(f -> f
+                .name("MCP_CLIENTS_KEY")
+                .type(STRING)
+                .isStatic(true)
+                .isFinal(true)
+                .accessModifier(PACKAGE_PRIVATE)
+                .addContent("LC4J_KEY + ")
+                .addContentLiteral("." + MCP_CLIENTS_ROOT_KEY)
+                .description("Configuration key for MCP clients definitions.")
+        );
+        classModel.addField(f -> f
+                .name("SUPPORTED_LC4J_ROOT_KEYS")
+                .type(TypeName.builder(LIST).addTypeArgument(STRING).build())
+                .isStatic(true)
+                .isFinal(true)
+                .accessModifier(PRIVATE)
+                .addContent(LIST)
+                .addContent(".of(")
+                .addContentLiteral(PROVIDERS_ROOT_KEY)
+                .addContent(", ")
+                .addContentLiteral(MODELS_ROOT_KEY)
+                .addContent(", ")
+                .addContentLiteral(SERVICES_ROOT_KEY)
+                .addContent(", ")
+                .addContentLiteral(AGENTS_ROOT_KEY)
+                .addContent(", ")
+                .addContentLiteral(EMBEDDING_STORES_ROOT_KEY)
+                .addContent(", ")
+                .addContentLiteral(CONTENT_RETRIEVERS_ROOT_KEY)
+                .addContent(", ")
+                .addContentLiteral(MCP_CLIENTS_ROOT_KEY)
+                .addContent(")")
+                .description("Supported first-level keys under {@value #LC4J_KEY}.")
+        );
+    }
 
+    private static void addGeneratedMethods(ClassModel.Builder classModel) {
         classModel.addMethod(ConstantsBuilder::addModelNamesMethod);
         classModel.addMethod(ConstantsBuilder::addCreateMethod);
+        addCreateMethodByCategoryClass(classModel);
+        addModelNamesMethodByCategoryClass(classModel);
+        classModel.addMethod(ConstantsBuilder::addWarnIfIncompatibleLangchain4jConfigMethod);
+        classModel.addMethod(ConstantsBuilder::addResolveMethod);
+        classModel.addInnerClass(ConstantsBuilder::addConfigCategoryEnum);
+    }
+
+    private static void addCreateMethodByCategoryClass(ClassModel.Builder classModel) {
         classModel.addMethod(b -> b
                 .name("create")
                 .isStatic(true)
@@ -191,11 +280,12 @@ class ConstantsBuilder {
                 .addParameter(Parameter.builder().type(STRING)
                                       .name("name")
                                       .description("the name of the model"))
-
                 .addContentLine("return create(root, resolve(categoryType), name);")
                 .description("Creates a merged configuration for a model identified by {@code name}, ")
                 .addDescriptionLine("combining model-specific settings with its provider's defaults."));
+    }
 
+    private static void addModelNamesMethodByCategoryClass(ClassModel.Builder classModel) {
         classModel.addMethod(b -> b
                         .name("modelNames")
                         .isStatic(true)
@@ -213,10 +303,6 @@ class ConstantsBuilder {
                                               .description("the provider name to filter by"))
                         .addContentLine("return modelNames(config, resolve(categoryType), providerKey);"))
                 .description("Returns the names of models of the given model class");
-        classModel.addMethod(ConstantsBuilder::addResolveMethod);
-        classModel.addInnerClass(ConstantsBuilder::addConfigCategoryEnum);
-        context.addGeneratedType(classTypeName, classModel, triggerType.typeName());
-        return classTypeName;
     }
 
     private static void addModelNamesMethod(Method.Builder ib) {
@@ -233,6 +319,7 @@ class ConstantsBuilder {
                 .addParameter(Parameter.builder().type(STRING)
                                       .name("providerKey")
                                       .description("the provider name to filter by"))
+                .addContentLine("warnIfIncompatibleLangchain4jConfig(config);")
                 .addContentLine("return config.get(configCategory.key)")
                 .increaseContentPadding()
                 .addContentLine(".asNodeList()")
@@ -241,7 +328,7 @@ class ConstantsBuilder {
                 .addContent(TypeNames.COLLECTION)
                 .addContentLine("::stream)")
                 .addContent(".filter(c -> c.get(")
-                .addContentLiteral("provider")
+                .addContentLiteral(PROVIDER_KEY)
                 .addContentLine(").asString().filter(providerKey::equals).isPresent())")
                 .addContentLine(".map(Config::key)")
                 .addContentLine(".map(Config.Key::name)")
@@ -266,8 +353,11 @@ class ConstantsBuilder {
                                       .name("modelName")
                                       .description("the provider name to filter by"))
 
+                .addContentLine("warnIfIncompatibleLangchain4jConfig(root);")
                 .addContentLine("Config modelConfig = root.get(configCategory.key).get(modelName);")
-                .addContentLine("Config providerConfig = modelConfig.get(\"provider\").asString()")
+                .addContent("Config providerConfig = modelConfig.get(")
+                .addContentLiteral(PROVIDER_KEY)
+                .addContentLine(").asString()")
                 .increaseContentPadding()
                 .addContentLine(".map(providerName -> root.get(PROVIDERS_KEY).get(providerName))")
                 .addContentLine(".orElse(Config.empty());")
@@ -277,6 +367,47 @@ class ConstantsBuilder {
                 .addContentLine(".create(modelConfig, providerConfig);")
                 .description("Merges model and provider configurations, giving precedence to model-specific ")
                 .addDescriptionLine("settings over those defined in the provider.");
+    }
+
+    private static void addWarnIfIncompatibleLangchain4jConfigMethod(Method.Builder ib) {
+        ib.name("warnIfIncompatibleLangchain4jConfig")
+                .isStatic(true)
+                .accessModifier(PRIVATE)
+                .addParameter(Parameter.builder().type(CONFIG).name("root")
+                                      .description("the root configuration"))
+                .addContentLine("if (INCOMPATIBLE_CONFIG_WARNING_LOGGED) {")
+                .addContentLine("return;")
+                .addContentLine("}")
+                .addContentLine("var unsupportedKeys = root.get(LC4J_KEY)")
+                .increaseContentPadding()
+                .addContentLine(".asNodeList()")
+                .addContent(".orElse(")
+                .addContent(LIST)
+                .addContentLine(".of())")
+                .addContentLine(".stream()")
+                .addContentLine(".map(Config::key)")
+                .addContentLine(".map(Config.Key::name)")
+                .addContent(".filter(")
+                .addContent(Predicate.class)
+                .addContentLine(".not(SUPPORTED_LC4J_ROOT_KEYS::contains))")
+                .addContentLine(".toList();")
+                .decreaseContentPadding()
+                .addContentLine("if (unsupportedKeys.isEmpty()) {")
+                .addContentLine("return;")
+                .addContentLine("}")
+                .addContentLine("INCOMPATIBLE_CONFIG_WARNING_LOGGED = true;")
+                .addContent("LOGGER.log(")
+                .addContent(System.Logger.Level.class)
+                .addContentLine(".WARNING,")
+                .increaseContentPadding()
+                .addContentLine("\"Incompatible langchain4j configuration detected. Unsupported first-level keys under '\"")
+                .addContentLine("+ LC4J_KEY")
+                .addContentLine("+ \"': \"")
+                .addContentLine("+ unsupportedKeys")
+                .addContentLine("+ \". Consult documentation to migrate to Helidon 4.4.0 and newer "
+                                        + "langchain4j configuration.\");")
+                .decreaseContentPadding()
+                .description("Logs a warning when unsupported first-level keys are present under {@value #LC4J_KEY}.");
     }
 
     private static void addResolveMethod(Method.Builder ib) {
