@@ -18,6 +18,9 @@ package io.helidon.json;
 
 import java.util.Arrays;
 
+/**
+ * Utility methods shared by JSON parser implementations.
+ */
 public final class Parsers {
 
     //Lookup table for converting hexadecimal characters to their numeric values
@@ -39,6 +42,13 @@ public final class Parsers {
     private Parsers() {
     }
 
+    /**
+     * Translates a hexadecimal byte into its numeric value.
+     *
+     * @param b the hexadecimal byte to translate
+     * @param parser the parser used to create an exception when the byte is invalid
+     * @return the numeric value of the hexadecimal digit
+     */
     public static int translateHex(byte b, JsonParser parser) {
         int val = HEX_DIGITS[b & 0xFF];
         if (val == -1) {
@@ -47,10 +57,22 @@ public final class Parsers {
         return val;
     }
 
+    /**
+     * Converts a byte value into a printable representation for diagnostics.
+     *
+     * @param c the byte value to convert
+     * @return a printable representation of the byte
+     */
     public static String toPrintableForm(byte c) {
         return toPrintableForm((char) c);
     }
 
+    /**
+     * Converts a character value into a printable representation for diagnostics.
+     *
+     * @param c the character value to convert
+     * @return a printable representation of the character
+     */
     public static String toPrintableForm(char c) {
         if (Character.isDigit(c) || Character.isAlphabetic(c)) {
             return "'" + c + "'";

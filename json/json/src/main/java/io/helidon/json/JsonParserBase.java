@@ -3,6 +3,9 @@ package io.helidon.json;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Base implementation of {@link JsonParser}.
+ */
 public abstract class JsonParserBase implements JsonParser {
 
     @Override

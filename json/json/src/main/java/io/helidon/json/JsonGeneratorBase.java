@@ -18,10 +18,12 @@ package io.helidon.json;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Base64;
 
 import io.helidon.common.buffers.Bytes;
 
+/**
+ * Base implementation of {@link JsonGenerator} with shared structure and state handling.
+ */
 public abstract class JsonGeneratorBase implements JsonGenerator {
 
     static final int STACK_SIZE = 64;

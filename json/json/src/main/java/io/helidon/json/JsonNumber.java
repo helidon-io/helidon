@@ -66,6 +66,12 @@ public final class JsonNumber extends JsonValue {
         return new JsonNumber(bigDecimalValue);
     }
 
+    /**
+     * Create a JsonNumber from a double value.
+     *
+     * @param doubleValue the double value
+     * @return a new JsonNumber
+     */
     public static JsonNumber create(double doubleValue) {
         return new JsonNumber(doubleValue);
     }

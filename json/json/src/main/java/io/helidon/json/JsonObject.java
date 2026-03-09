@@ -71,6 +71,11 @@ public final class JsonObject extends JsonValue {
         return new JsonObject(new LinkedHashMap<>(content));
     }
 
+    /**
+     * Returns the shared empty JSON object instance.
+     *
+     * @return the empty JSON object
+     */
     public static JsonObject empty() {
         return EMPTY_OBJECT;
     }

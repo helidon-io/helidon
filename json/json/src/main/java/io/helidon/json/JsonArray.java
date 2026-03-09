@@ -98,6 +98,11 @@ public final class JsonArray extends JsonValue {
         return new JsonArray(jsonValues);
     }
 
+    /**
+     * Returns the shared empty JSON array instance.
+     *
+     * @return the empty JSON array
+     */
     public static JsonArray empty() {
         return EMPTY_ARRAY;
     }

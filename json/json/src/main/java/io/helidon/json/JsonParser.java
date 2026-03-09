@@ -382,6 +382,11 @@ public interface JsonParser {
      */
     BigDecimal readBigDecimal();
 
+    /**
+     * Reads a binary value.
+     *
+     * @return the decoded binary value
+     */
     byte[] readBinary();
 
     /**
