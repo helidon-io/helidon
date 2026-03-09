@@ -122,57 +122,6 @@ final class JsonParserStream extends JsonParserBase {
         readMoreData();
     }
 
-//    @Override
-    public char[] readCharArray() {
-        switch (currentByte()) {
-        case '"':
-            return readStringCharArray();
-        case '{':
-            throw createException("Handling object as a character array is not supported");
-        case '[':
-            throw createException("Handling array as a character array is not supported");
-        case '-':
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-            return readNumberAsCharArray();
-        case 't':
-            ensure(3);
-            if (buffer[++currentIndex] == 'r'
-                    && buffer[++currentIndex] == 'u'
-                    && buffer[++currentIndex] == 'e') {
-                return new char[] {'t', 'r', 'u', 'e'};
-            }
-            throw createException("True value expect. Invalid JSON value");
-        case 'n':
-            ensure(3);
-            if (buffer[++currentIndex] == 'u'
-                    && buffer[++currentIndex] == 'l'
-                    && buffer[++currentIndex] == 'l') {
-                return new char[] {'n', 'u', 'l', 'l'};
-            }
-            throw createException("Null value expect. Invalid JSON value");
-        case 'f':
-            ensure(4);
-            if (buffer[++currentIndex] == 'a'
-                    && buffer[++currentIndex] == 'l'
-                    && buffer[++currentIndex] == 's'
-                    && buffer[++currentIndex] == 'e') {
-                return new char[] {'f', 'a', 'l', 's', 'e'};
-            }
-            throw createException("False value expect. Invalid JSON value");
-        default:
-            throw createException("Invalid JSON value to skip", currentByte());
-        }
-    }
-
     @Override
     public char readChar() {
         if (currentByte() != '\"') {
@@ -927,51 +876,6 @@ final class JsonParserStream extends JsonParserBase {
                 return b;
             }
         }
-    }
-
-    private char[] readStringCharArray() {
-        int readableBytes = bufferLength - currentIndex - 1;
-        int firstRun = Math.min(stringBufferLength, readableBytes);
-        int stringBuffIndex = 0;
-        byte b;
-        for (; stringBuffIndex < firstRun; stringBuffIndex++) {
-            b = this.buffer[++currentIndex];
-            if (b == '"') {
-                char[] chars = new char[stringBuffIndex];
-                System.arraycopy(stringBuffer, 0, chars, 0, stringBuffIndex);
-                return chars;
-            }
-            if (b == '\\' || b < 0) {
-                //Specialized character handling is likely required
-                //Either escaped sequence or multibyte detected
-                currentIndex--;
-                break;
-            }
-            stringBuffer[stringBuffIndex] = (char) b;
-        }
-
-        if (stringBuffIndex == stringBufferLength) {
-            increaseStringBuffer();
-        }
-
-        while (hasNext()) {
-            b = readNextByte();
-            if (b == '\\') {
-                stringBuffer[stringBuffIndex++] = processEscapedSequence();
-            } else if (b == '"') {
-                char[] chars = new char[stringBuffIndex];
-                System.arraycopy(stringBuffer, 0, chars, 0, stringBuffIndex);
-                return chars;
-            } else if ((b & 0x80) == 0) {
-                stringBuffer[stringBuffIndex++] = (char) b;
-            } else {
-                stringBuffIndex = decodeUtf8(stringBuffIndex, b);
-            }
-            if (stringBuffIndex == stringBufferLength) {
-                increaseStringBuffer();
-            }
-        }
-        throw createException("End of the string expected. Incomplete JSON");
     }
 
     private char[] readNumberAsCharArray() {
