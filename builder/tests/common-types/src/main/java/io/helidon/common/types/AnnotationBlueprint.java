@@ -100,6 +100,15 @@ interface AnnotationBlueprint {
     List<Annotation> metaAnnotations();
 
     /**
+     * The element used to create this instance.
+     * The type of the object depends on the environment.
+     *
+     * @return originating element
+     */
+    @Option.Redundant
+    Optional<Object> originatingElement();
+
+    /**
      * The value property.
      *
      * @return the string value of value property
