@@ -33,19 +33,6 @@
                 </model>
             </output>
         </method>
-        <method name="tracing-jaeger">
-            <output if="${tracing.provider} == 'jaeger'">
-                <model>
-                    <list key="dependencies">
-                        <map order="800">
-                            <value key="groupId">io.opentelemetry</value>
-                            <value key="artifactId">opentelemetry-exporter-otlp</value>
-                        </map>
-                    </list>
-                    <value key="tracing.provider.for.otel">otlp</value>
-                </model>
-            </output>
-        </method>
         <method name="tracing-zipkin">
             <output if="${tracing.provider} == 'zipkin'">
                 <model>
@@ -61,7 +48,6 @@
         </method>
     </methods>
     <call method="tracing-opentelemetry"/>
-    <call method="tracing-jaeger"/>
     <call method="tracing-zipkin"/>
     <output>
         <templates engine="mustache" transformations="packaged,mustache">
