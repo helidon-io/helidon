@@ -24,6 +24,7 @@ module io.helidon.tracing.config {
     requires transitive io.helidon.config;
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.common;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.tracing.config;
 

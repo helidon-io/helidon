@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
  * Helidon Integrations of OCI Certificates Service.
  */
 module io.helidon.integrations.oci.tls.certificates {
+    requires static io.helidon.config.metadata;
+
     requires io.helidon.builder.api;
     requires io.helidon.common;
     requires io.helidon.common.config;

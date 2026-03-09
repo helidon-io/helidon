@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ module io.helidon.webclient.discovery {
 
     requires transitive io.helidon.discovery;
     requires transitive io.helidon.webclient.api;
+    requires static io.helidon.config.metadata;
+
     exports io.helidon.webclient.discovery;
 
     provides io.helidon.webclient.spi.WebClientServiceProvider

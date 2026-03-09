@@ -37,6 +37,11 @@
             <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-configurable</artifactId>
         </dependency>
@@ -219,7 +224,7 @@
                 <configuration>
                     <!-- Attempt to get the pipeline Windows job to work. -->
                     <reuseForks>false</reuseForks>
-                    
+
                     <properties>
                         <configurationParameters>
                             junit.jupiter.extensions.autodetection.enabled = true

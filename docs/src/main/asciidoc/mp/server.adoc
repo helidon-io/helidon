@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -144,7 +144,7 @@ server.host=0.0.0.0
 server.features.access-log.format=helidon
 ----
 
-include::{rootdir}/config/io_helidon_webserver_accesslog_AccessLogConfig.adoc[leveloffset=+1]
+include::{rootdir}/config/io_helidon_webserver_accesslog_AccessLogFeature.adoc[leveloffset=+1]
 
 === Configuring TLS
 

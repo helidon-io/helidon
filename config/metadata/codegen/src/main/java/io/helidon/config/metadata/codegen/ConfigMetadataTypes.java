@@ -18,38 +18,27 @@ package io.helidon.config.metadata.codegen;
 
 import io.helidon.common.types.TypeName;
 
+/**
+ * Type names.
+ */
 final class ConfigMetadataTypes {
-    static final TypeName DEPRECATED = TypeName.create(Deprecated.class);
-    /*
-    Using config metadata
-     */
-    static final TypeName META_CONFIGURED = TypeName.create("io.helidon.config.metadata.Configured");
-    static final TypeName META_OPTION = TypeName.create("io.helidon.config.metadata.ConfiguredOption");
-    static final TypeName META_OPTIONS = TypeName.create("io.helidon.config.metadata.ConfiguredOptions");
-
-    /*
-    Using builder API
-     */
-    static final TypeName CONFIG = TypeName.create("io.helidon.config.Config");
-    static final TypeName PROTOTYPE_FACTORY = TypeName.create("io.helidon.builder.api.Prototype.Factory");
-    static final TypeName BLUEPRINT = TypeName.create("io.helidon.builder.api.Prototype.Blueprint");
-    static final TypeName CONFIGURED = TypeName.create("io.helidon.builder.api.Prototype.Configured");
-    static final TypeName PROTOTYPE_PROVIDES = TypeName.create("io.helidon.builder.api.Prototype.Provides");
-    static final TypeName PROTOTYPE_DEFAULT_METHODS = TypeName.create("io.helidon.builder.api.Prototype.IncludeDefaultMethods");
-    static final TypeName DESCRIPTION = TypeName.create("io.helidon.builder.api.Description");
-    static final TypeName OPTION_CONFIGURED = TypeName.create("io.helidon.builder.api.Option.Configured");
-    static final TypeName OPTION_REQUIRED = TypeName.create("io.helidon.builder.api.Option.Required");
-    static final TypeName OPTION_PROVIDER = TypeName.create("io.helidon.builder.api.Option.Provider");
-    static final TypeName OPTION_ALLOWED_VALUES = TypeName.create("io.helidon.builder.api.Option.AllowedValues");
-    static final TypeName OPTION_ALLOWED_VALUE = TypeName.create("io.helidon.builder.api.Option.AllowedValue");
-    static final TypeName OPTION_DEPRECATED = TypeName.create("io.helidon.builder.api.Option.Deprecated");
-    static final TypeName OPTION_DEFAULT = TypeName.create("io.helidon.builder.api.Option.Default");
-    static final TypeName OPTION_DEFAULT_INT = TypeName.create("io.helidon.builder.api.Option.DefaultInt");
-    static final TypeName OPTION_DEFAULT_DOUBLE = TypeName.create("io.helidon.builder.api.Option.DefaultDouble");
-    static final TypeName OPTION_DEFAULT_BOOLEAN = TypeName.create("io.helidon.builder.api.Option.DefaultBoolean");
-    static final TypeName OPTION_DEFAULT_LONG = TypeName.create("io.helidon.builder.api.Option.DefaultLong");
-    static final TypeName OPTION_DEFAULT_METHOD = TypeName.create("io.helidon.builder.api.Option.DefaultMethod");
-    static final TypeName OPTION_DEFAULT_CODE = TypeName.create("io.helidon.builder.api.Option.DefaultCode");
+    static final TypeName PROTOTYPE_API = TypeName.create("io.helidon.builder.api.Prototype.Api");
+    static final TypeName CONFIGURED = TypeName.create("io.helidon.config.metadata.Configured");
+    static final TypeName OPTION = TypeName.create("io.helidon.config.metadata.ConfiguredOption");
+    static final TypeName OPTIONS = TypeName.create("io.helidon.config.metadata.ConfiguredOptions");
+    static final TypeName ITERABLE = TypeName.create(Iterable.class);
+    static final TypeName MAP = io.helidon.common.types.TypeNames.MAP;
+    static final TypeName BOXED_VOID = io.helidon.common.types.TypeNames.BOXED_VOID;
+    static final TypeName STRING = io.helidon.common.types.TypeNames.STRING;
+    static final TypeName OBJECT = io.helidon.common.types.TypeNames.OBJECT;
+    static final TypeName CHAR_ARRAY = TypeName.create(char[].class);
+    static final TypeName BOXED_DOUBLE = io.helidon.common.types.TypeNames.BOXED_DOUBLE;
+    static final TypeName BOXED_BOOLEAN = io.helidon.common.types.TypeNames.BOXED_BOOLEAN;
+    static final TypeName BOXED_BYTE = io.helidon.common.types.TypeNames.BOXED_BYTE;
+    static final TypeName BOXED_SHORT = io.helidon.common.types.TypeNames.BOXED_SHORT;
+    static final TypeName BOXED_FLOAT = io.helidon.common.types.TypeNames.BOXED_FLOAT;
+    static final TypeName BOXED_LONG = io.helidon.common.types.TypeNames.BOXED_LONG;
+    static final TypeName BOXED_INT = io.helidon.common.types.TypeNames.BOXED_INT;
 
     private ConfigMetadataTypes() {
     }

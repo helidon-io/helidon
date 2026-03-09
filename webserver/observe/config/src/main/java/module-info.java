@@ -26,11 +26,12 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Path({"Observe", "Config"})
 module io.helidon.webserver.observe.config {
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires io.helidon.json;
     requires io.helidon.webserver;
 
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.webserver.observe;
     requires io.helidon.http.media.json;
 

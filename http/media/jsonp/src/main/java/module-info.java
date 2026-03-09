@@ -32,10 +32,9 @@ module io.helidon.http.media.jsonp {
     requires io.helidon.http.media;
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires transitive jakarta.json;
-    requires io.helidon.common.media.type;
-    requires io.helidon.http;
 
     exports io.helidon.http.media.jsonp;
 

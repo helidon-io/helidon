@@ -164,7 +164,8 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
     /**
      * Configuration of a secret.
      */
-    @Configured(description = "Provider of secrets defined in configuration itself",
+    @Configured(prefix = "config-vault",
+                description = "Provider of secrets defined in configuration itself",
                 provides = SecretsProviderConfig.class)
     public static class SecretConfig implements SecretsProviderConfig {
         private final Supplier<Optional<String>> value;

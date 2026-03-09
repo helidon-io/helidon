@@ -27,6 +27,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Preview
 module io.helidon.integrations.langchain4j.providers.lc4jinprocess {
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires langchain4j.core;
     requires langchain4j.embeddings;

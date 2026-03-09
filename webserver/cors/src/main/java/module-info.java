@@ -30,6 +30,7 @@ module io.helidon.webserver.cors {
     requires io.helidon.webserver;
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common;

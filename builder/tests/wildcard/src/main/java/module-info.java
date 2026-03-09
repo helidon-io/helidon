@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ module io.helidon.builder.tests.wildcard {
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.builder.api;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.builder.tests.wildcard;
 }

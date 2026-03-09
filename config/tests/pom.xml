@@ -64,6 +64,7 @@
         <module>service-registry</module>
         <module>service-registry-metaconfig</module>
         <module>config-metadata-meta-api</module>
+        <module>config-metadata-processor</module>
         <module>config-metadata-builder-api</module>
         <module>test-lazy-source</module>
         <module>test-no-config-sources</module>

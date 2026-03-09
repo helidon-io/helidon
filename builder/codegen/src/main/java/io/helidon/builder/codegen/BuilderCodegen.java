@@ -413,12 +413,13 @@ class BuilderCodegen implements CodegenExtension {
                             .description("Service discovery flag for {@link #" + it.getterName()
                                                  + "()}. If set to {@code true}, services will be discovered from Java service "
                                                  + "loader, or Helidon ServiceRegistry.")
-                            .paramDescription("whether to enabled automatic service discovery")
+                            .paramDescription("whether to enable automatic service discovery")
                             .name(name)
                             .setterName(setterName)
                             .getterName(getterName)
                             .builderOptionOnly(true)
                             .declaredType(TypeNames.PRIMITIVE_BOOLEAN)
+                            .interfaceMethod(it.interfaceMethod())
                             .defaultValue(defaultConsumer -> defaultConsumer.addContent(String.valueOf(defaultValue)))
                             .update(optionBuilder -> copyConfiguredForDiscoverServices(it, optionBuilder))
                             .update(optionBuilder -> it.deprecation().ifPresent(optionBuilder::deprecation))
@@ -710,6 +711,11 @@ class BuilderCodegen implements CodegenExtension {
                 .accessModifier(prototypeInfo.accessModifier());
 
         typeArguments.forEach(classModel::addGenericArgument);
+
+        if (prototypeInfo.configured().isPresent()) {
+            var schemaGen = new SchemaGenerator(this.ctx);
+            classModel.addAnnotation(schemaGen.type(prototypeInfo, options));
+        }
 
         prototypeInfo.annotations()
                 .forEach(classModel::addAnnotation);

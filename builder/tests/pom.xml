@@ -41,6 +41,7 @@
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <spotbugs.skip>true</spotbugs.skip>
         <dependency-check.skip>true</dependency-check.skip>
+        <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
     </properties>
 
     <modules>
@@ -54,6 +55,7 @@
         <module>custom-void-method</module>
         <module>third-party-factory</module>
         <module>factory</module>
+        <module>configured</module>
     </modules>
 
 </project>

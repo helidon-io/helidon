@@ -34,8 +34,7 @@ module io.helidon.http.media.jsonb {
     requires jakarta.json;
 
     requires static io.helidon.common.features.api;
-    requires io.helidon.common.media.type;
-    requires io.helidon.http;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.http.media.jsonb;
 

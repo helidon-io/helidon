@@ -30,6 +30,7 @@ module io.helidon.webserver.observe.health {
     requires java.management;
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.health;
@@ -41,5 +42,5 @@ module io.helidon.webserver.observe.health {
             with io.helidon.webserver.observe.health.HealthObserveProvider;
 
     uses io.helidon.health.spi.HealthCheckProvider;
-	
+
 }

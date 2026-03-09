@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ server:
 <3> The `hostName` node identifies the host. It defaults to the current host, which may or may not be suitable in your
     environment. Most of the time you can simply omit this node and use the defaulted value.
 
-Please consult the xref:{rootdir}/config/io_helidon_integrations_eureka_EurekaRegistrationConfig.adoc[Helidon Config
+Please consult the xref:{rootdir}/config/io_helidon_integrations_eureka_EurekaRegistrationServerFeature.adoc[Helidon Config
 Reference] for a full description of the permitted configuration.
 
 == Logging

@@ -48,6 +48,7 @@ module io.helidon.telemetry.otelconfig {
     requires zipkin2.reporter;
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     /*
     For conditionally-present exporter types.

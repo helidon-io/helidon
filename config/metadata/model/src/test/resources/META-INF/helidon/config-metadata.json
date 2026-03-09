@@ -1,0 +1,37 @@
+[
+   {
+      "module": "com.acme",
+      "types": [
+         {
+            "type": "com.acme.AcmeConfig",
+            "description": "ACME configuration",
+            "prefix": "acme",
+            "provides": [
+               "com.acme.AcmeProvider"
+            ],
+            "options": [
+               {
+                  "key": "mode",
+                  "type": "com.acme.AcmeMode",
+                  "description": "Mode",
+                  "defaultValue": "MODE1",
+                  "allowedValues": [
+                     {
+                        "value": "MODE1",
+                        "description": "mode 1"
+                     },
+                     {
+                        "value": "MODE2",
+                        "description": "mode 2"
+                     },
+                     {
+                        "value": "MODE3",
+                        "description": "mode 3"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+]
