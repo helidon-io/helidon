@@ -19,10 +19,8 @@ package io.helidon.json;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.List;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
