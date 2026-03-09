@@ -18,13 +18,17 @@ package io.helidon.common.types;
 
 import java.util.Objects;
 
-final class EnumValueImpl implements EnumValue {
+import io.helidon.common.types.AnnotationProperty.ConstantValue;
+
+final class ConstantValueImpl implements ConstantValue {
     private final TypeName type;
     private final String name;
+    private final Object value;
 
-    EnumValueImpl(TypeName type, String name) {
+    ConstantValueImpl(TypeName type, String name, Object value) {
         this.type = type;
         this.name = name;
+        this.value = value;
     }
 
     @Override
@@ -38,20 +42,21 @@ final class EnumValueImpl implements EnumValue {
     }
 
     @Override
+    public Object value() {
+        return value;
+    }
+
+    @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof EnumValue enumValue)) {
+        if (!(o instanceof ConstantValueImpl that)) {
             return false;
         }
-        return Objects.equals(type, enumValue.type())
-               && Objects.equals(name, enumValue.name());
+        return Objects.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, name);
+        return Objects.hashCode(value);
     }
 
     @Override

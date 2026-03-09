@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import io.helidon.common.types.AnnotationProperty;
 import io.helidon.common.types.AnnotationProperty.ConstantValue;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.EnumValue;
@@ -32,12 +33,12 @@ import io.helidon.common.types.TypeName;
 public final class AnnotationParameter extends CommonComponent {
 
     private final Set<TypeName> importedTypes;
-    private final Object value;
+    private final Object objectValue;
 
     private AnnotationParameter(Builder builder) {
         super(builder);
-        this.value = value(builder.value);
-        this.importedTypes = resolveImports(builder.value);
+        this.objectValue = value(builder.value);
+        this.importedTypes = resolveImports(this);
     }
 
     /**
@@ -51,7 +52,7 @@ public final class AnnotationParameter extends CommonComponent {
 
     @Override
     public String toString() {
-        return value + " (" + type().simpleTypeName() + ")";
+        return objectValue + " (" + type().simpleTypeName() + ")";
     }
 
     @Override
@@ -73,7 +74,7 @@ public final class AnnotationParameter extends CommonComponent {
     }
 
     Object value() {
-        return value;
+        return objectValue;
     }
 
     void writeValue(ModelWriter writer, boolean multiline, ImportOrganizer imports) {
@@ -106,18 +107,6 @@ public final class AnnotationParameter extends CommonComponent {
             case Annotation annotation -> annotation.writeComponent(writer, multiline, imports);
             default -> writer.write(value.toString());
         }
-    }
-
-    private static boolean isValueType(Object o) {
-        return switch (o) {
-            case TypeName ignored -> true;
-            case Class<?> ignored -> true;
-            case EnumValue ignored -> true;
-            case Character ignored -> true;
-            case String ignored -> true;
-            case Number ignored -> true;
-            default -> false;
-        };
     }
 
     void writeValue(ModelWriter writer, boolean multiline, ImportOrganizer imports, Collection<?> list) {
@@ -160,21 +149,22 @@ public final class AnnotationParameter extends CommonComponent {
         }
     }
 
-    private Set<TypeName> resolveImports(Object value) {
+    private static Set<TypeName> resolveImports(Object value) {
         Set<TypeName> imports = new HashSet<>();
         resolveImports(imports, value);
         return imports;
     }
 
-    private void resolveImports(Set<TypeName> imports, Object value) {
+    private static void resolveImports(Set<TypeName> imports, Object value) {
         switch (value) {
+            case AnnotationParameter p -> resolveImports(imports, p.objectValue);
             case Enum<?> e -> imports.add(TypeName.create(e.getClass()));
             case ConstantValue cv -> imports.add(cv.type());
             case TypeName tn -> imports.add(tn);
             case io.helidon.codegen.classmodel.Annotation an -> {
                 imports.add(an.typeName());
                 for (var e : an.parameters()) {
-                    resolveImports(imports, e.value);
+                    resolveImports(imports, e);
                 }
             }
             case io.helidon.common.types.Annotation an -> {
@@ -226,6 +216,18 @@ public final class AnnotationParameter extends CommonComponent {
         return builder.build();
     }
 
+    private static boolean isValueType(Object o) {
+        return switch (o) {
+            case TypeName ignored -> true;
+            case Class<?> ignored -> true;
+            case EnumValue ignored -> true;
+            case Character ignored -> true;
+            case String ignored -> true;
+            case Number ignored -> true;
+            default -> false;
+        };
+    }
+
     /**
      * Fluent API builder for {@link AnnotationParameter}.
      */
@@ -256,7 +258,11 @@ public final class AnnotationParameter extends CommonComponent {
          * @return updated builder instance
          */
         public Builder value(Object value) {
-            this.value = Objects.requireNonNull(value);
+            if (value instanceof AnnotationProperty p) {
+                this.value = p.value();
+            } else {
+                this.value = Objects.requireNonNull(value);
+            }
             return this;
         }
 

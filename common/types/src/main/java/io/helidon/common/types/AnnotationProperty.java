@@ -68,7 +68,7 @@ public interface AnnotationProperty {
                                                            + " Constant: " + constantType.fqName() + "." + constantName);
             }
         }
-        return new AnnotationPropertyImpl(new EnumValueImpl(constantType, constantName));
+        return new AnnotationPropertyImpl(new ConstantValueImpl(constantType, constantName, value));
     }
 
     /**
@@ -99,11 +99,31 @@ public interface AnnotationProperty {
      * {@link EnumValue}.
      *
      * @return constant value if defined
-     * @deprecated use {{@link #value()}} and downcast to {@link ConstantValue}
+     * @deprecated use {{@link #value()}} and downcast to {@link ConstantValue} or {@link EnumValue}
      */
-    @Deprecated(since = "4.4.0", forRemoval = true)
+    @Deprecated(forRemoval = true, since = "4.4.0")
     default Optional<ConstantValue> constantValue() {
+        if (value() instanceof ConstantValue cv) {
+            return Optional.of(cv);
+        }
         return Optional.empty();
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static Object value(Object value) {
+        return switch (value) {
+            case ConstantValue cv -> cv;
+            case Enum en -> EnumValue.create(en.getDeclaringClass(), en);
+            case AnnotationProperty ap -> ap.value();
+            case Collection<?> values -> {
+                var list = new ArrayList<>();
+                for (var e : values) {
+                    list.add(value(e));
+                }
+                yield list;
+            }
+            default -> value;
+        };
     }
 
     /**
@@ -123,22 +143,13 @@ public interface AnnotationProperty {
          * @return constant name
          */
         String name();
-    }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private static Object value(Object value) {
-        return switch (value) {
-            case Collection<?> values -> {
-                var list = new ArrayList<>();
-                for (var e : values) {
-                    list.add(value(e));
-                }
-                yield list;
-            }
-            case AnnotationProperty ap -> ap.value();
-            case Enum en -> EnumValue.create(en.getDeclaringClass(), en);
-            default -> value;
-        };
+        /**
+         * Value of the constant.
+         *
+         * @return constant value
+         */
+        Object value();
     }
 }
 

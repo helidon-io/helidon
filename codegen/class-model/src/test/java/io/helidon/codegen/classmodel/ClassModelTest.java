@@ -469,6 +469,49 @@ class ClassModelTest {
     }
 
     @Test
+    void testNestedConstantValues() throws IOException {
+        var sw = new StringWriter();
+        var constantTypeName = TypeName.create("com.example.Uids");
+        ClassModel.builder()
+                .packageName("com.acme")
+                .name("MyClass")
+                .addAnnotation(Annotation.builder()
+                        .type(TypeName.create("com.acme.Users"))
+                        .addParameter(annotationParameter("users", List.of(
+                                        Annotation.builder()
+                                                .type(TypeName.create("com.acme.User"))
+                                                .addParameter(annotationParameter("uid",
+                                                        AnnotationProperty.create("user1", constantTypeName, "USER1")))
+                                                .addParameter(annotationParameter("name", "User1"))
+                                                .addParameter(annotationParameter("roles", List.of("role1", "role2")))
+                                                .build(),
+                                        Annotation.builder()
+                                                .type(TypeName.create("com.acme.User"))
+                                                .addParameter(annotationParameter("uid", "user2"))
+                                                .addParameter(annotationParameter("name", "User2"))
+                                                .addParameter(annotationParameter("roles", List.of("role1", "role2")))
+                                                .build())))
+                        .build())
+                .build()
+                .write(sw);
+
+        assertThat(sw.toString(), isSource("""
+            package com.acme;
+            
+            import com.example.Uids;
+            
+            @Users(
+                users = {
+                    @User(uid = Uids.USER1, name = "User1", roles = {"role1", "role2"}),
+                    @User(uid = "user2", name = "User2", roles = {"role1", "role2"})
+                })
+            public class MyClass {
+            
+            }
+            """));
+    }
+
+    @Test
     void testNestedTypeAnnotationsListOneElement() throws IOException {
         var sw = new StringWriter();
         ClassModel.builder()

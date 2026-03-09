@@ -122,7 +122,7 @@ public final class Annotation extends CommonComponent {
         builder.typeName(type().genericTypeName());
         for (var parameter : parameters) {
             var value = toTypesValue(parameter.value());
-            builder.putProperty(parameter.name(), AnnotationProperty.create(value));
+            builder.property(parameter.name(), value);
         }
         return builder.build();
     }
