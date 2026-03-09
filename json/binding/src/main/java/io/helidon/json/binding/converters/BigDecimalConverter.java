@@ -34,12 +34,12 @@ class BigDecimalConverter implements JsonConverter<BigDecimal> {
 
     @Override
     public BigDecimal deserialize(JsonParser parser) {
-        return new BigDecimal(parser.readCharArray());
+        return parser.readBigDecimal();
     }
 
     @Override
     public void serialize(JsonGenerator generator, BigDecimal instance, boolean writeNulls) {
-        generator.write(instance.toString());
+        generator.write(instance);
     }
 
     @Override

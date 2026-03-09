@@ -71,6 +71,10 @@ public final class JsonObject extends JsonValue {
         return new JsonObject(new LinkedHashMap<>(content));
     }
 
+    public static JsonObject empty() {
+        return EMPTY_OBJECT;
+    }
+
     static JsonObject create(List<Pair> pairs) {
         return new JsonObject(pairs);
     }
@@ -399,7 +403,7 @@ public final class JsonObject extends JsonValue {
     private void ensureResolvedKeys() {
         if (!resolved) {
             for (Pair pair : pairs) {
-                content.put(pair.key.resolveValue(), pair.value);
+                content.put(pair.key.value(), pair.value);
             }
         }
     }

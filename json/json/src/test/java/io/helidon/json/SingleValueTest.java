@@ -118,47 +118,6 @@ abstract class SingleValueTest {
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseStringCharArray() {
-        String template = "\"myStringValue\"";
-        JsonParser parser = createParser(template);
-        char[] expected = "myStringValue".toCharArray();
-
-        assertThat(parser.readCharArray(), is(expected));
-        assertThat(parser.hasNext(), is(false));
-
-        template = "\"special chars ěščřžýáíé\"";
-        parser = createParser(template);
-        expected = "special chars ěščřžýáíé".toCharArray();
-
-        assertThat(parser.readCharArray(), is(expected));
-        assertThat(parser.hasNext(), is(false));
-    }
-
-    @Test
-    public void testParseNumberAsCharArray() {
-        String template = "-123";
-        JsonParser parser = createParser(template);
-        char[] expected = template.toCharArray();
-
-        assertThat(parser.readCharArray(), is(expected));
-        assertThat(parser.hasNext(), is(false));
-
-        template = "123.456";
-        parser = createParser(template);
-        expected = template.toCharArray();
-
-        assertThat(parser.readCharArray(), is(expected));
-        assertThat(parser.hasNext(), is(false));
-
-        template = "-123.456E+10";
-        parser = createParser(template);
-        expected = template.toCharArray();
-
-        assertThat(parser.readCharArray(), is(expected));
-        assertThat(parser.hasNext(), is(false));
-    }
-
     abstract JsonParser createParser(String template);
 
 }

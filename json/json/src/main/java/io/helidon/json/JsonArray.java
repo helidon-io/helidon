@@ -98,6 +98,10 @@ public final class JsonArray extends JsonValue {
         return new JsonArray(jsonValues);
     }
 
+    public static JsonArray empty() {
+        return EMPTY_ARRAY;
+    }
+
     /**
      * Return the JsonValue at the specified index as an Optional.
      *

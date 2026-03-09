@@ -16,6 +16,9 @@
 
 package io.helidon.json;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 /**
  * An implementation of the {@link io.helidon.json.JsonParser} which enforces object start as the current value.
  * Delegates all other calls to the provided JsonParser.
@@ -105,11 +108,6 @@ public final class ObjectStartParser implements JsonParser {
     }
 
     @Override
-    public char[] readCharArray() {
-        return parser.readCharArray();
-    }
-
-    @Override
     public char readChar() {
         return parser.readChar();
     }
@@ -147,6 +145,21 @@ public final class ObjectStartParser implements JsonParser {
     @Override
     public double readDouble() {
         return parser.readDouble();
+    }
+
+    @Override
+    public BigInteger readBigInteger() {
+        return parser.readBigInteger();
+    }
+
+    @Override
+    public BigDecimal readBigDecimal() {
+        return parser.readBigDecimal();
+    }
+
+    @Override
+    public byte[] readBinary() {
+        return parser.readBinary();
     }
 
     @Override
@@ -254,11 +267,6 @@ public final class ObjectStartParser implements JsonParser {
         }
 
         @Override
-        public char[] readCharArray() {
-            throw new UnsupportedOperationException("This parser allows only currentByte");
-        }
-
-        @Override
         public char readChar() {
             throw new UnsupportedOperationException("This parser allows only currentByte");
         }
@@ -295,6 +303,21 @@ public final class ObjectStartParser implements JsonParser {
 
         @Override
         public double readDouble() {
+            throw new UnsupportedOperationException("This parser allows only currentByte");
+        }
+
+        @Override
+        public BigInteger readBigInteger() {
+            throw new UnsupportedOperationException("This parser allows only currentByte");
+        }
+
+        @Override
+        public BigDecimal readBigDecimal() {
+            throw new UnsupportedOperationException("This parser allows only currentByte");
+        }
+
+        @Override
+        public byte[] readBinary() {
             throw new UnsupportedOperationException("This parser allows only currentByte");
         }
 

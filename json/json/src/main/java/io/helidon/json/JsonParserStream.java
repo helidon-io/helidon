@@ -19,32 +19,34 @@ package io.helidon.json;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import io.helidon.common.buffers.BufferData;
 
-import static io.helidon.json.ArrayJsonParser.BYTE_SIZE_BORDER;
-import static io.helidon.json.ArrayJsonParser.DOT_MARK;
-import static io.helidon.json.ArrayJsonParser.FNV_OFFSET_BASIS;
-import static io.helidon.json.ArrayJsonParser.FNV_PRIME;
-import static io.helidon.json.ArrayJsonParser.HEX_DIGITS;
-import static io.helidon.json.ArrayJsonParser.INT_SIZE_BORDER;
-import static io.helidon.json.ArrayJsonParser.LONG_SIZE_BORDER;
-import static io.helidon.json.ArrayJsonParser.POW10_DOUBLE_CACHE;
-import static io.helidon.json.ArrayJsonParser.POW10_DOUBLE_CACHE_SIZE;
-import static io.helidon.json.ArrayJsonParser.SHORT_SIZE_BORDER;
-import static io.helidon.json.ArrayJsonParser.VALID_NUMBER_PARTS;
-import static io.helidon.json.ArrayJsonParser.WHITESPACE_CHARS;
-import static io.helidon.json.ArrayJsonParser.WHOLE_NUMBER_PARTS;
+import static io.helidon.json.JsonParserArray.BYTE_SIZE_BORDER;
+import static io.helidon.json.JsonParserArray.DOT_MARK;
+import static io.helidon.json.JsonParserArray.FNV_OFFSET_BASIS;
+import static io.helidon.json.JsonParserArray.FNV_PRIME;
+import static io.helidon.json.JsonParserArray.INT_SIZE_BORDER;
+import static io.helidon.json.JsonParserArray.LONG_SIZE_BORDER;
+import static io.helidon.json.JsonParserArray.POW10_DOUBLE_CACHE;
+import static io.helidon.json.JsonParserArray.POW10_DOUBLE_CACHE_SIZE;
+import static io.helidon.json.JsonParserArray.SHORT_SIZE_BORDER;
+import static io.helidon.json.JsonParserArray.VALID_NUMBER_PARTS;
+import static io.helidon.json.JsonParserArray.WHITESPACE_CHARS;
+import static io.helidon.json.JsonParserArray.WHOLE_NUMBER_PARTS;
 
 /*
 This class is having mostly the same method implementations as ArrayJsonParser does.
 I will need to think carefully about how to do the abstraction right, but for the first version,
 I have decided to leave it like this and with a duplicit code.
  */
-final class JsonStreamParser implements JsonParser {
+final class JsonParserStream extends JsonParserBase {
 
     private static final int DEFAULT_BUFFER_SIZE = 512;
 
@@ -65,7 +67,7 @@ final class JsonStreamParser implements JsonParser {
     private int mark = -1;
     private boolean replayMarked = false;
 
-    JsonStreamParser(InputStream inputStream, int bufferSize) {
+    JsonParserStream(InputStream inputStream, int bufferSize) {
         this.configuredBufferSize = bufferSize;
         this.inputStream = inputStream;
         currentIndex = 0;
@@ -79,7 +81,7 @@ final class JsonStreamParser implements JsonParser {
         }
     }
 
-    JsonStreamParser(InputStream inputStream) {
+    JsonParserStream(InputStream inputStream) {
         this(inputStream, DEFAULT_BUFFER_SIZE);
     }
 
@@ -122,147 +124,7 @@ final class JsonStreamParser implements JsonParser {
         readMoreData();
     }
 
-    @Override
-    public JsonValue readJsonValue() {
-        return switch (currentByte()) {
-            case '{' -> readJsonObject();
-            case '[' -> readJsonArray();
-            case '"' -> readJsonString();
-            case '-', '.', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> readJsonNumber();
-            case 't', 'f' -> JsonBoolean.create(readBoolean());
-            case 'n' -> {
-                checkNull();
-                yield JsonNull.instance();
-            }
-            default -> throw createException("Unexpected JSON value type", currentByte());
-        };
-    }
-
-    @Override
-    public JsonObject readJsonObject() {
-        if (currentByte() != '{') {
-            throw createException("Object start expected", currentByte());
-        }
-        byte b = nextToken();
-        if (b == '}') {
-            return JsonObject.EMPTY_OBJECT;
-        }
-        List<JsonObject.Pair> pairs = new ArrayList<>();
-        while (hasNext()) {
-            JsonString key;
-            if (b == '"') {
-                key = readJsonString();
-            } else {
-                throw createException("Key name start expected", b);
-            }
-            b = nextToken();
-            if (b != ':') {
-                throw createException("Colon expected", b);
-            }
-            b = nextToken();
-            switch (b) {
-            case '"':
-                pairs.add(new JsonObject.Pair(key, readJsonString()));
-                break;
-            case '{':
-                pairs.add(new JsonObject.Pair(key, readJsonObject()));
-                break;
-            case '[':
-                pairs.add(new JsonObject.Pair(key, readJsonArray()));
-                break;
-            case '-':
-            case '.':
-            case '+':
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                pairs.add(new JsonObject.Pair(key, readJsonNumber()));
-                break;
-            case 'n':
-                checkNull();
-                pairs.add(new JsonObject.Pair(key, JsonNull.instance()));
-                break;
-            case 't':
-            case 'f':
-                pairs.add(new JsonObject.Pair(key, JsonBoolean.create(readBoolean())));
-                break;
-            default:
-                throw createException("Unexpected json value type", b);
-            }
-            b = nextToken();
-            if (b == '}') {
-                return JsonObject.create(pairs);
-            } else if (b != ',') {
-                throw createException("Comma or object end expected", b);
-            }
-            b = nextToken();
-        }
-        throw createException("Unexpected end of the object. Possibly incomplete JSON");
-    }
-
-    @Override
-    public JsonArray readJsonArray() {
-        byte b = nextToken();
-        if (b == ']') {
-            return JsonArray.EMPTY_ARRAY;
-        }
-        List<JsonValue> values = new ArrayList<>();
-        while (hasNext()) {
-            switch (b) {
-            case '"':
-                values.add(readJsonString());
-                break;
-            case '{':
-                values.add(readJsonObject());
-                break;
-            case '[':
-                values.add(readJsonArray());
-                break;
-            case '-':
-            case '.':
-            case '+':
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                values.add(readJsonNumber());
-                break;
-            case 'n':
-                checkNull();
-                values.add(JsonNull.instance());
-                break;
-            case 't':
-            case 'f':
-                values.add(JsonBoolean.create(readBoolean()));
-                break;
-            default:
-                throw createException("Invalid JSON value type", b);
-            }
-            b = nextToken();
-            if (b == ']') {
-                return JsonArray.create(values);
-            } else if (b != ',') {
-                throw createException("Comma or array end expected", b);
-            }
-            b = nextToken();
-        }
-        throw createException("Unexpected end of the array. Possibly incomplete JSON");
-    }
-
-    @Override
+//    @Override
     public char[] readCharArray() {
         switch (currentByte()) {
         case '"':
@@ -528,10 +390,10 @@ final class JsonStreamParser implements JsonParser {
         case 'u':
             ensure(4); // Need 4 hex digits
             char tmp = (char) (
-                    (translateHex(buffer[++currentIndex]) << 12)
-                            + (translateHex(buffer[++currentIndex]) << 8)
-                            + (translateHex(buffer[++currentIndex]) << 4)
-                            + translateHex(buffer[++currentIndex]));
+                    (Parsers.translateHex(buffer[++currentIndex], this) << 12)
+                            + (Parsers.translateHex(buffer[++currentIndex], this) << 8)
+                            + (Parsers.translateHex(buffer[++currentIndex], this) << 4)
+                            + Parsers.translateHex(buffer[++currentIndex], this));
             // Handle JSON's UTF-16 surrogate pair encoding (\\uXXXX\\uYYYY for code points > U+FFFF)
             if (Character.isHighSurrogate(tmp)) {
                 // High surrogate: must be followed by a low surrogate
@@ -704,12 +566,14 @@ final class JsonStreamParser implements JsonParser {
         return JsonString.create(stringBytes, 0, length);
     }
 
-    void skipString() {
+    private void skipString() {
         boolean isEscaped = false;
         byte b;
+        ensure(1);
+        currentIndex++;
         while (true) {
             int index;
-            for (index = this.currentIndex + 1; index < this.bufferLength; index++) {
+            for (index = this.currentIndex; index < this.bufferLength; index++) {
                 b = this.buffer[index];
                 if (b == '\\') {
                     isEscaped = !isEscaped;
@@ -918,6 +782,63 @@ final class JsonStreamParser implements JsonParser {
 
         bufferingJsonValue = false;
         return negative ? -result : result;
+    }
+
+    @Override
+    public BigInteger readBigInteger() {
+        boolean inString = false;
+        int start = currentIndex;
+        if (buffer[start] == '"') {
+            ensure(1);
+            start++;
+            inString = true;
+        }
+        bufferingJsonValue = true;
+        jsonValueStart = start;
+        skipNumber();
+        int length = currentIndex - jsonValueStart + 1;
+        BigInteger bigInteger = new BigInteger(new String(buffer, jsonValueStart, length, StandardCharsets.US_ASCII));
+        bufferingJsonValue = false;
+        if (inString) {
+            ensure(1);
+            if (buffer[++currentIndex] != '"') {
+                throw createException("Expected the end of the string", buffer[currentIndex]);
+            }
+        }
+        return bigInteger;
+    }
+
+    @Override
+    public BigDecimal readBigDecimal() {
+        boolean inString = false;
+        if (buffer[currentIndex] == '"') {
+            ensure(1);
+            currentIndex++;
+            inString = true;
+        }
+        BigDecimal bigDecimal = new BigDecimal(readNumberAsCharArray());
+        if (inString) {
+            ensure(1);
+            if (buffer[++currentIndex] != '"') {
+                throw createException("Expected the end of the string", buffer[currentIndex]);
+            }
+        }
+        return bigDecimal;
+    }
+
+    @Override
+    public byte[] readBinary() {
+        if (currentByte() != '\"') {
+            throw createException("Binary data should be in a Base64 format and enclosed with double quotes", currentByte());
+        }
+        bufferingJsonValue = true;
+        jsonValueStart = currentIndex + 1;
+        skipString();
+        bufferingJsonValue = false;
+        int length = currentIndex - jsonValueStart;
+        byte[] bytes = new byte[length];
+        System.arraycopy(buffer, jsonValueStart, bytes, 0, length);
+        return Base64.getDecoder().decode(bytes);
     }
 
     @Override
@@ -2141,14 +2062,6 @@ final class JsonStreamParser implements JsonParser {
             return;
         }
         throw createException("Comma or the end of the array expected", b);
-    }
-
-    private int translateHex(byte b) {
-        int val = HEX_DIGITS[b & 0xFF];
-        if (val == -1) {
-            throw createException("Invalid hex digit found", b);
-        }
-        return val;
     }
 
     private boolean expectedNext(char c) {

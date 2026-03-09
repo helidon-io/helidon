@@ -16,15 +16,18 @@
 
 package io.helidon.json;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 
-class ArrayJsonParser implements JsonParser {
+class JsonParserArray extends JsonParserBase {
 
     static final int FNV_OFFSET_BASIS = 0x811c9dc5;
     static final int FNV_PRIME = 0x01000193;
@@ -41,8 +44,6 @@ class ArrayJsonParser implements JsonParser {
     static final boolean[] VALID_NUMBER_PARTS = new boolean[256];
     //Lookup table for whitespace detection
     static final boolean[] WHITESPACE_CHARS = new boolean[256];
-    //Lookup table for converting hexadecimal characters to their numeric values
-    static final int[] HEX_DIGITS = new int[256];
 
     /**
      * Cached POW10 for double fast path calculations.
@@ -83,17 +84,6 @@ class ArrayJsonParser implements JsonParser {
         WHITESPACE_CHARS[0x0C] = true; // FF
         WHITESPACE_CHARS[0x0D] = true; // CR
         WHITESPACE_CHARS[0x20] = true; // SPACE
-
-        Arrays.fill(HEX_DIGITS, -1);
-        for (int i = '0'; i <= '9'; ++i) {
-            HEX_DIGITS[i] = (i - '0');
-        }
-        for (int i = 'a'; i <= 'f'; ++i) {
-            HEX_DIGITS[i] = ((i - 'a') + 10);
-        }
-        for (int i = 'A'; i <= 'F'; ++i) {
-            HEX_DIGITS[i] = ((i - 'A') + 10);
-        }
     }
 
     private int stringBufferLength = 64;
@@ -107,12 +97,12 @@ class ArrayJsonParser implements JsonParser {
     private int mark = -1;
     private boolean replayMarked = false;
 
-    ArrayJsonParser(byte[] buffer) {
+    JsonParserArray(byte[] buffer) {
         this.buffer = buffer;
         this.bufferLength = buffer.length;
     }
 
-    ArrayJsonParser(byte[] buffer, int start, int length) {
+    JsonParserArray(byte[] buffer, int start, int length) {
         this.buffer = buffer;
         this.currentIndex = start;
         this.bufferLength = length;
@@ -158,149 +148,6 @@ class ArrayJsonParser implements JsonParser {
 
     byte readNextByte() {
         return buffer[++currentIndex];
-    }
-
-    @Override
-    public JsonValue readJsonValue() {
-        return switch (currentByte()) {
-            case '{' -> readJsonObject();
-            case '[' -> readJsonArray();
-            case '"' -> readJsonString();
-            case '-', '.', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> readJsonNumber();
-            case 't', 'f' -> JsonBoolean.create(readBoolean());
-            case 'n' -> {
-                checkNull();
-                yield JsonNull.instance();
-            }
-            default -> throw createException("Unexpected JSON value type", currentByte());
-        };
-    }
-
-    @Override
-    public JsonObject readJsonObject() {
-        if (currentByte() != '{') {
-            throw createException("Object start expected", currentByte());
-        }
-        byte b = nextToken();
-        if (b == '}') {
-            return JsonObject.EMPTY_OBJECT;
-        }
-        List<JsonObject.Pair> pairs = new ArrayList<>();
-        while (hasNext()) {
-            JsonString key;
-            if (b == '"') {
-                key = readJsonString();
-            } else {
-                throw createException("Key name start expected", b);
-            }
-            b = nextToken();
-            if (b != ':') {
-                throw createException("Colon expected", b);
-            }
-            b = nextToken();
-            switch (b) {
-            case '"':
-                pairs.add(new JsonObject.Pair(key, readJsonString()));
-                break;
-            case '{':
-                pairs.add(new JsonObject.Pair(key, readJsonObject()));
-                break;
-            case '[':
-                pairs.add(new JsonObject.Pair(key, readJsonArray()));
-                break;
-            case '-':
-            case '.':
-            case '+':
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                pairs.add(new JsonObject.Pair(key, readJsonNumber()));
-                break;
-            case 'n':
-                checkNull();
-                pairs.add(new JsonObject.Pair(key, JsonNull.instance()));
-                break;
-            case 't':
-            case 'f':
-                pairs.add(new JsonObject.Pair(key, JsonBoolean.create(readBoolean())));
-                break;
-            default:
-                throw createException("Unexpected json value type", b);
-            }
-            b = nextToken();
-            if (b == '}') {
-                return JsonObject.create(pairs);
-            } else if (b != ',') {
-                throw createException("Comma or object end expected", b);
-            }
-            b = nextToken();
-        }
-        throw createException("Unexpected end of the object. Possibly incomplete JSON");
-    }
-
-    @Override
-    public JsonArray readJsonArray() {
-        if (currentByte() != '[') {
-            throw createException("Array start expected", currentByte());
-        }
-        byte b = nextToken();
-        if (b == ']') {
-            return JsonArray.EMPTY_ARRAY;
-        }
-        List<JsonValue> values = new ArrayList<>();
-        while (hasNext()) {
-            switch (b) {
-            case '"':
-                values.add(readJsonString());
-                break;
-            case '{':
-                values.add(readJsonObject());
-                break;
-            case '[':
-                values.add(readJsonArray());
-                break;
-            case '-':
-            case '.':
-            case '+':
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                values.add(readJsonNumber());
-                break;
-            case 'n':
-                checkNull();
-                values.add(JsonNull.instance());
-                break;
-            case 't':
-            case 'f':
-                values.add(JsonBoolean.create(readBoolean()));
-                break;
-            default:
-                throw createException("Invalid JSON value type", b);
-            }
-            b = nextToken();
-            if (b == ']') {
-                return JsonArray.create(values);
-            } else if (b != ',') {
-                throw createException("Comma or array end expected", b);
-            }
-            b = nextToken();
-        }
-        throw createException("Unexpected end of the array. Possibly incomplete JSON");
     }
 
     @Override
@@ -371,7 +218,7 @@ class ArrayJsonParser implements JsonParser {
         throw createException("End of the string expected. Incomplete JSON");
     }
 
-    @Override
+//    @Override
     public char[] readCharArray() {
         switch (currentByte()) {
         case '"':
@@ -686,6 +533,58 @@ class ArrayJsonParser implements JsonParser {
         return negative ? -result : result;
     }
 
+    @Override
+    public BigInteger readBigInteger() {
+        boolean inString = false;
+        int start = currentIndex;
+        if (buffer[start] == '"') {
+            ensure(1);
+            start = ++currentIndex;
+            inString = true;
+        }
+        skipNumber();
+        int length = currentIndex - start + 1;
+        BigInteger bigInteger = new BigInteger(new String(buffer, start, length, StandardCharsets.US_ASCII));
+        if (inString) {
+            ensure(1);
+            if (buffer[++currentIndex] != '"') {
+                throw createException("Expected the end of the string", buffer[currentIndex]);
+            }
+        }
+        return bigInteger;
+    }
+
+    @Override
+    public BigDecimal readBigDecimal() {
+        boolean inString = false;
+        if (buffer[currentIndex] == '"') {
+            ensure(1);
+            currentIndex++;
+            inString = true;
+        }
+        BigDecimal bigDecimal = new BigDecimal(readNumberAsCharArray());
+        if (inString) {
+            ensure(1);
+            if (buffer[++currentIndex] != '"') {
+                throw createException("Expected the end of the string", buffer[currentIndex]);
+            }
+        }
+        return bigDecimal;
+    }
+
+    @Override
+    public byte[] readBinary() {
+        if (currentByte() != '\"') {
+            throw createException("Binary data should be in a Base64 format and enclosed with double quotes", currentByte());
+        }
+        int start = currentIndex + 1;
+        skipString();
+        int length = currentIndex - start;
+        byte[] bytes = new byte[length];
+        System.arraycopy(buffer, start, bytes, 0, length);
+        return Base64.getDecoder().decode(bytes);
+    }
+
     void ensure(int amount) {
         if (currentIndex + amount >= bufferLength) {
             throw createException("There is not enough data to be read. Incomplete JSON");
@@ -871,10 +770,10 @@ class ArrayJsonParser implements JsonParser {
         case 'u':
             ensure(4); // Need 4 hex digits
             char tmp = (char) (
-                    (translateHex(buffer[++currentIndex]) << 12)
-                            + (translateHex(buffer[++currentIndex]) << 8)
-                            + (translateHex(buffer[++currentIndex]) << 4)
-                            + translateHex(buffer[++currentIndex]));
+                    (Parsers.translateHex(buffer[++currentIndex], this) << 12)
+                            + (Parsers.translateHex(buffer[++currentIndex], this) << 8)
+                            + (Parsers.translateHex(buffer[++currentIndex], this) << 4)
+                            + Parsers.translateHex(buffer[++currentIndex], this));
             // Handle JSON's UTF-16 surrogate pair encoding (\\uXXXX\\uYYYY for code points > U+FFFF)
             if (Character.isHighSurrogate(tmp)) {
                 // High surrogate: must be followed by a low surrogate
@@ -2101,14 +2000,6 @@ class ArrayJsonParser implements JsonParser {
             return;
         }
         throw createException("Comma or the end of the array expected", b);
-    }
-
-    private int translateHex(byte b) {
-        int val = HEX_DIGITS[b & 0xFF];
-        if (val == -1) {
-            throw createException("Invalid hex digit found", b);
-        }
-        return val;
     }
 
 }

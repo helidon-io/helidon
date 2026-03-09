@@ -16,8 +16,6 @@
 
 package io.helidon.json.binding.converters;
 
-import java.math.BigInteger;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -28,32 +26,22 @@ import io.helidon.service.registry.Service;
 
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
-class BigIntegerConverter implements JsonConverter<BigInteger> {
+class BinaryDataConverter implements JsonConverter<byte[]> {
 
-    private static final GenericType<BigInteger> TYPE = GenericType.create(BigInteger.class);
+    private static final GenericType<byte[]> TYPE = GenericType.create(byte[].class);
 
     @Override
-    public BigInteger deserialize(JsonParser parser) {
-        return parser.readBigInteger();
+    public byte[] deserialize(JsonParser parser) {
+        return parser.readBinary();
     }
 
     @Override
-    public boolean isMapKeySerializer() {
-        return true;
+    public void serialize(JsonGenerator generator, byte[] instance, boolean writeNulls) {
+        generator.writeBinary(instance);
     }
 
     @Override
-    public String serializeAsMapKey(BigInteger instance) {
-        return instance.toString();
-    }
-
-    @Override
-    public void serialize(JsonGenerator generator, BigInteger instance, boolean writeNulls) {
-        generator.write(instance);
-    }
-
-    @Override
-    public GenericType<BigInteger> type() {
+    public GenericType<byte[]> type() {
         return TYPE;
     }
 }

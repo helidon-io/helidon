@@ -16,6 +16,8 @@
 
 package io.helidon.json;
 
+import java.util.Base64;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -100,6 +102,39 @@ abstract class JsonGeneratorTest {
         }
 
         assertThat(getGeneratedJson(), is("null"));
+    }
+
+    @Test
+    public void testWriteBinaryAsRootValue() throws Exception {
+        byte[] value = "my-test-value".getBytes();
+        try (JsonGenerator generator = createGenerator()) {
+            generator.writeBinary(value);
+        }
+
+        assertThat(getGeneratedJson(), is("\"" + Base64.getEncoder().encodeToString(value) + "\""));
+    }
+
+    @Test
+    public void testWriteBinaryAsObjectField() throws Exception {
+        byte[] value = "hello".getBytes();
+        try (JsonGenerator generator = createGenerator()) {
+            generator.writeObjectStart()
+                    .writeBinary("payload", value)
+                    .writeObjectEnd();
+        }
+
+        assertThat(getGeneratedJson(), is("{\"payload\":\"" + Base64.getEncoder().encodeToString(value) + "\"}"));
+    }
+
+    @Test
+    public void testWriteEmptyBinaryAsObjectField() throws Exception {
+        try (JsonGenerator generator = createGenerator()) {
+            generator.writeObjectStart()
+                    .writeBinary("payload", new byte[0])
+                    .writeObjectEnd();
+        }
+
+        assertThat(getGeneratedJson(), is("{\"payload\":\"\"}"));
     }
 
     @Test

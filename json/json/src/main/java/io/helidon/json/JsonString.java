@@ -53,7 +53,11 @@ public final class JsonString extends JsonValue {
         return new JsonString(value);
     }
 
-    static JsonString create(byte[] buffer, int start, int length) {
+    public static JsonString create(byte[] value) {
+        return new JsonString(value, 0, value.length);
+    }
+
+    public static JsonString create(byte[] buffer, int start, int length) {
         return new JsonString(buffer, start, length);
     }
 
@@ -74,9 +78,8 @@ public final class JsonString extends JsonValue {
         return resolvedValue;
     }
 
-    String resolveValue() {
+    private void resolveValue() {
         resolvedValue = new String(buffer, start, length, StandardCharsets.UTF_8);
-        return resolvedValue;
     }
 
     @Override

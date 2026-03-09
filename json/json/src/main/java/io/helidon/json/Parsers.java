@@ -16,16 +16,42 @@
 
 package io.helidon.json;
 
-class Parsers {
+import java.util.Arrays;
+
+public final class Parsers {
+
+    //Lookup table for converting hexadecimal characters to their numeric values
+    private static final int[] HEX_DIGITS = new int[256];
+
+    static {
+        Arrays.fill(HEX_DIGITS, -1);
+        for (int i = '0'; i <= '9'; ++i) {
+            HEX_DIGITS[i] = (i - '0');
+        }
+        for (int i = 'a'; i <= 'f'; ++i) {
+            HEX_DIGITS[i] = ((i - 'a') + 10);
+        }
+        for (int i = 'A'; i <= 'F'; ++i) {
+            HEX_DIGITS[i] = ((i - 'A') + 10);
+        }
+    }
 
     private Parsers() {
     }
 
-    static String toPrintableForm(byte c) {
+    public static int translateHex(byte b, JsonParser parser) {
+        int val = HEX_DIGITS[b & 0xFF];
+        if (val == -1) {
+            throw parser.createException("Invalid hex digit found", b);
+        }
+        return val;
+    }
+
+    public static String toPrintableForm(byte c) {
         return toPrintableForm((char) c);
     }
 
-    static String toPrintableForm(char c) {
+    public static String toPrintableForm(char c) {
         if (Character.isDigit(c) || Character.isAlphabetic(c)) {
             return "'" + c + "'";
         }
