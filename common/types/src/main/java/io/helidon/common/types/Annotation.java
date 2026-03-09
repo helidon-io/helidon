@@ -805,6 +805,15 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
     List<Annotation> metaAnnotations();
 
     /**
+     * The element used to create this instance.
+     * The type of the object depends on the environment.
+     *
+     * @return originating element
+     */
+    @Override
+    Optional<Object> originatingElement();
+
+    /**
      * Fluent API builder base for {@link Annotation}.
      *
      * @param <BUILDER> type of the builder extending this abstract builder
@@ -819,6 +828,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         private Map<String, AnnotationProperty> properties = new LinkedHashMap<>();
         private Map<String, Object> values = new LinkedHashMap<>();
         private TypeName typeName;
+        private Object originatingElement;
 
         /**
          * Protected to support extensibility.
@@ -846,6 +856,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
                 this.metaAnnotations.clear();
             }
             addMetaAnnotations(prototype.metaAnnotations());
+            originatingElement(prototype.originatingElement());
             return self();
         }
 
@@ -878,6 +889,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             } else {
                 metaAnnotations(builder.metaAnnotations());
             }
+            builder.originatingElement().ifPresent(it -> originatingElement(it));
             return self();
         }
 
@@ -1129,6 +1141,34 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         }
 
         /**
+         * The element used to create this instance.
+         * The type of the object depends on the environment.
+         *
+         * @param originatingElement originating element
+         * @return updated builder instance
+         * @see #originatingElement()
+         */
+        public BUILDER originatingElement(Object originatingElement) {
+            Objects.requireNonNull(originatingElement);
+            this.originatingElement = originatingElement;
+            return self();
+        }
+
+        /**
+         * The element used to create this instance.
+         * The type of the object depends on the environment.
+         *
+         * @param originatingElement originating element
+         * @return updated builder instance
+         * @see #originatingElement()
+         */
+        BUILDER originatingElement(Optional<?> originatingElement) {
+            Objects.requireNonNull(originatingElement);
+            this.originatingElement = originatingElement.map(Object.class::cast).orElse(this.originatingElement);
+            return self();
+        }
+
+        /**
          * The type name, e.g., {@link java.util.Objects} -> "java.util.Objects".
          *
          * @return the annotation type name
@@ -1166,6 +1206,16 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             return metaAnnotations;
         }
 
+        /**
+         * The element used to create this instance.
+         * The type of the object depends on the environment.
+         *
+         * @return originating element
+         */
+        public Optional<Object> originatingElement() {
+            return Optional.ofNullable(originatingElement);
+        }
+
         @Override
         public String toString() {
             return "AnnotationBuilder{"
@@ -1201,6 +1251,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             private final Map<String, AnnotationProperty> properties;
             private final Map<String, Object> values;
             private final TypeName typeName;
+            private final Optional<Object> originatingElement;
 
             /**
              * Create an instance providing a builder.
@@ -1212,6 +1263,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
                 this.values = Collections.unmodifiableMap(new LinkedHashMap<>(builder.values()));
                 this.properties = Collections.unmodifiableMap(new LinkedHashMap<>(builder.properties()));
                 this.metaAnnotations = List.copyOf(builder.metaAnnotations());
+                this.originatingElement = builder.originatingElement();
             }
 
             @Override
@@ -1233,6 +1285,11 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             @Override
             public List<Annotation> metaAnnotations() {
                 return metaAnnotations;
+            }
+
+            @Override
+            public Optional<Object> originatingElement() {
+                return originatingElement;
             }
 
             @Override
