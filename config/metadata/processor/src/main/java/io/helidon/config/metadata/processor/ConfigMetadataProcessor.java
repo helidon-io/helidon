@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,32 +24,24 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 
-import static io.helidon.config.metadata.processor.UsedTypes.CONFIGURED;
-import static io.helidon.config.metadata.processor.UsedTypes.META_CONFIGURED;
-import static io.helidon.config.metadata.processor.UsedTypes.META_OPTION;
-import static io.helidon.config.metadata.processor.UsedTypes.META_OPTIONS;
-
 /**
- * Annotation processor.
+ * Config metadata annotation processor.
  *
  * @deprecated use {@code helidon-config-metadata-codegen} instead
  */
 @Deprecated(forRemoval = true, since = "4.1.0")
 public class ConfigMetadataProcessor extends AbstractProcessor {
-    private ConfigMetadataHandler handler;
 
     /**
      * Public constructor required for service loader.
      */
     public ConfigMetadataProcessor() {
+        super();
     }
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        return Set.of(META_CONFIGURED.fqName(),
-                      META_OPTION.fqName(),
-                      META_OPTIONS.fqName(),
-                      CONFIGURED.fqName());
+        return Set.of("io.helidon.config.metadata.Configured");
     }
 
     @Override
@@ -59,18 +51,13 @@ public class ConfigMetadataProcessor extends AbstractProcessor {
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
-        super.init(processingEnv);
-
-        handler = new ConfigMetadataHandler();
-        handler.init(processingEnv);
-
         processingEnv.getMessager()
                 .printWarning("Module helidon-config-metadata-processor is deprecated, "
-                                       + "please use io.helidon.config.metadata:helidon-config-metadata-codegen");
+                                       + "use io.helidon.config.metadata:helidon-config-metadata-codegen instead");
     }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        return handler.process(roundEnv);
+        return false;
     }
 }

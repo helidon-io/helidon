@@ -30,31 +30,26 @@
     <name>Helidon Config Metadata Annotation Processor</name>
 
     <description>
-        Configuration Metadata processing.
+        Configuration metadata processing. Deprecated, use helidon-config-metadata-codegen instead.
     </description>
+
+    <properties>
+        <javadoc.fail-on-warnings>false</javadoc.fail-on-warnings>
+        <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
+    </properties>
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-apt</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-types</artifactId>
+            <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common.processor</groupId>
-            <artifactId>helidon-common-processor</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.metadata</groupId>
-            <artifactId>helidon-metadata-hson</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
+            <groupId>io.helidon.config.metadata</groupId>
+            <artifactId>helidon-config-metadata-codegen</artifactId>
         </dependency>
     </dependencies>
 
