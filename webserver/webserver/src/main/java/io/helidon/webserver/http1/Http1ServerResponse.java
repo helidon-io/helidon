@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.ServerResponseBase;
 import io.helidon.webserver.http.spi.Sink;
@@ -313,6 +314,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                         @Override
                         public ServerResponse serverResponse() {
                             return Http1ServerResponse.this;
+                        }
+
+                        @Override
+                        public ServerRequest serverRequest() {
+                            return Http1ServerResponse.this.request;
                         }
 
                         @Override

@@ -37,6 +37,10 @@
             <artifactId>helidon-http-sse</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.http.encoding</groupId>
+            <artifactId>helidon-http-encoding</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>

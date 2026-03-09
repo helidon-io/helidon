@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ public class DeflateEncoding implements ContentEncoding {
         return new ContentEncoder() {
             @Override
             public OutputStream apply(OutputStream network) {
-                return new DeflaterOutputStream(network);
+                return new DeflaterOutputStream(network, true);
             }
 
             @Override
