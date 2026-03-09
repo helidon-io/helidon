@@ -144,11 +144,16 @@ public final class JsonNumber extends JsonValue {
 
     @Override
     public void toJson(JsonGenerator generator) {
-        BigDecimal bigDecimal = bigDecimalValue();
-        if (bigDecimal.stripTrailingZeros().scale() <= 0) {
-            generator.write(bigDecimal.longValue());
-        } else {
-            generator.write(bigDecimal.doubleValue());
+        if (bigDecimalValue != null) {
+            generator.write(bigDecimalValue);
+            return;
         }
+        if (buffer.length == 0) {
+            generator.write(doubleValue);
+            return;
+        }
+
+        JsonParser parser = new JsonParserArray(buffer, start, start + length);
+        generator.write(parser.readBigDecimal());
     }
 }

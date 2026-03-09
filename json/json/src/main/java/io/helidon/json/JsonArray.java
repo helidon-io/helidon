@@ -114,6 +114,9 @@ public final class JsonArray extends JsonValue {
      * @return an Optional containing the element at the specified position, or empty if out of bounds
      */
     public Optional<JsonValue> get(int index) {
+        if (index < 0 || index >= jsonValues.size()) {
+            return Optional.empty();
+        }
         return Optional.ofNullable(jsonValues.get(index));
     }
 
@@ -125,6 +128,9 @@ public final class JsonArray extends JsonValue {
      * @return the element at the specified position, or the default value
      */
     public JsonValue get(int index, JsonValue defaultValue) {
+        if (index < 0 || index >= jsonValues.size()) {
+            return defaultValue;
+        }
         JsonValue jsonValue = jsonValues.get(index);
         return jsonValue == null ? defaultValue : jsonValue;
     }
