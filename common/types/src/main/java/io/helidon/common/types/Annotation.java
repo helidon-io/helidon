@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
@@ -827,8 +828,8 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         private boolean isValuesMutated;
         private Map<String, AnnotationProperty> properties = new LinkedHashMap<>();
         private Map<String, Object> values = new LinkedHashMap<>();
-        private TypeName typeName;
         private Object originatingElement;
+        private TypeName typeName;
 
         /**
          * Protected to support extensibility.
@@ -889,7 +890,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             } else {
                 metaAnnotations(builder.metaAnnotations());
             }
-            builder.originatingElement().ifPresent(it -> originatingElement(it));
+            builder.originatingElement().ifPresent(this::originatingElement);
             return self();
         }
 
@@ -1141,16 +1142,13 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         }
 
         /**
-         * The element used to create this instance.
-         * The type of the object depends on the environment.
+         * Clear existing value of originatingElement.
          *
-         * @param originatingElement originating element
          * @return updated builder instance
          * @see #originatingElement()
          */
-        public BUILDER originatingElement(Object originatingElement) {
-            Objects.requireNonNull(originatingElement);
-            this.originatingElement = originatingElement;
+        public BUILDER clearOriginatingElement() {
+            this.originatingElement = null;
             return self();
         }
 
@@ -1162,9 +1160,9 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          * @return updated builder instance
          * @see #originatingElement()
          */
-        BUILDER originatingElement(Optional<?> originatingElement) {
+        public BUILDER originatingElement(Object originatingElement) {
             Objects.requireNonNull(originatingElement);
-            this.originatingElement = originatingElement.map(Object.class::cast).orElse(this.originatingElement);
+            this.originatingElement = originatingElement;
             return self();
         }
 
@@ -1243,6 +1241,21 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         }
 
         /**
+         * The element used to create this instance.
+         * The type of the object depends on the environment.
+         *
+         * @param originatingElement originating element
+         * @return updated builder instance
+         * @see #originatingElement()
+         */
+        @SuppressWarnings("unchecked")
+        BUILDER originatingElement(Optional<?> originatingElement) {
+            Objects.requireNonNull(originatingElement);
+            this.originatingElement = originatingElement.map(Object.class::cast).orElse(this.originatingElement);
+            return self();
+        }
+
+        /**
          * Generated implementation of the prototype, can be extended by descendant prototype implementations.
          */
         protected static class AnnotationImpl implements Annotation {
@@ -1250,8 +1263,8 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             private final List<Annotation> metaAnnotations;
             private final Map<String, AnnotationProperty> properties;
             private final Map<String, Object> values;
-            private final TypeName typeName;
             private final Optional<Object> originatingElement;
+            private final TypeName typeName;
 
             /**
              * Create an instance providing a builder.
@@ -1263,7 +1276,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
                 this.values = Collections.unmodifiableMap(new LinkedHashMap<>(builder.values()));
                 this.properties = Collections.unmodifiableMap(new LinkedHashMap<>(builder.properties()));
                 this.metaAnnotations = List.copyOf(builder.metaAnnotations());
-                this.originatingElement = builder.originatingElement();
+                this.originatingElement = builder.originatingElement().map(Function.identity());
             }
 
             @Override
