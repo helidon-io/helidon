@@ -27,7 +27,9 @@ import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.ObjectStorageClient;
 
-@Generated(value = "io.helidon.integrations.oci.sdk.codegen.OciInjectionCodegenObserver", trigger = "com.oracle.bmc.objectstorage.ObjectStorage")
+@Generated(
+    value = "io.helidon.integrations.oci.sdk.codegen.OciInjectionCodegenObserver",
+    trigger = "com.oracle.bmc.objectstorage.ObjectStorage")
 @Service.Singleton
 @Weight(99.0D)
 @Service.ExternalContracts(ObjectStorage.class)
