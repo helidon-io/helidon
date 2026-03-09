@@ -25,15 +25,15 @@ include::{rootdir}/includes/attributes.adoc[]
 
 Helidon 4.x introduces significant changes to APIs and runtime behavior. Use this guide to help you understand the changes required to transition a Helidon SE 3.x application to Helidon 4.x.
 
-NOTE: Helidon adheres to https://semver.org/spec/v2.0.0.html[Semantic Versioning]. As such, Helidon 4.x includes changes that are not backward compatible with Helidon 3.x.
-
-TIP: The link:{helidon-github-examples-url}/[Helidon Examples repository] is a good resource for understanding how things work in Helidon 4.x.
-
 == Significant Changes
 
 The following sections describe the changes between Helidon 3.x and Helidon 4.x that can significantly impact your development process. Review them carefully.
 
 You can also review the https://github.com/helidon-io/helidon/blob/main/CHANGELOG.md[Helidon repository CHANGELOG] to see a detailed history of changes made to the project.
+
+NOTE: Helidon adheres to https://semver.org/spec/v2.0.0.html[Semantic Versioning]. As such, Helidon 4.x includes changes that are not backward compatible with Helidon 3.x.
+
+TIP: The link:{helidon-github-examples-url}/[Helidon Examples repository] is a good resource for understanding how things work in Helidon 4.x.
 
 === Java SE Support
 
