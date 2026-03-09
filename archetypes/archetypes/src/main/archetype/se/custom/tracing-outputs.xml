@@ -33,7 +33,7 @@ tracing:
   service: helidon-tracing-service
 ]]></value>
             </list>
-            <list key="config-properties" if="${tracing.provider} == 'jaeger'">
+            <list key="config-properties" if="${tracing.provider} == 'opentelemetry'">
                 <value>tracing.global=false</value>
             </list>
             <list key="dependencies">
@@ -45,9 +45,9 @@ tracing:
                     <value key="groupId">io.helidon.webserver</value>
                     <value key="artifactId">helidon-webserver-http2</value>
                 </map>
-                <map if="${tracing.provider} == 'jaeger'">
+                <map if="${tracing.provider} == 'opentelemetry'">
                     <value key="groupId">io.helidon.tracing.providers</value>
-                    <value key="artifactId">helidon-tracing-providers-jaeger</value>
+                    <value key="artifactId">helidon-tracing-providers-opentelemetry</value>
                 </map>
                 <map if="${tracing.provider} == 'zipkin'">
                     <value key="groupId">io.helidon.tracing.providers</value>

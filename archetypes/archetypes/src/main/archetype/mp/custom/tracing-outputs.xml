@@ -20,8 +20,8 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <methods>
-        <method name="tracing-jaeger">
-            <output if="${tracing.provider} == 'jaeger'">
+        <method name="tracing-opentelemetry">
+            <output if="${tracing.provider} == 'opentelemetry'">
                 <model>
                     <list key="dependencies">
                         <map order="800">
@@ -47,7 +47,7 @@
             </output>
         </method>
     </methods>
-    <call method="tracing-jaeger"/>
+    <call method="tracing-opentelemetry"/>
     <call method="tracing-zipkin"/>
     <output>
         <templates engine="mustache" transformations="packaged,mustache">
