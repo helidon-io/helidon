@@ -58,7 +58,14 @@ public final class TestCompiler {
         this.modulepath = List.copyOf(builder.modulepath);
         this.opts = List.copyOf(builder.opts);
         this.sources = List.copyOf(builder.sources);
-        this.workDir = builder.workDir;
+        if (builder.workDir == null) {
+            this.workDir = TestPaths.newWorkDir(it -> {
+                var cls = it.getDeclaringClass();
+                return !cls.equals(TestCompiler.Builder.class)  && !cls.equals(TestCompiler.class);
+            });
+        } else {
+            this.workDir = builder.workDir;
+        }
         this.printDiagnostics = builder.printDiagnostics;
     }
 
@@ -78,18 +85,14 @@ public final class TestCompiler {
      */
     public Result compile() {
         try {
-            var dir = workDir;
-            if (dir == null) {
-                dir = TestPaths.newWorkDir(it -> !it.getDeclaringClass().equals(TestCompiler.class));
-            }
             var compiler = ToolProvider.getSystemJavaCompiler();
             var diagnostics = new DiagnosticCollector<>();
             var manager = compiler.getStandardFileManager(diagnostics, null, null);
-            var classOutput = dir.resolve("classes");
+            var classOutput = workDir.resolve("classes");
             if (!Files.exists(classOutput)) {
                 Files.createDirectories(classOutput);
             }
-            var sourceOuput = dir.resolve("generated-sources");
+            var sourceOuput = workDir.resolve("generated-sources");
             if (!Files.exists(sourceOuput)) {
                 Files.createDirectories(sourceOuput);
             }
@@ -314,7 +317,7 @@ public final class TestCompiler {
          * @param clazz class used to derive locations
          * @return this builder
          */
-        public Builder addModulePath(Class<?> clazz) {
+        public Builder addModulepath(Class<?> clazz) {
             Objects.requireNonNull(clazz, "clazz is null");
 
             modulepath.add(TestPaths.paths(clazz));
@@ -327,7 +330,7 @@ public final class TestCompiler {
          * @param classes classes used to derive locations
          * @return this builder
          */
-        public Builder addModulePath(List<Class<?>> classes) {
+        public Builder addModulepath(List<Class<?>> classes) {
             for (var cls : classes) {
                 modulepath.add(TestPaths.paths(cls));
             }
@@ -339,11 +342,11 @@ public final class TestCompiler {
          *
          * @param classes classes used to derive locations to replace configured value
          * @return this builder
-         * @see #modulePathEntries(java.util.List)
+         * @see #modulepathEntries(java.util.List)
          */
-        public Builder modulePath(List<Class<?>> classes) {
+        public Builder modulepath(List<Class<?>> classes) {
             modulepath.clear();
-            return addModulePath(classes);
+            return addModulepath(classes);
         }
 
         /**
@@ -352,7 +355,7 @@ public final class TestCompiler {
          * @param path path
          * @return this builder
          */
-        public Builder addModulePathEntry(Path path) {
+        public Builder addModulepathEntry(Path path) {
             Objects.requireNonNull(path, "path is null");
 
             this.modulepath.add(path);
@@ -365,7 +368,7 @@ public final class TestCompiler {
          * @param paths paths
          * @return this builder
          */
-        public Builder addModulePathEntries(List<Path> paths) {
+        public Builder addModulepathEntries(List<Path> paths) {
             Objects.requireNonNull(paths, "paths is null");
 
             modulepath.addAll(paths);
@@ -377,11 +380,11 @@ public final class TestCompiler {
          *
          * @param paths paths to replace configured value
          * @return this builder
-         * @see #modulePath(java.util.List)
+         * @see #modulepath(java.util.List)
          */
-        public Builder modulePathEntries(List<Path> paths) {
+        public Builder modulepathEntries(List<Path> paths) {
             modulepath.clear();
-            return addModulePathEntries(paths);
+            return addModulepathEntries(paths);
         }
 
         /**

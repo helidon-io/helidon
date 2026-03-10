@@ -225,6 +225,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.config.metadata</groupId>
+                <artifactId>helidon-config-metadata-model</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.config.metadata</groupId>
                 <artifactId>helidon-config-metadata-docs</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

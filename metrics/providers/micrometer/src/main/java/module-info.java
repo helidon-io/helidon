@@ -27,6 +27,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.metrics.providers.micrometer {
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires io.helidon.metrics.api;
     requires micrometer.core;

@@ -1,0 +1,44 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeOptionsConfig
+
+== Description
+
+++++
+<code>N/A</code>.
+++++
+
+== Usages
+
+
+// tag::config[]
+
+== Configuration options
+
+
+|===
+|Key|Kind|Type|Default Value|Description
+
+|[[a5a0ed-features]] xref:{rootdir}/config/com_acme_AcmeFeature.adoc[`features`]
+|`LIST`
+|`c.a.AcmeFeature`
+|{nbsp}
+|pass:[Dynamic features]
+
+|[[a41f37-host]] `host`
+|`VALUE`
+|`String`
+|`localhost`
+|pass:[Listen address]
+
+|[[adfe08-port]] `port`
+|`VALUE`
+|`Integer`
+|`8080`
+|pass:[Listen port]
+
+|===
+// end::config[]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

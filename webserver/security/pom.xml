@@ -44,6 +44,11 @@
             <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
             <scope>provided</scope>
@@ -59,15 +64,6 @@
         <dependency>
             <groupId>io.helidon.security.providers</groupId>
             <artifactId>helidon-security-providers-common</artifactId>
-        </dependency>
-        <dependency>
-            <!--
-            emits warning: unknown enum constant Kind.LIST when not on classpath during compilation
-            the annotation that triggers it has CLASS retention, so this is a bad warning...
-            https://bugs.openjdk.org/browse/JDK-8305250 -->
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

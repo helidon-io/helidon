@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,8 @@ import io.helidon.codegen.spi.CodegenExtensionProvider;
 import io.helidon.common.types.TypeName;
 
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.CONFIGURED;
-import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.META_CONFIGURED;
-import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.META_OPTION;
-import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.META_OPTIONS;
+import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.OPTION;
+import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.OPTIONS;
 
 /**
  * A Java {@link java.util.ServiceLoader} service implementation to add config metadata code generation.
@@ -45,9 +44,6 @@ public class ConfigMetadataCodegenProvider implements CodegenExtensionProvider {
 
     @Override
     public Set<TypeName> supportedAnnotations() {
-        return Set.of(META_CONFIGURED,
-                      META_OPTION,
-                      META_OPTIONS,
-                      CONFIGURED);
+        return Set.of(CONFIGURED, OPTION, OPTIONS);
     }
 }

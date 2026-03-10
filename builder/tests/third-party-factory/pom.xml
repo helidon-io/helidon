@@ -48,6 +48,11 @@
             <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.metadata</groupId>
             <artifactId>helidon-metadata</artifactId>
             <scope>test</scope>
@@ -75,6 +80,11 @@
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metadata</groupId>
+            <artifactId>helidon-metadata-hson</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

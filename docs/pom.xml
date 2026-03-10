@@ -37,6 +37,7 @@
     </properties>
 
     <dependencies>
+        <!--suppress VulnerableLibrariesLocal -->
         <dependency>
             <groupId>io.helidon</groupId>
             <artifactId>helidon-all</artifactId>
@@ -220,6 +221,7 @@
                     <dependencyExcludes>
                         <exclude>*:*-tests</exclude>
                         <exclude>io.helidon.config.metadata:helidon-config-metadata-docs</exclude>
+                        <exclude>io.helidon.config.metadata:helidon-config-metadata-model</exclude>
                     </dependencyExcludes>
                     <sourceExcludes>
                         <exclude>**/src/it</exclude>

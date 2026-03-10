@@ -16,22 +16,25 @@
 
 package io.helidon.builder.tests.third.party.factory;
 
-import java.io.IOException;
+import java.util.List;
+import java.util.function.Function;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.metadata.MetadataConstants;
 import io.helidon.metadata.hson.Hson;
 
+import org.hamcrest.FeatureMatcher;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
-import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 public class LoggerPrototypeTest {
     @Test
@@ -69,62 +72,45 @@ public class LoggerPrototypeTest {
     }
 
     @Test
-    public void testGeneratedMetadata() throws IOException {
-        String configMetaLocation = MetadataConstants.LOCATION + "/" + MetadataConstants.CONFIG_METADATA_FILE;
+    public void testGeneratedMetadata() {
+        var is = getClass().getResourceAsStream("/META-INF/helidon/config-metadata.json");
+        assertThat(is, is(not(nullValue())));
 
-        try (var stream = LoggerConfigBlueprint.class.getClassLoader()
-                .getResourceAsStream(configMetaLocation)) {
+        var actual = Hson.parse(is).asArray();
 
-            assertThat(configMetaLocation + " file must be generated", stream, notNullValue());
+        assertThat(actual.value(), is(hasItem(allOf(
+                hasString("module", is("io.helidon.builder.tests.third.party.factory")),
+                hasArray("types", allOf(
+                        hasItem(allOf(
+                                hasString("type", is("io.helidon.builder.tests.third.party.factory.UsingConfig")),
+                                hasString("description", is("<code>N/A</code>")))),
+                        hasItem(allOf(
+                                hasString("type", is("java.lang.System.Logger")),
+                                hasString("description", is("Configuration object for <code>java.lang.System.Logger</code>"))))
+                ))
+        ))));
+    }
 
-            Hson.Value<?> parsed = Hson.parse(stream);
-            // we assume this works, as we test the config metadata generation elsewhere, this is
-            // just to test the content is aligned with our prototypes
-            var array = parsed.asArray();
-            var structs = array.getStructs();
-            assertThat("There should be one module only", structs, hasSize(1));
-            var module = structs.getFirst();
-            assertThat(module.stringValue("module"), optionalValue(is("io.helidon.builder.tests.third.party.factory")));
-            var typesOpt = module.arrayValue("types");
-            assertThat("We should have \"types\" array", typesOpt, optionalPresent());
-            var types = typesOpt.get().getStructs();
-            assertThat("There should be two elements in the \"types\" array", types, hasSize(2));
-
-            Hson.Struct loggerStruct = null;
-            Hson.Struct usingStruct = null;
-            for (Hson.Struct typeStruct : types) {
-                var typeOpt = typeStruct.stringValue("type");
-                assertThat("Eeach type elmeent must have a \"type\" string value", typeOpt, optionalPresent());
-                var type = typeOpt.get();
-                switch (type) {
-                case "java.lang.System.Logger":
-                    loggerStruct = typeStruct;
-                    break;
-                case "io.helidon.builder.tests.third.party.factory.UsingConfig":
-                    usingStruct = typeStruct;
-                    break;
-                default:
-                    fail("Unexpected type in config metadata: " + type);
-                }
+    static Matcher<Hson.Value<?>> hasArray(String name, Matcher<List<Hson.Struct>> matcher) {
+        return new FeatureMatcher<>(matcher, "has property " + name, name) {
+            @Override
+            protected List<Hson.Struct> featureValueOf(Hson.Value<?> target) {
+                return target.asStruct().arrayValue(name)
+                        .map(Hson.Array::getStructs)
+                        .orElseGet(List::of);
             }
+        };
+    }
 
-            assertThat("java.lang.System.Logger type is missing from config metadata",
-                       loggerStruct,
-                       notNullValue());
-
-            assertThat("\"io.helidon.builder.tests.third.party.factory.UsingConfig\" type is missing from config metadata",
-                       usingStruct,
-                       notNullValue());
-
-            // we have validated that the two types are present, now we can validate their content
-            var annotated = loggerStruct.stringValue("annotatedType");
-            assertThat(annotated, optionalValue(is("io.helidon.builder.tests.third.party.factory.LoggerConfig")));
-        }
+    static Matcher<Hson.Value<?>> hasString(String name, Matcher<String> matcher) {
+        return new FeatureMatcher<>(matcher, "has property " + name, name) {
+            @Override
+            protected String featureValueOf(Hson.Value<?> target) {
+                return target.asStruct().stringValue(name, null);
+            }
+        };
     }
 
     static class First {
-    }
-
-    static class Second {
     }
 }

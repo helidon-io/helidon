@@ -19,5 +19,7 @@ module io.helidon.builder.tests.third.party.factory {
     requires io.helidon.common;
     requires io.helidon.config;
 
+    requires static io.helidon.config.metadata;
+
     exports io.helidon.builder.tests.third.party.factory;
 }

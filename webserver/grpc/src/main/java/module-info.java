@@ -43,6 +43,7 @@ module io.helidon.webserver.grpc {
     requires transitive io.helidon.grpc.core;
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.webserver.grpc;
     exports io.helidon.webserver.grpc.spi;

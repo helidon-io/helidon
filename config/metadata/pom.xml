@@ -41,6 +41,7 @@
 
     <modules>
         <module>metadata</module>
+        <module>model</module>
         <module>codegen</module>
         <module>processor</module>
         <module>docs</module>
@@ -60,4 +61,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>tests</id>
+            <modules>
+                <module>tests</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

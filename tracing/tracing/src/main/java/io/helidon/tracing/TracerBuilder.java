@@ -99,7 +99,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  *            are of the correct type and contain all methods, even those not inherited from this
  *            interface
  */
-@Configured(description = "Tracer configuration.", ignoreBuildMethod = true)
+@Configured(description = "Tracer configuration.")
 public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tracer> {
     /**
      * Create a new builder for the service name.

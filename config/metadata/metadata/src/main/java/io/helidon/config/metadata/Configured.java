@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
  * There are two options for a supported type - either it is an interface/class
  * with a {@code public static X create(Config)}, or a builder class with
  * a method {@code public Builder config(Config)}.
- *
+ * <p>
  * This annotation is used to provide IDE autocompletion, and to build documentation metadata
  * using an annotation processor.
  */
@@ -55,7 +55,7 @@ public @interface Configured {
     String prefix() default "";
 
     /**
-     * This is a helper to workaround issues where multiple builders build the same type and they do not make sense
+     * This is a helper to workaround issues where multiple builders build the same type, and they do not make sense
      * standalone.
      * This will force the builder to be a separate configuration type and not part of the built type.
      *
@@ -79,4 +79,18 @@ public @interface Configured {
      * @return types this configured type provides in addition to its qualified class name
      */
     Class<?>[] provides() default {};
+
+    /**
+     * Ad-hoc options.
+     *
+     * @return options
+     */
+    ConfiguredOption[] options() default {};
+
+    /**
+     * Ad-hoc inherited types.
+     *
+     * @return inherited types
+     */
+    Class<?>[] inherits() default {};
 }

@@ -28,6 +28,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Preview
 module io.helidon.integrations.langchain4j {
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.config;
     requires transitive io.helidon.builder.api;

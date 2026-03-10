@@ -29,6 +29,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.json.binding {
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.json;
     requires transitive io.helidon.builder.api;

@@ -30,6 +30,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.http.media.json {
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires io.helidon.builder.api;
     requires io.helidon.http.media;

@@ -74,7 +74,6 @@
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>

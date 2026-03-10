@@ -19,6 +19,8 @@
  */
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.tracing.providers.opentelemetry {
+    requires static io.helidon.config.metadata;
+
     requires io.helidon.common.config;
     requires io.helidon.common.context;
     requires io.helidon.common;

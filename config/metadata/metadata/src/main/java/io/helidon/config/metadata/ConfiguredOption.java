@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
  * should be used as defined on these methods. If a method {@code create(Config)} exists,
  * it should use the same groups (e.g. if one method defines URI and Proxy, and another
  * method defines a Path, the {@code create(Config)} method can accept either (URI, proxy host, proxy port)
- * or (path).
+ * or (path)).
  * <p>
  * By default, the name of the method is considered to be the configuration option used.
  * If method contains camel case, it will be changed to lower case hyphenated (this describes
@@ -68,8 +68,10 @@ public @interface ConfiguredOption {
 
     /**
      * The type of the configuration option.
-     * By default it is the type of the first parameter. If this annotation
-     * exists on a class, type defaults to {@link java.lang.String}.
+     * <p>
+     * If the type is not explicitly configured, it is derived from the annotated method.
+     * If the method has parameters, the type of the first parameter is used.
+     * Otherwise, the method must return a type is used.
      *
      * @return type of the configuration option
      */
@@ -77,8 +79,7 @@ public @interface ConfiguredOption {
 
     /**
      * Description of the configuration option.
-     * By default javadoc of the builder method is used. If this annotation exists
-     * on a class, description is mandatory.
+     * Defaults to the Javadoc first sentence of the annotated element.
      *
      * @return description of the configuration option
      */
@@ -128,7 +129,7 @@ public @interface ConfiguredOption {
      * If the method returns a list, the provider configuration must be under config key {@code providers} under
      * the configured option. On the same level as {@code providers}, there can be {@code discover-services} boolean
      * defining whether to look for services from service loader even if not configured in the configuration (this would
-     * override {@link #providerDiscoverServices()} defined on this annotation.
+     * override {@link #providerDiscoverServices()} defined on this annotation).
      * <p>
      * Option called {@code myProvider} that returns a single provider, or an {@link java.util.Optional} provider example
      * in configuration:
@@ -163,7 +164,9 @@ public @interface ConfiguredOption {
      * implementations.
      *
      * @return type of the provider.
+     * @deprecated This attribute is unsupported and will be removed in the next major release
      */
+    @Deprecated(since = "4.4.0", forRemoval = true)
     Class<?> providerType() default ConfiguredOption.class;
 
     /**
@@ -173,7 +176,9 @@ public @interface ConfiguredOption {
      * This can be overridden by {@code discover-services} configuration option under this option's key.
      *
      * @return whether to discover services by default for a provider
+     * @deprecated This attribute is unsupported and will be removed in the next major release
      */
+    @Deprecated(since = "4.4.0", forRemoval = true)
     boolean providerDiscoverServices() default true;
 
     /**
@@ -202,7 +207,9 @@ public @interface ConfiguredOption {
      * Is this method also available as a public builder method, or is it only used for configuration.
      *
      * @return whether the method is also a builder method ({@code true}), or only config method ({@code false})
+     * @deprecated This attribute is unsupported and will be removed in the next major release
      */
+    @Deprecated(since = "4.4.0", forRemoval = true)
     boolean builderMethod() default true;
 
     /**
@@ -210,7 +217,9 @@ public @interface ConfiguredOption {
      * indicate something to be loaded from configuration.
      *
      * @return whether this option should be configured from configuration
+     * @deprecated This attribute is unsupported and will be removed in the next major release
      */
+    @Deprecated(since = "4.4.0", forRemoval = true)
     boolean configured() default true;
 
     /**
@@ -228,8 +237,7 @@ public @interface ConfiguredOption {
          */
         LIST,
         /**
-         * Option is a map of strings to primitive type or String.
-         * Example: tags in tracing, CDI configuration
+         * Option is a map keyed by strings.
          */
         MAP
     }

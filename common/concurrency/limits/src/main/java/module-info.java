@@ -21,6 +21,7 @@
  */
 module io.helidon.common.concurrency.limits {
     requires static io.helidon.service.registry;
+    requires static io.helidon.config.metadata;
 
     requires io.helidon.builder.api;
     requires io.helidon.common;

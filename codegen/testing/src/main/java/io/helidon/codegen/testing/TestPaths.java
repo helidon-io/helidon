@@ -52,7 +52,7 @@ class TestPaths {
      */
     static Path newWorkDir(Predicate<StackWalker.StackFrame> predicate) {
         var frame = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
-                .walk(stream -> stream.filter(it -> !it.getDeclaringClass().equals(TestCompiler.class) && predicate.test(it))
+                .walk(stream -> stream.filter(it -> !it.getDeclaringClass().equals(TestPaths.class) && predicate.test(it))
                         .findFirst())
                 .orElseThrow();
 

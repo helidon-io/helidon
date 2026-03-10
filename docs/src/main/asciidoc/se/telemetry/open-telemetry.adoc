@@ -220,7 +220,7 @@ You can control almost all of OpenTelemetry's overall, tracing, metrics, and log
 === Controlling Overall OpenTelemetry Behavior
 Several settings control the operation of OpenTelemetry as a whole, as shown in the next table.
 
-include::{rootdir}/config/io_helidon_telemetry_otelconfig_OpenTelemetryConfig.adoc[tag=config,leveloffset=+2]
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_HelidonOpenTelemetry.adoc[tag=config,leveloffset=+2]
 
 Notes:
 
@@ -317,9 +317,22 @@ include::{rootdir}/config/io_helidon_telemetry_otelconfig_RetryPolicyConfig.adoc
 
 OpenTelemetry also supports a Zipkin exporter which it has recently deprecated.
 
-====== Zipkip Exporter
+====== Zipkin Exporter
 .Configuration for Zipkin exporters
 include::{rootdir}/config/io_helidon_telemetry_otelconfig_ZipkinExporterConfig.adoc[tag=config,leveloffset=+3]
+
+The link:https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters[OpenTelemetry documentation] describes the defaults; see the "Properties for Zipkin span exporters" section there.
+
+.OpenTelemetry defaults for Zipkin exporters
+[cols="1,4"]
+|====
+| Setting | OpenTelemetry default value
+
+| `compression` | `none`
+| `encoder` | `JSON_V2`
+| `endpoint` | http://localhost:9411/api/v2/spans
+| `timeout` | 10 seconds
+|====
 
 OpenTelemetry provides other exporters, often used for debugging:
 
@@ -356,7 +369,7 @@ In the table below, the Maven artifacts are all in the `io.opentelemetry` group.
 .2+|
 `opentelemetry-exporter-otlp`
 |`OtlpHttp\{signal}Exporter`
-|<<zipkin-exporter-config,`zipkin`>> | `ZipkinSpanExporter` a|
+|xref:{rootdir}/config/io_helidon_telemetry_otelconfig_ZipkinExporterConfig.adoc[`zipkin`] | `ZipkinSpanExporter` a|
 `opentelemetry-exporter-zipkin`
 | `console` | `Logging\{signal}Exporter`
 .3+|
@@ -365,27 +378,6 @@ In the table below, the Maven artifacts are all in the `io.opentelemetry` group.
 
 `SystemOutLogRecordExporeter`
 |===
-
-
-
-
-[[zipkin-exporter-config]]
-===== Configuring a Zipkin Exporter
-
-include::{rootdir}/config/io_helidon_telemetry_otelconfig_ZipkinExporterConfig.adoc[tag=config,leveloffset=+2]
-
-The link:https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters[OpenTelemetry documentation] describes the defaults; see the "Properties for Zipkin span exporters" section there.
-
-.OpenTelemetry defaults for Zipkin exporters
-[cols="1,4"]
-|====
-| Setting | OpenTelemetry default value
-
-| `compression` | `none`
-| `encoder` | `JSON_V2`
-| `endpoint` | http://localhost:9411/api/v2/spans
-| `timeout` | 10 seconds
-|====
 
 
 // ====
