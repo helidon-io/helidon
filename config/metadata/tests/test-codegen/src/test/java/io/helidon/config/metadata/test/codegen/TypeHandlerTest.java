@@ -45,9 +45,10 @@ class TypeHandlerTest {
     void testImplicitTargetType() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeListenerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeListenerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -88,15 +89,16 @@ class TypeHandlerTest {
     void testExternalBuilderTargetType() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeListener.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeListener.java", """
                         package com.acme.server;
                         
                         public interface AcmeListener {
                         }
                         """)
-                .source("AcmeConfig.java", """
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -136,9 +138,10 @@ class TypeHandlerTest {
     void testNormalType() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeListenerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeListenerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -176,9 +179,10 @@ class TypeHandlerTest {
     void testIgnoreBuildMethod() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeListenerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeListenerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -219,9 +223,10 @@ class TypeHandlerTest {
     void testGenericTargetType() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeListenerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeListenerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -262,9 +267,10 @@ class TypeHandlerTest {
     void testParameterizedTargetType() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeListenerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeListenerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -306,9 +312,10 @@ class TypeHandlerTest {
     void testUnresolvedParameterizedTargetType() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeListenerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeListenerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -347,15 +354,16 @@ class TypeHandlerTest {
     void testImplicitTargetTypeOverride() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeListenerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeListenerConfig.java", """
                         package com.acme;
                         
                         interface AcmeListenerConfig {
                         }
                         """)
-                .source("AcmeServerConfig.java", """
+                .addSource("AcmeServerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -399,9 +407,10 @@ class TypeHandlerTest {
     void testInheritance() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeListenerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeListenerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -416,7 +425,7 @@ class TypeHandlerTest {
                             }
                         }
                         """)
-                .source("AcmeServerConfig.java", """
+                .addSource("AcmeServerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -464,9 +473,10 @@ class TypeHandlerTest {
     void testOptions() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeListenerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeListenerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -539,9 +549,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeListenerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeListenerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -601,9 +612,10 @@ class TypeHandlerTest {
     void testUnconfiguredOption() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeListenerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeListenerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -649,9 +661,10 @@ class TypeHandlerTest {
     void testOverrides() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeListenerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeListenerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -684,7 +697,7 @@ class TypeHandlerTest {
                             }
                         }
                         """)
-                .source("AcmeServerConfig.java", """
+                .addSource("AcmeServerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -772,15 +785,16 @@ class TypeHandlerTest {
     void testProvider() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("SecurityProvider.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("SecurityProvider.java", """
                         package com.acme;
                         
                         interface SecurityProvider {
                         }
                         """)
-                .source("AcmeBasicAuthProvider.java", """
+                .addSource("AcmeBasicAuthProvider.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -825,9 +839,10 @@ class TypeHandlerTest {
     void testStandalone() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeServerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeServerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -870,16 +885,16 @@ class TypeHandlerTest {
     void testModule() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .modulepath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("module-info.java", """
+                .addModulepath(List.of(Configured.class, Builder.class))
+                .addProcessor(AptProcessor::new)
+                .addSource("module-info.java", """
                         module com.acme {
                             exports com.acme;
                             requires io.helidon.common;
                             requires io.helidon.config.metadata;
                         }
                         """)
-                .source("AcmeConfig.java", """
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -920,12 +935,13 @@ class TypeHandlerTest {
     void testInheritsFromClasspath() throws IOException {
         var compiler = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
                 .build();
         var result1 = TestCompiler.builder()
                 .from(compiler)
-                .source("AcmeListenerConfig.java", """
+                .addSource("AcmeListenerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -946,9 +962,9 @@ class TypeHandlerTest {
 
         var result2 = TestCompiler.builder()
                 .from(compiler)
-                .classpathEntries(result1.classOutput())
-                .processors(AptProcessor::new)
-                .source("AcmeServerConfig.java", """
+                .addClasspathEntry(result1.classOutput())
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeServerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -989,9 +1005,10 @@ class TypeHandlerTest {
     void testMerge() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeServerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeServerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -1009,7 +1026,7 @@ class TypeHandlerTest {
                             }
                         }
                         """)
-                .source("AcmeListenerConfig.java", """
+                .addSource("AcmeListenerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -1090,9 +1107,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeServerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeServerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -1152,12 +1170,13 @@ class TypeHandlerTest {
     void testMergeFromClasspath() throws IOException {
         var compiler = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
                 .build();
         var result1 = TestCompiler.builder()
                 .from(compiler)
-                .source("AcmeListenerConfig.java", """
+                .addSource("AcmeListenerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -1195,8 +1214,8 @@ class TypeHandlerTest {
 
         var result2 = TestCompiler.builder()
                 .from(compiler)
-                .classpathEntries(result1.classOutput())
-                .source("AcmeServerConfig.java", """
+                .addClasspathEntry(result1.classOutput())
+                .addSource("AcmeServerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -1247,9 +1266,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeLoggerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeLoggerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -1334,9 +1354,10 @@ class TypeHandlerTest {
     void testEnumOption() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeLoggerConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeLoggerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -1434,12 +1455,13 @@ class TypeHandlerTest {
     void testEnumOptionFromClasspath() throws IOException {
         var compiler = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
                 .build();
         var result1 = TestCompiler.builder()
                 .from(compiler)
-                .source("AcmeLoggerConfig.java", """
+                .addSource("AcmeLoggerConfig.java", """
                         package com.acme;
                         
                         /**
@@ -1470,8 +1492,8 @@ class TypeHandlerTest {
 
         var result2 = TestCompiler.builder()
                 .from(compiler)
-                .classpathEntries(result1.classOutput())
-                .source("AcmeLoggerConfig.java", """
+                .addClasspathEntry(result1.classOutput())
+                .addSource("AcmeLoggerConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -1552,9 +1574,10 @@ class TypeHandlerTest {
     void testRequiredOption() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -1610,9 +1633,10 @@ class TypeHandlerTest {
     void testOptionDefaultValue() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -1670,9 +1694,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -1810,9 +1835,10 @@ class TypeHandlerTest {
     void testOptionDescription() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -1863,9 +1889,10 @@ class TypeHandlerTest {
     void testOptionList() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.List;
@@ -1924,9 +1951,9 @@ class TypeHandlerTest {
     void testOptionPathType() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.nio.file.Path;
@@ -1978,9 +2005,10 @@ class TypeHandlerTest {
     void testOptionMapStringInt() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -2040,9 +2068,10 @@ class TypeHandlerTest {
     void testOptionMapStringString() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -2101,9 +2130,10 @@ class TypeHandlerTest {
     void testExplicitKind() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -2163,9 +2193,10 @@ class TypeHandlerTest {
     void testExplicitOptionType() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -2223,9 +2254,10 @@ class TypeHandlerTest {
     void testMultipleMethodOptions() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -2291,9 +2323,10 @@ class TypeHandlerTest {
     void testOptionReturnType() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -2345,9 +2378,10 @@ class TypeHandlerTest {
     void testMapOption() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -2405,9 +2439,10 @@ class TypeHandlerTest {
     void testMapValueType() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -2467,9 +2502,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -2531,9 +2567,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.List;
@@ -2597,9 +2634,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -2663,9 +2701,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -2720,9 +2759,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -2779,9 +2819,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -2837,9 +2878,10 @@ class TypeHandlerTest {
     void testOptionLiterals() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -2896,9 +2938,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -2941,9 +2984,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -3004,9 +3048,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -3032,15 +3077,16 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeContract.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeContract.java", """
                         package com.acme;
                         
                         interface AcmeContract {
                         }
                         """)
-                .source("AcmeConfig.java", """
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -3085,15 +3131,16 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeContract.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeContract.java", """
                         package com.acme;
                         
                         interface AcmeContract {
                         }
                         """)
-                .source("AcmeConfig.java", """
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -3119,9 +3166,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -3159,9 +3207,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -3184,9 +3233,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -3242,9 +3292,10 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -3283,16 +3334,17 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class, Builder.class)
-                .processors(AptProcessor::new)
-                .source("AcmeValue.java", """
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeValue.java", """
                         package com.acme;
                         
                         enum AcmeValue {
                             ABC
                         }
                         """)
-                .source("AcmeConfig.java", """
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -3335,9 +3387,9 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -3369,9 +3421,9 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -3403,9 +3455,9 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.Collection;
@@ -3437,9 +3489,9 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class)
-                .processors(AptProcessor::new)
-                .source("AcmeConfig.java", """
+                .addClasspath(Configured.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -3470,15 +3522,15 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class)
-                .processors(AptProcessor::new)
-                .source("JsonValue.java", """
+                .addClasspath(Configured.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("JsonValue.java", """
                         package com.acme;
                         
                         interface JsonValue {
                         }
                         """)
-                .source("JsonObject.java", """
+                .addSource("JsonObject.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -3486,7 +3538,7 @@ class TypeHandlerTest {
                         interface JsonObject extends Map<String, JsonValue> {
                         }
                         """)
-                .source("AcmeConfig.java", """
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import java.util.HashMap;
@@ -3543,15 +3595,15 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class)
-                .processors(AptProcessor::new)
-                .source("AcmeIterable.java", """
+                .addClasspath(Configured.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeIterable.java", """
                         package com.acme;
                         
                         interface AcmeIterable<X, Z> extends Iterable<Z> {
                         }
                         """)
-                .source("AcmeConfig.java", """
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
@@ -3608,15 +3660,15 @@ class TypeHandlerTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(Configured.class)
-                .processors(AptProcessor::new)
-                .source("AcmeMap.java", """
+                .addClasspath(Configured.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeMap.java", """
                         package com.acme;
                         
                         interface AcmeMap<X, Z> extends java.util.Map<String, Z> {
                         }
                         """)
-                .source("AcmeConfig.java", """
+                .addSource("AcmeConfig.java", """
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;

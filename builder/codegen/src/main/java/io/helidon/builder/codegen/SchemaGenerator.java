@@ -89,7 +89,7 @@ class SchemaGenerator {
             }
         }
         // check Prototype.Factory<? extends NamedService> declares provider
-        var rtName = runtimeTypeName(prototypeInfo);
+        var rtName = prototypeInfo.runtimeType().orElse(null);
         if (rtName != null) {
             var rtInfo = ctx.typeInfo(rtName).orElseThrow(() ->
                     new CodegenException("Unable to resolve: " + rtName.fqName(), enclosingTypeInfo));
@@ -100,24 +100,6 @@ class SchemaGenerator {
             }
         }
         return provides;
-    }
-
-    private TypeName runtimeTypeName(PrototypeInfo prototypeInfo) {
-        var enclosingTypeInfo = prototypeInfo.blueprint();
-        for (var superTypeInfo : resolver.typeHierarchy(enclosingTypeInfo)) {
-            var superTypeName = superTypeInfo.typeName();
-            var rawSuperTypeName = superTypeName.genericTypeName();
-            if (rawSuperTypeName.equals(Types.PROTOTYPE_FACTORY)) {
-                for (var typeArg : superTypeName.typeArguments()) {
-                    var resolvedTypeArgInfo = ctx.typeInfo(typeArg)
-                            .orElseGet(() -> resolver.resolveTypeParameter(typeArg, superTypeName));
-                    if (resolvedTypeArgInfo != null) {
-                        return resolvedTypeArgInfo.typeName();
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     private TypeName providedTypeName(TypeInfo providedTypeInfo) {
@@ -162,7 +144,7 @@ class SchemaGenerator {
 
         if (configured.merge()) {
             if (typeName.equals(TypeNames.STRING) || typeName.unboxed().primitive()) {
-                var methodInfo =  optionInfo.interfaceMethod().orElse(null);
+                var methodInfo = optionInfo.interfaceMethod().orElse(null);
                 logger.log(Level.WARNING, "Invalid merge option type: " + typeName.fqName(), methodInfo);
             } else {
                 builder.property("type", typeName);
@@ -176,7 +158,7 @@ class SchemaGenerator {
         builder.property("type", typeName);
 
         var kind = optionKind(optionInfo);
-        if (!"VALUE".equals(kind)) {
+        if (!"VALUE" .equals(kind)) {
             var enumValue = EnumValue.create(Types.CONFIGURED_OPTION_KIND, kind);
             builder.property("kind", enumValue);
         }
@@ -260,7 +242,7 @@ class SchemaGenerator {
                         .orElse(null);
                 if (description == null) {
                     logger.log(Level.WARNING,
-                            "Missing javadoc: %s.%s".formatted(e.typeName().fqName(), e.elementName()),
+                            "Missing javadoc: %s.%s" .formatted(e.typeName().fqName(), e.elementName()),
                             originElements);
                     description = "<code>N/A</code>";
                 }
@@ -277,7 +259,7 @@ class SchemaGenerator {
     private String optionDescription(PrototypeInfo prototypeInfo, OptionInfo optionInfo) {
         var key = optionInfo.configured().orElseThrow().configKey();
         if (key.endsWith("-discover-services")) {
-            var providerKey = key.substring(0, key.length() - "-discover-services".length());
+            var providerKey = key.substring(0, key.length() - "-discover-services" .length());
             return "Whether to enable automatic service discovery for <code>" + providerKey + "</code>";
         } else {
             var description = optionInfo.description()
@@ -342,7 +324,7 @@ class SchemaGenerator {
             return null;
         }
         var typeInfo = prototypeInfo.blueprint();
-        var methodInfo =  optionInfo.interfaceMethod().orElse(null);
+        var methodInfo = optionInfo.interfaceMethod().orElse(null);
         var lookup = typeName.genericTypeName().boxed();
         var lookupName = lookup.fqName();
         return ctx.typeInfo(lookup)
@@ -376,12 +358,29 @@ class SchemaGenerator {
         } else if (typeName.isMap()) {
             typeName = typeName.typeArguments().get(1);
         }
-        if (!isPrototyped(typeName)) {
-            var runtimeType = optionInfo.runtimeType().orElse(null);
-            if (runtimeType != null) {
-                typeName = runtimeType.optionBuilder().builderMethodType().genericTypeName();
-            }
+
+        if (optionInfo.prototypedBy().isPresent()) {
+            return optionInfo.prototypedBy().get();
         }
+
+        // check configured factory method
+        var configuredDeclaredTypeName = optionInfo.configured()
+                .flatMap(OptionConfigured::factoryMethod)
+                .map(FactoryMethod::declaringType)
+                .orElse(null);
+        if (configuredDeclaredTypeName != null) {
+            return configuredDeclaredTypeName;
+        }
+
+        // check runtime factory method
+        var runtimeParamTypeName = optionInfo.runtimeType()
+                .flatMap(RuntimeTypeInfo::factoryMethod)
+                .flatMap(FactoryMethod::parameterType)
+                .orElse(null);
+        if (runtimeParamTypeName != null) {
+            return runtimeParamTypeName;
+        }
+
         return typeName.boxed();
     }
 

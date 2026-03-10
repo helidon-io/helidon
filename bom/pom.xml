@@ -212,7 +212,6 @@
                 <groupId>io.helidon.config</groupId>
                 <artifactId>helidon-config-metadata</artifactId>
                 <version>${helidon.version}</version>
-                <optional>true</optional>
             </dependency>
             <dependency>
                 <groupId>io.helidon.config</groupId>
@@ -582,11 +581,6 @@
             <dependency>
                 <groupId>io.helidon.codegen</groupId>
                 <artifactId>helidon-codegen-class-model</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.codegen</groupId>
-                <artifactId>helidon-codegen-testing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

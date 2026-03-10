@@ -68,6 +68,7 @@
         <dependency>
             <groupId>io.helidon.codegen</groupId>
             <artifactId>helidon-codegen-testing</artifactId>
+            <version>${helidon.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

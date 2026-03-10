@@ -56,10 +56,10 @@ class SchemaGeneratorTest {
     void testRoot() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import io.helidon.builder.api.Prototype;
@@ -96,10 +96,10 @@ class SchemaGeneratorTest {
     void testNonRoot() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import io.helidon.builder.api.Prototype;
@@ -136,10 +136,10 @@ class SchemaGeneratorTest {
     void testPrefixedNonRoot() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import io.helidon.builder.api.Prototype;
@@ -176,10 +176,10 @@ class SchemaGeneratorTest {
     void testJavadocEscapes() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import io.helidon.builder.api.Prototype;
@@ -216,10 +216,10 @@ class SchemaGeneratorTest {
     void testCharArray() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import io.helidon.builder.api.Prototype;
@@ -268,10 +268,10 @@ class SchemaGeneratorTest {
     void testDefault() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import io.helidon.builder.api.Prototype;
@@ -321,10 +321,10 @@ class SchemaGeneratorTest {
     void testDefaultBoolean() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import io.helidon.builder.api.Prototype;
@@ -374,10 +374,10 @@ class SchemaGeneratorTest {
     void testDefaultInt() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import io.helidon.builder.api.Prototype;
@@ -427,10 +427,10 @@ class SchemaGeneratorTest {
     void testDefaultLong() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import io.helidon.builder.api.Prototype;
@@ -480,10 +480,10 @@ class SchemaGeneratorTest {
     void testDefaultDoubleValue() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import io.helidon.builder.api.Prototype;
@@ -533,10 +533,10 @@ class SchemaGeneratorTest {
     void testList() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.List;
@@ -590,10 +590,10 @@ class SchemaGeneratorTest {
     void testSet() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Set;
@@ -647,10 +647,10 @@ class SchemaGeneratorTest {
     void testOptionalList() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.List;
@@ -705,10 +705,10 @@ class SchemaGeneratorTest {
     void testOptionalSet() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Optional;
@@ -763,10 +763,10 @@ class SchemaGeneratorTest {
     void testMap() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -820,10 +820,10 @@ class SchemaGeneratorTest {
     void testOptionalMap() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -878,10 +878,10 @@ class SchemaGeneratorTest {
     void testAllowedValuesWithoutEnum() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -942,10 +942,10 @@ class SchemaGeneratorTest {
     void testEnumAllowedValues() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeMode.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeMode.java", """
                         package com.acme;
                         
                         /**
@@ -962,7 +962,7 @@ class SchemaGeneratorTest {
                             MODE2,
                         }
                         """)
-                .source("AcmeConfigBlueprint.java", """
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -1021,14 +1021,14 @@ class SchemaGeneratorTest {
     void testPrefixWithConstant() throws IOException {
         var compiler = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .opts(OPTS)
-                .processors(AptProcessor::new)
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
                 .build();
 
         var result1 = TestCompiler.builder()
                 .from(compiler)
-                .source("AcmeConstants.java", """
+                .addSource("AcmeConstants.java", """
                         package com.acme;
                         
                         class AcmeConstants {
@@ -1041,8 +1041,8 @@ class SchemaGeneratorTest {
 
         var result2 = TestCompiler.builder()
                 .from(compiler)
-                .classpathEntries(result1.classOutput())
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspathEntry(result1.classOutput())
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -1081,14 +1081,14 @@ class SchemaGeneratorTest {
     void testExternalEnum() throws IOException {
         var compiler = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .opts(OPTS)
-                .processors(AptProcessor::new)
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
                 .build();
 
         var result1 = TestCompiler.builder()
                 .from(compiler)
-                .source("AcmeMode.java", """
+                .addSource("AcmeMode.java", """
                         package com.acme;
                         
                         /**
@@ -1112,8 +1112,8 @@ class SchemaGeneratorTest {
         var result2 = TestCompiler.builder()
                 .from(compiler)
                 .printDiagnostics(false)
-                .classpathEntries(result1.classOutput())
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspathEntry(result1.classOutput())
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -1181,24 +1181,24 @@ class SchemaGeneratorTest {
     void testProviderList() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeService.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeService.java", """
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
                         interface AcmeService extends io.helidon.common.config.NamedService {
                         }
                         """)
-                .source("AcmeServiceProvider.java", """
+                .addSource("AcmeServiceProvider.java", """
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
                         interface AcmeServiceProvider extends io.helidon.common.config.ConfiguredProvider<AcmeService> {
                         }
                         """)
-                .source("AcmeConfigBlueprint.java", """
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.List;
@@ -1259,24 +1259,24 @@ class SchemaGeneratorTest {
     void testOptionalProvider() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeService.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeService.java", """
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
                         interface AcmeService extends io.helidon.common.config.NamedService {
                         }
                         """)
-                .source("AcmeServiceProvider.java", """
+                .addSource("AcmeServiceProvider.java", """
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
                         interface AcmeServiceProvider extends io.helidon.common.config.ConfiguredProvider<AcmeService> {
                         }
                         """)
-                .source("AcmeConfigBlueprint.java", """
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Optional;
@@ -1332,17 +1332,17 @@ class SchemaGeneratorTest {
     void testProviderType() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeService.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeService.java", """
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
                         interface AcmeService extends io.helidon.config.NamedService {
                         }
                         """)
-                .source("AcmeLogging.java", """
+                .addSource("AcmeLogging.java", """
                         package com.acme;
                         import io.helidon.builder.api.RuntimeType;
                         
@@ -1359,14 +1359,14 @@ class SchemaGeneratorTest {
                             }
                         }
                         """)
-                .source("AcmeServiceProvider.java", """
+                .addSource("AcmeServiceProvider.java", """
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
                         interface AcmeServiceProvider extends io.helidon.config.ConfiguredProvider<AcmeService> {
                         }
                         """)
-                .source("AcmeLoggingConfigBlueprint.java", """
+                .addSource("AcmeLoggingConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Optional;
@@ -1405,24 +1405,24 @@ class SchemaGeneratorTest {
     void testParameterizedProviderType() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeService.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeService.java", """
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
                         interface AcmeService extends io.helidon.common.config.NamedService {
                         }
                         """)
-                .source("AcmeServiceProvider.java", """
+                .addSource("AcmeServiceProvider.java", """
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
                         interface AcmeServiceProvider<T extends AcmeService> extends io.helidon.common.config.ConfiguredProvider<T> {
                         }
                         """)
-                .source("AcmeLoggingServiceConfigBlueprint.java", """
+                .addSource("AcmeLoggingServiceConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Optional;
@@ -1462,17 +1462,17 @@ class SchemaGeneratorTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeService.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeService.java", """
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
                         interface AcmeService extends io.helidon.common.config.NamedService {
                         }
                         """)
-                .source("AcmeLogging.java", """
+                .addSource("AcmeLogging.java", """
                         package com.acme;
                         
                         import io.helidon.builder.api.RuntimeType;
@@ -1489,7 +1489,7 @@ class SchemaGeneratorTest {
                             }
                         }
                         """)
-                .source("AcmeLoggingConfigBlueprint.java", """
+                .addSource("AcmeLoggingConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Optional;
@@ -1532,10 +1532,10 @@ class SchemaGeneratorTest {
     void testPrototypeForwardReference() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeObjectBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeObjectBlueprint.java", """
                         package com.acme;
                         
                         import io.helidon.builder.api.Prototype;
@@ -1548,7 +1548,7 @@ class SchemaGeneratorTest {
                         interface AcmeObjectBlueprint {
                         }
                         """)
-                .source("AcmeConfigBlueprint.java", """
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Optional;
@@ -1598,10 +1598,10 @@ class SchemaGeneratorTest {
         void testBlueprintWithoutJavadoc() throws IOException {
             var result = TestCompiler.builder()
                     .currentRelease()
-                    .classpath(CLASSPATH)
-                    .processors(AptProcessor::new)
-                    .opts(OPTS)
-                    .source("AcmeObjectBlueprint.java", """
+                    .addClasspath(CLASSPATH)
+                    .addProcessor(AptProcessor::new)
+                    .options(OPTS)
+                    .addSource("AcmeObjectBlueprint.java", """
                             package com.acme;
                             
                             import io.helidon.builder.api.RuntimeType;
@@ -1622,7 +1622,7 @@ class SchemaGeneratorTest {
                                 }
                             }
                             """)
-                    .source("AcmeConfigBlueprint.java", """
+                    .addSource("AcmeConfigBlueprint.java", """
                             package com.acme;
                             
                             import java.util.Optional;
@@ -1657,11 +1657,11 @@ class SchemaGeneratorTest {
     void testStandaloneBlueprintWithoutJavadoc() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
                 .printDiagnostics(false)
-                .source("AcmeConfigBlueprint.java", """
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Optional;
@@ -1701,10 +1701,10 @@ class SchemaGeneratorTest {
     void testJavadocFistSentence() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Optional;
@@ -1743,10 +1743,10 @@ class SchemaGeneratorTest {
     void testInheritedDescription() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .processors(AptProcessor::new)
-                .opts(OPTS)
-                .source("AcmeNamed.java", """
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeNamed.java", """
                         package com.acme;
                         
                         import java.util.Optional;
@@ -1764,7 +1764,7 @@ class SchemaGeneratorTest {
                             Optional<String> name();
                         }
                         """)
-                .source("AcmeConfigBlueprint.java", """
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Optional;
@@ -1810,14 +1810,14 @@ class SchemaGeneratorTest {
     void testExternalOptionInterface() throws IOException {
         var compiler = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .opts(OPTS)
-                .processors(AptProcessor::new)
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
                 .build();
 
         var result1 = TestCompiler.builder()
                 .from(compiler)
-                .source("AcmeNamed.java", """
+                .addSource("AcmeNamed.java", """
                         package com.acme;
                         
                         import java.util.Optional;
@@ -1842,8 +1842,8 @@ class SchemaGeneratorTest {
         var result2 = TestCompiler.builder()
                 .from(compiler)
                 .printDiagnostics(false)
-                .classpathEntries(result1.classOutput())
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspathEntry(result1.classOutput())
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Optional;
@@ -1895,10 +1895,10 @@ class SchemaGeneratorTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(CLASSPATH)
-                .opts(OPTS)
-                .processors(AptProcessor::new)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Map;
@@ -1951,10 +1951,10 @@ class SchemaGeneratorTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(CLASSPATH)
-                .opts(OPTS)
-                .processors(AptProcessor::new)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.List;
@@ -2007,10 +2007,10 @@ class SchemaGeneratorTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(CLASSPATH)
-                .opts(OPTS)
-                .processors(AptProcessor::new)
-                .source("AcmeConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.List;
@@ -2058,10 +2058,10 @@ class SchemaGeneratorTest {
     void testCustomMethod() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .opts(OPTS)
-                .processors(AptProcessor::new)
-                .source("AcmePrivateKey.java", """
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmePrivateKey.java", """
                         package com.acme;
                         
                         /**
@@ -2070,7 +2070,7 @@ class SchemaGeneratorTest {
                         interface AcmePrivateKey {
                         }
                         """)
-                .source("AcmePrivateKeyConfigBlueprint.java", """
+                .addSource("AcmePrivateKeyConfigBlueprint.java", """
                         package com.acme;
                         
                         import io.helidon.builder.api.Prototype;
@@ -2083,7 +2083,7 @@ class SchemaGeneratorTest {
                         interface AcmePrivateKeyConfigBlueprint {
                         }
                         """)
-                .source("AcmeConfigMethods.java", """
+                .addSource("AcmeConfigMethods.java", """
                         package com.acme;
                         
                         import java.util.Optional;
@@ -2098,7 +2098,7 @@ class SchemaGeneratorTest {
                             }
                         }
                         """)
-                .source("AcmeConfigBlueprint.java", """
+                .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Optional;
@@ -2147,10 +2147,10 @@ class SchemaGeneratorTest {
     void testMerge() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .classpath(CLASSPATH)
-                .opts(OPTS)
-                .processors(AptProcessor::new)
-                .source("AcmeListener.java", """
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeListener.java", """
                         package com.acme;
                         
                         import io.helidon.builder.api.RuntimeType;
@@ -2167,7 +2167,7 @@ class SchemaGeneratorTest {
                             }
                         }
                         """)
-                .source("AcmeListenerConfigBlueprint.java", """
+                .addSource("AcmeListenerConfigBlueprint.java", """
                         package com.acme;
                         
                         import io.helidon.builder.api.Prototype;
@@ -2187,7 +2187,7 @@ class SchemaGeneratorTest {
                             int port();
                         }
                         """)
-                .source("AcmeServerConfigBlueprint.java", """
+                .addSource("AcmeServerConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Optional;
@@ -2236,10 +2236,10 @@ class SchemaGeneratorTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .classpath(CLASSPATH)
-                .opts(OPTS)
-                .processors(AptProcessor::new)
-                .source("AcmeServerConfigBlueprint.java", """
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeServerConfigBlueprint.java", """
                         package com.acme;
                         
                         import java.util.Optional;
