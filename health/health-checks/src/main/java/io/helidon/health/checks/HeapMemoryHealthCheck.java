@@ -58,17 +58,16 @@ public class HeapMemoryHealthCheck implements HealthCheck {
             + "." + CONFIG_KEY_HEAP_PREFIX
             + "." + CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX;
 
-    private final Runtime rt;
+    private final RuntimeMethods rt;
     private final double thresholdPercent;
 
-    HeapMemoryHealthCheck(Runtime runtime, double thresholdPercent) {
+    HeapMemoryHealthCheck(RuntimeMethods runtime, double thresholdPercent) {
         this.rt = runtime;
         this.thresholdPercent = thresholdPercent;
     }
 
     private HeapMemoryHealthCheck(Builder builder) {
-        this.thresholdPercent = builder.threshold;
-        this.rt = Runtime.getRuntime();
+        this(new RealRuntimeMethods(), builder.threshold);
     }
 
     /**
@@ -194,6 +193,42 @@ public class HeapMemoryHealthCheck implements HealthCheck {
                     .ifPresent(this::thresholdPercent);
 
             return this;
+        }
+    }
+
+    interface RuntimeMethods {
+        long freeMemory();
+
+        long totalMemory();
+
+        long maxMemory();
+    }
+
+    private static class RealRuntimeMethods implements RuntimeMethods {
+        private final Runtime runtime;
+
+        private RealRuntimeMethods() {
+            this.runtime = Runtime.getRuntime();
+        }
+
+        @Override
+        public long freeMemory() {
+            return runtime.freeMemory();
+        }
+
+        @Override
+        public long totalMemory() {
+            return runtime.totalMemory();
+        }
+
+        @Override
+        public long maxMemory() {
+            return runtime.maxMemory();
+        }
+
+        @Override
+        public String toString() {
+            return runtime.toString();
         }
     }
 }
