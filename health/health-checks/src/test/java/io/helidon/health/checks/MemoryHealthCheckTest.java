@@ -28,7 +28,6 @@ import org.junit.jupiter.api.condition.JRE;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -43,14 +42,11 @@ class MemoryHealthCheckTest {
     private static final long THRESHOLD_MEMORY = 9000L;
     private static final double THRESHOLD_PERCENT = 90;
 
-    private HeapMemoryHealthCheck.RuntimeMethods runtime;
+    private TestRuntimeMethods runtime;
 
     @BeforeEach
     void init() {
-        runtime = Mockito.mock(HeapMemoryHealthCheck.RuntimeMethods.class);
-        Mockito.when(runtime.freeMemory()).thenReturn(TOTAL_MEMORY_START);  // Current free memory
-        Mockito.when(runtime.maxMemory()).thenReturn(MAX_MEMORY);           // Max VM space that can be allocated
-        Mockito.when(runtime.totalMemory()).thenReturn(TOTAL_MEMORY_START); // Total VM space currently allocated
+        runtime = new TestRuntimeMethods();
     }
 
     @Test
@@ -112,7 +108,28 @@ class MemoryHealthCheckTest {
     }
 
     private void setMemoryUsage(long used, long total) {
-        Mockito.when(runtime.freeMemory()).thenReturn(total - used);
-        Mockito.when(runtime.totalMemory()).thenReturn(total);
+        runtime.freeMemory = total - used;
+        runtime.totalMemory = total;
+    }
+
+    private static class TestRuntimeMethods implements HeapMemoryHealthCheck.RuntimeMethods {
+        private long freeMemory = TOTAL_MEMORY_START;
+        private long totalMemory = TOTAL_MEMORY_START;
+        private long maxMemory = MAX_MEMORY;
+
+        @Override
+        public long freeMemory() {
+            return freeMemory;
+        }
+
+        @Override
+        public long totalMemory() {
+            return totalMemory;
+        }
+
+        @Override
+        public long maxMemory() {
+            return maxMemory;
+        }
     }
 }
