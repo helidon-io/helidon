@@ -20,15 +20,28 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 
 ### NEW FEATURES
 
-Helidon 4.4.0 introduces the following new features:
+Helidon 4.4.0 introduces new features including the following:
 
-- LC4J 1.11.0 with Agentic
-- Helidon Declarative for WebClient, WebSocket, Health Checks, Telemetry, Metrics, CORS, Security
-- Helidon JSON: fast, compile time JSON
+- LC4J 1.11.0 with Agentic (Preview)
+- Helidon Declarative for WebClient, WebSocket, Health Checks, Telemetry, Metrics, CORS, Security (Preview)
+- Helidon JSON: fast, compile time JSON (Incubating)
 - Improved support for Open Telemetry
 - Automatic AOT Cache creation when building jlink image with Java 25+
 
 ### NOTABLE CHANGES
+
+#### Tracing: Jaeger Exporter Deprecation
+
+Helidon 4.4 upgrades OpenTelemetry to a version that no longer provides a Jaeger exporter. Therefore
+Helidon's Jaeger tracing provider is now deprecated. Users are encouraged to switch to the
+OpenTelemtry OTLP exporter. For more details see [11069](https://github.com/helidon-io/helidon/issues/11069).
+
+#### LangChain4j Config Changes (Preview Feature)
+
+The configuration for Helidon's LangChain4j support (preview feature) has changed. If you use this
+feature you will need to update your configuration. For more information see Helidon's
+[LangChain4j documentation](https://helidon.io/docs/v4/se/ai/langchain4j/langchain4j)
+
 
 #### CORS Configuration
 
@@ -46,6 +59,13 @@ JSON Media Support has been enhanced and made consistent for JSON providers (Hel
 * JSON-P continues to accept text/plain if read as a JsonObject
 * Charset is now consistently processed if configured on the Content-Type. There may be changes as each support had slightly different implementation, now it is all consistent
 
+#### New Blueprint Dependency
+
+If you use Helidon’s Blueprint Prototype feature (via the `Prototype.Configure` API) then you now need
+to add an optional compile time dependency on `helidon-config-metadata` for your generated blueprint code to compile.
+We expect this case to be rare.
+
+
 ### CHANGES
 
 - Builders: Annotations properly generated with the Blueprint [11016](https://github.com/helidon-io/helidon/pull/11016)
@@ -54,16 +74,24 @@ JSON Media Support has been enhanced and made consistent for JSON providers (Hel
 - Builders: Default methods on blueprint now generate backward compatible prototypes. [11061](https://github.com/helidon-io/helidon/pull/11061)
 - Builders: Ensure that decorator methods for Set and List are called with correctly types values [11244](https://github.com/helidon-io/helidon/pull/11244)
 - Builders: Fix a problem where we kept bad candidates for builder methods. [10897](https://github.com/helidon-io/helidon/pull/10897)
+- Builders: Fix builder regression - generate singular setter with consumer of prototype builder [11252](https://github.com/helidon-io/helidon/pull/11252)
 - Builders: Generate service descriptors without deprecated code for annotations. [11183](https://github.com/helidon-io/helidon/pull/11183)
+- Builders: helidon-builder-processor as a shim of helidon-builder-codegen [11278](https://github.com/helidon-io/helidon/pull/11278)
+- Builders: Improve annotation processing diagnostics [11281](https://github.com/helidon-io/helidon/pull/11281)
 - Builders: Update builders to support third party types as runtime types. [11113](https://github.com/helidon-io/helidon/pull/11113)
 - Builders: Update documentation of classValue in Annotation [11228](https://github.com/helidon-io/helidon/pull/11228)
 - Codegen: Add support for enum and record types to class model. [11071](https://github.com/helidon-io/helidon/pull/11071)
+- Codegen: Codegen Unit Testing [11283](https://github.com/helidon-io/helidon/pull/11283)
+- Codegen: Fix addContentLiteral in content builder in class model [11249](https://github.com/helidon-io/helidon/pull/11249)
+- Codegen: Prettify class-model annotation rendering and support nested annotations [11282](https://github.com/helidon-io/helidon/pull/11282)
 - Common: Fix weight comparator. [11129](https://github.com/helidon-io/helidon/pull/11129)
 - Config: Changes in handling environment variables in SE config. [11049](https://github.com/helidon-io/helidon/pull/11049)
+- Config: Common config alternatives [11261](https://github.com/helidon-io/helidon/pull/11261)
 - Config: Create config from text and media type. [11138](https://github.com/helidon-io/helidon/pull/11138)
 - Config: File ConfigSource fails generating MD5 digest. [11233](https://github.com/helidon-io/helidon/pull/11233)
 - Config: Fix a bug in config expression resolution, where the `:` separating c… [11200](https://github.com/helidon-io/helidon/pull/11200)
 - Config: Fixes for Javadoc when building on Java 26 EA [11174](https://github.com/helidon-io/helidon/pull/11174)
+- Config: helidon-config-metadata-processor as a shim of helidon-config-metadata-codegen [11279](https://github.com/helidon-io/helidon/pull/11279)
 - Config: Log setup of configuration - filters, config sources, parsers etc. [11140](https://github.com/helidon-io/helidon/pull/11140)
 - Config: Merged config [11072](https://github.com/helidon-io/helidon/pull/11072)
 - Config: Meta config can now use config sources provided via service registry [10842](https://github.com/helidon-io/helidon/pull/10842)
@@ -76,10 +104,11 @@ JSON Media Support has been enhanced and made consistent for JSON providers (Hel
 - Declarative tracing [10934](https://github.com/helidon-io/helidon/pull/10934)
 - Declarative Validation [10755](https://github.com/helidon-io/helidon/pull/10755)
 - Declarative WebSocket [11050](https://github.com/helidon-io/helidon/pull/11050)
+- Declarative: Fix handling of generic type for client response. [11300](https://github.com/helidon-io/helidon/pull/11300)
 - Declarative: Fix validation codegen to generate validation in order of declaration. [11142](https://github.com/helidon-io/helidon/pull/11142)
 - Declarative: WebSocket Client [11081](https://github.com/helidon-io/helidon/pull/11081)
 - Discovery: Web Client Discovery integration [10786](https://github.com/helidon-io/helidon/pull/10786)
-- Fault Tolerance: Terminate monitor thread created by the timeout implementation when supplier returns [10833](https://github.com/helidon-io/helidon/pull/10833)
+- FT: Terminate monitor thread created by the timeout implementation when supplier returns [10833](https://github.com/helidon-io/helidon/pull/10833)
 - gRPC: Fix "typo" in header name construction [10987](https://github.com/helidon-io/helidon/pull/10987)
 - gRPC: Fix problem handling server-side gRPC errors. Handles grpc-status hea… [10890](https://github.com/helidon-io/helidon/pull/10890)
 - gRPC: Update gRPC reflection service to support imports [11075](https://github.com/helidon-io/helidon/pull/11075)
@@ -89,14 +118,19 @@ JSON Media Support has been enhanced and made consistent for JSON providers (Hel
 - JSON: Helidon JSON polymorphism support [11187](https://github.com/helidon-io/helidon/pull/11187)
 - JSON: Helidon JSON serialization loop fix [11218](https://github.com/helidon-io/helidon/pull/11218)
 - JSON: Insufficient number parsing fixed [11227](https://github.com/helidon-io/helidon/pull/11227)
+- JSON: Json API fixes [11286](https://github.com/helidon-io/helidon/pull/11286)
 - JSON: JSON generator fixes [11074](https://github.com/helidon-io/helidon/pull/11074)
 - JSON: Object deserialization fix [11236](https://github.com/helidon-io/helidon/pull/11236)
 - JSON: Remove incubating from Helidon JSON module [11219](https://github.com/helidon-io/helidon/pull/11219)
+- JSON: Use Helidon JSON instead of JSON-P for Config observer. [11264](https://github.com/helidon-io/helidon/pull/11264)
 - LC4J: Agentic [10972](https://github.com/helidon-io/helidon/pull/10972)
 - LC4J: Agentic MCP [11190](https://github.com/helidon-io/helidon/pull/11190)
 - LC4J: Add LangChain4j Mock ChatModel provider [10966](https://github.com/helidon-io/helidon/pull/10966)
+- LC4J: Add warning for incompatible langchain4j config keys [11287](https://github.com/helidon-io/helidon/pull/11287)
+- LC4J: documentation update. Bump version to 1.12.1 [11275](https://github.com/helidon-io/helidon/pull/11275)
+- LC4J: Fix MockStreamingChatModel cofig root [11277](https://github.com/helidon-io/helidon/pull/11277)
 - LC4J: Support injection in guardrails #10714 [11024](https://github.com/helidon-io/helidon/pull/11024)
-- Media: Update of JSON media supports [11234](https://github.com/helidon-io/helidon/pull/11234)
+- Media Support: Update of JSON media supports [11234](https://github.com/helidon-io/helidon/pull/11234)
 - Media: Add custom `Gson` type adapter factories during runtime [10437](https://github.com/helidon-io/helidon/pull/10437)
 - Media: Add support for buffering entities [11151](https://github.com/helidon-io/helidon/pull/11151)
 - Messaging: Add config-metadata support to JMS, AQ & Kafka connectors #5227 [10863](https://github.com/helidon-io/helidon/pull/10863)
@@ -109,6 +143,10 @@ JSON Media Support has been enhanced and made consistent for JSON providers (Hel
 - OCI: Fully deprecate old OCI SE support [10899](https://github.com/helidon-io/helidon/pull/10899)
 - OpenAPI: Export package from OpenAPI UI integration module; with integration test [10902](https://github.com/helidon-io/helidon/pull/10902)
 - OpenAPI: Fix incorrect config examples and text for customizing UI settings in SE [10884](https://github.com/helidon-io/helidon/pull/10884)
+- OTel: Add support for exporting Helidon metrics via OTLP [11231](https://github.com/helidon-io/helidon/pull/11231)
+- OTel: Adopt later OpenTelemetry release [11066](https://github.com/helidon-io/helidon/pull/11066)
+- OTel: Allow and document how users control SE tracing for OpenTelemetry using Helidon config under `tracing` [10791](https://github.com/helidon-io/helidon/pull/10791)
+- OTel: Support OpenTelemetry logging set-up using Helidon configuration [11260](https://github.com/helidon-io/helidon/pull/11260)
 - Registry: Allow service registry injected ConfigSources to work in Helidon MP [11029](https://github.com/helidon-io/helidon/pull/11029)
 - Registry: If System.exit is called from post construct method, do not deadlock [11060](https://github.com/helidon-io/helidon/pull/11060)
 - Registry: Remove preview flag from service registry. [10907](https://github.com/helidon-io/helidon/pull/10907)
@@ -120,8 +158,7 @@ JSON Media Support has been enhanced and made consistent for JSON providers (Hel
 - Scheduling: Scheduling fixes [10837](https://github.com/helidon-io/helidon/pull/10837)
 - Security: Allow creation of ProviderRequest by changing it to an interface [11047](https://github.com/helidon-io/helidon/pull/11047)
 - Security: Backward compatible fix for common config in SecurityProviderService [11046](https://github.com/helidon-io/helidon/pull/11046)
-- Telemetry: Adopt later OpenTelemetry release [11066](https://github.com/helidon-io/helidon/pull/11066)
-- Telemetry: Allow and document how users control SE tracing for OpenTelemetry using Helidon config under `tracing` [10791](https://github.com/helidon-io/helidon/pull/10791)
+- SSE: Add support for content encoding in SSE [11273](https://github.com/helidon-io/helidon/pull/11273)
 - Telemetry: Add support for OpenTelemetry metrics configuration using Helidon config [11044](https://github.com/helidon-io/helidon/pull/11044)
 - Telemetry: Provide equivalent of OTel's Jaeger exporter for Helidon compatibility [11112](https://github.com/helidon-io/helidon/pull/11112)
 - Telemetry: Support OpenTelemetry metrics and tracing semantic conventions for web clients [11065](https://github.com/helidon-io/helidon/pull/11065)
@@ -145,6 +182,7 @@ JSON Media Support has been enhanced and made consistent for JSON providers (Hel
 - WebServer: Prevent double compression when handler has already set content encoding [10887](https://github.com/helidon-io/helidon/pull/10887)
 - WebServer: Throughput rate limiting feature [10969](https://github.com/helidon-io/helidon/pull/10969)
 - WebServer: UNIX Domain Socket support [10894](https://github.com/helidon-io/helidon/pull/10894)
+- WebServer: Validate HTTP/2 MAX_FRAME_SIZE before applying client settings [11291](https://github.com/helidon-io/helidon/pull/11291)
 - Build: Attempt to fix intermittent compilation failures. [11165](https://github.com/helidon-io/helidon/pull/11165)
 - Build: bundles-apt added to the bom [11220](https://github.com/helidon-io/helidon/pull/11220)
 - Build: Fix dependency:analyze-only for http-media-json [11077](https://github.com/helidon-io/helidon/pull/11077)
@@ -163,6 +201,7 @@ JSON Media Support has been enhanced and made consistent for JSON providers (Hel
 - Dependencies: Upgrade commons-logging to 1.3.5 [11084](https://github.com/helidon-io/helidon/pull/11084)
 - Dependencies: Upgrade GSON to 2.13.2 [11082](https://github.com/helidon-io/helidon/pull/11082)
 - Dependencies: Upgrade guava to 33.3.1-jre. Exclude some troublesome google artifacts from dep convergence [10839](https://github.com/helidon-io/helidon/pull/10839)
+- Dependencies: Upgrade Jackson to 2.21.0 [11052](https://github.com/helidon-io/helidon/pull/11052)
 - Dependencies: Upgrade Jackson to 2.21.1 [11239](https://github.com/helidon-io/helidon/pull/11239)
 - Dependencies: Upgrade Jersey to 3.1.11 [10970](https://github.com/helidon-io/helidon/pull/10970)
 - Dependencies: Upgrade junit to 5.12.2 [11177](https://github.com/helidon-io/helidon/pull/11177)
@@ -173,27 +212,38 @@ JSON Media Support has been enhanced and made consistent for JSON providers (Hel
 - Dependencies: Upgrade test-containers to 1.21.4 [11164](https://github.com/helidon-io/helidon/pull/11164)
 - Dependencies: Upgrades Byte Buddy to 1.18.5 [11189](https://github.com/helidon-io/helidon/pull/11189)
 - Dependencies: Upgrades Narayana to 7.1.0.Final [10900](https://github.com/helidon-io/helidon/pull/10900)
+- Dependencies: Upgrades Oracle drivers to latest version [11271](https://github.com/helidon-io/helidon/pull/11271)
 - Dependencies: Upgrades version.lib.ojdbc to 23.26.0.0.0 [10872](https://github.com/helidon-io/helidon/pull/10872)
 - Docs: Add reference to oci guide [11109](https://github.com/helidon-io/helidon/pull/11109)
 - Docs: Compile time json documentation [11055](https://github.com/helidon-io/helidon/pull/11055)
+- Docs: Config reference docs updates [11284](https://github.com/helidon-io/helidon/pull/11284)
 - Docs: Declarative security docs [10865](https://github.com/helidon-io/helidon/pull/10865)
+- Docs: Doc for using the OTel API directly from a Helidon app [11235](https://github.com/helidon-io/helidon/pull/11235)
 - Docs: Document support for service registry through Testing.Test annotation. [11243](https://github.com/helidon-io/helidon/pull/11243)
 - Docs: Exclude src/it from aggregated javadocs [11122](https://github.com/helidon-io/helidon/pull/11122)
 - Docs: Remove /#/ from helidon.io docs links [10960](https://github.com/helidon-io/helidon/pull/10960)
 - Docs: Remove MCP page and its reference in MP docs [11013](https://github.com/helidon-io/helidon/pull/11013)
 - Docs: Update docs to mention support for AOT Cache in custom jlink images [11226](https://github.com/helidon-io/helidon/pull/11226)
 - Docs: Update documentation with support for configuration expressions in scheduling [11169](https://github.com/helidon-io/helidon/pull/11169)
+- Docs: Update Helidon introduction page [11250](https://github.com/helidon-io/helidon/pull/11250)
 - Docs: Update LangChain4j docs for new provider/model config [11225](https://github.com/helidon-io/helidon/pull/11225)
 - Docs: Update OCI Integration documentation for SE [11032](https://github.com/helidon-io/helidon/pull/11032)
+- Docs: Update quick start (and related) documentation [11208](https://github.com/helidon-io/helidon/pull/11208)
+- Docs: Updates to SE and MP Upgrade Guides [11272](https://github.com/helidon-io/helidon/pull/11272)
+- Examples: Add OpenTelemetry as archetype tracing choice, make it default, remove Jaeger [11274](https://github.com/helidon-io/helidon/pull/11274)
 - Examples: Remove usage of Config.global in the archetypes [11162](https://github.com/helidon-io/helidon/pull/11162)
 - Tests: Accounts for Hibernate 6.6 and future versions' unique interpretation of an area of the JPA spec [11188](https://github.com/helidon-io/helidon/pull/11188)
 - Tests: Enable microprofile/tests/tck/tck-config/src/test/tck-suite.xml tests [8173](https://github.com/helidon-io/helidon/pull/8173)
 - Tests: Fix AckMPTest RC when delayed ack asks offset of the next message [10831](https://github.com/helidon-io/helidon/pull/10831)
 - Tests: Fix concurrent update problem in test log handler [10823](https://github.com/helidon-io/helidon/pull/10823)
 - Tests: Fix timeout duration in test [11040](https://github.com/helidon-io/helidon/pull/11040)
+- Tests: Isolate tests modules with -Ptests [11280](https://github.com/helidon-io/helidon/pull/11280)
+- Tests: Java 25 test fixes [11293](https://github.com/helidon-io/helidon/pull/11293)
+- Tests: Remove flaky HTTP/2 CutConnectionTest [11296](https://github.com/helidon-io/helidon/pull/11296)
 - Tests: Remove unused types from gson test. [10992](https://github.com/helidon-io/helidon/pull/10992)
 - Tests: Remove usage of local environment variables in test. [10878](https://github.com/helidon-io/helidon/pull/10878)
 - Tests: Tolerate test log tracing output that has attributes with no value [11085](https://github.com/helidon-io/helidon/pull/11085)
+
 
 ## [4.3.4]
 
