@@ -26,7 +26,9 @@ import io.helidon.service.registry.Service;
 import com.oracle.bmc.Region;
 import com.oracle.bmc.objectstorage.ObjectStorageClient;
 
-@Generated(value = "io.helidon.integrations.oci.sdk.codegen.OciInjectionCodegenObserver", trigger = "com.oracle.bmc.objectstorage.ObjectStorage")
+@Generated(
+    value = "io.helidon.integrations.oci.sdk.codegen.OciInjectionCodegenObserver",
+    trigger = "com.oracle.bmc.objectstorage.ObjectStorage")
 @Service.Singleton
 @Weight(99.0D)
 class ObjectStorage__Oci_ClientBuilder implements Service.InjectionPointFactory<ObjectStorageClient.Builder> {

@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.types.AnnotationProperty.ConstantValue;
 
 /**
  * An annotation with defined values.
@@ -166,7 +167,11 @@ interface AnnotationBlueprint {
      * @return object value
      */
     default Optional<Object> objectValue(String property) {
-        return Optional.ofNullable(properties().get(property).value());
+        var value = properties().get(property).value();
+        if (value instanceof ConstantValue cv) {
+            return Optional.of(cv.value());
+        }
+        return Optional.ofNullable(value);
     }
 
     /**

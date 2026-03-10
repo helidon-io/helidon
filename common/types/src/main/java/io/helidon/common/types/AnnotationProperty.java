@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.common.types;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -35,18 +37,9 @@ public interface AnnotationProperty {
      * @return a new annotation property
      * @see io.helidon.common.types.Annotation.BuilderBase#putValue(String, Object)
      */
-    @SuppressWarnings({"rawtypes", "unchecked"})
     static AnnotationProperty create(Object value) {
         Objects.requireNonNull(value);
-
-        return switch (value) {
-            case AnnotationProperty ap ->
-                    throw new IllegalArgumentException("Cannot use an existing annotation property to create a new one."
-                                                               + ", value: " + value + ", inlined value: " + ap.value());
-            case EnumValue ev -> new AnnotationPropertyImpl(value, ev);
-            case Enum en -> new AnnotationPropertyImpl(value, EnumValue.create(en.getDeclaringClass(), en));
-            default -> new AnnotationPropertyImpl(value);
-        };
+        return new AnnotationPropertyImpl(value(value));
     }
 
     /**
@@ -75,7 +68,7 @@ public interface AnnotationProperty {
                                                            + " Constant: " + constantType.fqName() + "." + constantName);
             }
         }
-        return new AnnotationPropertyImpl(value, new EnumValueImpl(constantType, constantName));
+        return new AnnotationPropertyImpl(new ConstantValueImpl(constantType, constantName, value));
     }
 
     /**
@@ -106,8 +99,32 @@ public interface AnnotationProperty {
      * {@link EnumValue}.
      *
      * @return constant value if defined
+     * @deprecated use {{@link #value()}} and downcast to {@link ConstantValue} or {@link EnumValue}
      */
-    Optional<ConstantValue> constantValue();
+    @Deprecated(forRemoval = true, since = "4.4.0")
+    default Optional<ConstantValue> constantValue() {
+        if (value() instanceof ConstantValue cv) {
+            return Optional.of(cv);
+        }
+        return Optional.empty();
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static Object value(Object value) {
+        return switch (value) {
+            case ConstantValue cv -> cv;
+            case Enum en -> EnumValue.create(en.getDeclaringClass(), en);
+            case AnnotationProperty ap -> ap.value();
+            case Collection<?> values -> {
+                var list = new ArrayList<>();
+                for (var e : values) {
+                    list.add(value(e));
+                }
+                yield list;
+            }
+            default -> value;
+        };
+    }
 
     /**
      * A reference to a constant, that can be used in generated annotation code.
@@ -126,6 +143,13 @@ public interface AnnotationProperty {
          * @return constant name
          */
         String name();
+
+        /**
+         * Value of the constant.
+         *
+         * @return constant value
+         */
+        Object value();
     }
 }
 
