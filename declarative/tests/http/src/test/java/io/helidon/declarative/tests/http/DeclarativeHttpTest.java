@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.declarative.tests.http;
 
 import java.net.URI;
-import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.http.HeaderName;
@@ -25,6 +24,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.ServiceRegistry;
@@ -32,12 +32,10 @@ import io.helidon.webclient.api.RestClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -46,8 +44,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SuppressWarnings("deprecation")
 @ServerTest
 class DeclarativeHttpTest {
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
-
     private final Http1Client client;
     private final ServiceRegistry registry;
     private final URI serverUri;
@@ -71,10 +67,22 @@ class DeclarativeHttpTest {
 
         assertThat(response.status(), is(Status.OK_200));
         JsonObject json = response.entity();
-        assertThat(json.getString("message"), is("Hello World!"));
+        assertThat(json.stringValue("message", "bad"), is("Hello World!"));
 
         assertThat(SomeEntryPointInterceptor.executions(),
                    hasItems(GreetServiceEndpoint.class.getName() + ".getDefaultMessageHandler()"));
+    }
+
+    @Test
+    void testGreetingList() {
+        GreetServiceClient typedClient = registry.get(Lookup.builder()
+                                                              .addContract(GreetServiceClient.class)
+                                                              .addQualifier(Qualifier.create(RestClient.Client.class))
+                                                              .build());
+
+        var all = typedClient.greetings();
+
+        assertThat(all, hasItem(is(new GreetingDto("Hello"))));
     }
 
     @Test
@@ -97,15 +105,15 @@ class DeclarativeHttpTest {
 
     @Test
     void testErrorHandler() {
-        JsonObject badEntity = JSON.createObjectBuilder().build();
+        JsonObject badEntity = JsonObject.builder().build();
 
         var response = client.put("/greet/greeting").submit(badEntity, JsonObject.class);
         assertThat(response.status(), is(Status.BAD_REQUEST_400));
         JsonObject entity = response.entity();
-        assertThat(entity.getString("error"), is("No greeting provided"));
+        assertThat(entity.stringValue("error", "bad"), is("No greeting provided"));
 
         assertThat(SomeEntryPointInterceptor.executions(),
-                   hasItems(GreetServiceEndpoint.class.getName() + ".updateGreetingHandler(jakarta.json.JsonObject)"));
+                   hasItems(GreetServiceEndpoint.class.getName() + ".updateGreetingHandler(io.helidon.json.JsonObject)"));
     }
 
     @Test
@@ -161,7 +169,7 @@ class DeclarativeHttpTest {
         assertThat(message, is("Hello World!"));
 
         JsonObject jsonMessage = typedClient.getDefaultMessageHandler();
-        assertThat(jsonMessage.getString("message"), is("Hello World!"));
+        assertThat(jsonMessage.stringValue("message", "bad"), is("Hello World!"));
 
         message = typedClient.failingFallback(serverUri.getAuthority());
         assertThat(message, is("Fallback " + serverUri.getAuthority()));
@@ -179,17 +187,17 @@ class DeclarativeHttpTest {
         assertThat(exception.status(), is(Status.SERVICE_UNAVAILABLE_503));
 
         jsonMessage = typedClient.getMessageHandler("test");
-        assertThat(jsonMessage.getString("message"), is("Hello test!"));
+        assertThat(jsonMessage.stringValue("message", "bad"), is("Hello test!"));
 
-        JsonObject newGreeting = JSON.createObjectBuilder()
-                .add("greeting", "Ahoj")
+        JsonObject newGreeting = JsonObject.builder()
+                .set("greeting", "Ahoj")
                 .build();
         typedClient.updateGreetingHandler(newGreeting);
 
-        newGreeting = JSON.createObjectBuilder()
-                .add("greeting", "Hello")
+        newGreeting = JsonObject.builder()
+                .set("greeting", "Hello")
                 .build();
         jsonMessage = typedClient.updateGreetingHandlerReturningCurrent(newGreeting);
-        assertThat(jsonMessage.getString("message"), is("Ahoj World!"));
+        assertThat(jsonMessage.stringValue("message", "bad"), is("Ahoj World!"));
     }
 }

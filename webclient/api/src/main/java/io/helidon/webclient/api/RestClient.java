@@ -24,6 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Optional;
 
+import io.helidon.common.GenericType;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Status;
@@ -224,14 +225,14 @@ public final class RestClient {
          * @param requestUri     requested URI
          * @param requestHeaders request headers
          * @param typedResponse  response we received from the server
-         * @param type           entity class (type of the typed response)
+         * @param type           type of the typed response
          * @return possible exception to throw, if empty, the invocation will be considered a success, even if the
          *         status denoted an error
          */
         Optional<? extends RuntimeException> handleError(String requestUri,
                                                          ClientRequestHeaders requestHeaders,
                                                          ClientResponseTyped<?> typedResponse,
-                                                         Class<?> type);
+                                                         GenericType<?> type);
     }
 
     /**
@@ -257,7 +258,19 @@ public final class RestClient {
          * @param response response
          * @param type type of the response
          */
-        void handle(String uri, ClientRequestHeaders requestHeaders, ClientResponseTyped<?> response, Class<?> type);
+        default void handle(String uri, ClientRequestHeaders requestHeaders, ClientResponseTyped<?> response, Class<?> type) {
+            handle(uri, requestHeaders, response, GenericType.create(type));
+        }
+
+        /**
+         * Handle an exception for a typed response.
+         *
+         * @param uri invoked URI
+         * @param requestHeaders headers of the request
+         * @param response response
+         * @param type type of the typed response
+         */
+        void handle(String uri, ClientRequestHeaders requestHeaders, ClientResponseTyped<?> response, GenericType<?> type);
     }
 
 }

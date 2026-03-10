@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.GenericType;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HttpException;
 import io.helidon.service.registry.Service;
@@ -47,7 +48,7 @@ class DefaultErrorHandling implements RestClient.ErrorHandling {
     }
 
     @Override
-    public void handle(String uri, ClientRequestHeaders requestHeaders, ClientResponseTyped<?> response, Class<?> type) {
+    public void handle(String uri, ClientRequestHeaders requestHeaders, ClientResponseTyped<?> response, GenericType<?> type) {
         for (RestClient.ErrorHandler errorHandler : errorHandlers) {
             if (errorHandler.handles(uri, requestHeaders, response.status(), response.headers())) {
                 var maybeException = errorHandler.handleError(uri, requestHeaders, response, type);
@@ -77,7 +78,7 @@ class DefaultErrorHandling implements RestClient.ErrorHandling {
         public Optional<? extends RuntimeException> handleError(String requestUri,
                                                                 ClientRequestHeaders requestHeaders,
                                                                 ClientResponseTyped<?> response,
-                                                                Class<?> type) {
+                                                                GenericType<?> type) {
             return Optional.of(new HttpException("Failed when invoking a client call to " + requestUri
                                                          + ", status: " + response.status(),
                                                  response.status()));

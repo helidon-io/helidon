@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.api;
 
+import io.helidon.common.GenericType;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Status;
@@ -33,6 +34,23 @@ class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
         RuntimeException thrown;
         try {
             entity = response.as(entityType);
+            thrown = null;
+        } catch (RuntimeException e) {
+            thrown = e;
+            entity = null;
+        }
+        this.thrown = thrown;
+        this.entity = entity;
+    }
+
+    ClientResponseTypedImpl(HttpClientResponse response, GenericType<T> entityType) {
+        this.response = response;
+
+        // Read the entity immediately, as this type is not going to be autocloseable, so we need to read the whole thing
+        T entity;
+        RuntimeException thrown;
+        try {
+            entity = response.entity().as(entityType);
             thrown = null;
         } catch (RuntimeException e) {
             thrown = e;

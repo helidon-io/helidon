@@ -39,7 +39,11 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.http.media</groupId>
-            <artifactId>helidon-http-media-jsonp</artifactId>
+            <artifactId>helidon-http-media-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-json-binding</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver.observe</groupId>
@@ -68,10 +72,6 @@
         <dependency>
             <groupId>io.helidon.health</groupId>
             <artifactId>helidon-health-checks</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.logging</groupId>

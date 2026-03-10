@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,16 @@
 
 package io.helidon.declarative.tests.http;
 
-import java.util.Map;
-
 import io.helidon.faulttolerance.FaultToleranceException;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.ErrorHandler;
 import io.helidon.webserver.http.spi.ErrorHandlerProvider;
 
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-
 @SuppressWarnings("deprecation")
 @Service.Singleton
 class FaultToleranceErrorHandler implements ErrorHandlerProvider<FaultToleranceException> {
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
-
     @Override
     public Class<FaultToleranceException> errorType() {
         return FaultToleranceException.class;
@@ -41,8 +34,8 @@ class FaultToleranceErrorHandler implements ErrorHandlerProvider<FaultToleranceE
     @Override
     public ErrorHandler<FaultToleranceException> create() {
         return (req, res, t) -> {
-            JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                    .add("error", t.getMessage())
+            JsonObject jsonErrorObject = JsonObject.builder()
+                    .set("error", t.getMessage())
                     .build();
 
             res.status(Status.SERVICE_UNAVAILABLE_503)

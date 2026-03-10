@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package io.helidon.declarative.tests.http;
 
+import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.api.RestClient;
 import io.helidon.webserver.http.RestServer;
-
-import jakarta.json.JsonObject;
 
 @SuppressWarnings("deprecation")
 @Http.Path("/greet")
@@ -39,6 +39,10 @@ interface GreetService {
     @Http.GET
     @Http.Path("/ft/fallback")
     String failingFallback(@Http.HeaderParam(HeaderNames.HOST_NAME) String host);
+
+    @Http.GET
+    @Http.Path("/all")
+    List<GreetingDto> greetings();
 
     @Http.GET
     @Http.Path("/ft/retry")
