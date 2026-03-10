@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -219,6 +219,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
      * @param http2Settings client settings to use
      */
     public void clientSettings(Http2Settings http2Settings) {
+        validateMaxFrameSize(http2Settings);
         this.clientSettings = http2Settings;
         this.receiveFrameListener.frame(ctx, 0, clientSettings);
         if (this.clientSettings.hasValue(Http2Setting.HEADER_TABLE_SIZE)) {
@@ -255,13 +256,20 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
         if (this.clientSettings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {
             Long maxFrameSize = this.clientSettings.value(Http2Setting.MAX_FRAME_SIZE);
-            // specification defines, that the frame size must be between the initial size (16384) and 2^24-1
-            if (maxFrameSize < WindowSize.DEFAULT_MAX_FRAME_SIZE || maxFrameSize > WindowSize.MAX_MAX_FRAME_SIZE) {
-                throw new Http2Exception(Http2ErrorCode.PROTOCOL,
-                                         "Frame size must be between 2^14 and 2^24-1, but is: " + maxFrameSize);
-            }
-
             flowControl.resetMaxFrameSize(maxFrameSize.intValue());
+        }
+    }
+
+    private static void validateMaxFrameSize(Http2Settings http2Settings) {
+        if (!http2Settings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {
+            return;
+        }
+
+        Long maxFrameSize = http2Settings.value(Http2Setting.MAX_FRAME_SIZE);
+        // specification defines, that the frame size must be between the initial size (16384) and 2^24-1
+        if (maxFrameSize < WindowSize.DEFAULT_MAX_FRAME_SIZE || maxFrameSize > WindowSize.MAX_MAX_FRAME_SIZE) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                     "Frame size must be between 2^14 and 2^24-1, but is: " + maxFrameSize);
         }
     }
 
