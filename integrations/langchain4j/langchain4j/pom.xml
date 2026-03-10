@@ -192,6 +192,11 @@
                         <artifactId>helidon-common-features-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
+                    <dependency>
+                        <groupId>io.helidon.integrations.langchain4j</groupId>
+                        <artifactId>helidon-integrations-langchain4j-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
                 </dependencies>
             </plugin>
             <plugin>
