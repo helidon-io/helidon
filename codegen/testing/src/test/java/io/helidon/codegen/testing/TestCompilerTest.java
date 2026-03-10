@@ -51,7 +51,7 @@ class TestCompilerTest {
     void testCodegen() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .processors(new ProcessorImpl() {
+                .addProcessor(new ProcessorImpl() {
                     @Override
                     ClassModel handle(Element element) {
                         var annot = element.getAnnotation(AcmeAnnotation.class);
@@ -80,9 +80,9 @@ class TestCompilerTest {
                         }
                     }
                 })
-                .classpath(AcmeAnnotation.class)
+                .addClasspath(AcmeAnnotation.class)
                 .printDiagnostics(false)
-                .source("AcmeObject.java", """
+                .addSource("AcmeObject.java", """
                         package io.helidon.codegen.testing;
                         
                         import io.helidon.codegen.testing.TestCompilerTest.AcmeAnnotation;

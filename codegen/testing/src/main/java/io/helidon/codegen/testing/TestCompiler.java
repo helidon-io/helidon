@@ -21,7 +21,6 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -42,7 +41,6 @@ import org.intellij.lang.annotations.Language;
  * This code and its internal interfaces are subject to change or deletion without notice.</b>
  * </p>
  */
-@SuppressWarnings("ALL")
 public final class TestCompiler {
 
     private final List<Supplier<Processor>> processors;
@@ -162,6 +160,7 @@ public final class TestCompiler {
         private final List<Path> modulepath = new ArrayList<>();
         private final List<String> opts = new ArrayList<>();
         private final List<JavaFileObject> sources = new ArrayList<>();
+
         private Path workDir;
         private boolean printDiagnostics = true;
 
@@ -183,14 +182,35 @@ public final class TestCompiler {
         }
 
         /**
-         * Add processors.
+         * Processors to use during compilation.
          *
-         * @param processors processors
+         * @param processors processors to replace current configured value
          * @return this builder
          */
-        @SafeVarargs
-        public final Builder processors(Supplier<Processor>... processors) {
-            Collections.addAll(this.processors, processors);
+        public Builder processors(List<Processor> processors) {
+            this.processors.clear();
+            return addProcessors(processors);
+        }
+
+        /**
+         * Add processor.
+         *
+         * @param processor processor
+         * @return this builder
+         */
+        public Builder addProcessor(Processor processor) {
+            this.processors.add(() -> processor);
+            return this;
+        }
+
+        /**
+         * Add processor.
+         *
+         * @param processor processor supplier
+         * @return this builder
+         */
+        public Builder addProcessor(Supplier<Processor> processor) {
+            this.processors.add(processor);
             return this;
         }
 
@@ -200,17 +220,7 @@ public final class TestCompiler {
          * @param processors processors
          * @return this builder
          */
-        public Builder processors(Processor... processors) {
-            return processors(List.of(processors));
-        }
-
-        /**
-         * Add processors.
-         *
-         * @param processors processors
-         * @return this builder
-         */
-        public Builder processors(List<Processor> processors) {
+        public Builder addProcessors(List<Processor> processors) {
             for (var processor : processors) {
                 this.processors.add(() -> processor);
             }
@@ -218,13 +228,26 @@ public final class TestCompiler {
         }
 
         /**
-         * Add class-path entries.
+         * Class-path entries.
          *
-         * @param classes classes used to derive locations
+         * @param classes classes used to derive locations to replace configured value
+         * @return this builder
+         * @see #classpathEntries(java.util.List)
+         */
+        public Builder classpath(List<Class<?>> classes) {
+            this.classpath.clear();
+            return addClasspath(classes);
+        }
+
+        /**
+         * Add class-path entry.
+         *
+         * @param clazz class used to derive location
          * @return this builder
          */
-        public Builder classpath(Class<?>... classes) {
-            return classpath(List.of(classes));
+        public Builder addClasspath(Class<?> clazz) {
+            classpath.add(TestPaths.paths(clazz));
+            return this;
         }
 
         /**
@@ -233,7 +256,7 @@ public final class TestCompiler {
          * @param classes classes used to derive locations
          * @return this builder
          */
-        public Builder classpath(List<Class<?>> classes) {
+        public Builder addClasspath(List<Class<?>> classes) {
             for (var cls : classes) {
                 classpath.add(TestPaths.paths(cls));
             }
@@ -241,13 +264,26 @@ public final class TestCompiler {
         }
 
         /**
-         * Add class-path entries.
+         * Class-path entries.
          *
-         * @param paths paths
+         * @param paths paths to replace configured value
+         * @return this builder
+         * @see #classpath(java.util.List)
+         */
+        public Builder classpathEntries(List<Path> paths) {
+            classpath.clear();
+            return addClasspathEntries(paths);
+        }
+
+        /**
+         * Add class-path entry.
+         *
+         * @param path path
          * @return this builder
          */
-        public Builder classpathEntries(Path... paths) {
-            return classpathEntries(List.of(paths));
+        public Builder addClasspathEntry(Path path) {
+            this.classpath.add(path);
+            return this;
         }
 
         /**
@@ -256,28 +292,29 @@ public final class TestCompiler {
          * @param paths paths
          * @return this builder
          */
-        public Builder classpathEntries(List<Path> paths) {
+        public Builder addClasspathEntries(List<Path> paths) {
             classpath.addAll(paths);
             return this;
         }
 
         /**
-         * Add module-path entries.
+         * Add module-path entry.
          *
-         * @param classes classes used to derive locations
+         * @param clazz class used to derive locations
          * @return this builder
          */
-        public Builder modulepath(Class<?>... classes) {
-            return modulepath(List.of(classes));
+        public Builder addModulePath(Class<?> clazz) {
+            modulepath.add(TestPaths.paths(clazz));
+            return this;
         }
 
         /**
-         * Add module-path entries.
+         * Module-path entries.
          *
          * @param classes classes used to derive locations
          * @return this builder
          */
-        public Builder modulepath(List<Class<?>> classes) {
+        public Builder addModulePath(List<Class<?>> classes) {
             for (var cls : classes) {
                 modulepath.add(TestPaths.paths(cls));
             }
@@ -287,11 +324,24 @@ public final class TestCompiler {
         /**
          * Add module-path entries.
          *
-         * @param paths paths
+         * @param classes classes used to derive locations to replace configured value
+         * @return this builder
+         * @see #modulePathEntries(java.util.List)
+         */
+        public Builder modulePath(List<Class<?>> classes) {
+            modulepath.clear();
+            return addModulePath(classes);
+        }
+
+        /**
+         * Add module-path entry.
+         *
+         * @param path path
          * @return this builder
          */
-        public Builder modulepathEntries(Path... paths) {
-            return modulepathEntries(List.of(paths));
+        public Builder addModulePathEntry(Path path) {
+            this.modulepath.add(path);
+            return this;
         }
 
         /**
@@ -300,27 +350,78 @@ public final class TestCompiler {
          * @param paths paths
          * @return this builder
          */
-        public Builder modulepathEntries(List<Path> paths) {
+        public Builder addModulePathEntries(List<Path> paths) {
             modulepath.addAll(paths);
             return this;
         }
 
         /**
+         * Module-path entries.
+         *
+         * @param paths paths to replace configured value
+         * @return this builder
+         * @see #modulePath(java.util.List)
+         */
+        public Builder modulePathEntries(List<Path> paths) {
+            modulepath.clear();
+            return addModulePathEntries(paths);
+        }
+
+        /**
          * Do annotation processing only.
+         * <p>
+         * This is a helper method that adds {@code -proc:only} option.
          *
          * @return this builder
          */
         public Builder procOnly() {
-            return opts("-proc:only");
+            return addOption("-proc:only");
         }
 
         /**
          * Add {@code --release} for the current runtime version.
+         * <p>
+         * This is a helper method that adds {@code --release} option and an option with the current Java version.
          *
          * @return this builder
          */
         public Builder currentRelease() {
-            return opts("--release", String.valueOf(Runtime.version().feature()));
+            return addOption("--release", String.valueOf(Runtime.version().feature()));
+        }
+
+        /**
+         * Add an option.
+         *
+         * @param option to add, must not contain spaces (otherwise it is multiple options)
+         * @return this builder
+         */
+        public Builder addOption(String option) {
+            opts.add(option);
+            return this;
+        }
+
+        /**
+         * Add an option with a name and a value (i.e. {@code --release 25}).
+         *
+         * @param option option name
+         * @param value  option value
+         * @return this builder
+         */
+        public Builder addOption(String option, String value) {
+            opts.add(option);
+            opts.add(value);
+            return this;
+        }
+
+        /**
+         * Compiler options.
+         *
+         * @param opts options to replace configured value
+         * @return this builder
+         */
+        public Builder options(List<String> opts) {
+            this.opts.clear();
+            return addOptions(opts);
         }
 
         /**
@@ -329,17 +430,7 @@ public final class TestCompiler {
          * @param opts options
          * @return this builder
          */
-        public Builder opts(String... opts) {
-            return opts(List.of(opts));
-        }
-
-        /**
-         * Add compiler options.
-         *
-         * @param opts options
-         * @return this builder
-         */
-        public Builder opts(List<String> opts) {
+        public Builder addOptions(List<String> opts) {
             this.opts.addAll(opts);
             return this;
         }
@@ -351,9 +442,9 @@ public final class TestCompiler {
          * @param code     source code
          * @return this builder
          */
-        public Builder source(String fileName, @Language("java") String code) {
+        public Builder addSource(String fileName, @Language("java") String code) {
             var uri = URI.create("string:///" + fileName);
-            return source(new SimpleJavaFileObject(uri, JavaFileObject.Kind.SOURCE) {
+            return addSource(new SimpleJavaFileObject(uri, JavaFileObject.Kind.SOURCE) {
                 @Override
                 public CharSequence getCharContent(boolean ignoreEncodingErrors) {
                     return code;
@@ -365,9 +456,9 @@ public final class TestCompiler {
          * Add a source to compile.
          *
          * @param source source code
-         * @return this instace
+         * @return this instance
          */
-        public Builder source(JavaFileObject source) {
+        public Builder addSource(JavaFileObject source) {
             this.sources.add(source);
             return this;
         }
