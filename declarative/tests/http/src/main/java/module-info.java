@@ -19,7 +19,6 @@ module io.helidon.declarative.tests.http {
     requires io.helidon.common.media.type;
     requires io.helidon.webserver;
     requires io.helidon.service.registry;
-    requires jakarta.json;
     requires io.helidon.config.yaml;
     requires io.helidon.logging.common;
     requires io.helidon.metrics.systemmeters;
@@ -27,6 +26,8 @@ module io.helidon.declarative.tests.http {
     requires io.helidon.webclient.api;
     requires io.helidon.faulttolerance;
     requires io.helidon.metrics.api;
+    requires io.helidon.json.binding;
+    requires io.helidon.json;
 
     // Security related dependencies
     requires io.helidon.security;

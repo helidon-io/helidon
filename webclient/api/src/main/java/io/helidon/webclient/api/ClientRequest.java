@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.function.Consumer;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.tls.Tls;
@@ -283,6 +284,19 @@ public interface ClientRequest<T extends ClientRequest<T>> {
     }
 
     /**
+     * Request without sending an entity.
+     *
+     * @param type generic type of entity
+     * @param <E>  type of entity
+     * @return correctly typed response
+     * @see #request()
+     */
+    default <E> ClientResponseTyped<E> request(GenericType<E> type) {
+        HttpClientResponse response = request();
+        return new ClientResponseTypedImpl<>(response, type);
+    }
+
+    /**
      * Request entity without sending a request entity, asking for entity only.
      * This method will fail if the status is not in successful family.
      *
@@ -292,6 +306,26 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @param <E> type of the entity to read from the response
      */
     default <E> E requestEntity(Class<E> type) throws HttpException {
+        ClientResponseTyped<E> typedResponse = request(type);
+        if (typedResponse.status().family() == Status.Family.SUCCESSFUL) {
+            return typedResponse.entity();
+        }
+        if (typedResponse.status() == Status.BAD_REQUEST_400) {
+            throw new IllegalArgumentException("Failed to read entity, received bad request");
+        }
+        throw new IllegalStateException(typedResponse.status() + ": Failed to read entity, as response status is not success");
+    }
+
+    /**
+     * Request entity without sending a request entity, asking for entity only.
+     * This method will fail if the status is not in successful family.
+     *
+     * @param type generic type of requested entity
+     * @return correctly typed entity
+     * @throws io.helidon.http.HttpException in case the response status is not success
+     * @param <E> type of the entity to read from the response
+     */
+    default <E> E requestEntity(GenericType<E> type) throws HttpException {
         ClientResponseTyped<E> typedResponse = request(type);
         if (typedResponse.status().family() == Status.Family.SUCCESSFUL) {
             return typedResponse.entity();
@@ -315,10 +349,23 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      *
      * @param entity        request entity
      * @param requestedType type of response entity
-     * @param <T>           type of response entity
+     * @param <E>           type of response entity
      * @return correctly typed response
      */
-    default <T> ClientResponseTyped<T> submit(Object entity, Class<T> requestedType) {
+    default <E> ClientResponseTyped<E> submit(Object entity, Class<E> requestedType) {
+        HttpClientResponse response = submit(entity);
+        return new ClientResponseTypedImpl<>(response, requestedType);
+    }
+
+    /**
+     * Submit an entity and request a specific type.
+     *
+     * @param entity        request entity
+     * @param requestedType generic type of response entity
+     * @param <E>           type of response entity
+     * @return correctly typed response
+     */
+    default <E> ClientResponseTyped<E> submit(Object entity, GenericType<E> requestedType) {
         HttpClientResponse response = submit(entity);
         return new ClientResponseTypedImpl<>(response, requestedType);
     }

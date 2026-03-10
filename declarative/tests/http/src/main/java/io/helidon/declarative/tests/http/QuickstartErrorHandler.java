@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,10 @@ package io.helidon.declarative.tests.http;
 
 import java.util.Map;
 
+import io.helidon.json.JsonObject;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.ErrorHandler;
 import io.helidon.webserver.http.spi.ErrorHandlerProvider;
-
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
 
 /**
  * Example of an HTTP error handler to have an easy approach to returning well-formatted error messages
@@ -33,8 +30,6 @@ import jakarta.json.JsonObject;
 @SuppressWarnings("deprecation")
 @Service.Singleton
 class QuickstartErrorHandler implements ErrorHandlerProvider<QuickstartException> {
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
-
     @Override
     public Class<QuickstartException> errorType() {
         return QuickstartException.class;
@@ -43,8 +38,8 @@ class QuickstartErrorHandler implements ErrorHandlerProvider<QuickstartException
     @Override
     public ErrorHandler<QuickstartException> create() {
         return (req, res, t) -> {
-            JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                    .add("error", t.getMessage())
+            JsonObject jsonErrorObject = JsonObject.builder()
+                    .set("error", t.getMessage())
                     .build();
             res.status(t.status())
                     .send(jsonErrorObject);

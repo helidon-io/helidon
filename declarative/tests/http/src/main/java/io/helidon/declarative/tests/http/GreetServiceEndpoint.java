@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.declarative.tests.http;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -32,14 +32,11 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.abac.role.RoleValidator;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.RestServer;
-
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
 
 /**
  * A simple endpoint to greet you. Examples:
@@ -61,7 +58,6 @@ import jakarta.json.JsonObject;
 @SuppressWarnings("deprecation")
 class GreetServiceEndpoint implements GreetService {
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
     private static final AtomicInteger RETRY_CALLS = new AtomicInteger();
     private static volatile Instant lastCall = Instant.now();
 
@@ -94,6 +90,15 @@ class GreetServiceEndpoint implements GreetService {
     @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
     public JsonObject getDefaultMessageHandler() {
         return response("World");
+    }
+
+    @Override
+    public List<GreetingDto> greetings() {
+        var current = this.greeting.get();
+        if (current.equals("Hello")) {
+            return List.of(new GreetingDto("Hello"));
+        }
+        return List.of(new GreetingDto(this.greeting.get()), new GreetingDto("Hello"));
     }
 
     @Ft.Fallback(value = "fallback", applyOn = IllegalStateException.class)
@@ -167,7 +172,7 @@ class GreetServiceEndpoint implements GreetService {
             throw new QuickstartException(Status.BAD_REQUEST_400, "No greeting provided");
         }
 
-        greeting.set(greetingMessage.getString("greeting"));
+        greeting.set(greetingMessage.stringValue("greeting", greeting.get()));
     }
 
     /**
@@ -183,7 +188,7 @@ class GreetServiceEndpoint implements GreetService {
             throw new QuickstartException(Status.BAD_REQUEST_400, "No greeting provided");
         }
         JsonObject response = response("World");
-        greeting.set(greetingMessage.getString("greeting"));
+        greeting.set(greetingMessage.stringValue("greeting", greeting.get()));
         return response;
     }
 
@@ -198,12 +203,6 @@ class GreetServiceEndpoint implements GreetService {
 
     String fallback(String host) {
         return "Fallback " + host;
-    }
-
-    private JsonObject response(String name) {
-        return JSON.createObjectBuilder()
-                .add("message", stringResponse(name))
-                .build();
     }
 
     /**
@@ -224,10 +223,15 @@ class GreetServiceEndpoint implements GreetService {
             throw new QuickstartException(Status.BAD_REQUEST_400, "No greeting provided");
         }
         JsonObject response = response(securityContext.userName());
-        greeting.set(greetingMessage.getString("greeting"));
+        greeting.set(greetingMessage.stringValue("greeting", greeting.get()));
         return response;
     }
 
+    private JsonObject response(String name) {
+        return JsonObject.builder()
+                .set("message", stringResponse(name))
+                .build();
+    }
 
     private String stringResponse(String name) {
         return String.format("%s %s!", greeting.get(), name);
