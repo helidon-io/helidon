@@ -70,12 +70,10 @@
             io.helidon.integrations.microstream.core.ConfigurationTest.createFromConfigTest  Time elapsed: 0.455 s  <<< ERROR!
             java.lang.NoSuchMethodError: 'void sun.misc.Unsafe.ensureClassInitialized(java.lang.Class)'
             at one.microstream.memory.sun.JdkInternals.ensureClassInitialized(JdkInternals.java:988)
-
-            Intentionally not using Java 25 or newer, as our next Java update MUST support this
             -->
-            <id>java-24</id>
+            <id>java-24-plus</id>
             <activation>
-                <jdk>24</jdk>
+                <jdk>[24,)</jdk>
             </activation>
             <build>
                 <plugins>
