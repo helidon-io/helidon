@@ -2497,7 +2497,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
-[4.4.0]: https://github.com/oracle/helidon/compare/4.4.0...4.3.4
+[4.4.0]: https://github.com/oracle/helidon/compare/4.3.4...4.4.0
 [4.3.4]: https://github.com/oracle/helidon/compare/4.3.3...4.3.4
 [4.3.3]: https://github.com/oracle/helidon/compare/4.3.2...4.3.3
 [4.3.2]: https://github.com/oracle/helidon/compare/4.3.1...4.3.2
