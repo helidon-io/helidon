@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import javax.annotation.processing.Processor;
@@ -199,6 +200,8 @@ public final class TestCompiler {
          * @return this builder
          */
         public Builder addProcessor(Processor processor) {
+            Objects.requireNonNull(processor, "processor is null");
+
             this.processors.add(() -> processor);
             return this;
         }
@@ -210,6 +213,8 @@ public final class TestCompiler {
          * @return this builder
          */
         public Builder addProcessor(Supplier<Processor> processor) {
+            Objects.requireNonNull(processor, "processor is null");
+
             this.processors.add(processor);
             return this;
         }
@@ -246,6 +251,8 @@ public final class TestCompiler {
          * @return this builder
          */
         public Builder addClasspath(Class<?> clazz) {
+            Objects.requireNonNull(clazz, "clazz is null");
+
             classpath.add(TestPaths.paths(clazz));
             return this;
         }
@@ -282,6 +289,8 @@ public final class TestCompiler {
          * @return this builder
          */
         public Builder addClasspathEntry(Path path) {
+            Objects.requireNonNull(path, "path is null");
+
             this.classpath.add(path);
             return this;
         }
@@ -293,6 +302,8 @@ public final class TestCompiler {
          * @return this builder
          */
         public Builder addClasspathEntries(List<Path> paths) {
+            Objects.requireNonNull(paths, "paths is null");
+
             classpath.addAll(paths);
             return this;
         }
@@ -304,6 +315,8 @@ public final class TestCompiler {
          * @return this builder
          */
         public Builder addModulePath(Class<?> clazz) {
+            Objects.requireNonNull(clazz, "clazz is null");
+
             modulepath.add(TestPaths.paths(clazz));
             return this;
         }
@@ -340,6 +353,8 @@ public final class TestCompiler {
          * @return this builder
          */
         public Builder addModulePathEntry(Path path) {
+            Objects.requireNonNull(path, "path is null");
+
             this.modulepath.add(path);
             return this;
         }
@@ -351,6 +366,8 @@ public final class TestCompiler {
          * @return this builder
          */
         public Builder addModulePathEntries(List<Path> paths) {
+            Objects.requireNonNull(paths, "paths is null");
+
             modulepath.addAll(paths);
             return this;
         }
@@ -396,6 +413,8 @@ public final class TestCompiler {
          * @return this builder
          */
         public Builder addOption(String option) {
+            Objects.requireNonNull(option, "option is null");
+
             opts.add(option);
             return this;
         }
@@ -408,6 +427,9 @@ public final class TestCompiler {
          * @return this builder
          */
         public Builder addOption(String option, String value) {
+            Objects.requireNonNull(option, "option is null");
+            Objects.requireNonNull(option, "value is null");
+
             opts.add(option);
             opts.add(value);
             return this;
@@ -431,6 +453,8 @@ public final class TestCompiler {
          * @return this builder
          */
         public Builder addOptions(List<String> opts) {
+            Objects.requireNonNull(opts, "opts is null");
+
             this.opts.addAll(opts);
             return this;
         }
@@ -443,6 +467,9 @@ public final class TestCompiler {
          * @return this builder
          */
         public Builder addSource(String fileName, @Language("java") String code) {
+            Objects.requireNonNull(fileName, "fileName is null");
+            Objects.requireNonNull(fileName, "code is null");
+
             var uri = URI.create("string:///" + fileName);
             return addSource(new SimpleJavaFileObject(uri, JavaFileObject.Kind.SOURCE) {
                 @Override
@@ -459,6 +486,8 @@ public final class TestCompiler {
          * @return this instance
          */
         public Builder addSource(JavaFileObject source) {
+            Objects.requireNonNull(source, "source is null");
+
             this.sources.add(source);
             return this;
         }
@@ -470,6 +499,8 @@ public final class TestCompiler {
          * @return this builder
          */
         public Builder workDir(Path workDir) {
+            Objects.requireNonNull(workDir, "workDir is null");
+
             this.workDir = workDir;
             return this;
         }
