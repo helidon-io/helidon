@@ -17,11 +17,8 @@
 package io.helidon.config;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -30,89 +27,10 @@ import io.helidon.common.GenericType;
 import io.helidon.config.spi.ConfigMapper;
 
 final class EmptyConfig {
-    static final Config.Key ROOT_KEY = new KeyImpl(null, "");
+    static final Config.Key ROOT_KEY = ConfigKeyImpl.of();
     static final Config EMPTY = new EmptyNode(ROOT_KEY);
 
     private EmptyConfig() {
-    }
-
-    private static final class KeyImpl implements Config.Key {
-        private final Config.Key parent;
-        private final String name;
-
-        private KeyImpl(Config.Key parent, String name) {
-            this.parent = parent;
-            this.name = name;
-        }
-
-        @Override
-        public Config.Key parent() throws ConfigException {
-            if (isRoot()) {
-                throw new IllegalStateException("Attempting to get parent of a root node. Guard by isRoot instead");
-            }
-
-            return parent;
-        }
-
-        @Override
-        public boolean isRoot() {
-            return parent == null;
-        }
-
-        @Override
-        public String name() {
-            return name;
-        }
-
-        @Override
-        public Config.Key child(Config.Key key) {
-            List<String> path = path(key);
-            Config.Key node = this;
-            for (String name : path) {
-                node = new KeyImpl(node, name);
-            }
-            // the last one is the correct one
-            return node;
-        }
-
-        @Override
-        public int compareTo(Config.Key o) {
-            return this.toString().compareTo(o.toString());
-        }
-
-        @Override
-        public String toString() {
-            return String.join(".", path(this));
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            KeyImpl key = (KeyImpl) o;
-            return Objects.equals(parent, key.parent) && Objects.equals(name, key.name);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(parent, name);
-        }
-
-        private static List<String> path(Config.Key key) {
-            List<String> names = new ArrayList<>();
-            Config.Key node = key;
-            while (!node.isRoot()) {
-                names.add(node.name());
-                node = node.parent();
-            }
-            // names are now from lowest to highest, inverse
-            Collections.reverse(names);
-            return names;
-        }
     }
 
     private static final class EmptyNode implements Config {
@@ -157,7 +75,7 @@ final class EmptyConfig {
             Key node = this.key;
 
             for (String s : split) {
-                node = new KeyImpl(node, s);
+                node = node.child(ConfigKeyImpl.of(s));
             }
 
             return new EmptyNode(node);
