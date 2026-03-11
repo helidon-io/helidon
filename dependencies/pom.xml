@@ -115,7 +115,6 @@
         <version.lib.snakeyaml>2.5</version.lib.snakeyaml>
         <version.lib.testcontainers>1.21.4</version.lib.testcontainers>
         <version.lib.typesafe-config>1.4.4</version.lib.typesafe-config>
-        <version.lib.tyrus>2.1.5</version.lib.tyrus>
         <version.lib.yasson>3.0.4</version.lib.yasson>
         <version.lib.zipkin.sender-urlconnection>2.16.4</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
@@ -390,33 +389,6 @@
                 <artifactId>jakarta.websocket-client-api</artifactId>
                 <version>${version.lib.jakarta.websockets-api}</version>
             </dependency>
-            <dependency>
-                <groupId>org.glassfish.tyrus</groupId>
-                <artifactId>tyrus-core</artifactId>
-                <version>${version.lib.tyrus}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.tyrus</groupId>
-                <artifactId>tyrus-client</artifactId>
-                <version>${version.lib.tyrus}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.tyrus</groupId>
-                <artifactId>tyrus-container-jdk-client</artifactId>
-                <version>${version.lib.tyrus}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.tyrus</groupId>
-                <artifactId>tyrus-server</artifactId>
-                <version>${version.lib.tyrus}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.glassfish.tyrus</groupId>
-                        <artifactId>tyrus-container-grizzly-client</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
             <!-- DB Client related -->
             <dependency>
                 <groupId>org.mongodb</groupId>
