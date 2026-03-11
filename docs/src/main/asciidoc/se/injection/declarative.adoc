@@ -226,8 +226,8 @@ Scheduling allows service methods to be invoked periodically.
 
 Method annotations:
 
-- link:{scheduling-se-javadoc-base-url}/io/helidon/scheduling/Scheduling.Cron.html[`io.helidon.scheduling.Scheduling.Cron`] - execute with schedule defined by a CRON expression
-- link:{scheduling-se-javadoc-base-url}/io/helidon/scheduling/Scheduling.FixedRate.html[`io.helidon.scheduling.Scheduling.FixedRate`] - execute with a fixed interval
+- link:{scheduling-javadoc-base-url}/io/helidon/scheduling/Scheduling.Cron.html[`io.helidon.scheduling.Scheduling.Cron`] - execute with schedule defined by a CRON expression
+- link:{scheduling-javadoc-base-url}/io/helidon/scheduling/Scheduling.FixedRate.html[`io.helidon.scheduling.Scheduling.FixedRate`] - execute with a fixed interval
 
 [source,java]
 .Example of a fixed rate scheduled method

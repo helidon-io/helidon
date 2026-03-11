@@ -30,8 +30,7 @@
 
     <description>
         Helidon SE security bundle.
-        This bundle does not contain integration with webserver, jersey or
-            microprofile.
+        This bundle does not contain integration with webserver.
     </description>
 
     <properties>

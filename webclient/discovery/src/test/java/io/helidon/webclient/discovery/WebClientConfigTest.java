@@ -16,14 +16,16 @@
 package io.helidon.webclient.discovery;
 
 import java.util.List;
+import java.util.SequencedSet;
 
+import io.helidon.discovery.DiscoveredUri;
 import io.helidon.webclient.api.WebClientConfig;
 import io.helidon.webclient.spi.WebClientService;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 
 class WebClientConfigTest {
 
@@ -37,7 +39,9 @@ class WebClientConfigTest {
         List<WebClientService> services = c.services();
         assertThat(services, hasSize(1));
         WebClientDiscovery s = (WebClientDiscovery) services.get(0);
-        assertThat(s.prototype().discovery().uris("test", java.net.URI.create("http://example.com")), empty());
+        SequencedSet<DiscoveredUri> discovered = s.prototype().discovery().uris("test", java.net.URI.create("http://example.com"));
+        assertThat(discovered, hasSize(1));
+        assertThat(discovered.getFirst().uri(), is(java.net.URI.create("http://example.com")));
     }
 
 }

@@ -53,23 +53,6 @@
             <artifactId>mockito-core</artifactId>
         </dependency>
         <!-- snippets dependencies -->
-        <!--suppress VulnerableLibrariesLocal -->
-        <dependency>
-            <groupId>org.apache.activemq</groupId>
-            <artifactId>activemq-client</artifactId>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle.oci.sdk</groupId>
-            <artifactId>oci-java-sdk-objectstorage</artifactId>
-            <optional>true</optional>
-        </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
