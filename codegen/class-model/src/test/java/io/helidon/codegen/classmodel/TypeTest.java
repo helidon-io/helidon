@@ -55,11 +55,11 @@ class TypeTest {
     void testWildcardType() throws IOException {
         assertThat(write(TypeName.builder(TypeNames.SUPPLIER)
                                  .addTypeArgument(TypeName.builder(TypeName.create(
-                                                 "io.helidon.inject.api.InjectionPointInfo"))
+                                                 "io.helidon.service.ServiceRegistry"))
                                                           .wildcard(true)
                                                           .build())
                                  .build()),
-                   is("java.util.function.Supplier<? extends io.helidon.inject.api.InjectionPointInfo>"));
+                   is("java.util.function.Supplier<? extends io.helidon.service.ServiceRegistry>"));
     }
 
     private String write(TypeName typeName) throws IOException {

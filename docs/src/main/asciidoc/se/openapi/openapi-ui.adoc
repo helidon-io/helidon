@@ -42,12 +42,11 @@ This dependency allows your application to create, configure, and register the `
 include::{ui-inc}[tag=usage]
 
 == API
-With the Helidon OpenAPI UI dependency in your `pom.xml` file, the OpenAPI support automatically includes the default UI behavior,
- possibly modified by any UI settings you have in your configuration. You do not have to do anything else to enable the UI.
+With `helidon-openapi` in your `pom.xml` and the SmallRye UI runtime dependency added, the OpenAPI support automatically includes the default UI behavior, possibly modified by any UI settings you have in your configuration. You do not have to do anything else to enable the UI.
 
 === Creating `OpenApiFeature` with Automatic UI Behavior
 Some applications explicitly create the `OpenApiFeature` object to tailor its behavior before registering it with the server.
-If your `pom.xml` includes a dependency on the OpenAPI UI component, then any `OpenApiFeature` object your application builds prepares the default OpenAPI UI behavior, possibly modified as above by any UI settings you have in your configuration.
+If your `pom.xml` includes the Helidon OpenAPI dependency and the SmallRye UI runtime dependency, then any `OpenApiFeature` object your application builds prepares the default OpenAPI UI behavior, possibly modified as above by any UI settings you have in your configuration.
 
 [source,java]
 .Create `OpenApiFeature` with automatic UI

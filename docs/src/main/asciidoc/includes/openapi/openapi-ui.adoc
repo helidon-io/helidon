@@ -61,15 +61,7 @@ The Helidon OpenAPI component allows you to integrate the SmallRye UI into your 
 // tag::dependencies[]
 include::{rootdir}/includes/dependencies.adoc[]
 
-[source,xml,subs=+macros]
-----
-<dependency>
-    <groupId>io.helidon.integrations.openapi-ui</groupId>
-    <artifactId>helidon-integrations-openapi-ui</artifactId>
-</dependency>
-----
-
-And add a runtime dependency on the SmallRye UI.
+Add a runtime dependency on the SmallRye UI.
 
 [source,xml]
 ----
@@ -84,7 +76,7 @@ And add a runtime dependency on the SmallRye UI.
 // tag::usage[]
 // tag::usage-start[]
 == Usage
-Make sure your application incorporates Helidon OpenAPI support as  described in detail in link:{openapi-page}[the Helidon OpenAPI documentation]). Helidon automatically prepares the OpenAPI UI with default settings if you also declare a dependency on the Helidon OpenAPI UI integration component as explained above. The <<API,API>> section below illustrates adding OpenAPI to your application and customizing the UI behavior.
+Make sure your application incorporates Helidon OpenAPI support as described in detail in link:{openapi-page}[the Helidon OpenAPI documentation]. Helidon automatically prepares the OpenAPI UI with default settings when the SmallRye UI runtime dependency is present. The <<API,API>> section below illustrates adding OpenAPI to your application and customizing the UI behavior.
 
 After you modify, build, and start your Helidon {flavor-uc} service, you can access the OpenAPI UI by default at `http://your-host:your-port/openapi/ui`.
 Helidon also uses conventional content negotiation at `http://your-host:your-port/openapi` returning the UI to browsers (or any client that accepts HTML) and the OpenAPI document otherwise.

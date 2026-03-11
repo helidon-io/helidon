@@ -180,17 +180,6 @@ backend:
                   type: "icon"
                   value: "favorite_outline"
               - type: "MENU"
-                title: "Integrations"
-                dir: "integrations"
-                glyph:
-                  type: "icon"
-                  value: "filter_drama"
-                sources:
-                  - "eureka/eureka-registration.adoc"
-                  - "oci.adoc"
-                  - "hcv.adoc"
-                  - "neo4j.adoc"
-              - type: "MENU"
                 title: "Injection"
                 dir: "injection"
                 glyph:

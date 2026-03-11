@@ -23,7 +23,7 @@ endif::[]
 :feature-name: Micrometer support
 
 //Contains content that is shared between multiple Micrometer pages.
-:keywords: helidon, java, micrometer, integration, se
+:keywords: helidon, java, micrometer, se
 
 == Overview
 
@@ -49,27 +49,6 @@ endif::se-flavor[]
 In Helidon {helidon-version}, Micrometer support is separate from the Helidon {h1-prefix} metrics API and the built-in Helidon metrics.
 
 // end::intro[]
-
-// tag::prereq[]
-include::{rootdir}/includes/dependencies.adoc[]
-
-[source,xml,subs="verbatim,attributes"]
-----
-<dependency>
-    <groupId>io.helidon.integrations.micrometer</groupId>
-    <artifactId>helidon-integrations-micrometer</artifactId>
-</dependency>
-----
-
-Micrometer supports different types of meter registries which have different output styles and formats.
-Helidon provides built-in support for the Prometheus meter registry.
-To use other meter registry types, you will need to add dependencies for them to your `pom.xml` and, optionally, add
-ifdef::se-flavor[]
-code to your application or add
-endif::se-flavor[]
-configuration to set them up as you wish.
-
-// end::prereq[]
 
 // tag::overriding-intro[]
 ==== Overriding Defaults for Built-in Meter Registry Types

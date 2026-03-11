@@ -38,10 +38,6 @@
             <artifactId>helidon-dbclient-metrics-hikari</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.db</groupId>
-            <artifactId>helidon-integrations-db-pgsql</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
         </dependency>
