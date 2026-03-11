@@ -67,6 +67,11 @@
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${project.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.config.metadata</groupId>
                             <artifactId>helidon-config-metadata-codegen</artifactId>
                             <version>${project.version}</version>
@@ -74,6 +79,11 @@
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
                     <dependency>
                         <groupId>io.helidon.config.metadata</groupId>
                         <artifactId>helidon-config-metadata-codegen</artifactId>

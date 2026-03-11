@@ -26,9 +26,6 @@ module io.helidon.declarative.tests.metrics {
 
     // needed for generated binding
     requires io.helidon.config.yaml;
-    // this module will not be needed in the future, as CORS will be a feature added separately
-    // now included through other modules (metrics in this case)
-    requires io.helidon.webserver.cors;
 
     exports io.helidon.declarative.tests.metrics;
 }

@@ -57,7 +57,7 @@ jobs:
     needs: [ create-tag, validate ]
     strategy:
       matrix:
-        moduleSet: [ core, integrations, others ]
+        moduleSet: [ core, others ]
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     environment: release
