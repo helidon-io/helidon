@@ -37,7 +37,6 @@
     <modules>
         <module>buffers</module>
         <module>common</module>
-        <module>config</module>
         <module>configurable</module>
         <module>context</module>
         <module>crypto</module>

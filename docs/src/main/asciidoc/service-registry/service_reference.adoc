@@ -32,16 +32,6 @@ Note: this is a work in progress, not listing the full set of contracts yet!
 [cols="2,1,2,6,5"]
 |===
 |Contract (package, class) |Weight | Module | Description |Qualifiers
-.2+|`io.helidon.common.config`
-`Config`
-|`80`
-|`io.helidon.common.config`
-|Empty config instance
-|N/A
-|`90`
-|`io.helidon.config`
-|Configuration either from meta configuration (config profiles), or from service registry
-|N/A
 |`io.helidon.config`
 `Config`
 |`90`
