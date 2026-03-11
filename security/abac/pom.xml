@@ -37,6 +37,5 @@
         <module>scope</module>
         <module>time</module>
         <module>policy</module>
-        <module>policy-el</module>
     </modules>
 </project>

@@ -49,11 +49,6 @@ import io.helidon.security.providers.abac.spi.AbacValidator;
  * and is delegated to another module implementing the {@link PolicyExecutor} obtained through a {@link PolicyExecutorService}
  * java service.
  * <p>
- * Implementations provided by Helidon security:
- * <ul>
- * <li>Java EE expression language support, artifact id: "helidon-security-abac-policy-el"</li>
- * </ul>
- *
  * Example of a policy statement:<br>
  * <code>&#64;PolicyStatement("${env.time.year &gt;= 2017 &amp;&amp; object.owner == subject.principal.id}")</code>
  */

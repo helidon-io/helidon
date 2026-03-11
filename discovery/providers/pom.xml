@@ -32,7 +32,4 @@
     <name>Helidon Discovery Providers</name>
     <packaging>pom</packaging>
 
-    <modules>
-        <module>eureka</module>
-    </modules>
 </project>

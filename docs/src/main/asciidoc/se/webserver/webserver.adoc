@@ -772,17 +772,16 @@ The following table lists JSON media supports:
 |===
 |Media type|TypeName|Maven groupId:artifactId|Supported Java type(s)
 
-|*<<JSON-P Support, JSON-P>>*|JsonpSupport|`io.helidon.http.media:helidon-http-media-jsonp`|`JsonObject, JsonArray`
-|*<<JSON-B Support, JSON-B>>*|JsonbSupport|`io.helidon.http.media:helidon-http-media-jsonb`|Any *
+|*<<JSON Support, JSON>>*|JsonSupport|`io.helidon.http.media:helidon-http-media-json`|`JsonObject, JsonArray`
+|*<<JSON Binding Support, JSON-Binding>>*|JsonBindingSupport|`io.helidon.http.media:helidon-http-media-json-binding`|Any *
 |*<<Jackson Support, Jackson>>*|JacksonSupport|`io.helidon.http.media:helidon-http-media-jackson`|Any *
-|*<<Gson Support, Gson>>*|GsonSupport|`io.helidon.http.media:helidon-http-media-gson`|Any *
 |===
 
 * JSON-B and Jackson have lower weight, so they are used only when no other media type matched the object being written or read
 
-=== JSON-P Support
-The WebServer supports JSON-P. When enabled, you can send and
-receive JSON-P objects transparently.
+=== JSON Support
+The WebServer supports JSON. When enabled, you can send and
+receive Helidon JSON objects transparently (i.e. `io.helidon.json.JsonObject`).
 
 ==== Maven Coordinates
 
@@ -792,7 +791,7 @@ To enable JSON Support add the following dependency to your project's `pom.xml`.
 ----
 <dependency>
     <groupId>io.helidon.http.media</groupId>
-    <artifactId>helidon-http-media-jsonp</artifactId>
+    <artifactId>helidon-http-media-json</artifactId>
 </dependency>
 ----
 
@@ -805,10 +804,9 @@ include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_24, indent=0]
 
 include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_25, indent=0]
 ----
-<1> Using a `JsonBuilderFactory` is more efficient than `Json.createObjectBuilder()`
-<2> Get the request entity as `JsonObject`
-<3> Create a new `JsonObject` for the response entity
-<4> Send `JsonObject` in response
+<1> Get the request entity as `JsonObject`
+<2> Create a new `JsonObject` for the response entity
+<3> Send `JsonObject` in response
 
 [source,bash]
 .Example of posting JSON to sayHello endpoint
@@ -823,50 +821,47 @@ curl --noproxy '*' -X POST -H "Content-Type: application/json" \
 {"message":"Hello Joe"}
 ----
 
-=== JSON-B Support
-The WebServer supports the http://json-b.net/[JSON-B
-specification]. When this support is enabled, Java objects will be
-serialized to and deserialized from JSON automatically using
-https://github.com/eclipse-ee4j/yasson[Yasson], an implementation of
-the link:{jakarta-jsonb-spec-url}[JSON-B specification].
+=== JSON Binding Support
+The WebServer supports JSON binding. When this support is enabled, Java objects will be
+serialized to and deserialized from JSON, as long as they are correctly annotated with `@Json.Entity` and
+annotation processing is configured.
 
 ==== Maven Coordinates
 
-To enable JSON-B Support add the following dependency to your project's `pom.xml`.
+To enable JSON Binding Support add the following dependency to your project's `pom.xml`.
 
 [source,xml]
 ----
 <dependency>
     <groupId>io.helidon.http.media</groupId>
-    <artifactId>helidon-http-media-jsonb</artifactId>
+    <artifactId>helidon-http-media-json-binding</artifactId>
 </dependency>
 ----
 
-==== Configuration
-It is possible to configure the Jsonb instance via programmatic or configuration-based approach.
-When configured over the configuration, all the configured value types need to be selected correctly according
-to the JSON-B spec and placed to the right section.
+Annotation processor setup:
 
-include::{rootdir}/config/io_helidon_http_media_jsonb_JsonbSupport.adoc[leveloffset=+3,tag=config]
-
-===== Example
-[source,yaml]
-.Example JSON-B configuration
+[source, xml]
 ----
-jsonb:
-  boolean-properties:
-    jsonb.null-values: true
-  properties:
-    jsonb.property-naming-strategy: "LOWER_CASE_WITH_DASHES"
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+        <annotationProcessorPaths>
+            <path>
+                <groupId>io.helidon.bundles</groupId>
+                <artifactId>helidon-bundles-apt</artifactId>
+                <version>${helidon.version}</version>
+            </path>
+        </annotationProcessorPaths>
+    </configuration>
+</plugin>
 ----
 
 ==== Usage
 
 Now that automatic JSON serialization and deserialization facilities
 have been set up, you can register a `Handler` that works with Java
-objects instead of raw JSON.  Deserialization from and serialization
-to JSON will be handled according to the
-https://jcp.org/en/jsr/detail?id=367[JSON-B specification].
+objects instead of raw JSON.
 
 Suppose you have a `Person` class that looks like this:
 
@@ -932,76 +927,6 @@ have been set up, you can register a `Handler` that works with Java
 objects instead of raw JSON.  Deserialization from and serialization
 to JSON will be handled by
 https://github.com/FasterXML/jackson#jackson-project-home-github[Jackson].
-
-Suppose you have a `Person` class that looks like this:
-
-[source,java]
-.Hypothetical `Person` class
-----
-include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_26, indent=0]
-----
-
-Then you can set up a `Handler` like this:
-
-[source,java]
-.A `Handler` that works with Java objects instead of raw JSON
-----
-include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_28, indent=0]
-----
-<1> This handler consumes a `Person` instance and simply echoes it back.  Note that there is no working with raw JSON here.
-
-[source,bash]
-.Example of posting JSON to the `/echo` endpoint
-----
-curl --noproxy '*' -X POST -H "Content-Type: application/json" \
-    http://localhost:8080/echo -d '{"name":"Joe"}'
-----
-
-[source, json]
-.Response body
-----
-{"name":"Joe"}
-----
-
-=== Gson Support
-The WebServer supports
-https://github.com/google/gson#gson[Gson].
-When this support is enabled, Java objects will be serialized to and
-deserialized from JSON automatically using Gson.
-
-==== Maven Coordinates
-
-To enable Gson Support add the following dependency to your project's `pom.xml`.
-
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.http.media</groupId>
-    <artifactId>helidon-http-media-gson</artifactId>
-</dependency>
-----
-
-==== Configuration
-It is possible to configure the Gson instance via programmatic or configuration-based approach.
-
-include::{rootdir}/config/io_helidon_http_media_gson_GsonSupport.adoc[leveloffset=+3,tag=config]
-
-===== Example
-[source,yaml]
-.Example Gson configuration
-----
-gson:
-  properties:
-    serialize-nulls: false
-----
-
-==== Usage
-
-Now that automatic JSON serialization and deserialization facilities
-have been set up, you can register a `Handler` that works with Java
-objects instead of raw JSON.  Deserialization from and serialization
-to JSON will be handled by
-link:++https://github.com/google/gson#gson[Gson].
 
 Suppose you have a `Person` class that looks like this:
 
@@ -1174,7 +1099,7 @@ include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_35, indent=0]
 
 * link:{webserver-javadoc-base-url}/module-summary.html[Helidon WebServer JavaDoc]
 * link:{webserver-staticcontent-javadoc-base-url}/module-summary.html[Helidon WebServer Static Content JavaDoc]
-* link:{media-jsonp-javadoc-base-url}/module-summary.html[Helidon JSON-B Support JavaDoc]
-* link:{media-jsonb-javadoc-base-url}/module-summary.html[Helidon JSON-P Support JavaDoc]
+* link:{media-json-javadoc-base-url}/module-summary.html[Helidon JSON-B Support JavaDoc]
+* link:{media-json-binding-javadoc-base-url}/module-summary.html[Helidon JSON-P Support JavaDoc]
 * link:{media-jackson-javadoc-base-url}/module-summary.html[Helidon Jackson Support JavaDoc]
 * link:https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt[Proxy Protocol Specification]

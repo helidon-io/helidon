@@ -60,9 +60,8 @@ Note the use of `ifPresent()` on the returned `Optional<SpanContext>`.
 2. Methods on `ConfigSources` now return specific builders (they used to return `AbstractParsableConfigSource.Builder`
    with a complex type declaration). If you store such a builder in a variable, either change it to the correct type,
    or use `var`
-3. Some APIs were cleaned up to be aligned with the development guidelines of Helidon. When using Git config source,
-   or etcd config source, the factory methods moved to the config source itself, and the builder now accepts all
-   configuration options through methods
+3. Some APIs were cleaned up to be aligned with the development guidelines of Helidon. The factory methods moved to
+   the config source itself, and the builder now accepts all configuration options through methods
 4. The API of config source builders has been cleaned, so now only methods that are relevant to a specific config
    source type can be invoked on such a builder. Previously you could configure a polling strategy on a source that
    did not support polling

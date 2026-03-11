@@ -30,9 +30,3 @@ DiscoveryRequestTest-testSimpleActualUsage:
       prefix-uris:
         PROD: "${DiscoveryRequestTest-testSimpleActualUsage.base-uri}"
         TEST: "http://test.example.com/foo"
-
-discovery:
-  eureka:
-    client:
-      services-discover-services: false
-      base-uri: "http://localhost:8761/eureka"

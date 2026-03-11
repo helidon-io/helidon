@@ -22,8 +22,8 @@ import io.helidon.webclient.spi.WebClientService;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
 
 class WebClientConfigTest {
 
@@ -37,10 +37,7 @@ class WebClientConfigTest {
         List<WebClientService> services = c.services();
         assertThat(services, hasSize(1));
         WebClientDiscovery s = (WebClientDiscovery) services.get(0);
-        // Ensure the service is discovered and instantiated and has its Discovery client set properly even in the
-        // absence of other configuration. (We have the Eureka provider on the test classpath.)
-        assertThat(s.prototype().discovery().getClass().getName(),
-                   is("io.helidon.discovery.providers.eureka.EurekaDiscoveryImpl"));
+        assertThat(s.prototype().discovery().uris("test", java.net.URI.create("http://example.com")), empty());
     }
 
 }

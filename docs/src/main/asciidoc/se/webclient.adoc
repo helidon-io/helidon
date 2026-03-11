@@ -431,13 +431,7 @@ In order for a service to function, its dependencies need to be added in the app
     <artifactId>helidon-webclient-discovery</artifactId>
     <scope>runtime</scope>
 </dependency>
-<dependency>
-    <groupId>io.helidon.discovery.providers</groupId>
-    <artifactId>helidon-discovery-providers-eureka</artifactId> <!--1-->
-    <scope>runtime</scope>
-</dependency>
 ----
-<1> Backs the `discovery` service with a xref:discovery.adoc#_eureka[Discovery provider based on Netflix's Eureka]
 
 * `metrics`
 +

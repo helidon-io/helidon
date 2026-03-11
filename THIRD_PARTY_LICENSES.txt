@@ -891,7 +891,7 @@ See full text at the bottom of this document for license: Apache-2.0
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 JGit Core  Eclipse Foundation
 Eclipse Distribution License 1.0
-Used by: [helidon-config-git]
+Used by: []
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 JGit - Core (org.eclipse.jgit:org.eclipse.jgit)
   Copyright (C) 2011, Abhishek Bhatnagar <abhatnag@redhat.com> and others
@@ -1183,7 +1183,7 @@ See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta Expression Language (EL)  Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-security-abac-policy-el, weld-se-core]
+Used by: [weld-se-core]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta Expression Language API (EL) (jakarta.el:jakarta.el-api)
   Copyright (c) 2021 Contributors to the Eclipse Foundation
@@ -2331,7 +2331,7 @@ Copyright (c) 2008, SnakeYAML
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Typesafe config  Typesafe Inc.
 Apache 2.0
-Used by: [helidon-config-etcd, helidon-config-hocon, helidon-config-hocon-mp, helidon-config-tests-test-bundle]
+Used by: [helidon-config-hocon, helidon-config-hocon-mp, helidon-config-tests-test-bundle]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Typesafe Config
 config (com.typesafe:config)
@@ -2602,7 +2602,7 @@ Apache License Version 2
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 etcd4j  Jurriaan Mous
 Apache 2.0
-Used by: [helidon-config-etcd]
+Used by: []
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 etcd4j (org.mousio:etcd4j)
   Copyright (c) 2015, Jurriaan Mous and contributors as indicated by the @author tags.
@@ -2971,7 +2971,7 @@ See full text at the bottom of this document for license: Apache-2.0
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 grpc-java  The gRPC Authors
 Apache 2.0
-Used by: [helidon-config-etcd, helidon-webserver-grpc]
+Used by: [helidon-webserver-grpc]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 grpc-java (io.grpc:grpc-*)
   Copyright 2014,2023 The gRPC Authors

@@ -39,8 +39,6 @@
         <module>config</module>
         <module>object-mapping</module>
         <module>yaml</module>
-        <module>etcd</module>
-        <module>git</module>
         <module>hocon</module>
         <module>encryption</module>
         <module>testing</module>

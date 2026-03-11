@@ -966,186 +966,6 @@ See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
-            <id>150602</id>
-            <name>JGit Core</name>
-            <version>6.7.0.202309050840-r</version>
-            <licensor>Eclipse Foundation</licensor>
-            <licenseName>Eclipse Distribution License 1.0</licenseName>
-            <consumers>
-                <consumer>helidon-config-git</consumer>
-            </consumers>
-            <attribution>JGit - Core (org.eclipse.jgit:org.eclipse.jgit)
-  Copyright (C) 2011, Abhishek Bhatnagar &lt;abhatnag@redhat.com&gt; and others
-  Copyright (C) 2009, Alex Blewitt &lt;alex.blewitt@gmail.com&gt;
-  Copyright (C) 2014, Alexey Kuznetsov &lt;axet@me.com&gt;
-  Copyright (C) 2018- 2022, Andre Bossert &lt;andre.bossert@siemens.com&gt; and others
-  Copyright (C) 2014,2021 Andrey Loskutov &lt;loskutov@gmx.de&gt; and others
-  Copyright (C) 2014, André de Oliveira &lt;andre.oliveira@liferay.com&gt; and others
-  Copyright (C) 2014, Arthur Daussy &lt;arthur.daussy@obeo.fr&gt; and others
-  Copyright (C) 2014, Axel Richard &lt;axel.richard@obeo.fr&gt; and others
-  Copyright (C) 2008, Charles O'Farrell &lt;charleso@charleso.org&gt;
-  Copyright (C) 2010,2022 Chris Aniszczyk &lt;caniszczyk@gmail.com&gt; and others
-  Copyright (C) 2009,2021 Christian Halstrick &lt;christian.halstrick@sap.com&gt; and others
-  Copyright (C) 2013, CloudBees, Inc. and others
-  Copyright (C) 2009,2010 Constantine Plotnikov &lt;constantine.plotnikov@gmail.com&gt;
-  Copyright (C) 2012, Daniel Megert &lt;daniel_megert@ch.ibm.com&gt; and others
-  Copyright (C) 2007, Dave Watson &lt;dwatson@mimvista.com&gt;
-  Copyright (C) 2017,2022 David Pursehouse &lt;david.pursehouse@gmail.com&gt; and others
-  Copyright (C) 2015,2017 Ericsson and others
-  Copyright (C) 2021, Fabio Ponciroli &lt;ponch@gerritforge.com&gt;
-  Copyright (C) 2008, Florian Köberle &lt;florianskarten@web.de&gt; and others
-  Copyright (C) 2011, GEBIT Solutions and others
-  Copyright (C) 2010, Garmin International
-  Copyright (C) 2011,2023 GitHub Inc. and others
-  Copyright (C) 2008,2023 Google Inc. and others
-  Copyright (C) 2013, Gunnar Wagenknecht
-  Copyright (C) 2013,2014 Gustaf Lundh &lt;gustaf.lundh@sonymobile.com&gt; and others
-  Copyright (C) 2011,2012 IBM Corporation and others. and others
-  Copyright (C) 2009, Igor Fedorenko &lt;igor@ifedorenko.com&gt;
-  Copyright (C) 2008, Imran M Yousuf &lt;imyousuf@smartitengineering.com&gt;
-  Copyright (C) 2015,2022 Ivan Motsch &lt;ivan.motsch@bsiag.com&gt; and others
-  Copyright (C) 2016,2020 JGit contributors
-  Copyright (C) 2010, Jens Baumgart &lt;jens.baumgart@sap.com&gt; and others
-  Copyright (C) 2009,2022 JetBrains s.r.o. and others
-  Copyright (C) 2008- 2021, Johannes E. Schindelin &lt;johannes.schindelin@gmx.de&gt; and others
-  Copyright (C) 2009, Johannes Schindelin &lt;johannes.schindelin@gmx.de&gt; and others
-  Copyright (C) 2008,2009 Jonas Fonseca &lt;fonseca@diku.dk&gt;
-  Copyright (c) 2020,2022 Julian Ruppel &lt;julian.ruppel@sap.com&gt; and others
-  Copyright (C) 2015, Kaloyan Raev &lt;kaloyan.r@zend.com&gt; and others
-  Copyright (C) 2011, Ketan Padegaonkar &lt;ketanpadegaonkar@gmail.com&gt; and others
-  Copyright (c) 2014, Konrad Kügler and others
-  Copyright (C) 2018, Konrad Windszus &lt;konrad_w@gmx.de&gt; and others
-  Copyright (C) 2016,2021 Laurent Delaigue &lt;laurent.delaigue@obeo.fr&gt; and others
-  Copyright (C) 2014 Laurent Goujon &lt;lgoujon@twitter.com&gt; and others
-  Copyright 2017 Marc Stevens &lt;marc@marc-stevens.nl&gt;, Dan Shumow &lt;danshu@microsoft.com&gt;
-  Copyright (C) 2010,2019 Marc Strapetz &lt;marc.strapetz@syntevo.com&gt;
-  Copyright (C) 2008,2022 Marek Zawirski &lt;marek.zawirski@gmail.com&gt; and others
-  Copyright (C) 2009, Mark Struberg &lt;struberg@yahoo.de&gt;
-  Copyright (C) 2018, Markus Duft &lt;markus.duft@ssi-schaefer.com&gt; and others
-  Copyright (C) 2010,2020 Mathias Kinzler &lt;mathias.kinzler@sap.com&gt; and others
-  Copyright (C) 2010,2023 Matthias Sohn &lt;matthias.sohn@sap.com&gt; and others
-  Copyright (C) 2020, Michael Dardis. and others
-  Copyright (C) 2008, Mike Ralphson &lt;mike@abacus.co.uk&gt;
-  Copyright (C) 2009, Mykola Nikishov &lt;mn@mn.com.ua&gt;
-  Copyright (C) 2015,2022 Obeo and others
-  Copyright (C) 2015, Patrick Steinhardt &lt;ps@pks.im&gt; and others
-  Copyright (C) 2011, Philipp Thun &lt;philipp.thun@sap.com&gt; and others
-  Copyright (c) 2021,2023 Qualcomm Innovation Center, Inc.
-  Copyright (C) 2010,2021 Red Hat Inc. and others
-  Copyright (C) 2012,2021 Research In Motion Limited and others
-  Copyright (C) 2011, Roberto Tyley &lt;roberto.tyley@gmail.com&gt; and others
-  Copyright (C) 2006- 2018, Robin Rosenberg &lt;robin.rosenberg@dewire.com&gt;
-  Copyright (C) 2012, 2022, Robin Rosenberg and others
-  Copyright (C) 2011,2013 Robin Stocker &lt;robin@nibor.org&gt;
-  Copyright (C) 2010-2011 2012, Robin Stocker &lt;robin@nibor.org&gt; and others
-  Copyright (C) 2013,2014 Robin Stocker &lt;robin@nibor.org&gt; and others
-  Copyright (C) 2008, Roger C. Soares &lt;rogersoares@intelinet.com.br&gt;
-  Copyright (C) 2023, SAP SE and others
-  Copyright (C) 2018,2022 Salesforce and others
-  Copyright (C) 2009,2013 Sasa Zivkov &lt;sasa.zivkov@sap.com&gt;
-  Copyright (C) 2014, Sasa Zivkov &lt;sasa.zivkov@sap.com&gt;, SAP AG and others
-  Copyright (C) 2006, 2022, Shawn O. Pearce &lt;spearce@spearce.org&gt; and others
-  Copyright (C) 2021 Simeon Andreev &lt;simeon.danailov.andreev@gmail.com&gt; and others
-  Copyright (C) 2022, Simeon Andreev and others
-  Copyright (C) 2010, 2014, Stefan Lay &lt;stefan.lay@sap.com&gt;
-  Copyright (C) 2021,2023 Tencent.
-  Copyright (C) 2008, Thad Hughes &lt;thadh@thad.corp.google.com&gt; and others
-  Copyright (C) 2009, The Android Open Source Project
-  Copyright (C) 2007 The Guava Authors
-  Copyright (C) 2017, 2023, Thomas Wolf &lt;twolf@apache.org&gt; and others
-  Copyright (C) 2018- 2019, Tim Neumann &lt;Tim.Neumann@advantest.com&gt;
-  Copyright (C) 2011, Tomasz Zarna &lt;Tomasz.Zarna@pl.ibm.com&gt; and others
-  Copyright (C) 2009, Tor Arne Vestbø &lt;torarnv@gmail.com&gt; and others
-  Copyright (C) 2017, Two Sigma Open Source and others
-  Copyright (C) 2009, Vasyl' Vavrychuk &lt;vvavrychuk@gmail.com&gt; and others
-  Copyright (C) 2017, Wim Jongman &lt;wim.jongman@remainsoftware.com&gt; and others
-  Copyright (C) 2022, Workday Inc.
-  Copyright (C) 2009, Yann Simon &lt;yann.simon.fr@gmail.com&gt; and others
-  Copyright (C) 2011,2022 Christoph Brill &lt;egore911@egore911.de&gt; and others
-  Copyright (C) 2022, Fabio Ponciroli &lt;ponch78@gmail.com&gt; and others
---------------------------------------------
-This program and the accompanying materials are made available
-under the terms of the Eclipse Distribution License v1.0 which
-accompanies this distribution, is reproduced below, and is
-available at http://www.eclipse.org/org/documents/edl-v10.php
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following
-conditions are met:
-
-- Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-
-- Redistributions in binary form must reproduce the above
-  copyright notice, this list of conditions and the following
-  disclaimer in the documentation and/or other materials provided
-  with the distribution.
-
-- Neither the name of the Eclipse Foundation, Inc. nor the
-  names of its contributors may be used to endorse or promote
-  products derived from this software without specific prior
-  written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
-INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
---------------------------------------------
-Fourth Party Dependencies
---------------------------------------------
-"SLF4J API Module" (org.slf4j:slf4j-api)
-  Copyright (c) 2004-2011 QOS.ch
-
-The MIT License SPDX short identifier: MIT
-
-Further resources on the MIT License Copyright &lt;YEAR&gt; &lt;COPYRIGHT HOLDER&gt;
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
---------------------------------------------
-"JavaEWAH" (com.googlecode.javaewah:JavaEWAH)
-  Copyright 2009- 2016, Daniel Lemire, Cliff Moon, David McIntosh, Robert Becho,
-            Google Inc., Veronika Zenz, Owen Kaser, Gregory Ssi-Yan-Kai, Rory Graves
-  Copyright 2012, Google Inc.
-Apache License 2.0
---------------------------------------------
-"Apache Commons Codec" (commons-codec:commons-codec)
-    Copyright 2002-2023 The Apache Software Foundation
-
-    This product includes software developed at
-    The Apache Software Foundation (https://www.apache.org/).
-Apache License 2.0
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-</attribution>
-        </dependency>
-        <dependency>
             <id>141990</id>
             <name>Jakarta Annotations API</name>
             <version>2.1.1</version>
@@ -1309,7 +1129,6 @@ EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
-                <consumer>helidon-security-abac-policy-el</consumer>
                 <consumer>weld-se-core</consumer>
             </consumers>
             <attribution>Jakarta Expression Language API (EL) (jakarta.el:jakarta.el-api)
@@ -2526,7 +2345,6 @@ Copyright (c) 2008, SnakeYAML
             <licensor>Typesafe Inc.</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-config-etcd</consumer>
                 <consumer>helidon-config-hocon</consumer>
                 <consumer>helidon-config-hocon-mp</consumer>
                 <consumer>helidon-config-tests-test-bundle</consumer>
@@ -2831,7 +2649,6 @@ Apache License Version 2
             <licensor>Jurriaan Mous</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-config-etcd</consumer>
             </consumers>
             <attribution>etcd4j (org.mousio:etcd4j)
   Copyright (c) 2015, Jurriaan Mous and contributors as indicated by the @author tags.
@@ -3213,7 +3030,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <licensor>The gRPC Authors</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-config-etcd</consumer>
                 <consumer>helidon-webserver-grpc</consumer>
             </consumers>
             <attribution>grpc-java (io.grpc:grpc-*)

@@ -93,17 +93,7 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.config</groupId>
-                <artifactId>helidon-config-git</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.config</groupId>
                 <artifactId>helidon-config-hocon</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.config</groupId>
-                <artifactId>helidon-config-etcd</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -193,11 +183,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.security.providers</groupId>
-                <artifactId>helidon-security-providers-config-vault</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.security.integration</groupId>
                 <artifactId>helidon-security-integration-common</artifactId>
                 <version>${helidon.version}</version>
@@ -230,11 +215,6 @@
             <dependency>
                 <groupId>io.helidon.security.abac</groupId>
                 <artifactId>helidon-security-abac-policy</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.security.abac</groupId>
-                <artifactId>helidon-security-abac-policy-el</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -776,11 +756,6 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.http.media</groupId>
-                <artifactId>helidon-http-media-gson</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.http.media</groupId>
                 <artifactId>helidon-http-media-jsonp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -1080,11 +1055,6 @@
             <dependency>
                 <groupId>io.helidon.discovery</groupId>
                 <artifactId>helidon-discovery</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.discovery.providers</groupId>
-                <artifactId>helidon-discovery-providers-eureka</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

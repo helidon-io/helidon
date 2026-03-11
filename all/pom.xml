@@ -55,15 +55,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-git</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-hocon</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-etcd</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -130,10 +122,6 @@
             <artifactId>helidon-security-providers-http-sign</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.security.providers</groupId>
-            <artifactId>helidon-security-providers-config-vault</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.security.integration</groupId>
             <artifactId>helidon-security-integration-common</artifactId>
         </dependency>
@@ -160,10 +148,6 @@
         <dependency>
             <groupId>io.helidon.security.abac</groupId>
             <artifactId>helidon-security-abac-policy</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.security.abac</groupId>
-            <artifactId>helidon-security-abac-policy-el</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.security</groupId>
@@ -568,10 +552,6 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.http.media</groupId>
-            <artifactId>helidon-http-media-gson</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media-jsonp</artifactId>
         </dependency>
         <dependency>
@@ -809,10 +789,6 @@
         <dependency>
             <groupId>io.helidon.discovery</groupId>
             <artifactId>helidon-discovery</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.discovery.providers</groupId>
-            <artifactId>helidon-discovery-providers-eureka</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.json</groupId>

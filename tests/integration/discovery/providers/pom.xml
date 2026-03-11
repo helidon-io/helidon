@@ -29,8 +29,4 @@
     <packaging>pom</packaging>
     <name>Helidon Tests Integration Discovery Providers Project</name>
 
-    <modules>
-        <module>eureka</module>
-    </modules>
-
 </project>
