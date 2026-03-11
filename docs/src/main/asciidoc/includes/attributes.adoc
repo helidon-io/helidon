@@ -41,24 +41,6 @@ endif::[]
 // versions
 :version-plugin-helidon: 4.0.25
 
-:version-lib-microprofile-api: 6.1
-
-// microprofile specifications
-:version-lib-microprofile-lra-api: 2.0
-:version-lib-microprofile-config: 3.1
-:version-lib-microprofile-fault-tolerance-api: 4.0.2
-:version-lib-microprofile-graphql: 2.0
-:version-lib-microprofile-health: 4.0
-:version-lib-microprofile-jwt: 2.1
-:version-lib-microprofile-metrics-api: 5.1.1
-:version-lib-microprofile-openapi-api: 3.1.1
-:version-lib-microprofile-reactive-messaging-api: 3.0
-:version-lib-microprofile-rs-operators-api: 3.0
-:version-lib-microprofile-rest-client: 3.0
-:version-lib-microprofile-telemetry-tck: 1.1
-:version-lib-microprofile-telemetry: 1.1
-:version-lib-microprofile-tracing: 3.0
-
 // jakarta specifications
 :version-lib-jakarta-core: 10
 :version-lib-jakarta-cdi: 4.0
@@ -94,61 +76,6 @@ endif::[]
 :jdk-javadoc-url: {jdk-doc-url}/docs/api
 
 :helidon-maven-plugin-doc-url: https://github.com/helidon-io/helidon-build-tools/blob/{version-plugin-helidon}/maven-plugins/helidon-maven-plugin/README.md
-
-// MicroProfile versioned URLs
-
-:microprofile-base-url: https://download.eclipse.org/microprofile
-
-:microprofile-open-api-base-url: {microprofile-base-url}/microprofile-open-api-{version-lib-microprofile-openapi-api}
-:microprofile-open-api-spec-url: {microprofile-open-api-base-url}/microprofile-openapi-spec-{version-lib-microprofile-openapi-api}.html
-:microprofile-open-api-javadoc-base-url: {microprofile-open-api-base-url}/apidocs
-:microprofile-open-api-javadoc-url: {microprofile-open-api-javadoc-base-url}/org/eclipse/microprofile/openapi
-
-:microprofile-lra-base-url: {microprofile-base-url}/microprofile-lra-{version-lib-microprofile-lra-api}
-:microprofile-lra-spec-url: {microprofile-lra-base-url}/microprofile-lra-spec-{version-lib-microprofile-lra-api}.html
-:microprofile-lra-javadoc-url: {microprofile-lra-base-url}/apidocs/org/eclipse/microprofile/lra/annotation/
-
-:microprofile-fault-tolerance-base-url: {microprofile-base-url}/microprofile-fault-tolerance-{version-lib-microprofile-fault-tolerance-api}
-:microprofile-fault-tolerance-spec-url: {microprofile-fault-tolerance-base-url}/microprofile-fault-tolerance-spec-{version-lib-microprofile-fault-tolerance-api}.html
-:microprofile-fault-tolerance-javadoc-url: {microprofile-fault-tolerance-base-url}/apidocs
-
-:microprofile-metrics-base-url: {microprofile-base-url}/microprofile-metrics-{version-lib-microprofile-metrics-api}
-:microprofile-metrics-spec-url: {microprofile-metrics-base-url}/microprofile-metrics-spec-{version-lib-microprofile-metrics-api}.html
-:microprofile-metrics-javadoc-url: {microprofile-metrics-base-url}/apidocs
-:microprofile-metrics-javadoc-annotation-url: {microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics/annotation
-:microprofile-metrics-javadoc-metric-url: {microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics
-
-:microprofile-tracing-base-url: {microprofile-base-url}/microprofile-opentracing-{version-lib-microprofile-tracing}
-:microprofile-tracing-spec-url: {microprofile-tracing-base-url}/microprofile-opentracing-spec-{version-lib-microprofile-tracing}.html
-:microprofile-tracing-javadoc-url: {microprofile-tracing-base-url}/apidocs
-
-:microprofile-health-base-url: {microprofile-base-url}/microprofile-health-{version-lib-microprofile-health}
-:microprofile-health-spec-url: {microprofile-health-base-url}/microprofile-health-spec-{version-lib-microprofile-health}.html
-:microprofile-health-javadoc-url: {microprofile-health-base-url}/apidocs
-
-:microprofile-config-base-url: {microprofile-base-url}/microprofile-config-{version-lib-microprofile-config}
-:microprofile-config-spec-url: {microprofile-config-base-url}/microprofile-config-spec-{version-lib-microprofile-config}.html
-:microprofile-config-javadoc-url: {microprofile-config-base-url}/apidocs
-
-:microprofile-reactive-messaging-base-url: {microprofile-base-url}/microprofile-reactive-messaging-{version-lib-microprofile-reactive-messaging-api}
-:microprofile-reactive-messaging-spec-url: {microprofile-reactive-messaging-base-url}/microprofile-reactive-messaging-spec-{version-lib-microprofile-reactive-messaging-api}.html
-:microprofile-reactive-messaging-javadoc-url: {microprofile-reactive-messaging-base-url}/apidocs
-
-:microprofile-rs-operators-base-url: {microprofile-base-url}/microprofile-reactive-streams-operators-{version-lib-microprofile-rs-operators-api}
-:microprofile-rs-operators-spec-url: {microprofile-rs-operators-base-url}/microprofile-reactive-streams-operators-spec-{version-lib-microprofile-rs-operators-api}.html
-:microprofile-rs-operators-javadoc-url: {microprofile-rs-operators-base-url}/apidocs
-
-:microprofile-jwt-base-url: {microprofile-base-url}/microprofile-jwt-auth-{version-lib-microprofile-jwt}
-:microprofile-jwt-spec-url: {microprofile-jwt-base-url}/microprofile-jwt-auth-spec-{version-lib-microprofile-jwt}.html
-:microprofile-jwt-javadoc-url: {microprofile-jwt-base-url}/apidocs
-
-:microprofile-rest-client-base-url: {microprofile-base-url}/microprofile-rest-client-{version-lib-microprofile-rest-client}
-:microprofile-rest-client-spec-url: {microprofile-rest-client-base-url}/microprofile-rest-client-spec-{version-lib-microprofile-rest-client}.html
-:microprofile-rest-client-javadoc-url: {microprofile-rest-client-base-url}/apidocs
-
-:microprofile-graphql-base-url: {microprofile-base-url}/microprofile-graphql-{version-lib-microprofile-graphql}
-:microprofile-graphql-spec-url: {microprofile-graphql-base-url}/microprofile-graphql-spec-{version-lib-microprofile-graphql}.html
-:microprofile-graphql-javadoc-url: {microprofile-graphql-base-url}/apidocs
 
 // Jakarta versioned URLs
 
@@ -215,18 +142,9 @@ endif::[]
 :media-jsonb-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.jsonb
 :media-jackson-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.jackson
 :metrics-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.api
-:metrics-mp-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.metrics
 :metrics-serviceapi-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.serviceapi
 :micrometer-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.micrometer
 :prometheus-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.prometheus
-:mp-config-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.config
-:mp-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.cors
-:mp-restclient-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.restclient
-:mp-server-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.server
-:mp-tyrus-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.tyrus
-:mp-testing-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.testing
-:mp-junit5-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.testing.junit5
-:mp-mocking-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.testing.mocking
 :openapi-javadoc-base-url: {javadoc-base-url}/io.helidon.openapi
 :openapi-ui-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.openapi.ui
 :reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive

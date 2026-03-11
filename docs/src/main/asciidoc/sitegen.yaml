@@ -242,12 +242,6 @@ backend:
                 glyph:
                   type: "icon"
                   value: "search"
-              - type: "PAGE"
-                title: "Reactive Messaging"
-                source: "reactive-messaging.adoc"
-                glyph:
-                  type: "icon"
-                  value: "message"
               - type: "MENU"
                 title: "Reactive Streams"
                 dir: "reactivestreams"

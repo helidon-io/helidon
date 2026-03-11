@@ -109,14 +109,6 @@ Instrumentation to expose metrics of your applications.
 Support OpenAPI from your application.
 --
 
-//Reactive Messaging
-[CARD]
-.Reactive Messaging
-[icon=message,link=reactive-messaging.adoc]
---
-Use prepared tools for repetitive use case scenarios.
---
-
 //Reactive Streams
 [CARD]
 .Reactive Streams

@@ -9,37 +9,7 @@ Module `helidon-tracing-providers-opentracing` adds support for opentracing base
 Module `helidon-tracing-providers-opentelemetry` adds support for opentelemetry based tracers (such as Jaeger).
 
 # Usage
-## Usage In Helidon MP
-To use tracing in MP, simply depend on the `helidon-microprofile-tracing` module to automate
-setup of tracing, and add your favorite tracer implementation to the classpath (currently Zipkin is the only
-favorite tracer implemented, though SPI is available).
 
-Example of pom.xml dependencies:
-```xml
-<dependency>
-    <!-- general support for tracing -->
-    <groupId>io.helidon.microprofile.tracing</groupId>
-    <artifactId>helidon-microprofile-tracing</artifactId>
-</dependency>
-<dependency>
-    <!-- Zipkin tracer implementation -->
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing-providers-zipkin</artifactId>
-</dependency>
-```
-
-To customize configuration of zipkin, see `ZipkinTracerBuilder` javadoc. Basics:
-```yaml
-tracing:
-  # required
-  service: "service-name"
-  # default is "localhost"
-  host: "zipkin"
-  # default is 9411
-  port: 9411
-```
-
-## Usage in Helidon SE
 To use tracing in SE, add a dependency on `helidon-tracing` and a tracer
 implementation and register tracer with server configuration.
 
@@ -105,12 +75,6 @@ tracing:
   service: "myService"
   host: "zipkin"
 ```
-
-## Module `helidon-microprofile-tracing`
-Provides automated integration with Helidon MP, including automated configuration of
-tracer and of server-side filters that register context for client calls and trace each 
-request (unless explicitly disabled using configuration)
-This module is located in /microprofile/tracing
 
 ## Module `helidon-tracing-providers-zipkin`
 Integration with Zipkin (https://zipkin.io/). Easiest approach is to use a docker image
