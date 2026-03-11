@@ -35,7 +35,7 @@ import io.helidon.health.HealthCheckType;
  * 50 for 50% or 99 for 99%.
  * </p>
  * <p>
- * This health check is automatically created and registered through CDI.
+ * This health check is automatically created and registered.
  * </p>
  * <p>
  * This health check can be referred to in properties as {@code heapMemory}. So for example, to exclude this

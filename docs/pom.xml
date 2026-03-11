@@ -213,10 +213,6 @@
                             <location>${javadoc.pkg.dir}/jackson-databind</location>
                         </offlineLink>
                         <offlineLink>
-                            <url>${javadoc.link.jakarta-cdi}</url>
-                            <location>${javadoc.pkg.dir}/jakarta-cdi</location>
-                        </offlineLink>
-                        <offlineLink>
                             <url>${javadoc.link.jakarta-inject}</url>
                             <location>${javadoc.pkg.dir}/jakarta-inject</location>
                         </offlineLink>

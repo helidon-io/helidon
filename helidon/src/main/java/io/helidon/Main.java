@@ -40,7 +40,7 @@ import io.helidon.spi.HelidonStartupProvider;
 /**
  * Main entry point for any Helidon application.
  * {@link java.util.ServiceLoader} is used to discover the correct {@link io.helidon.spi.HelidonStartupProvider}
- * to start the application (probably either Helidon Injection based application, or a CDI based application).
+ * to start the application, typically a Helidon Injection based application.
  * <p>
  * The default option is to start Helidon injection based application.
  */

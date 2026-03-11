@@ -46,12 +46,6 @@
             <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
-            <!-- only needed for compilation, not required in runtime -->
-            <groupId>jakarta.enterprise</groupId>
-            <artifactId>jakarta.enterprise.cdi-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>

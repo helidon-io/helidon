@@ -145,14 +145,12 @@ public interface Grpc {
     /**
      * Specifies that a class is a gRPC interceptor.
      * <p>
-     * The class should be a discoverable CDI bean, for example it could be discovered
-     * by being annotated with a valid CDI scope.
+     * The class should be a discoverable service implementation.
      *
      * <p>
      * The annotated class can be a {@link io.grpc.ServerInterceptor}.
      * <pre>
      * &#064;Interceptor
-     * &#064;ApplicationScoped
      * public class ValidationInterceptor
      *         implements io.grpc.ServerInterceptor { ... }
      * </pre>
@@ -161,7 +159,6 @@ public interface Grpc {
      * Or the annotated class can be a {@link io.grpc.ClientInterceptor}.
      * <pre>
      * &#064;Interceptor
-     * &#064;ApplicationScoped
      * public class ValidationInterceptor
      *         implements io.grpc.ClientInterceptor { ... }
      * </pre>

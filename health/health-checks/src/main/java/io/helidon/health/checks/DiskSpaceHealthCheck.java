@@ -46,7 +46,7 @@ import io.helidon.health.HealthCheckType;
  * Unless ephemeral disk space is being used, it is often not sufficient to simply restart a server in the event
  * that that health check fails.
  *<p>
- * This health check is automatically created and registered through CDI.
+ * This health check is automatically created and registered.
  *</p>
  * <p>
  * This health check can be referred to in properties as {@code diskSpace}. So for example, to exclude this

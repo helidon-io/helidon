@@ -19,7 +19,6 @@
  */
 module io.helidon.tests.apps.bookstore.common {
 
-    requires jakarta.cdi;
     requires jakarta.json;
 
     exports io.helidon.tests.apps.bookstore.common;

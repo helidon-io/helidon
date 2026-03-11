@@ -19,12 +19,9 @@ package io.helidon.tests.apps.bookstore.common;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jakarta.enterprise.context.ApplicationScoped;
-
 /**
  * Provider for greeting message.
  */
-@ApplicationScoped
 public class BookStore {
 
     private final ConcurrentHashMap<String, Book> store = new ConcurrentHashMap<>();
@@ -57,4 +54,3 @@ public class BookStore {
     public boolean contains(String isbn) { return store.containsKey(isbn); }
 
 }
-

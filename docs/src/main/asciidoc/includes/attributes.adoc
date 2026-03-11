@@ -43,7 +43,6 @@ endif::[]
 
 // jakarta specifications
 :version-lib-jakarta-core: 10
-:version-lib-jakarta-cdi: 4.0
 :version-lib-jakarta-websockets-api: 2.1
 :version-lib-jakarta-bean-validation: 3.0
 :version-lib-jakarta-jsonp-api: 2.1
@@ -77,10 +76,6 @@ endif::[]
 // Jakarta versioned URLs
 
 :jakarta-base-url: https://jakarta.ee/specifications
-
-:jakarta-cdi-base-url: {jakarta-base-url}/cdi/{version-lib-jakarta-cdi}
-:jakarta-cdi-spec-url: {jakarta-cdi-base-url}/jakarta-cdi-spec-{version-lib-jakarta-cdi}.html
-:jakarta-cdi-javadoc-url: {jakarta-cdi-base-url}/apidocs/
 
 :jakarta-websocket-base-url: {jakarta-base-url}/websocket/{version-lib-jakarta-websockets-api}
 :jakarta-websocket-spec-url: {jakarta-websocket-base-url}/jakarta-websocket-spec-{version-lib-jakarta-websockets-api}.html
@@ -129,7 +124,6 @@ endif::[]
 :grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.grpc
 :health-javadoc-base-url: {javadoc-base-url}/io.helidon.health.checks
 :http-javadoc-base-url: {javadoc-base-url}/io.helidon.http
-:integration-oci-sdk-cdi-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.oci.sdk.cdi
 :media-json-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.json
 :media-json-binding-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.json-binding
 :media-jackson-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.jackson

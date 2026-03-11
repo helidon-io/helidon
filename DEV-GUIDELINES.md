@@ -55,7 +55,7 @@ Some of these rules are enforced by checkstyle, some are checked during code rev
 # Configuration and programmatic API
 1. **Everything that can be done using config, must be possible using programmatic approach through builders**
     1. Exceptions:
-        1. CDI components configured from a CDI Extension
+        1. components that can only be code generated and must use inversion of control
 2. Everything that can be done using builders should be possible also using configuration, 
         except for cases that would mandate usage of reflection 
         (such an exception may be configuration of Routing in WebServer - nevertheless we still may support 

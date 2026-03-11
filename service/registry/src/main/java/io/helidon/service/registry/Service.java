@@ -217,7 +217,7 @@ public final class Service {
      * qualified by the same qualifier.
      */
     @Target(ElementType.ANNOTATION_TYPE)
-    @Retention(RetentionPolicy.RUNTIME) // we need this for our CDI integration
+    @Retention(RetentionPolicy.RUNTIME)
     @Documented
     public @interface Qualifier {
     }
@@ -226,7 +226,6 @@ public final class Service {
      * A qualifier that can restrict injection to specifically named instances, or that qualifies services with that name.
      */
     @Qualifier
-    // we need runtime retention policy to correctly handle CDI integration
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD, ElementType.TYPE})
