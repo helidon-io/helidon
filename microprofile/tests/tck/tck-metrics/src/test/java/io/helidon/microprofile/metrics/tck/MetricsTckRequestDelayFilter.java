@@ -15,25 +15,21 @@
  */
 package io.helidon.microprofile.metrics.tck;
 
-import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import jakarta.annotation.Priority;
-import jakarta.ws.rs.Priorities;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerRequestFilter;
-import jakarta.ws.rs.ext.Provider;
+import io.helidon.webserver.http.Filter;
+import io.helidon.webserver.http.FilterChain;
+import io.helidon.webserver.http.RoutingRequest;
+import io.helidon.webserver.http.RoutingResponse;
 
 /**
- * Adds a small configurable buffer before selected optional metrics TCK requests so timing-sensitive
+ * Adds a small configurable buffer before selected metrics TCK requests so timing-sensitive
  * assertions do not race metric publication.
  */
-@Provider
-@Priority(Priorities.USER)
-public class OptionalAsyncRequestDelayFilter implements ContainerRequestFilter {
+public class MetricsTckRequestDelayFilter implements Filter {
 
     static final String DELAY_MS_PROPERTY = "helidon.microprofile.metrics.tck.request-delay-ms";
     static final String DELAY_PATH_PATTERN_PROPERTY = "helidon.microprofile.metrics.tck.request-delay-path-pattern";
@@ -43,29 +39,27 @@ public class OptionalAsyncRequestDelayFilter implements ContainerRequestFilter {
     private final long delayMs;
     private final Pattern delayPathPattern;
 
-    public OptionalAsyncRequestDelayFilter() {
+    MetricsTckRequestDelayFilter() {
         this(configuredDelayMs(), configuredDelayPathPattern());
     }
 
-    OptionalAsyncRequestDelayFilter(long delayMs, Pattern delayPathPattern) {
+    MetricsTckRequestDelayFilter(long delayMs, Pattern delayPathPattern) {
         this.delayMs = Math.max(0, delayMs);
         this.delayPathPattern = Objects.requireNonNull(delayPathPattern);
     }
 
     @Override
-    public void filter(ContainerRequestContext requestContext) throws IOException {
-        if (!"GET".equals(requestContext.getMethod())
-                || !matchesPath(requestContext.getUriInfo().getPath(), delayPathPattern)
-                || delayMs == 0) {
-            return;
+    public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
+        if ("GET".equals(req.prologue().method().text())
+                && delayMs > 0
+                && matchesPath(req.path().path(), delayPathPattern)) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(delayMs);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
-
-        try {
-            TimeUnit.MILLISECONDS.sleep(delayMs);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException("Interrupted while delaying optional metrics TCK request", e);
-        }
+        chain.proceed();
     }
 
     static boolean matchesPath(String path) {

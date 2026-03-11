@@ -15,9 +15,8 @@
  */
 package io.helidon.microprofile.metrics.tck;
 
-import java.util.Set;
-
 import io.helidon.microprofile.metrics.RegistryFactory;
+import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.server.CatchAllExceptionMapper;
 
 import jakarta.annotation.Priority;
@@ -27,15 +26,20 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.BeforeShutdown;
 import jakarta.enterprise.inject.spi.Extension;
-import org.eclipse.microprofile.metrics.MetricRegistry;
+
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 public class MetricsTckCdiExtension implements Extension {
 
     void before(@Observes BeforeBeanDiscovery discovery) {
         discovery.addAnnotatedType(ArrayParamConverterProvider.class, ArrayParamConverterProvider.class.getSimpleName());
         discovery.addAnnotatedType(CatchAllExceptionMapper.class, CatchAllExceptionMapper.class.getSimpleName());
-        discovery.addAnnotatedType(OptionalAsyncRequestDelayFilter.class,
-                                   OptionalAsyncRequestDelayFilter.class.getSimpleName());
+    }
+
+    void registerDelayFilter(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object event,
+                             ServerCdiExtension server) {
+        server.serverRoutingBuilder()
+                .addFilter(new MetricsTckRequestDelayFilter());
     }
 
     void clear(@Observes BeforeShutdown shutdown) {
