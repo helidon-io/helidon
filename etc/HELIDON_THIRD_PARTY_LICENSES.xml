@@ -50,8 +50,6 @@ Fourth Party Runtime Dependencies
                 <consumer>helidon-integrations-cdi-jta-weld</consumer>
                 <consumer>helidon-integrations-cdi-reference-counted-context</consumer>
                 <consumer>helidon-integrations-micrometer-cdi</consumer>
-                <consumer>helidon-integrations-micronaut-cdi</consumer>
-                <consumer>helidon-integrations-micronaut-data</consumer>
                 <consumer>helidon-integrations-microstream-cdi</consumer>
                 <consumer>helidon-integrations-oci-sdk-cdi</consumer>
                 <consumer>helidon-integrations-vault-cdi</consumer>
@@ -1182,8 +1180,6 @@ See full text at the bottom of this document for license: Apache-2.0
                 <consumer>helidon-integrations-cdi-datasource-ucp</consumer>
                 <consumer>helidon-integrations-cdi-jpa</consumer>
                 <consumer>helidon-integrations-cdi-jta</consumer>
-                <consumer>helidon-integrations-micronaut-cdi-processor</consumer>
-                <consumer>helidon-integrations-micronaut-data</consumer>
                 <consumer>helidon-integrations-microstream-cdi</consumer>
                 <consumer>helidon-integrations-oci-sdk-cdi</consumer>
                 <consumer>helidon-integrations-oci-sdk-tests-test-application</consumer>
@@ -2096,7 +2092,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <consumer>helidon-integrations-cdi-datasource</consumer>
                 <consumer>helidon-integrations-cdi-datasource-hikaricp</consumer>
                 <consumer>helidon-integrations-cdi-datasource-ucp</consumer>
-                <consumer>helidon-integrations-micronaut-cdi</consumer>
                 <consumer>helidon-integrations-oci-sdk-cdi</consumer>
                 <consumer>helidon-integrations-oci-secrets-mp-config-source</consumer>
                 <consumer>helidon-integrations-vault-cdi</consumer>
@@ -4359,7 +4354,6 @@ NOTICE: same as jackson-databind</attribution>
                 <consumer>helidon-integrations-cdi-datasource-hikaricp</consumer>
                 <consumer>helidon-integrations-cdi-datasource-ucp</consumer>
                 <consumer>helidon-integrations-cdi-hibernate</consumer>
-                <consumer>helidon-integrations-micronaut-cdi-processor</consumer>
                 <consumer>helidon-integrations-oci-sdk-cdi</consumer>
                 <consumer>helidon-integrations-oci-sdk-runtime</consumer>
                 <consumer>helidon-integrations-oci-sdk-tests-test-application</consumer>
@@ -7779,193 +7773,6 @@ Apache License 2.0
 --------------------------------------------
 </attribution>
         </dependency>
-        <dependency>
-            <id>151309</id>
-            <name>micronaut-aop</name>
-            <version>3.8.7</version>
-            <licensor>original author or authors</licensor>
-            <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-integrations-micronaut-cdi</consumer>
-            </consumers>
-            <attribution>Micronaut AOP (io.micronaut:micronaut-aop)
-  Copyright 2017-2021 original authors
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-Fourth Party Runtime Dependencies
---------------------------------------------
-"SLF4J API Module" (org.slf4j:slf4j-api)
-  Copyright (c) 2004-2011 QOS.ch
-
-The MIT License SPDX short identifier: MIT
-
-Further resources on the MIT License Copyright &lt;YEAR&gt; &lt;COPYRIGHT HOLDER&gt;
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
---------------------------------------------
-"Micronaut" (io.micronaut:micronaut-inject)
-  Copyright 2017-2022 original authors
-  Apache License 2.0
---------------------------------------------
-"Jakarta Dependency Injection" (jakarta.inject:jakarta.inject-api)
-  Copyright (C) 2009 The JSR-330 Expert Group
-  Copyright &amp;#169; 2018,2020 Eclipse Foundation.
-  Apache License 2.0
---------------------------------------------
-"SnakeYAML" (org.yaml:snakeyaml)
-  Copyright 2003-2010 Christian d'Heureuse, Inventec Informatik AG, Zurich, Switzerland
-  Copyright (c) 2008, SnakeYAML
-  Apache License 2.0
---------------------------------------------
-"Micronaut" (io.micronaut:micronaut-core)
-  Copyright 2010,2012 Google Inc. All Rights Reserved.
-  Copyright 2017-2022 original authors
-  Apache License 2.0
---------------------------------------------
-"Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2019, 2021 Eclipse Foundation. All rights reserved.
-  Copyright (c) 2005,2022 Oracle and/or its affiliates. All rights reserved.
-  EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
---------------------------------------------
-See full text at the bottom of this document for license: EPL-2.0
---------------------------------------------
-See full text at the bottom of this document for license: GPLv2-CPE
-</attribution>
-        </dependency>
-        <dependency>
-            <id>151306</id>
-            <name>micronaut-core</name>
-            <version>3.8.7</version>
-            <licensor>original author or authors</licensor>
-            <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-integrations-micronaut-cdi</consumer>
-                <consumer>helidon-integrations-micronaut-cdi-processor</consumer>
-            </consumers>
-            <attribution>Micronaut Core (io.micronaut:micronaut-core)
-  Copyright 2010,2012 Google Inc. All Rights Reserved.
-  Copyright 2017-2022 original authors
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-Fourth Party Runtime Dependencies
---------------------------------------------
-"SLF4J API Module" (org.slf4j:slf4j-api)
-  Copyright (c) 2004-2011 QOS.ch
-
-The MIT License SPDX short identifier: MIT
-
-Further resources on the MIT License Copyright &lt;YEAR&gt; &lt;COPYRIGHT HOLDER&gt;
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
---------------------------------------------
-
-</attribution>
-        </dependency>
-        <dependency>
-            <id>151305</id>
-            <name>micronaut-inject-java</name>
-            <version>3.8.7</version>
-            <licensor>original author or authors</licensor>
-            <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-integrations-micronaut-cdi</consumer>
-                <consumer>helidon-integrations-micronaut-cdi-processor</consumer>
-                <consumer>helidon-integrations-micronaut-data</consumer>
-            </consumers>
-            <attribution>Micronaut Inject Java (io.micronaut:micronaut-inject-java)
-  Copyright 2017-2022 original authors
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-Fourth Party Runtime Dependencies
---------------------------------------------
-"SLF4J API Module" (org.slf4j:slf4j-api)
-  Copyright (c) 2004-2011 QOS.ch
-
-The MIT License SPDX short identifier: MIT
-
-Further resources on the MIT License Copyright &lt;YEAR&gt; &lt;COPYRIGHT HOLDER&gt;
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
---------------------------------------------
-"Micronaut" (io.micronaut:micronaut-inject)
-  Copyright 2017-2022 original authors
-  Apache License 2.0
---------------------------------------------
-"Jakarta Dependency Injection" (jakarta.inject:jakarta.inject-api)
-  Copyright (C) 2009 The JSR-330 Expert Group
-  Copyright (c) 2018,2020 Eclipse Foundation.
-  Apache License 2.0
---------------------------------------------
-"Micronaut" (io.micronaut:micronaut-core)
-  Copyright 2010,2012 Google Inc. All Rights Reserved.
-  Copyright 2017-2022 original authors
-  Apache License 2.0
---------------------------------------------
-"SnakeYAML" (org.yaml:snakeyaml)
-  Copyright 2003-2010 Christian d'Heureuse, Inventec Informatik AG, Zurich, Switzerland
-  Copyright (c) 2008, SnakeYAML
-  Apache License 2.0
---------------------------------------------
-"Micronaut" (io.micronaut:micronaut-aop)
-  Copyright 2017-2021 original authors
-  Apache License 2.0
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-"Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2019, 2021 Eclipse Foundation. All rights reserved.
-  Copyright (c) 2005,2022 Oracle and/or its affiliates. All rights reserved.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 See full text at the bottom of this document for license: EPL-2.0

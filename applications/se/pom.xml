@@ -54,37 +54,6 @@
 
     <profiles>
         <profile>
-            <id>native-image</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.graalvm.buildtools</groupId>
-                        <artifactId>native-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>resource-config</id>
-                                <goals>
-                                    <goal>generateResourceConfig</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>build-native-image</id>
-                                <goals>
-                                    <goal>compile-no-fork</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-            <dependencies>
-                <dependency>
-                    <groupId>io.helidon.integrations.graal</groupId>
-                    <artifactId>helidon-graal-native-image-extension</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
             <id>jlink-image</id>
             <build>
                 <plugins>

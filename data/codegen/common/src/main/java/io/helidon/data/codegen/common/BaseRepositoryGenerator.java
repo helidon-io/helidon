@@ -26,7 +26,7 @@ import io.helidon.data.codegen.common.spi.PersistenceGenerator;
 import io.helidon.data.codegen.common.spi.RepositoryGenerator;
 
 /**
- * Specific data repository (e.g. Jakarta Data, Micronaut Data, ...) generator base class.
+ * Specific data repository (e.g. Jakarta Data) generator base class.
  */
 public abstract class BaseRepositoryGenerator implements RepositoryGenerator {
 

@@ -31,7 +31,7 @@ Fourth Party Runtime Dependencies
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 CDI-API  RedHat, Inc., JBoss community
 Apache 2.0
-Used by: [helidon-health-checks, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-delegates, helidon-integrations-cdi-eclipselink, helidon-integrations-cdi-hibernate, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-cdi-jta-weld, helidon-integrations-cdi-reference-counted-context, helidon-integrations-micrometer-cdi, helidon-integrations-micronaut-cdi, helidon-integrations-micronaut-data, helidon-integrations-microstream-cdi, helidon-integrations-oci-sdk-cdi, helidon-integrations-vault-cdi, helidon-messaging-aq, helidon-messaging-jms, helidon-messaging-kafka, helidon-messaging-mock, helidon-messaging-wls-jms, weld-se-core]
+Used by: [helidon-health-checks, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-delegates, helidon-integrations-cdi-eclipselink, helidon-integrations-cdi-hibernate, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-cdi-jta-weld, helidon-integrations-cdi-reference-counted-context, helidon-integrations-micrometer-cdi, helidon-integrations-microstream-cdi, helidon-integrations-oci-sdk-cdi, helidon-integrations-vault-cdi, helidon-messaging-aq, helidon-messaging-jms, helidon-messaging-kafka, helidon-messaging-mock, helidon-messaging-wls-jms, weld-se-core]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta CDI API (jakarta.enterprise:jakarta.enterprise.cdi-api)
   Copyright 2010, 2016, Red Hat, Inc., and individual contributors
@@ -1066,7 +1066,7 @@ See full text at the bottom of this document for license: Apache-2.0
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta Annotations API  Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-bundles-config, helidon-config, helidon-config-hocon, helidon-config-mp, helidon-config-tests-module-mappers-1-base, helidon-config-tests-module-mappers-2-override, helidon-config-tests-module-parsers-1-override, helidon-config-tests-test-bundle, helidon-config-yaml, helidon-config-yaml-mp, helidon-http-encoding, helidon-inject-api, helidon-inject-configdriven-runtime, helidon-inject-configdriven-tests-config, helidon-inject-configdriven-tests-configuredby, helidon-inject-configdriven-tests-configuredby-application, helidon-inject-maven-plugin, helidon-inject-runtime, helidon-inject-tests-interception, helidon-inject-tests-resources-inject, helidon-inject-tests-resources-plain, helidon-inject-tests-tck-jsr330, helidon-inject-tools, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-micronaut-cdi-processor, helidon-integrations-micronaut-data, helidon-integrations-microstream-cdi, helidon-integrations-oci-sdk-cdi, helidon-integrations-oci-sdk-tests-test-application, helidon-integrations-oci-sdk-tests-test-module1, helidon-integrations-oci-sdk-tests-test-module2, helidon-integrations-oci-tls-certificates, helidon-messaging-mock, weld-se-core]
+Used by: [helidon-bundles-config, helidon-config, helidon-config-hocon, helidon-config-mp, helidon-config-tests-module-mappers-1-base, helidon-config-tests-module-mappers-2-override, helidon-config-tests-module-parsers-1-override, helidon-config-tests-test-bundle, helidon-config-yaml, helidon-config-yaml-mp, helidon-http-encoding, helidon-inject-api, helidon-inject-configdriven-runtime, helidon-inject-configdriven-tests-config, helidon-inject-configdriven-tests-configuredby, helidon-inject-configdriven-tests-configuredby-application, helidon-inject-maven-plugin, helidon-inject-runtime, helidon-inject-tests-interception, helidon-inject-tests-resources-inject, helidon-inject-tests-resources-plain, helidon-inject-tests-tck-jsr330, helidon-inject-tools, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-microstream-cdi, helidon-integrations-oci-sdk-cdi, helidon-integrations-oci-sdk-tests-test-application, helidon-integrations-oci-sdk-tests-test-module1, helidon-integrations-oci-sdk-tests-test-module2, helidon-integrations-oci-tls-certificates, helidon-messaging-mock, weld-se-core]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta Annotations API (jakarta.annotation:jakarta.annotation-api)
 Copyright (c) 2009, 2022 Oracle and/or its affiliates. All rights reserved.
@@ -1962,7 +1962,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 MicroProfile Config API  Eclipse Foundation
 Apache 2.0
-Used by: [helidon-config-hocon-mp, helidon-config-mp, helidon-config-yaml-mp, helidon-health-checks, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-micronaut-cdi, helidon-integrations-oci-sdk-cdi, helidon-integrations-oci-secrets-mp-config-source, helidon-integrations-vault-cdi, helidon-messaging-mock]
+Used by: [helidon-config-hocon-mp, helidon-config-mp, helidon-config-yaml-mp, helidon-health-checks, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-oci-sdk-cdi, helidon-integrations-oci-secrets-mp-config-source, helidon-integrations-vault-cdi, helidon-messaging-mock]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 MicroProfile Config API (org.eclipse.microprofile.config:microprofile-config-api)
   Copyright (c) 2009-2020 Contributors to the Eclipse Foundation
@@ -4076,7 +4076,7 @@ NOTICE: same as jackson-databind
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 jakarta.inject-api  Eclipse Foundation
 Apache 2.0
-Used by: [helidon-config-tests-service-registry, helidon-inject-api, helidon-inject-configdriven-api, helidon-inject-configdriven-runtime, helidon-inject-configdriven-tests-config, helidon-inject-configdriven-tests-configuredby, helidon-inject-configdriven-tests-configuredby-application, helidon-inject-maven-plugin, helidon-inject-runtime, helidon-inject-testing, helidon-inject-tests-interception, helidon-inject-tests-resources-inject, helidon-inject-tests-resources-plain, helidon-inject-tests-tck-jsr330, helidon-inject-tools, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-hibernate, helidon-integrations-micronaut-cdi-processor, helidon-integrations-oci-sdk-cdi, helidon-integrations-oci-sdk-runtime, helidon-integrations-oci-sdk-tests-test-application, helidon-integrations-oci-sdk-tests-test-module1, helidon-integrations-oci-sdk-tests-test-module2, helidon-integrations-oci-tls-certificates, helidon-security-providers-oidc, helidon-webserver, weld-se-core]
+Used by: [helidon-config-tests-service-registry, helidon-inject-api, helidon-inject-configdriven-api, helidon-inject-configdriven-runtime, helidon-inject-configdriven-tests-config, helidon-inject-configdriven-tests-configuredby, helidon-inject-configdriven-tests-configuredby-application, helidon-inject-maven-plugin, helidon-inject-runtime, helidon-inject-testing, helidon-inject-tests-interception, helidon-inject-tests-resources-inject, helidon-inject-tests-resources-plain, helidon-inject-tests-tck-jsr330, helidon-inject-tools, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-hibernate, helidon-integrations-oci-sdk-cdi, helidon-integrations-oci-sdk-runtime, helidon-integrations-oci-sdk-tests-test-application, helidon-integrations-oci-sdk-tests-test-module1, helidon-integrations-oci-sdk-tests-test-module2, helidon-integrations-oci-tls-certificates, helidon-security-providers-oidc, helidon-webserver, weld-se-core]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta Dependency Injection API (@inject) (jakarta.inject:jakarta.inject-api)
  Copyright(C) 2009 The JSR-330 Expert Group
@@ -7488,176 +7488,6 @@ Apache License 2.0
   THE POSSIBILITY OF SUCH DAMAGE.
 --------------------------------------------
 
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-micronaut-aop  original author or authors
-Apache 2.0
-Used by: [helidon-integrations-micronaut-cdi]
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Micronaut AOP (io.micronaut:micronaut-aop)
-  Copyright 2017-2021 original authors
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-Fourth Party Runtime Dependencies
---------------------------------------------
-"SLF4J API Module" (org.slf4j:slf4j-api)
-  Copyright (c) 2004-2011 QOS.ch
-
-The MIT License SPDX short identifier: MIT
-
-Further resources on the MIT License Copyright <YEAR> <COPYRIGHT HOLDER>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
---------------------------------------------
-"Micronaut" (io.micronaut:micronaut-inject)
-  Copyright 2017-2022 original authors
-  Apache License 2.0
---------------------------------------------
-"Jakarta Dependency Injection" (jakarta.inject:jakarta.inject-api)
-  Copyright (C) 2009 The JSR-330 Expert Group
-  Copyright &#169; 2018,2020 Eclipse Foundation.
-  Apache License 2.0
---------------------------------------------
-"SnakeYAML" (org.yaml:snakeyaml)
-  Copyright 2003-2010 Christian d'Heureuse, Inventec Informatik AG, Zurich, Switzerland
-  Copyright (c) 2008, SnakeYAML
-  Apache License 2.0
---------------------------------------------
-"Micronaut" (io.micronaut:micronaut-core)
-  Copyright 2010,2012 Google Inc. All Rights Reserved.
-  Copyright 2017-2022 original authors
-  Apache License 2.0
---------------------------------------------
-"Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2019, 2021 Eclipse Foundation. All rights reserved.
-  Copyright (c) 2005,2022 Oracle and/or its affiliates. All rights reserved.
-  EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
---------------------------------------------
-See full text at the bottom of this document for license: EPL-2.0
---------------------------------------------
-See full text at the bottom of this document for license: GPLv2-CPE
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-micronaut-core  original author or authors
-Apache 2.0
-Used by: [helidon-integrations-micronaut-cdi, helidon-integrations-micronaut-cdi-processor]
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Micronaut Core (io.micronaut:micronaut-core)
-  Copyright 2010,2012 Google Inc. All Rights Reserved.
-  Copyright 2017-2022 original authors
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-Fourth Party Runtime Dependencies
---------------------------------------------
-"SLF4J API Module" (org.slf4j:slf4j-api)
-  Copyright (c) 2004-2011 QOS.ch
-
-The MIT License SPDX short identifier: MIT
-
-Further resources on the MIT License Copyright <YEAR> <COPYRIGHT HOLDER>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
---------------------------------------------
-
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-micronaut-inject-java  original author or authors
-Apache 2.0
-Used by: [helidon-integrations-micronaut-cdi, helidon-integrations-micronaut-cdi-processor, helidon-integrations-micronaut-data]
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Micronaut Inject Java (io.micronaut:micronaut-inject-java)
-  Copyright 2017-2022 original authors
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-Fourth Party Runtime Dependencies
---------------------------------------------
-"SLF4J API Module" (org.slf4j:slf4j-api)
-  Copyright (c) 2004-2011 QOS.ch
-
-The MIT License SPDX short identifier: MIT
-
-Further resources on the MIT License Copyright <YEAR> <COPYRIGHT HOLDER>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
---------------------------------------------
-"Micronaut" (io.micronaut:micronaut-inject)
-  Copyright 2017-2022 original authors
-  Apache License 2.0
---------------------------------------------
-"Jakarta Dependency Injection" (jakarta.inject:jakarta.inject-api)
-  Copyright (C) 2009 The JSR-330 Expert Group
-  Copyright (c) 2018,2020 Eclipse Foundation.
-  Apache License 2.0
---------------------------------------------
-"Micronaut" (io.micronaut:micronaut-core)
-  Copyright 2010,2012 Google Inc. All Rights Reserved.
-  Copyright 2017-2022 original authors
-  Apache License 2.0
---------------------------------------------
-"SnakeYAML" (org.yaml:snakeyaml)
-  Copyright 2003-2010 Christian d'Heureuse, Inventec Informatik AG, Zurich, Switzerland
-  Copyright (c) 2008, SnakeYAML
-  Apache License 2.0
---------------------------------------------
-"Micronaut" (io.micronaut:micronaut-aop)
-  Copyright 2017-2021 original authors
-  Apache License 2.0
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-"Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2019, 2021 Eclipse Foundation. All rights reserved.
-  Copyright (c) 2005,2022 Oracle and/or its affiliates. All rights reserved.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 See full text at the bottom of this document for license: EPL-2.0

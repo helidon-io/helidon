@@ -26,7 +26,7 @@ import io.helidon.data.codegen.common.RepositoryInfo;
 import io.helidon.data.codegen.common.RepositoryInterfaceInfo;
 
 /**
- * Specific data repository (e.g. Jakarta Data, Micronaut Data, ...) generator.
+ * Specific data repository (e.g. Jakarta Data) generator.
  * Defines generated data repository interfaces implementations.
  */
 public interface RepositoryGenerator {

@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  * A method or field annotated with this method will be added for reflection.
  * <p>
  * This is an alternative to GraalVM native-image's {@code reflect-config.json} file, specific to Helidon.
- * Processing of this annotation requires {@code io.helidon.integrations.graal:helidon-graal-native-image-extension}
+ * Processing of this annotation requires an extension for GraalVM that can handle it
  *  on the classpath when building native image.
  * <p>
  * Constructors annotated with this annotation would only be added for reflection if either a field

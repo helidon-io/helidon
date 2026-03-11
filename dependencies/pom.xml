@@ -111,10 +111,6 @@
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.micrometer>1.15.2</version.lib.micrometer>
         <version.lib.micrometer-prometheus>1.15.2</version.lib.micrometer-prometheus>
-        <version.lib.micronaut>4.10.9</version.lib.micronaut>
-        <version.lib.micronaut.validation>4.12.0</version.lib.micronaut.validation>
-        <version.lib.micronaut.data>4.4.1</version.lib.micronaut.data>
-        <version.lib.micronaut.sql>5.4.0</version.lib.micronaut.sql>
         <version.lib.microstream>08.01.01-MS-GA</version.lib.microstream>
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
@@ -835,32 +831,6 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <!-- Micronaut integrations -->
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-inject-java</artifactId>
-                <version>${version.lib.micronaut}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-inject</artifactId>
-                <version>${version.lib.micronaut}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-core</artifactId>
-                <version>${version.lib.micronaut}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-aop</artifactId>
-                <version>${version.lib.micronaut}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-core-processor</artifactId>
-                <version>${version.lib.micronaut}</version>
-            </dependency>
             <!-- Neo4j -->
             <dependency>
                 <groupId>org.neo4j.driver</groupId>
@@ -895,63 +865,6 @@
                 <groupId>org.apache.activemq</groupId>
                 <artifactId>activemq-client</artifactId>
                 <version>${version.lib.activemq}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.validation</groupId>
-                <artifactId>micronaut-validation</artifactId>
-                <version>${version.lib.micronaut.validation}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.validation</groupId>
-                <artifactId>micronaut-validation-processor</artifactId>
-                <version>${version.lib.micronaut.validation}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-runtime</artifactId>
-                <version>${version.lib.micronaut}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.sql</groupId>
-                <artifactId>micronaut-jdbc-hikari</artifactId>
-                <version>${version.lib.micronaut.sql}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.sql</groupId>
-                <artifactId>micronaut-jdbc-ucp</artifactId>
-                <version>${version.lib.micronaut.sql}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.sql</groupId>
-                <artifactId>micronaut-jdbc</artifactId>
-                <version>${version.lib.micronaut.sql}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.data</groupId>
-                <artifactId>micronaut-data-tx</artifactId>
-                <version>${version.lib.micronaut.data}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.data</groupId>
-                <artifactId>micronaut-data-jdbc</artifactId>
-                <version>${version.lib.micronaut.data}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.data</groupId>
-                <artifactId>micronaut-data-processor</artifactId>
-                <version>${version.lib.micronaut.data}</version>
             </dependency>
             <!-- END OF Section 2: third party dependencies used by examples -->
 
@@ -996,33 +909,6 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${version.lib.commons-io}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-http</artifactId>
-                <version>${version.lib.micronaut}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.data</groupId>
-                <artifactId>micronaut-data-model</artifactId>
-                <version>${version.lib.micronaut.data}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.data</groupId>
-                <artifactId>micronaut-data-runtime</artifactId>
-                <version>${version.lib.micronaut.data}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <!-- Force upgrade okhttp3 for dependency convergence -->

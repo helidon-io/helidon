@@ -680,19 +680,6 @@
                 <version>${helidon.version}</version>
             </dependency>
 
-            <!-- Long Running Actions -->
-            <!-- integrations -->
-            <dependency>
-                <groupId>io.helidon.integrations.db</groupId>
-                <artifactId>ojdbc</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.db</groupId>
-                <artifactId>h2</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
             <!-- OpenAPI support -->
             <dependency>
                 <groupId>io.helidon.openapi</groupId>

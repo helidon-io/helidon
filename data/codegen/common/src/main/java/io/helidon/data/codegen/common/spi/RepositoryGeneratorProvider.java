@@ -16,7 +16,7 @@
 package io.helidon.data.codegen.common.spi;
 
 /**
- * Specific data repository (e.g. Jakarta Data, Micronaut Data, ...) generator provider.
+ * Specific data repository (e.g. Jakarta Data) generator provider.
  */
 public interface RepositoryGeneratorProvider {
 
