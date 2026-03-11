@@ -24,31 +24,12 @@
         <text path="module-dir"><![CDATA[]]></text>
         <boolean path="multi-module">false</boolean>
     </variables>
-    <step name="Helidon Flavor" optional="true">
-        <inputs>
-            <enum id="flavor"
-                  name="Select a Flavor"
-                  default="se"
-                  global="true"
-                  optional="true">
-                <option value="se"
-                        name="Helidon SE"
-                        description="Programmatic, lean &amp; fast">
-                    <exec src="se/se.xml"/>
-                </option>
-                <option value="mp"
-                        name="Helidon MP"
-                        description="Declarative, MicroProfile compliant">
-                    <exec src="mp/mp.xml"/>
-                </option>
-            </enum>
-        </inputs>
-    </step>
+    <exec src="se/se.xml"/>
     <exec src="common/customize-project.xml"/>
     <output>
         <model>
             <value key="helidon-version">${helidon-version}</value>
-            <value key="flavor">${flavor}</value>
+            <value key="flavor">se</value>
         </model>
     </output>
 </archetype-script>
