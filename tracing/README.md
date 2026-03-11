@@ -75,33 +75,6 @@ tracing:
   host: "zipkin"
 ```
 
-### Usage of Jersey client outside of Helidon MP
-Jersey client can be used (maybe standalone, or in Helidon SE) and traced.
-Simple add `helidon-tracing-jersey-client` as a dependency and correctly configure
-the request properties. The client expects Tracer to be configured (see zipkin examples above)
- 
-Note that in Helidon MP, this would work automatically with no additional configuration if you 
-carry out the steps described in "Usage in Helidon MP".
-
-```xml
-<dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing-jersey-client</artifactId>
-</dependency>
-```
-
-And in code:
-```java
-response = webTarget
-            .request()
-            // tracer information - not required if global tracer should be used
-            .property(ClientTracingFilter.TRACER_PROPERTY_NAME, tracer)
-            // the current tracing span context to be used as a parent for outbound request
-            // if not provided a new span with no parent would be created
-            .property(ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, spanContext)
-            .get();
-```
-
 # Modules
 
 ## Module `helidon-tracing`
@@ -132,45 +105,6 @@ tracing:
   service: "myService"
   host: "zipkin"
 ```
-
-## Module `helidon-tracing-jersey-client`
-Integration with Jersey client to add tracing support
- for outbound requests.
- 
-The client is registered automatically with Jersey (e.g. no need to add any filter).
-
-There are two modes of usage:
-1. Use within a Jersey server (requires `helidon-tracing-jersey` with a registered filter, or `helidon-microprofile-tracing`)
-2. Standalone use
-
-### Use within Jersey server
-The server filters create a context for the client, so as long as the client is invoked
-within the same thread, no additional configuration is required - just use 
-client as usual and tracing will be propagated and added for outbound call.
-
-### Standalone use
-In case the Jersey client is used on its own, the tracing filter cannot obtain 
-information needed for outbound call and it has to be provided.
-
-Example of use:
-```java
-response = webTarget
-            .request()
-            // tracer information - not required if global tracer should be used
-            .property(ClientTracingFilter.TRACER_PROPERTY_NAME, tracer)
-            // the current tracing span context to be used as a parent for outbound request
-            // if not provided a new span with no parent would be created
-            .property(ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, spanContext)
-            .get();
-``` 
-
-## Module `helidon-tracing-jersey`
-Integration with "pure" Jersey server. This module should not be directly used when using
-Helidon MP, use `helidon-microprofile-tracing` instead.
-
-To configure tracing with Jersey, add `TracingFilter` to your application/resource configuration.
-The tracing filter will start a new span for each jersey call and register context for client calls.
-`helidon-tracing-jersey-client` is a transitive dependency of this module.
 
 ## Module `helidon-microprofile-tracing`
 Provides automated integration with Helidon MP, including automated configuration of

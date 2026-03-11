@@ -31,8 +31,6 @@
 
     <modules>
         <module>tracing</module>
-        <module>jersey-client</module>
-        <module>jersey</module>
         <module>config</module>
         <module>tracer-resolver</module>
         <module>providers</module>

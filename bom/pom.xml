@@ -52,37 +52,6 @@
                 <artifactId>helidon-metrics-prometheus</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <!-- Helidon Jersey -->
-            <dependency>
-                <groupId>io.helidon.jersey</groupId>
-                <artifactId>helidon-jersey-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.jersey</groupId>
-                <artifactId>helidon-jersey-server</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.jersey</groupId>
-                <artifactId>helidon-jersey-client</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.jersey</groupId>
-                <artifactId>helidon-jersey-connector</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.jersey</groupId>
-                <artifactId>helidon-jersey-media-jsonp</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.jersey</groupId>
-                <artifactId>helidon-jersey-webserver</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
             <!-- graphQL -->
             <dependency>
                 <groupId>io.helidon.graphql</groupId>
@@ -730,18 +699,6 @@
                 <!-- to add TracerResolver support -->
                 <groupId>io.helidon.tracing</groupId>
                 <artifactId>helidon-tracing-tracer-resolver</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <!-- Client support -->
-                <groupId>io.helidon.tracing</groupId>
-                <artifactId>helidon-tracing-jersey-client</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <!-- Server support -->
-                <groupId>io.helidon.tracing</groupId>
-                <artifactId>helidon-tracing-jersey</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Scheduling -->

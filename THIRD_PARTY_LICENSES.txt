@@ -31,7 +31,7 @@ Fourth Party Runtime Dependencies
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 CDI-API  RedHat, Inc., JBoss community
 Apache 2.0
-Used by: [helidon-health-checks, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-delegates, helidon-integrations-cdi-eclipselink, helidon-integrations-cdi-hibernate, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-cdi-jta-weld, helidon-integrations-cdi-reference-counted-context, helidon-integrations-micrometer-cdi, helidon-integrations-micronaut-cdi, helidon-integrations-micronaut-data, helidon-integrations-microstream-cdi, helidon-integrations-oci-sdk-cdi, helidon-integrations-vault-cdi, helidon-jersey-client, helidon-messaging-aq, helidon-messaging-jms, helidon-messaging-kafka, helidon-messaging-mock, helidon-messaging-wls-jms, helidon-microprofile-config, helidon-microprofile-cors, helidon-microprofile-fault-tolerance, helidon-microprofile-metrics, helidon-microprofile-server, helidon-microprofile-service-common, helidon-microprofile-telemetry, helidon-microprofile-tracing, helidon-microprofile-websocket, weld-se-core]
+Used by: [helidon-health-checks, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-delegates, helidon-integrations-cdi-eclipselink, helidon-integrations-cdi-hibernate, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-cdi-jta-weld, helidon-integrations-cdi-reference-counted-context, helidon-integrations-micrometer-cdi, helidon-integrations-micronaut-cdi, helidon-integrations-micronaut-data, helidon-integrations-microstream-cdi, helidon-integrations-oci-sdk-cdi, helidon-integrations-vault-cdi, helidon-messaging-aq, helidon-messaging-jms, helidon-messaging-kafka, helidon-messaging-mock, helidon-messaging-wls-jms, helidon-microprofile-config, helidon-microprofile-cors, helidon-microprofile-fault-tolerance, helidon-microprofile-metrics, helidon-microprofile-server, helidon-microprofile-service-common, helidon-microprofile-telemetry, helidon-microprofile-tracing, helidon-microprofile-websocket, weld-se-core]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta CDI API (jakarta.enterprise:jakarta.enterprise.cdi-api)
   Copyright 2010, 2016, Red Hat, Inc., and individual contributors
@@ -1069,7 +1069,7 @@ See full text at the bottom of this document for license: Apache-2.0
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta Annotations API  Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-bundles-config, helidon-config, helidon-config-hocon, helidon-config-mp, helidon-config-tests-module-mappers-1-base, helidon-config-tests-module-mappers-2-override, helidon-config-tests-module-parsers-1-override, helidon-config-tests-test-bundle, helidon-config-yaml, helidon-config-yaml-mp, helidon-http-encoding, helidon-inject-api, helidon-inject-configdriven-runtime, helidon-inject-configdriven-tests-config, helidon-inject-configdriven-tests-configuredby, helidon-inject-configdriven-tests-configuredby-application, helidon-inject-maven-plugin, helidon-inject-runtime, helidon-inject-tests-interception, helidon-inject-tests-resources-inject, helidon-inject-tests-resources-plain, helidon-inject-tests-tck-jsr330, helidon-inject-tools, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-micronaut-cdi-processor, helidon-integrations-micronaut-data, helidon-integrations-microstream-cdi, helidon-integrations-oci-sdk-cdi, helidon-integrations-oci-sdk-tests-test-application, helidon-integrations-oci-sdk-tests-test-module1, helidon-integrations-oci-sdk-tests-test-module2, helidon-integrations-oci-tls-certificates, helidon-jersey-client, helidon-messaging-mock, helidon-microprofile-fault-tolerance, helidon-microprofile-telemetry, weld-se-core]
+Used by: [helidon-bundles-config, helidon-config, helidon-config-hocon, helidon-config-mp, helidon-config-tests-module-mappers-1-base, helidon-config-tests-module-mappers-2-override, helidon-config-tests-module-parsers-1-override, helidon-config-tests-test-bundle, helidon-config-yaml, helidon-config-yaml-mp, helidon-http-encoding, helidon-inject-api, helidon-inject-configdriven-runtime, helidon-inject-configdriven-tests-config, helidon-inject-configdriven-tests-configuredby, helidon-inject-configdriven-tests-configuredby-application, helidon-inject-maven-plugin, helidon-inject-runtime, helidon-inject-tests-interception, helidon-inject-tests-resources-inject, helidon-inject-tests-resources-plain, helidon-inject-tests-tck-jsr330, helidon-inject-tools, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-micronaut-cdi-processor, helidon-integrations-micronaut-data, helidon-integrations-microstream-cdi, helidon-integrations-oci-sdk-cdi, helidon-integrations-oci-sdk-tests-test-application, helidon-integrations-oci-sdk-tests-test-module1, helidon-integrations-oci-sdk-tests-test-module2, helidon-integrations-oci-tls-certificates, helidon-messaging-mock, helidon-microprofile-fault-tolerance, helidon-microprofile-telemetry, weld-se-core]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta Annotations API (jakarta.annotation:jakarta.annotation-api)
 Copyright (c) 2009, 2022 Oracle and/or its affiliates. All rights reserved.
@@ -4158,7 +4158,7 @@ NOTICE: same as jackson-databind
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 jakarta.inject-api  Eclipse Foundation
 Apache 2.0
-Used by: [helidon-config-tests-service-registry, helidon-inject-api, helidon-inject-configdriven-api, helidon-inject-configdriven-runtime, helidon-inject-configdriven-tests-config, helidon-inject-configdriven-tests-configuredby, helidon-inject-configdriven-tests-configuredby-application, helidon-inject-maven-plugin, helidon-inject-runtime, helidon-inject-testing, helidon-inject-tests-interception, helidon-inject-tests-resources-inject, helidon-inject-tests-resources-plain, helidon-inject-tests-tck-jsr330, helidon-inject-tools, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-hibernate, helidon-integrations-micronaut-cdi-processor, helidon-integrations-oci-sdk-cdi, helidon-integrations-oci-sdk-runtime, helidon-integrations-oci-sdk-tests-test-application, helidon-integrations-oci-sdk-tests-test-module1, helidon-integrations-oci-sdk-tests-test-module2, helidon-integrations-oci-tls-certificates, helidon-jersey-client, helidon-jersey-connector, helidon-jersey-server, helidon-microprofile-cdi, helidon-microprofile-config, helidon-security-providers-oidc, helidon-webserver, weld-se-core]
+Used by: [helidon-config-tests-service-registry, helidon-inject-api, helidon-inject-configdriven-api, helidon-inject-configdriven-runtime, helidon-inject-configdriven-tests-config, helidon-inject-configdriven-tests-configuredby, helidon-inject-configdriven-tests-configuredby-application, helidon-inject-maven-plugin, helidon-inject-runtime, helidon-inject-testing, helidon-inject-tests-interception, helidon-inject-tests-resources-inject, helidon-inject-tests-resources-plain, helidon-inject-tests-tck-jsr330, helidon-inject-tools, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-hibernate, helidon-integrations-micronaut-cdi-processor, helidon-integrations-oci-sdk-cdi, helidon-integrations-oci-sdk-runtime, helidon-integrations-oci-sdk-tests-test-application, helidon-integrations-oci-sdk-tests-test-module1, helidon-integrations-oci-sdk-tests-test-module2, helidon-integrations-oci-tls-certificates, helidon-microprofile-cdi, helidon-microprofile-config, helidon-security-providers-oidc, helidon-webserver, weld-se-core]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta Dependency Injection API (@inject) (jakarta.inject:jakarta.inject-api)
  Copyright(C) 2009 The JSR-330 Expert Group
@@ -4329,86 +4329,10 @@ limitations under the License.
 --------------------------------------------
 See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jersey-client  Eclipse Foundation
-Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-jersey-client, helidon-jersey-connector]
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jersey-core-client (org.glassfish.jersey.core:jersey-client)
-  Copyright (c) 2010,2023 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
-  Copyright (c) 2018,2019 Payara Foundation and/or its affiliates.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-# Notice for Jersey 
-This content is produced and maintained by the Eclipse Jersey project.
-
-*  Project home: https://projects.eclipse.org/projects/ee4j.jersey
-
-## Trademarks
-Eclipse Jersey is a trademark of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Public License v. 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
-available under the following Secondary Licenses when the conditions for such
-availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
-General Public License, version 2 with the GNU Classpath Exception which is
-available at https://www.gnu.org/software/classpath/license.html.
-
-SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
-## Source Code
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jersey
---------------------------------------------
-See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
-----------------------------------------------------------------------------------------------------------------------
-Fourth Party Dependencies
---------------------------------------------
-"jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Markus KARG. All rights reserved.
-  Copyright (c) 2006 Google Inc.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2023 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Payara Foundation and/or its affiliates.
-  Copyright (c) 2022 Payara Foundation and/or its affiliates.
-  Copyright (C) 2006,2014 The Guava Authors
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2022 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2019, 2021 Eclipse Foundation. All rights reserved.<br>
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"OSGi resource locator" (org.glassfish.hk2:osgi-resource-locator)
-  Copyright (c) 2009,2018 Oracle and/or its affiliates. All rights reserved.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Jakarta Dependency Injection" (jakarta.inject:jakarta.inject-api)
-  Copyright (C) 2009 The JSR-330 Expert Group
-  Copyright (c) 2018,2020 Eclipse Foundation.
-  Apache License 2.0
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
-
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 jersey-hk2  Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-integrations-oci-sdk-cdi, helidon-integrations-oci-secrets-config-source, helidon-jersey-client, helidon-jersey-connector, helidon-jersey-server]
+Used by: [helidon-integrations-oci-sdk-cdi, helidon-integrations-oci-secrets-config-source]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2)
   Copyright (c) 2017,2023 Oracle and/or its affiliates. All rights reserved.
@@ -6433,92 +6357,6 @@ None
 --------------------------------------------
 See full text at the bottom of this document for license: Apache-2.0
 
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jersey-media-json-processing  Eclipse Foundation
-Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-jersey-media-jsonp]
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jersey-media-json-processing (org.glassfish.jersey.media:jersey-media-json-processing)
-  Copyright (c) 2011,2023 Oracle and/or its affiliates. All rights reserved.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-# Notice for Jersey 
-This content is produced and maintained by the Eclipse Jersey project.
-
-*  Project home: https://projects.eclipse.org/projects/ee4j.jersey
-
-## Trademarks
-Eclipse Jersey is a trademark of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Public License v. 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
-available under the following Secondary Licenses when the conditions for such
-availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
-General Public License, version 2 with the GNU Classpath Exception which is
-available at https://www.gnu.org/software/classpath/license.html.
-
-SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
-## Source Code
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jersey
---------------------------------------------
-See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
-----------------------------------------------------------------------------------------------------------------------
-Fourth Party Dependencies
---------------------------------------------
-"jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2023 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Payara Foundation and/or its affiliates.
-  Copyright (C) 2006,2014 The Guava Authors
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Markus KARG. All rights reserved.
-  Copyright (c) 2006 Google Inc.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2022 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2019,2021 Eclipse Foundation. All rights reserved.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"OSGi resource locator" (org.glassfish.hk2:osgi-resource-locator)
-  Copyright (c) 2009,2018 Oracle and/or its affiliates. All rights reserved.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Jakarta JSON Processing API" (jakarta.json:jakarta.json-api)
-  Copyright (c) 2011,2022 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2019,2022 Eclipse Foundation. All rights reserved.<br>
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Eclipse Parsson" (org.eclipse.parsson:parsson)
-  Copyright (c) 2011,2022 Oracle and/or its affiliates. All rights reserved.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Eclipse Parsson Media for Jakarta RESTful Web Services" (org.eclipse.parsson:parsson-media)
-  Copyright (c) 2012,2022 Oracle and/or its affiliates. All rights reserved.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Jakarta Dependency Injection" (jakarta.inject:jakarta.inject-api)
-  Copyright (C) 2009 The JSR-330 Expert Group
-  Copyright (c) 2018,2020 Eclipse Foundation.
-  Apache License 2.0
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
-
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 jersey-mp-rest-client  Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
 Used by: [helidon-microprofile-rest-client]
@@ -6748,17 +6586,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   Copyright (C) 2004 Bill Burke. All Rights Reserved.
  Apache License 2.0
 
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jersey-server  Eclipse Foundation
-Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-jersey-server]
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jersey-core-server (org.glassfish.jersey.core:jersey-server)
-  Copyright (c) 2010,2023 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2000-2011 INRIA, France Telecom
-  Copyright (c) 2018 Markus KARG. All rights reserved.
-  Copyright (c) 2018 Payara Foundation and/or its affiliates.
-  Copyright 2010,2013 Coda Hale and Yammer, Inc.
 --------------------------------------------
 # Notice for Jersey 
 This content is produced and maintained by the Eclipse Jersey project.

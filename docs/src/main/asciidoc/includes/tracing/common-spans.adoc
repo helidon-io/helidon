@@ -37,7 +37,6 @@ is used.
 |`security`     |`security:response`    |Processing of response security
 |`security`     |`security:outbound`    |Processing of outbound security
 |`jax-rs`       |A generated name       |Span for the resource method invocation, name is generated from class and method name
-|`jax-rs`       |`jersey-client-call`   |Span for outbound client call
 |===
 
 Some of these spans `log` to the span. These log events can be (in most cases) configured:
@@ -67,8 +66,4 @@ There are also tags that are set by Helidon components. These are not configurab
 |`HTTP Request`         |`http.url`         |The path of the request (for SE without protocol, host and port)
 |`HTTP Request`         |`error`            |If the request ends in error, this tag is set to `true`, usually accompanied by logs with details
 |`security`             |`security.id`      |ID of the security context created for this request (if security is used)
-|`jersey-client-call`   |`http.method`      |HTTP method of the client request
-|`jersey-client-call`   |`http.status_code` |HTTP status code of client response
-|`jersey-client-call`   |`http.url`         |Full URL of the request (such as `http://localhost:8080/greet`)
 |===
-
