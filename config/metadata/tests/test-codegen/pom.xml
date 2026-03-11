@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.config.metadata.tests</groupId>
         <artifactId>helidon-config-metadata-tests-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>helidon-config-metadata-tests-codegen</artifactId>
