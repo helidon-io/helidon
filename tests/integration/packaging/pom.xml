@@ -36,9 +36,6 @@
 
     <modules>
         <module>static-content</module>
-        <module>mp-1</module>
-        <module>mp-2</module>
-        <module>mp-3</module>
         <module>se-1</module>
         <module>inject</module>
     </modules>
