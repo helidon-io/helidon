@@ -36,6 +36,5 @@
     <modules>
         <module>common</module>
         <module>bookstore-se</module>
-        <module>bookstore-mp</module>
     </modules>
 </project>
