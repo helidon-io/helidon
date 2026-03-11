@@ -38,7 +38,6 @@
         <module>config</module>
         <module>dbclient</module>
         <module>discovery</module>
-        <module>eureka</module>
         <module>harness</module>
         <module>health</module>
         <module>jep290</module>
@@ -101,8 +100,6 @@
             <modules>
                 <module>kafka</module>
                 <module>oidc</module>
-                <module>vault</module>
-                <module>crac</module>
                 <module>transaction</module>
             </modules>
         </profile>

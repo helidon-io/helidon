@@ -222,7 +222,6 @@
         <module>health</module>
         <module>helidon</module>
         <module>http</module>
-        <module>integrations</module>
         <module>jsonrpc</module>
         <module>jersey</module>
         <module>licensing</module>
