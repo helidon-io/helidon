@@ -152,7 +152,7 @@ public class HeaderAtnOutboundConfig {
          * @return updated builder instance
          */
         public Builder config(Config config) {
-            config.get("outbound-token").map(TokenHandler::create)
+            config.get("outbound-token").as(TokenHandler::create)
                     .ifPresent(this::tokenHandler);
             config.get("username").asString().ifPresent(this::explicitUser);
 

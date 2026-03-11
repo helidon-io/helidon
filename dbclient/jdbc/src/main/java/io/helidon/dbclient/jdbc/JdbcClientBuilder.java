@@ -53,7 +53,7 @@ public final class JdbcClientBuilder
     @Override
     public JdbcClientBuilder config(Config config) {
         super.config(config);
-        config.get("connection").detach().map(JdbcConnectionPool::create).ifPresent(this::connectionPool);
+        config.get("connection").detach().as(JdbcConnectionPool::create).ifPresent(this::connectionPool);
         Config parameters = config.get("parameters");
         if (parameters.exists()) {
             this.parametersConfig = JdbcParametersConfig.create(parameters);

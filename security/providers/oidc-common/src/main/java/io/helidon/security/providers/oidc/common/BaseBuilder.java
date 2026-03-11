@@ -124,10 +124,10 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         config.get("identity-uri").as(URI.class).ifPresent(this::identityUri);
 
         // OIDC server configuration
-        config.get("oidc-metadata.resource").map(Resource::create).ifPresent(this::oidcMetadata);
+        config.get("oidc-metadata.resource").as(Resource::create).ifPresent(this::oidcMetadata);
         config.get("base-scopes").asString().ifPresent(this::baseScopes);
         // backward compatibility
-        config.get("oidc-metadata.resource").map(Resource::create).ifPresent(this::oidcMetadata);
+        config.get("oidc-metadata.resource").as(Resource::create).ifPresent(this::oidcMetadata);
         config.get("oidc-metadata-well-known").asBoolean().ifPresent(this::oidcMetadataWellKnown);
 
         config.get("scope-audience").asString().ifPresent(this::scopeAudience);
@@ -139,8 +139,8 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         config.get("token-endpoint-uri").as(URI.class).ifPresent(this::tokenEndpointUri);
         config.get("logout-endpoint-uri").as(URI.class).ifPresent(this::logoutEndpointUri);
 
-        config.get("sign-jwk.resource").map(Resource::create).ifPresent(this::signJwk);
-        config.get("decryption-keys.resource").map(Resource::create).ifPresent(this::decryptionKeys);
+        config.get("sign-jwk.resource").as(Resource::create).ifPresent(this::signJwk);
+        config.get("decryption-keys.resource").as(Resource::create).ifPresent(this::decryptionKeys);
 
         config.get("introspect-endpoint-uri").as(URI.class).ifPresent(this::introspectEndpointUri);
         DeprecatedConfig.get(config, "validate-jwt-with-jwk", "validate-with-jwk")

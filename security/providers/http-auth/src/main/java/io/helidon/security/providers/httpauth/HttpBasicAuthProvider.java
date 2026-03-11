@@ -365,7 +365,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
 
                         @Override
                         public SecureUserStore create(Config config) {
-                            return usersConfig.map(ConfigUserStore::create)
+                            return usersConfig.as(ConfigUserStore::create)
                                     .orElseThrow(() -> new HttpAuthException(
                                             "No users configured! Key \"users\" must be in configuration"));
                         }
@@ -379,7 +379,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
                         addUserStore(userStoreService.create(config.get(userStoreService.configKey())));
                     });
 
-            config.get("outbound").mapList(OutboundTarget::create)
+            config.get("outbound").asList(OutboundTarget::create)
                     .ifPresent(it -> it.forEach(outboundBuilder::addTarget));
 
             return this;

@@ -303,7 +303,7 @@ public class InboundClientDefinition {
             keyId(config.get("key-id").asString().get());
             config.get("principal-name").asString().ifPresent(this::principalName);
             config.get("principal-type").asString().as(SubjectType::valueOf).ifPresent(this::subjectType);
-            config.get("public-key").map(Keys::create).ifPresent(this::publicKeyConfig);
+            config.get("public-key").as(Keys::create).ifPresent(this::publicKeyConfig);
             config.get("hmac.secret").asString().ifPresent(this::hmacSecret);
             config.get("algorithm").asString().ifPresent(this::algorithm);
 

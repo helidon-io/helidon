@@ -190,7 +190,7 @@ public abstract class HelidonFeatureSupport implements FeatureSupport {
                     .ifPresent(restServiceSettingsBuilder::routing);
 
             config.get(CorsEnabledServiceHelper.CORS_CONFIG_KEY)
-                    .map(CrossOriginConfig::create)
+                    .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
 
             return identity();

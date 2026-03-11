@@ -594,7 +594,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                                         .orElse(true);
                                 TokenHandler handler = outboundTarget.getConfig()
                                         .flatMap(cfg -> cfg.get("outbound-token")
-                                                .map(TokenHandler::create)
+                                                .map(Config::config)
+                                                .as(TokenHandler::create)
                                                 .asOptional())
                                         .orElse(defaultTokenHandler);
                                 return new OidcOutboundTarget(propagate, handler);

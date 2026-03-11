@@ -292,9 +292,9 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         config.get("path").asString().ifPresent(this::collectorPath);
         config.get("sampler-type").asString().as(SamplerType::create).ifPresent(this::samplerType);
         config.get("sampler-param").asDouble().ifPresent(this::samplerParam);
-        config.get("private-key-pem").map(io.helidon.common.configurable.Resource::create).ifPresent(this::privateKey);
-        config.get("client-cert-pem").map(io.helidon.common.configurable.Resource::create).ifPresent(this::clientCertificate);
-        config.get("trusted-cert-pem").map(io.helidon.common.configurable.Resource::create).ifPresent(this::trustedCertificates);
+        config.get("private-key-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::privateKey);
+        config.get("client-cert-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::clientCertificate);
+        config.get("trusted-cert-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::trustedCertificates);
         config.get("propagation").asList(String.class)
                 .ifPresent(propagationStrings -> {
                     propagationStrings.stream()

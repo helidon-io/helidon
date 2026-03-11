@@ -262,7 +262,7 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
         @Override
         public B config(Config config) {
             super.config(config);
-            config.get("cache-config").map(EvictableCache::<String, List<Grant>>create).ifPresent(this::roleCache);
+            config.get("cache-config").as(EvictableCache::<String, List<Grant>>create).ifPresent(this::roleCache);
 
             return me;
         }

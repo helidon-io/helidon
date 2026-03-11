@@ -1196,7 +1196,7 @@ public final class OidcConfig extends TenantConfigImpl {
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("force-https-redirects").asBoolean().ifPresent(this::forceHttpsRedirects);
 
-            config.get("cors").map(CrossOriginConfig::create).ifPresent(this::crossOriginConfig);
+            config.get("cors").as(CrossOriginConfig::create).ifPresent(this::crossOriginConfig);
 
             config.get("token-refresh-before-expiration").as(Duration.class).ifPresent(this::tokenRefreshSkew);
 
