@@ -619,7 +619,7 @@ include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;detailed]
 This guide has demonstrated how to use the Helidon SE tracing feature with Jaeger. You have learned to do the following:
 
 - Enable tracing within a service
-- Use tracing with JAX-RS
+- Use tracing with HTTP endpoints
 - Use the Jaeger REST API and UI
 - Use tracing across multiple services
 - Integrate tracing with Kubernetes

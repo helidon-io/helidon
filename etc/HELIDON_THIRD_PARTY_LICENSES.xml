@@ -1563,20 +1563,6 @@ The project maintains the following source code repositories:
 
 This project leverages the following third party content.
 
-javax.ws.rs-api:2.0.1 (2.0.1)
-
-* License: (CDDL-1.1 OR GPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0) AND
-   Apache-2.0
-* Project: https://github.com/jax-rs/api
-* Source: https://github.com/jax-rs/api
-
-javax.ws.rs:jsr311-api:jar:1.1.1 (1.1.1)
-
-* License: CDDL-1.0 AND Apache-2.0
-* Project: https://github.com/jax-rs/api
-* Source:
-   http://search.maven.org/remotecontent?filepath=javax/ws/rs/jsr311-api/1.1.1/jsr311-api-1.1.1-sources.jar
-
 javax:javaee-web-api:jar:7.0 (7.0)
 
 * License: (CDDL-1.0 OR GPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0) AND
@@ -1806,131 +1792,6 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</attribution>
-        </dependency>
-        <dependency>
-            <id>141984</id>
-            <name>Jakarta Restful Web Services JAX-RS API</name>
-            <version>3.1.0</version>
-            <licensor>Eclipse Foundation</licensor>
-            <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-integrations-oci-sdk-cdi</consumer>
-                <consumer>helidon-microprofile-bean-validation</consumer>
-                <consumer>helidon-microprofile-cors</consumer>
-                <consumer>helidon-microprofile-rest-client</consumer>
-            </consumers>
-            <attribution># Notices for Jakarta RESTful Web Services
-
-This content is produced and maintained by the **Jakarta RESTful Web Services**
-project.
-
-* Project home: https://projects.eclipse.org/projects/ee4j.jaxrs
-
-## Trademarks
-
-**Jakarta RESTful Web Services** is a trademark of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Public License v. 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
-available under the following Secondary Licenses when the conditions for such
-availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
-General Public License, version 2 with the GNU Classpath Exception which is
-available at https://www.gnu.org/software/classpath/license.html.
-
-SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
-## Source Code
-
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jaxrs-api
-
-## Cryptography
-
-Content may contain encryption software. The country in which you are currently
-may have restrictions on the import, possession, and use, and/or re-export to
-another country, of encryption software. BEFORE using any encryption software,
-please check the country's laws, regulations and policies concerning the import,
-possession, or use, and re-export of encryption software, to see if this is
-permitted.
----
-jakarta RESTful Web Services API (JAX-RS) (jakarta.ws.rs:jakarta.ws.rs-api)
-Copyright (c) 2011, 2021 Oracle and/or its affiliates. All rights reserved.
-
-    This program and the accompanying materials are made available under the
-    terms of the Eclipse Public License v. 2.0, which is available at
-    http://www.eclipse.org/legal/epl-2.0.
-
-    This Source Code may also be made available under the following Secondary
-    Licenses when the conditions for such availability set forth in the
-    Eclipse Public License v. 2.0 are satisfied: GNU General Public License,
-    version 2 with the GNU Classpath Exception, which is available at
-    https://www.gnu.org/software/classpath/license.html.
-
-    SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
---------------------------------------------
-See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
----
-
-##----------------------------------------------------------------------
-/*
- * Copyright (c) 2018 Markus KARG. All rights reserved.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0, which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the
- * Eclipse Public License v. 2.0 are satisfied: GNU General Public License,
- * version 2 with the GNU Classpath Exception, which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- */
---------------------------------------------
-Fourth Party Dependencies
---------------------------------------------
-Jakarta Activation API (JAF) (jakarta.activation:jakarta.activation-api)
-
-Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-  - Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-
-  - Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-
-  - Neither the name of the Eclipse Foundation, Inc. nor the names of its
-    contributors may be used to endorse or promote products derived
-    from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</attribution>
         </dependency>
         <dependency>
             <id>112923</id>
@@ -4868,10 +4729,6 @@ Javassist Version 3.25.0-GA
 * Project: http://www.javassist.org/
 * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
 
-Jackson JAX-RS Providers Version 2.14.1
-* License: Apache License, 2.0
-* Project: https://github.com/FasterXML/jackson-jaxrs-providers
-* Copyright: (c) 2009-2022 FasterXML, LLC. All rights reserved unless otherwise indicated.
 
 jQuery v1.12.4
 * License: jquery.org/license
@@ -5044,10 +4901,6 @@ Javassist Version 3.25.0-GA
 * Project: http://www.javassist.org/
 * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
 
-Jackson JAX-RS Providers Version 2.14.1
-* License: Apache License, 2.0
-* Project: https://github.com/FasterXML/jackson-jaxrs-providers
-* Copyright: (c) 2009-2022 FasterXML, LLC. All rights reserved unless otherwise indicated.
 
 jQuery v1.12.4
 * License: jquery.org/license
@@ -5090,14 +4943,6 @@ Technology, Institut National de Recherche en Informatique et en Automatique, Ke
 All Rights Reserved. http://www.w3.org/Consortium/Legal/
 
 --------------------------------------------
-"jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api) v3.1.0
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Markus KARG. All rights reserved.
-  Copyright (c) 2006 Google Inc.
-  Copyright (c) 2021 Eclipse Foundation
-  Eclipse Public License 2.0 + GPL v.2 with CPE
-  
-# Notices for Jakarta RESTful Web Services
 
 This content is produced and maintained by the **Jakarta RESTful Web Services**
 project.
@@ -6084,10 +5929,6 @@ Javassist Version 3.25.0-GA
 * Project: http://www.javassist.org/
 * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
 
-Jackson JAX-RS Providers Version 2.14.1
-* License: Apache License, 2.0
-* Project: https://github.com/FasterXML/jackson-jaxrs-providers
-* Copyright: (c) 2009-2022 FasterXML, LLC. All rights reserved unless otherwise indicated.
 
 jQuery v1.12.4
 * License: jquery.org/license
@@ -6257,10 +6098,6 @@ Javassist Version 3.25.0-GA
 * Project: http://www.javassist.org/
 * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
 
-Jackson JAX-RS Providers Version 2.14.1
-* License: Apache License, 2.0
-* Project: https://github.com/FasterXML/jackson-jaxrs-providers
-* Copyright: (c) 2009-2022 FasterXML, LLC. All rights reserved unless otherwise indicated.
 
 jQuery v1.12.4
 * License: jquery.org/license
@@ -6303,73 +6140,6 @@ Technology, Institut National de Recherche en Informatique et en Automatique, Ke
 All Rights Reserved. http://www.w3.org/Consortium/Legal/
 
 --------------------------------------------
-"jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Markus KARG. All rights reserved.
-  Copyright (c) 2006 Google Inc.
-  Copyright (c) 2021 Eclipse Foundation
-  Eclipse Public License 2.0 + GPL v.2 with CPE
-  
-# Notices for Jakarta RESTful Web Services
-
-This content is produced and maintained by the **Jakarta RESTful Web Services**
-project.
-
-* Project home: https://projects.eclipse.org/projects/ee4j.jaxrs
-
-## Trademarks
-
-**Jakarta RESTful Web Services** is a trademark of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Public License v. 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
-available under the following Secondary Licenses when the conditions for such
-availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
-General Public License, version 2 with the GNU Classpath Exception which is
-available at https://www.gnu.org/software/classpath/license.html.
-
-SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
-## Source Code
-
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jaxrs-api
-
-## Third-party Content
-
-This project leverages the following third party content.
-
-javaee-api (7.0)
-
-* License: Apache-2.0 AND W3C
-
-JUnit (4.11)
-
-* License: Common Public License 1.0
-
-Mockito (2.16.0)
-
-* Project: http://site.mockito.org
-* Source: https://github.com/mockito/mockito/releases/tag/v2.16.0
-
-## Cryptography
-
-Content may contain encryption software. The country in which you are currently
-may have restrictions on the import, possession, and use, and/or re-export to
-another country, of encryption software. BEFORE using any encryption software,
-please check the country's laws, regulations and policies concerning the import,
-possession, or use, and re-export of encryption software, to see if this is
-permitted.
 
 --------------------------------------------
 "Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
@@ -6473,20 +6243,6 @@ The project maintains the following source code repositories:
 ## Third-party Content
 
 This project leverages the following third party content.
-
-javax.ws.rs-api:2.0.1 (2.0.1)
-
-* License: (CDDL-1.1 OR GPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0) AND
-   Apache-2.0
-* Project: https://github.com/jax-rs/api
-* Source: https://github.com/jax-rs/api
-
-javax.ws.rs:jsr311-api:jar:1.1.1 (1.1.1)
-
-* License: CDDL-1.0 AND Apache-2.0
-* Project: https://github.com/jax-rs/api
-* Source:
-   http://search.maven.org/remotecontent?filepath=javax/ws/rs/jsr311-api/1.1.1/jsr311-api-1.1.1-sources.jar
 
 javax:javaee-web-api:jar:7.0 (7.0)
 
@@ -6925,12 +6681,7 @@ Jakarta Expression Language API (EL) (jakarta.el:jakarta.el-api)
   Copyright 2004 The Apache Software Foundation
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
-"jakarta.ws.rs-api" jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Markus KARG. All rights reserved.
-  Copyright (c) 2006 Google Inc.
-  Copyright (c) 2021 Eclipse Foundation
-  EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+
 --------------------------------------------
 "JSON-P Default Provider" (org.glassfish:jakarta.json)
   Copyright (c) 2011,2020 Oracle and/or its affiliates. All rights reserved.
@@ -7128,12 +6879,7 @@ Fourth Party Dependencies
   Copyright (c) 2013,2023 Oracle and/or its affiliates. All rights reserved.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
-"jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Markus KARG. All rights reserved.
-  Copyright (c) 2021 Eclipse Foundation
-  Copyright (c) 2006 Google Inc.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
+
 --------------------------------------------
 "Jakarta Expression Language API" (jakarta.el:jakarta.el-api)
   Copyright (c) 2018, 2022 Eclipse Foundation. All rights reserved.
@@ -9667,119 +9413,6 @@ Fourth Party Dependencies
   A list of contributors may be found from CREDITS(-2.x) file, which is included
   in some artifacts (usually source distributions); but is always available
   from the source code management (SCM) system project uses.
---------------------------------------------
-</attribution>
-        </dependency>
-        <dependency>
-            <id>150418</id>
-            <name>smallrye-open-api-jaxrs</name>
-            <version>3.3.4</version>
-            <licensor>Red Hat, Inc.</licensor>
-            <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-openapi</consumer>
-            </consumers>
-            <attribution>SmallRye: OpenAPI extension - JAX-RS (io.smallrye:smallrye-open-api-jaxrs)
-  Copyright 2018 Red Hat, Inc.
-  Copyright 2020 Red Hat, Inc.
-  Copyright 2017,2019 Red Hat, Inc, and individual contributors.
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-Fourth Party Dependencies
---------------------------------------------
-"SmallRye: OpenAPI Core" (io.smallrye:smallrye-open-api-core)
-  Copyright 2018 Red Hat, Inc.
-  Copyright 2020 Red Hat, Inc.
-  Copyright 2017,2019 Red Hat, Inc, and individual contributors.
-  Apache License 2.0
---------------------------------------------
-"MicroProfile OpenAPI API" (org.eclipse.microprofile.openapi:microprofile-openapi-api)
-  Copyright 2017 SmartBear Software
-  Copyright (c) 2017,2022 Contributors to the Eclipse Foundation
-  Apache License 2.0
-  The majority of this software were originally based on the following:
-  * Swagger Core
-    https://github.com/swagger-api/swagger-core
-    under Apache License, v2.0
-
-  SPDXVersion: SPDX-2.1
-  PackageName: Eclipse MicroProfile
-  PackageHomePage: http://www.eclipse.org/microprofile
-  PackageLicenseDeclared: Apache-2.0
-
-  PackageCopyrightText: &lt;text&gt;
-  Arthur De Magalhaes arthurdm@ca.ibm.com
-  &lt;/text&gt;
---------------------------------------------
-"MicroProfile Config API" (org.eclipse.microprofile.config:microprofile-config-api)
-  Copyright (c) 2009-2020 Contributors to the Eclipse Foundation
-  Apache License 2.0
-  This product includes software developed at
-  The Apache Software Foundation (http://www.apache.org/).
-
-  Portions of this software were originally based on the following:
-  * Apache DeltaSpike Config
-    https://deltaspike.apache.org
-    under Apache License, v2.0
-
-  SPDXVersion: SPDX-2.1
-  PackageName: Eclipse Microprofile
-  PackageHomePage: http://www.eclipse.org/microprofile
-  PackageLicenseDeclared: Apache-2.0
-
-  PackageCopyrightText: &lt;text&gt;
-  Mark Struberg struberg@apache.org,
-  Gerhard Petracek gpetracek@apache.org,
-  Romain Manni-Bucau rmannibucau@apache.org,
-  Ron Smeral rsmeral@apache.org,
-  Emily Jiang emijiang@uk.ibm.com,
-  Ondrej Mihalyi ondrej.mihalyi@gmail.com,
-  Gunnar Morling gunnar@hibernate.org
-  &lt;/text&gt;
---------------------------------------------
-"Jackson" (com.fasterxml.jackson.*:jackson-*)
-  com.fasterxml.jackson.core:jackson-databind
-  com.fasterxml.jackson.core:jackson-annotations
-  com.fasterxml.jackson.dataformat:jackson-dataformat-yaml
-  Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
-  Copyright 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
-  Copyright 2018-2020 Raffaello Giulietti
-  Copyright 2010,2011 Google Inc. All Rights Reserved.
-  Apache License Version 2
-
-  # Jackson JSON processor
-
-  Jackson is a high-performance, Free/Open Source JSON processing library.
-  It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
-  been in development since 2007.
-  It is currently developed by a community of developers.
-
-  ## Licensing
-
-  Jackson 2.x core and extension components are licensed under Apache License 2.0
-  To find the details that apply to this artifact see the accompanying LICENSE file.
-
-  ## Credits
-
-  A list of contributors may be found from CREDITS(-2.x) file, which is included
-  in some artifacts (usually source distributions); but is always available
-  from the source code management (SCM) system project uses.
---------------------------------------------
-"SnakeYAML" (org.yaml:snakeyaml)
-  Copyright 2003-2010 Christian d'Heureuse, Inventec Informatik AG, Zurich, Switzerland
-  Copyright (c) 2008, SnakeYAML
-  Copyright (c) 2008 Google Inc.
-  Apache License 2.0
---------------------------------------------
-"Jandex: Core"  (io.smallrye:jandex)
-  Copyright 2013,2021 Red Hat, Inc., and individual contributors
-  Apache License 2.0
---------------------------------------------
-"JBoss Logging 3" Final (org.jboss.logging:jboss-logging)
-  Copyright 2010,2011 Red Hat, Inc., and individual contributors
-  Copyright 2010,2019 Red Hat, Inc.
-  Apache License 2.0
 --------------------------------------------
 </attribution>
         </dependency>

@@ -42,8 +42,6 @@ module io.helidon.security.providers.idcs.mapper {
     requires transitive io.helidon.security.providers.oidc.common;
     requires transitive io.helidon.security;
 
-    requires jakarta.ws.rs;
-
     exports io.helidon.security.providers.idcs.mapper;
 
     provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProviderService;

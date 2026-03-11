@@ -49,8 +49,8 @@ public interface AuthorizationProvider extends SecurityProvider {
      * Only providers that support role based access should implement this method.
      * For others it checks the subject for the presence of {@link Role} grant of the specified name.
      *
-     * This method is defined to conform with one of the most commonly spread authorization concept, as it is required
-     * for frameworks such as Servlet and JAX-RS.
+     * This method is defined to conform with one of the most commonly used authorization concepts, as it is required
+     * for frameworks such as Servlet and HTTP endpoint integrations.
      *
      * @param subject current subject
      * @param role    role name

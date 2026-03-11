@@ -226,7 +226,7 @@ public class SecurityLevel {
     }
 
     /**
-     * Type of the class this level represents (such as a JAX-RS resource class, Rest endpoint).
+     * Type of the class this level represents (such as an endpoint class).
      *
      * @return the type name
      */

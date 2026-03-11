@@ -28,7 +28,6 @@ import io.helidon.config.Config;
  *     <li>web-server: webServer adds the root tracing span + two additional spans (content-read and content-write)</li>
  *     <li>security: security adds the overall request security span, a span for authentication ("security:atn"), a span for
  *          authorization "security:atz", and a span for response processing ("security:response")</li>
- *     <li>jax-rs: JAX-RS integration adds spans for overall resource invocation</li>
  * </ul>
  */
 public abstract class ComponentTracingConfig extends Traceable {

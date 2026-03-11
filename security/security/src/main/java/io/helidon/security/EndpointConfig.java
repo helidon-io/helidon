@@ -162,17 +162,17 @@ public class EndpointConfig implements AbacSupport {
     public enum AnnotationScope {
         /**
          * Annotations on an application class or application layer.
-         * Example: JAX-RS application class annotation
+         * Example: application-level annotation
          */
         APPLICATION,
         /**
          * Annotations on a resource class.
-         * Example: JAX-RS resource class annotation
+         * Example: endpoint class annotation
          */
         CLASS,
         /**
          * Annotation on a resource method.
-         * Example: JAX-RS resource method annotation
+         * Example: endpoint method annotation
          */
         METHOD,
         /**

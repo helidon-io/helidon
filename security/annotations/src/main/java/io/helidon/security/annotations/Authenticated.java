@@ -29,23 +29,19 @@ import io.helidon.security.spi.AuthenticationProvider;
 /**
  * An annotation used to specify server resources with enforced authentication and resources accessible without authentication.
  * <p>
- * The following sample shows examples of use of {@link Authenticated} annotation in a JAX-RS/Jersey application:
+ * The following sample shows examples of use of {@link Authenticated} annotation on application endpoints:
  *
  * <pre>
  *  &#64;Authenticated
- *  &#64;ApplicationPath("myApp")
- *  public class SecuredApplication extends jakarta.ws.rs.core.Application { ... }
+ *  public class SecuredEndpoint { ... }
  *
  *  &#64;Authenticated(false)
- *  &#64;Path("/")
- *  public class PublicResource {
- *    &#64;GET
+ *  public class PublicEndpoint {
  *    public String getResourceContent() { ... }
  *
  *    // Only authenticated users can update the content of the public resource
  *    &#64;Authenticated
- *    &#64;PUT
- *    public Response setNewResourceContent(String content) { ... }
+ *    public String setNewResourceContent(String content) { ... }
  *  }
  * </pre>
  * <p>

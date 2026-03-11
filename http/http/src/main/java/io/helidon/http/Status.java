@@ -876,7 +876,7 @@ public class Status {
      * An enumeration representing the class of status code. Family is used
      * here since class is overloaded in Java.
      * <p>
-     * Copied from JAX-RS.
+     * Based on the standard HTTP status family classification.
      */
     public enum Family {
 

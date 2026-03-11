@@ -49,12 +49,12 @@ readonly TMP_OUTPUT_DIR
 
 # The project pom file has a set of properties that look like this:
 #
-# <javadoc.link.jaxrs>https://jax-rs.github.io/apidocs/${version.lib.jaxrs-api}</javadoc.link.jaxrs>
+# <javadoc.link.example>https://example.org/apidocs/</javadoc.link.example>
 #
 # We turn that into two arrays. The first is a list of javadoc.link property names (less the prefix)
 # the second is a list of the property values which are URLs. So
 # linkPropNames="jaxrs jackson-core jackson-databind ..."
-# linkPropValues="https://jax-rs.github.io/... https://fasterxml.github.io/... ..."
+# linkPropValues="https://example.org/... https://fasterxml.github.io/... ..."
 
 # We create the array of property names by parsing the pom.xml. Yes, icky.
 linkPropNames=()

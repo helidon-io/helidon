@@ -1383,7 +1383,6 @@ Java 21 is required to use Helidon 4.0.7.
 
 - Builders: Avoid using replicated default values for Lists when creating from builder or instance [8428](https://github.com/helidon-io/helidon/pull/8428)
 - CORS: Properly handle opaque origin ("null") in CORS processing [8537](https://github.com/helidon-io/helidon/pull/8537)
-- JAX-RS: Fix failure with input stream obtained more than once for post with more than one JAX-RS app [8558](https://github.com/helidon-io/helidon/pull/8558)
 - Metrics: Add `unwrap` support to metrics builders [8588](https://github.com/helidon-io/helidon/pull/8588)
 - Observability: Observers now inherit weight of the ObserveFeature. [8554](https://github.com/helidon-io/helidon/pull/8554)
 - Security: Disabled OidcFeature no longer throws an NPE. [8520](https://github.com/helidon-io/helidon/pull/8520)

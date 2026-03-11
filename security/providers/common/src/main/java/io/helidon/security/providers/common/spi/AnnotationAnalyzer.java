@@ -71,7 +71,7 @@ public interface AnnotationAnalyzer {
     /**
      * Analyze an application class.
      *
-     * @param maybeAnnotated class of the JAX-RS application
+     * @param maybeAnnotated class of the application layer
      * @return response with information whether to (and how) authenticate and authorize
      * @deprecated this method will be made default in a future version, and marked for removal; it will be removed in two
      *         major versions from now (most likely version 6).
@@ -101,7 +101,7 @@ public interface AnnotationAnalyzer {
      * Analyze a resource class.
      * By default returns an abstain response.
      *
-     * @param maybeAnnotated   class of the JAX-RS resource
+     * @param maybeAnnotated   class of the endpoint
      * @param previousResponse response from parent of this class (e.g. from application analysis)
      * @return response with information whether to (and how) authenticate and authorize
      * @deprecated going away from reflection, use
@@ -117,7 +117,7 @@ public interface AnnotationAnalyzer {
     /**
      * Analyze an endpoint class.
      *
-     * @param endpointType     type of the endpoint (such as JAX-RS resource)
+     * @param endpointType     type of the endpoint
      * @param annotations      annotations on the type
      * @param previousResponse response from parent of this class (e.g. from application analysis)
      * @return response with information whether to (and how) authenticate and authorize
@@ -135,7 +135,7 @@ public interface AnnotationAnalyzer {
      * Analyze a resource method.
      * By default returns an abstain response.
      *
-     * @param maybeAnnotated   JAX-RS resource method
+     * @param maybeAnnotated   endpoint method
      * @param previousResponse response from parent of this class (e.g. from resource class analysis)
      * @return response with information whether to (and how) authenticate and authorize
      * @deprecated going away from reflection, use
@@ -153,7 +153,7 @@ public interface AnnotationAnalyzer {
      * By default returns an abstain response.
      *
      * @param typeName         type that contains the method
-     * @param method           endpoint method (such as JAX-RS method)
+     * @param method           endpoint method
      * @param previousResponse response from parent of this class (e.g. from resource class analysis)
      * @return response with information whether to (and how) authenticate and authorize
      */
@@ -455,5 +455,4 @@ public interface AnnotationAnalyzer {
         }
     }
 }
-
 

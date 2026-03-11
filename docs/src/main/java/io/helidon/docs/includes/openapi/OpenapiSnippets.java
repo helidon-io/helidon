@@ -17,13 +17,6 @@ package io.helidon.docs.includes.openapi;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 @SuppressWarnings("ALL")
 class OpenapiSnippets {
@@ -35,13 +28,11 @@ class OpenapiSnippets {
     class Snippet1 {
 
         // tag::snippet_1[]
-        @GET
         @Operation(summary = "Returns a generic greeting", // <1>
                    description = "Greets the user generically")
         @APIResponse(description = "Simple JSON containing the greeting", // <2>
                      content = @Content(mediaType = "application/json",
                                         schema = @Schema(implementation = GreetingMessage.class)))
-        @Produces(MediaType.APPLICATION_JSON)
         public JsonObject getDefaultMessage() {
             return Json.createObjectBuilder()
                     .add("message", "Hello World!")

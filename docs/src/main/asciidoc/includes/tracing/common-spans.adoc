@@ -27,8 +27,6 @@ The following table lists all spans traced by Helidon components:
 |component      |span name              |description
 
 |`web-server`   |`HTTP Request`         |The overall span of the Web Server from request initiation until response
-Note that in `Zipkin` the name is replaced with `jax-rs` span name if `jax-rs` tracing
-is used.
 |`web-server`   |`content-read`         |Span for reading the request entity
 |`web-server`   |`content-write`        |Span for writing the response entity
 |`security`     |`security`             |Processing of request security
@@ -36,7 +34,6 @@ is used.
 |`security`     |`security:atz`         |Span for request authorization
 |`security`     |`security:response`    |Processing of response security
 |`security`     |`security:outbound`    |Processing of outbound security
-|`jax-rs`       |A generated name       |Span for the resource method invocation, name is generated from class and method name
 |===
 
 Some of these spans `log` to the span. These log events can be (in most cases) configured:

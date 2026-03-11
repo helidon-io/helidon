@@ -44,8 +44,8 @@ import io.helidon.security.providers.abac.AbacValidatorConfig;
 public interface AbacValidator<T extends AbacValidatorConfig> {
     /**
      * Provide extension annotations supported by this validator (e.g. {@link jakarta.annotation.security.RolesAllowed}).
-     * Annotations will be collected according to framework in use. For JAX-RS, annotations from application class, resource
-     * class and resource methods will be collected.
+     * Annotations will be collected according to framework in use. For endpoint-style integrations, annotations from the
+     * application layer, endpoint class, and endpoint methods may all be collected.
      * The annotations will be transformed to configuration by {@link #fromAnnotations(EndpointConfig)}.
      *
      * @return Collection of annotations this provider expects.

@@ -148,7 +148,7 @@ public class SecurityEnvironment implements AbacSupport {
 
     /**
      * Path to the resource.
-     * For jax-rs, this is relative URI.
+     * For some endpoint integrations, this is a relative URI.
      *
      * @return Path to the resource
      */
