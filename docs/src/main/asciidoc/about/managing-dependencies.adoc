@@ -75,8 +75,5 @@ Once you have imported the BOM, you can declare dependencies on Helidon
 
 == For More Information
 
--  Maven Build Guide for xref:../se/guides/maven-build.adoc[SE] and
- xref:../mp/guides/maven-build.adoc[MP]
--  Gradle Build Guide for xref:../se/guides/gradle-build.adoc[SE] and
- xref:../mp/guides/gradle-build.adoc[MP]
-
+-  Maven Build Guide for xref:../se/guides/maven-build.adoc[SE]
+-  Gradle Build Guide for xref:../se/guides/gradle-build.adoc[SE]

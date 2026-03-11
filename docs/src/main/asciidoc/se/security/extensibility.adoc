@@ -123,8 +123,7 @@ Helidon Security also defines a set of annotations:
 * `@Authorized` - access to resources must follow authorization rules defined by the annotation
 * `@Audited` - to configure auditing
 
-If the protected resources (in Helidon MP, these are JAX-RS resource classes and methods) can
-be annotated, the integration component must use these annotations when deciding how to secure
+If the protected resources can be annotated, the integration component must use these annotations when deciding how to secure
 the endpoint. For example, the Jersey integration checks whether the @Authenticated annotation exists. If it does, then
 the integration component attempts to authenticate the request.
 

@@ -26,8 +26,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 :feature-name: Helidon OpenAPI UI support
 :screen-capture-start: openapi-ui-screen-capture-greeting-{flavor-lc}-start.png
 :screen-capture-expanded: openapi-ui-screen-capture-greeting-{flavor-lc}-expanded.png
-ifdef::mp-flavor[:ui-config-prefix: mp.openapi.services.ui]
-ifdef::se-flavor[:ui-config-prefix: server.features.openapi.services.ui]
+:ui-config-prefix: server.features.openapi.services.ui
 // end::preamble[]
 
 // tag::intro[]
@@ -67,7 +66,6 @@ include::{rootdir}/includes/dependencies.adoc[]
 <dependency>
     <groupId>io.helidon.integrations.openapi-ui</groupId>
     <artifactId>helidon-integrations-openapi-ui</artifactId>
-ifdef::mp-flavor[    <scope>runtime</scope>]
 </dependency>
 ----
 
@@ -86,9 +84,7 @@ And add a runtime dependency on the SmallRye UI.
 // tag::usage[]
 // tag::usage-start[]
 == Usage
-ifdef::se-flavor[]
 Make sure your application incorporates Helidon OpenAPI support as  described in detail in link:{openapi-page}[the Helidon OpenAPI documentation]). Helidon automatically prepares the OpenAPI UI with default settings if you also declare a dependency on the Helidon OpenAPI UI integration component as explained above. The <<API,API>> section below illustrates adding OpenAPI to your application and customizing the UI behavior.
-endif::se-flavor[]
 
 After you modify, build, and start your Helidon {flavor-uc} service, you can access the OpenAPI UI by default at `http://your-host:your-port/openapi/ui`.
 Helidon also uses conventional content negotiation at `http://your-host:your-port/openapi` returning the UI to browsers (or any client that accepts HTML) and the OpenAPI document otherwise.
@@ -98,12 +94,7 @@ ifdef::se-flavor[either the API or ]
 xref:Configuration[configuration].
 
 The example below shows the UI
-ifdef::se-flavor[]
 if you modify the Helidon SE QuickStart greeting application to contain a static OpenAPI file which describes the service endpoints.
-endif::se-flavor[]
-ifdef::mp-flavor[]
-for the Helidon MP QuickStart greeting application.
-endif::mp-flavor[]
 
 .OpenAPI UI Screen for Helidon {flavor-uc} QuickStart Greeting Application
 image::{screen-capture-start}[align="center",title="Example OpenAPI UI Screen",role="fit"]
@@ -137,8 +128,7 @@ image::{screen-capture-expanded}[align="center",title="Example OpenAPI UI Screen
 // tag::config-intro[]
 == Configuration
 To use configuration to control how the Helidon OpenAPI UI service behaves, add
-ifdef::mp-flavor[`{ui-config-prefix}` settings to your `META-INF/microprofile-config.properties` file.]
-ifdef::se-flavor[a `{ui-config-prefix}` section to your configuration file, such as `application.yaml`.]
+a `{ui-config-prefix}` section to your configuration file, such as `application.yaml`.
 
 include::{rootdir}/config/io_helidon_integrations_openapi_ui_OpenApiUi.adoc[tag=config,leveloffset=+1]
 The default UI `web-context` value is the web context for your `OpenApiFeature` service with the added suffix `/ui`. If you use the default web context for both `OpenApiFeature` and the UI, the UI responds at `/openapi/ui`.

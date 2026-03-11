@@ -18,7 +18,7 @@
 
 = Helidon SE Tracing Guide
 :description: Helidon tracing
-:keywords: helidon, tracing, microprofile, guide
+:keywords: helidon, tracing, guide
 :toc:
 :rootdir: {docdir}/../..
 :imagesdir: {rootdir}/images
@@ -627,8 +627,5 @@ This guide has demonstrated how to use the Helidon SE tracing feature with Jaege
 
 Refer to the following references for additional information:
 
-- link:{microprofile-tracing-spec-url}[MicroProfile OpenTracing specification]
-- link:{microprofile-tracing-javadoc-url}[MicroProfile OpenTracing Javadoc]
 * link:https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API]
 - link:{javadoc-base-url}/index.html?overview-summary.html[Helidon Javadoc]
-

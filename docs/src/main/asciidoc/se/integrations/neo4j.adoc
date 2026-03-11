@@ -81,7 +81,7 @@ include::{rootdir}/config/io_helidon_integrations_neo4j_Neo4j.adoc[leveloffset=+
 
 == Examples
 
-This example implements a simple Neo4j REST service using MicroProfile. For this example a working Neo4j database is required. The Neo4j Movie database is used for this example.
+This example implements a simple Neo4j REST service. For this example a working Neo4j database is required. The Neo4j Movie database is used for this example.
 
 Bring up a Neo4j instance via Docker
 
@@ -184,7 +184,7 @@ Full example code is available in link:{helidon-github-examples-url}/integration
 
 === Neo4j Metrics propagation
 
-Neo4j's metrics can be propagated to the user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add:
+Neo4j's metrics can be propagated to your application's metrics endpoint. This is implemented in a separate Maven module. Just add:
 
 [source,xml]
 ----
@@ -216,7 +216,7 @@ Neo4j's metrics will be automatically added to the output of the `/metrics` endp
 
 If your application is highly dependent on Neo4j database, health and liveness checks are essential for this application to work correctly.
 
-`MicroProfile` Health checks for Neo4j are implemented in a separate Maven module:
+Health checks for Neo4j are implemented in a separate Maven module:
 
 [source, xml]
 ----
@@ -241,5 +241,4 @@ Health checks for Neo4j will be included in `/health` endpoint output.
 
 * link:https://neo4j.com/[Neo4j official website]
 * link:https://neo4j.com/developer/java/[Neo4j Java developer guide]
-
 

@@ -60,11 +60,6 @@ LangChain4j integration is a preview feature. The APIs shown here are subject to
 +
 Automatically creates and registers selected LangChain4j components in the Helidon service registry based on configuration.
 
-- *Integration with CDI*
-+
-Thanks to the *Helidon Inject to CDI Bridge*, LangChain4j components can be used in CDI environments, including Helidon MP applications.
-
-
 - *Declarative AI Services and Agents*
 +
 Supports https://docs.langchain4j.dev/tutorials/ai-services/[LangChain4j's AI Services] and https://docs.langchain4j.dev/tutorials/agents/[Agents] within the declarative programming model, allowing for clean, easy-to-manage code structures.
@@ -301,7 +296,7 @@ Helidon LangChain4j integration provides two declarative approaches for using AI
 Services and Agents are typically Java interfaces annotated with LangChain4j and Helidon annotations,
  the resulting implementation is created by LangChain4j runtime and wired together by xref:{rootdir}/se/injection/injection.adoc[Helidon as singleton declarative
 service beans]. You can access those anywhere in Helidon with `Services.get(FooBarAiService.class)` or inject it in another
-service bean as constructor parameter. Thanks to the CDI bridge, you can inject AI Services and Agents even to Helidon MP CDI beans.
+service bean as constructor parameter.
 
 Both AI Services and Agents can be configured with the following Helidon annotations:
 
@@ -548,8 +543,6 @@ public class OrderService {
     }
 }
 ----
-
-NOTE: If you are using Helidon MP, to enable `@Tool`-annotated methods in CDI beans, you must annotate the CDI bean with the `@Ai.Tool` qualifier.
 
 For more details, read the https://docs.langchain4j.dev/tutorials/tools#high-level-tool-api[LangChain4j Documentation on Tools].
 

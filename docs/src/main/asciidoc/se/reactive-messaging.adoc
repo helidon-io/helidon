@@ -67,11 +67,8 @@ called *Reactive Messaging*. It's basically an API for connecting and configurin
 connectors and emitters with your reactive streams through <<Channel,Channels>>.
 
 Reactive Messaging relates to
-xref:../mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging] as the making of connectors and configuring them can be a repetitive task that ultimately leads to
-the same results. Helidon SE Reactive Messaging supports the very same configuration format
-for connectors as its MicroProfile counterpart does. Also, MP Connectors are reusable in
-Helidon SE Messaging with some limitations such as there is no CDI in Helidon SE.
-All <<Messaging Connector,Messaging connectors>> in Helidon are made to be universally usable by Helidon MP and SE.
+the same style of connector orchestration and configuration while keeping the SE programming model explicit.
+Helidon SE Reactive Messaging supports the same connector configuration format across the Helidon messaging APIs.
 
 === Channel
 
@@ -101,7 +98,7 @@ include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_2, indent=0]
 === Message
 
 Reactive Messaging in Helidon SE uses the same concept of
-message wrapping as MicroProfile messaging.
+message wrapping across Helidon messaging implementations.
 The only notable difference is that SE Messaging does almost no implicit or automatic
 acknowledgement due to _no magic_ philosophy of Helidon SE.
 
@@ -115,9 +112,8 @@ an implicit acknowledgement is executed before the callback.
 Connectors are used to connect <<Channel,channels>> to external sources.
 To make the <<Messaging Connector,creation and usage of connectors>>
 as easy and versatile as possible, Helidon SE Messaging uses the same API for connectors
-that xref:../mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging] does.
-This allows connectors to be used in both flavors of Helidon with one limitation which is
-that the connector has to be able to work without CDI.
+used across Helidon messaging implementations.
+This allows connectors to be reused as long as they can operate without CDI.
 
 Examples of versatile connectors in Helidon include the following:
 
@@ -159,7 +155,7 @@ include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_5, indent=0]
 ===== Configuration for Messaging Connector
 
 A messaging connector in Helidon SE can be configured explicitly by API or implicitly
-by config following the notation of link:https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_configuration[MicroProfile Reactive Messaging].
+by config using the `mp.messaging` key layout.
 
 Configuration that is supplied to connector by the Messaging implementation must include
 two mandatory attributes:
@@ -192,7 +188,7 @@ include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_7, indent=0]
 
 ====== Implicit Config for Messaging Connector
 
-Implicit config without any hard-coding is possible with xref:config/introduction.adoc[Helidon Config] following notation of link:https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_configuration[MicroProfile Reactive Messaging].
+Implicit config without any hard-coding is possible with xref:config/introduction.adoc[Helidon Config] using the `mp.messaging` key layout.
 
 [source,yaml]
 .Example of channel to connector mapping config with custom properties:
@@ -210,15 +206,6 @@ mp.messaging.connector.example-connector.second-test-prop: bar<3>
 ----
 include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_8, indent=0]
 ----
-
-==== Re-usability in MP Messaging
-
-As the API is the same for xref:../mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging]
-connectors, all that is needed to make connector work in both ways is annotating it with
-`@ApplicationScoped`. Such connector is treated as a bean in Helidon MP.
-
-For specific information about creating messaging connectors for Helidon MP visit
-xref:../mp/reactivemessaging/introduction.adoc[MicroProfile Reactive Messaging].
 
 ==== Kafka Connector
 
@@ -422,6 +409,4 @@ include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_17, indent=0]
 
 == Reference
 
-* link:{microprofile-reactive-messaging-spec-url}[MicroProfile Reactive Messaging Specification]
-* link:https://github.com/eclipse/microprofile-reactive-messaging[MicroProfile Reactive Messaging on GitHub]
 * link:{helidon-github-examples-url}/messaging[Helidon Messaging Examples]

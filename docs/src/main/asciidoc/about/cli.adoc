@@ -98,9 +98,8 @@ You can use the Helidon CLI to quickly create a new Helidon project.
 . Open a command-line interface and navigate to the directory where you want to create the project.
 . Run `helidon init`.
 . Choose a *Helidon Version*. 
-. Choose a *Helidon Flavor*: SE or MP. 
-. Choose an *Application Type*. If you chose Helidon SE, the OCI option is not available.
-. Select a JSON library. If you chose Helidon MP, the JSON-P option is not available.
+. Choose an *Application Type*.
+. Select a JSON library.
 . Customize your project by specifying a `groupId`, an `artifactId`, a `version`, and a `package name`.
 
 The Helidon CLI will create a new project folder in your current directory.

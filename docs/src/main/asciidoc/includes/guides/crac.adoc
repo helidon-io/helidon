@@ -133,14 +133,6 @@ Started all channels in 9 milliseconds. 521 milliseconds since JVM startup. Java
 WEB server is up! http://localhost:8080/simple-greet
 ----
 endif::se-flavor[]
-ifdef::mp-flavor[]
-[source,bash,subs="attributes+"]
-----
-Started all channels in 10 milliseconds. 1937 milliseconds since JVM startup. Java {zulu-version}
-Server started on http://localhost:8080 in 1941 milliseconds (since JVM startup).
-Helidon MP {helidon-version} features: [CDI, CRaC, Config, Health, Metrics, Open API, Server]
-----
-endif::mp-flavor[]
 
 In another shell test an endpoint:
 

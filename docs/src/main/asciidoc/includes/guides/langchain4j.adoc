@@ -78,21 +78,13 @@ include::{rootdir}/se/ai/langchain4j/langchain4j.adoc[tag=annotation-processors]
 
 == Configuration
 
-Add to the configuration file
-ifdef::se-flavor[]
-`./src/main/resources/application.yaml`
-endif::se-flavor[]
-ifdef::mp-flavor[]
-`./src/main/resources/META-INF/microprofile-config.properties`
-endif::mp-flavor[]
-following LangChain4j configuration for OpenAI provider.
+Add the following LangChain4j configuration for the OpenAI provider to `./src/main/resources/application.yaml`.
 
 Model configured under `langchain4j.models` has arbitrary name `pirate-chat-model`,
 it uses `open-ai` provider defined under `langchain4j.providers`.
 With a single configured chat model, default auto-discovery resolves it automatically.
 If you configure multiple chat models, use `@Ai.ChatModel("pirate-chat-model")` to select one explicitly.
 
-ifdef::se-flavor[]
 [source,yaml]
 ----
 langchain4j:
@@ -106,17 +98,6 @@ langchain4j:
       provider: open-ai
       model-name: "gpt-4o-mini"
 ----
-endif::se-flavor[]
-ifdef::mp-flavor[]
-[source,properties]
-----
-langchain4j.providers.open-ai.base-url=http://langchain4j.dev/demo/openai/v1
-# Lc4j demo api key needs to be routed over lc4j proxy
-langchain4j.providers.open-ai.api-key=demo
-langchain4j.models.pirate-chat-model.provider=open-ai
-langchain4j.models.pirate-chat-model.model-name=gpt-4o-mini
-----
-endif::mp-flavor[]
 
 == Ai Service
 Next we need to create LangChain4j https://docs.langchain4j.dev/tutorials/ai-services[Ai service] and
@@ -127,8 +108,6 @@ annotate it with `@Ai.Service` so Helidon can make a superfast build time bean f
 include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=base_ai_service, indent=0]
 ----
 
-ifdef::se-flavor[]
-
 Next step is to add new Http POST handler to the webserver, you can do it by changing method `routing` in  `src/main/java/io/helidon/examples/quickstart/lc4j/Main.java` like following example shows.
 
 [source,java]
@@ -136,8 +115,6 @@ Next step is to add new Http POST handler to the webserver, you can do it by cha
 include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=base_resource, indent=0]
 ----
 <1> Notice how we can look up the LangChain4j Ai service as Helidon declarative superfast build time bean.
-
-endif::se-flavor[]
 ifdef::mp-flavor[]
 Next step is to add new Http POST JAX-RS resource, create new public class `PirateResource` like following example shows.
 

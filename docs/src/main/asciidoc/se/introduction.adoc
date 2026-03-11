@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Introduction
-:keywords: helidon, java, microservices, microprofile
+:keywords: helidon, java, microservices
 :description: Helidon SE introduction
 :keywords: helidon, java, SE, microservices, Netty
 :rootdir: {docdir}/..

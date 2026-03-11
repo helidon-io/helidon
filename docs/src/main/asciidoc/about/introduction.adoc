@@ -18,7 +18,7 @@
 
 = Introducing Helidon
 :description: Helidon
-:keywords: helidon, java, microservices, microprofile
+:keywords: helidon, java, microservices
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/attributes.adoc[]
@@ -31,36 +31,18 @@ At its core, Helidon provides a set of Java APIs that allow you to develop new J
 
 Helidon applications are standalone Java applications running in their own JVM and powered by the Helidon WebServer. Helidon is compatible with Java SE and many Jakarta EE specifications. It includes a full observability stack with dedicated components for health checks, metrics, tracing, and logging. It also integrates well with several other popular tools and technologies so you can feel confident that you won't lose any functionality moving to the Helidon framework.
 
-Helidon is available in two flavors, Helidon SE and Helidon MP. Both flavors deliver great results for generating cloud-native Java applications built on microservices, but they offer distinct developer experiences.
+Helidon SE is Helidon's foundational set of APIs. It offers a lightweight and flexible approach to developing Java applications while still providing a full framework for configuration, observability, security, integrations, and deployment.
 
-*Helidon SE* is Helidon's foundational set of APIs; it offers a lightweight and flexible approach to developing Java applications within a framework. Generally, you should use Helidon SE if you want the greatest possible control over the development and functionality of your application, while still benefiting from the Helidon framework.
+You should use Helidon SE if:
 
-*Helidon MP* builds on the APIs in Helidon SE by adding support for https://projects.eclipse.org/proposals/eclipse-microprofile[Eclipse MicroProfile], a project whose goal is to standardize Enterprise Java APIs for microservices development.
-
-.Which flavor should _you_ use?
-[cols="3,3"]
-|===
-|*Use Helidon SE if*
-|*Use Helidon MP if*
-
-a|
 * You want full transparency into and greater control over your development process.
-* You plan to rely heavily on concurrency APIs and you want support for virtual threads.
-* You do not plant to use CDI-based components.
+* You plan to rely heavily on concurrency APIs and want support for virtual threads.
 * You want to limit the number of third-party dependencies.
-* You prefer a microframework with a tiny footprint (~7 MB).
+* You prefer a microframework with a tiny footprint.
 
-Learn more at xref:{rootdir}/se/introduction.adoc[Helidon SE]
-a|
-* You want to take advantage of the APIs provided by the MicroProfile specification.
-* You are already familiar with Jakarta EE, MicroProfile, or Spring Boot and want a similar development experience.
-* You are migrating existing Jakarta EE applications to microservices architecture.
-* You plan to use CDI components or extensions, Jakarta Persistence (JPA) for data access, or Jersey (Jakarta RESTful Web Services, JAX-RS) for RESTful services.
+Learn more at xref:{rootdir}/se/introduction.adoc[Helidon SE].
 
-Learn more at xref:{rootdir}/mp/introduction.adoc[Helidon MP]
-|===
-
-Compare the following code examples to see the differences in how you would implement a simple RESTful service using either Helidon SE or Helidon MP.
+The following code example shows a simple RESTful service implemented using Helidon SE.
 
 .Helidon SE sample
 [source,java]
@@ -68,20 +50,10 @@ Compare the following code examples to see the differences in how you would impl
 include::{sourcedir}/about/IntroductionSnippets.java[tag=snippet_1, indent=0]
 ----
 
-.Helidon MP sample
-[source,java]
-----
-include::{sourcedir}/about/IntroductionSnippets.java[tag=snippet_2, indent=0]
-----
-
 == Next Steps
 
 * Read xref:{rootdir}/about/prerequisites.adoc[Get Started] and learn how to set up your environment.
-* Try out Helidon with the Quick Start tutorials:
-** xref:{rootdir}/se/guides/quickstart.adoc[Helidon SE Quick Start]
-** xref:{rootdir}/mp/guides/quickstart.adoc[Helidon MP Quick Start]
-* If you're using an earlier version of Helidon, read the Helidon Upgrade Guides for guidance on how to move to the latest version:
-** xref:{rootdir}/se/guides/upgrade_4x.adoc[Helidon SE 4.x Upgrade Guide]
-** xref:{rootdir}/mp/guides/upgrade_4x.adoc[Helidon MP 4.x Upgrade Guide]
+* Try out Helidon with the xref:{rootdir}/se/guides/quickstart.adoc[Helidon SE Quick Start].
+* If you're using an earlier version of Helidon, read the xref:{rootdir}/se/guides/upgrade_4x.adoc[Helidon SE 4.x Upgrade Guide].
 
 Helidon is an open source framework (developed by Oracle) licensed under Apache License 2.0. You can follow its development at the https://github.com/helidon-io/helidon[Helidon GitHub repository].

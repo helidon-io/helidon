@@ -26,8 +26,7 @@ ifndef::flavor-lc[:flavor-lc: se]
 == Configuration
 
 To control how the Helidon metrics subsystem behaves, add a `metrics` section to
-ifdef::mp-flavor[your `META-INF/microprofile-config.properties` file.]
-ifdef::se-flavor[your configuration file, such as `application.yaml`.]
+your configuration file, such as `application.yaml`.
 
 Certain default configuration values depend on the fact that you are using Helidon {flavor-uc} as described in the <<flavor-specific-defaults,second table below>>.
 
@@ -63,10 +62,7 @@ ifdef::mp-flavor[`application`]
 === Controlling the {metric_uc} Type for `gc.time`
 To date Helidon 4 releases have implemented the system-provided {metric} `gc.time` as a counter.
 In fact, a gauge is more suitable for the approximate time the JVM has spent doing garbage
-ifdef::se-flavor[collection.]
-ifdef::mp-flavor[]
-collection, and beginning with MicroProfile Metrics 5.1 the TCK relies on `gc.time` being a gauge.
-endif::mp-flavor[]
+collection.
 
 Helidon {helidon-version} continues to use a counter by default to preserve backward compatibility, but you can choose to use a gauge by setting the configuration property `metrics.gc-time-type` to `gauge`.
 You can also set the config property to `counter` which is the default.

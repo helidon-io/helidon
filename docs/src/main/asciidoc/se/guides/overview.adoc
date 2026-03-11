@@ -18,7 +18,7 @@
 
 = Overview
 :description: Helidon SE Guides
-:keywords: helidon, java, microservices, microprofile, guides
+:keywords: helidon, java, microservices, guides
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]

@@ -56,7 +56,6 @@ mvn -U archetype:generate -DinteractiveMode=false \
 Helidon provides three built-in scopes of metrics: base, vendor, and application. Here are the metric endpoints:
 
 1. `{metrics-endpoint}?scope=base` - Base {metrics}
-ifdef::mp-flavor[as specified by the MicroProfile Metrics specification]
 2. `{metrics-endpoint}?scope=vendor` - Helidon-specific {metrics}
 3. `{metrics-endpoint}?scope=application` - Application-specific metrics data.
 

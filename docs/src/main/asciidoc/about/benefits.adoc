@@ -47,18 +47,15 @@ mission-critical production applications.
 
 
 
-== Two API Flavors for Two Programming Styles
-Helidon offers two API flavors: Helidon SE, and Helidon MP. Both are fun to
-program in, but each caters to a different style of programming
+== A Programming Model Focused on Clarity
+Helidon SE offers a direct, explicit programming model that gives you fine-grained
+control over application behavior without sacrificing productivity.
 
 
 == Feature Richness
-Both API flavors, Helidon SE and Helidon MP, offer a rich and similar set of
-features, like configuration and metrics and security, as examples. In Helidon
-MP, the APIs for the features are specified by a standards body, whereas in
-Helidon SE they are not. In both cases, the
-set of features available is complete enough to cover every aspect of the needs
-of modern microservices applications.
+Helidon provides a rich set of features, including configuration, metrics,
+security, data access, messaging, and integrations. The available feature set is
+broad enough to cover the needs of modern microservices applications.
 
 == Enterprise Features
 Helidon intentionally includes many features required by industrial-strength

@@ -31,13 +31,6 @@ That said, Helidon's support for OpenTelemetry using _tracing_ does not afford a
 The xref:{rootdir}/{flavor-lc}/telemetry/open-telemetry.adoc[telemetry doc page] describes how to use the Helidon `telemetry` config section and the related builder to exert more control over  OpenTelemetry and OpenTelemetry tracing behavior.
 
 endif::se-flavor[]
-ifdef::mp-flavor[]
-The xref:{rootdir}/mp/telemetry.adoc[Helidon MP Telemetry doc page] describes how to use Helidon's support for MicroProfile Telemetry to control OpenTelemetry.
-
-Avoid using both the OpenTelemetry tracing support described here and support for MicroProfile Telemetry as the results are unpredictable.
-
-endif::mp-flavor[]
-
 [NOTE]
 .Avoid specifying both `telemetry` and `tracing`
 If you provide settings under both `telemetry` and `tracing`, Helidon uses the `telemetry` settings. Specifying both does not confuse Helidon but it might confuse users.
