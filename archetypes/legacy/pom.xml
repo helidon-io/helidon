@@ -30,11 +30,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>bare-mp</module>
         <module>bare-se</module>
-        <module>quickstart-mp</module>
         <module>quickstart-se</module>
-        <module>database-mp</module>
         <module>database-se</module>
     </modules>
 
