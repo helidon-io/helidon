@@ -611,7 +611,6 @@ See full text at the bottom of this document for license: GPLv2-CPE
             <licensor>Google</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-security-providers-google-login</consumer>
             </consumers>
             <attribution>Google APIs Client Library for Java (com.google.api-client:google-api-client)
   Copyright 2010,2015 Google Inc.

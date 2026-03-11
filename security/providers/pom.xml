@@ -35,7 +35,6 @@
         <module>common</module>
         <module>http-auth</module>
         <module>http-sign</module>
-        <module>google-login</module>
         <module>header</module>
         <module>jwt</module>
         <module>abac</module>

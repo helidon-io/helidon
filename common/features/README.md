@@ -32,17 +32,16 @@ import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
 
 /**
- * Google login authentication provider.
+ * OpenID Connect authentication provider.
  *
- * @deprecated use our OpenID Connect security provider instead
+ * Example feature annotation for a security provider module.
  */
-@Features.Name("Google Login")
-@Features.Description("Security provider for Google login button authentication and outbound")
+@Features.Name("OIDC")
+@Features.Description("Security provider for OpenID Connect authentication")
 @Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
-@Features.Path({"Security", "Provider", "Google-Login"})
+@Features.Path({"Security", "Provider", "OIDC"})
 @Features.Aot(false)
-@Deprecated(forRemoval = true, since = "4.3.0")
-module io.helidon.security.providers.google.login {
+module io.helidon.security.providers.oidc {
     requires static io.helidon.common.features.api;
     // other module dependencies and configuration
 }

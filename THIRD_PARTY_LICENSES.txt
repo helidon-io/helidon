@@ -552,18 +552,6 @@ See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 See full text at the bottom of this document for license: GPLv2-CPE
 
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Google APIs Client Library for Java  Google
-Apache 2.0
-Used by: [helidon-security-providers-google-login]
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Google APIs Client Library for Java (com.google.api-client:google-api-client)
-  Copyright 2010,2015 Google Inc.
-  Copyright 2015, Google Inc. All rights reserved.
-  Copyright 2020 Google LLC
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
 "Checker Qual" (org.checkerframework:checker-compat-qual)

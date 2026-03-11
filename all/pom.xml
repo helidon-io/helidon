@@ -95,10 +95,6 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.security.providers</groupId>
-            <artifactId>helidon-security-providers-google-login</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.security.providers</groupId>
             <artifactId>helidon-security-providers-oidc</artifactId>
         </dependency>
         <dependency>

@@ -20,12 +20,9 @@ security:
   provider-policy:
     type: "COMPOSITE"
     authentication:
-      - name: "google-login"
+      - name: "http-signatures"
     outbound:
-      - name: "google-login"
       - name: "http-signatures"
   providers:
-    - google-login:
-        # specific configuration of this provider
     - http-signatures:
         # specific configuration of this provider

@@ -167,7 +167,6 @@ endif::[]
 :security-provider-httpsign-base-url: {javadoc-base-url}/io.helidon.security.providers.httpsign
 :security-provider-idcs-mapper-base-url: {javadoc-base-url}/io.helidon.security.providers.idcs.mapper
 :security-provider-abac-base-url: {javadoc-base-url}/io.helidon.security.providers.abac
-:security-provider-google-login-base-url: {javadoc-base-url}/io.helidon.security.providers.google.login
 :security-provider-jwt-base-url: {javadoc-base-url}/io.helidon.security.providers.jwt
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
 :websocket-javadoc-base-url: {javadoc-base-url}/io.helidon.websocket

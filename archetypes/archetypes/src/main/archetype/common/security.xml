@@ -39,23 +39,6 @@
                                 </model>
                             </output>
                         </option>
-                        <option value="google" name="Google Login" description="Google identity">
-                            <output>
-                                <model>
-                                    <list key="dependencies">
-                                        <map>
-                                            <value key="groupId">io.helidon.security.providers</value>
-                                            <value key="artifactId">helidon-security-providers-google-login</value>
-                                        </map>
-                                    </list>
-                                    <list key="module-requires">
-                                        <value>io.helidon.webserver.context</value>
-                                        <value>io.helidon.webserver.staticcontent</value>
-                                        <value>io.helidon.security.providers.google.login</value>
-                                    </list>
-                                </model>
-                            </output>
-                        </option>
                         <option value="http-signature" name="HTTP Signature" description="Service to service authentication">
                             <output>
                                 <files>

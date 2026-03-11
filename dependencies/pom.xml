@@ -45,7 +45,6 @@
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.36</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>4.0.7</version.lib.eclipselink>
-        <version.lib.google-api-client>2.8.1</version.lib.google-api-client>
         <version.lib.google-error-prone-annotations>2.30.0</version.lib.google-error-prone-annotations>
         <version.lib.google-protobuf>4.31.1</version.lib.google-protobuf>
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
@@ -413,21 +412,6 @@
                     <exclusion>
                         <groupId>org.glassfish.tyrus</groupId>
                         <artifactId>tyrus-container-grizzly-client</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <!-- Security related -->
-            <dependency>
-                <!-- Google APIs -->
-                <groupId>com.google.api-client</groupId>
-                <artifactId>google-api-client</artifactId>
-                <version>${version.lib.google-api-client}</version>
-                <exclusions>
-                    <exclusion>
-                        <!-- should be optional -->
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
