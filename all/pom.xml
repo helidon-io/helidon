@@ -559,10 +559,6 @@
             <artifactId>helidon-cors</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.messaging</groupId>
-            <artifactId>helidon-messaging-jms-shim</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.logging</groupId>
             <artifactId>helidon-logging-common</artifactId>
         </dependency>

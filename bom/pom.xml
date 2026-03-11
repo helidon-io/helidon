@@ -776,12 +776,6 @@
                 <artifactId>helidon-cors</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <!-- Messaging -->
-            <dependency>
-                <groupId>io.helidon.messaging</groupId>
-                <artifactId>helidon-messaging-jms-shim</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
             <!-- Testing -->
             <dependency>
                 <groupId>io.helidon.common.testing</groupId>
