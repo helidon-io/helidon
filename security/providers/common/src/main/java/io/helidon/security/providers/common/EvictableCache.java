@@ -101,23 +101,6 @@ public interface EvictableCache<K, V> {
     }
 
     /**
-     * Create a new cache from configuration.
-     *
-     * @param config config to read configuration of this cache from
-     * @param <K>    type of keys in the cache
-     * @param <V>    type of values in the cache
-     * @return new cache configured from config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    static <K, V> EvictableCache<K, V> create(io.helidon.common.config.Config config) {
-        Builder<K, V> builder = builder();
-        return builder.config(config)
-                .build();
-    }
-
-    /**
      * Create a new cache and configure it from the provided configuration.
      * See {@link Builder#config(Config)} for the list of configuration keys.
      * This will use the default implementation.
@@ -334,20 +317,7 @@ public interface EvictableCache<K, V> {
 
         /**
          * Update this builder from configuration.
-         *
-         * @param config Config to use to load configuration options for this builder
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder<K, V> config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
-         * Update this builder from configuration.
-         *
+         * <p>
          * Options expected under the current config node:
          * <table border="1">
          * <caption>Configuration parameters</caption>

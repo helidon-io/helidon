@@ -63,38 +63,11 @@ public final class OutboundConfig {
     /**
      * Parse targets from provider configuration.
      *
-     * @param config configuration
-     * @return new instance
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static OutboundConfig create(io.helidon.common.config.Config config) {
-        return create(Config.config(config));
-    }
-
-    /**
-     * Parse targets from provider configuration.
-     *
      * @param providerConfig configuration object of current provider
      * @return new instance with targets from configuration
      */
     public static OutboundConfig create(Config providerConfig) {
         return createFromConfig(providerConfig, null);
-    }
-
-    /**
-     * Parse targets from provider configuration with possible default targets.
-     *
-     * @param config   configuration
-     * @param defaults default target configuration
-     * @return new instance
-     * @deprecated use {@link #create(io.helidon.config.Config, OutboundTarget...)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static OutboundConfig create(io.helidon.common.config.Config config, OutboundTarget... defaults) {
-        return create(Config.config(config), defaults);
     }
 
     /**
@@ -179,7 +152,7 @@ public final class OutboundConfig {
     @SuppressWarnings("unchecked")
     public <T> Optional<T> findTargetCustomObject(SecurityEnvironment env,
                                                   Class<T> customObjectClass,
-                                                  Function<io.helidon.common.config.Config, ? extends T> customObjectProducer,
+                                                  Function<Config, ? extends T> customObjectProducer,
                                                   Supplier<? extends T> defaultValue) {
         Optional<OutboundTarget> targetOptional = findTarget(env);
         if (targetOptional.isEmpty()) {

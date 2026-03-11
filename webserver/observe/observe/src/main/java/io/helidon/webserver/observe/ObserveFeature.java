@@ -150,19 +150,6 @@ public class ObserveFeature implements ServerFeature, Weighted, RuntimeType.Api<
      *
      * @param config configuration to read observe config from
      * @return a new observe support
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static ObserveFeature create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Create a new support with custom configuration.
-     *
-     * @param config configuration to read observe config from
-     * @return a new observe support
      */
     public static ObserveFeature create(Config config) {
         return builder().config(config).build();

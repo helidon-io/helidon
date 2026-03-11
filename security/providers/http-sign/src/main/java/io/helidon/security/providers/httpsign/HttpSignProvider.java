@@ -95,24 +95,10 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         outboundConfig.targets().forEach(target -> target.getConfig()
                 .ifPresent(targetConfig -> {
             OutboundTargetDefinition outboundTargetDefinition = targetConfig.get("signature")
-                    .map(Config::config)
                     .as(OutboundTargetDefinition::create)
                     .get();
             targetKeys.put(target.name(), outboundTargetDefinition);
         }));
-    }
-
-    /**
-     * Create a new instance of this provider from configuration.
-     *
-     * @param config config located at this provider, expects "http-signature" to be a child
-     * @return provider configured from config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static HttpSignProvider create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
     }
 
     /**
@@ -344,19 +330,6 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         @Override
         public HttpSignProvider build() {
             return new HttpSignProvider(this);
-        }
-
-        /**
-         * Create a builder from configuration.
-         *
-         * @param config Config located at http-signatures key
-         * @return builder instance configured from config
-         * @deprecated use {@link #create(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

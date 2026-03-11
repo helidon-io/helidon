@@ -75,21 +75,6 @@ public class HttpBasicOutboundConfig {
      *
      * @param config configuration for outbound config
      * @return a new configuration
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static HttpBasicOutboundConfig create(io.helidon.common.config.Config config) {
-        return builder()
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Create basic outbound configuration from config.
-     *
-     * @param config configuration for outbound config
-     * @return a new configuration
      */
     public static HttpBasicOutboundConfig create(Config config) {
         return builder()
@@ -159,19 +144,6 @@ public class HttpBasicOutboundConfig {
                                                     + " outbound");
             }
             return new HttpBasicOutboundConfig(this);
-        }
-
-        /**
-         * Updated this configuration from the config instance.
-         *
-         * @param config configuration
-         * @return updated builder instance
-         * @deprecated use {@link #create(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

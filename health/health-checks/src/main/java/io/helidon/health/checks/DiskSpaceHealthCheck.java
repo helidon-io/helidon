@@ -244,19 +244,6 @@ public class DiskSpaceHealthCheck implements HealthCheck {
         /**
          * Set up the disk space health check via config keys, if present.
          *
-         * @param config {@code Config} node for disk space
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
-         * Set up the disk space health check via config keys, if present.
-         *
          * Configuration options:
          * <table class="config">
          * <caption>Disk space health check configuration</caption>

@@ -63,19 +63,6 @@ public enum OtlpExporterProtocolType {
      *
      * @param config config node
      * @return matching type
-     * @deprecated use {@link #from(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    static OtlpExporterProtocolType from(io.helidon.common.config.Config config) {
-        return from(config.asString().get());
-    }
-
-    /**
-     * Maps a config node's string value to the corresponding type.
-     *
-     * @param config config node
-     * @return matching type
      */
     static OtlpExporterProtocolType from(Config config) {
         return from(config.asString().get());

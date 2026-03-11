@@ -20,7 +20,7 @@
 module io.helidon.health {
 
     requires transitive io.helidon.common;
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
 
     exports io.helidon.health;
     exports io.helidon.health.spi;

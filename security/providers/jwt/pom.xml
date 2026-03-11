@@ -39,6 +39,10 @@
             <artifactId>helidon-security-providers-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.security</groupId>
             <artifactId>helidon-security-jwt</artifactId>
         </dependency>

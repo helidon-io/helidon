@@ -23,6 +23,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.config.Config;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
@@ -47,13 +48,12 @@ public class OpenTracingTracerProvider implements TracerProvider {
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
 
     private LazyValue<Tracer> globalHelidonTracer = LazyValue.create(() -> {
-        var tracingConfig = io.helidon.common.config.GlobalConfig.config().get("tracing");
+        var tracingConfig = Config.global().get("tracing");
 
         // Set up to create an explicit OpenTracing tracer only if we have config for tracing, indicating that the user wants
         // something other than the no-op implementation.
         if (tracingConfig.exists()) {
-            io.opentracing.Tracer openTracingTracer = OpenTracingTracerBuilder.create(tracingConfig)
-                    .build();
+            io.opentracing.Tracer openTracingTracer = OpenTracingTracerBuilder.create(tracingConfig).build();
             GlobalTracer.registerIfAbsent(openTracingTracer);
         }
         return OpenTracingTracer.create(GlobalTracer.get());

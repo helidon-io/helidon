@@ -204,7 +204,7 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>oidc-metadata.resource</td>
  *     <td>identity-uri/.well-known/openid-configuration</td>
  *     <td>Resource configuration for OIDC Metadata containing endpoints to various identity services, as well as information
- *     about the identity server. See {@link Resource#create(io.helidon.common.config.Config)}</td>
+ *     about the identity server. See {@link Resource#create(io.helidon.config.Config)}</td>
  * </tr>
  * <tr>
  *     <td>token-endpoint-uri</td>
@@ -227,7 +227,7 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>"jwks-uri" in OIDC metadata, or identity-uri/admin/v1/SigningCert/jwk if not available, only needed
  *              when jwt validation is done by us</td>
  *     <td>A resource pointing to JWK with public keys of signing certificates used to validate JWT.
- *     See {@link Resource#create(io.helidon.common.config.Config)}</td>
+ *     See {@link Resource#create(io.helidon.config.Config)}</td>
  * </tr>
  * <tr>
  *     <td>introspect-endpoint-uri</td>
@@ -462,22 +462,7 @@ public final class OidcConfig extends TenantConfigImpl {
     }
 
     /**
-     * Create a new instance from {@link io.helidon.common.config.Config}.
-     *
-     * @param config configuration used to obtain OIDC integration values
-     * @return a new instance of this class configured from provided config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static OidcConfig create(io.helidon.common.config.Config config) {
-        return OidcConfig.builder()
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Create a new instance from {@link io.helidon.common.config.Config}.
+     * Create a new instance from {@link io.helidon.config.Config}.
      * The config instance has to be on the node containing keys used by this class (e.g. client-id).
      *
      * @param config configuration used to obtain OIDC integration values

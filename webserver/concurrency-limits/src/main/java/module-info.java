@@ -23,7 +23,7 @@ module io.helidon.webserver.concurrency.limits {
     requires io.helidon.webserver;
 
     requires transitive io.helidon.builder.api;
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.common.concurrency.limits;
     requires static io.helidon.config.metadata;
 

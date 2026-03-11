@@ -16,7 +16,6 @@
 
 package io.helidon.security.spi;
 
-import io.helidon.common.DeprecationSupport;
 import io.helidon.config.Config;
 
 /**
@@ -55,33 +54,7 @@ public interface SecurityProviderService {
      * provided. The config is located at the config key of this provider.
      *
      * @param config Config with provider configuration
-     * @return provider instance created from the {@link io.helidon.common.config.Config} provided
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead,
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    default SecurityProvider providerInstance(io.helidon.common.config.Config config) {
-        // default to avoid forcing deprecated symbols references
-        return create(Config.config(config));
-    }
-
-    /**
-     * Create a new instance of the provider based on the configuration
-     * provided. The config is located at the config key of this provider.
-     * <p>
-     * API Note: the default method implementation is provided for backward compatibility
-     * and <b>will be removed in the next major version</b>
-     *
-     * @param config Config with provider configuration
      * @return provider instance created from the {@link io.helidon.config.Config} provided
-     * @since 4.4.0
      */
-    @SuppressWarnings("removal")
-    default SecurityProvider create(Config config) {
-        // default to preserve backward compatibility
-        // require the deprecated variant to be implemented
-        DeprecationSupport.requireOverride(this, SecurityProviderService.class, "providerInstance",
-                io.helidon.common.config.Config.class);
-        return providerInstance((io.helidon.common.config.Config) config);
-    }
+    SecurityProvider create(Config config);
 }

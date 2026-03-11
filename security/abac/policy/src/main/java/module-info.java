@@ -21,7 +21,7 @@ module io.helidon.security.abac.policy {
 
     requires io.helidon.security.providers.abac;
 
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.common;
     requires transitive io.helidon.security;
 
@@ -32,5 +32,4 @@ module io.helidon.security.abac.policy {
 
     provides io.helidon.security.providers.abac.spi.AbacValidatorService
             with io.helidon.security.abac.policy.PolicyValidatorService;
-	
 }

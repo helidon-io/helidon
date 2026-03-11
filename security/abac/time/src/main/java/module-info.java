@@ -30,7 +30,7 @@ module io.helidon.security.abac.time {
 
     requires static io.helidon.common.features.api;
 
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.security;
 
     exports io.helidon.security.abac.time;

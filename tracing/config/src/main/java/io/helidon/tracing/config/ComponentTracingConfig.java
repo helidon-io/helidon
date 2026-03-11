@@ -140,22 +140,6 @@ public abstract class ComponentTracingConfig extends Traceable {
      * @param name name of the component
      * @param config config for a new component
      * @return a new traced component configuration
-     * @deprecated use {@link #create(String, io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static ComponentTracingConfig create(String name, io.helidon.common.config.Config config) {
-        return builder(name)
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Create a new traced component configuration from {@link Config}.
-     *
-     * @param name name of the component
-     * @param config config for a new component
-     * @return a new traced component configuration
      */
     public static ComponentTracingConfig create(String name, Config config) {
         return builder(name)
@@ -195,19 +179,6 @@ public abstract class ComponentTracingConfig extends Traceable {
                     return finalEnabled;
                 }
             };
-        }
-
-        /**
-         * Update this builder from configuration.
-         *
-         * @param config configuration of a traced component
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

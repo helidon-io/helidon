@@ -283,19 +283,6 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
 
         /**
          * Update this builder state from configuration.
-         *
-         * @param config current node must have "oidc-config" as one of its children
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public B config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
-         * Update this builder state from configuration.
          * Expects:
          * <ul>
          * <li>oidc-config to load an instance of {@link io.helidon.security.providers.oidc.common.OidcConfig}</li>

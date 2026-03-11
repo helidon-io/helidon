@@ -60,21 +60,6 @@ public class HeaderAtnOutboundConfig {
      *
      * @param config configuration for outbound config
      * @return a new configuration
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static HeaderAtnOutboundConfig create(io.helidon.common.config.Config config) {
-        return builder()
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Create header outbound configuration from config.
-     *
-     * @param config configuration for outbound config
-     * @return a new configuration
      */
     public static HeaderAtnOutboundConfig create(Config config) {
         return builder()
@@ -130,19 +115,6 @@ public class HeaderAtnOutboundConfig {
         @Override
         public HeaderAtnOutboundConfig build() {
             return new HeaderAtnOutboundConfig(this);
-        }
-
-        /**
-         * Update this builder from configuration.
-         *
-         * @param config configuration
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

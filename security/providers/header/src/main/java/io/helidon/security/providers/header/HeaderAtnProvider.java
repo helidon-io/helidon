@@ -70,19 +70,6 @@ public class HeaderAtnProvider implements AuthenticationProvider, OutboundSecuri
      *
      * @param config configuration of this provider
      * @return provider instance
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static HeaderAtnProvider create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Create provider instance from configuration.
-     *
-     * @param config configuration of this provider
-     * @return provider instance
      */
     public static HeaderAtnProvider create(Config config) {
         return builder().config(config).build();
@@ -222,19 +209,6 @@ public class HeaderAtnProvider implements AuthenticationProvider, OutboundSecuri
                 outboundTokenHandler = atnTokenHandler;
             }
             return new HeaderAtnProvider(this);
-        }
-
-        /**
-         * Load this builder from a configuration.
-         *
-         * @param config configuration to load from
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

@@ -60,7 +60,7 @@ import io.opentelemetry.semconv.ServiceAttributes;
  * <p>
  * <b>Unless You want to explicitly depend on Jaeger in Your code, please
  * use {@link io.helidon.tracing.TracerBuilder#create(String)} or
- * {@link io.helidon.tracing.TracerBuilder#create(io.helidon.common.config.Config)} that is abstracted.</b>
+ * {@link io.helidon.tracing.TracerBuilder#create(io.helidon.config.Config)} that is abstracted.</b>
  * <p>
  * The Jaeger tracer uses environment variables and system properties to override the defaults.
  * Except for {@code protocol} and {@code service} these are honored, unless overridden in configuration
@@ -202,20 +202,6 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     public static JaegerTracerBuilder forService(String serviceName) {
         return create()
                 .serviceName(serviceName);
-    }
-
-    /**
-     * Create a new builder based on values in configuration.
-     * This requires at least a key "service" in the provided config.
-     *
-     * @param config configuration to load this builder from
-     * @return a new builder instance.
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static JaegerTracerBuilder create(io.helidon.common.config.Config config) {
-        return create().config(config);
     }
 
     /**

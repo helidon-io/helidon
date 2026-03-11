@@ -142,19 +142,6 @@ public final class AbacProvider implements AuthorizationProvider {
      *
      * @param config configuration
      * @return ABAC provider instantiated from config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static AbacProvider create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Creates a new provider instance from configuration.
-     *
-     * @param config configuration
-     * @return ABAC provider instantiated from config
      */
     public static AbacProvider create(Config config) {
         return builder().config(config).build();
@@ -189,8 +176,7 @@ public final class AbacProvider implements AuthorizationProvider {
         // list all custom objects and check those that implement AttributeConfig and ...
         validateCustom(epConfig, collector);
 
-        Optional<Config> abacConfig = epConfig.config(AbacProviderService.PROVIDER_CONFIG_KEY)
-                .map(Config::config);
+        Optional<Config> abacConfig = epConfig.config(AbacProviderService.PROVIDER_CONFIG_KEY);
 
         for (var validator : validators) {
             // order of preference - explicit class, configuration, annotation
@@ -286,10 +272,8 @@ public final class AbacProvider implements AuthorizationProvider {
                 });
     }
 
-    @SuppressWarnings("removal")
     private void validateConfig(EndpointConfig config, Errors.Collector collector) {
         config.config(AbacProviderService.PROVIDER_CONFIG_KEY)
-                .map(Config::config)
                 .ifPresent(abacConfig -> validateAbacConfig(abacConfig, collector));
     }
 
@@ -451,19 +435,6 @@ public final class AbacProvider implements AuthorizationProvider {
         public Builder failIfNoneValidated(boolean failIfNoneValidated) {
             this.failIfNoneValidated = failIfNoneValidated;
             return this;
-        }
-
-        /**
-         * Update builder from configuration.
-         *
-         * @param config configuration placed on the key of this provider
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

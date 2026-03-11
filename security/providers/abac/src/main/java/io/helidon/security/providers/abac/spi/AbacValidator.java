@@ -20,7 +20,6 @@ import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Collections;
 
-import io.helidon.common.DeprecationSupport;
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
@@ -73,33 +72,8 @@ public interface AbacValidator<T extends AbacValidatorConfig> {
      *
      * @param config configuration located on the key this validator expects in {@link #configKey()}
      * @return instance of configuration class
-     * @deprecated use {@link #fromConfig(io.helidon.config.Config)} instead
      */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    default T fromConfig(io.helidon.common.config.Config config) {
-        // default to avoid forcing deprecated symbols references
-        return fromConfig(io.helidon.config.Config.config(config));
-    }
-
-    /**
-     * Load configuration class instance from configuration.
-     * <p>
-     * API Note: the default method implementation is provided for backward compatibility
-     * and <b>will be removed in the next major version</b>
-     *
-     * @param config configuration located on the key this validator expects in {@link #configKey()}
-     * @return instance of configuration class
-     * @since 4.4.0
-     */
-    @SuppressWarnings("removal")
-    default T fromConfig(Config config) {
-        // default to preserve backward compatibility
-        // require the deprecated variant to be implemented
-        DeprecationSupport.requireOverride(this, AbacValidator.class, "fromConfig",
-                io.helidon.common.config.Config.class);
-        return fromConfig((io.helidon.common.config.Config) config);
-    }
+    T fromConfig(Config config);
 
     /**
      * Load configuration class instance from annotations this validator expects.

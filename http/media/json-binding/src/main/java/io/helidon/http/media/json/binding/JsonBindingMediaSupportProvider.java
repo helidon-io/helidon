@@ -44,7 +44,7 @@ public class JsonBindingMediaSupportProvider implements MediaSupportProvider, We
 
     @Override
     public MediaSupport create(Config config, String name) {
-        return JsonBindingSupport.create(io.helidon.config.Config.config(config), name);
+        return JsonBindingSupport.create(config, name);
     }
 
     @Override

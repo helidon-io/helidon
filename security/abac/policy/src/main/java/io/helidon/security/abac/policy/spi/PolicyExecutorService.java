@@ -16,7 +16,6 @@
 
 package io.helidon.security.abac.policy.spi;
 
-import io.helidon.common.DeprecationSupport;
 import io.helidon.config.Config;
 import io.helidon.security.abac.policy.PolicyValidator;
 
@@ -46,34 +45,7 @@ public interface PolicyExecutorService {
      *
      * @param config configuration as located on {@link #configKey()}.
      * @return new executor instance to be used by {@link PolicyValidator} to evaluate policy
-     * statements
-     * @deprecated use {@link #instantiate(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    default PolicyExecutor instantiate(io.helidon.common.config.Config config) {
-        // default to avoid forcing deprecated symbols references
-        return instantiate(Config.config(config));
-    }
-
-    /**
-     * Create a new instance of a {@link PolicyExecutor} based on the configuration provider.
-     * Another option is to use a builder directly with {@link PolicyValidator.Builder#addExecutor}
-     * <p>
-     * API Note: the default method implementation is provided for backward compatibility
-     * and <b>will be removed in the next major version</b>
-     *
-     * @param config configuration as located on {@link #configKey()}.
-     * @return new executor instance to be used by {@link PolicyValidator} to evaluate policy
      *         statements
-     * @since 4.4.0
      */
-    @SuppressWarnings("removal")
-    default PolicyExecutor instantiate(Config config) {
-        // default to preserve backward compatibility
-        // require the deprecated variant to be implemented
-        DeprecationSupport.requireOverride(this, PolicyExecutorService.class, "instantiate",
-                io.helidon.common.config.Config.class);
-        return instantiate((io.helidon.common.config.Config) config);
-    }
+    PolicyExecutor instantiate(Config config);
 }

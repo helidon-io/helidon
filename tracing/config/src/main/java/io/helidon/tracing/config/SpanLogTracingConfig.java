@@ -73,20 +73,6 @@ public abstract class SpanLogTracingConfig extends Traceable {
      * @param name name of the span log
      * @param config config for a traced span log
      * @return a new traced span log configuration
-     * @deprecated use {@link #create(String, io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static SpanLogTracingConfig create(String name, io.helidon.common.config.Config config) {
-        return builder(name).config(config).build();
-    }
-
-    /**
-     * Create a new traced span log configuration from configuration.
-     *
-     * @param name name of the span log
-     * @param config config for a traced span log
-     * @return a new traced span log configuration
      */
     public static SpanLogTracingConfig create(String name, Config config) {
         return builder(name).config(config).build();
@@ -123,19 +109,6 @@ public abstract class SpanLogTracingConfig extends Traceable {
         public Builder enabled(boolean enabled) {
             this.enabled = Optional.of(enabled);
             return this;
-        }
-
-        /**
-         * Update this builder from configuration.
-         *
-         * @param config config of a traced span log
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)}
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

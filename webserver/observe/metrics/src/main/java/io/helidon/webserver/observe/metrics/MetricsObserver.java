@@ -112,21 +112,6 @@ public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserve
      *
      * @param config configuration of this observer
      * @return a new observer
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static MetricsObserver create(io.helidon.common.config.Config config) {
-        return builder()
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Create a new Metrics observer from configuration.
-     *
-     * @param config configuration of this observer
-     * @return a new observer
      */
     public static MetricsObserver create(Config config) {
         return builder()

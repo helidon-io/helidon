@@ -34,6 +34,10 @@
             <artifactId>helidon-dbclient-metrics</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-jdbc</artifactId>
         </dependency>

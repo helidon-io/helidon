@@ -154,19 +154,6 @@ public class HeapMemoryHealthCheck implements HealthCheck {
         /**
          * Set up the heap space health check via config key, if present.
          *
-         * @param config configuration
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
-         * Set up the heap space health check via config key, if present.
-         *
          * Configuration options:
          * <table class="config">
          * <caption>Heap space health check configuration</caption>

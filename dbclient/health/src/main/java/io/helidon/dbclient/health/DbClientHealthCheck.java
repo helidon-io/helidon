@@ -44,21 +44,6 @@ public abstract class DbClientHealthCheck implements HealthCheck {
      * @param dbClient database client used to execute health check statement
      * @param config   {@link Config} node with health check configuration
      * @return health check that can be used with health services
-     * @deprecated use {@link #create(io.helidon.dbclient.DbClient, io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static DbClientHealthCheck create(DbClient dbClient, io.helidon.common.config.Config config) {
-        return builder(dbClient).config(config).build();
-    }
-
-    /**
-     * Create a health check with configured settings for the database.
-     * This health check will execute health check as defined in provided {@link Config} node.
-     *
-     * @param dbClient database client used to execute health check statement
-     * @param config   {@link Config} node with health check configuration
-     * @return health check that can be used with health services
      */
     public static DbClientHealthCheck create(DbClient dbClient, Config config) {
         return builder(dbClient).config(config).build();
@@ -330,19 +315,6 @@ public abstract class DbClientHealthCheck implements HealthCheck {
         public Builder name(String name) {
             this.name = name;
             return this;
-        }
-
-        /**
-         * Set health check parameters using {@link Config} node.
-         *
-         * @param config {@link Config} instance with health check parameters
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

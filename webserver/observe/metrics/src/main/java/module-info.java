@@ -35,7 +35,7 @@ module io.helidon.webserver.observe.metrics {
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.webserver.observe;
 
     exports io.helidon.webserver.observe.metrics;

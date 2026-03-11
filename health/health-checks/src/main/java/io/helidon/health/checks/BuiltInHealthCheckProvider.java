@@ -19,6 +19,7 @@ import java.lang.management.ManagementFactory;
 import java.util.List;
 
 import io.helidon.common.NativeImageHelper;
+import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.spi.HealthCheckProvider;
 
@@ -33,8 +34,7 @@ public class BuiltInHealthCheckProvider implements HealthCheckProvider {
     }
 
     @Override
-    @SuppressWarnings("removal")
-    public List<HealthCheck> healthChecks(io.helidon.common.config.Config config) {
+    public List<HealthCheck> healthChecks(Config config) {
         if (NativeImageHelper.isNativeImage()) {
             return List.of(diskSpace(config), heapMemory(config));
         } else {
@@ -46,16 +46,13 @@ public class BuiltInHealthCheckProvider implements HealthCheckProvider {
         return DeadlockHealthCheck.create(ManagementFactory.getThreadMXBean());
     }
 
-
-    @SuppressWarnings("removal")
-    private HeapMemoryHealthCheck heapMemory(io.helidon.common.config.Config config) {
+    private HeapMemoryHealthCheck heapMemory(Config config) {
         return HeapMemoryHealthCheck.builder()
                 .config(config)
                 .build();
     }
 
-    @SuppressWarnings("removal")
-    private DiskSpaceHealthCheck diskSpace(io.helidon.common.config.Config config) {
+    private DiskSpaceHealthCheck diskSpace(Config config) {
         return DiskSpaceHealthCheck.builder()
                 .config(config)
                 .build();

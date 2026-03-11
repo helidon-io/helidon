@@ -80,9 +80,8 @@ public final class FaultTolerance {
      * @param config config to read fault tolerance configuration
      */
     @Deprecated(forRemoval = true, since = "4.3.0")
-    @SuppressWarnings("removal")
-    public static void config(io.helidon.common.config.Config config) {
-        CONFIG.set(Config.config(config));
+    public static void config(Config config) {
+        CONFIG.set(config);
     }
 
     /**

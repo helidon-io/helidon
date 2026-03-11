@@ -80,19 +80,6 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
      *
      * @param config configuration on the key of this provider
      * @return scope validator instance
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static ScopeValidator create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Create a new validator instance from configuration.
-     *
-     * @param config configuration on the key of this provider
-     * @return scope validator instance
      */
     public static ScopeValidator create(Config config) {
         return builder().config(config).build();
@@ -263,19 +250,6 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
          *
          * @param config config located on key of this validator
          * @return updated builder instance
-         * @deprecated use {@link #create(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
-         * Update builder from configuration.
-         *
-         * @param config config located on key of this validator
-         * @return updated builder instance
          */
         public Builder config(Config config) {
             config.get("operator").asString().map("OR"::equals).ifPresent(this::useOrOperator);
@@ -316,19 +290,6 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
                 allScopes.add(scope.value());
             }
             return new ScopesConfig(allScopes);
-        }
-
-        /**
-         * Create an instance from configuration (of endpoint).
-         *
-         * @param config config located on the key of this validator
-         * @return configuration based on the config
-         * @deprecated use {@link #create(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public static ScopesConfig create(io.helidon.common.config.Config config) {
-            return create(Config.config(config));
         }
 
         /**

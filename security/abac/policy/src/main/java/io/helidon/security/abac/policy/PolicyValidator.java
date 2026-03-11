@@ -81,19 +81,6 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
 
     /**
      * Create an instance from configuration.
-     *
-     * @param config configuration to load this class from
-     * @return a new instance from config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static PolicyValidator create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Create an instance from configuration.
      * Example:
      * <pre>
      * # configuration of this validator (current key in config passed to this instance)
@@ -237,19 +224,6 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
          *
          * @param config configuration instance located on {@link PolicyValidatorService#configKey()}
          * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
-         * Update this builder from configuration.
-         *
-         * @param config configuration instance located on {@link PolicyValidatorService#configKey()}
-         * @return updated builder instance
          */
         public Builder config(Config config) {
             this.config = config;
@@ -361,19 +335,6 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
             public Builder inherit(boolean inherit) {
                 this.inherit = inherit;
                 return this;
-            }
-
-            /**
-             * Update this builder from configuration.
-             *
-             * @param config config instance located on the key {@link PolicyValidator#configKey()}
-             * @return updated builder instance
-             * @deprecated use {@link #config(io.helidon.config.Config)} instead
-             */
-            @SuppressWarnings("removal")
-            @Deprecated(since = "4.4.0", forRemoval = true)
-            public Builder config(io.helidon.common.config.Config config) {
-                return config(Config.config(config));
             }
 
             /**

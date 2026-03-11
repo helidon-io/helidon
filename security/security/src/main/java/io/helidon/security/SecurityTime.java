@@ -62,19 +62,6 @@ public class SecurityTime {
 
     /**
      * Load an instance from configuration.
-     *
-     * @param config configuration
-     * @return a new instance of time configured from this configuration
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static SecurityTime create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Load an instance from configuration.
      * <p>
      * Example:
      * <pre>
@@ -196,19 +183,6 @@ public class SecurityTime {
         }
 
         /**
-         * Update this builder from configuration.
-         *
-         * @param config configuration
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
          * Update this builder from configuration. The config should be located on parent key of the following keys
          * (all of them are optional):
          * <ul>
@@ -254,4 +228,3 @@ public class SecurityTime {
         }
     }
 }
-

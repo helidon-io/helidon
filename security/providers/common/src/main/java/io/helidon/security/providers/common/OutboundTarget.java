@@ -107,19 +107,6 @@ public final class OutboundTarget {
      * Create a target from configuration.
      *
      * @param config configuration on the node of a single outbound target
-     * @return a new target from config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static OutboundTarget create(io.helidon.common.config.Config config) {
-        return create(Config.config(config));
-    }
-
-    /**
-     * Create a target from configuration.
-     *
-     * @param config configuration on the node of a single outbound target
      * @return a new target from config, requires at least {@value CONFIG_NAME}
      */
     public static OutboundTarget create(Config config) {
@@ -188,7 +175,7 @@ public final class OutboundTarget {
      * Configuration of this target.
      * @return target configuration or empty if none provided
      */
-    public Optional<io.helidon.common.config.Config> getConfig() {
+    public Optional<Config> getConfig() {
         return Optional.ofNullable(config);
     }
 
@@ -317,19 +304,6 @@ public final class OutboundTarget {
             // this method must be public, so we can read the configured option
             this.name = name;
             return this;
-        }
-
-        /**
-         * Set config for this target.
-         *
-         * @param config configuration
-         * @return update builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

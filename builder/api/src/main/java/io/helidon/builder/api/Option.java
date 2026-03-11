@@ -500,7 +500,7 @@ public final class Option {
      * If this annotation is not used, traversed is automatically applied on String and primitive/boxed types.
      * In all other cases, non-traverse approach is applied.
      * <p>
-     * If this annotation is used, it will use the {@code io.helidon.common.config.Config#traverse} method
+     * If this annotation is used, it will use the {@code io.helidon.config.Config#traverse} method
      * to perform a depth-first traversal of the node and its subtrees.
      * Note: this annotation takes effect only when used in combination with {@link Configured}.
      * <p>

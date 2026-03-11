@@ -64,20 +64,6 @@ public final class QueryParamMapping {
      *
      * @param config configuration instance
      * @return new query parameter handler instance
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static QueryParamMapping create(io.helidon.common.config.Config config) {
-        return create(Config.config(config));
-    }
-
-    /**
-     * Read a new instance from configuration.
-     * The current node should contain a {@code "name"} and configuration for {@link TokenHandler}
-     *
-     * @param config configuration instance
-     * @return new query parameter handler instance
      */
     public static QueryParamMapping create(Config config) {
         String name = config.get("name").asString().get();

@@ -16,7 +16,6 @@
 
 package io.helidon.security.spi;
 
-import io.helidon.common.DeprecationSupport;
 import io.helidon.config.Config;
 
 /**
@@ -33,32 +32,8 @@ public interface DigestProvider<T extends ProviderConfig> extends SecurityProvid
      *
      * @param config config located on the node of the specific digest {@code config} node
      * @return digest support to digest/verify
-     * @deprecated use {@link #digest(io.helidon.config.Config)} instead
      */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    default DigestSupport digest(io.helidon.common.config.Config config) {
-        // default to avoid forcing deprecated symbols references
-        return digest(io.helidon.config.Config.config(config));
-    }
-
-    /**
-     * Create digest support from configuration.
-     * <p>
-     * API Note: the default method implementation is provided for backward compatibility
-     * and <b>will be removed in the next major version</b>
-     *
-     * @param config config located on the node of the specific digest {@code config} node
-     * @return digest support to digest/verify
-     * @since 4.4.0
-     */
-    @SuppressWarnings("removal")
-    default DigestSupport digest(Config config) {
-        // default to preserve backward compatibility
-        // require the deprecated variant to be implemented
-        DeprecationSupport.requireOverride(this, DigestProvider.class, "digest", io.helidon.common.config.Config.class);
-        return digest((io.helidon.common.config.Config) config);
-    }
+    DigestSupport digest(Config config);
 
     /**
      * Create digest support from configuration object.

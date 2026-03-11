@@ -75,35 +75,9 @@ public final class OutboundTargetDefinition {
      *
      * @param config configuration located at this target, expects "key-id" to be a child
      * @return builder instance
-     * @deprecated use {@link #builder(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static Builder builder(io.helidon.common.config.Config config) {
-        return new Builder().config(config);
-    }
-
-    /**
-     * Create a builder from configuration.
-     *
-     * @param config configuration located at this target, expects "key-id" to be a child
-     * @return builder instance
      */
     public static Builder builder(Config config) {
         return new Builder().config(config);
-    }
-
-    /**
-     * Create an instance from configuration.
-     *
-     * @param config configuration located at this outbound key, expects "key-id" to be a child
-     * @return new instance configured from config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static OutboundTargetDefinition create(io.helidon.common.config.Config config) {
-        return builder(config).build();
     }
 
     /**
@@ -326,19 +300,6 @@ public final class OutboundTargetDefinition {
         @Override
         public OutboundTargetDefinition build() {
             return new OutboundTargetDefinition(this);
-        }
-
-        /**
-         * Update this builder instance from configuration.
-         *
-         * @param config config instance
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)}
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

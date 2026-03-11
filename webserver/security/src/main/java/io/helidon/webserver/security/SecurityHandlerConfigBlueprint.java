@@ -22,6 +22,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.config.Config;
 import io.helidon.security.ClassToInstanceStore;
 
 /**
@@ -133,7 +134,7 @@ interface SecurityHandlerConfigBlueprint extends Prototype.Factory<SecurityHandl
      *
      * @return the configuration (if provided)
      */
-    Optional<io.helidon.common.config.Config> config();
+    Optional<Config> config();
 
     /**
      * Whether this is a combined handler. Internal use.

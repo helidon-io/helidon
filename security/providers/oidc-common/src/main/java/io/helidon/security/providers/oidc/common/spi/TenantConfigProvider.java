@@ -16,6 +16,8 @@
 
 package io.helidon.security.providers.oidc.common.spi;
 
+import io.helidon.config.Config;
+
 /**
  * Java {@link java.util.ServiceLoader} service interface for multitenancy support.
  */
@@ -26,5 +28,5 @@ public interface TenantConfigProvider {
      * @param config configuration (may be empty)
      * @return a tenant configuration API
      */
-    TenantConfigFinder createTenantConfigFinder(io.helidon.common.config.Config config);
+    TenantConfigFinder createTenantConfigFinder(Config config);
 }

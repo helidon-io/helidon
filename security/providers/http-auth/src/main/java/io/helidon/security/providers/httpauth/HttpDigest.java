@@ -79,19 +79,6 @@ public class HttpDigest {
          *
          * @param config Config with wrapped enum value
          * @return enum instance
-         * @deprecated use {@link #create(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public static Qop create(io.helidon.common.config.Config config) {
-            return create(Config.config(config));
-        }
-
-        /**
-         * Parse configuration into this enum.
-         *
-         * @param config Config with wrapped enum value
-         * @return enum instance
          */
         public static Qop create(Config config) {
             return fromString(config.asString().get());

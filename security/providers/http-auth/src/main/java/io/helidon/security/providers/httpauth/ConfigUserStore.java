@@ -35,19 +35,6 @@ public class ConfigUserStore implements SecureUserStore {
     private final Map<String, ConfigUser> users = new HashMap<>();
 
     /**
-     * Create an instance from config.
-     *
-     * @param config to load this user store from
-     * @return {@link io.helidon.security.providers.httpauth.SecureUserStore} instance
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static SecureUserStore create(io.helidon.common.config.Config config) {
-        return create(Config.config(config));
-    }
-
-    /**
      * Create an instance from config. Expects key "users" to be the current key.
      * Example:
      * <pre>

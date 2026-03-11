@@ -28,7 +28,7 @@ module io.helidon.security.abac.scope {
 
     requires static io.helidon.common.features.api;
 
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.security.providers.abac;
     requires transitive io.helidon.security;
 

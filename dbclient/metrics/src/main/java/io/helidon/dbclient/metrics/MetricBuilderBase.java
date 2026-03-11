@@ -118,19 +118,6 @@ abstract class MetricBuilderBase<B extends MetricBuilderBase<B, T>, T extends Db
 
     /**
      * Configure a metric from configuration.
-     *
-     * @param config configuration to configure this metric
-     * @return updated builder instance
-     * @deprecated use {@link #config(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public B config(io.helidon.common.config.Config config) {
-        return config(Config.config(config));
-    }
-
-    /**
-     * Configure a metric from configuration.
      * The following configuration key are used:
      * <table>
      * <caption>DB Metric configuration options</caption>

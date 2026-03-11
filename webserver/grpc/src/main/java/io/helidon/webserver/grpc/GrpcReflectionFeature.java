@@ -93,21 +93,6 @@ public class GrpcReflectionFeature implements Weighted, ServerFeature, RuntimeTy
      *
      * @param config configuration
      * @return a new configured feature
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static GrpcReflectionFeature create(io.helidon.common.config.Config config) {
-        return builder()
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Create a new gRPC reflection feature with custom setup.
-     *
-     * @param config configuration
-     * @return a new configured feature
      */
     public static GrpcReflectionFeature create(Config config) {
         return builder()

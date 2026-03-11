@@ -33,7 +33,7 @@ module io.helidon.webserver.observe.info {
     requires io.helidon.http.media.jsonp;
     requires io.helidon.webserver;
 
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.webserver.observe;
 
     exports io.helidon.webserver.observe.info;

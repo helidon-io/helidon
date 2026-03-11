@@ -76,19 +76,6 @@ public class InboundClientDefinition {
      *
      * @param config configuration instance located at a single client definition (expect key-id as a child)
      * @return builder configured based on config
-     * @deprecated use {@link #builder(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static Builder builder(io.helidon.common.config.Config config) {
-        return new Builder().config(config);
-    }
-
-    /**
-     * Create a new builder from configuration.
-     *
-     * @param config configuration instance located at a single client definition (expect key-id as a child)
-     * @return builder configured based on config
      */
     public static Builder builder(Config config) {
         return new Builder().config(config);
@@ -278,19 +265,6 @@ public class InboundClientDefinition {
         @Override
         public InboundClientDefinition build() {
             return new InboundClientDefinition(this);
-        }
-
-        /**
-         * Create a builder instance from configuration.
-         *
-         * @param config config instance
-         * @return builder instance initialized from config
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

@@ -134,27 +134,12 @@ public final class SecurityHttpFeature implements HttpSecurity, HttpFeature, Wei
     }
 
     /**
-     * Create a new instance from configuration.
-     *
-     * @param config configuration
-     * @return SecurityHttpFeature
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static SecurityHttpFeature create(io.helidon.common.config.Config config) {
-        return create(Config.config(config));
-    }
-
-    /**
-     * Create a consumer of routing config to be
-     * {@link io.helidon.webserver.http.HttpRouting.Builder#addFeature(java.util.function.Supplier)  registered} with
-     * web server routing to process security requests.
+     * Create a security HTTP feature.
      * This method configures security and web server integration from a config instance.
      *
      * @param config on the node of the server configuration of security (expects {@code paths} for example),
      *               configuration of security is expected under root node {@code security}
-     * @return routing config consumer
+     * @return security HTTP feature
      */
     public static SecurityHttpFeature create(Config config) {
         return SecurityFeature.builder()

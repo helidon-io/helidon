@@ -106,19 +106,6 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
 
     /**
      * Creates an instance from configuration.
-     *
-     * @param config configuration of this provider
-     * @return a new instance configured from config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static SecurityProvider create(io.helidon.common.config.Config config) {
-        return new Builder<>().config(config).build();
-    }
-
-    /**
-     * Creates an instance from configuration.
      * <p>
      * Expects:
      * <ul>

@@ -109,19 +109,6 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
      *
      * @param config typed configuration
      * @return new instance
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static OpenApiFeature create(io.helidon.common.config.Config config) {
-        return new OpenApiFeature(OpenApiFeatureConfig.create(config));
-    }
-
-    /**
-     * Create a new instance from typed configuration.
-     *
-     * @param config typed configuration
-     * @return new instance
      */
     public static OpenApiFeature create(Config config) {
         return new OpenApiFeature(OpenApiFeatureConfig.create(config));

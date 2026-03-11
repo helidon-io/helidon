@@ -99,20 +99,6 @@ public final class HttpDigestAuthProvider implements AuthenticationProvider {
      *
      * @param config configuration
      * @return instance of provider configured from provided config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static HttpDigestAuthProvider create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Load this provider from configuration.
-     *
-     * @param config Configuration located at this provider's configuration (e.g. child is either http-basic-auth or
-     *               http-digest-auth)
-     * @return instance of provider configured from provided config
      */
     public static HttpDigestAuthProvider create(Config config) {
         return builder().config(config).build();
@@ -314,19 +300,6 @@ public final class HttpDigestAuthProvider implements AuthenticationProvider {
         private char[] digestServerSecret = randomSecret();
 
         private Builder() {
-        }
-
-        /**
-         * Update builder from configuration.
-         *
-         * @param config to read configuration from, located on the node of the provider
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

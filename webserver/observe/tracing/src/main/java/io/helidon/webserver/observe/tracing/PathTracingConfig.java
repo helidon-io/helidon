@@ -37,19 +37,6 @@ public interface PathTracingConfig {
      *
      * @param config config of a path
      * @return traced path configuration
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    static PathTracingConfig create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Create a new traced path from configuration.
-     *
-     * @param config config of a path
-     * @return traced path configuration
      */
     static PathTracingConfig create(Config config) {
         return builder().config(config).build();
@@ -121,20 +108,7 @@ public interface PathTracingConfig {
         }
 
         /**
-         * Update this builder from provided {@link io.helidon.common.config.Config}.
-         *
-         * @param config config to update this builder from
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
-         * Update this builder from provided {@link io.helidon.common.config.Config}.
+         * Update this builder from provided {@link io.helidon.config.Config}.
          *
          * @param config config to update this builder from
          * @return updated builder instance
