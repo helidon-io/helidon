@@ -29,7 +29,7 @@
     <name>Helidon Health Checks</name>
 
     <description>
-        Microprofile Health implementation - health checks supported OOTB
+        Built-in health checks supported out of the box
     </description>
 
     <properties>
@@ -56,13 +56,6 @@
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <!-- only needed for compilation, not required in runtime -->
-            <groupId>org.eclipse.microprofile.config</groupId>
-            <artifactId>microprofile-config-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

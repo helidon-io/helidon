@@ -69,7 +69,6 @@
         <module>test-lazy-source</module>
         <module>test-no-config-sources</module>
         <module>test-default-config-source</module>
-        <module>test-mp-se-meta</module>
         <module>se-profile</module>
     </modules>
 </project>

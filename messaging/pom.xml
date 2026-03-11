@@ -33,7 +33,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>messaging</module>
         <module>connectors</module>
     </modules>
 </project>

@@ -124,16 +124,6 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.config</groupId>
-                <artifactId>helidon-config-yaml-mp</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.config</groupId>
-                <artifactId>helidon-config-hocon-mp</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.config</groupId>
                 <artifactId>helidon-config-git</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -160,11 +150,6 @@
             <dependency>
                 <groupId>io.helidon.config</groupId>
                 <artifactId>helidon-config-object-mapping</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.config</groupId>
-                <artifactId>helidon-config-mp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -767,21 +752,6 @@
             </dependency>
 
             <!-- Long Running Actions -->
-            <dependency>
-                <groupId>io.helidon.lra</groupId>
-                <artifactId>helidon-lra-coordinator-client-spi</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.lra</groupId>
-                <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.lra</groupId>
-                <artifactId>helidon-lra-coordinator-server</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
             <!-- integrations -->
             <dependency>
                 <groupId>io.helidon.integrations.db</groupId>
@@ -809,43 +779,13 @@
             <!-- Messaging -->
             <dependency>
                 <groupId>io.helidon.messaging</groupId>
-                <artifactId>helidon-messaging</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.messaging.kafka</groupId>
-                <artifactId>helidon-messaging-kafka</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.messaging.jms</groupId>
-                <artifactId>helidon-messaging-jms</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.messaging</groupId>
                 <artifactId>helidon-messaging-jms-shim</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.messaging.aq</groupId>
-                <artifactId>helidon-messaging-aq</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.messaging.wls-jms</groupId>
-                <artifactId>helidon-messaging-wls-jms</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Testing -->
             <dependency>
                 <groupId>io.helidon.common.testing</groupId>
                 <artifactId>helidon-common-testing-virtual-threads</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.messaging.mock</groupId>
-                <artifactId>helidon-messaging-mock</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Logging -->

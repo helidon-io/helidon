@@ -226,7 +226,6 @@
         <module>jersey</module>
         <module>licensing</module>
         <module>logging</module>
-        <module>lra</module>
         <module>messaging</module>
         <module>metrics</module>
         <module>openapi</module>

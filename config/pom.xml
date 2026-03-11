@@ -44,10 +44,7 @@
         <module>hocon</module>
         <module>encryption</module>
         <module>testing</module>
-        <module>config-mp</module>
-        <module>yaml-mp</module>
         <module>metadata</module>
-        <module>hocon-mp</module>
     </modules>
 
     <build>
