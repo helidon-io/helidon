@@ -229,7 +229,6 @@
         <module>lra</module>
         <module>messaging</module>
         <module>metrics</module>
-        <module>microprofile</module>
         <module>openapi</module>
         <module>parent</module>
         <module>scheduling</module>

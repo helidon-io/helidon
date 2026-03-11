@@ -1,9 +1,0 @@
-"""
-Description"
-"""
-enum ShirtSize {
- Small
- Medium
- Large
- XLarge
-}

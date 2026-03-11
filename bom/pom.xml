@@ -94,11 +94,6 @@
                 <artifactId>helidon-webserver-graphql</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.graphql</groupId>
-                <artifactId>helidon-microprofile-graphql-server</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
             <!-- JSON-RPC -->
             <dependency>
                 <groupId>io.helidon.jsonrpc</groupId>
@@ -114,26 +109,6 @@
             <dependency>
                 <groupId>io.helidon.grpc</groupId>
                 <artifactId>helidon-grpc-api</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.grpc</groupId>
-                <artifactId>helidon-microprofile-grpc-core</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.grpc</groupId>
-                <artifactId>helidon-microprofile-grpc-server</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.grpc</groupId>
-                <artifactId>helidon-microprofile-grpc-client</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.grpc</groupId>
-                <artifactId>helidon-microprofile-grpc-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- config -->
@@ -334,77 +309,6 @@
                 <artifactId>helidon-bundles-security</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <!-- microprofile -->
-            <dependency>
-                <groupId>io.helidon.microprofile.bundles</groupId>
-                <artifactId>helidon-microprofile-core</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.bundles</groupId>
-                <artifactId>helidon-microprofile</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile</groupId>
-                <artifactId>helidon-microprofile-security</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile</groupId>
-                <artifactId>helidon-microprofile-oidc</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.metrics</groupId>
-                <artifactId>helidon-microprofile-metrics</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.weld</groupId>
-                <artifactId>weld-se-core</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.cdi</groupId>
-                <artifactId>helidon-microprofile-cdi</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.config</groupId>
-                <artifactId>helidon-microprofile-config</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile</groupId>
-                <artifactId>helidon-microprofile-fault-tolerance</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.health</groupId>
-                <artifactId>helidon-microprofile-health</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.server</groupId>
-                <artifactId>helidon-microprofile-server</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile</groupId>
-                <artifactId>helidon-microprofile-access-log</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.websocket</groupId>
-                <artifactId>helidon-microprofile-websocket</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.service-common</groupId>
-                <artifactId>helidon-microprofile-service-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
             <!-- metrics -->
             <dependency>
                 <groupId>io.helidon.metrics</groupId>
@@ -441,13 +345,6 @@
             <dependency>
                 <groupId>io.helidon.health</groupId>
                 <artifactId>helidon-health-checks</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
-            <!-- jwt -->
-            <dependency>
-                <groupId>io.helidon.microprofile.jwt</groupId>
-                <artifactId>helidon-microprofile-jwt-auth</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
@@ -862,69 +759,14 @@
                 <artifactId>helidon-tracing-jersey</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <!-- MP extension -->
-                <groupId>io.helidon.microprofile.tracing</groupId>
-                <artifactId>helidon-microprofile-tracing</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
-            <!-- MP Telemetry -->
-            <dependency>
-                <groupId>io.helidon.microprofile.telemetry</groupId>
-                <artifactId>helidon-microprofile-telemetry</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
-            <!-- REST Client -->
-            <dependency>
-                <groupId>io.helidon.microprofile.rest-client</groupId>
-                <artifactId>helidon-microprofile-rest-client</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.rest-client-metrics</groupId>
-                <artifactId>helidon-microprofile-rest-client-metrics</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
-            <!-- Reactive Streams Operators -->
-            <dependency>
-                <groupId>io.helidon.microprofile.reactive-streams</groupId>
-                <artifactId>helidon-microprofile-reactive-streams</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
-            <!-- Reactive Messaging -->
-            <dependency>
-                <groupId>io.helidon.microprofile.messaging</groupId>
-                <artifactId>helidon-microprofile-messaging</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.messaging</groupId>
-                <artifactId>helidon-microprofile-messaging-health</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
             <!-- Scheduling -->
             <dependency>
                 <groupId>io.helidon.scheduling</groupId>
                 <artifactId>helidon-scheduling</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.scheduling</groupId>
-                <artifactId>helidon-microprofile-scheduling</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
 
             <!-- Long Running Actions -->
-            <dependency>
-                <groupId>io.helidon.microprofile.lra</groupId>
-                <artifactId>helidon-microprofile-lra</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
             <dependency>
                 <groupId>io.helidon.lra</groupId>
                 <artifactId>helidon-lra-coordinator-client-spi</artifactId>
@@ -940,12 +782,6 @@
                 <artifactId>helidon-lra-coordinator-server</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.lra</groupId>
-                <artifactId>helidon-microprofile-lra-testing</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
             <!-- integrations -->
             <dependency>
                 <groupId>io.helidon.integrations.db</groupId>
@@ -964,20 +800,10 @@
                 <artifactId>helidon-openapi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.openapi</groupId>
-                <artifactId>helidon-microprofile-openapi</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
             <!-- CORS support -->
             <dependency>
                 <groupId>io.helidon.cors</groupId>
                 <artifactId>helidon-cors</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile</groupId>
-                <artifactId>helidon-microprofile-cors</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Messaging -->
@@ -1018,28 +844,8 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.microprofile.testing</groupId>
-                <artifactId>helidon-microprofile-testing</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.testing</groupId>
-                <artifactId>helidon-microprofile-testing-junit5</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.testing</groupId>
-                <artifactId>helidon-microprofile-testing-testng</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.messaging.mock</groupId>
                 <artifactId>helidon-messaging-mock</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.testing</groupId>
-                <artifactId>helidon-microprofile-testing-mocking</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Logging -->
@@ -1063,13 +869,6 @@
                 <artifactId>helidon-logging-log4j</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <!-- Bean Validation -->
-            <dependency>
-                <groupId>io.helidon.microprofile.bean-validation</groupId>
-                <artifactId>helidon-microprofile-bean-validation</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
             <dependency>
                 <groupId>io.helidon.http</groupId>
                 <artifactId>helidon-http</artifactId>
