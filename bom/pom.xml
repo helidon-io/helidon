@@ -564,7 +564,7 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.dbclient</groupId>
-                <artifactId>helidon-dbclient-jsonp</artifactId>
+                <artifactId>helidon-dbclient-json</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

@@ -169,7 +169,6 @@ See full text at the bottom of this document for license: GPLv2-CPE
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
-                <consumer>helidon-dbclient-jsonp</consumer>
                 <consumer>helidon-dbclient-mongodb</consumer>
                 <consumer>helidon-graal-native-image-extension</consumer>
                 <consumer>helidon-http-media-jsonp</consumer>

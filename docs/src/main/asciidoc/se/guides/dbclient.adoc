@@ -214,7 +214,7 @@ Navigate to the `helidon-quickstart-se` directory and open the `pom.xml` file to
     </dependency>
     <dependency>
         <groupId>io.helidon.dbclient</groupId>
-        <artifactId>helidon-dbclient-jsonp</artifactId> <!--7-->
+        <artifactId>helidon-dbclient-json</artifactId> <!--7-->
     </dependency>
     <!-- ... -->
 </dependencies>
@@ -225,7 +225,7 @@ Navigate to the `helidon-quickstart-se` directory and open the `pom.xml` file to
 <4> H2 driver dependency.
 <5> Support for health check.
 <6> Support for metrics.
-<7> Support for Jsonp.
+<7> Support for Helidon JSON mapping.
 
 === Configure the DB Client
 

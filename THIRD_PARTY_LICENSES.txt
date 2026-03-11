@@ -137,7 +137,7 @@ See full text at the bottom of this document for license: GPLv2-CPE
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Parsson  Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-dbclient-jsonp, helidon-dbclient-mongodb, helidon-graal-native-image-extension, helidon-http-media-jsonp, helidon-lra-coordinator-server, helidon-mp-graal-native-image-extension, helidon-security-jwt]
+Used by: [helidon-dbclient-mongodb, helidon-graal-native-image-extension, helidon-http-media-jsonp, helidon-lra-coordinator-server, helidon-mp-graal-native-image-extension, helidon-security-jwt]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Parsson (org.eclipse.parsson:parsson)
  Copyright (c) 2011, 2023 Oracle and/or its affiliates. All rights reserved.

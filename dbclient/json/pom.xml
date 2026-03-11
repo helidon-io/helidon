@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
+    Copyright (c) 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@
         <version>4.4.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>helidon-dbclient-jsonp</artifactId>
-    <name>Helidon Database Client JSON-Processing</name>
-    <description>Helidon Database Client JSON-Processing Support</description>
+    <artifactId>helidon-dbclient-json</artifactId>
+    <name>Helidon Database Client JSON</name>
+    <description>Helidon Database Client JSON Support</description>
 
     <dependencies>
         <dependency>
@@ -34,8 +34,8 @@
             <artifactId>helidon-dbclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.parsson</groupId>
-            <artifactId>parsson</artifactId>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>

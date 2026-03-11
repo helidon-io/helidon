@@ -229,7 +229,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
             <list key="dependencies">
                 <map>
                     <value key="groupId">io.helidon.dbclient</value>
-                    <value key="artifactId">helidon-dbclient-jsonp</value>
+                    <value key="artifactId">helidon-dbclient-json</value>
                 </map>
                 <map>
                     <value key="groupId">io.helidon.dbclient</value>
