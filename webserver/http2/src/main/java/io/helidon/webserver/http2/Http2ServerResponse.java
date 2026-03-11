@@ -38,6 +38,8 @@ import io.helidon.http.http2.Http2Headers;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.ServerResponseBase;
 import io.helidon.webserver.http.spi.Sink;
 import io.helidon.webserver.http.spi.SinkProvider;
@@ -62,8 +64,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private boolean isSent;
     private boolean streamingEntity;
     private long bytesWritten;
-    private static final List<SinkProvider> SINK_PROVIDERS
-            = HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build().asList();
+    private static final List<SinkProvider> SINK_PROVIDERS = HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build().asList();
 
     private BlockingOutputStream outputStream;
     private UnaryOperator<OutputStream> outputStreamFilter;
@@ -99,12 +100,12 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 try {
                     X sink = (X) p.create(new SinkProviderContext() {
                         @Override
-                        public io.helidon.webserver.http.ServerResponse serverResponse() {
+                        public ServerResponse serverResponse() {
                             return Http2ServerResponse.this;
                         }
 
                         @Override
-                        public io.helidon.webserver.http.ServerRequest serverRequest() {
+                        public ServerRequest serverRequest() {
                             return Http2ServerResponse.this.request;
                         }
 
@@ -320,7 +321,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 }
             }
         } catch (IOException e) {
-            throw new io.helidon.webserver.ServerConnectionException("Failed to write sink data", e);
+            throw new ServerConnectionException("Failed to write sink data", e);
         }
     }
 
