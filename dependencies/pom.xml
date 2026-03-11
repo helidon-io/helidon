@@ -116,7 +116,6 @@
         <version.lib.testcontainers>1.21.4</version.lib.testcontainers>
         <version.lib.typesafe-config>1.4.4</version.lib.typesafe-config>
         <version.lib.tyrus>2.1.5</version.lib.tyrus>
-        <version.lib.weld-api>5.0.SP3</version.lib.weld-api>
         <version.lib.yasson>3.0.4</version.lib.yasson>
         <version.lib.zipkin.sender-urlconnection>2.16.4</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
@@ -646,7 +645,7 @@
                 <version>${version.lib.guava}</version>
             </dependency>
             <dependency>
-                <!-- if needed (as excluded from weld) -->
+                <!-- if needed for dependency convergence -->
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
                 <version>${version.lib.groovy-all}</version>

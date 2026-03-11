@@ -141,7 +141,6 @@
         <javadoc.link.jakarta-jaxb>https://jakarta.ee/specifications/xml-binding/4.0/apidocs/</javadoc.link.jakarta-jaxb>
         <javadoc.link.jakarta-transaction>https://jakarta.ee/specifications/transactions/2.0/apidocs/</javadoc.link.jakarta-transaction>
 
-        <javadoc.link.weld>https://javadoc.io/doc/org.jboss.weld/weld-spi/${version.lib.weld-api}</javadoc.link.weld>
         <javadoc.link.narayana>https://narayana.io/docs/api/</javadoc.link.narayana>
         <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/4.0/</javadoc.link.eclipselink>
         <javadoc.link.hibernate>https://docs.jboss.org/hibernate/orm/${version.lib.hibernate.family}/javadocs/</javadoc.link.hibernate>
@@ -314,10 +313,6 @@
                             <offlineLink>
                                 <url>${javadoc.link.jakarta-transaction}</url>
                                 <location>${javadoc.pkg.dir}/jakarta-transaction</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.weld}</url>
-                                <location>${javadoc.pkg.dir}/weld</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.narayana}</url>

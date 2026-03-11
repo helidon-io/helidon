@@ -261,10 +261,6 @@
                             <location>${javadoc.pkg.dir}/jakarta-transaction</location>
                         </offlineLink>
                         <offlineLink>
-                            <url>${javadoc.link.weld}</url>
-                            <location>${javadoc.pkg.dir}/weld</location>
-                        </offlineLink>
-                        <offlineLink>
                             <url>${javadoc.link.narayana}</url>
                             <location>${javadoc.pkg.dir}/narayana</location>
                         </offlineLink>
