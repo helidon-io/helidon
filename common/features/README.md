@@ -99,7 +99,7 @@ when used outside Helidon repository, the `dependencies` section is not required
 
 ## Version 1
 
-Created by `helidon-common-features-processor` using deprecated `Feature` annotation.
+Created by deprecated feature annotation processing.
 This is now obsolete and will be removed from Helidon in version 5.0.0
 
 The registry is stored in each module in `META-INF/helidon/feature-metadata.properties`.

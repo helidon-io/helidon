@@ -43,7 +43,6 @@
         <module>api</module>
         <module>codegen</module>
         <module>codegen-jackson</module>
-        <module>processor</module>
     </modules>
 
     <build>

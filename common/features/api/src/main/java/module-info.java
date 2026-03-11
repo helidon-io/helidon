@@ -16,7 +16,7 @@
 
 /**
  * API required to describe features in module descriptor.
- * All deprecated annotations are processed by the {@code helidon-common-features-processor}, all new annotations
+ * Deprecated annotations are processed by legacy feature processing, all new annotations
  * are handled by {@code helidon-common-features-codegen}.
  *
  * @see io.helidon.common.features.api.Features

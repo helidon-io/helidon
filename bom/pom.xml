@@ -127,11 +127,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.config</groupId>
-                <artifactId>helidon-config-metadata-processor</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.config.metadata</groupId>
                 <artifactId>helidon-config-metadata-codegen</artifactId>
                 <version>${helidon.version}</version>
@@ -424,24 +419,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <!-- deprecated module -->
-                <groupId>io.helidon.common.processor</groupId>
-                <artifactId>helidon-common-processor</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <!-- deprecated module -->
-                <groupId>io.helidon.common.processor</groupId>
-                <artifactId>helidon-common-processor-helidon-copyright</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <!-- deprecated module -->
-                <groupId>io.helidon.common.processor</groupId>
-                <artifactId>helidon-common-processor-class-model</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.testing</groupId>
                 <artifactId>helidon-testing</artifactId>
                 <version>${helidon.version}</version>
@@ -474,11 +451,6 @@
             <dependency>
                 <groupId>io.helidon.common.features</groupId>
                 <artifactId>helidon-common-features-api</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.common.features</groupId>
-                <artifactId>helidon-common-features-processor</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -1065,11 +1037,6 @@
             <dependency>
                 <groupId>io.helidon.builder</groupId>
                 <artifactId>helidon-builder-api</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.builder</groupId>
-                <artifactId>helidon-builder-processor</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

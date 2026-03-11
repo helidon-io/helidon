@@ -43,7 +43,6 @@
         <module>metadata</module>
         <module>model</module>
         <module>codegen</module>
-        <module>processor</module>
         <module>docs</module>
     </modules>
 

@@ -46,7 +46,6 @@
         <module>mapper</module>
         <module>media-type</module>
         <module>parameters</module>
-        <module>processor</module>
         <module>reactive</module>
         <module>security</module>
         <module>socket</module>

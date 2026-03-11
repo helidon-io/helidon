@@ -82,10 +82,6 @@
             <artifactId>helidon-config-metadata</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata-processor</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config.metadata</groupId>
             <artifactId>helidon-config-metadata-codegen</artifactId>
         </dependency>
@@ -310,18 +306,6 @@
             <artifactId>helidon-codegen-helidon-copyright</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common.processor</groupId>
-            <artifactId>helidon-common-processor</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common.processor</groupId>
-            <artifactId>helidon-common-processor-helidon-copyright</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common.processor</groupId>
-            <artifactId>helidon-common-processor-class-model</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.testing</groupId>
             <artifactId>helidon-testing</artifactId>
         </dependency>
@@ -344,10 +328,6 @@
         <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common.features</groupId>
-            <artifactId>helidon-common-features-processor</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>
@@ -785,10 +765,6 @@
         <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-processor</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.builder</groupId>

@@ -194,7 +194,7 @@ interface MyConfigBeanBlueprint {
             <dependencies>
                 <dependency>
                     <groupId>io.helidon.builder</groupId>
-                    <artifactId>helidon-builder-processor</artifactId>
+                    <artifactId>helidon-builder-codegen</artifactId>
                     <version>${helidon.version}</version>
                 </dependency>
             </dependencies>
