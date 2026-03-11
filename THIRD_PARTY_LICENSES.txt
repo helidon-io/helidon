@@ -9238,15 +9238,6 @@ Fourth Party Dependencies
   Apache License Version 2.0
 --------------------------------------------
 
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-LangChain4j (dev.langchain4j:langchain4j-*)
-Apache 2.0
-Used by: [helidon-integrations-langchain4j-*]
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-LangChain4j (dev.langchain4j:langchain4j-*)
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
 "SLF4J API Module" (org.slf4j:slf4j-api)
   MIT License
   Copyright (c) 2004-2022 QOS.ch

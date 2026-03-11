@@ -48,13 +48,6 @@ Learn how to configure a Helidon SE application.
 --
 
 [CARD]
-.LangChain4j Guide
-[link=langchain4j.adoc]
---
-Learn how to create AI powered Helidon SE applications.
---
-
-[CARD]
 .Health Check Guide
 [link=health.adoc]
 --
