@@ -217,7 +217,6 @@ final class MetaConfigFinder {
             }
         }
         // we did not find a config profile, let's create one with the usual suspects
-        // to make things easier, let's try both application.xxx and META-INF/microprofile-config.properties
         ListNode.Builder sourceListBuilder = ListNode.builder();
 
         sourceListBuilder.addObject(ObjectNode.builder().addValue("type", "environment-variables").build())
@@ -261,9 +260,6 @@ final class MetaConfigFinder {
         for (String supportedSuffix : supportedSuffixes) {
             addClasspath(sourceListBuilder, "application", supportedSuffix);
         }
-
-        addClasspath(sourceListBuilder, "META-INF/microprofile-config-" + profileName, "properties");
-        addClasspath(sourceListBuilder, "META-INF/microprofile-config", "properties");
 
         return ConfigSources.create(ObjectNode.builder()
                                             .addList("sources", sourceListBuilder.build())

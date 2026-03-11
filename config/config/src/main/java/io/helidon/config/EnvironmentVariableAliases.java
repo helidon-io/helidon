@@ -26,8 +26,7 @@ import static java.util.Collections.singletonList;
 /**
  * Provides configuration key aliases in an attempt to map to legal environment variable names.
  * <p>
- * The <a href="https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc">
- * MP config specification</a> describes the environment variables {@code ConfigSource} as follows:
+ * Helidon supports environment-variable aliases for configuration keys as follows:
  * <pre>
  * Some operating systems allow only alphabetic characters or an underscore, _, in environment variables. Other
  * characters such as ., /, etc may be disallowed. In order to set a value for a config property that has a name

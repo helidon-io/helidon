@@ -54,6 +54,6 @@ module io.helidon.config {
             with io.helidon.config.EnumMapperProvider;
 
     // needed when running with modules - to make private methods accessible
-    opens io.helidon.config to weld.core.impl, io.helidon.microprofile.cdi;
+    opens io.helidon.config to weld.core.impl;
 
 }

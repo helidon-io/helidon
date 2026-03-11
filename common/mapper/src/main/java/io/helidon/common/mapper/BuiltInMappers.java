@@ -184,7 +184,7 @@ class BuiltInMappers implements MapperProvider {
      */
     private static Boolean asBoolean(String stringValue) {
         String lower = stringValue.toLowerCase();
-        // according to microprofile config specification (section Built-in Converters)
+        // Keep boolean parsing aligned with Helidon built-in converters.
         return switch (lower) {
             case "true", "1", "yes", "y", "on" -> true;
             default -> false;

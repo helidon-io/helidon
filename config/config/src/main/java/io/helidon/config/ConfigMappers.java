@@ -252,7 +252,7 @@ public final class ConfigMappers {
      */
     public static Boolean toBoolean(String stringValue) {
         final String lower = stringValue.toLowerCase();
-        // according to microprofile config specification (section Built-in Converters)
+        // Keep boolean parsing aligned with Helidon built-in converters.
         switch (lower) {
         case "true":
         case "1":

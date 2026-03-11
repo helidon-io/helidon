@@ -58,7 +58,7 @@ public class DiskSpaceHealthCheck implements HealthCheck {
      * If you need to check a different path (e.g. application runtime disks are not mounted the same
      * directory as application path), use
      * {@link DiskSpaceHealthCheck.Builder#path(java.nio.file.Path)}.
-     * When running within a MicroProfile server, you can configure path using a configuration key
+     * You can configure the path using the configuration key
      * {@value #CONFIG_KEY_PATH}
      * Defaults to {@value}
      */
@@ -75,14 +75,14 @@ public class DiskSpaceHealthCheck implements HealthCheck {
     static final String CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX = "thresholdPercent";
 
     /**
-     * Full configuration key for path, when configured through MicroProfile config.
+     * Full configuration key for the configured path.
      */
     public static final String CONFIG_KEY_PATH = HealthChecks.CONFIG_KEY_HEALTH_PREFIX
             + "." + CONFIG_KEY_DISKSPACE_PREFIX
             + "." + CONFIG_KEY_PATH_SUFFIX;
 
     /**
-     * Full configuration key for threshold percent, when configured through Microprofile config.
+     * Full configuration key for the configured threshold percent.
      */
     public static final String CONFIG_KEY_THRESHOLD_PERCENT = HealthChecks.CONFIG_KEY_HEALTH_PREFIX
             + "." + CONFIG_KEY_DISKSPACE_PREFIX

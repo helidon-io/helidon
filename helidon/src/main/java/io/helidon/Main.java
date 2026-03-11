@@ -74,8 +74,8 @@ public class Main {
 
         if (services.isEmpty()) {
             throw new IllegalStateException("Helidon Main class can only be called if a startup provider is available. "
-                                                    + "Please use either Helidon Injection, or Helidon MicroProfile "
-                                                    + "(or a custom extension). If neither is used, you should define "
+                                                    + "Please use either Helidon Injection or a custom extension. "
+                                                    + "If neither is used, you should define "
                                                     + "your own Main class, usually configured as 'mainClass' property in "
                                                     + "your pom.xml.");
         }

@@ -26,8 +26,7 @@ import static java.util.Collections.unmodifiableMap;
  * Provides environment variables that include aliases enabling setting or overriding configuration with keys that are
  * unlikely to be legal as environment variables.
  * <p>
- * The <a href="https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc">
- * MP config specification</a> describes the environment variables {@code ConfigSource} as follows:
+ * Helidon supports environment-variable aliases for configuration keys as follows:
  * <pre>
  * Some operating systems allow only alphabetic characters or an underscore, _, in environment variables. Other
  * characters such as ., /, etc may be disallowed. In order to set a value for a config property that has a name
@@ -39,7 +38,7 @@ import static java.util.Collections.unmodifiableMap;
  *  2. Replace the character that is neither alphanumeric nor _ with _ (i.e. com_ACME_size)
  *  3. Replace the character that is neither alphanumeric nor _ with _ and convert to upper case (i.e. COM_ACME_SIZE)
  *
- * The first environment variable that is found is returned by this ConfigSource.
+ * The first environment variable that is found is returned.
  * </pre>
  * <p>
  * The spec assumes the mapping takes place during search, where the desired key is known, but Helidon merges
