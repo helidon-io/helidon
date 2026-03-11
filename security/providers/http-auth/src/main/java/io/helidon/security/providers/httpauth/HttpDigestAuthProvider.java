@@ -338,7 +338,7 @@ public final class HttpDigestAuthProvider implements AuthenticationProvider {
         public Builder config(Config config) {
             config.get("optional").asBoolean().ifPresent(this::optional);
             config.get("realm").asString().ifPresent(this::realm);
-            config.get("users").map(ConfigUserStore::create).ifPresent(this::userStore);
+            config.get("users").as(ConfigUserStore::create).ifPresent(this::userStore);
             config.get("algorithm").asString().as(HttpDigest.Algorithm::valueOf).ifPresent(this::digestAlgorithm);
             config.get("nonce-timeout-millis").asLong()
                     .ifPresent(timeout -> this.digestNonceTimeout(timeout, TimeUnit.MILLISECONDS));
@@ -349,7 +349,7 @@ public final class HttpDigestAuthProvider implements AuthenticationProvider {
                     .map(String::toCharArray)
                     .ifPresent(this::digestServerSecret);
 
-            config.get("qop").mapList(HttpDigest.Qop::create).ifPresent(qop -> {
+            config.get("qop").asList(HttpDigest.Qop::create).ifPresent(qop -> {
                 if (qop.isEmpty()) {
                     noDigestQop();
                 } else {

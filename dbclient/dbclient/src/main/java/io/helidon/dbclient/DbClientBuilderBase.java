@@ -73,7 +73,7 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
     @Override
     public T config(Config config) {
         config.get("missing-map-parameters-as-null").as(Boolean.class).ifPresent(this::missingMapParametersAsNull);
-        config.get("statements").map(DbStatements::create).ifPresent(this::statements);
+        config.get("statements").as(DbStatements::create).ifPresent(this::statements);
         return identity();
     }
 

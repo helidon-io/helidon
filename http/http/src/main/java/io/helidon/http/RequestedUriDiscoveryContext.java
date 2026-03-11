@@ -178,7 +178,7 @@ public interface RequestedUriDiscoveryContext {
                     .asList(RequestedUriDiscoveryType.class)
                     .ifPresent(this::types);
             requestedUriDiscoveryConfig.get("trusted-proxies")
-                    .map(AllowList::create)
+                    .as(AllowList::create)
                     .ifPresent(this::trustedProxies);
             return this;
         }

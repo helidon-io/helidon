@@ -92,9 +92,11 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         this.outboundConfig = builder.outboundConfig;
         this.backwardCompatibleEol = builder.backwardCompatibleEol;
 
-        outboundConfig.targets().forEach(target -> target.getConfig().ifPresent(targetConfig -> {
+        outboundConfig.targets().forEach(target -> target.getConfig()
+                .ifPresent(targetConfig -> {
             OutboundTargetDefinition outboundTargetDefinition = targetConfig.get("signature")
-                    .map(OutboundTargetDefinition::create)
+                    .map(Config::config)
+                    .as(OutboundTargetDefinition::create)
                     .get();
             targetKeys.put(target.name(), outboundTargetDefinition);
         }));
@@ -367,7 +369,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
             config.get("headers").asList(HttpSignHeader.class).ifPresent(list -> list.forEach(this::addAcceptHeader));
             config.get("optional").asBoolean().ifPresent(this::optional);
             config.get("realm").asString().ifPresent(this::realm);
-            config.get("sign-headers").map(SignedHeadersConfig::create).ifPresent(this::inboundRequiredHeaders);
+            config.get("sign-headers").as(SignedHeadersConfig::create).ifPresent(this::inboundRequiredHeaders);
             outboundConfig = OutboundConfig.create(config);
 
             config.get("inbound.keys")
