@@ -117,21 +117,6 @@
         <version.lib.micronaut.validation>4.12.0</version.lib.micronaut.validation>
         <version.lib.micronaut.data>4.4.1</version.lib.micronaut.data>
         <version.lib.micronaut.sql>5.4.0</version.lib.micronaut.sql>
-        <version.lib.microprofile-config>3.1</version.lib.microprofile-config>
-        <!-- FIXME upgrade to 4.1 when it is released in Maven -->
-        <version.lib.microprofile-fault-tolerance-api>4.0.2</version.lib.microprofile-fault-tolerance-api>
-        <version.lib.microprofile-graphql>2.0</version.lib.microprofile-graphql>
-        <version.lib.microprofile-health>4.0.1</version.lib.microprofile-health>
-        <version.lib.microprofile-jwt>2.1</version.lib.microprofile-jwt>
-        <version.lib.microprofile-metrics-api>5.1.2</version.lib.microprofile-metrics-api>
-        <version.lib.microprofile-openapi-api>3.1.2</version.lib.microprofile-openapi-api>
-        <version.lib.microprofile-reactive-messaging-api>3.0.1</version.lib.microprofile-reactive-messaging-api>
-        <version.lib.microprofile-reactive-streams-operators-api>3.0.1</version.lib.microprofile-reactive-streams-operators-api>
-        <version.lib.microprofile-reactive-streams-operators-core>3.0.1</version.lib.microprofile-reactive-streams-operators-core>
-        <version.lib.microprofile-rest-client>3.0.1</version.lib.microprofile-rest-client>
-        <version.lib.microprofile-telemetry-tck>1.1</version.lib.microprofile-telemetry-tck>
-        <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
-        <version.lib.microprofile-lra-api>2.0.1</version.lib.microprofile-lra-api>
         <version.lib.microstream>08.01.01-MS-GA</version.lib.microstream>
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
@@ -620,140 +605,6 @@
                 <version>${version.lib.micrometer}</version>
             </dependency>
 
-            <!-- Microprofile related -->
-            <dependency>
-                <groupId>org.eclipse.microprofile.config</groupId>
-                <artifactId>microprofile-config-api</artifactId>
-                <version>${version.lib.microprofile-config}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.osgi</groupId>
-                        <artifactId>org.osgi.annotation.versioning</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.health</groupId>
-                <artifactId>microprofile-health-api</artifactId>
-                <version>${version.lib.microprofile-health}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.osgi</groupId>
-                        <artifactId>org.osgi.annotation.versioning</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.graphql</groupId>
-                <artifactId>microprofile-graphql-api</artifactId>
-                <version>${version.lib.microprofile-graphql}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.osgi</groupId>
-                        <artifactId>org.osgi.annotation.versioning</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.jwt</groupId>
-                <artifactId>microprofile-jwt-auth-api</artifactId>
-                <version>${version.lib.microprofile-jwt}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.osgi</groupId>
-                        <artifactId>org.osgi.annotation.versioning</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.fault-tolerance</groupId>
-                <artifactId>microprofile-fault-tolerance-api</artifactId>
-                <version>${version.lib.microprofile-fault-tolerance-api}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.osgi</groupId>
-                        <artifactId>org.osgi.annotation.versioning</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.opentracing</groupId>
-                <artifactId>microprofile-opentracing-api</artifactId>
-                <version>${version.lib.microprofile-tracing}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.osgi</groupId>
-                        <artifactId>org.osgi.annotation.versioning</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.rest.client</groupId>
-                <artifactId>microprofile-rest-client-api</artifactId>
-                <version>${version.lib.microprofile-rest-client}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.osgi</groupId>
-                        <artifactId>org.osgi.annotation.versioning</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.inject</groupId>
-                        <artifactId>javax.inject</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.openapi</groupId>
-                <artifactId>microprofile-openapi-api</artifactId>
-                <version>${version.lib.microprofile-openapi-api}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.osgi</groupId>
-                        <artifactId>org.osgi.annotation.versioning</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.metrics</groupId>
-                <artifactId>microprofile-metrics-api</artifactId>
-                <version>${version.lib.microprofile-metrics-api}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.osgi</groupId>
-                        <artifactId>org.osgi.annotation.versioning</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
-                <artifactId>microprofile-reactive-streams-operators-api</artifactId>
-                <version>${version.lib.microprofile-reactive-streams-operators-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
-                <artifactId>microprofile-reactive-streams-operators-core</artifactId>
-                <version>${version.lib.microprofile-reactive-streams-operators-core}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
-                <artifactId>microprofile-reactive-messaging-api</artifactId>
-                <version>${version.lib.microprofile-reactive-messaging-api}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
-                        <artifactId>microprofile-reactive-streams-operators-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
-                        <artifactId>microprofile-reactive-streams-operators-core</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.lra</groupId>
-                <artifactId>microprofile-lra-api</artifactId>
-                <version>${version.lib.microprofile-lra-api}</version>
-            </dependency>
             <dependency>
                 <groupId>io.smallrye</groupId>
                 <artifactId>jandex</artifactId>
@@ -997,54 +848,6 @@
                 <artifactId>jersey-media-json-binding</artifactId>
                 <version>${version.lib.jersey}</version>
                 <exclusions>
-                    <exclusion>
-                        <groupId>org.glassfish.hk2.external</groupId>
-                        <artifactId>jakarta.inject</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.ext.microprofile</groupId>
-                <artifactId>jersey-mp-rest-client</artifactId>
-                <version>${version.lib.jersey}</version>
-                <exclusions>
-                    <!-- most of these libraries are either bad (javax*), or we need additional exclusions on them -->
-                    <exclusion>
-                        <groupId>org.glassfish.jersey.core</groupId>
-                        <artifactId>jersey-server</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.glassfish.jersey.core</groupId>
-                        <artifactId>jersey-client</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.glassfish.jersey.inject</groupId>
-                        <artifactId>jersey-hk2</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.glassfish.jersey.media</groupId>
-                        <artifactId>jersey-media-json-binding</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.glassfish.jersey.ext.cdi</groupId>
-                        <artifactId>jersey-cdi1x</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.glassfish</groupId>
-                        <artifactId>jsonp-jaxrs</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.eclipse.microprofile.config</groupId>
-                        <artifactId>microprofile-config-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.el</groupId>
-                        <artifactId>javax.el-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.interceptor</groupId>
-                        <artifactId>javax.interceptor-api</artifactId>
-                    </exclusion>
                     <exclusion>
                         <groupId>org.glassfish.hk2.external</groupId>
                         <artifactId>jakarta.inject</artifactId>
@@ -1316,54 +1119,6 @@
                 <groupId>org.apache.activemq</groupId>
                 <artifactId>activemq-kahadb-store</artifactId>
                 <version>${version.lib.activemq}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.graphql</groupId>
-                <artifactId>microprofile-graphql-tck</artifactId>
-                <version>${version.lib.microprofile-graphql}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.metrics</groupId>
-                <artifactId>microprofile-metrics-rest-tck</artifactId>
-                <version>${version.lib.microprofile-metrics-api}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.arquillian.junit</groupId>
-                        <artifactId>arquillian-junit-container</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.metrics</groupId>
-                <artifactId>microprofile-metrics-optional-tck</artifactId>
-                <version>${version.lib.microprofile-metrics-api}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.arquillian.junit</groupId>
-                        <artifactId>arquillian-junit-container</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.metrics</groupId>
-                <artifactId>microprofile-metrics-api-tck</artifactId>
-                <version>${version.lib.microprofile-metrics-api}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.arquillian.junit</groupId>
-                        <artifactId>arquillian-junit-container</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.lra</groupId>
-                <artifactId>microprofile-lra-tck</artifactId>
-                <version>${version.lib.microprofile-lra-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.telemetry.tracing</groupId>
-                <artifactId>microprofile-telemetry-tracing-tck</artifactId>
-                <version>${version.lib.microprofile-telemetry-tck}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>

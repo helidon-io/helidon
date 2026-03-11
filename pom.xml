@@ -70,11 +70,8 @@
         <version.lib.jinjava>2.8.3</version.lib.jinjava>
         <!-- Dependencies convergence via jinjava -->
         <version.lib.immutables-exceptions>1.9</version.lib.immutables-exceptions>
-        <version.lib.microprofile-core-profile>10.0.3</version.lib.microprofile-core-profile>
         <version.lib.sigtest>1.4</version.lib.sigtest>
         <version.lib.jsonp-tck>2.1.1</version.lib.jsonp-tck>
-        <version.lib.microprofile-cdi-tck>4.0.13</version.lib.microprofile-cdi-tck>
-        <version.lib.microprofile-restful-tck>3.1.5</version.lib.microprofile-restful-tck>
         <version.lib.jsoup>1.15.3</version.lib.jsoup>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
@@ -165,20 +162,6 @@
         <javadoc.link.jakarta-inject>https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/</javadoc.link.jakarta-inject>
         <javadoc.link.jakarta-jaxb>https://jakarta.ee/specifications/xml-binding/4.0/apidocs/</javadoc.link.jakarta-jaxb>
         <javadoc.link.jakarta-transaction>https://jakarta.ee/specifications/transactions/2.0/apidocs/</javadoc.link.jakarta-transaction>
-
-        <javadoc.link.microprofile-config>https://download.eclipse.org/microprofile/microprofile-config-${version.lib.microprofile-config}/apidocs/</javadoc.link.microprofile-config>
-        <javadoc.link.microprofile-health>https://download.eclipse.org/microprofile/microprofile-health-${version.lib.microprofile-health}/apidocs/</javadoc.link.microprofile-health>
-        <javadoc.link.microprofile-metrics>https://download.eclipse.org/microprofile/microprofile-metrics-${version.lib.microprofile-metrics-api}/apidocs/</javadoc.link.microprofile-metrics>
-        <javadoc.link.microprofile-fault-tolerance-api>https://download.eclipse.org/microprofile/microprofile-fault-tolerance-${version.lib.microprofile-fault-tolerance-api}/apidocs/</javadoc.link.microprofile-fault-tolerance-api>
-        <javadoc.link.microprofile-graphql>https://download.eclipse.org/microprofile/microprofile-graphql-${version.lib.microprofile-graphql}/apidocs/</javadoc.link.microprofile-graphql>
-        <javadoc.link.microprofile-jwt>https://download.eclipse.org/microprofile/microprofile-jwt-auth-${version.lib.microprofile-jwt}/apidocs/</javadoc.link.microprofile-jwt>
-        <javadoc.link.microprofile-openapi-api>https://download.eclipse.org/microprofile/microprofile-open-api-${version.lib.microprofile-openapi-api}/apidocs/</javadoc.link.microprofile-openapi-api>
-        <javadoc.link.microprofile-reactive-messaging-api>https://download.eclipse.org/microprofile/microprofile-reactive-messaging-${version.lib.microprofile-reactive-messaging-api}/apidocs/</javadoc.link.microprofile-reactive-messaging-api>
-        <javadoc.link.microprofile-reactive-streams-operators-api>https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-${version.lib.microprofile-reactive-streams-operators-api}/apidocs</javadoc.link.microprofile-reactive-streams-operators-api>
-        <javadoc.link.microprofile-rest-client>https://download.eclipse.org/microprofile/microprofile-rest-client-${version.lib.microprofile-rest-client}/apidocs</javadoc.link.microprofile-rest-client>
-        <javadoc.link.microprofile-tracing>https://download.eclipse.org/microprofile/microprofile-opentracing-${version.lib.microprofile-tracing}/apidocs/</javadoc.link.microprofile-tracing>
-        <javadoc.link.microprofile-lra-api>https://download.eclipse.org/microprofile/microprofile-lra-${version.lib.microprofile-lra-api}/apidocs/</javadoc.link.microprofile-lra-api>
-
 
         <javadoc.link.jersey>https://eclipse-ee4j.github.io/jersey.github.io/apidocs/${version.lib.jersey}/jersey</javadoc.link.jersey>
         <javadoc.link.weld>https://javadoc.io/doc/org.jboss.weld/weld-spi/${version.lib.weld-api}</javadoc.link.weld>
@@ -366,57 +349,6 @@
                                 <url>${javadoc.link.jakarta-transaction}</url>
                                 <location>${javadoc.pkg.dir}/jakarta-transaction</location>
                             </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-config}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-config</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-health}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-health</location>
-                            </offlineLink>
-
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-metrics}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-metrics</location>
-                            </offlineLink>
-
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-fault-tolerance-api}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-fault-tolerance-api</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-graphql}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-graphql</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-jwt}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-jwt</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-lra-api}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-lra-api</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-openapi-api}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-openapi-api</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-reactive-messaging-api}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-reactive-messaging-api</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-reactive-streams-operators-api}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-reactive-streams-operators-api</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-rest-client}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-rest-client</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-tracing}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-tracing</location>
-                            </offlineLink>
-
                             <offlineLink>
                                 <url>${javadoc.link.weld}</url>
                                 <location>${javadoc.pkg.dir}/weld</location>
@@ -670,7 +602,6 @@
                             <exclude>io.helidon.config.tests*</exclude>
                             <exclude>io.helidon.test*</exclude>
                             <exclude>io.helidon.examples*</exclude>
-                            <exclude>io.helidon.microprofile.tests*</exclude>
                             <!-- This should be excluded by above, but for some reason it persists -->
                             <exclude>org.testng:testng</exclude>
                         </excludes>
@@ -1097,34 +1028,9 @@
                 <version>${version.lib.opentracing}</version>
             </dependency>
             <dependency>
-                <groupId>jakarta.ee.tck.coreprofile</groupId>
-                <artifactId>core-profile-tck-impl</artifactId>
-                <version>${version.lib.microprofile-core-profile}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.netbeans.tools</groupId>
                 <artifactId>sigtest-maven-plugin</artifactId>
                 <version>${version.lib.sigtest}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.enterprise</groupId>
-                <artifactId>cdi-tck-core-impl</artifactId>
-                <version>${version.lib.microprofile-cdi-tck}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.enterprise</groupId>
-                <artifactId>cdi-tck-api</artifactId>
-                <version>${version.lib.microprofile-cdi-tck}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.enterprise</groupId>
-                <artifactId>cdi-tck-lang-model</artifactId>
-                <version>${version.lib.microprofile-cdi-tck}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.ws.rs</groupId>
-                <artifactId>jakarta-restful-ws-tck</artifactId>
-                <version>${version.lib.microprofile-restful-tck}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.akarnokd</groupId>
@@ -1230,57 +1136,6 @@
                 <version>${version.lib.weld-junit}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.microprofile.health</groupId>
-                <artifactId>microprofile-health-tck</artifactId>
-                <version>${version.lib.microprofile-health}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.jwt</groupId>
-                <artifactId>microprofile-jwt-auth-tck</artifactId>
-                <version>${version.lib.microprofile-jwt}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.jwt</groupId>
-                <artifactId>microprofile-jwt-auth-tck</artifactId>
-                <version>${version.lib.microprofile-jwt}</version>
-                <type>test-jar</type>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.fault-tolerance</groupId>
-                <artifactId>microprofile-fault-tolerance-tck</artifactId>
-                <version>${version.lib.microprofile-fault-tolerance-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.opentracing</groupId>
-                <artifactId>microprofile-opentracing-tck</artifactId>
-                <version>${version.lib.microprofile-tracing}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.opentracing</groupId>
-                <artifactId>microprofile-opentracing-tck-rest-client</artifactId>
-                <version>${version.lib.microprofile-tracing}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.rest.client</groupId>
-                <artifactId>microprofile-rest-client-tck</artifactId>
-                <version>${version.lib.microprofile-rest-client}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.openapi</groupId>
-                <artifactId>microprofile-openapi-tck</artifactId>
-                <version>${version.lib.microprofile-openapi-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
-                <artifactId>microprofile-reactive-streams-operators-tck</artifactId>
-                <version>${version.lib.microprofile-reactive-streams-operators-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
-                <artifactId>microprofile-reactive-messaging-tck</artifactId>
-                <version>${version.lib.microprofile-reactive-messaging-api}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
                 <version>${version.lib.testng}</version>
@@ -1341,21 +1196,6 @@
                 <groupId>org.jboss.shrinkwrap.resolver</groupId>
                 <artifactId>shrinkwrap-resolver-api-maven</artifactId>
                 <version>${version.lib.shrinkwrap-resolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.config</groupId>
-                <artifactId>microprofile-config-tck</artifactId>
-                <version>${version.lib.microprofile-config}</version>
-                <exclusions>
-                    <exclusion>
-                        <!--
-                        There is a security issue in this dependency.
-                        If needed, add a dependency management for version >= 2.0b6
-                        -->
-                        <groupId>org.beanshell</groupId>
-                        <artifactId>bsh</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.awaitility</groupId>
