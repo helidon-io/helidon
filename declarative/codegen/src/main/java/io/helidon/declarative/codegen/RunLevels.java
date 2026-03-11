@@ -33,7 +33,7 @@ public final class RunLevels {
      */
     public static final double DATA = 25D;
     /**
-     * Messaging and similar (JMS, Kafka).
+     * Messaging and similar (JMS).
      */
     public static final double MESSAGING = 30D;
     /**

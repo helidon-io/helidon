@@ -36,7 +36,6 @@
         <!--
         Changing these versions requires approval for a new third party dependency!
         -->
-        <version.lib.activemq>5.16.0</version.lib.activemq>
         <version.lib.antlr>4.13.2</version.lib.antlr>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.bytebuddy>1.18.5</version.lib.bytebuddy>
@@ -69,7 +68,6 @@
         <version.lib.jakarta.jsonp-api>2.1.3</version.lib.jakarta.jsonp-api>
         <version.lib.jakarta.persistence-api>3.1.0</version.lib.jakarta.persistence-api>
         <version.lib.jakarta.transaction-api>2.0.1</version.lib.jakarta.transaction-api>
-        <version.lib.jakarta.websockets-api>2.1.1</version.lib.jakarta.websockets-api>
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>4.0.2</version.lib.jakarta.xml.bind-api>
         <version.lib.jandex>3.3.0</version.lib.jandex>
@@ -79,7 +77,6 @@
         <version.lib.jaxb-runtime>4.0.5</version.lib.jaxb-runtime>
         <!-- Jetbrains annotations: dependency convergence requirement, we never use this directly -->
         <version.lib.jetbrains.annotations>17.0.0</version.lib.jetbrains.annotations>
-        <version.lib.jgit>7.3.0.202506031305-r</version.lib.jgit>
         <version.lib.junit>5.12.2</version.lib.junit>
         <version.lib.kafka>3.9.2</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
@@ -87,12 +84,10 @@
         <version.lib.log4j>2.25.3</version.lib.log4j>
         <version.lib.micrometer>1.15.2</version.lib.micrometer>
         <version.lib.micrometer-prometheus>1.15.2</version.lib.micrometer-prometheus>
-        <version.lib.microstream>08.01.01-MS-GA</version.lib.microstream>
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
         <version.lib.narayana>7.1.0.Final</version.lib.narayana>
         <version.lib.netty>4.1.130.Final</version.lib.netty>
-        <version.lib.oci>3.78.1</version.lib.oci>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <version.lib.ojdbc>${version.lib.ojdbc.family}.26.1.0.0</version.lib.ojdbc>
         <!-- Force upgrade of okio for dependency convergence -->
@@ -110,7 +105,6 @@
         <version.lib.prometheus>0.16.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.slf4j>2.0.17</version.lib.slf4j>
-        <version.lib.smallrye-openapi>3.3.4</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>2.5</version.lib.snakeyaml>
         <version.lib.testcontainers>1.21.4</version.lib.testcontainers>
         <version.lib.typesafe-config>1.4.4</version.lib.typesafe-config>
@@ -270,11 +264,6 @@
                 <version>${version.lib.jakarta.activation-api}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.jgit</groupId>
-                <artifactId>org.eclipse.jgit</artifactId>
-                <version>${version.lib.jgit}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.eclipse.parsson</groupId>
                 <artifactId>parsson</artifactId>
                 <version>${version.lib.parsson}</version>
@@ -368,16 +357,6 @@
                 <artifactId>antlr4-runtime</artifactId>
                 <version>${version.lib.antlr}</version>
             </dependency>
-            <dependency>
-                <groupId>jakarta.websocket</groupId>
-                <artifactId>jakarta.websocket-api</artifactId>
-                <version>${version.lib.jakarta.websockets-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.websocket</groupId>
-                <artifactId>jakarta.websocket-client-api</artifactId>
-                <version>${version.lib.jakarta.websockets-api}</version>
-            </dependency>
             <!-- DB Client related -->
             <dependency>
                 <groupId>org.mongodb</groupId>
@@ -421,33 +400,6 @@
                 <groupId>io.smallrye</groupId>
                 <artifactId>smallrye-open-api-ui</artifactId>
                 <version>${version.lib.smallrye-openapi}</version>
-            </dependency>
-
-            <!-- Microstream related -->
-            <dependency>
-                <groupId>one.microstream</groupId>
-                <artifactId>microstream-storage-embedded</artifactId>
-                <version>${version.lib.microstream}</version>
-            </dependency>
-            <dependency>
-                <groupId>one.microstream</groupId>
-                <artifactId>microstream-storage-embedded-configuration</artifactId>
-                <version>${version.lib.microstream}</version>
-            </dependency>
-            <dependency>
-                <groupId>one.microstream</groupId>
-                <artifactId>microstream-configuration</artifactId>
-                <version>${version.lib.microstream}</version>
-            </dependency>
-            <dependency>
-                <groupId>one.microstream</groupId>
-                <artifactId>microstream-cache</artifactId>
-                <version>${version.lib.microstream}</version>
-            </dependency>
-            <dependency>
-                <groupId>one.microstream</groupId>
-                <artifactId>microstream-persistence-binary-jdk17</artifactId>
-                <version>${version.lib.microstream}</version>
             </dependency>
 
             <!-- Integrations related -->
@@ -581,12 +533,7 @@
             </dependency>
             <!-- END OF Section 1: direct third party dependencies -->
 
-            <!-- Section 2: third party dependencies used by examples -->
-            <dependency>
-                <groupId>org.apache.activemq</groupId>
-                <artifactId>activemq-client</artifactId>
-                <version>${version.lib.activemq}</version>
-            </dependency>
+            <!-- Section 2: third party dependencies used by examples (obsolete) -->
             <!-- END OF Section 2: third party dependencies used by examples -->
 
             <!-- Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
@@ -694,11 +641,6 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>oracle-xe</artifactId>
                 <version>${version.lib.testcontainers}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.activemq</groupId>
-                <artifactId>activemq-kahadb-store</artifactId>
-                <version>${version.lib.activemq}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>

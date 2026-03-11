@@ -81,7 +81,7 @@ hosted JMS destinations
 using Oracle Identity Cloud Service
 - Distributed transaction coordination between Helidon and WLS
 - hosted resources using Oracle MicroTx Free
-* Messaging Connectors for JMS, Kafka, and Oracle AQ, to allow Helidon
+* Messaging Connectors for JMS and Oracle AQ, to allow Helidon
 applications to consume and produce messages with those providers
 * HashiCorp Vault for accessing securely stored tokens, passwords, API
 keys, PKI certificates, and other secrets
