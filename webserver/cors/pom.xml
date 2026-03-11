@@ -47,10 +47,6 @@
             <groupId>io.helidon.builder</groupId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.cors</groupId>
-            <artifactId>helidon-cors</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>

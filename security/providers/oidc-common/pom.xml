@@ -47,10 +47,6 @@
             <artifactId>helidon-security-providers-http-auth</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.cors</groupId>
-            <artifactId>helidon-cors</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient</artifactId>
         </dependency>

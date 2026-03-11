@@ -30,7 +30,6 @@
 
 include::{rootdir}/includes/se.adoc[]
 :ws-cors-javadoc: {webserver-cors-javadoc-base-url}/io/helidon/webserver/cors
-:cors-javadoc: {cors-javadoc-base-url}/io/helidon/cors
 :ws-cors-artifact: io.helidon.webserver:helidon-webserver-cors
 
 == Contents
@@ -95,7 +94,7 @@ The CORS feature works as follows:
 - if a request comes to the webserver that is not pre-flight, and it is a CORS request, the filter will validate the request can be executed, and adds appropriate headers to the response, OR it terminates the request as forbidden
 
 [[se-api-routing-example]]
-=== Sample Routing Setup Using the `CrossOriginConfig` API
+=== Sample Routing Setup Using the `CorsPathConfig` API
 
 The link:{helidon-github-examples-url}/quickstarts/helidon-quickstart-se[Helidon SE Quickstart application]
  lets you change the greeting by sending a `PUT` request to the `/greet/greeting` resource.

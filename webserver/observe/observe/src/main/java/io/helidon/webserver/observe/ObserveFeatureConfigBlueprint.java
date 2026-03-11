@@ -21,7 +21,6 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.cors.CrossOriginConfig;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
 import io.helidon.webserver.spi.ServerFeatureProvider;
@@ -33,20 +32,6 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 @Prototype.Configured(value = ObserveFeature.OBSERVE_ID, root = false)
 @Prototype.Provides(ServerFeatureProvider.class)
 interface ObserveFeatureConfigBlueprint extends Prototype.Factory<ObserveFeature> {
-
-    /**
-     * Cors support inherited by each observe provider, unless explicitly configured.
-     *
-     * @return cors support to use
-     * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
-     *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
-     *  server feature
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    @Option.Configured
-    @Option.DefaultCode("@io.helidon.cors.CrossOriginConfig@.create()")
-    CrossOriginConfig cors();
 
     /**
      * Whether the observe support is enabled.

@@ -173,7 +173,6 @@
         <module>bundles</module>
         <module>common</module>
         <module>config</module>
-        <module>cors</module>
         <module>dbclient</module>
         <module>dependencies</module>
         <module>fault-tolerance</module>

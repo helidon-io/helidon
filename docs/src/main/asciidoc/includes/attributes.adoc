@@ -124,7 +124,6 @@ endif::[]
 :config-mapping-javadoc-base-url: {javadoc-base-url}/io.helidon.config.objectmapping
 :configurable-javadoc-base-url: {javadoc-base-url}/io.helidon.common.configurable
 :context-javadoc-base-url: {javadoc-base-url}/io.helidon.common.context
-:cors-javadoc-base-url: {javadoc-base-url}/io.helidon.cors
 :discovery-javadoc-base-url: {javadoc-base-url}/io.helidon.discovery
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
 :grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.grpc

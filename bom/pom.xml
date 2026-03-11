@@ -662,11 +662,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <!-- CORS support -->
-            <dependency>
-                <groupId>io.helidon.cors</groupId>
-                <artifactId>helidon-cors</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
             <!-- Testing -->
             <dependency>
                 <groupId>io.helidon.common.testing</groupId>

@@ -65,21 +65,18 @@ class OpenApiFeatureTest {
                                   .servicesDiscoverServices(false)
                                   .staticFile("src/test/resources/greeting.yml")
                                   .webContext("/openapi-greeting")
-                                  .cors(cors -> cors.enabled(false))
                                   .build())
                 .addFeature(OpenApiFeature.builder()
                                     .servicesDiscoverServices(false)
                                     .staticFile("src/test/resources/time-server.yml")
                                     .webContext("/openapi-time")
                                     .name("openapi-time")
-                                    .cors(cors -> cors.allowOrigins("http://foo.bar", "http://bar.foo"))
                                     .build())
                 .addFeature(OpenApiFeature.builder()
                                     .servicesDiscoverServices(false)
                                     .staticFile("src/test/resources/petstore.yaml")
                                     .webContext("/openapi-petstore")
                                     .name("openapi-petstore")
-                                    .cors(cors -> cors.enabled(false))
                                     .build());
 
     }

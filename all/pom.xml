@@ -483,10 +483,6 @@
             <artifactId>helidon-openapi</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.cors</groupId>
-            <artifactId>helidon-cors</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.logging</groupId>
             <artifactId>helidon-logging-common</artifactId>
         </dependency>

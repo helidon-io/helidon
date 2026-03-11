@@ -33,9 +33,7 @@ module io.helidon.webserver.graphql {
     requires io.helidon.common.uri;
     requires io.helidon.common;
     requires io.helidon.config;
-    requires io.helidon.cors;
     requires io.helidon.graphql.server;
-    requires io.helidon.webserver.cors;
     requires jakarta.json.bind;
     requires org.eclipse.yasson;
 

@@ -46,7 +46,9 @@
         <version.lib.dropwizard.metrics>4.1.36</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>4.0.7</version.lib.eclipselink>
         <version.lib.google-error-prone-annotations>2.30.0</version.lib.google-error-prone-annotations>
+        <version.lib.google-gson>2.11.0</version.lib.google-gson>
         <version.lib.google-protobuf>4.31.1</version.lib.google-protobuf>
+        <version.lib.google-j2objc-annotations>3.0.0</version.lib.google-j2objc-annotations>
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
         <version.lib.grpc>1.73.0</version.lib.grpc>
@@ -689,6 +691,16 @@
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>${version.lib.google-findbugs-jsr305}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>${version.lib.google-gson}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.j2objc</groupId>
+                <artifactId>j2objc-annotations</artifactId>
+                <version>${version.lib.google-j2objc-annotations}</version>
             </dependency>
             <!-- END OF Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
 

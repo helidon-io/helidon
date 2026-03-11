@@ -22,8 +22,6 @@ module io.helidon.servicecommon {
     requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.common.config;
-    requires transitive io.helidon.cors;
-    requires transitive io.helidon.webserver.cors;
     requires transitive io.helidon.webserver;
 
     exports io.helidon.webserver.servicecommon;

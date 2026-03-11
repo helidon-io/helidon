@@ -38,10 +38,6 @@
             <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-cors</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.eclipse</groupId>
             <artifactId>yasson</artifactId>
         </dependency>
