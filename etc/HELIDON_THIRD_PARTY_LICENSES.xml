@@ -60,15 +60,6 @@ Fourth Party Runtime Dependencies
                 <consumer>helidon-messaging-kafka</consumer>
                 <consumer>helidon-messaging-mock</consumer>
                 <consumer>helidon-messaging-wls-jms</consumer>
-                <consumer>helidon-microprofile-config</consumer>
-                <consumer>helidon-microprofile-cors</consumer>
-                <consumer>helidon-microprofile-fault-tolerance</consumer>
-                <consumer>helidon-microprofile-metrics</consumer>
-                <consumer>helidon-microprofile-server</consumer>
-                <consumer>helidon-microprofile-service-common</consumer>
-                <consumer>helidon-microprofile-telemetry</consumer>
-                <consumer>helidon-microprofile-tracing</consumer>
-                <consumer>helidon-microprofile-websocket</consumer>
                 <consumer>weld-se-core</consumer>
             </consumers>
             <attribution>Jakarta CDI API (jakarta.enterprise:jakarta.enterprise.cdi-api)
@@ -185,7 +176,6 @@ See full text at the bottom of this document for license: GPLv2-CPE
                 <consumer>helidon-graal-native-image-extension</consumer>
                 <consumer>helidon-http-media-jsonp</consumer>
                 <consumer>helidon-lra-coordinator-server</consumer>
-                <consumer>helidon-microprofile-server</consumer>
                 <consumer>helidon-mp-graal-native-image-extension</consumer>
                 <consumer>helidon-security-jwt</consumer>
             </consumers>
@@ -281,9 +271,6 @@ EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
             <version>2.0.4</version>
             <licensor>Oracle</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-websocket</consumer>
-            </consumers>
             <attribution>Eclipse Tyrus (org.glassfish.tyrus:tyrus-*)
   Copyright (c) 2007,2022 Oracle and/or its affiliates. All rights reserved.
 --------------------------------------------
@@ -374,7 +361,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <licenseName>Multiple Licenses</licenseName>
             <consumers>
                 <consumer>helidon-http-media-jsonb</consumer>
-                <consumer>helidon-microprofile</consumer>
                 <consumer>helidon-webserver-graphql</consumer>
             </consumers>
             <attribution>Eclipse Yasson
@@ -859,9 +845,6 @@ The Apache Software Foundation (https://www.apache.org/).
             <version>7.0.2.Final</version>
             <licensor>Hibernate</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-bean-validation</consumer>
-            </consumers>
             <attribution>Hibernate Validator 
   Copyright 2007-2021 Red Hat, Inc. All Rights Reserved
   Copyright 2009 IIZUKA Software Technologies Ltd
@@ -977,9 +960,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             <version>3.5.3.Final</version>
             <licensor>Apache 2.0</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-cdi</consumer>
-            </consumers>
             <attribution>JBoss Logging 3 (org.jboss.logging:jboss-logging)
   Copyright 2023 Red Hat, Inc.
 --------------------------------------------
@@ -1211,8 +1191,6 @@ See full text at the bottom of this document for license: Apache-2.0
                 <consumer>helidon-integrations-oci-sdk-tests-test-module2</consumer>
                 <consumer>helidon-integrations-oci-tls-certificates</consumer>
                 <consumer>helidon-messaging-mock</consumer>
-                <consumer>helidon-microprofile-fault-tolerance</consumer>
-                <consumer>helidon-microprofile-telemetry</consumer>
                 <consumer>weld-se-core</consumer>
             </consumers>
             <attribution>Jakarta Annotations API (jakarta.annotation:jakarta.annotation-api)
@@ -1265,9 +1243,6 @@ See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
             <version>5.0.0</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-bean-validation</consumer>
-            </consumers>
             <attribution>Eclipse Expressly (org.glassfish.expressly:expressly)
   Copyright (c) 2021 Payara Services Ltd.
   Copyright (c) 2018, 2022 Eclipse Foundation. All rights reserved.
@@ -1399,14 +1374,6 @@ See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
-                <consumer>helidon-microprofile-access-log</consumer>
-                <consumer>helidon-microprofile-jwt-auth</consumer>
-                <consumer>helidon-microprofile-messaging</consumer>
-                <consumer>helidon-microprofile-openapi</consumer>
-                <consumer>helidon-microprofile-scheduling</consumer>
-                <consumer>helidon-microprofile-security</consumer>
-                <consumer>helidon-microprofile-server</consumer>
-                <consumer>helidon-microprofile-telemetry</consumer>
                 <consumer>weld-se-core</consumer>
             </consumers>
             <attribution>Jakarta Interceptors (jakarta.interceptor:jakarta.interceptor-api)
@@ -1477,7 +1444,6 @@ Fourth Party Dependencies
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
                 <consumer>helidon-http-media-jsonb</consumer>
-                <consumer>helidon-microprofile</consumer>
             </consumers>
             <attribution>Jakarta JSON Binding API (JSON-B) (jakarta.json.bind:jakarta.json.bind-api)
   Copyright (c) 2015,2020 Oracle and/or its affiliates. All rights reserved.
@@ -1593,7 +1559,6 @@ permitted.</attribution>
             <consumers>
                 <consumer>helidon-http-media-jsonb</consumer>
                 <consumer>helidon-http-media-jsonp</consumer>
-                <consumer>helidon-microprofile-server</consumer>
                 <consumer>helidon-security-jwt</consumer>
                 <consumer>helidon-webserver-observe-config</consumer>
                 <consumer>helidon-webserver-observe-health</consumer>
@@ -1934,9 +1899,6 @@ The project maintains the following source code repositories:
             <version>2.1.0</version>
             <licensor>Oracle</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-websocket</consumer>
-            </consumers>
             <attribution>Jakarta WebSocket
   Copyright (c) 2018,2022 Oracle and/or its affiliates and others.
 Eclipse Public License 2.0
@@ -2139,11 +2101,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <consumer>helidon-integrations-oci-secrets-mp-config-source</consumer>
                 <consumer>helidon-integrations-vault-cdi</consumer>
                 <consumer>helidon-messaging-mock</consumer>
-                <consumer>helidon-microprofile-cdi</consumer>
-                <consumer>helidon-microprofile-fault-tolerance</consumer>
-                <consumer>helidon-microprofile-health</consumer>
-                <consumer>helidon-microprofile-openapi</consumer>
-                <consumer>helidon-microprofile-service-common</consumer>
             </consumers>
             <attribution>MicroProfile Config API (org.eclipse.microprofile.config:microprofile-config-api)
   Copyright (c) 2009-2020 Contributors to the Eclipse Foundation
@@ -2185,9 +2142,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <version>4.0.2</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-fault-tolerance</consumer>
-            </consumers>
             <attribution>microProfile-fault-tolerance-api (org.eclipse.microprofile.fault-tolerance:microprofile-fault-tolerance-api)
   Copyright (c) 2017-2019 Contributors to the Eclipse Foundation
 --------------------------------------------
@@ -2222,9 +2176,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <version>2.0</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-graphql-server</consumer>
-            </consumers>
             <attribution>MicroProfile GraphQL :: API (org.eclipse.microprofile.graphql:microprofile-graphql-api)
   Copyright (c) 2020 Contributors to the Eclipse Foundation
 --------------------------------------------
@@ -2237,9 +2188,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <version>4.0.1</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-health</consumer>
-            </consumers>
             <attribution>MicroProfile Health API (org.eclipse.microprofile.health:microprofile-health-api)
   Copyright (c) 2017-2021 Contributors to the Eclipse Foundation
 --------------------------------------------
@@ -2270,9 +2218,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <version>2.1</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-jwt-auth</consumer>
-            </consumers>
             <attribution>MicroProfile JWT Auth API (org.eclipse.microprofile.jwt:microprofile-jwt-auth-api)
   Copyright (c) 2016-2022 Contributors to the Eclipse Foundation
 ======================================================================
@@ -2299,7 +2244,6 @@ See full text at the bottom of this document for license: Apache-2.0
                 <consumer>helidon-lra-coordinator-client-spi</consumer>
                 <consumer>helidon-lra-coordinator-narayana-client</consumer>
                 <consumer>helidon-lra-coordinator-server</consumer>
-                <consumer>helidon-microprofile-lra</consumer>
             </consumers>
             <attribution>MicroProfile LRA API (org.eclipse.microprofile.lra:microprofile-lra-api)
   Copyright (c) 2018-2021 Contributors to the Eclipse Foundation
@@ -2337,8 +2281,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <licenseName>Apache 2.0</licenseName>
             <consumers>
                 <consumer>helidon-integrations-cdi-datasource-hikaricp</consumer>
-                <consumer>helidon-microprofile-fault-tolerance</consumer>
-                <consumer>helidon-microprofile-metrics</consumer>
             </consumers>
             <attribution>MicroProfile Metrics API (org.eclipse.microprofile.metrics:microprofile-metrics-api)
   Copyright (c) 2017,2023 Contributors to the Eclipse Foundation
@@ -2403,9 +2345,6 @@ See full text at the bottom of this document for license: GPLv2-CPE
             <version>3.0</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-tracing</consumer>
-            </consumers>
             <attribution>MicroProfile OpenTracing API (org.eclipse.microprofile.opentracing:microprofile-opentracing-api)
   Copyright (c) 2017-2021 Contributors to the Eclipse Foundation
 --------------------------------------------
@@ -2439,7 +2378,6 @@ Kevin Grigorenko kevin.grigorenko@us.ibm.com
                 <consumer>helidon-messaging-jms</consumer>
                 <consumer>helidon-messaging-kafka</consumer>
                 <consumer>helidon-messaging-mock</consumer>
-                <consumer>helidon-microprofile-messaging</consumer>
             </consumers>
             <attribution>MicroProfile Reactive Messaging API (org.eclipse.microprofile.reactive.messaging:microprofile-reactive-messaging-api)
   Copyright (c) 2018,2022 Contributors to the Eclipse Foundation
@@ -2473,7 +2411,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <consumers>
                 <consumer>helidon-messaging</consumer>
                 <consumer>helidon-messaging-mock</consumer>
-                <consumer>helidon-microprofile-reactive-streams</consumer>
             </consumers>
             <attribution>Eclipse MicroProfile Reactive Streams Operators (org.eclipse.microprofile.reactive-streams-operators:microprofile-reactive-streams-operators-*)
   Copyright (c) 2018,2022 Contributors to the Eclipse Foundation
@@ -2526,10 +2463,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             <version>3.0</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-rest-client</consumer>
-                <consumer>helidon-microprofile-tracing</consumer>
-            </consumers>
             <attribution>MicroProfile Rest Client API (org.eclipse.microprofile.rest.client:microprofile-rest-client-api)
   Copyright (c) 2016-2020 Contributors to the Eclipse Foundation
 --------------------------------------------
@@ -2574,7 +2507,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <licenseName>Apache 2.0</licenseName>
             <consumers>
                 <consumer>helidon-config-yaml</consumer>
-                <consumer>helidon-microprofile-openapi</consumer>
                 <consumer>helidon-openapi</consumer>
             </consumers>
             <attribution>SnakeYAML
@@ -2619,7 +2551,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <licenseName>Apache 2.0</licenseName>
             <consumers>
                 <consumer>helidon-integrations-cdi-jta-weld</consumer>
-                <consumer>helidon-microprofile-fault-tolerance</consumer>
                 <consumer>weld-se-core</consumer>
             </consumers>
             <attribution>Weld APIs (org.jboss.weld:weld-api, weld-spi)
@@ -2692,7 +2623,6 @@ See full text at the bottom of this document for license: GPLv2-CPE
             <licenseName>Apache 2.0</licenseName>
             <consumers>
                 <consumer>helidon-integrations-cdi-jta-weld</consumer>
-                <consumer>helidon-microprofile-cdi</consumer>
                 <consumer>weld-core-impl</consumer>
                 <consumer>weld-se-core</consumer>
             </consumers>
@@ -3153,9 +3083,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <version>18.3</version>
             <licensor>Brad Baker</licensor>
             <licenseName>MIT</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-graphql-server</consumer>
-            </consumers>
             <attribution>graphql-java-extended-scalars (com.graphql-java:graphql-java-extended-scalars)
 
 The MIT License (MIT)
@@ -4439,8 +4366,6 @@ NOTICE: same as jackson-databind</attribution>
                 <consumer>helidon-integrations-oci-sdk-tests-test-module1</consumer>
                 <consumer>helidon-integrations-oci-sdk-tests-test-module2</consumer>
                 <consumer>helidon-integrations-oci-tls-certificates</consumer>
-                <consumer>helidon-microprofile-cdi</consumer>
-                <consumer>helidon-microprofile-config</consumer>
                 <consumer>helidon-security-providers-oidc</consumer>
                 <consumer>helidon-webserver</consumer>
                 <consumer>weld-se-core</consumer>
@@ -4504,9 +4429,6 @@ See full text at the bottom of this document for license: Apache-2.0
                 <consumer>helidon-integrations-cdi-jta</consumer>
                 <consumer>helidon-integrations-cdi-reference-counted-context</consumer>
                 <consumer>helidon-integrations-oci-sdk-cdi</consumer>
-                <consumer>helidon-microprofile-graphql-server</consumer>
-                <consumer>helidon-microprofile-lra</consumer>
-                <consumer>helidon-microprofile-openapi</consumer>
             </consumers>
             <attribution>Jandex: Core (io.smallrye:jandex)
   Copyright 2013,2021 Red Hat, Inc., and individual contributors
@@ -4616,9 +4538,6 @@ Fourth Party Dependencies
             <version>1.3.0.Final</version>
             <licensor>Red Hat</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-cdi</consumer>
-            </consumers>
             <attribution>classfilewriter (org.jboss.classfilewriter:jboss-classfilewriter)
   Copyright 2012,2019 Red Hat, Inc.
   Copyright 2015, Red Hat, Inc., and individual contributors
@@ -5851,9 +5770,6 @@ See full text at the bottom of this document for license: LGPL-2.1-only
             <version>3.1.3</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile</consumer>
-            </consumers>
             <attribution>jersey-media-json-binding (org.glassfish.jersey.media:jersey-media-json-binding)
   Copyright (c) 2017,2023 Oracle and/or its affiliates. All rights reserved.
 --------------------------------------------
@@ -6583,9 +6499,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <version>3.1.3</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-rest-client</consumer>
-            </consumers>
             <attribution>jersey-mp-rest-client (org.glassfish.jersey.ext.microprofile:jersey-mp-rest-client)
   Copyright (c) 2019,2023 Oracle and/or its affiliates. All rights reserved.
   Copyright (c) 2019,2021 Payara Foundation and/or its affiliates. All rights reserved.
@@ -6813,10 +6726,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <version>3.1.3</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-fault-tolerance</consumer>
-                <consumer>helidon-microprofile-server</consumer>
-            </consumers>
             <attribution>jersey-ext-weld2-se (org.glassfish.jersey.ext.cdi:jersey-weld2-se)
   Copyright (c) 2014,2023 Oracle and/or its affiliates. All rights reserved.
 --------------------------------------------
@@ -8070,9 +7979,6 @@ See full text at the bottom of this document for license: GPLv2-CPE
             <version>3.1.1</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-openapi</consumer>
-            </consumers>
             <attribution>MicroProfile OpenAPI API (org.eclipse.microprofile.openapi:microprofile-openapi-api)
   Copyright 2017 SmartBear Software
   Copyright (c) 2017,2022 Contributors to the Eclipse Foundation
@@ -8649,9 +8555,6 @@ Apache License 2.0
             <version>1.22.0</version>
             <licensor>OpenTelemetry authors</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-telemetry</consumer>
-            </consumers>
             <attribution>OpenTelemetry Java (io.opentelemetry:opentelemetry-context)
   Copyright 2015 The gRPC Authors
   Copyright The OpenTelemetry Authors
@@ -8823,9 +8726,6 @@ Fourth Party Dependencies
             <version>1.22.0</version>
             <licensor>OpenTelemetry authors</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-telemetry</consumer>
-            </consumers>
             <attribution>OpenTelemetry Instrumentation for Java (io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations)
   Copyright The OpenTelemetry Authors
 --------------------------------------------
@@ -8854,9 +8754,6 @@ Fourth Party Dependencies
             <version>1.22.0-alpha</version>
             <licensor>OpenTelemetry authors</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-tracing</consumer>
-            </consumers>
             <attribution>OpenTelemetry Java (io.opentelemetry:opentelemetry-opentracing-shim)
   Copyright The OpenTelemetry Authors
 --------------------------------------------
@@ -8895,7 +8792,6 @@ Fourth Party Dependencies
             <licensor>OpenTelemetry authors</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-microprofile-telemetry</consumer>
                 <consumer>helidon-tracing-providers-jaeger</consumer>
             </consumers>
             <attribution>OpenTelemetry Java (io.opentelemetry:opentelemetry-sdk)
@@ -8948,9 +8844,6 @@ Fourth Party Dependencies
             <version>1.22.0-alpha</version>
             <licensor>OpenTelemetry authors</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-telemetry</consumer>
-            </consumers>
             <attribution>OpenTelemetry Java (io.opentelemetry:opentelemetry-sdk-extension-autoconfigure)
   Copyright The OpenTelemetry Authors
 --------------------------------------------
@@ -9037,9 +8930,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <version>1.0.4</version>
             <licensor>Reactive Streams</licensor>
             <licenseName>MIT</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-reactive-streams</consumer>
-            </consumers>
             <attribution>MIT No Attribution
 
 Copyright 2014 Reactive Streams
@@ -9318,9 +9208,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             <version>3.3.4</version>
             <licensor>Red Hat, Inc.</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-openapi</consumer>
-            </consumers>
             <attribution>SmallRye: OpenAPI Core (io.smallrye:smallrye-open-api-core)
   Copyright 2018 Red Hat, Inc.
   Copyright 2020 Red Hat, Inc.
