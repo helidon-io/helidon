@@ -314,6 +314,7 @@ class MetricsFeature {
             res.header(ALLOW, "GET");
             res.status(METHOD_NOT_ALLOWED_405);
             res.send();
+            return;
         }
 
         getOrOptionsMatching(mediaType, req, res, () -> outputMetadata(mediaType,
