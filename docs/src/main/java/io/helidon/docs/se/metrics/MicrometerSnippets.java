@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.docs.se.metrics;
 
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -22,9 +23,21 @@ import io.helidon.webserver.http.ServerResponse;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 
 @SuppressWarnings("ALL")
 class MicrometerSnippets {
+
+    void snippet_1() {
+        // tag::snippet_1[]
+        MeterRegistry registry = Metrics.globalRegistry; // <1>
+        MyService myService = new MyService(registry); // <2>
+
+        WebServer.builder()
+                .routing(r -> r.register("/myapp", myService)) // <3>
+                .build();
+        // end::snippet_1[]
+    }
 
     // tag::snippet_2[]
     class MyService implements HttpService {
