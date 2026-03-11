@@ -38,19 +38,6 @@ public interface JdbcConnectionPool extends NamedService {
 
     /**
      * Create a JDBC connection pool from provided configuration.
-     *
-     * @param config configuration of connection pool
-     * @return a new instance configured from the provided config
-     * @deprecated {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    static JdbcConnectionPool create(io.helidon.common.config.Config config) {
-        return create(Config.config(config));
-    }
-
-    /**
-     * Create a JDBC connection pool from provided configuration.
      * <table>
      * <caption>Optional configuration parameters</caption>
      * <tr>
@@ -153,19 +140,6 @@ public interface JdbcConnectionPool extends NamedService {
         private String password;
 
         protected BuilderBase() {
-        }
-
-        /**
-         * Update builder from configuration.
-         *
-         * @param config configuration
-         * @return updated builder
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public B config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

@@ -56,19 +56,6 @@ public interface RequestedUriDiscoveryContext {
      *
      * @param config node for the discovery context
      * @return new discovery context instance
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    @SuppressWarnings("removal")
-    static RequestedUriDiscoveryContext create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Creates a new {@code RequestedUriDiscoveryContext} from the provided discovery context config node.
-     *
-     * @param config node for the discovery context
-     * @return new discovery context instance
      */
     static RequestedUriDiscoveryContext create(Config config) {
         return builder().config(config).build();
@@ -142,20 +129,6 @@ public interface RequestedUriDiscoveryContext {
         public RequestedUriDiscoveryContext build() {
             prepareAndCheckRequestedUriSettings();
             return new RequestedUriDiscoveryContextImpl(this);
-        }
-
-        /**
-         * Update the settings from the {@value REQUESTED_URI_DISCOVERY_CONFIG_KEY}
-         * {@link io.helidon.common.config.Config} node within the socket configuration.
-         *
-         * @param config requested URI discovery configuration node
-         * @return updated builder instance
-         * @deprecated use {@link #create(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

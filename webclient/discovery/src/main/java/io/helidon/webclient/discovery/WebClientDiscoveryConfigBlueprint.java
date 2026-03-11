@@ -54,7 +54,7 @@ interface WebClientDiscoveryConfigBlueprint extends Prototype.Factory<WebClientD
      * The name to assign to the runtime type ({@code discovery} by default).
      *
      * @return a name
-     * @see io.helidon.common.config.NamedService#name()
+     * @see io.helidon.config.NamedService#name()
      */
     @Option.Configured
     @Option.Default("discovery")

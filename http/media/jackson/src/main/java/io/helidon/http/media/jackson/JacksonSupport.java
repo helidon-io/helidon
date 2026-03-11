@@ -64,39 +64,9 @@ public class JacksonSupport extends MediaSupportBase<JacksonSupportConfig> imple
      *
      * @param config must not be {@code null}
      * @return a new {@link JacksonSupport}
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    public static MediaSupport create(io.helidon.common.config.Config config) {
-        return create(config, ID);
-    }
-
-    /**
-     * Creates a new {@link JacksonSupport}.
-     *
-     * @param config must not be {@code null}
-     * @return a new {@link JacksonSupport}
      */
     public static MediaSupport create(Config config) {
         return create(config, ID);
-    }
-
-    /**
-     * Creates a new {@link JacksonSupport}.
-     *
-     * @param config must not be {@code null}
-     * @param name of the Jackson support
-     * @return a new {@link JacksonSupport}
-     * @deprecated use {@link #create(io.helidon.config.Config, java.lang.String)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    public static MediaSupport create(io.helidon.common.config.Config config, String name) {
-        Objects.requireNonNull(config);
-        Objects.requireNonNull(name);
-
-        return create(io.helidon.config.Config.config(config), name);
     }
 
     /**

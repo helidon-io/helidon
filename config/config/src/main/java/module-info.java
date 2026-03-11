@@ -50,8 +50,4 @@ module io.helidon.config {
             with io.helidon.config.PropertiesConfigParser;
     provides io.helidon.config.spi.ConfigMapperProvider
             with io.helidon.config.EnumMapperProvider;
-
-    // needed when running with modules - to make private methods accessible
-    opens io.helidon.config to weld.core.impl;
-
 }

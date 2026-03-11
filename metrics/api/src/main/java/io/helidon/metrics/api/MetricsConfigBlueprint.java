@@ -200,7 +200,7 @@ interface MetricsConfigBlueprint {
      * @return metrics configuration
      */
     @Option.Redundant
-    io.helidon.common.config.Config config();
+    Config config();
 
     /**
      * Whether the {@code gc.time} meter should be registered as a gauge (vs. a counter).

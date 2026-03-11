@@ -485,9 +485,7 @@ final class GenerateAbstractBuilder {
 
             if (configured && hasConfiguredRegistryServiceOrProvider(options)) {
                 // need to have a non-null config instance
-                preBuildBuilder.addContent("var config = config().map(")
-                        .addContent(CONFIG)
-                        .addContent("::config).orElseGet(")
+                preBuildBuilder.addContent("var config = config().orElseGet(")
                         .addContent(CONFIG)
                         .addContentLine("::empty);");
             }

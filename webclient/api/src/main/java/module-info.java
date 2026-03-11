@@ -31,13 +31,13 @@ module io.helidon.webclient.api {
     requires static io.helidon.common.features.api; // @Feature
     requires static io.helidon.config.metadata; // @ConfiguredOption etc
 
-    requires transitive io.helidon.common.config;
     requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.common.socket;
     requires transitive io.helidon.common.tls;
     requires transitive io.helidon.common.uri;
     requires transitive io.helidon.common;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.http.encoding;
     requires transitive io.helidon.http.media;
     requires transitive io.helidon.http;

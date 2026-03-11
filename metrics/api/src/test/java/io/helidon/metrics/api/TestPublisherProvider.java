@@ -16,7 +16,7 @@
 
 package io.helidon.metrics.api;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.metrics.spi.MetricsPublisherProvider;
 
 public class TestPublisherProvider implements MetricsPublisherProvider {

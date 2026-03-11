@@ -16,7 +16,6 @@
 package io.helidon.dbclient.spi;
 
 import io.helidon.common.Builder;
-import io.helidon.common.DeprecationSupport;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.config.Config;
@@ -38,32 +37,8 @@ public interface DbClientBuilder<T extends DbClientBuilder<T>> extends Builder<T
      *
      * @param config {@link Config} instance with database connection attributes
      * @return database provider builder
-     * @deprecated use {@link #config(io.helidon.config.Config)} instead
      */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    default T config(io.helidon.common.config.Config config) {
-        // default to avoid forcing deprecated symbols references
-        return config(Config.config(config));
-    }
-
-    /**
-     * Use database connection configuration from configuration file.
-     * <p>
-     * API Note: the default method implementation is provided for backward compatibility
-     * and <b>will be removed in the next major version</b>
-     *
-     * @param config {@link Config} instance with database connection attributes
-     * @return database provider builder
-     * @since 4.4.0
-     */
-    @SuppressWarnings("removal")
-    default T config(Config config) {
-        // default to preserve backward compatibility
-        // require the deprecated variant to be implemented
-        DeprecationSupport.requireOverride(this, DbClientBuilder.class, "config", io.helidon.common.config.Config.class);
-        return config((io.helidon.common.config.Config) config);
-    }
+    T config(Config config);
 
     /**
      * Set database connection string (URL).

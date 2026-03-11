@@ -54,19 +54,6 @@ public class WebClientContextService implements WebClientService, RuntimeType.Ap
      *
      * @param config configuration
      * @return a new service
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static WebClientContextService create(io.helidon.common.config.Config config) {
-        return create(WebClientContextConfig.create(config));
-    }
-
-    /**
-     * Create a new instance from configuration.
-     *
-     * @param config configuration
-     * @return a new service
      */
     public static WebClientContextService create(Config config) {
         return create(WebClientContextConfig.create(config));

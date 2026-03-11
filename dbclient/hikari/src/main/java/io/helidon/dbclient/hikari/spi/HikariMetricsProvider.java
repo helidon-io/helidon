@@ -17,7 +17,6 @@ package io.helidon.dbclient.hikari.spi;
 
 import java.util.ServiceLoader;
 
-import io.helidon.common.DeprecationSupport;
 import io.helidon.config.Config;
 import io.helidon.dbclient.hikari.HikariMetricsRegistry;
 
@@ -38,32 +37,7 @@ public interface HikariMetricsProvider {
      *
      * @param config provider configuration
      * @return interceptor to handle connection pool configuration.
-     * @deprecated use {@link #extension(io.helidon.config.Config)} instead
      */
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    @SuppressWarnings("removal")
-    default HikariMetricsRegistry extension(io.helidon.common.config.Config config) {
-        // default to avoid forcing deprecated symbols references
-        return extension(Config.config(config));
-    }
-
-    /**
-     * Get instance of {@link HikariMetricsRegistry} from config.
-     * <p>
-     * API Note: the default method implementation is provided for backward compatibility
-     * and <b>will be removed in the next major version</b>
-     *
-     * @param config provider configuration
-     * @return interceptor to handle connection pool configuration.
-     * @since 4.4.0
-     */
-    @SuppressWarnings("removal")
-    default HikariMetricsRegistry extension(Config config) {
-        // default to preserve backward compatibility
-        // require the deprecated variant to be implemented
-        DeprecationSupport.requireOverride(this, HikariMetricsProvider.class, "extension",
-                io.helidon.common.config.Config.class);
-        return extension((io.helidon.common.config.Config) config);
-    }
+    HikariMetricsRegistry extension(Config config);
 
 }

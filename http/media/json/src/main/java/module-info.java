@@ -36,8 +36,6 @@ module io.helidon.http.media.json {
     requires io.helidon.http.media;
     requires io.helidon.common.media.type;
     requires io.helidon.http;
-    requires io.helidon.common.config;
-
     requires transitive io.helidon.config;
     requires transitive io.helidon.json;
     requires io.helidon.common;

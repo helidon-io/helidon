@@ -42,19 +42,6 @@ public interface MediaContext extends RuntimeType.Api<MediaContextConfig> {
      *
      * @param config configuration to use
      * @return media context
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    static MediaContext create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Create a new media context and apply provided configuration.
-     *
-     * @param config configuration to use
-     * @return media context
      */
     static MediaContext create(Config config) {
         return builder().config(config).build();

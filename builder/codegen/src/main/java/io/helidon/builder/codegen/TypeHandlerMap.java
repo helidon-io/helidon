@@ -68,7 +68,7 @@ class TypeHandlerMap extends TypeHandlerContainer {
             method.addContentLine(configGet(optionConfigured) + ".detach().asMap().ifPresent(this::" + optionName + ");");
         } else if (optionConfigured.traverse()) {
             method.addContent(configGet(optionConfigured) + ".detach().traverse().filter(")
-                    .addContent(Types.COMMON_CONFIG)
+                    .addContent(Types.CONFIG)
                     .addContent("::hasValue).forEach(node -> "
                                         + optionName + ".put(node.get(\"name\").asString().orElse(node.key().toString()), node");
             generateFromConfig(method);

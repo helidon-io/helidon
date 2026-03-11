@@ -30,7 +30,7 @@ module io.helidon.webclient.metrics {
     requires io.helidon.metrics.api;
     requires io.helidon.webclient;
 
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
 
     provides io.helidon.webclient.spi.WebClientServiceProvider
             with io.helidon.webclient.metrics.WebClientMetricsProvider;

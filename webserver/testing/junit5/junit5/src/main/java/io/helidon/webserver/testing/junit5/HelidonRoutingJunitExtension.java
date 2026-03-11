@@ -25,8 +25,8 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.spi.ServerFeature;
@@ -73,7 +73,7 @@ class HelidonRoutingJunitExtension extends JunitExtensionBase
         }
 
         WebServerConfig.Builder builder = WebServer.builder()
-                .config(GlobalConfig.config().get("server"))
+                .config(Config.global().get("server"))
                 .host("localhost");
 
         extensions.forEach(it -> it.beforeAll(context));

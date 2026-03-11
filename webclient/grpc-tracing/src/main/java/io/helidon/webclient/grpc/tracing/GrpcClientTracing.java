@@ -29,33 +29,8 @@ public class GrpcClientTracing implements GrpcClientService {
 
     private final Config config;
 
-    /**
-     * Create an instance from config.
-     *
-     * @param config the config
-     * @deprecated this constructor was left public by accident, please use #create(Config)
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true)
-    public GrpcClientTracing(io.helidon.common.config.Config config) {
-        this(Config.config(config));
-    }
-
     private GrpcClientTracing(Config config) {
         this.config = config;
-    }
-
-    /**
-     * Create a new instance of the gRPC client tracing service.
-     *
-     * @param config the config
-     * @return client tracing service
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static GrpcClientTracing create(io.helidon.common.config.Config config) {
-        return new GrpcClientTracing(config);
     }
 
     /**

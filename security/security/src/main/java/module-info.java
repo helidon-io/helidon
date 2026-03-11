@@ -50,9 +50,6 @@ module io.helidon.security {
     // this will be marked as internal API
     exports io.helidon.security.internal;
 
-    // needed for CDI integration
-    opens io.helidon.security to weld.core.impl;
-
     uses io.helidon.security.spi.SecurityProviderService;
 
 }

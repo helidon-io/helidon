@@ -19,7 +19,6 @@
  */
 module io.helidon.webserver.grpc.tracing {
 
-    requires io.helidon.common.config;
     requires io.helidon.webserver.grpc;
     requires io.helidon.grpc.core;
     requires io.helidon.tracing;
