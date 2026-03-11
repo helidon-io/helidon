@@ -40,28 +40,16 @@
         <version.lib.antlr>4.13.2</version.lib.antlr>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.bytebuddy>1.18.5</version.lib.bytebuddy>
-        <version.lib.coherence>25.03.1</version.lib.coherence>
-        <version.lib.commons-codec>1.16.0</version.lib.commons-codec>
         <version.lib.commons-compress>1.27.1</version.lib.commons-compress>
-        <version.lib.commons-io>2.16.1</version.lib.commons-io>
         <version.lib.commons-lang>3.18.0</version.lib.commons-lang>
-        <version.lib.commons-logging>1.3.5</version.lib.commons-logging>
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
-        <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.dropwizard.metrics>4.1.36</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>4.0.7</version.lib.eclipselink>
-        <!-- el-impl has been replaced by expressly. But we still manage version to not break existing application poms -->
-        <version.lib.el-impl>4.0.2</version.lib.el-impl>
-        <version.lib.expressly>5.0.0</version.lib.expressly>
-        <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
-        <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <version.lib.google-api-client>2.8.1</version.lib.google-api-client>
         <version.lib.google-error-prone-annotations>2.30.0</version.lib.google-error-prone-annotations>
         <version.lib.google-protobuf>4.31.1</version.lib.google-protobuf>
-        <version.lib.graalvm>23.1.0</version.lib.graalvm>
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
-        <version.lib.gson>2.13.2</version.lib.gson>
         <version.lib.grpc>1.73.0</version.lib.grpc>
         <version.lib.google-findbugs-jsr305>3.0.2</version.lib.google-findbugs-jsr305>
         <version.lib.guava>33.3.1-jre</version.lib.guava>
@@ -72,30 +60,21 @@
         <version.lib.hibernate>${version.lib.hibernate.family}.1.Final</version.lib.hibernate>
         <version.lib.hibernate-validator>8.0.2.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
-        <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.jackson>2.21.1</version.lib.jackson>
         <version.lib.jakarta.activation-api>2.1.3</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.1.1</version.lib.jakarta.annotation-api>
         <version.lib.jakarta.cdi-api>4.0.1</version.lib.jakarta.cdi-api>
-        <version.lib.jakarta.el-api>5.0.1</version.lib.jakarta.el-api>
         <version.lib.jakarta.inject>2.0.1</version.lib.jakarta.inject>
-        <version.lib.jakarta.interceptor-api>2.1.0</version.lib.jakarta.interceptor-api>
-        <version.lib.jakarta.jaxrs-api>3.1.0</version.lib.jakarta.jaxrs-api>
-        <version.lib.jakarta.jms-api>3.1.0</version.lib.jakarta.jms-api>
         <version.lib.jakarta.jsonb-api>3.0.1</version.lib.jakarta.jsonb-api>
-        <version.lib.jakarta.jsonb-tck>3.0.0</version.lib.jakarta.jsonb-tck>
         <version.lib.jakarta.jsonp-api>2.1.3</version.lib.jakarta.jsonp-api>
         <version.lib.jakarta.persistence-api>3.1.0</version.lib.jakarta.persistence-api>
         <version.lib.jakarta.transaction-api>2.0.1</version.lib.jakarta.transaction-api>
-        <version.lib.jakarta.validation-api>3.0.2</version.lib.jakarta.validation-api>
         <version.lib.jakarta.websockets-api>2.1.1</version.lib.jakarta.websockets-api>
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>4.0.2</version.lib.jakarta.xml.bind-api>
         <version.lib.jandex>3.3.0</version.lib.jandex>
-        <version.lib.javassist>3.30.2-GA</version.lib.javassist>
         <version.lib.jaxb-core>4.0.5</version.lib.jaxb-core>
         <version.lib.jaxb-impl>4.0.5</version.lib.jaxb-impl>
-        <version.lib.jboss.classfilewriter>1.3.1.Final</version.lib.jboss.classfilewriter>
         <version.lib.jboss.logging>3.5.3.Final</version.lib.jboss.logging>
         <version.lib.jaxb-runtime>4.0.5</version.lib.jaxb-runtime>
         <!-- Jetbrains annotations: dependency convergence requirement, we never use this directly -->
@@ -106,34 +85,26 @@
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
         <version.lib.log4j>2.25.3</version.lib.log4j>
-        <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
-        <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.micrometer>1.15.2</version.lib.micrometer>
         <version.lib.micrometer-prometheus>1.15.2</version.lib.micrometer-prometheus>
         <version.lib.microstream>08.01.01-MS-GA</version.lib.microstream>
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
-        <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
         <version.lib.narayana>7.1.0.Final</version.lib.narayana>
-        <version.lib.neo4j>5.28.3</version.lib.neo4j>
         <version.lib.netty>4.1.130.Final</version.lib.netty>
         <version.lib.oci>3.78.1</version.lib.oci>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <version.lib.ojdbc>${version.lib.ojdbc.family}.26.1.0.0</version.lib.ojdbc>
-        <version.lib.ojdbc8>${version.lib.ojdbc}</version.lib.ojdbc8>
         <!-- Force upgrade of okio for dependency convergence -->
         <version.lib.okio>3.6.0</version.lib.okio>
         <!-- Force upgrade okhttp3 for dependency convergence -->
         <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
         <version.lib.opentelemetry.semconv>1.37.0</version.lib.opentelemetry.semconv>
-        <version.lib.opentelemetry-sdk-extension-autoconfigure>1.58.0</version.lib.opentelemetry-sdk-extension-autoconfigure>
-        <version.lib.opentelemetry.opentracing.shim>1.58.0</version.lib.opentelemetry.opentracing.shim>
         <version.lib.opentelemetry>1.58.0</version.lib.opentelemetry>
         <version.lib.opentelemetry.instrumentation.annotations>2.24.0</version.lib.opentelemetry.instrumentation.annotations>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
-        <version.lib.perfmark-api>0.25.0</version.lib.perfmark-api>
         <version.lib.parsson>1.1.7</version.lib.parsson>
         <version.lib.postgresql>42.7.2</version.lib.postgresql>
         <version.lib.prometheus>0.16.0</version.lib.prometheus>
@@ -145,12 +116,10 @@
         <version.lib.typesafe-config>1.4.4</version.lib.typesafe-config>
         <version.lib.tyrus>2.1.5</version.lib.tyrus>
         <version.lib.weld-api>5.0.SP3</version.lib.weld-api>
-        <version.lib.weld>5.1.6.Final</version.lib.weld>
         <version.lib.yasson>3.0.4</version.lib.yasson>
         <version.lib.zipkin.sender-urlconnection>2.16.4</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
         <version.lib.zookeeper>3.5.7</version.lib.zookeeper>
-        <version.lib.crac>1.5.0</version.lib.crac>
     </properties>
 
     <dependencyManagement>
@@ -278,19 +247,6 @@
                 <version>${version.lib.jaxb-runtime}</version>
             </dependency>
             <dependency>
-                <!-- contains the API as well -->
-                <!-- Has been replaced by expressly. We manage version to not break existing application poms -->
-                <groupId>org.glassfish</groupId>
-                <artifactId>jakarta.el</artifactId>
-                <version>${version.lib.el-impl}</version>
-            </dependency>
-            <dependency>
-                <!-- Jakarta EL implementation -->
-                <groupId>org.glassfish.expressly</groupId>
-                <artifactId>expressly</artifactId>
-                <version>${version.lib.expressly}</version>
-            </dependency>
-            <dependency>
                 <groupId>jakarta.enterprise</groupId>
                 <artifactId>jakarta.enterprise.cdi-api</artifactId>
                 <version>${version.lib.jakarta.cdi-api}</version>
@@ -301,26 +257,9 @@
                 <version>${version.lib.jakarta.cdi-api}</version>
             </dependency>
             <dependency>
-                <groupId>jakarta.el</groupId>
-                <artifactId>jakarta.el-api</artifactId>
-                <version>${version.lib.jakarta.el-api}</version>
-            </dependency>
-            <dependency>
                 <groupId>jakarta.annotation</groupId>
                 <artifactId>jakarta.annotation-api</artifactId>
                 <version>${version.lib.jakarta.annotation-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.interceptor</groupId>
-                <artifactId>jakarta.interceptor-api</artifactId>
-                <version>${version.lib.jakarta.interceptor-api}</version>
-                <exclusions>
-                    <!-- Exclude EJB. See https://github.com/eclipse-ee4j/interceptor-api/issues/31 -->
-                    <exclusion>
-                        <groupId>jakarta.ejb</groupId>
-                        <artifactId>jakarta.ejb-api</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>jakarta.inject</groupId>
@@ -346,11 +285,6 @@
                 <groupId>org.eclipse.jgit</groupId>
                 <artifactId>org.eclipse.jgit</artifactId>
                 <version>${version.lib.jgit}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.jms</groupId>
-                <artifactId>jakarta.jms-api</artifactId>
-                <version>${version.lib.jakarta.jms-api}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.parsson</groupId>
@@ -384,18 +318,6 @@
                 <artifactId>snakeyaml</artifactId>
                 <version>${version.lib.snakeyaml}</version>
             </dependency>
-            <dependency>
-                <groupId>org.mousio</groupId>
-                <artifactId>etcd4j</artifactId>
-                <version>${version.lib.etcd4j}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.google.code.gson</groupId>
-                <artifactId>gson</artifactId>
-                <version>${version.lib.gson}</version>
-            </dependency>
-
             <dependency>
               <groupId>io.opentracing.contrib</groupId>
               <artifactId>opentracing-grpc</artifactId>
@@ -452,11 +374,6 @@
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
                 <version>${version.lib.bytebuddy}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.javassist</groupId>
-                <artifactId>javassist</artifactId>
-                <version>${version.lib.javassist}</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -520,11 +437,6 @@
                 <groupId>org.mongodb</groupId>
                 <artifactId>mongodb-driver-sync</artifactId>
                 <version>${version.lib.mongodb}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.oracle.database.messaging</groupId>
-                <artifactId>aqapi</artifactId>
-                <version>${version.lib.database.messaging}</version>
             </dependency>
 
             <!-- Micrometer related -->
@@ -604,11 +516,6 @@
                 <version>${version.lib.jakarta.transaction-api}</version>
             </dependency>
             <dependency>
-                <groupId>jakarta.validation</groupId>
-                <artifactId>jakarta.validation-api</artifactId>
-                <version>${version.lib.jakarta.validation-api}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>${version.lib.h2}</version>
@@ -670,70 +577,9 @@
                 <version>${version.lib.narayana}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss.weld</groupId>
-                <artifactId>weld-api</artifactId>
-                <version>${version.lib.weld-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.weld</groupId>
-                <artifactId>weld-core-impl</artifactId>
-                <version>${version.lib.weld}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.weld</groupId>
-                <artifactId>weld-spi</artifactId>
-                <version>${version.lib.weld-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.weld</groupId>
-                <artifactId>weld-lite-extension-translator</artifactId>
-                <version>${version.lib.weld}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.weld</groupId>
-                        <artifactId>weld-core-impl</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.weld.module</groupId>
-                <artifactId>weld-jta</artifactId>
-                <version>${version.lib.weld}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.spec.javax.transaction</groupId>
-                        <artifactId>jboss-transaction-api_1.3_spec</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jboss.weld</groupId>
-                        <artifactId>weld-core-impl</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.weld.environment</groupId>
-                <artifactId>weld-environment-common</artifactId>
-                <version>${version.lib.weld}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.classfilewriter</groupId>
-                <artifactId>jboss-classfilewriter</artifactId>
-                <version>${version.lib.jboss.classfilewriter}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging</artifactId>
                 <version>${version.lib.jboss.logging}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.graalvm.sdk</groupId>
-                <artifactId>nativeimage</artifactId>
-                <version>${version.lib.graalvm}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.graalvm.nativeimage</groupId>
-                <artifactId>svm</artifactId>
-                <version>${version.lib.graalvm}</version>
             </dependency>
             <dependency>
                 <groupId>com.graphql-java</groupId>
@@ -781,12 +627,6 @@
                 <artifactId>annotations</artifactId>
                 <version>${version.lib.jetbrains.annotations}</version>
             </dependency>
-            <!-- Neo4j -->
-            <dependency>
-                <groupId>org.neo4j.driver</groupId>
-                <artifactId>neo4j-java-driver</artifactId>
-                <version>${version.lib.neo4j}</version>
-            </dependency>
             <!-- Cron utils -->
             <dependency>
                 <groupId>com.cronutils</groupId>
@@ -802,11 +642,6 @@
                 <groupId>org.reactivestreams</groupId>
                 <artifactId>reactive-streams-tck</artifactId>
                 <version>${version.lib.reactivestreams}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.crac</groupId>
-                <artifactId>crac</artifactId>
-                <version>${version.lib.crac}</version>
             </dependency>
             <!-- END OF Section 1: direct third party dependencies -->
 
@@ -831,18 +666,6 @@
                 <version>${version.lib.groovy-all}</version>
             </dependency>
             <dependency>
-                <!-- Required for dependency convergence google-api-client -->
-                <groupId>commons-logging</groupId>
-                <artifactId>commons-logging</artifactId>
-                <version>${version.lib.commons-logging}</version>
-            </dependency>
-            <dependency>
-                <!-- Required for dependency convergence google-api-client -->
-                <groupId>commons-codec</groupId>
-                <artifactId>commons-codec</artifactId>
-                <version>${version.lib.commons-codec}</version>
-            </dependency>
-            <dependency>
                 <!-- Force upgrade -->
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
@@ -853,12 +676,6 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${version.lib.commons-lang}</version>
-            </dependency>
-            <dependency>
-                <!-- version managed to align with commons-compress version above -->
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>${version.lib.commons-io}</version>
             </dependency>
             <dependency>
                 <!-- Force upgrade okhttp3 for dependency convergence -->
@@ -942,26 +759,9 @@
                 <artifactId>slf4j-simple</artifactId>
                 <version>${version.lib.slf4j}</version>
             </dependency>
-            <dependency>
-                <groupId>org.mariadb.jdbc</groupId>
-                <artifactId>mariadb-java-client</artifactId>
-                <version>${version.lib.mariadb-java-client}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.microsoft.sqlserver</groupId>
-                <artifactId>mssql-jdbc</artifactId>
-                <version>${version.lib.mssql-jdbc}</version>
-            </dependency>
             <!-- END OF Section 4: Testing -->
 
             <!-- imported boms -->
-            <dependency>
-                <groupId>com.oracle.coherence.ce</groupId>
-                <artifactId>coherence-bom</artifactId>
-                <version>${version.lib.coherence}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
             <!-- Force upgrade. Used by grpc -->
             <dependency>
                 <groupId>com.google.protobuf</groupId>
@@ -1025,13 +825,6 @@
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-bom</artifactId>
                 <version>${version.lib.opentelemetry}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.oracle.oci.sdk</groupId>
-                <artifactId>oci-java-sdk-bom</artifactId>
-                <version>${version.lib.oci}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
