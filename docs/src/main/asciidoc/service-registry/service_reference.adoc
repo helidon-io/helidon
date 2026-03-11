@@ -46,7 +46,7 @@ Note: this is a work in progress, not listing the full set of contracts yet!
 `Config`
 |`90`
 |`io.helidon.config`
-|Configuration either from meta configuration (config profiles), or from service registry (same instance that implements `io.helidon.common.config.Config`)
+|Configuration either from meta configuration (config profiles), or from service registry (same instance that implements `io.helidon.config.Config`)
 |N/A
 |`io.helidon.scheduling`
 `TaskManager`

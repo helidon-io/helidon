@@ -37,19 +37,16 @@ import static org.hamcrest.Matchers.is;
 /**
  * Tests {@code BuilderCodegen}.
  */
-@SuppressWarnings("removal")
 class SchemaGeneratorTest {
 
     static final List<Class<?>> CLASSPATH = List.of(
             Option.class,
             Builder.class,
             Config.class,
-            io.helidon.common.config.Config.class,
             OptionalValue.class,
             Configured.class);
 
     static final List<String> OPTS = List.of(
-            "-Xlint:-removal",
             "-Xlint:-deprecation");
 
     @Test
@@ -1188,14 +1185,14 @@ class SchemaGeneratorTest {
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
-                        interface AcmeService extends io.helidon.common.config.NamedService {
+                        interface AcmeService extends io.helidon.config.NamedService {
                         }
                         """)
                 .addSource("AcmeServiceProvider.java", """
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
-                        interface AcmeServiceProvider extends io.helidon.common.config.ConfiguredProvider<AcmeService> {
+                        interface AcmeServiceProvider extends io.helidon.config.ConfiguredProvider<AcmeService> {
                         }
                         """)
                 .addSource("AcmeConfigBlueprint.java", """
@@ -1266,14 +1263,14 @@ class SchemaGeneratorTest {
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
-                        interface AcmeService extends io.helidon.common.config.NamedService {
+                        interface AcmeService extends io.helidon.config.NamedService {
                         }
                         """)
                 .addSource("AcmeServiceProvider.java", """
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
-                        interface AcmeServiceProvider extends io.helidon.common.config.ConfiguredProvider<AcmeService> {
+                        interface AcmeServiceProvider extends io.helidon.config.ConfiguredProvider<AcmeService> {
                         }
                         """)
                 .addSource("AcmeConfigBlueprint.java", """
@@ -1412,14 +1409,14 @@ class SchemaGeneratorTest {
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
-                        interface AcmeService extends io.helidon.common.config.NamedService {
+                        interface AcmeService extends io.helidon.config.NamedService {
                         }
                         """)
                 .addSource("AcmeServiceProvider.java", """
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
-                        interface AcmeServiceProvider<T extends AcmeService> extends io.helidon.common.config.ConfiguredProvider<T> {
+                        interface AcmeServiceProvider<T extends AcmeService> extends io.helidon.config.ConfiguredProvider<T> {
                         }
                         """)
                 .addSource("AcmeLoggingServiceConfigBlueprint.java", """
@@ -1469,7 +1466,7 @@ class SchemaGeneratorTest {
                         package com.acme;
                         
                         @SuppressWarnings("ALL")
-                        interface AcmeService extends io.helidon.common.config.NamedService {
+                        interface AcmeService extends io.helidon.config.NamedService {
                         }
                         """)
                 .addSource("AcmeLogging.java", """

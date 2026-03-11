@@ -121,7 +121,6 @@
                             <rules>
                                 <bannedDependencies>
                                     <excludes>
-                                        <exclude>io.helidon.common.config:helidon-common-config</exclude>
                                         <exclude>io.helidon.config:helidon-config</exclude>
                                     </excludes>
                                 </bannedDependencies>

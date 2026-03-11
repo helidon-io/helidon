@@ -18,7 +18,7 @@ package io.helidon.builder.test.testsubjects;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 @Prototype.Blueprint
 @Prototype.Configured

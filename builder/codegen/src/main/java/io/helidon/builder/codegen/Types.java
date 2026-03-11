@@ -25,7 +25,6 @@ import io.helidon.common.Generated;
 import io.helidon.common.types.TypeName;
 
 final class Types {
-    static final TypeName COMMON_CONFIG = TypeName.create("io.helidon.common.config.Config");
     static final TypeName CONFIG = TypeName.create("io.helidon.config.Config");
     static final TypeName GENERATED = TypeName.create(Generated.class);
     static final TypeName DEPRECATED = TypeName.create(Deprecated.class);
@@ -105,8 +104,6 @@ final class Types {
     static final TypeName CONFIGURED_OPTION_KIND = TypeName.create("io.helidon.config.metadata.ConfiguredOption.Kind");
     static final TypeName CONFIGURED_VALUE = TypeName.create("io.helidon.config.metadata.ConfiguredValue");
 
-    static final TypeName COMMON_CONFIGURED_PROVIDER = TypeName.create("io.helidon.common.config.ConfiguredProvider");
-    static final TypeName COMMON_NAMED_SERVICE = TypeName.create("io.helidon.common.config.NamedService");
     static final TypeName CONFIGURED_PROVIDER = TypeName.create("io.helidon.config.ConfiguredProvider");
     static final TypeName NAMED_SERVICE = TypeName.create("io.helidon.config.NamedService");
 

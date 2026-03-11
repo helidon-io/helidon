@@ -93,7 +93,7 @@ class SchemaGenerator {
         if (rtName != null) {
             var rtInfo = ctx.typeInfo(rtName).orElseThrow(() ->
                     new CodegenException("Unable to resolve: " + rtName.fqName(), enclosingTypeInfo));
-            if (resolver.isSubtype(rtInfo, Types.COMMON_NAMED_SERVICE, Types.NAMED_SERVICE)) {
+            if (resolver.isSubtype(rtInfo, Types.NAMED_SERVICE)) {
                 if (provides.isEmpty()) {
                     logger.log(Level.WARNING, "Configured provider not declared for: " + rtName.fqName(), enclosingTypeInfo);
                 }
@@ -106,8 +106,7 @@ class SchemaGenerator {
         for (var superTypeInfo : resolver.typeHierarchy(providedTypeInfo)) {
             var superTypeName = superTypeInfo.typeName();
             var rawSuperTypeName = superTypeName.genericTypeName();
-            if (rawSuperTypeName.equals(Types.COMMON_CONFIGURED_PROVIDER)
-                || rawSuperTypeName.equals(Types.CONFIGURED_PROVIDER)) {
+            if (rawSuperTypeName.equals(Types.CONFIGURED_PROVIDER)) {
                 for (var typeArg : superTypeName.typeArguments()) {
                     var resolvedTypeArgInfo = ctx.typeInfo(typeArg)
                             .orElseGet(() -> resolver.resolveTypeParameter(typeArg, superTypeName));

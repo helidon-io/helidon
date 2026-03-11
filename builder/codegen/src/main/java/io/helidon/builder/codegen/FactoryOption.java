@@ -47,7 +47,6 @@ import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.Types.ARRAY_LIST;
 import static io.helidon.builder.codegen.Types.BUILDER_DESCRIPTION;
-import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
 import static io.helidon.builder.codegen.Types.CONFIG;
 import static io.helidon.builder.codegen.Types.DEPRECATED;
 import static io.helidon.builder.codegen.Types.LINKED_HASH_MAP;
@@ -401,7 +400,7 @@ final class FactoryOption {
             }
 
             TypeName param = referencedMethod.parameterArguments().getFirst().typeName();
-            if (param.equals(CONFIG) || param.equals(COMMON_CONFIG)) {
+            if (param.equals(CONFIG)) {
                 continue;
             }
 
@@ -782,7 +781,7 @@ final class FactoryOption {
                 continue;
             }
             TypeName firstParam = referencedMethod.parameterArguments().getFirst().typeName();
-            if (!(firstParam.equals(COMMON_CONFIG) || firstParam.equals(CONFIG))) {
+            if (!firstParam.equals(CONFIG)) {
                 // not a config factory
                 continue;
             }
@@ -820,13 +819,13 @@ final class FactoryOption {
                 .filter(it -> Utils.typesEqual(it.typeName(), actualType))
                 .filter(it -> it.parameterArguments().size() == 1)
                 .map(it -> it.parameterArguments().getFirst().typeName())
-                .anyMatch(it -> it.equals(COMMON_CONFIG) || it.equals(CONFIG))) {
+                .anyMatch(CONFIG::equals)) {
             // there is a config factory method on the type
             configured.factoryMethod(fm -> fm
                     .declaringType(actualType)
                     .returnType(actualType)
                     .methodName("create")
-                    .parameterType(COMMON_CONFIG)
+                    .parameterType(CONFIG)
                     .optionName(optionName)
             );
             return;
@@ -896,8 +895,6 @@ final class FactoryOption {
     /*
     Method name is camel case (such as maxInitialLineLength)
     result is kebab-case (such as max-initial-line-length).
-    Note that this same method was created in ConfigUtils in common-config, but since this
-    module should not have any dependencies in it a copy was left here as well.
     */
     private static String toConfigKey(String name) {
         StringBuilder result = new StringBuilder();

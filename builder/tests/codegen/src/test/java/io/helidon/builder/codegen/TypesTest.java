@@ -84,7 +84,6 @@ public class TypesTest {
             fields.put(name, declaredField);
         }
 
-        checkField(toCheck, checked, fields, "COMMON_CONFIG", io.helidon.common.config.Config.class);
         checkField(toCheck, checked, fields, "CONFIG", io.helidon.config.Config.class);
         checkField(toCheck, checked, fields, "GENERATED", Generated.class);
         checkField(toCheck, checked, fields, "DEPRECATED", Deprecated.class);
@@ -157,8 +156,6 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "CONFIGURED_OPTION", ConfiguredOption.class);
         checkField(toCheck, checked, fields, "CONFIGURED_OPTION_KIND", ConfiguredOption.Kind.class);
         checkField(toCheck, checked, fields, "CONFIGURED_VALUE", ConfiguredValue.class);
-        checkField(toCheck, checked, fields, "COMMON_CONFIGURED_PROVIDER", io.helidon.common.config.ConfiguredProvider.class);
-        checkField(toCheck, checked, fields, "COMMON_NAMED_SERVICE", io.helidon.common.config.NamedService.class);
         checkField(toCheck, checked, fields, "CONFIGURED_PROVIDER", io.helidon.config.ConfiguredProvider.class);
         checkField(toCheck, checked, fields, "NAMED_SERVICE", io.helidon.config.NamedService.class);
 
