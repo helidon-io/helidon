@@ -65,20 +65,6 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
      *
      * @param config config instance
      * @return a new thread pool supplier configured from config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static ScheduledThreadPoolSupplier create(io.helidon.common.config.Config config) {
-        return builder().config(config)
-                .build();
-    }
-
-    /**
-     * Load supplier from configuration.
-     *
-     * @param config config instance
-     * @return a new thread pool supplier configured from config
      */
     public static ScheduledThreadPoolSupplier create(Config config) {
         return builder().config(config)

@@ -36,7 +36,6 @@ final class EmptyConfig {
     private EmptyConfig() {
     }
 
-    @SuppressWarnings("removal")
     private static final class KeyImpl implements Config.Key {
         private final Config.Key parent;
         private final String name;
@@ -66,11 +65,8 @@ final class EmptyConfig {
         }
 
         @Override
-        public Config.Key child(io.helidon.common.config.Config.Key key) {
-            if (isRoot()) {
-                return new ConfigProvider.CommonKeyWrapper(key);
-            }
-            List<String> path = path(new ConfigProvider.CommonKeyWrapper(key));
+        public Config.Key child(Config.Key key) {
+            List<String> path = path(key);
             Config.Key node = this;
             for (String name : path) {
                 node = new KeyImpl(node, name);
@@ -80,7 +76,7 @@ final class EmptyConfig {
         }
 
         @Override
-        public int compareTo(io.helidon.common.config.Config.Key o) {
+        public int compareTo(Config.Key o) {
             return this.toString().compareTo(o.toString());
         }
 
@@ -119,7 +115,6 @@ final class EmptyConfig {
         }
     }
 
-    @SuppressWarnings("removal")
     private static final class EmptyNode implements Config {
         private static final Config DELEGATE = new BuilderImpl()
                 // the empty config source is needed, so we do not look for meta config or default
@@ -204,18 +199,7 @@ final class EmptyConfig {
         }
 
         @Override
-        public <T> ConfigValue<T> map(Function<io.helidon.common.config.Config, T> mapper) {
-            return ConfigValues.empty();
-        }
-
-        @Override
         public <T> ConfigValue<List<T>> asList(Class<T> type) throws
-                ConfigException {
-            return ConfigValues.empty();
-        }
-
-        @Override
-        public <T> ConfigValue<List<T>> mapList(Function<io.helidon.common.config.Config, T> mapper) throws
                 ConfigException {
             return ConfigValues.empty();
         }

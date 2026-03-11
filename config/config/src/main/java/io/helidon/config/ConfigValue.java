@@ -20,6 +20,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.mapper.OptionalValue;
+
 /**
  * A typed value of a {@link Config} node.
  * <p>
@@ -32,7 +35,7 @@ import java.util.function.Supplier;
  * @see Config#as(Function)
  * @see Config#as(io.helidon.common.GenericType)
  */
-public interface ConfigValue<T> extends io.helidon.common.config.ConfigValue<T> {
+public interface ConfigValue<T> extends OptionalValue<T> {
     /**
      * Returns the fully-qualified key of the originating {@code Config} node.
      * <p>

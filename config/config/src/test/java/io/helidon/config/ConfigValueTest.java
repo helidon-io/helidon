@@ -66,12 +66,12 @@ class ConfigValueTest {
             }
 
             @Override
-            public <N> io.helidon.common.config.ConfigValue<N> as(Class<N> type) {
+            public <N> ConfigValue<N> as(Class<N> type) {
                 throw new ConfigMappingException(key(), "test value cannot be mapped to other types.");
             }
 
             @Override
-            public <N> io.helidon.common.config.ConfigValue<N> as(GenericType<N> type) {
+            public <N> ConfigValue<N> as(GenericType<N> type) {
                 throw new ConfigMappingException(key(), "test value cannot be mapped to other types.");
             }
 
@@ -107,12 +107,12 @@ class ConfigValueTest {
             }
 
             @Override
-            public <N> io.helidon.common.config.ConfigValue<N> as(Class<N> type) {
+            public <N> ConfigValue<N> as(Class<N> type) {
                 throw new ConfigMappingException(key(), "test value cannot be mapped to other types.");
             }
 
             @Override
-            public <N> io.helidon.common.config.ConfigValue<N> as(GenericType<N> type) {
+            public <N> ConfigValue<N> as(GenericType<N> type) {
                 throw new ConfigMappingException(key(), "test value cannot be mapped to other types.");
             }
 

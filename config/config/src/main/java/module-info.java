@@ -29,8 +29,8 @@ module io.helidon.config {
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.service.registry;
-    requires transitive io.helidon.common.config;
     requires transitive io.helidon.common.media.type;
+    requires transitive io.helidon.common.mapper;
     requires transitive io.helidon.common;
     requires transitive io.helidon.builder.api;
 
@@ -48,8 +48,6 @@ module io.helidon.config {
 
     provides io.helidon.config.spi.ConfigParser
             with io.helidon.config.PropertiesConfigParser;
-    provides io.helidon.common.config.spi.ConfigProvider
-            with io.helidon.config.HelidonConfigProvider;
     provides io.helidon.config.spi.ConfigMapperProvider
             with io.helidon.config.EnumMapperProvider;
 

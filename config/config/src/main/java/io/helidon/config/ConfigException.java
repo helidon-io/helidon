@@ -19,7 +19,7 @@ package io.helidon.config;
 /**
  * Exception is thrown by {@link Config} implementations.
  */
-public class ConfigException extends io.helidon.common.config.ConfigException {
+public class ConfigException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 

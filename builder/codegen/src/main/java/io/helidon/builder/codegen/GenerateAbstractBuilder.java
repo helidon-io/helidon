@@ -294,22 +294,6 @@ final class GenerateAbstractBuilder {
                 .addLine("If a value is present in configuration, it would override currently configured values.")
                 .build();
 
-        // backward compatibility
-        classBuilder.addMethod(commonConfig -> commonConfig
-                .name("config")
-                .javadoc(Javadoc.builder(javadoc)
-                                 .addTag("deprecated", "use {@link #config(" + Types.CONFIG.fqName() + ")}")
-                                 .build())
-                .returnType(TypeArgument.create("BUILDER"), "updated builder instance")
-                .addParameter(param -> param.name("config")
-                        .type(Types.COMMON_CONFIG)
-                        .description("configuration instance used to obtain values to update this builder"))
-                .addAnnotation(Annotations.DEPRECATED)
-                .addContent("return config(")
-                .addContent(Types.CONFIG)
-                .addContentLine(".config(config));")
-        );
-
         Method.Builder builder = Method.builder()
                 .name("config")
                 .javadoc(javadoc)

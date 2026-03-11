@@ -77,8 +77,8 @@ final class ProvidedUtil {
      * @param <T>              type of the service provider (contract)
      * @return first service by {@link io.helidon.common.Weight}, or empty optional
      */
-    static <S extends io.helidon.common.config.NamedService,
-            T extends io.helidon.common.config.ConfiguredProvider<S>> Optional<S> discoverService(
+    static <S extends NamedService,
+            T extends ConfiguredProvider<S>> Optional<S> discoverService(
             Config config,
             String configKey,
             HelidonServiceLoader<T> serviceLoader,
@@ -129,8 +129,8 @@ final class ProvidedUtil {
      * @param <T>              type of the service provider (contract)
      * @return list of discovered services, ordered by {@link io.helidon.common.Weight} (highest weight first)
      */
-    static <S extends io.helidon.common.config.NamedService,
-            T extends io.helidon.common.config.ConfiguredProvider<S>> List<S> discoverServices(
+    static <S extends NamedService,
+            T extends ConfiguredProvider<S>> List<S> discoverServices(
             Config config,
             String configKey,
             HelidonServiceLoader<T> serviceLoader,
@@ -179,8 +179,8 @@ final class ProvidedUtil {
         }
     }
 
-    static <S extends io.helidon.common.config.NamedService,
-            T extends io.helidon.common.config.ConfiguredProvider<S>> List<S> discoverServices(Config config,
+    static <S extends NamedService,
+            T extends ConfiguredProvider<S>> List<S> discoverServices(Config config,
             String configKey,
             Optional<ServiceRegistry> serviceRegistry,
             Class<T> providerType,
@@ -231,8 +231,8 @@ final class ProvidedUtil {
         }
     }
 
-    static <S extends io.helidon.common.config.NamedService,
-            T extends io.helidon.common.config.ConfiguredProvider<S>> Optional<S> discoverService(
+    static <S extends NamedService,
+            T extends ConfiguredProvider<S>> Optional<S> discoverService(
             Config config,
             String configKey,
             Optional<ServiceRegistry> serviceRegistry,
@@ -267,8 +267,8 @@ final class ProvidedUtil {
         return services.isEmpty() ? Optional.empty() : Optional.of(services.getFirst());
     }
 
-    private static <S extends io.helidon.common.config.NamedService,
-            T extends io.helidon.common.config.ConfiguredProvider<S>> List<S> servicesFromObject(
+    private static <S extends NamedService,
+            T extends ConfiguredProvider<S>> List<S> servicesFromObject(
             Config providersConfig,
             HelidonServiceLoader<T> serviceLoader,
             Class<T> providerType,
@@ -327,8 +327,8 @@ final class ProvidedUtil {
         return result;
     }
 
-    private static <S extends io.helidon.common.config.NamedService,
-            T extends io.helidon.common.config.ConfiguredProvider<S>> List<S> servicesFromList(
+    private static <S extends NamedService,
+            T extends ConfiguredProvider<S>> List<S> servicesFromList(
             HelidonServiceLoader<T> serviceLoader,
             Class<T> providerType,
             Class<S> configType,
@@ -416,8 +416,8 @@ final class ProvidedUtil {
         return new ConfiguredService(new TypeAndName(type, name), serviceConfig, enabled);
     }
 
-    private static <S extends io.helidon.common.config.NamedService,
-            T extends io.helidon.common.config.ConfiguredProvider<S>> List<S> servicesFromList(
+    private static <S extends NamedService,
+            T extends ConfiguredProvider<S>> List<S> servicesFromList(
             RegistryWrap serviceRegistry,
             Class<T> providerType,
             Class<S> configType,
@@ -475,8 +475,8 @@ final class ProvidedUtil {
         return result;
     }
 
-    private static <S extends io.helidon.common.config.NamedService,
-            T extends io.helidon.common.config.ConfiguredProvider<S>> List<S> servicesFromObject(
+    private static <S extends NamedService,
+            T extends ConfiguredProvider<S>> List<S> servicesFromObject(
             Config providersConfig,
             RegistryWrap serviceRegistry,
             Class<T> providerType,

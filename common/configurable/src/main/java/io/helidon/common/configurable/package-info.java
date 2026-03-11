@@ -15,7 +15,7 @@
  */
 
 /**
- * General utilities that use {@link io.helidon.common.config.Config}.
+ * General utilities that use {@link io.helidon.config.Config}.
  *
  * @see io.helidon.common.configurable.Resource
  */

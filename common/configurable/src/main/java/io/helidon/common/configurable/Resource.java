@@ -203,21 +203,6 @@ public interface Resource extends RuntimeType.Api<ResourceConfig> {
      * Loads the resource from appropriate location based
      * on configuration.
      *
-     * @param config config node
-     * @return a resource ready to load from one of the locations
-     * @throws io.helidon.config.ConfigException in case this config does not define a resource configuration
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    static Resource create(io.helidon.common.config.Config config) {
-        return ResourceConfig.create(config).build();
-    }
-
-    /**
-     * Loads the resource from appropriate location based
-     * on configuration.
-     *
      * @param config    configuration current node must be the node containing the location of the resource, by
      *                          convention in helidon, this should be on key named {@code resource}
      * @return a resource ready to load from one of the locations

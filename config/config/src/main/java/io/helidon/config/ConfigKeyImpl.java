@@ -107,7 +107,7 @@ class ConfigKeyImpl implements Config.Key {
      * @return new child instance of ConfigKeyImpl.
      */
     @Override
-    public ConfigKeyImpl child(io.helidon.common.config.Config.Key key) {
+    public ConfigKeyImpl child(Config.Key key) {
         final List<String> path;
         if (key instanceof ConfigKeyImpl configKey) {
             path = configKey.path;
@@ -147,10 +147,10 @@ class ConfigKeyImpl implements Config.Key {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof io.helidon.common.config.Config.Key)) {
+        if (!(o instanceof Config.Key key)) {
             return false;
         }
-        io.helidon.common.config.Config.Key key = (io.helidon.common.config.Config.Key) o;
+
         return Objects.equals(name(), key.name())
                 && Objects.equals(isRoot(), key.isRoot())
                 && (isRoot() || Objects.equals(parent(), key.parent()));
@@ -162,7 +162,7 @@ class ConfigKeyImpl implements Config.Key {
     }
 
     @Override
-    public int compareTo(io.helidon.common.config.Config.Key that) {
+    public int compareTo(Config.Key that) {
         return toString().compareTo(that.toString());
     }
 

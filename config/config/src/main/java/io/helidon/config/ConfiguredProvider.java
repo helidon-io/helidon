@@ -15,51 +15,27 @@
  */
 package io.helidon.config;
 
-import io.helidon.common.DeprecationSupport;
-
 /**
  * Providers that can be loaded from configuration should implement this interface.
  *
  * @param <T> type of the service this provider provides
  */
-@SuppressWarnings("removal")
-public interface ConfiguredProvider<T extends NamedService> extends io.helidon.common.config.ConfiguredProvider<T> {
-
+public interface ConfiguredProvider<T extends NamedService> {
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    String configKey();
-
-    /**
-     * {@inheritDoc}
+     * Key this service implementation is stored under. This is also considered the service "type" when used
+     * in a list in configuration, to allow the same service defined more than once.
      *
-     * @deprecated use {@link #create(Config, String)} instead
+     * @return key of this implementation
      */
-    @Override
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    default T create(io.helidon.common.config.Config config, String name) {
-        // default to avoid forcing deprecated symbols references
-        return create(Config.config(config), name);
-    }
+    String configKey();
 
     /**
      * Create a new instance from the configuration located
      * on the provided node.
-     * <p>
-     * API Note: the default method implementation is provided for backward compatibility
-     * and <b>will be removed in the next major version</b>
      *
      * @param config located at {@link #configKey()} node
      * @param name   name of the configured implementation
      * @return a new instance created from this config node
-     * @since 4.4.0
      */
-    default T create(Config config, String name) {
-        // default to preserve backward compatibility
-        // require the deprecated variant to be implemented
-        DeprecationSupport.requireOverride(this, ConfiguredProvider.class, "create", io.helidon.common.config.Config.class);
-        return create((io.helidon.common.config.Config) config, name);
-    }
+    T create(Config config, String name);
 }
