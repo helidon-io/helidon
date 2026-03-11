@@ -146,7 +146,6 @@ endif::[]
 :micrometer-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.micrometer
 :prometheus-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.prometheus
 :openapi-javadoc-base-url: {javadoc-base-url}/io.helidon.openapi
-:openapi-ui-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.openapi.ui
 :reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive
 :scheduling-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.scheduling
 :scheduling-se-javadoc-base-url: {javadoc-base-url}/io.helidon.scheduling
@@ -241,8 +240,5 @@ endif::[]
 // GraalVM
 :graalvm-jdk-version: 21
 :graalvm-doc-url: https://www.graalvm.org/jdk{graalvm-jdk-version}/
-
-// OpenAPI UI
-:smallrye-openapi-ui-base-url: https://github.com/smallrye/smallrye-open-api/tree/{version-lib-smallrye-open-api}/ui/open-api-ui
 
 endif::attributes-included[]

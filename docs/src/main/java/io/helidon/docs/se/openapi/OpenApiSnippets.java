@@ -16,7 +16,6 @@
 package io.helidon.docs.se.openapi;
 
 import io.helidon.config.Config;
-import io.helidon.integrations.openapi.ui.OpenApiUi;
 import io.helidon.openapi.OpenApiFeature;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;

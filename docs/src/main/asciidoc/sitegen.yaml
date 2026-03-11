@@ -224,7 +224,6 @@ backend:
                 sources:
                   - "openapi.adoc"
                   - "openapi-generator.adoc"
-                  - "openapi-ui.adoc"
               - type: "PAGE"
                 title: "Observability"
                 source: "observability.adoc"
