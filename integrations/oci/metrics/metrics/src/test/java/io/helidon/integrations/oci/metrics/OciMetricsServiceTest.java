@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Counter;
@@ -30,6 +32,8 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 
@@ -52,7 +56,8 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
-class OciMetricsSupportTest {
+@Testing.Test
+class OciMetricsServiceTest {
     private static final Monitoring monitoringClient = mock(Monitoring.class);
     private static volatile Double[] testMetricUpdateCounterValue = new Double[2];
     private static volatile int testMetricCount = 0;
@@ -60,7 +65,8 @@ class OciMetricsSupportTest {
     private static int noOfMetrics;
     private static String endPoint = "https://telemetry.DummyEndpoint.com";
     private static String postingEndPoint;
-    private static final MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry(MetricsConfig.create());
+
+    private static MeterRegistry meterRegistry;
 
     @BeforeAll
     static void mockSetGetEndpoints() {
@@ -71,6 +77,27 @@ class OciMetricsSupportTest {
         doAnswer(invocation -> {
             return endPoint;
         }).when(monitoringClient).getEndpoint();
+
+    }
+
+    @BeforeAll
+    static void prepareMeterRegistry() {
+        // Save the mocked monitorincClient so the OCI metrics publisher will get that one when it
+        // asks the service registry for it.
+        Services.set(Monitoring.class, monitoringClient);
+        var start = System.nanoTime();
+        /*
+        Specify oci as a publisher to trigger the periodic push of the metrics data to OCI, and keep
+        prometheus so there is a functional Micrometer meter registry to hold meter data.
+         */
+        var config = Config.just("""
+                                         metrics:
+                                           publishers:
+                                             - type: oci
+                                             - type: prometheus
+                                 """, MediaTypes.APPLICATION_YAML);
+
+        meterRegistry = MetricsFactory.getInstance().globalRegistry(MetricsConfig.builder().config(config.get("metrics")).build());
     }
 
     @BeforeEach
@@ -83,7 +110,7 @@ class OciMetricsSupportTest {
     }
 
     @Test
-    void testMetricUpdate() throws InterruptedException {
+    void testMetricUpdate() throws Exception {
         Counter counter = meterRegistry.getOrCreate(Counter.builder("DummyCounter")
                                                             .scope(Meter.Scope.BASE));
 
@@ -111,34 +138,38 @@ class OciMetricsSupportTest {
                     .build();
         }).when(monitoringClient).postMetricData(any());
 
-        OciMetricsSupport.Builder ociMetricsSupportBuilder = OciMetricsSupport.builder()
+        try (var ociMetricsService = OciMetricsService.builder()
                 .compartmentId("compartmentId")
                 .namespace("namespace")
                 .resourceGroup("resourceGroup")
-                .initialDelay(1L)
-                .delay(2L)
+                .initialDelay(Duration.ofSeconds(1L))
+                .delay(Duration.ofSeconds(2L))
                 .descriptionEnabled(false)
                 .monitoringClient(monitoringClient)
-                .enabled(true);
+                .enabled(true)
+                .build()) {
 
-        HttpRouting.Builder routing = createRouting(ociMetricsSupportBuilder);
+            HttpRouting.Builder routing = createRouting();
 
-        counter.increment();
-        WebServer webServer = createWebServer(routing);
+            counter.increment();
+            WebServer webServer = createWebServer(routing);
 
-        // Wait for metric updates to complete
-        countDownLatchWait(countDownLatch);
+            // Wait for metric updates to complete
+            countDownLatchWait(countDownLatch);
 
-        // Test the 1st and 2nd metric counter updates
-        assertThat(ociMetricsSupportBuilder.enabled(), is(true));
-        assertThat(testMetricUpdateCounterValue[0].intValue(), is(equalTo(1)));
-        assertThat(testMetricUpdateCounterValue[1].intValue(), is(equalTo(2)));
+            // Test the 1st and 2nd metric counter updates
+            assertThat(ociMetricsService.enabled(), is(true));
+            assertThat(testMetricUpdateCounterValue[0].intValue(), is(equalTo(1)));
+            assertThat(testMetricUpdateCounterValue[1].intValue(), is(equalTo(2)));
 
-        webServer.stop();
+            webServer.stop();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Test
-    void testEndpoint() throws InterruptedException {
+    void testEndpoint() throws Exception {
         String originalEndPoint = endPoint;
 
         meterRegistry.getOrCreate(Counter.builder("baseDummyCounter1")
@@ -162,48 +193,56 @@ class OciMetricsSupportTest {
                     .build();
         }).when(monitoringClient).postMetricData(any());
 
-        OciMetricsSupport.Builder ociMetricsSupportBuilder = OciMetricsSupport.builder()
+        try (var ociMetricsService = OciMetricsConfig.builder()
                 .compartmentId("compartmentId")
                 .namespace("namespace")
                 .resourceGroup("resourceGroup")
-                .initialDelay(0L)
-                .delay(20L)
+                .initialDelay(Duration.ofSeconds(0L))
+                .delay(Duration.ofSeconds(20L))
                 .descriptionEnabled(false)
-                .monitoringClient(monitoringClient);
+                .monitoringClient(monitoringClient)
+                .enabled(true)
+                .build()) {
 
-        HttpRouting.Builder routing = createRouting(ociMetricsSupportBuilder);
 
-        WebServer webServer = createWebServer(routing);
+            HttpRouting.Builder routing = createRouting();
 
-        // Wait for metrics to be posted
-        countDownLatchWait(countDownLatch);
+            WebServer webServer = createWebServer(routing);
 
-        assertThat(ociMetricsSupportBuilder.enabled(), is(true));
-        // Verify that telemetry-ingestion endpoint is properly set during postin
-        assertThat(postingEndPoint, startsWith("https://telemetry-ingestion."));
-        // In a span of 10 seconds, verify that original endpoint is restored after metric posting
-        long start = System.currentTimeMillis();
-        long end = start + 10 * 1000;
-        boolean endPointIsRestored = false;
-        while (System.currentTimeMillis() < end) {
-            if (monitoringClient.getEndpoint().equals(originalEndPoint)) {
-                endPointIsRestored = true;
-                break;
-            }
             try {
-                Thread.sleep(100);
-            } catch (InterruptedException ie) {
-                fail("Failed with " + ie);
-            }
-        }
-        assertThat(endPointIsRestored, is(true));
-        // assertThat(monitoringClient.getEndpoint(), is(equalTo(originalEndPoint)));
+                // Wait for metrics to be posted
+                countDownLatchWait(countDownLatch);
 
-        webServer.stop();
+                assertThat(ociMetricsService.enabled(), is(true));
+                // Verify that telemetry-ingestion endpoint is properly set during postin
+                assertThat(postingEndPoint, startsWith("https://telemetry-ingestion."));
+                // In a span of 10 seconds, verify that original endpoint is restored after metric posting
+                long start = System.currentTimeMillis();
+                long end = start + 10 * 1000;
+                boolean endPointIsRestored = false;
+                while (System.currentTimeMillis() < end) {
+                    if (monitoringClient.getEndpoint().equals(originalEndPoint)) {
+                        endPointIsRestored = true;
+                        break;
+                    }
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ie) {
+                        fail("Failed with " + ie);
+                    }
+                }
+                assertThat(endPointIsRestored, is(true));
+                // assertThat(monitoringClient.getEndpoint(), is(equalTo(originalEndPoint)));
+            } finally {
+                webServer.stop();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Test
-    void testBatchSize() throws InterruptedException {
+    void testBatchSize() throws Exception {
         Stream.of("baseDummyCounter1",
                   "baseDummyCounter2",
                   "baseDummyCounter3")
@@ -257,40 +296,45 @@ class OciMetricsSupportTest {
                     .build();
         }).when(monitoringClient).postMetricData(any());
 
-        OciMetricsSupport.Builder ociMetricsSupportBuilder = OciMetricsSupport.builder()
+        try (var ignored = OciMetricsConfig.builder()
                 .compartmentId("compartmentId")
                 .namespace("namespace")
                 .resourceGroup("resourceGroup")
-                .initialDelay(0L)
-                .delay(20000L)
-                .batchDelay(batchDelay)
-                .schedulingTimeUnit(TimeUnit.MILLISECONDS)
+                .initialDelay(Duration.ofMillis(0L))
+                .delay(Duration.ofMillis(20000L))
+                .batchDelay(Duration.ofMillis(batchDelay))
                 .descriptionEnabled(false)
                 .batchSize(batchSize)
-                .monitoringClient(monitoringClient);
+                .monitoringClient(monitoringClient)
+                .build()) {
 
-        Instant start = Instant.now();
+            Instant start = Instant.now();
 
-        HttpRouting.Builder routing = createRouting(ociMetricsSupportBuilder);
+            HttpRouting.Builder routing = createRouting();
 
-        WebServer webServer = createWebServer(routing);
+            WebServer webServer = createWebServer(routing);
 
-        // Wait for last batch to be completed
-        countDownLatchWait(countDownLatch);
-        Instant finish = Instant.now();
+            try {
+                // Wait for last batch to be completed
+                countDownLatchWait(countDownLatch);
+                Instant finish = Instant.now();
 
-        // Batch size of 3 for 10 metrics should yield 4 batches to post
-        assertThat(totalMetrics, is(10));
-        assertThat(noOfBatches, is(4));
-        assertThat(noOfExecutions, is(noOfBatches));
-        assertThat(noOfMetrics, is(totalMetrics));
+                // Batch size of 3 for 10 metrics should yield 4 batches to post
+                assertThat(totalMetrics, is(10));
+                assertThat(noOfBatches, is(4));
+                assertThat(noOfExecutions, is(noOfBatches));
+                assertThat(noOfMetrics, is(totalMetrics));
 
-        // Last batch is not delayed so compute only the delays for prior batches
-        long estimatedTotalBatchDelay = batchDelay * (noOfBatches - 1);
-        // Test total batch delay
-        assertThat(Duration.between(start, finish).toMillis(), is(greaterThanOrEqualTo(estimatedTotalBatchDelay)));
-
-        webServer.stop();
+                // Last batch is not delayed so compute only the delays for prior batches
+                long estimatedTotalBatchDelay = batchDelay * (noOfBatches - 1);
+                // Test total batch delay
+                assertThat(Duration.between(start, finish).toMillis(), is(greaterThanOrEqualTo(estimatedTotalBatchDelay)));
+            } finally {
+                webServer.stop();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Test
@@ -308,11 +352,11 @@ class OciMetricsSupportTest {
                 .forEach(name -> meterRegistry.getOrCreate(Counter.builder(name)
                                                                    .scope(Meter.Scope.APPLICATION)).increment());
 
-        validateMetricCount("base, vendor, application", 6);
+        validateMetricCount("base,vendor,application", 6);
         validateMetricCount("base", 1);
         validateMetricCount("vendor", 2);
         validateMetricCount("application", 3);
-        validateMetricCount("base, vendor", 3);
+        validateMetricCount("base,vendor", 3);
     }
 
     @Test
@@ -347,7 +391,7 @@ class OciMetricsSupportTest {
     }
 
     @Test
-    void testDisableMetrics() {
+    void testDisableMetrics() throws Exception {
         meterRegistry.getOrCreate(Counter.builder("baseDummyCounter1")
                                           .scope(Meter.Scope.BASE)).increment();
         meterRegistry.getOrCreate(Counter.builder("vendorDummyCounter1")
@@ -355,27 +399,31 @@ class OciMetricsSupportTest {
         meterRegistry.getOrCreate(Counter.builder("appDummyCounter1")
                                           .scope(Meter.Scope.APPLICATION)).increment();
 
-        OciMetricsSupport.Builder ociMetricsSupportBuilder = OciMetricsSupport.builder()
+        try (var ociMetricsService = OciMetricsConfig.builder()
                 .namespace("namespace")
                 .compartmentId("compartmentId")
                 .resourceGroup("resourceGroup")
-                .initialDelay(50L)
-                .delay(500L)
-                .schedulingTimeUnit(TimeUnit.MILLISECONDS)
+                .initialDelay(Duration.ofMillis(50L))
+                .delay(Duration.ofMillis(500L))
                 .descriptionEnabled(false)
                 .monitoringClient(monitoringClient)
-                .enabled(false);
+                .enabled(false)
+                .build()) {
 
-        testMetricCount = 0;
-        HttpRouting.Builder routing = createRouting(ociMetricsSupportBuilder);
-        WebServer webServer = createWebServer(routing);
+            testMetricCount = 0;
+            HttpRouting.Builder routing = createRouting();
+            WebServer webServer = createWebServer(routing);
 
-        delay(1000L);
+            try {
+                delay(1000L);
+            } finally {
+                webServer.stop();
+            }
 
-        webServer.stop();
-        assertThat(ociMetricsSupportBuilder.enabled(), is(false));
-        // metric count should remain 0 as metrics is disabled
-        assertThat(testMetricCount, is(equalTo(0)));
+            assertThat(ociMetricsService.enabled(), is(false));
+            // metric count should remain 0 as metrics is disabled
+            assertThat(testMetricCount, is(equalTo(0)));
+        }
     }
 
     private void mockPostMetricDataAndGetTestMetricCount(CountDownLatch countDownLatch) {
@@ -401,10 +449,10 @@ class OciMetricsSupportTest {
         return webServer;
     }
 
-    private HttpRouting.Builder createRouting(OciMetricsSupport.Builder ociMetricsSupportBuilder) {
+    private HttpRouting.Builder createRouting() {
         return HttpRouting.builder()
-                .put("/test", (req, res) -> res.send())
-                .register(ociMetricsSupportBuilder);
+                .put("/test", (req, res) -> res.send());
+//                .register(ociMetricsServiceBuilder);
     }
 
     private void validateMetricCount(String scopesList, int expectedMetricCount) {
@@ -412,48 +460,55 @@ class OciMetricsSupportTest {
                 "compartmentId", "compartmentId",
                 "namespace", "namespace",
                 "resourceGroup", "resourceGroup",
-                "initialDelay", "50",
-                "delay", "15000",
-                "schedulingTimeUnit", "milliseconds",
+                "initialDelay", "PT0.050S",
+                "delay", "PT1.5S",
                 "scopes", scopesList)
         ));
-        OciMetricsSupport.Builder ociMetricsSupportBuilder = OciMetricsSupport.builder()
+        var builder = OciMetricsConfig.builder()
                 .config(config)
                 .monitoringClient(monitoringClient);
 
-        validateMetricCount(ociMetricsSupportBuilder, expectedMetricCount);
+        validateMetricCount(builder, expectedMetricCount);
     }
 
     private void validateMetricCount(String[] scopes, int expectedMetricCount) {
-        OciMetricsSupport.Builder ociMetricsSupportBuilder = OciMetricsSupport.builder()
+        var builder = OciMetricsConfig.builder()
                 .namespace("namespace")
                 .compartmentId("compartmentId")
                 .resourceGroup("resourceGroup")
-                .initialDelay(50L)
-                .delay(2000L)
-                .schedulingTimeUnit(TimeUnit.MILLISECONDS)
+                .initialDelay(Duration.ofMillis(50L))
+                .delay(Duration.ofMillis(2000L))
                 .descriptionEnabled(false)
-                .scopes(scopes)
                 .monitoringClient(monitoringClient);
 
-        validateMetricCount(ociMetricsSupportBuilder, expectedMetricCount);
+        // Test uses an empty array for meaning "no scopes" which should lead to use of the default.
+        if (scopes != null && scopes.length > 0) {
+            builder.scopes(Set.of(scopes));
+        }
+
+        validateMetricCount(builder, expectedMetricCount);
     }
 
-    private void validateMetricCount(OciMetricsSupport.Builder ociMetricsSupportBuilder, int expectedMetricCount) {
-        testMetricCount = 0;
-        CountDownLatch countDownLatch = new CountDownLatch(1);
-        mockPostMetricDataAndGetTestMetricCount(countDownLatch);
-        HttpRouting.Builder routing = createRouting(ociMetricsSupportBuilder);
-        WebServer webServer = createWebServer(routing);
+    private void validateMetricCount(OciMetricsConfig.Builder ociMetricsServiceBuilder, int expectedMetricCount) {
+        try (var ignored = ociMetricsServiceBuilder.build()) {
+            testMetricCount = 0;
+            CountDownLatch countDownLatch = new CountDownLatch(1);
+            mockPostMetricDataAndGetTestMetricCount(countDownLatch);
+            HttpRouting.Builder routing = createRouting();
+            WebServer webServer = createWebServer(routing);
 
-        try {
-            // Wait for signal from metric update that testMetricCount has been retrieved
-            countDownLatchWait(countDownLatch);
-        } catch (InterruptedException e) {
-            fail("Error while waiting for testMetricCount: " + e.getMessage());
+            try {
+                // Wait for signal from metric update that testMetricCount has been retrieved
+                countDownLatchWait(countDownLatch);
+            } catch (InterruptedException e) {
+                fail("Error while waiting for testMetricCount: " + e.getMessage());
+            } finally {
+                webServer.stop();
+            }
+            assertThat(testMetricCount, is(equalTo(expectedMetricCount)));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        webServer.stop();
-        assertThat(testMetricCount, is(equalTo(expectedMetricCount)));
     }
 
     private void countDownLatchWait(CountDownLatch countDownLatch) throws InterruptedException {
