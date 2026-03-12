@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 
@@ -59,7 +60,7 @@ class OciMetricsSupportTest {
     private static int noOfMetrics;
     private static String endPoint = "https://telemetry.DummyEndpoint.com";
     private static String postingEndPoint;
-    private static final MeterRegistry meterRegistry = Metrics.globalRegistry();
+    private static final MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry(MetricsConfig.create());
 
     @BeforeAll
     static void mockSetGetEndpoints() {

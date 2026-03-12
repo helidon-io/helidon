@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.integrations.oci.metrics;
+
+import java.util.function.Supplier;
+
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
+import io.helidon.integrations.oci.OciConfig;
+import io.helidon.service.registry.Service;
+
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
+import com.oracle.bmc.monitoring.Monitoring;
+import com.oracle.bmc.monitoring.MonitoringClient;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+
+@Service.Singleton
+@Weight(Weighted.DEFAULT_WEIGHT + 10)
+class MockedMonitoringFactory implements Supplier<Monitoring> {
+
+    private final OciConfig ociConfig;
+    private final BasicAuthenticationDetailsProvider basicAuthenticationDetailsProvider;
+
+    @Service.Inject
+    MockedMonitoringFactory(OciConfig ociConfig, BasicAuthenticationDetailsProvider basicAuthenticationDetailsProvider) {
+        this.ociConfig = ociConfig;
+        this.basicAuthenticationDetailsProvider = basicAuthenticationDetailsProvider;
+    }
+
+    @Override
+    public Monitoring get() {
+        var mocked = mock(Monitoring.class);
+        doAnswer(invocation -> {
+            OciMetricsServiceTest.endPoint(invocation.getArgument(0));
+            return null;
+        }).when(mocked).setEndpoint(any());
+        doAnswer(invocation -> {
+            return OciMetricsServiceTest.endPoint();
+        }).when(mocked).getEndpoint();
+
+        return mocked;
+    }
+}

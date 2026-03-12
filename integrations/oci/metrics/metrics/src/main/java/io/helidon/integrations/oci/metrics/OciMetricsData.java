@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ class OciMetricsData {
     private static final List<UnitConverter> UNIT_CONVERTERS = List.of(STORAGE_UNIT_CONVERTER, TIME_UNIT_CONVERTER);
 
     private final Set<String> scopes;
-    private final OciMetricsSupport.NameFormatter nameFormatter;
+    private final OciMetricsConfig.NameFormatter nameFormatter;
     private final String compartmentId;
     private final String namespace;
     private final String resourceGroup;
@@ -50,7 +50,7 @@ class OciMetricsData {
 
     OciMetricsData(
             Set<String> scopes,
-            OciMetricsSupport.NameFormatter nameFormatter,
+            OciMetricsConfig.NameFormatter nameFormatter,
             String compartmentId,
             String namespace,
             String resourceGroup,
