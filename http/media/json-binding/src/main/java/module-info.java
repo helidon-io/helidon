@@ -33,10 +33,10 @@ module io.helidon.http.media.json.binding {
 
     requires io.helidon.builder.api;
     requires io.helidon.http.media;
+    requires io.helidon.json;
     requires io.helidon.json.binding;
 
     requires transitive io.helidon.config;
-    requires io.helidon.json;
 
     exports io.helidon.http.media.json.binding;
 

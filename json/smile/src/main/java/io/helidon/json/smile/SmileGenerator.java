@@ -29,6 +29,9 @@ import io.helidon.json.JsonException;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonGeneratorBase;
 
+/**
+ * Smile binary JSON generator implementation.
+ */
 public final class SmileGenerator extends JsonGeneratorBase {
 
     private static final int SHARED_TABLE_SIZE = 1024;
@@ -570,7 +573,8 @@ public final class SmileGenerator extends JsonGeneratorBase {
             return;
         }
         ensureCapacity(2);
-        buffer[index++] = (byte) (SmileConstants.VALUE_SHARED_LONG_MIN | ((ref >> 8) & SmileConstants.LONG_SHARED_REFERENCE_PREFIX_MASK));
+        buffer[index++] = (byte) (SmileConstants.VALUE_SHARED_LONG_MIN |
+                                          ((ref >> 8) & SmileConstants.LONG_SHARED_REFERENCE_PREFIX_MASK));
         buffer[index++] = (byte) (ref & 0xFF);
     }
 
@@ -581,7 +585,8 @@ public final class SmileGenerator extends JsonGeneratorBase {
             return;
         }
         ensureCapacity(2);
-        buffer[index++] = (byte) (SmileConstants.KEY_SHARED_LONG_MIN | ((ref >> 8) & SmileConstants.LONG_SHARED_REFERENCE_PREFIX_MASK));
+        buffer[index++] = (byte) (SmileConstants.KEY_SHARED_LONG_MIN
+                                          | ((ref >> 8) & SmileConstants.LONG_SHARED_REFERENCE_PREFIX_MASK));
         buffer[index++] = (byte) (ref & 0xFF);
     }
 

@@ -22,7 +22,6 @@ import io.helidon.common.features.api.HelidonFlavor;
  * Provides Smile media type support for HTTP requests and responses,
  * enabling automatic serialization and deserialization of Smile data.
  */
-@SuppressWarnings("removal")
 @Features.Name("Smile")
 @Features.Description("Smile media support")
 @Features.Flavor(HelidonFlavor.SE)
@@ -34,15 +33,11 @@ module io.helidon.http.media.smile {
 
     requires io.helidon.builder.api;
     requires io.helidon.http.media;
-    requires io.helidon.common.media.type;
-    requires io.helidon.http;
-    requires io.helidon.common.config;
+    requires io.helidon.json;
+    requires io.helidon.json.smile;
+    requires io.helidon.json.binding;
 
     requires transitive io.helidon.config;
-    requires transitive io.helidon.json;
-    requires transitive io.helidon.json.smile;
-    requires io.helidon.common;
-    requires io.helidon.json.binding;
 
     exports io.helidon.http.media.smile;
 
