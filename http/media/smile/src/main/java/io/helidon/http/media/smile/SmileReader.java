@@ -23,7 +23,6 @@ import java.io.UncheckedIOException;
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
 import io.helidon.http.media.EntityReaderBase;
-import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.json.smile.SmileParser;
 

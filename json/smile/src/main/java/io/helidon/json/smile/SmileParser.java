@@ -37,6 +37,9 @@ import io.helidon.json.Parsers;
 
 import static io.helidon.json.Parsers.translateHex;
 
+/**
+ * Smile binary JSON parser implementation.
+ */
 public final class SmileParser extends JsonParserBase {
 
     private static final JsonString[] EMPTY = new JsonString[0];
@@ -66,7 +69,6 @@ public final class SmileParser extends JsonParserBase {
     private static final BigDecimal MIN_BYTE_BD = BigDecimal.valueOf(Byte.MIN_VALUE);
     private static final BigInteger MAX_BYTE_BI = BigInteger.valueOf(Byte.MAX_VALUE);
     private static final BigInteger MIN_BYTE_BI = BigInteger.valueOf(Byte.MIN_VALUE);
-
 
     private static final byte[] TOKEN_LOOKUP;
 
@@ -193,6 +195,7 @@ public final class SmileParser extends JsonParserBase {
      * Create a Smile parser from an input stream.
      *
      * @param inputStream stream containing Smile data
+     * @param bufferSize size of the internal streaming buffer
      * @return a new Smile parser instance
      */
     public static JsonParser create(InputStream inputStream, int bufferSize) {
@@ -201,7 +204,6 @@ public final class SmileParser extends JsonParserBase {
         parser.validateHeader();
         return parser;
     }
-
 
     /**
      * Reads and validates the 4-byte Smile header, extracting feature flags.
@@ -1026,6 +1028,7 @@ public final class SmileParser extends JsonParserBase {
         return new JsonException(message);
     }
 
+    @Override
     public void mark() {
         mark = currentIndex;
         markToken = currentToken;
@@ -1035,6 +1038,7 @@ public final class SmileParser extends JsonParserBase {
         markDepth = stackDepth;
     }
 
+    @Override
     public void clearMark() {
         mark = -1;
         markToken = -1;
@@ -1044,6 +1048,7 @@ public final class SmileParser extends JsonParserBase {
         markDepth = -1;
     }
 
+    @Override
     public void resetToMark() {
         if (mark == -1) {
             throw createException("No mark was set. Set it via mark() method first.");
@@ -1166,7 +1171,8 @@ public final class SmileParser extends JsonParserBase {
                 // Short ASCII: len = (token & 0x3F) + 1
                 stringAscii = true;
                 return (currentByte & SmileConstants.KEY_STRING_LENGTH_MASK) + SmileConstants.KEY_SHORT_ASCII_LENGTH_ADD;
-            } else if (currentByte >= SmileConstants.KEY_SHORT_UNICODE_MIN && currentByte <= SmileConstants.KEY_SHORT_UNICODE_MAX) {
+            } else if (currentByte >= SmileConstants.KEY_SHORT_UNICODE_MIN
+                    && currentByte <= SmileConstants.KEY_SHORT_UNICODE_MAX) {
                 // Short Unicode: len = (token & 0x3F) + 2
                 return (currentByte & SmileConstants.KEY_STRING_LENGTH_MASK) + SmileConstants.KEY_SHORT_UNICODE_LENGTH_ADD;
             } else if (currentByte == SmileConstants.KEY_LONG_UNICODE) {
@@ -1191,9 +1197,11 @@ public final class SmileParser extends JsonParserBase {
         } else if (currentByte >= SmileConstants.VALUE_SHORT_ASCII_MIN && currentByte <= SmileConstants.VALUE_SHORT_ASCII_MAX) {
             stringAscii = true;
             return (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK) + SmileConstants.VALUE_SHORT_ASCII_LENGTH_ADD;
-        } else if (currentByte >= SmileConstants.VALUE_TINY_UNICODE_MIN && currentByte <= SmileConstants.VALUE_TINY_UNICODE_MAX) {
+        } else if (currentByte >= SmileConstants.VALUE_TINY_UNICODE_MIN
+                && currentByte <= SmileConstants.VALUE_TINY_UNICODE_MAX) {
             return (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK) + SmileConstants.VALUE_TINY_UNICODE_LENGTH_ADD;
-        } else if (currentByte >= SmileConstants.VALUE_SHORT_UNICODE_MIN && currentByte <= SmileConstants.VALUE_SHORT_UNICODE_MAX) {
+        } else if (currentByte >= SmileConstants.VALUE_SHORT_UNICODE_MIN
+                && currentByte <= SmileConstants.VALUE_SHORT_UNICODE_MAX) {
             return (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK) + SmileConstants.VALUE_SHORT_UNICODE_LENGTH_ADD;
         } else {
             throw createException("Unsupported string token: 0x" + Integer.toHexString(currentByte));
@@ -1342,7 +1350,7 @@ public final class SmileParser extends JsonParserBase {
                     throw createException("Shared key references are disabled by Smile header");
                 }
                 int ref = token - SmileConstants.KEY_SHARED_SHORT_MIN;
-                return resolveSharedReference(sharedKeyStrings, ref, nextSharedKeyIndex -1, "key");
+                return resolveSharedReference(sharedKeyStrings, ref, nextSharedKeyIndex - 1, "key");
             }
             if (token >= SmileConstants.KEY_SHARED_LONG_MIN && token <= SmileConstants.KEY_SHARED_LONG_MAX) {
                 if (!sharedKeysEnabled) {
@@ -1356,7 +1364,7 @@ public final class SmileParser extends JsonParserBase {
                 if (ref <= SmileConstants.KEY_SHARED_SHORT_MAX_INDEX) {
                     throw createException("Invalid long shared key reference index (must be >= 64): " + ref);
                 }
-                return resolveSharedReference(sharedKeyStrings, ref, nextSharedKeyIndex -1, "key");
+                return resolveSharedReference(sharedKeyStrings, ref, nextSharedKeyIndex - 1, "key");
             }
             return null;
         } else if (token >= SmileConstants.VALUE_SHARED_SHORT_MIN && token <= SmileConstants.VALUE_SHARED_SHORT_MAX) {
@@ -1452,7 +1460,6 @@ public final class SmileParser extends JsonParserBase {
         }
         nextSharedValueIndex++;
     }
-
 
     private static boolean isAllowedSharedIndex(int index) {
         int low = index & 0xFF;
