@@ -36,17 +36,17 @@
                         <output>
                             <model>
                                 <list key="dependencies">
-                                    <map>
+                                    <map if="${flavor} == 'se'">
                                         <value key="groupId">io.helidon.webserver.observe</value>
                                         <value key="artifactId">helidon-webserver-observe-metrics</value>
                                     </map>
-                                    <map>
+                                    <map if="${flavor} == 'se'">
                                         <value key="groupId">io.helidon.metrics</value>
                                         <value key="artifactId">helidon-metrics-system-meters</value>
                                         <value key="scope">runtime</value>
                                     </map>
                                 </list>
-                                <list key="Abstract-tests">
+                                <list key="Abstract-tests" if="${flavor} == 'se'">
                                     <value><![CDATA[
     @Test
     void testMetricsObserver() {
@@ -57,10 +57,10 @@
 ]]></value>
                                 </list>
                                 <list key="module-requires">
-                                    <value>io.helidon.webserver.observe.metrics</value>
-                                    <value>io.helidon.metrics.api</value>
+                                    <value if="${flavor} == 'se'">io.helidon.webserver.observe.metrics</value>
+                                    <value if="${flavor} == 'se'">io.helidon.metrics.api</value>
                                 </list>
-                                <list key="readme-sections">
+                                <list key="readme-sections" if="${flavor} == 'se'">
                                     <value><![CDATA[
 ## Try metrics
 
@@ -95,7 +95,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/observe/metrics
                              optional="true">
                         <output>
                             <model>
-                                <list key="dependencies">
+                                <list key="dependencies" if="${flavor} == 'se'">
                                     <map order="800">
                                         <value key="groupId">io.helidon.webserver.observe</value>
                                         <value key="artifactId">helidon-webserver-observe-health</value>
@@ -105,10 +105,10 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/observe/metrics
                                         <value key="artifactId">helidon-health-checks</value>
                                     </map>
                                 </list>
-                                <list key="MainTest-static-imports">
+                                <list key="MainTest-static-imports" if="${flavor} == 'se'">
                                     <value>org.hamcrest.CoreMatchers.containsString</value>
                                 </list>
-                                <list key="Abstract-test">
+                                <list key="Abstract-test" if="${flavor} == 'se'">
                                     <value><![CDATA[
     @Test
     void testHealth() {
@@ -119,7 +119,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/observe/metrics
     }
 ]]></value>
                                 </list>
-                                <list key="readme-sections">
+                                <list key="readme-sections" if="${flavor} == 'se'">
                                     <value><![CDATA[
 ## Try health
 
@@ -138,7 +138,7 @@ curl -X GET http://localhost:8080/observe/health/ready
 
 ]]></value>
                                 </list>
-                                <list key="module-requires">
+                                <list key="module-requires" if="${flavor} == 'se'">
                                     <value>io.helidon.webserver.observe.health</value>
                                     <value>io.helidon.health.checks</value>
                                 </list>

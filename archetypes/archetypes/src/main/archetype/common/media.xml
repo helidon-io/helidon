@@ -22,7 +22,7 @@
 
     <step name="Media Support" optional="true">
         <variables>
-            <text path="media.default-json-lib">jsonp</text>
+            <text path="media.default-json-lib" if="${flavor} == 'se'">jsonp</text>
         </variables>
         <inputs>
             <!-- TODO https://github.com/oracle/helidon-build-tools/issues/699 -->
@@ -30,7 +30,7 @@
                 <option value="json" name="JSON" description="Handle 'application/json' payloads">
                     <inputs>
                         <enum id="json-lib" name="Select a JSON library" default="${default-json-lib}" optional="true">
-                            <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing">
+                            <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing" if="${flavor} == 'se'">
                                 <output>
                                     <model>
                                         <list key="MainTest-other-imports">
@@ -57,7 +57,7 @@
                                                 <value key="groupId">com.fasterxml.jackson.core</value>
                                                 <value key="artifactId">jackson-databind</value>
                                             </map>
-                                            <map order="500">
+                                            <map order="500" if="${flavor} == 'se'">
                                                 <value key="groupId">io.helidon.http.media</value>
                                                 <value key="artifactId">helidon-http-media-jackson</value>
                                             </map>
@@ -73,12 +73,16 @@
                                 <output>
                                     <model>
                                         <list key="dependencies">
-                                            <map order="500">
+                                            <map order="500" if="${flavor} != 'se'">
+                                                <value key="groupId">jakarta.json.bind</value>
+                                                <value key="artifactId">jakarta.json.bind-api</value>
+                                            </map>
+                                            <map order="500" if="${flavor} == 'se'">
                                                 <value key="groupId">io.helidon.http.media</value>
                                                 <value key="artifactId">helidon-http-media-jsonb</value>
                                             </map>
                                         </list>
-                                        <list key="Abstract-tests">
+                                        <list key="Abstract-tests" if="${flavor} == 'se'">
                                             <value><![CDATA[
     @Test
     void testGreet() {
@@ -108,29 +112,29 @@
                     <output>
                         <model>
                             <list key="dependencies">
-                                <map order="500">
+                                <map order="500" if="${flavor} == 'se'">
                                     <value key="groupId">io.helidon.http.media</value>
                                     <value key="artifactId">helidon-http-media-multipart</value>
                                 </map>
-                                <map order="500">
+                                <map order="500" if="${flavor} == 'se'">
                                     <value key="groupId">io.helidon.webserver</value>
                                     <value key="artifactId">helidon-webserver-static-content</value>
                                 </map>
                             </list>
-                            <list key="module-requires">
+                            <list key="module-requires" if="${flavor} == 'se'">
                                 <value>io.helidon.http.media.multipart</value>
                                 <value>io.helidon.webserver.staticcontent</value>
                             </list>
-                            <list key="module-opens">
+                            <list key="module-opens" if="${flavor} == 'se'">
                                 <value>WEB</value>
                             </list>
-                            <list key="Main-helidon-imports">
+                            <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                 <value>io.helidon.http.Status</value>
                                 <value>io.helidon.http.HeaderNames</value>
                                 <value>io.helidon.http.HeaderValues</value>
                                 <value>io.helidon.webserver.staticcontent.StaticContentService</value>
                             </list>
-                            <list key="Main-routing-builder">
+                            <list key="Main-routing-builder" if="${flavor} == 'se'">
                                 <value order="1"><![CDATA[.any("/", (req, res) -> {
                     res.status(Status.MOVED_PERMANENTLY_301);
                     res.header(HeaderValues.createCached(HeaderNames.LOCATION, "/ui"));
@@ -186,11 +190,11 @@ curl -X GET http://localhost:8080/greet/Jose
 ]]></value>
                 </list>
                 <list key="dependencies" if="${media} contains 'multipart' || ${media.json-lib} == 'jsonp'">
-                    <map order="500">
+                    <map order="500" if="${flavor} == 'se'">
                         <value key="groupId">jakarta.json</value>
                         <value key="artifactId">jakarta.json-api</value>
                     </map>
-                    <map order="500">
+                    <map order="500" if="${flavor} == 'se'">
                         <value key="groupId">io.helidon.http.media</value>
                         <value key="artifactId">helidon-http-media-jsonp</value>
                     </map>

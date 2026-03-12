@@ -90,6 +90,7 @@ docker run --rm --name mysql -p 3306:3306 \
                         <map>
                             <value key="groupId">com.oracle.database.jdbc</value>
                             <value key="artifactId">ojdbc17-production</value>
+                            <value key="type">pom</value>
                         </map>
                     </list>
                     <value key="db-health-check-stmt" if="${health}">SELECT 1 FROM DUAL</value>
@@ -229,7 +230,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
             <list key="dependencies">
                 <map>
                     <value key="groupId">io.helidon.dbclient</value>
-                    <value key="artifactId">helidon-dbclient-json</value>
+                    <value key="artifactId">helidon-dbclient-jsonp</value>
                 </map>
                 <map>
                     <value key="groupId">io.helidon.dbclient</value>

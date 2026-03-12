@@ -194,29 +194,6 @@ jobs:
               -f docs/pom.xml \
               -Pjavadoc \
               install
-  quickstarts:
-    needs: build
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        os: [ ubuntu-22.04, macos-14 ]
-        include:
-          - { os: ubuntu-22.04, platform: linux }
-          - { os: macos-14, platform: macos }
-    runs-on: ${{ matrix.os }}
-    name: quickstarts/${{ matrix.platform }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          free-space: true
-          build-cache: read-only
-          native-image: false
-          test-artifact-name: tests-quickstarts-${{ matrix.platform }}
-          run: |
-            etc/scripts/test-quickstarts.sh
   examples:
     needs: build
     timeout-minutes: 30

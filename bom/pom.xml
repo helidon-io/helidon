@@ -554,6 +554,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient-jsonp</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.dbclient</groupId>
                 <artifactId>helidon-dbclient-json</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

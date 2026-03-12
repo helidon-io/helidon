@@ -81,14 +81,14 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
                     <output>
                         <model>
                             <list key="dependencies">
-                                <map>
+                                <map if="${flavor} == 'se'">
                                     <value key="groupId">io.helidon.webserver</value>
                                     <value key="artifactId">helidon-webserver-cors</value>
                                 </map>
                             </list>
                             <list key="module-requires">
-                                <value>io.helidon.webserver.cors</value>
-                                <value>java.logging</value>
+                                <value if="${flavor} == 'se'">io.helidon.webserver.cors</value>
+                                <value if="${flavor} == 'se'">java.logging</value>
                             </list>
                             <list key="FileServiceTest-annotations" if="${media} contains 'multipart'">
                             </list>
@@ -102,25 +102,25 @@ cors:
 ]]>
                                 </value>
                             </list>
-                            <list key="Main-routing-builder">
+                            <list key="Main-routing-builder" if="${flavor} == 'se'">
                                 <value><![CDATA[        .register("/cors-greet", new GreetService())
 ]]>
                                 </value>
                             </list>
-                            <list key="MainTest-helidon-imports">
+                            <list key="MainTest-helidon-imports" if="${flavor} == 'se'">
                                 <value>io.helidon.http.Headers</value>
                             </list>
-                            <list key="MainTest-java-imports">
+                            <list key="MainTest-java-imports" if="${flavor} == 'se'">
                                 <value>java.util.Optional</value>
                             </list>
-                            <list key="MainTest-static-imports">
+                            <list key="MainTest-static-imports" if="${flavor} == 'se'">
                                 <value>io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN</value>
                                 <value>io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN_NAME</value>
                                 <value>io.helidon.http.HeaderNames.HOST</value>
                                 <value>io.helidon.http.HeaderNames.ORIGIN</value>
                                 <value>org.hamcrest.CoreMatchers.containsString</value>
                             </list>
-                            <list key="Abstract-tests">
+                            <list key="Abstract-tests" if="${flavor} == 'se'">
                                 <value><![CDATA[
     @Test
     void testAnonymousGreetWithCors() {
@@ -144,7 +144,7 @@ cors:
 ]]>
                                 </value>
                             </list>
-                            <list key="readme-sections">
+                            <list key="readme-sections" if="${flavor} == 'se'">
                                 <value><![CDATA[
 ## Using CORS
 
