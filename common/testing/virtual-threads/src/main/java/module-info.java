@@ -19,6 +19,6 @@
  */
 module io.helidon.common.testing.vitualthreads {
     requires jdk.jfr;
-    exports io.helidon.common.testing.virtualthreads to
-            io.helidon.webserver.testing.junit5;
+
+    exports io.helidon.common.testing.virtualthreads;
 }
