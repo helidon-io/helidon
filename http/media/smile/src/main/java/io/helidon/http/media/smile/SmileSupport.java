@@ -26,7 +26,6 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaSupportBase;
-import io.helidon.json.JsonValue;
 import io.helidon.json.binding.JsonBinding;
 
 /**
@@ -36,6 +35,7 @@ import io.helidon.json.binding.JsonBinding;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class SmileSupport extends MediaSupportBase<SmileSupportConfig> implements RuntimeType.Api<SmileSupportConfig> {
+
     static final String ID = "smile";
 
     private final SmileReader reader;
