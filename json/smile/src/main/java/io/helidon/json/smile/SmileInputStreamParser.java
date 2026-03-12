@@ -33,6 +33,9 @@ import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParserBase;
 import io.helidon.json.JsonString;
 import io.helidon.json.JsonValue;
+import io.helidon.json.Parsers;
+
+import static io.helidon.json.Parsers.translateHex;
 
 /**
  * Streaming Smile-format parser that reads from an {@link InputStream} using an internal
@@ -1482,8 +1485,7 @@ final class SmileInputStreamParser extends JsonParserBase {
                 i++;
             }
             if (finished) {
-                throw createException(
-                        "Could not find END_OF_STRING terminator: stream ended prematurely");
+                throw createException("Could not find END_OF_STRING terminator: stream ended prematurely");
             }
             // Compact the buffer, keeping everything from startIndex onward.
             int shift = startIndex;
@@ -1511,7 +1513,6 @@ final class SmileInputStreamParser extends JsonParserBase {
                     bufferLength = kept;
                 } else {
                     bufferLength = kept + lastRead;
-                    finished = false;
                 }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -1545,7 +1546,9 @@ final class SmileInputStreamParser extends JsonParserBase {
         int bufferPosition = currentIndex + 1;
         for (int i = 0; i < readableBytes; bufferPosition++, i++) {
             byte b = buffer[bufferPosition];
-            if ((b & 0x80) == 0) {
+            if (b == '\\') {
+                bufferPosition = processEscapedSequence(result, bufferPosition, i);
+            } else if ((b & 0x80) == 0) {
                 result[i] = (char) b;
             } else if ((b & 0xE0) == 0xC0) {
                 // 2-byte UTF-8
@@ -1578,6 +1581,65 @@ final class SmileInputStreamParser extends JsonParserBase {
         }
         this.currentIndex += readableBytes + stringOffset;
         return result;
+    }
+
+    private int processEscapedSequence(char[] result, int currentIndex, int resultPosition) {
+        byte b = buffer[++currentIndex];
+        if (expectLowSurrogate && b != 'u') {
+            throw createException("Low surrogate must follow the high surrogate.", b);
+        }
+        switch (b) {
+        case '\\':
+        case '"':
+        case '/':
+            result[resultPosition] = (char) b;
+            return currentIndex;
+        case 'b':
+            result[resultPosition] = '\b';
+            return currentIndex;
+        case 't':
+            result[resultPosition] = '\t';
+            return currentIndex;
+        case 'n':
+            result[resultPosition] = '\n';
+            return currentIndex;
+        case 'f':
+            result[resultPosition] = '\f';
+            return currentIndex;
+        case 'r':
+            result[resultPosition] = '\r';
+            return currentIndex;
+        case 'u':
+            char tmp = (char) (
+                    (translateHex(buffer[++currentIndex], this) << 12)
+                            + (translateHex(buffer[++currentIndex], this) << 8)
+                            + (translateHex(buffer[++currentIndex], this) << 4)
+                            + translateHex(buffer[++currentIndex], this));
+            // Handle JSON's UTF-16 surrogate pair encoding (\\uXXXX\\uYYYY for code points > U+FFFF)
+            if (Character.isHighSurrogate(tmp)) {
+                // High surrogate: must be followed by a low surrogate
+                if (expectLowSurrogate) {
+                    throw createException("A high surrogate must always be followed by a low surrogate");
+                } else {
+                    expectLowSurrogate = true; // Expect low surrogate next
+                }
+            } else if (Character.isLowSurrogate(tmp)) {
+                // Low surrogate: must follow a high surrogate
+                if (expectLowSurrogate) {
+                    expectLowSurrogate = false; // Pair complete
+                } else {
+                    throw createException("A low surrogate must always follow a high surrogate");
+                }
+            } else if (expectLowSurrogate) {
+                // Expected low surrogate but got neither high nor low
+                throw createException("Low surrogate was expected to follow the high surrogate, "
+                                              + "but found " + Parsers.toPrintableForm(tmp));
+            }
+            result[resultPosition] = tmp;
+            return currentIndex;
+        default:
+            throw createException("Invalid escaped value", b);
+        }
     }
 
     // -----------------------------------------------------------------------
