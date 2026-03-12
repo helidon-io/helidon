@@ -67,7 +67,7 @@ abstract class CreateApplicationAbstractMojo extends CodegenAbstractMojo {
      * Note: using the same as maven-compiler for convenience and least astonishment.
      */
     @Parameter(property = "maven.compiler.source",
-               defaultValue = "21")
+               defaultValue = "25")
     private String release;
     /**
      * Whether to validate the application when creating its bindings.

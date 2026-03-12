@@ -33,13 +33,13 @@ include::{rootdir}/includes/attributes.adoc[]
 
 * Converted other _reactive_ API modules to _blocking_ style APIs. The `io.helidon.common.reactive` APIs will stay as general purpose reactive utilities and operators. Learn more: <<Helidon SE, Helidon SE>>
 
-* Java 21 is required to use Helidon 4. Java 25 or newer is recommended.
+* Java 25 is required to use Helidon 27.
 
 
 
 == Helidon 4 WebServer
 
-Before Helidon 4, the Helidon WebServer was built on Netty and had a reactive API. In Helidon 4 we have replaced this with a new server implementation (Project N&iacute;ma) that is written from the ground up to take full advantage of Java 21's virtual threads. With virtual threads, threads are no longer a scarce resource to be carefully pooled and managed. Instead they are an abundant resource that can be created as needed to handle nearly unlimited concurrent requests.
+Before Helidon 4, the Helidon WebServer was built on Netty and had a reactive API. In Helidon 4 we have replaced this with a new server implementation (Project N&iacute;ma) that is written from the ground up to take full advantage of Java 25's virtual threads. With virtual threads, threads are no longer a scarce resource to be carefully pooled and managed. Instead they are an abundant resource that can be created as needed to handle nearly unlimited concurrent requests.
 
 Because each request runs in its own dedicated thread, it is free to perform blocking operations -- like calling a database, or another service. And it can do so in a simple synchronous way with no fear of blocking a platform thread and starving other requests. You no longer need to resort to complicated asynchronous code to implement a low-overhead, highly concurrent service.
 
@@ -59,4 +59,3 @@ include::{sourcedir}/about/IntroSnippets.java[tag=snippet_1, indent=0]
 ----
 include::{sourcedir}/about/IntroSnippets.java[tag=snippet_2, indent=0]
 ----
-

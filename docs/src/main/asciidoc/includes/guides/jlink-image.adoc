@@ -37,7 +37,7 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 == Verify JDK
 
-As noted in the prerequisites above, Java 21 or newer is required (Java 25 or newer is recommended).
+As noted in the prerequisites above, Java 25 or newer is required.
 
 [source,bash]
 ----
