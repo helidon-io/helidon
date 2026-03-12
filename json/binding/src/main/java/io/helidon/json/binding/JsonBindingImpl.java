@@ -103,6 +103,25 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
         return config;
     }
 
+//    @SuppressWarnings("unchecked")
+//    @Override
+//    public byte[] serializeBinary(Object obj) {
+//        if (obj == null) {
+//            //The first 4 bytes are Smile header and 0x21 is the Smile token for null
+//            return new byte[] {0x3A, 0x29, 0x0A, 0x01, 0x21};
+//        }
+//        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+//        JsonSerializer<Object> serializer = (JsonSerializer<Object>) serializer(obj.getClass());
+//        try (JsonGenerator generator = JsonGenerator.createSmile(outputStream)) {
+//            serializer.serialize(generator, obj, false);
+//        } catch (RuntimeException e) {
+//            throw e;
+//        } catch (Exception e) {
+//            throw new JsonBindingException("Failed to serialize an object to stream", e);
+//        }
+//        return outputStream.toByteArray();
+//    }
+
     @Override
     public String serialize(Object obj) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -150,6 +169,37 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
             return;
         }
         serialize(outputStream, obj, serializer(type));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void serialize(JsonGenerator generator, Object obj) {
+        if (obj == null) {
+            generator.writeNull();
+            return;
+        }
+        JsonSerializer<Object> serializer = (JsonSerializer<Object>) serializer(obj.getClass());
+        serializer.serialize(generator, obj, false);;
+    }
+
+    @Override
+    public <T> void serialize(JsonGenerator generator, T obj, Class<? super T> type) {
+        if (obj == null) {
+            generator.writeNull();
+            return;
+        }
+        JsonSerializer<? super T> serializer = serializer(type);
+        serializer.serialize(generator, obj, false);
+    }
+
+    @Override
+    public <T> void serialize(JsonGenerator generator, T obj, GenericType<? super T> type) {
+        if (obj == null) {
+            generator.writeNull();
+            return;
+        }
+        JsonSerializer<? super T> serializer = serializer(type);
+        serializer.serialize(generator, obj, false);
     }
 
     @Override
@@ -271,6 +321,18 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     public <T> T deserialize(JsonValue jsonValue, GenericType<T> type) {
         JsonDeserializer<T> deserializer = deserializer(type);
         JsonParser parser = JsonParser.create(jsonValue);
+        return Deserializers.deserialize(parser, deserializer);
+    }
+
+    @Override
+    public <T> T deserialize(JsonParser parser, Class<T> type) {
+        JsonDeserializer<T> deserializer = deserializer(type);
+        return Deserializers.deserialize(parser, deserializer);
+    }
+
+    @Override
+    public <T> T deserialize(JsonParser parser, GenericType<T> type) {
+        JsonDeserializer<T> deserializer = deserializer(type);
         return Deserializers.deserialize(parser, deserializer);
     }
 

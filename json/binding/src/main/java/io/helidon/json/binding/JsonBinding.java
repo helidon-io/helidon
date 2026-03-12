@@ -20,10 +20,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.GenericType;
+import io.helidon.json.JsonGenerator;
+import io.helidon.json.JsonParser;
 import io.helidon.json.JsonValue;
 
 /**
@@ -147,6 +150,12 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param <T>          the type of the object
      */
     <T> void serialize(OutputStream outputStream, T obj, GenericType<? super T> type);
+
+    void serialize(JsonGenerator generator, Object obj);
+
+    <T> void serialize(JsonGenerator generator, T obj, Class<? super T> type);
+
+    <T> void serialize(JsonGenerator generator, T obj, GenericType<? super T> type);
 
     /**
      * Serializes an object to JSON and writes it to a Writer.
@@ -300,5 +309,9 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @return          the deserialized object
      */
     <T> T deserialize(JsonValue jsonValue, GenericType<T> type);
+
+    <T> T deserialize(JsonParser parser, Class<T> type);
+
+    <T> T deserialize(JsonParser parser, GenericType<T> type);
 
 }
