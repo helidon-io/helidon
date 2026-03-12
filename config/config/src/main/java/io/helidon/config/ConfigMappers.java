@@ -83,7 +83,6 @@ public final class ConfigMappers {
     private static Map<Class<?>, Function<Config, ?>> initEssentialMappers() {
 
         return Map.of(Config.class, (node) -> node,
-                      io.helidon.common.config.Config.class, (node) -> node,
                       String.class, wrap(value -> value),
                       OptionalInt.class, ConfigMappers::optionalIntEssential,
                       OptionalLong.class, ConfigMappers::optionalLongEssential,
@@ -252,7 +251,7 @@ public final class ConfigMappers {
      */
     public static Boolean toBoolean(String stringValue) {
         final String lower = stringValue.toLowerCase();
-        // according to microprofile config specification (section Built-in Converters)
+        // Keep boolean parsing aligned with Helidon built-in converters.
         switch (lower) {
         case "true":
         case "1":

@@ -155,19 +155,6 @@ public final class CompositeProviderSelectionPolicy implements ProviderSelection
      *
      * @param config configuration instance
      * @return function as expected by {@link Security.Builder#providerSelectionPolicy(Function)}
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static Function<Providers, ProviderSelectionPolicy> create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Load this policy from config. See {@link CompositeProviderSelectionPolicy} for example.
-     *
-     * @param config configuration instance
-     * @return function as expected by {@link Security.Builder#providerSelectionPolicy(Function)}
      */
     public static Function<Providers, ProviderSelectionPolicy> create(Config config) {
         return builder().config(config).build();
@@ -316,19 +303,6 @@ public final class CompositeProviderSelectionPolicy implements ProviderSelection
         public Builder addOutboundProvider(String namedProvider) {
             outbound.add(namedProvider);
             return this;
-        }
-
-        /**
-         * Update fields from configuration.
-         *
-         * @param config Configuration
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

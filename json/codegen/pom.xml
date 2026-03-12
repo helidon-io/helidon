@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.json</groupId>
         <artifactId>helidon-json-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
 
     <name>Helidon JSON Codegen</name>
@@ -71,8 +71,8 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.common.processor</groupId>
-                            <artifactId>helidon-common-processor-helidon-copyright</artifactId>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
@@ -89,8 +89,8 @@
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.common.processor</groupId>
-                        <artifactId>helidon-common-processor-helidon-copyright</artifactId>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>

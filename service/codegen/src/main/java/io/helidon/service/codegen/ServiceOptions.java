@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,13 +56,11 @@ public final class ServiceOptions {
                           GenericType.create(InterceptionStrategy.class));
 
     /**
-     * Additional meta annotations that mark scope annotations. This can be used to include
-     * jakarta.enterprise.context.NormalScope annotated types as scopes.
+     * Additional meta annotations that mark scope annotations.
      */
     public static final Option<Set<TypeName>> SCOPE_META_ANNOTATIONS =
             Option.createSet("helidon.registry.scopeMetaAnnotations",
-                             "Additional meta annotations that mark scope annotations. This can be used to include"
-                                     + "jakarta.enterprise.context.NormalScope annotated types as scopes.",
+                             "Additional meta annotations that mark scope annotations.",
                              Set.of(),
                              TypeName::create,
                              new GenericType<Set<TypeName>>() { });

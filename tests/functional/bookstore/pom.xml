@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.tests.functional</groupId>
         <artifactId>helidon-tests-functional-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.tests.functional.bookstore</groupId>
     <artifactId>helidon-tests-functional-bookstore</artifactId>
@@ -31,7 +31,6 @@
 
     <properties>
         <appJarPathSE>${project.basedir}/../../apps/bookstore/bookstore-se/target/bookstore-se.jar</appJarPathSE>
-        <appJarPathMP>${project.basedir}/../../apps/bookstore/bookstore-mp/target/bookstore-mp.jar</appJarPathMP>
     </properties>
 
     <build>
@@ -43,7 +42,6 @@
                 <configuration>
                     <systemPropertyVariables>
                         <app.jar.path.se>${appJarPathSE}</app.jar.path.se>
-                        <app.jar.path.mp>${appJarPathMP}</app.jar.path.mp>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
@@ -55,12 +53,6 @@
         <dependency>
             <groupId>io.helidon.tests.apps.bookstore.bookstore-se</groupId>
             <artifactId>bookstore-se</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.tests.apps.bookstore.bookstore-mp</groupId>
-            <artifactId>bookstore-mp</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

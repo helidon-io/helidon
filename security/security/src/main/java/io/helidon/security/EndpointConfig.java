@@ -61,7 +61,7 @@ public class EndpointConfig implements AbacSupport {
     private final List<SecurityLevel> securityLevels;
     private final AbacSupport attributes;
     private final ClassToInstanceStore<Object> customObjects;
-    private final Map<String, io.helidon.common.config.Config> configMap;
+    private final Map<String, Config> configMap;
 
     private EndpointConfig(Builder builder) {
         this.securityLevels = Collections.unmodifiableList(builder.securityLevels);
@@ -125,7 +125,7 @@ public class EndpointConfig implements AbacSupport {
      * @param configKey key of configuration expected
      * @return Config instance if present in this endpoint configuration
      */
-    public Optional<io.helidon.common.config.Config> config(String configKey) {
+    public Optional<Config> config(String configKey) {
         return Optional.ofNullable(configMap.get(configKey));
     }
 
@@ -162,17 +162,17 @@ public class EndpointConfig implements AbacSupport {
     public enum AnnotationScope {
         /**
          * Annotations on an application class or application layer.
-         * Example: JAX-RS application class annotation
+         * Example: application-level annotation
          */
         APPLICATION,
         /**
          * Annotations on a resource class.
-         * Example: JAX-RS resource class annotation
+         * Example: endpoint class annotation
          */
         CLASS,
         /**
          * Annotation on a resource method.
-         * Example: JAX-RS resource method annotation
+         * Example: endpoint method annotation
          */
         METHOD,
         /**
@@ -187,7 +187,7 @@ public class EndpointConfig implements AbacSupport {
      */
     public static final class Builder implements io.helidon.common.Builder<Builder, EndpointConfig> {
         private final ClassToInstanceStore<Object> customObjects = new ClassToInstanceStore<>();
-        private final Map<String, io.helidon.common.config.Config> configMap = new HashMap<>();
+        private final Map<String, Config> configMap = new HashMap<>();
         private final List<SecurityLevel> securityLevels = new ArrayList<>();
         private BasicAttributes attributes = BasicAttributes.create();
 
@@ -228,20 +228,6 @@ public class EndpointConfig implements AbacSupport {
         }
 
         /**
-         * Provide a configuration for provider to use.
-         *
-         * @param configKey enclosing key
-         * @param config    configuration
-         * @return Updated builder instance
-         * @deprecated use {@link #config(String, io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(String configKey, io.helidon.common.config.Config config) {
-            return config(configKey, Config.config(config));
-        }
-
-        /**
          * Provide a configuration for provider to use. This allows a provider to define a custom configuration key.
          *
          * @param configKey     key this configuration is stored under
@@ -259,7 +245,7 @@ public class EndpointConfig implements AbacSupport {
          * @param configMap map of configurations
          * @return updated builder instance
          */
-        public Builder configMap(Map<String, io.helidon.common.config.Config> configMap) {
+        public Builder configMap(Map<String, Config> configMap) {
             this.configMap.putAll(configMap);
             return this;
         }

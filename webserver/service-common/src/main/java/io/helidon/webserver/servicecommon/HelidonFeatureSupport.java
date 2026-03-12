@@ -15,13 +15,9 @@
  */
 package io.helidon.webserver.servicecommon;
 
-import java.util.Objects;
-
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.cors.CrossOriginConfig;
-import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpService;
 
@@ -31,7 +27,6 @@ import io.helidon.webserver.http.HttpService;
  * This base class takes care of some tasks common to many services, using config and other settings in the builder:
  *     <ul>
  *         <li>Setting up the endpoint path (web context) for the service, using settings in the builder and config.</li>
- *         <li>Providing automatic CORS support (and the ability to control it via config).</li>
  *     </ul>
  *
  * <p>
@@ -40,17 +35,13 @@ import io.helidon.webserver.http.HttpService;
  *     See also the {@link Builder} information for possible additional overrides.
  * </p>
  *
- * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
- *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
- *  server feature; reason for existence of this class was CORS configuration - as this is now not needed,
- *  this class will most likely be removed in a future version of Helidon; implement an
+ * @deprecated this class will most likely be removed in a future version of Helidon; implement an
  *  {@link io.helidon.webserver.http.HttpFeature} directly instead
  */
 @Deprecated(forRemoval = true, since = "4.4.0")
 @SuppressWarnings("removal")
 public abstract class HelidonFeatureSupport implements FeatureSupport {
 
-    private final CorsEnabledServiceHelper corsEnabledServiceHelper;
     private final System.Logger logger;
     private final String configuredContext;
     private final boolean enabled;
@@ -69,7 +60,6 @@ public abstract class HelidonFeatureSupport implements FeatureSupport {
 
     protected HelidonFeatureSupport(System.Logger logger, RestServiceSettings restServiceSettings, String serviceName) {
         this.logger = logger;
-        this.corsEnabledServiceHelper = CorsEnabledServiceHelper.create(serviceName, restServiceSettings.crossOriginConfig());
         this.configuredContext = restServiceSettings.webContext();
         this.context = (restServiceSettings.webContext().startsWith("/") ? "" : "/") + restServiceSettings.webContext();
         this.enabled = restServiceSettings.enabled();
@@ -88,11 +78,6 @@ public abstract class HelidonFeatureSupport implements FeatureSupport {
      */
     @Override
     public final void setup(HttpRouting.Builder defaultRouting, HttpRouting.Builder featureRouting) {
-        // CORS first
-        defaultRouting.any(corsEnabledServiceHelper.processor());
-        if (defaultRouting != featureRouting) {
-            featureRouting.any(corsEnabledServiceHelper.processor());
-        }
         service().ifPresent(it -> featureRouting.register(context(), it));
         postSetup(defaultRouting, featureRouting);
     }
@@ -157,19 +142,6 @@ public abstract class HelidonFeatureSupport implements FeatureSupport {
 
         /**
          * Sets the configuration to be used by this builder.
-         *
-         * @param config the Helidon config instance
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public B config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
-         * Sets the configuration to be used by this builder.
          * <p>
          * Concrete builder implementations may override this method but should invoke {@code super.config(config)} to
          * benefit from the common routing set-up.
@@ -189,10 +161,6 @@ public abstract class HelidonFeatureSupport implements FeatureSupport {
                     .asString()
                     .ifPresent(restServiceSettingsBuilder::routing);
 
-            config.get(CorsEnabledServiceHelper.CORS_CONFIG_KEY)
-                    .as(CrossOriginConfig::create)
-                    .ifPresent(this::crossOriginConfig);
-
             return identity();
         }
 
@@ -201,7 +169,7 @@ public abstract class HelidonFeatureSupport implements FeatureSupport {
          *
          * @return the Config
          */
-        public io.helidon.common.config.Config config() {
+        public Config config() {
             return config;
         }
 
@@ -220,24 +188,6 @@ public abstract class HelidonFeatureSupport implements FeatureSupport {
                 context = "/" + path;
             }
             restServiceSettingsBuilder.webContext(context);
-            return identity();
-        }
-
-        /**
-         * Set the CORS config from the specified {@code CrossOriginConfig} object.
-         *
-         * @param crossOriginConfig {@code CrossOriginConfig} containing CORS set-up
-         * @return updated builder instance
-         * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
-         *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
-         *  server feature
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(forRemoval = true, since = "4.4.0")
-        @ConfiguredOption
-        public B crossOriginConfig(CrossOriginConfig crossOriginConfig) {
-            Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
-            restServiceSettingsBuilder.crossOriginConfig(crossOriginConfig);
             return identity();
         }
 

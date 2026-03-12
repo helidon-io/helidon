@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-docs</artifactId>
     <packaging>site</packaging>
@@ -52,64 +52,19 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
+        </dependency>
         <!-- snippets dependencies -->
-        <!--suppress VulnerableLibrariesLocal -->
-        <dependency>
-            <groupId>org.apache.activemq</groupId>
-            <artifactId>activemq-client</artifactId>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle.oci.sdk</groupId>
-            <artifactId>oci-java-sdk-objectstorage</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.batch</groupId>
-            <artifactId>jakarta.batch-api</artifactId>
-            <version>${version.lib.jbatch-api}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.ibm.jbatch</groupId>
-            <artifactId>com.ibm.jbatch.spi</artifactId>
-            <version>${version.lib.jbatch.container}</version>
-            <optional>true</optional>
-        </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.lra</groupId>
-            <artifactId>helidon-microprofile-lra-testing</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.testing</groupId>
-            <artifactId>helidon-microprofile-testing-junit5</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.testing</groupId>
-            <artifactId>helidon-microprofile-testing-testng</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
             <optional>true</optional>
         </dependency>
     </dependencies>
@@ -240,14 +195,7 @@
                         <!-- See https://github.com/helidon-io/helidon/issues/8163 -->
                         <include>helidon.*</include>
                     </moduleIncludes>
-                    <moduleExcludes>
-                        <!-- Unsupported modules -->
-                        <exclude>io.helidon.inject*</exclude>
-                        <exclude>*.processor*</exclude>
-                        <exclude>io.helidon.integrations.oci.authentication.instance</exclude>
-                        <exclude>io.helidon.integrations.oci.authentication.resource</exclude>
-                        <exclude>io.helidon.integrations.oci.authentication.okeworkload</exclude>
-                    </moduleExcludes>
+                    <moduleExcludes/>
                     <packageIncludes>
                         <include>io.helidon*</include>
                     </packageIncludes>
@@ -269,24 +217,12 @@
                             <location>${javadoc.pkg.dir}/jackson-databind</location>
                         </offlineLink>
                         <offlineLink>
-                            <url>${javadoc.link.jakarta-jaxrs}</url>
-                            <location>${javadoc.pkg.dir}/jakarta-jaxrs</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.jakarta-cdi}</url>
-                            <location>${javadoc.pkg.dir}/jakarta-cdi</location>
-                        </offlineLink>
-                        <offlineLink>
                             <url>${javadoc.link.jakarta-inject}</url>
                             <location>${javadoc.pkg.dir}/jakarta-inject</location>
                         </offlineLink>
                         <offlineLink>
                             <url>${javadoc.link.reactive-streams}</url>
                             <location>${javadoc.pkg.dir}/reactive-streams</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.jersey}</url>
-                            <location>${javadoc.pkg.dir}/jersey</location>
                         </offlineLink>
                         <offlineLink>
                             <url>${javadoc.link.typesafe-config}</url>
@@ -323,58 +259,6 @@
                         <offlineLink>
                             <url>${javadoc.link.jakarta-transaction}</url>
                             <location>${javadoc.pkg.dir}/jakarta-transaction</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.microprofile-config}</url>
-                            <location>${javadoc.pkg.dir}/microprofile-config</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.microprofile-health}</url>
-                            <location>${javadoc.pkg.dir}/microprofile-health</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.microprofile-metrics}</url>
-                            <location>${javadoc.pkg.dir}/microprofile-metrics</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.microprofile-fault-tolerance-api}</url>
-                            <location>${javadoc.pkg.dir}/microprofile-fault-tolerance-api</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.microprofile-graphql}</url>
-                            <location>${javadoc.pkg.dir}/microprofile-graphql</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.microprofile-jwt}</url>
-                            <location>${javadoc.pkg.dir}/microprofile-jwt</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.microprofile-lra-api}</url>
-                            <location>${javadoc.pkg.dir}/microprofile-lra-api</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.microprofile-openapi-api}</url>
-                            <location>${javadoc.pkg.dir}/microprofile-openapi-api</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.microprofile-reactive-messaging-api}</url>
-                            <location>${javadoc.pkg.dir}/microprofile-reactive-messaging-api</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.microprofile-reactive-streams-operators-api}</url>
-                            <location>${javadoc.pkg.dir}/microprofile-reactive-streams-operators-api</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.microprofile-rest-client}</url>
-                            <location>${javadoc.pkg.dir}/microprofile-rest-client</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.microprofile-tracing}</url>
-                            <location>${javadoc.pkg.dir}/microprofile-tracing</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.weld}</url>
-                            <location>${javadoc.pkg.dir}/weld</location>
                         </offlineLink>
                         <offlineLink>
                             <url>${javadoc.link.narayana}</url>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,7 @@ module io.helidon.webserver.graphql {
     requires io.helidon.common.uri;
     requires io.helidon.common;
     requires io.helidon.config;
-    requires io.helidon.cors;
     requires io.helidon.graphql.server;
-    requires io.helidon.webserver.cors;
     requires jakarta.json.bind;
     requires org.eclipse.yasson;
 

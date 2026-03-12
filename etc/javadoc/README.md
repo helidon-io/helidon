@@ -26,8 +26,8 @@ OK, so if you need to add a new link to external javadocs this is what you do
 1. Add a new property to the root `pom.xml` with the link to the exernal javadocs. The name
    must folow the naming convention shown here (`javadoc.link` as a prefix with a short
    name following). The value is the same as what you would use in a `<link>`. For example:
-   ```
-        <javadoc.link.jaxrs>https://jax-rs.github.io/apidocs/${version.lib.jaxrs-api}</javadoc.link.jaxrs>
+   ```xml
+        <javadoc.link.example>https://example.org/apidocs/</javadoc.link.example>
    ```
    
 2. Add a new `<offlineLink>` to the javadoc plugin configuration. It should reference the property
@@ -58,6 +58,5 @@ OK, so if you need to add a new link to external javadocs this is what you do
    
 5. If all is good make sure to `git add` your new `package-list` (`element-list`) file
    and commit it
-
 
 

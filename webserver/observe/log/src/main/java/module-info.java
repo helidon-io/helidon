@@ -35,7 +35,7 @@ module io.helidon.webserver.observe.log {
     requires io.helidon.webserver;
     requires java.logging;
 
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.webserver.observe;
     requires io.helidon.builder.api;
     requires io.helidon.http;

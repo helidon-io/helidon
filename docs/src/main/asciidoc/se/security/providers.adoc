@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -52,7 +52,6 @@ The following providers are no longer evolved:
 |===
 ^|Provider ^|Type ^|Outbound supported ^|Description
 
-|<<Google Login Provider,Google Login>> |Authentication |✅ |*Deprecated*! Authenticates a token from request against Google servers
 |<<JWT Provider,JWT Provider>> |Authentication |✅ |JWT tokens passed from frontend
 |===
 
@@ -95,8 +94,6 @@ include::{rootdir}/includes/security/providers/idcs-role-mapper.adoc[]
 
 include::{rootdir}/includes/security/providers/abac.adoc[]
 
-include::{rootdir}/includes/security/providers/google-login.adoc[]
-
 include::{rootdir}/includes/security/providers/jwt.adoc[]
 
 == Reference
@@ -108,5 +105,4 @@ include::{rootdir}/includes/security/providers/jwt.adoc[]
 * link:{security-provider-httpsign-base-url}/module-summary.html[Helidon HTTP Signature JavaDoc]
 * link:{security-provider-idcs-mapper-base-url}/module-summary.html[Helidon IDCS Role Mapper JavaDoc]
 * link:{security-provider-abac-base-url}/module-summary.html[Helidon ABAC JavaDoc]
-* link:{security-provider-google-login-base-url}/module-summary.html[Helidon Google Login JavaDoc]
 * link:{security-provider-jwt-base-url}/module-summary.html[Helidon JWT JavaDoc]

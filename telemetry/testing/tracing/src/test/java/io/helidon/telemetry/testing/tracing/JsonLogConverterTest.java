@@ -113,7 +113,7 @@ class JsonLogConverterTest {
                            }, {
                              "key" : "user_agent.original",
                              "value" : {
-                               "stringValue" : "Helidon 4.4.0-SNAPSHOT"
+                               "stringValue" : "Helidon 27.0.0-SNAPSHOT"
                              }
                            }, {
                              "key" : "url.path",

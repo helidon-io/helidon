@@ -141,21 +141,6 @@ public class Proxy {
 
     /**
      * Create a new proxy instance from configuration.
-     *
-     * @param config configuration, should be located on a key that has proxy as a subkey
-     * @return proxy instance
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static Proxy create(io.helidon.common.config.Config config) {
-        return builder()
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Create a new proxy instance from configuration.
      * {@code
      * proxy:
      * http:
@@ -609,19 +594,6 @@ public class Proxy {
         @Override
         public Proxy build() {
             return new Proxy(this);
-        }
-
-        /**
-         * Configure a metric from configuration.
-         *
-         * @param config configuration to configure this proxy
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

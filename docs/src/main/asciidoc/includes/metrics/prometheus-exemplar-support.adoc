@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -67,21 +67,11 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 
 Also, include the Helidon integration module for a tracing implementation (such as
-ifdef::se-flavor[]
 xref:{rootdir}/se/tracing.adoc#zipkin-tracing[Helidon Zipkin])
-endif::[]
-ifdef::mp-flavor[]
-xref:{rootdir}/mp/tracing.adoc#zipkin-tracing[Helidon Zipkin])
-endif::[]
 include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
 
 Add the Helidon tracing component itself:
-ifdef::se-flavor[]
 include::{rootdir}/se/tracing.adoc[tag=tracing-dependency]
-endif::[]
-ifdef::mp-flavor[]
-include::{rootdir}/mp/tracing.adoc[tag=tracing-dependency]
-endif::[]
 
 == Usage
 Once you add the appropriate dependencies to your project, exemplar support runs automatically as part of the Helidon metrics implementation using Micrometer. You do not need to change your application or configuration.

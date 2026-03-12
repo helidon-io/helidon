@@ -16,7 +16,7 @@
 
 package io.helidon.metrics.providers.micrometer;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsPublisher;
 import io.helidon.metrics.spi.MetricsPublisherProvider;
 

@@ -35,7 +35,7 @@ import io.helidon.health.HealthCheckType;
  * 50 for 50% or 99 for 99%.
  * </p>
  * <p>
- * This health check is automatically created and registered through CDI.
+ * This health check is automatically created and registered.
  * </p>
  * <p>
  * This health check can be referred to in properties as {@code heapMemory}. So for example, to exclude this
@@ -149,19 +149,6 @@ public class HeapMemoryHealthCheck implements HealthCheck {
         public Builder thresholdPercent(double threshold) {
             this.threshold = threshold;
             return this;
-        }
-
-        /**
-         * Set up the heap space health check via config key, if present.
-         *
-         * @param config configuration
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

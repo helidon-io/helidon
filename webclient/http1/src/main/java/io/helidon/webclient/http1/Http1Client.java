@@ -83,19 +83,6 @@ public interface Http1Client extends HttpClient<Http1ClientRequest>, RuntimeType
      *
      * @param config client config
      * @return client
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    static Http1Client create(io.helidon.common.config.Config config) {
-        return create(it -> it.config(config));
-    }
-
-    /**
-     * Create a new instance based on {@link Config}.
-     *
-     * @param config client config
-     * @return client
      */
     static Http1Client create(Config config) {
         return create(it -> it.config(config));

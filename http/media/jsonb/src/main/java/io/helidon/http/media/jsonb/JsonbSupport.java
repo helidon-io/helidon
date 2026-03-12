@@ -66,37 +66,9 @@ public class JsonbSupport extends MediaSupportBase<JsonbSupportConfig> implement
      *
      * @param config must not be {@code null}
      * @return a new {@link JsonbSupport}
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    @SuppressWarnings("removal")
-    public static MediaSupport create(io.helidon.common.config.Config config) {
-        return create(config, ID);
-    }
-
-    /**
-     * Creates a new {@link JsonbSupport}.
-     *
-     * @param config must not be {@code null}
-     * @return a new {@link JsonbSupport}
      */
     public static MediaSupport create(Config config) {
         return create(config, ID);
-    }
-
-    /**
-     * Creates a new {@link JsonbSupport}.
-     *
-     * @param config must not be {@code null}
-     * @param name   name of this instance
-     * @return a new {@link JsonbSupport}
-     * @see #create(io.helidon.common.config.Config)
-     * @deprecated use {@link #create(io.helidon.config.Config, java.lang.String)} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    @SuppressWarnings("removal")
-    public static MediaSupport create(io.helidon.common.config.Config config, String name) {
-        return create(Config.config(config), name);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.webserver.graphql;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
@@ -27,10 +26,8 @@ import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
-import io.helidon.cors.CrossOriginConfig;
 import io.helidon.graphql.server.GraphQlConstants;
 import io.helidon.graphql.server.InvocationHandler;
-import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -59,14 +56,12 @@ public class GraphQlService implements HttpService {
     private final String context;
     private final String schemaUri;
     private final InvocationHandler invocationHandler;
-    private final CorsEnabledServiceHelper corsEnabled;
     private final ExecutorService executor;
 
     private GraphQlService(Builder builder) {
         this.context = builder.context;
         this.schemaUri = builder.schemaUri;
         this.invocationHandler = builder.handler;
-        this.corsEnabled = CorsEnabledServiceHelper.create("GraphQL", builder.crossOriginConfig);
         this.executor = builder.executor.get();
     }
 
@@ -94,8 +89,6 @@ public class GraphQlService implements HttpService {
 
     @Override
     public void routing(HttpRules rules) {
-        // cors
-        rules.any(context, corsEnabled.processor());
         // schema
         rules.get(context + schemaUri, this::graphQlSchema);
         // get and post endpoint for graphQL
@@ -167,7 +160,6 @@ public class GraphQlService implements HttpService {
     public static class Builder implements io.helidon.common.Builder<Builder, GraphQlService> {
         private String context = GraphQlConstants.GRAPHQL_WEB_CONTEXT;
         private String schemaUri = GraphQlConstants.GRAPHQL_SCHEMA_URI;
-        private CrossOriginConfig crossOriginConfig;
         private Supplier<? extends ExecutorService> executor;
         private InvocationHandler handler;
 
@@ -212,11 +204,6 @@ public class GraphQlService implements HttpService {
          *     <td>URI that serves the schema (under web context)</td>
          * </tr>
          * <tr>
-         *     <td>cors</td>
-         *     <td>default CORS configuration</td>
-         *     <td>see {@link CrossOriginConfig#create(io.helidon.config.Config)}</td>
-         * </tr>
-         * <tr>
          *     <td>executor-service</td>
          *     <td>default server thread pool configuration</td>
          *     <td>see {@link io.helidon.common.configurable.ServerThreadPoolSupplier#builder()}</td>
@@ -229,7 +216,6 @@ public class GraphQlService implements HttpService {
         public Builder config(Config config) {
             config.get("web-context").asString().ifPresent(this::webContext);
             config.get("schema-uri").asString().ifPresent(this::schemaUri);
-            config.get("cors").as(CrossOriginConfig::create).ifPresent(this::crossOriginConfig);
 
             if (executor == null) {
                 executor = ServerThreadPoolSupplier.builder()
@@ -291,18 +277,6 @@ public class GraphQlService implements HttpService {
                 this.schemaUri = "/" + uri;
             }
 
-            return this;
-        }
-
-        /**
-         * Set the CORS config from the specified {@code CrossOriginConfig} object.
-         *
-         * @param crossOriginConfig {@code CrossOriginConfig} containing CORS set-up
-         * @return updated builder instance
-         */
-        public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
-            Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
-            this.crossOriginConfig = crossOriginConfig;
             return this;
         }
 

@@ -24,7 +24,7 @@ module io.helidon.common.tls {
 
     requires io.helidon.builder.api;
     requires io.helidon.common;
-    requires io.helidon.common.config;
+    requires io.helidon.config;
     requires io.helidon.common.pki;
 
     uses io.helidon.common.tls.spi.TlsManagerProvider;

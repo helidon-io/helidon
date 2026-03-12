@@ -22,14 +22,14 @@
     <parent>
         <groupId>io.helidon.health</groupId>
         <artifactId>helidon-health-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-health-checks</artifactId>
     <name>Helidon Health Checks</name>
 
     <description>
-        Microprofile Health implementation - health checks supported OOTB
+        Built-in health checks supported out of the box
     </description>
 
     <properties>
@@ -46,23 +46,10 @@
             <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
-            <!-- only needed for compilation, not required in runtime -->
-            <groupId>jakarta.enterprise</groupId>
-            <artifactId>jakarta.enterprise.cdi-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <!-- only needed for compilation, not required in runtime -->
-            <groupId>org.eclipse.microprofile.config</groupId>
-            <artifactId>microprofile-config-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

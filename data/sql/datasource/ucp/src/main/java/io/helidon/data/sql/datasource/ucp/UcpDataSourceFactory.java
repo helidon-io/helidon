@@ -52,19 +52,6 @@ public class UcpDataSourceFactory {
      *
      * @param config UCP {@link DataSource} specific configuration node.
      * @return new instance of UCP {@link DataSource}
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static DataSource create(io.helidon.common.config.Config config) {
-        return create(UcpDataSourceConfig.create(config));
-    }
-
-    /**
-     * Create new instance of UCP {@link DataSource}.
-     *
-     * @param config UCP {@link DataSource} specific configuration node.
-     * @return new instance of UCP {@link DataSource}
      */
     public static DataSource create(Config config) {
         return create(UcpDataSourceConfig.create(config));

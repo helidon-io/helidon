@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,8 @@
  */
 package io.helidon.docs.se.config;
 
-import java.net.URI;
-import java.nio.file.Paths;
-import java.time.Duration;
-
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
-import io.helidon.config.PollingStrategies;
-import io.helidon.config.etcd.EtcdConfigSource;
-import io.helidon.config.etcd.EtcdConfigSourceBuilder;
-import io.helidon.config.etcd.EtcdWatcher;
-import io.helidon.config.git.GitConfigSource;
 import io.helidon.config.hocon.HoconConfigParser;
 import io.helidon.config.yaml.YamlConfigParser;
 
@@ -101,60 +92,5 @@ class SupportedFormatsSnippets {
                                    .build()) // <3>
                 .build();
         // end::snippet_9[]
-    }
-
-    void snippet_10() {
-        // tag::snippet_10[]
-        Config config = Config.create(
-                EtcdConfigSource // <1>
-                        .create(URI.create("http://my-etcd:2379"), // <2>
-                                "/config.yaml", // <3>
-                                EtcdConfigSourceBuilder.EtcdApi.v3)); // <4>
-        // end::snippet_10[]
-    }
-
-    void snippet_11() {
-        // tag::snippet_11[]
-        Config config = Config.create(
-                EtcdConfigSource
-                        .builder()
-                        .uri(URI.create("http://my-etcd:2379"))
-                        .key("/config.yaml")
-                        .api(EtcdConfigSourceBuilder.EtcdApi.v3)
-                        .changeWatcher(EtcdWatcher.create())); // <1>
-        // end::snippet_11[]
-    }
-
-    void snippet_12() {
-        // tag::snippet_12[]
-        Config config = Config.create(classpath("config-meta-etcd.yaml"));
-        // end::snippet_12[]
-    }
-
-    void snippet_13() {
-        // tag::snippet_13[]
-        Config config = Config.create(
-                GitConfigSource
-                        .builder() // <1>
-                        .uri(URI.create("https://github.com/okosatka/test-config.git")) // <2>
-                        .directory(Paths.get("/config")) // <3>
-                        .branch("dev")); // <4>
-        // end::snippet_13[]
-    }
-
-    void snippet_14() {
-        // tag::snippet_14[]
-        Config config = Config.create(
-                GitConfigSource.builder()
-                        .uri(URI.create("https://github.com/okosatka/test-config.git"))
-                        .pollingStrategy(PollingStrategies.regular(Duration.ofMinutes(
-                                5)))); // <1>
-        // end::snippet_14[]
-    }
-
-    void snippet_15() {
-        // tag::snippet_15[]
-        Config config = Config.create(classpath("config-meta-git.yaml"));
-        // end::snippet_15[]
     }
 }

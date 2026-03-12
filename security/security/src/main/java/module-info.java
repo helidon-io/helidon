@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,12 +47,8 @@ module io.helidon.security {
     exports io.helidon.security;
     exports io.helidon.security.spi;
 
-    exports io.helidon.security.internal to
-            io.helidon.microprofile.security,
-            io.helidon.webserver.security;
-
-    // needed for CDI integration
-    opens io.helidon.security to weld.core.impl, io.helidon.microprofile.cdi;
+    // this will be marked as internal API
+    exports io.helidon.security.internal;
 
     uses io.helidon.security.spi.SecurityProviderService;
 

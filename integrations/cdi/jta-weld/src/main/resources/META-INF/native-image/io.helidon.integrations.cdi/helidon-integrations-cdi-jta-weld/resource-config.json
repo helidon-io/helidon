@@ -1,7 +1,0 @@
-{
-    "resources": [
-        {
-            "pattern": "io/helidon/integrations/jta/weld/Messages.properties"
-        }
-    ]
-}

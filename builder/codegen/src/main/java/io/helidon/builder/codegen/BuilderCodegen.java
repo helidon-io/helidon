@@ -42,7 +42,6 @@ import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassBase;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
-import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.TypeArgument;
 import io.helidon.codegen.spi.CodegenExtension;
@@ -50,7 +49,6 @@ import io.helidon.common.Errors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
-import io.helidon.common.types.Annotations;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -58,7 +56,6 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.metadata.MetadataConstants;
 
-import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
 import static io.helidon.builder.codegen.Types.CONFIG;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_EXTENSION;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_EXTENSIONS;
@@ -229,25 +226,6 @@ class BuilderCodegen implements CodegenExtension {
                 .decreaseContentPadding();
         classModel.addMethod(method);
 
-        // backward compatibility
-        Method.Builder commonMethod = Method.builder()
-                .name("create")
-                .isStatic(true)
-                .returnType(prototype)
-                .addParameter(paramBuilder -> paramBuilder.type(Types.COMMON_CONFIG)
-                        .name("config"))
-                .javadoc(Javadoc.builder()
-                                 .add("Create a new instance from configuration.")
-                                 .returnDescription("a new instance configured from configuration")
-                                 .addParameter("config", "used to configure the new instance")
-                                 .addTag("deprecated", "use {@link #create(" + Types.CONFIG.fqName() + ")}")
-                                 .build())
-                .addContent("return create(")
-                .addContent(Types.CONFIG)
-                .addContentLine(".config(config));")
-                .addAnnotation(Annotations.DEPRECATED);
-        typeArguments.forEach(commonMethod::addGenericArgument);
-        classModel.addMethod(commonMethod);
     }
 
     private static void addCopyBuilderMethod(ClassModel.Builder classModel,
@@ -540,14 +518,13 @@ class BuilderCodegen implements CodegenExtension {
             return;
         }
 
-        // we must add it, for now common config to have backward compatibility
         boolean style = prototypeInfo.recordStyle();
         String getter = style ? "config" : "getConfig";
         String setter = style ? "config" : "setConfig";
 
         newOptions.add(OptionInfo.builder()
                                .name("config")
-                               .declaredType(COMMON_CONFIG)
+                               .declaredType(CONFIG)
                                .getterName(getter)
                                .setterName(setter)
                                .includeInEqualsAndHashCode(false)
@@ -563,14 +540,14 @@ class BuilderCodegen implements CodegenExtension {
         return options.stream()
                 .filter(it -> it.name().equals("config"))
                 .anyMatch(it -> {
-                    // we only support Config, Optional<Config> for both common and config config
+                    // we only support Config and Optional<Config>
                     var optionType = it.declaredType();
-                    if (optionType.equals(CONFIG) || optionType.equals(COMMON_CONFIG)) {
+                    if (optionType.equals(CONFIG)) {
                         return true;
                     }
                     if (optionType.isOptional()) {
                         optionType = optionType.typeArguments().getFirst();
-                        if (optionType.equals(CONFIG) || optionType.equals(COMMON_CONFIG)) {
+                        if (optionType.equals(CONFIG)) {
                             return true;
                         }
                     }
@@ -706,8 +683,6 @@ class BuilderCodegen implements CodegenExtension {
                 .copyright(CodegenUtil.copyright(GENERATOR,
                                                  blueprint.typeName(),
                                                  prototype))
-                // adding suppress warnings for config - once we remove helidon-common-config, we can remove this
-                .addAnnotation(Annotation.create(SuppressWarnings.class, "removal"))
                 .accessModifier(prototypeInfo.accessModifier());
 
         typeArguments.forEach(classModel::addGenericArgument);

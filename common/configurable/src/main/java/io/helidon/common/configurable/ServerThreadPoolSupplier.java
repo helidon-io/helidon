@@ -81,20 +81,6 @@ public final class ServerThreadPoolSupplier implements Supplier<ExecutorService>
      *
      * @param config config instance
      * @return a new thread pool supplier configured from config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static ThreadPoolSupplier create(io.helidon.common.config.Config config) {
-        return builder().config(config)
-                .build();
-    }
-
-    /**
-     * Create supplier from configuration.
-     *
-     * @param config config instance
-     * @return a new thread pool supplier configured from config
      */
     public static ThreadPoolSupplier create(Config config) {
         return builder().config(config)

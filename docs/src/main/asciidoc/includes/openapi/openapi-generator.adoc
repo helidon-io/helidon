@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -35,18 +35,10 @@ In the vocabulary of the tool, there are two _generators_ for Helidon:
 * `java-helidon-client` (hereafter the Helidon client generator)
 * `java-helidon-server` (hereafter the Helidon server generator).
 
-Each of these generators supports two _libraries_:
-
-* `mp` - for Helidon MP code generation
-* `se` - for Helidon SE code generation
+For Helidon SE, use the `se` library with each generator.
 
 Use the Helidon _client_ generator and its `{flavor-lc}` library to create a
-ifdef::mp-flavor[]
-xref:{helidon-client-xref}[Helidon MicroProfile REST client].
-endif::mp-flavor[]
-ifdef::se-flavor[]
 Helidon SE client based on xref:{helidon-client-xref}[Helidon WebClients].
-endif::se-flavor[]
 The resulting client library works with any server that implements the API declared in the OpenAPI document you specified when you ran the generator.
 The client library provides an abstraction similar to remote procedure calls (RPC).
 To access a remote service that implements the endpoints declared in the OpenAPI document, your code uses the generated client library first to establish a connection to the remote service and then to call remote service endpoints by invoking local methods passing POJO business objects or Java types as arguments.
@@ -219,8 +211,7 @@ You must specify the following options:
 | {nbsp}
 | `<library>`
 |Library you want to use
-|`mp` +
-`se`
+|`se`
 |===
 
 === Recommended Settings for the OpenAPI Generator

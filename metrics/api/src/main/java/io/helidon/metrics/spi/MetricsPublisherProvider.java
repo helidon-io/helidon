@@ -16,7 +16,7 @@
 
 package io.helidon.metrics.spi;
 
-import io.helidon.common.config.ConfiguredProvider;
+import io.helidon.config.ConfiguredProvider;
 import io.helidon.metrics.api.MetricsPublisher;
 import io.helidon.service.registry.Service;
 

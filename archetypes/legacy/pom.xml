@@ -23,18 +23,15 @@
     <parent>
         <groupId>io.helidon.archetypes</groupId>
         <artifactId>helidon-archetypes-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-archetypes-legacy-project</artifactId>
     <name>Helidon Legacy Archetypes</name>
     <packaging>pom</packaging>
 
     <modules>
-        <module>bare-mp</module>
         <module>bare-se</module>
-        <module>quickstart-mp</module>
         <module>quickstart-se</module>
-        <module>database-mp</module>
         <module>database-se</module>
     </modules>
 

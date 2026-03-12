@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ Each feature is implemented with the help of "xref:providers.adoc[Security Provi
 
 Security module is quite HTTP centric (as most common use cases are related to
  HTTP REST), though it is not HTTP specific (the security module may be used to
- secure even other transports, such as JMS, Kafka messages etc. if an appropriate
+ secure even other transports, such as JMS messages etc. if an appropriate
  integration module is developed, as all APIs can be mapped to a non-HTTP
  protocol). Nevertheless, there may be security providers that only make sense with
  HTTP (such as HTTP digest authentication).

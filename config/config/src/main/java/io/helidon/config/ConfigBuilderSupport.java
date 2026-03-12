@@ -62,8 +62,8 @@ public final class ConfigBuilderSupport {
      * @return instances from the user augmented with instances from the registry
      */
     public static <
-            S extends io.helidon.common.config.NamedService,
-            T extends io.helidon.common.config.ConfiguredProvider<S>> List<S
+            S extends NamedService,
+            T extends ConfiguredProvider<S>> List<S
             > discoverServices(Config config,
                                String configKey,
                                Optional<ServiceRegistry> serviceRegistry,
@@ -98,8 +98,8 @@ public final class ConfigBuilderSupport {
      * @return an instance, if available in the registry, or if provided by the user (user's value wins)
      */
     public static <
-            S extends io.helidon.common.config.NamedService,
-            T extends io.helidon.common.config.ConfiguredProvider<S>> Optional<S> discoverService(
+            S extends NamedService,
+            T extends ConfiguredProvider<S>> Optional<S> discoverService(
             Config config,
             String configKey,
             Optional<ServiceRegistry> serviceRegistry,
@@ -136,8 +136,8 @@ public final class ConfigBuilderSupport {
      * @return list of discovered services, ordered by {@link io.helidon.common.Weight} (highest weight is first in the list)
      */
     public static <
-            S extends io.helidon.common.config.NamedService,
-            T extends io.helidon.common.config.ConfiguredProvider<S>> List<S> discoverServices(
+            S extends NamedService,
+            T extends ConfiguredProvider<S>> List<S> discoverServices(
             Config config,
             String configKey,
             Class<T> providerType,
@@ -173,8 +173,8 @@ public final class ConfigBuilderSupport {
      *         is found
      */
     public static <
-            S extends io.helidon.common.config.NamedService,
-            T extends io.helidon.common.config.ConfiguredProvider<S>> Optional<S> discoverService(
+            S extends NamedService,
+            T extends ConfiguredProvider<S>> Optional<S> discoverService(
             Config config,
             String configKey,
             Class<T> providerType,
@@ -198,8 +198,7 @@ public final class ConfigBuilderSupport {
      * @param <BUILDER>   type of the builder
      * @param <PROTOTYPE> type of the prototype to be built
      */
-    public interface ConfiguredBuilder<BUILDER, PROTOTYPE> extends Prototype.Builder<BUILDER, PROTOTYPE>,
-            io.helidon.common.config.ConfigBuilderSupport.ConfiguredBuilder<BUILDER, PROTOTYPE> {
+    public interface ConfiguredBuilder<BUILDER, PROTOTYPE> extends Prototype.Builder<BUILDER, PROTOTYPE> {
         /**
          * Update builder from configuration.
          * Any configured option that is defined on this prototype will be checked in configuration, and if it exists,

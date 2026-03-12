@@ -66,21 +66,6 @@ public interface MetricsFactory {
      * config node to set up the metrics factory and saving the resulting metrics factory
      * as the current one, returned by {@link #getInstance()}}.
      *
-     * @param config config node
-     * @return new instance configured as directed
-     * @deprecated use {@link #getInstance(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    static MetricsFactory getInstance(io.helidon.common.config.Config config) {
-        return getInstance(Config.config(config));
-    }
-
-    /**
-     * Returns a new metrics factory instance from a highest-weight provider using the provided
-     * config node to set up the metrics factory and saving the resulting metrics factory
-     * as the current one, returned by {@link #getInstance()}}.
-     *
      * @param metricsConfigNode metrics config node
      * @return new instance configured as directed
      */

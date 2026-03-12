@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,8 +33,6 @@ include::{rootdir}/includes/attributes.adoc[]
 
 * Converted other _reactive_ API modules to _blocking_ style APIs. The `io.helidon.common.reactive` APIs will stay as general purpose reactive utilities and operators. Learn more: <<Helidon SE, Helidon SE>>
 
-* Upgraded MicroProfile support to MicroProfile 6 and Jakarta 10 Core Profile running on the Helidon WebServer. Learn more: <<Helidon MP, Helidon MP>>
-
 * Java 21 is required to use Helidon 4. Java 25 or newer is recommended.
 
 
@@ -61,11 +59,4 @@ include::{sourcedir}/about/IntroSnippets.java[tag=snippet_1, indent=0]
 ----
 include::{sourcedir}/about/IntroSnippets.java[tag=snippet_2, indent=0]
 ----
-
-
-== Helidon MP
-Helidon MP is Helidon's MicroProfile implementation and in Helidon 4 it supports MicroProfile 6 and the Jakarta EE 10 Core Profile. Your Helidon 3 MicroProfile application should migrate to Helidon 4 fairly easily (the most significant changes are in MicroProfile Metrics 5.0), and since Helidon's MicroProfile server is based on the new Helidon WebServer (Project N&iacute;ma), you get all the benefits of running on virtual threads.
-
-
-
 

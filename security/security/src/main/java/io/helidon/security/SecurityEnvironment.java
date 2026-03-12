@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,7 +148,7 @@ public class SecurityEnvironment implements AbacSupport {
 
     /**
      * Path to the resource.
-     * For jax-rs, this is relative URI.
+     * For some endpoint integrations, this is a relative URI.
      *
      * @return Path to the resource
      */

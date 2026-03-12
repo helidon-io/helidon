@@ -81,20 +81,6 @@ public final class HealthChecks {
      * @param config the configuration to use in setting up the heap memory check
      * @return memory health check with default configuration
      * @see HeapMemoryHealthCheck#builder()
-     * @deprecated use {@link #heapMemoryCheck(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static HeapMemoryHealthCheck heapMemoryCheck(io.helidon.common.config.Config config) {
-        return HeapMemoryHealthCheck.builder().config(config).build();
-    }
-
-    /**
-     * Memory health check.
-     *
-     * @param config the configuration to use in setting up the heap memory check
-     * @return memory health check with default configuration
-     * @see HeapMemoryHealthCheck#builder()
      */
     public static HeapMemoryHealthCheck heapMemoryCheck(Config config) {
         return HeapMemoryHealthCheck.builder().config(config).build();
@@ -118,19 +104,6 @@ public final class HealthChecks {
                     heapMemoryCheck()
             };
         }
-    }
-
-    /**
-     * Built-in health checks, set up using "helidon.health" configuration.
-     *
-     * @param config configuration rooted at "helidon.health"
-     * @return built-in health checks, set up using the provided configuration
-     * @deprecated use {@link #healthChecks(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static HealthCheck[] healthChecks(io.helidon.common.config.Config config) {
-        return healthChecks(Config.config(config));
     }
 
     /**

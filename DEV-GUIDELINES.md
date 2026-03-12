@@ -45,7 +45,7 @@ Some of these rules are enforced by checkstyle, some are checked during code rev
         1. For pom packaging, the module is a "project module" (considering modules that serve as aggregators for sub-modules 
             into a common reactor)
     2. Maven coordinates:
-        1. Group id: io.helidon.${project_module}* - such as io.helidon.reactive.webserver; io.helidon.microprofile.config
+        1. Group id: io.helidon.${project_module}* - such as io.helidon.reactive.webserver; io.helidon.config
         2. Artifact id: helidon-${module_name}(-project)? - such as "helidon-security", "helicon-security-project", 
             where project modules use the suffix "-project"
         3. Version: always inherited
@@ -55,7 +55,7 @@ Some of these rules are enforced by checkstyle, some are checked during code rev
 # Configuration and programmatic API
 1. **Everything that can be done using config, must be possible using programmatic approach through builders**
     1. Exceptions:
-        1. CDI components configured from a CDI Extension
+        1. components that can only be code generated and must use inversion of control
 2. Everything that can be done using builders should be possible also using configuration, 
         except for cases that would mandate usage of reflection 
         (such an exception may be configuration of Routing in WebServer - nevertheless we still may support 
@@ -190,10 +190,10 @@ but: was "Requested value for configuration key 'list-1.1' is not present in the
 6. Bundles may be created, though we still must give our users the freedom to pick and choose modules directly
     1. Avoid bundling third party dependencies that may bring unexpected libraries in (e.g. Google Login provider)
     2. $root/bundles - SE bundles (groupId: io.helidon.bundles)
-    3. microprofile/bundles - MP bundles
+    3. keep bundle directories scoped to active Helidon bundle families
     4. Bundles are for end users, not for internal use
-7. Java EE components and Microprofile specifications should be in "provided" scope unless you are implementing
-    the spec itself
+7. Third-party specification APIs should be in "provided" scope unless you are implementing
+    the specification itself
     1. Analyze the dependencies of your module and choose the correct maven scope and module-info.java dependency declaration
     2. Mapping to module-info.java
         1. compile -> requires
@@ -203,5 +203,4 @@ but: was "Requested value for configuration key 'list-1.1' is not present in the
                     note that "requires static" only works if the module is required by any other module used, otherwise
                     it does not end up on module path even if it is on the class path 
     3. Use transitive in module-info.java for your dependencies that are part of public API of the module
-8. Carefully choose scope for dependencies on other helidon modules (e.g. microprofile extensions should have
-    helidon microprofile in "provided" scope)
+8. Carefully choose scope for dependencies on other helidon modules, especially for optional integrations

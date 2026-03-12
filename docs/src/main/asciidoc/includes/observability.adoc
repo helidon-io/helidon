@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -121,14 +121,6 @@ server:
       weight: 120
 ----
 endif::se-flavor[]
-ifdef::mp-flavor[]
-.Configuration in `META-INF/microprofile-config.properties` Assigning Feature Weight to Control Routing
-[source,properties]
-----
-server.features.observe.weight = 120
-----
-endif::mp-flavor[]
-
 Helidon does not enforce the weight range {observe-weight-range-start}-{observe-weight-range-end} for observability, but you should use a value in this range for the observe weight to avoid problems with other features such as security, CORS, and others; their relative ordering is important.
 
 // end::weight-and-endpoint-conflicts[]
@@ -339,7 +331,6 @@ Main difference is that a feature can add `Filter` filters and it cannot be  reg
 // tag::references[]
 == Reference
 
-* https://download.eclipse.org/microprofile/microprofile-metrics-5.0.0/microprofile-metrics-spec-5.0.0.pdf[MicroProfile Metrics Specification]
 * xref:{rootdir}/se/metrics/metrics.adoc[Metrics] documentation.
 * xref:{rootdir}/se/health.adoc[Health] documentation.
 

@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-project</artifactId>
@@ -39,15 +39,10 @@
         <module>config</module>
         <module>object-mapping</module>
         <module>yaml</module>
-        <module>etcd</module>
-        <module>git</module>
         <module>hocon</module>
         <module>encryption</module>
         <module>testing</module>
-        <module>config-mp</module>
-        <module>yaml-mp</module>
         <module>metadata</module>
-        <module>hocon-mp</module>
     </modules>
 
     <build>

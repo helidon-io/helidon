@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,16 +49,10 @@
  *     # Composite policy when using more than one provider
  *     type: "COMPOSITE"
  *     authentication:
- *       # This is a frontend service - only allow google authentication
- *       - name: "google-login"
+ *       - name: "http-signatures"
  *     outbound:
- *       # Propagate the goole token and this service's identity to backend
- *       - name: "google-login"
  *       - name: "http-signatures"
  *   providers:
- *     # Google login button support - authentication and identity propagation provider
- *     - google-login:
- *         client-id: "your-google-application-id"
  *     # Attribute based access control authorization provider
  *     - abac:
  *     # HTTP signatures - authentication and identity propagation provider (for service identity)

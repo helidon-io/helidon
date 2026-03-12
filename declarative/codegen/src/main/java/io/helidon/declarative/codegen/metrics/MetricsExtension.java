@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -224,13 +224,14 @@ class MetricsExtension implements RegistryCodegenExtension {
     private void checkTypeIsService(RegistryRoundContext roundContext, TypeInfo typeInfo) {
         Optional<ClassModel.Builder> descriptor = roundContext.generatedType(ctx.descriptorType(typeInfo.typeName()));
         if (descriptor.isEmpty()) {
-            // we may be in CDI (as we support the annotations on both CDI beans and Helidon Declarative Services)
+            // we may be in another container, as we support the annotations on both container-managed beans and
+            // Helidon Declarative Services
             // let's just check there is any annotation on the type
             if (typeInfo.annotations().isEmpty()) {
                 throw new CodegenException("Type annotated with one of the metrics annotations is not a service itself."
                                                    + " It must be annotated with "
                                                    + SERVICE_ANNOTATION_SINGLETON.classNameWithEnclosingNames() + ","
-                                                   + " or it must be a CDI bean (in Helidon MP).",
+                                                   + " or it must be a container-managed bean.",
                                            typeInfo.originatingElementValue());
             }
         }

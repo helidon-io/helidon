@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2024, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -50,16 +50,6 @@
                         <include>security/**</include>
                     </includes>
                 </moduleSet>
-                <moduleSet name="jpa-oracle">
-                    <includes>
-                        <include>tests/integration/jpa/oracle/**</include>
-                    </includes>
-                </moduleSet>
-                <moduleSet name="jpa">
-                    <includes>
-                        <include>tests/integration/jpa/**</include>
-                    </includes>
-                </moduleSet>
                 <moduleSet name="data-oracle">
                     <includes>
                         <include>data/tests/**/ucp/**</include>
@@ -100,29 +90,6 @@
                 </moduleSet>
             </moduleSets>
         </reactorRule>
-        <reactorRule name="tck">
-            <profiles>
-                <profile>tests</profile>
-                <profile>tck</profile>
-            </profiles>
-            <moduleSets>
-                <moduleSet name="cdi">
-                    <includes>
-                        <include>microprofile/tests/tck/tck-cdi*/**</include>
-                    </includes>
-                </moduleSet>
-                <moduleSet name="rest">
-                    <includes>
-                        <include>microprofile/tests/tck/tck-rest*/**</include>
-                    </includes>
-                </moduleSet>
-                <moduleSet name="others">
-                    <includes>
-                        <include>microprofile/tests/tck/**</include>
-                    </includes>
-                </moduleSet>
-            </moduleSets>
-        </reactorRule>
         <reactorRule name="default">
             <moduleSets>
                 <moduleSet name="core">
@@ -135,11 +102,6 @@
                         <include>common/**</include>
                         <include>config/**</include>
                         <include>security/**</include>
-                    </includes>
-                </moduleSet>
-                <moduleSet name="integrations">
-                    <includes>
-                        <include>integrations/**</include>
                     </includes>
                 </moduleSet>
                 <moduleSet name="others">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import io.helidon.spi.HelidonStartupProvider;
 /**
  * Main entry point for any Helidon application.
  * {@link java.util.ServiceLoader} is used to discover the correct {@link io.helidon.spi.HelidonStartupProvider}
- * to start the application (probably either Helidon Injection based application, or a CDI based application).
+ * to start the application, typically a Helidon Injection based application.
  * <p>
  * The default option is to start Helidon injection based application.
  */
@@ -74,8 +74,8 @@ public class Main {
 
         if (services.isEmpty()) {
             throw new IllegalStateException("Helidon Main class can only be called if a startup provider is available. "
-                                                    + "Please use either Helidon Injection, or Helidon MicroProfile "
-                                                    + "(or a custom extension). If neither is used, you should define "
+                                                    + "Please use either Helidon Injection or a custom extension. "
+                                                    + "If neither is used, you should define "
                                                     + "your own Main class, usually configured as 'mainClass' property in "
                                                     + "your pom.xml.");
         }

@@ -676,7 +676,7 @@ Service instance based (to obtain registry metadata in addition to the instance)
 
 ## Why are some dependency options not supported
 
-We do not support dependencies of types `List<Supplier<Contract>>` and `Optional<Supplier<Contract>>`, even though other frameworks (such as CDI) do have similar concepts.
+We do not support dependencies of types `List<Supplier<Contract>>` and `Optional<Supplier<Contract>>`, even though other frameworks do have similar concepts.
 
 The reason is that we resolve all injection points as late as possible, and injecting these types would require an early resolution of instances.
 
@@ -697,4 +697,3 @@ resolved only once you call `get()` on the supplier.
 | Service         | A class annotated with one of the scope annotations, or a core service                                                                                                                                        |
 | Factory         | A "Core Service" or "Service" that implements one of the factory interfaces; Core service is a factory only if it implements a `Supplier                                                                      |
 | Injection Point | Field annotated with `@Service.Inject`, or a constructor parameter of a constructor used for injection (either the only accessible constructor, or the only constructor annotated with `@Service.Inject`) |
-

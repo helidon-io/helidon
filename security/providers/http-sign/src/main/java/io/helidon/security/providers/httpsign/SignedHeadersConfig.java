@@ -69,19 +69,6 @@ public final class SignedHeadersConfig {
      *
      * @param config config instance, expecting object array as children
      * @return signed headers configuration loaded from config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static SignedHeadersConfig create(io.helidon.common.config.Config config) {
-        return create(Config.config(config));
-    }
-
-    /**
-     * Load header configuration from config.
-     *
-     * @param config config instance, expecting object array as children
-     * @return signed headers configuration loaded from config
      */
     public static SignedHeadersConfig create(Config config) {
         Builder builder = builder();
@@ -217,19 +204,6 @@ public final class SignedHeadersConfig {
          */
         public static HeadersConfig create(List<String> requiredHeaders, List<String> ifPresentHeaders) {
             return new HeadersConfig(requiredHeaders, ifPresentHeaders);
-        }
-
-        /**
-         * Create a new instance from configuration.
-         *
-         * @param config configuration located at header config
-         * @return instance configured from config
-         * @deprecated use {@link #create(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public static HeadersConfig create(io.helidon.common.config.Config config) {
-            return create(Config.config(config));
         }
 
         /**

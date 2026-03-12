@@ -77,21 +77,6 @@ public class AimdLimit extends LimitAlgorithmDeprecatedBase implements Limit, Se
      *
      * @param config configuration of the AIMD limit
      * @return a new limit instance configured from {@code config}
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static AimdLimit create(io.helidon.common.config.Config config) {
-        return builder()
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Create a new instance from configuration.
-     *
-     * @param config configuration of the AIMD limit
-     * @return a new limit instance configured from {@code config}
      */
     public static AimdLimit create(Config config) {
         return builder()

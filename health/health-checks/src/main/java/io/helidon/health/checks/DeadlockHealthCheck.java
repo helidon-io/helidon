@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import io.helidon.health.HealthCheckResponse.Status;
 import io.helidon.health.HealthCheckType;
 
 /**
- * A health check that looks for thread deadlocks. Automatically created and registered via CDI.
+ * A health check that looks for thread deadlocks. Automatically created and registered.
  * <p>
  * This health check can be referred to in properties as {@code deadlock}. So for example, to exclude this
  * health check from being exposed, use {@code helidon.health.exclude: deadlock}.
@@ -44,7 +44,7 @@ public class DeadlockHealthCheck implements HealthCheck {
     private final ThreadMXBean threadBean;
     private final boolean disabled;
 
-        // this will be ignored if not within CDI
+        // ignored when dependency injection is not active
     DeadlockHealthCheck(ThreadMXBean threadBean) {
         this.threadBean = threadBean;
         // in Graal native image, we cannot use this check, as it would always fail
@@ -114,4 +114,3 @@ public class DeadlockHealthCheck implements HealthCheck {
         return builder.build();
     }
 }
-

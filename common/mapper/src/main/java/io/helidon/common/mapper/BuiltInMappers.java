@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -184,7 +184,7 @@ class BuiltInMappers implements MapperProvider {
      */
     private static Boolean asBoolean(String stringValue) {
         String lower = stringValue.toLowerCase();
-        // according to microprofile config specification (section Built-in Converters)
+        // Keep boolean parsing aligned with Helidon built-in converters.
         return switch (lower) {
             case "true", "1", "yes", "y", "on" -> true;
             default -> false;

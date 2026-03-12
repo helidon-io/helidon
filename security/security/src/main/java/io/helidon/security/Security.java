@@ -80,21 +80,6 @@ public interface Security {
      *
      * @param config Config instance located on security configuration ("providers" is an expected child)
      * @return new instance.
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    static Security create(io.helidon.common.config.Config config) {
-        Objects.requireNonNull(config, "Configuration must not be null");
-        return builder()
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Creates new instance based on configuration values.
-     *
-     * @param config Config instance located on security configuration ("providers" is an expected child)
-     * @return new instance.
      */
     static Security create(Config config) {
         Objects.requireNonNull(config, "Configuration must not be null");
@@ -202,7 +187,7 @@ public interface Security {
      * @return a child node of security configuration
      * @throws IllegalArgumentException in case you request child in one of the forbidden trees
      */
-    io.helidon.common.config.Config configFor(String child);
+    Config configFor(String child);
 
     /**
      * Encrypt bytes.
@@ -839,19 +824,6 @@ public interface Security {
          */
         public Builder addAuditProvider(Supplier<? extends AuditProvider> builder) {
             return addAuditProvider(builder.get());
-        }
-
-        /**
-         * Add config instance to this builder. This may be later use by components initialized as a side-effect
-         * of creating an instance of security (such as security providers).
-         *
-         * @param config Config instance
-         * @return this instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @Deprecated(forRemoval = true, since = "4.4.0")
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

@@ -97,21 +97,6 @@ public class LimitsFeature implements ServerFeature, Weighted, RuntimeType.Api<L
      *
      * @param config configuration
      * @return a new configured feature
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static LimitsFeature create(io.helidon.common.config.Config config) {
-        return builder()
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Create a new context feature with custom setup.
-     *
-     * @param config configuration
-     * @return a new configured feature
      */
     public static LimitsFeature create(Config config) {
         return builder()

@@ -1,3 +1,0 @@
-    - abac:
-        fail-on-unvalidated: true
-        fail-if-none-validated: true

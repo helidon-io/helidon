@@ -16,7 +16,6 @@
 
 package io.helidon.security.providers.abac.spi;
 
-import io.helidon.common.DeprecationSupport;
 import io.helidon.config.Config;
 import io.helidon.security.providers.abac.AbacValidatorConfig;
 
@@ -47,32 +46,6 @@ public interface AbacValidatorService {
      *
      * @param config Config with provider configuration
      * @return validator instance created from the {@link Config} provided
-     * @deprecated use {@link #instantiate(io.helidon.config.Config)} instead
      */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    default AbacValidator<? extends AbacValidatorConfig> instantiate(io.helidon.common.config.Config config) {
-        // default to avoid forcing deprecated symbols references
-        return instantiate(Config.config(config));
-    }
-
-    /**
-     * Create a new instance of the validator based on the configuration
-     * provided. The config is located at the config key of this provider.
-     * <p>
-     * API Note: the default method implementation is provided for backward compatibility
-     * and <b>will be removed in the next major version</b>
-     *
-     * @param config Config with provider configuration
-     * @return validator instance created from the {@link Config} provided
-     * @since 4.4.0
-     */
-    @SuppressWarnings("removal")
-    default AbacValidator<? extends AbacValidatorConfig> instantiate(Config config) {
-        // default to preserve backward compatibility
-        // require the deprecated variant to be implemented
-        DeprecationSupport.requireOverride(this, AbacValidatorService.class, "instantiate",
-                io.helidon.common.config.Config.class);
-        return instantiate((io.helidon.common.config.Config) config);
-    }
+    AbacValidator<? extends AbacValidatorConfig> instantiate(Config config);
 }

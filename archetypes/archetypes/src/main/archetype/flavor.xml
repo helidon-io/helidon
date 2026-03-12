@@ -36,11 +36,6 @@
                         description="Programmatic, lean &amp; fast">
                     <exec src="se/se.xml"/>
                 </option>
-                <option value="mp"
-                        name="Helidon MP"
-                        description="Declarative, MicroProfile compliant">
-                    <exec src="mp/mp.xml"/>
-                </option>
             </enum>
         </inputs>
     </step>
@@ -48,7 +43,7 @@
     <output>
         <model>
             <value key="helidon-version">${helidon-version}</value>
-            <value key="flavor">${flavor}</value>
+            <value key="flavor">se</value>
         </model>
     </output>
 </archetype-script>

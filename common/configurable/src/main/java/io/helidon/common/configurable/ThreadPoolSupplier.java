@@ -100,22 +100,6 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService>, Runt
      * @param config config instance
      * @param name thread pool name
      * @return a new thread pool supplier configured from config
-     * @deprecated use {@link #create(io.helidon.config.Config, String)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static ThreadPoolSupplier create(io.helidon.common.config.Config config, String name) {
-        return builder().name(name)
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Load supplier from configuration.
-     *
-     * @param config config instance
-     * @param name thread pool name
-     * @return a new thread pool supplier configured from config
      */
     public static ThreadPoolSupplier create(Config config, String name) {
         return builder().name(name)

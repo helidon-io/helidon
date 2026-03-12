@@ -37,10 +37,5 @@ module io.helidon.webserver.cors {
     requires io.helidon.http;
     requires io.helidon.config;
 
-    // required for backward compatibility, will be removed in next major release
-    requires transitive io.helidon.common.config;
-    requires transitive io.helidon.cors;
-    requires java.net.http;
-
     exports io.helidon.webserver.cors;
 }

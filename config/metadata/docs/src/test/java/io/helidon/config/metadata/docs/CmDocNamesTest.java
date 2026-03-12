@@ -42,7 +42,7 @@ class CmDocNamesTest {
         assertThat(shortTypeName("io.helidon.webclient.api.WebClient"), is("i.h.w.a.WebClient"));
         assertThat(shortTypeName("java.lang.String"), is("String"));
         assertThat(shortTypeName("java.time.Duration"), is("Duration"));
-        assertThat(shortTypeName("io.helidon.integrations.langchain4j.providers.gemini.GoogleAiGeminiStreamingChatModelConfig"),
-                is("i.h.i.l.p.g.GoogleAiGeminiStreamingChatModelConfig"));
+        assertThat(shortTypeName("io.helidon.webserver.observe.ObserveFeatureConfig"),
+                is("i.h.w.o.ObserveFeatureConfig"));
     }
 }

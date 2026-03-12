@@ -108,18 +108,6 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
      *
      * @param config configuration of this provider
      * @return a new provider configured for OIDC
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static OidcProvider create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Load this provider from configuration.
-     *
-     * @param config configuration of this provider
-     * @return a new provider configured for OIDC
      */
     public static OidcProvider create(Config config) {
         return builder().config(config).build();
@@ -358,20 +346,6 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
          * Update this builder with configuration.
          * Only updates information that was not explicitly set.
          *
-         * @param config OIDC provider configuration
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
-         * Update this builder with configuration.
-         * Only updates information that was not explicitly set.
-         *
          * The following configuration options are used:
          *
          * <table class="config">
@@ -594,7 +568,6 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                                         .orElse(true);
                                 TokenHandler handler = outboundTarget.getConfig()
                                         .flatMap(cfg -> cfg.get("outbound-token")
-                                                .map(Config::config)
                                                 .as(TokenHandler::create)
                                                 .asOptional())
                                         .orElse(defaultTokenHandler);
@@ -617,4 +590,3 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         }
     }
 }
-

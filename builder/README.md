@@ -30,7 +30,7 @@ Table of contents:
 ## Goals
 
 Generate all required types for Helidon APIs with builders, that follow the same style (method names, required validation etc.).
-Support for builders that can read options from Helidon configuration (`helidon-common-config`, and of course `helidon-config`).
+Support for builders that can read options from Helidon configuration (`helidon-config`).
 
 - We MUST NOT change bytecode of user classes
 - We MUST NOT use reflection (everything is code generated)
@@ -194,7 +194,7 @@ interface MyConfigBeanBlueprint {
             <dependencies>
                 <dependency>
                     <groupId>io.helidon.builder</groupId>
-                    <artifactId>helidon-builder-processor</artifactId>
+                    <artifactId>helidon-builder-codegen</artifactId>
                     <version>${helidon.version}</version>
                 </dependency>
             </dependencies>

@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.common.DeprecationSupport;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -42,36 +41,14 @@ public interface AnnotationAnalyzer {
      * Provides configuration on node "security.jersey.analyzers".
      *
      * @param config config to use to configure an analyzer, may be empty (e.g. have reasonable defaults if possible)
-     * @deprecated use {@link #init(io.helidon.config.Config)} instead
      */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    default void init(io.helidon.common.config.Config config) {
-        init(Config.config(config));
-    }
-
-    /**
-     * Provides configuration on node "security.jersey.analyzers".
-     * <p>
-     * API Note: the default method implementation is provided for backward compatibility
-     * and <b>will be removed in the next major version</b>
-     *
-     * @param config config to use to configure an analyzer, may be empty (e.g. have reasonable defaults if possible)
-     * @since 4.4.0
-     */
-    @SuppressWarnings("removal")
     default void init(Config config) {
-        // default to preserve backward compatibility
-        // only delegate if the deprecated variant is implemented
-        if (DeprecationSupport.isOverridden(this, AnnotationAnalyzer.class, "init", io.helidon.common.config.Config.class)) {
-            init((io.helidon.common.config.Config) config);
-        }
     }
 
     /**
      * Analyze an application class.
      *
-     * @param maybeAnnotated class of the JAX-RS application
+     * @param maybeAnnotated class of the application layer
      * @return response with information whether to (and how) authenticate and authorize
      * @deprecated this method will be made default in a future version, and marked for removal; it will be removed in two
      *         major versions from now (most likely version 6).
@@ -101,7 +78,7 @@ public interface AnnotationAnalyzer {
      * Analyze a resource class.
      * By default returns an abstain response.
      *
-     * @param maybeAnnotated   class of the JAX-RS resource
+     * @param maybeAnnotated   class of the endpoint
      * @param previousResponse response from parent of this class (e.g. from application analysis)
      * @return response with information whether to (and how) authenticate and authorize
      * @deprecated going away from reflection, use
@@ -117,7 +94,7 @@ public interface AnnotationAnalyzer {
     /**
      * Analyze an endpoint class.
      *
-     * @param endpointType     type of the endpoint (such as JAX-RS resource)
+     * @param endpointType     type of the endpoint
      * @param annotations      annotations on the type
      * @param previousResponse response from parent of this class (e.g. from application analysis)
      * @return response with information whether to (and how) authenticate and authorize
@@ -135,7 +112,7 @@ public interface AnnotationAnalyzer {
      * Analyze a resource method.
      * By default returns an abstain response.
      *
-     * @param maybeAnnotated   JAX-RS resource method
+     * @param maybeAnnotated   endpoint method
      * @param previousResponse response from parent of this class (e.g. from resource class analysis)
      * @return response with information whether to (and how) authenticate and authorize
      * @deprecated going away from reflection, use
@@ -153,7 +130,7 @@ public interface AnnotationAnalyzer {
      * By default returns an abstain response.
      *
      * @param typeName         type that contains the method
-     * @param method           endpoint method (such as JAX-RS method)
+     * @param method           endpoint method
      * @param previousResponse response from parent of this class (e.g. from resource class analysis)
      * @return response with information whether to (and how) authenticate and authorize
      */
@@ -455,5 +432,3 @@ public interface AnnotationAnalyzer {
         }
     }
 }
-
-

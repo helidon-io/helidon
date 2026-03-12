@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -60,17 +60,14 @@ Note the use of `ifPresent()` on the returned `Optional<SpanContext>`.
 2. Methods on `ConfigSources` now return specific builders (they used to return `AbstractParsableConfigSource.Builder`
    with a complex type declaration). If you store such a builder in a variable, either change it to the correct type,
    or use `var`
-3. Some APIs were cleaned up to be aligned with the development guidelines of Helidon. When using Git config source,
-   or etcd config source, the factory methods moved to the config source itself, and the builder now accepts all
-   configuration options through methods
+3. Some APIs were cleaned up to be aligned with the development guidelines of Helidon. The factory methods moved to
+   the config source itself, and the builder now accepts all configuration options through methods
 4. The API of config source builders has been cleaned, so now only methods that are relevant to a specific config
    source type can be invoked on such a builder. Previously you could configure a polling strategy on a source that
    did not support polling
-5. There is a small change in behavior of Helidon Config vs. MicroProfile Config:
-   The MP TCK require that system properties are fully mutable (e.g. as soon as the property is changed, it
-   must be used), so MP Config methods work in this manner (with a certain performance overhead).
-   Helidon Config treats System properties as a mutable config source, with an (optional) time based polling strategy. So
-   the change is reflected as well, though not immediately (this is only relevant if you use change notifications).
+5. There is a small change in behavior for system properties:
+   Helidon Config treats system properties as a mutable config source, with an optional time-based polling strategy. Changes
+   are therefore reflected, but not necessarily immediately. This matters only if you rely on change notifications.
 6. `CompositeConfigSource` has been removed from `Config`. If you need to configure `MerginStrategy`, you can do it now on
     `Config` `Builder`
 
@@ -259,4 +256,3 @@ include::{sourcedir}/se/guides/UpgradeSnippets.java[tag=snippet_8, indent=0]
 - `io.helidon.webserver.SocketConfiguration.DEFAULT` - use a builder to create a named configuration
 - `io.helidon.webserver.SocketConfiguration.Builder.ssl(SSLContext) - use `WebServerTls` instead
 - `io.helidon.webserver.SocketConfiguration.Builder.enabledSSlProtocols(String...) - use `WebServerTls` instead
-

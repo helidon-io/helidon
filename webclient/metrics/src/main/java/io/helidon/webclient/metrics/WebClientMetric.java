@@ -223,16 +223,6 @@ abstract class WebClientMetric implements WebClientService {
 
         /**
          * Configure a metric from configuration.
-         *
-         * @param config configuration to configure this metric
-         * @return updated builder instance
-         */
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
-         * Configure a metric from configuration.
          * The following configuration key are used:
          * <table>
          * <caption>Client Metric configuration options</caption>

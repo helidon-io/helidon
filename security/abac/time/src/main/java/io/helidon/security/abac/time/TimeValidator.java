@@ -258,19 +258,6 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
          *
          * @param config configuration located on this validator config key
          * @return time configuration based on the config
-         * @deprecated use {@link #create(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public static TimeConfig create(io.helidon.common.config.Config config) {
-            return create(Config.config(config));
-        }
-
-        /**
-         * Create a time config from configuration.
-         *
-         * @param config configuration located on this validator config key
-         * @return time configuration based on the config
          */
         public static TimeConfig create(Config config) {
             Builder builder = TimeConfig.builder();

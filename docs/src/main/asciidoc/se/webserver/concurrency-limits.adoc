@@ -19,7 +19,6 @@
 = Concurrency Limits
 :description: Helidon SE Concurrency Limits
 :feature-name: Concurrency Limits
-:microprofile-bundle: false
 :keywords: helidon, se, performance, concurrency, limits
 :rootdir: {docdir}/../..
 

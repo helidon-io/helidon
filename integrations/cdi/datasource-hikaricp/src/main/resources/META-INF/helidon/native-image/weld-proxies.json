@@ -1,8 +1,0 @@
-[
-    {
-        "bean-class": "com.zaxxer.hikari.HikariDataSource",
-        "ifaces": [
-            "com.zaxxer.hikari.HikariDataSource"
-        ]
-    }
-]

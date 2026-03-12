@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -36,8 +36,7 @@ include::{rootdir}/includes/se.adoc[]
 
 == Overview
 
-Helidon Fault Tolerance support is inspired by
-link:{microprofile-fault-tolerance-spec-url}[MicroProfile Fault Tolerance].
+Helidon Fault Tolerance support is inspired by well-established fault-tolerance patterns for retries, timeouts, circuit breakers, fallbacks, and bulkheads.
 The API defines the notion of a _fault handler_ that can be combined with other handlers to
 improve application robustness. Handlers are created to manage error conditions (faults)
 that may occur in real-world application environments. Examples include service restarts,
@@ -255,9 +254,6 @@ but generally the order starting from innermost to outermost should be: bulkhead
 timeout, circuit breaker, retry and fallback. That is, fallback is the first
 handler in the chain (the last to executed once a value is returned)
 and bulkhead is the last one (the first to be executed once a value is returned).
-
-NOTE: This is the ordering used by the MicroProfile Fault Tolerance implementation
-in Helidon when a method is decorated with multiple annotations.
 
 == Metrics
 

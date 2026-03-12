@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import io.helidon.http.BadRequestException;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.Status;
-import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.SecureHandler;
@@ -52,16 +51,13 @@ class OpenApiHttpFeature implements HttpFeature {
     private final OpenApiFeatureConfig config;
     private final OpenApiManager<?> manager;
     private final LazyValue<Object> model;
-    private final CorsEnabledServiceHelper corsService;
 
     OpenApiHttpFeature(OpenApiFeatureConfig config,
                        OpenApiManager<?> manager,
-                       LazyValue<Object> model,
-                       CorsEnabledServiceHelper corsService) {
+                       LazyValue<Object> model) {
         this.config = config;
         this.manager = manager;
         this.model = model;
-        this.corsService = corsService;
     }
 
     @Override
@@ -70,8 +66,7 @@ class OpenApiHttpFeature implements HttpFeature {
         if (!config.permitAll()) {
             routing.any(path, SecureHandler.authorize(config.roles().toArray(new String[0])));
         }
-        routing.any(path, corsService.processor())
-                .get(path, this::handle);
+        routing.get(path, this::handle);
         config.services().forEach(service -> service.setup(routing, path, this::content));
     }
 

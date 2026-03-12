@@ -352,8 +352,8 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 
 Helidon 4.3.0 introduces new preview features (as preview features these APIs are subject to change):
 
-- Helidon Declarative for HTTP, Fault Tolerance and Scheduling 
-- Helidon Data 
+- Helidon Declarative for HTTP, Fault Tolerance and Scheduling
+- Helidon Data
 - LC4J 1.5.0 support with additional providers
 - JSON-RPC support
 - Eureka Discovery support
@@ -945,7 +945,7 @@ In addition to the changes listed below, 4.2.0 contains all fixes through Helido
 - Tests: Use 3 startup attempts for Oracle Testcontainer [9662](https://github.com/helidon-io/helidon/pull/9662)
 - Tests: Avoid cross-test config contamination in `microprofile/telemetry` tests [9685](https://github.com/helidon-io/helidon/pull/9685)
 - Tests: Refactor JPA integration tests [9754](https://github.com/helidon-io/helidon/pull/9754)
-- 
+-
 ## [4.1.7]
 
 This release contains important bugfixes and is recommended for all users of Helidon 4.
@@ -968,7 +968,7 @@ A minimum of Java 21 is required to use Helidon 4.
 - Build: upgrade ubuntu workflow image to 22.04, upgrade dependency check plugin [9816](https://github.com/helidon-io/helidon/pull/9816)
 - Tests: Avoid cross-test config contamination in `microprofile/telemetry` tests [9758](https://github.com/helidon-io/helidon/pull/9758)
 - Tests: Segregate tests that use special global tracer  [9799](https://github.com/helidon-io/helidon/pull/9799)
-- 
+-
 ## [4.1.6]
 
 This release contains important bugfixes in the area of HTTP/2 compliance.
@@ -1051,7 +1051,7 @@ A minimum of Java 21 is required to use Helidon 4.
 
 ## [4.1.2]
 
-This release contains important bugfixes and enhancements and is recommended for all users of Helidon 4. 
+This release contains important bugfixes and enhancements and is recommended for all users of Helidon 4.
 
 A minimum of Java 21 is required to use Helidon 4.
 
@@ -1119,7 +1119,7 @@ This release contains important bugfixes and enhancements and is recommended for
 A minimum of Java 21 is required to use Helidon 4.
 
 ### Notable Changes
- 
+
 - Support for MicroProfile 6.1 [8704](https://github.com/helidon-io/helidon/issues/8704)
 - gRPC support [5418](https://github.com/helidon-io/helidon/issues/5418)
 - Support for Java 22 and Java 23
@@ -1250,7 +1250,7 @@ A minimum of Java 21 is required to use Helidon 4.
 
 ## [4.0.11]
 
-This release contains important bugfixes and is recommended for all users of Helidon 4. 
+This release contains important bugfixes and is recommended for all users of Helidon 4.
 
 Java 21 is required to use Helidon 4
 
@@ -1275,7 +1275,7 @@ Java 21 is required to use Helidon 4
 
 ## [4.0.10]
 
-This release contains important bugfixes and enhancements and is recommended for all users of Helidon 4. 
+This release contains important bugfixes and enhancements and is recommended for all users of Helidon 4.
 
 Java 21 is required to use Helidon 4.0.10.
 
@@ -1293,7 +1293,7 @@ Java 21 is required to use Helidon 4.0.10.
 
 ## [4.0.9]
 
-This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
+This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4.
 
 Java 21 is required to use Helidon 4.0.9.
 
@@ -1338,7 +1338,7 @@ Java 21 is required to use Helidon 4.0.9.
 
 ## [4.0.8]
 
-This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
+This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4.
 
 Java 21 is required to use Helidon 4.0.8.
 
@@ -1375,7 +1375,7 @@ Java 21 is required to use Helidon 4.0.8.
 
 ## [4.0.7]
 
-This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
+This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4.
 
 Java 21 is required to use Helidon 4.0.7.
 
@@ -1416,7 +1416,7 @@ Java 21 is required to use Helidon 4.0.7.
 
 ## [4.0.6]
 
-This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
+This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4.
 
 Java 21 is required to use Helidon 4.0.6.
 
@@ -1478,7 +1478,7 @@ Java 21 is required to use Helidon 4.0.6.
 
 ## [4.0.5]
 
-This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
+This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4.
 
 Java 21 is required to use Helidon 4.0.5.
 
@@ -1854,10 +1854,10 @@ helidon init --version 4.0.0-M2
 Notable Changes
 
 * Java 21 is required for 4.0.0-M2
-* Finish integration of Níma WebServer into Helidon 4. This means that the `nima` Java package has been assimilated into the base Helidon packages. 
+* Finish integration of Níma WebServer into Helidon 4. This means that the `nima` Java package has been assimilated into the base Helidon packages.
 * Numerous enhancements to WebServer and WebClient to achieve feature parity with Helidon 3
 
-The above is work-in-progress. There are still some gaps, and APIs are subject to change. 
+The above is work-in-progress. There are still some gaps, and APIs are subject to change.
 
 ### CHANGES
 
@@ -1948,7 +1948,7 @@ The above is work-in-progress. There are still some gaps, and APIs are subject t
 
 This is the first Milestone build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental and not fully tested.
 
-The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a [ground up webserver implementation based on JDK Project Loom virtual threads](https://medium.com/helidon/helidon-n%C3%ADma-helidon-on-virtual-threads-130bb2ea2088). 
+The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a [ground up webserver implementation based on JDK Project Loom virtual threads](https://medium.com/helidon/helidon-n%C3%ADma-helidon-on-virtual-threads-130bb2ea2088).
 
 Java 20 is required to use Heldon 4.0.0-M1.
 
@@ -2184,7 +2184,7 @@ Java 20 or newer is required to use Heldon 4.0.0-ALPHA6.
 
 This is the fifth Alpha build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental and not fully tested.
 
-The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a [ground up webserver implementation based on JDK Project Loom virtual threads](https://medium.com/helidon/helidon-n%C3%ADma-helidon-on-virtual-threads-130bb2ea2088). 
+The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a [ground up webserver implementation based on JDK Project Loom virtual threads](https://medium.com/helidon/helidon-n%C3%ADma-helidon-on-virtual-threads-130bb2ea2088).
 
 Helidon 4.0.0 is a major release that includes significant new features and fixes. As a major release it also includes some backward incompatible API changes.
 
@@ -2237,7 +2237,7 @@ Java 19 or newer is required to use Heldon 4.0.0-ALPHA5.
 
 This is the fourth Alpha build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental and not fully tested.
 
-The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a [ground up webserver implementation based on JDK Project Loom virtual threads](https://medium.com/helidon/helidon-n%C3%ADma-helidon-on-virtual-threads-130bb2ea2088). 
+The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a [ground up webserver implementation based on JDK Project Loom virtual threads](https://medium.com/helidon/helidon-n%C3%ADma-helidon-on-virtual-threads-130bb2ea2088).
 
 Helidon 4.0.0 is a major release that includes significant new features and fixes. As a major release it also includes some backward incompatible API changes.
 
@@ -2271,7 +2271,7 @@ Java 19 or newer is required to use Heldon 4.0.0-ALPHA4.
 
 This is the third Alpha build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental and not fully tested.
 
-The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a [ground up webserver implementation based on JDK Project Loom virtual threads](https://medium.com/helidon/helidon-n%C3%ADma-helidon-on-virtual-threads-130bb2ea2088). 
+The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a [ground up webserver implementation based on JDK Project Loom virtual threads](https://medium.com/helidon/helidon-n%C3%ADma-helidon-on-virtual-threads-130bb2ea2088).
 
 Helidon 4.0.0 is a major release that includes significant new features and fixes. As a major release it also includes some backward incompatible API changes.
 
@@ -2400,7 +2400,7 @@ Java 19 or newer is required to use Heldon 4.0.0-ALPHA3.
 
 This is the second Alpha build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental and not fully tested.
 
-The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a [ground up webserver implementation based on JDK Project Loom](https://medium.com/helidon/helidon-n%C3%ADma-helidon-on-virtual-threads-130bb2ea2088). 
+The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a [ground up webserver implementation based on JDK Project Loom](https://medium.com/helidon/helidon-n%C3%ADma-helidon-on-virtual-threads-130bb2ea2088).
 
 Helidon 4.0.0 is a major release that includes significant new features and fixes. As a major release it also includes some backward incompatible API changes.
 
@@ -2467,15 +2467,15 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - Using System.Logger instead of java util logging (incremental change)
 - `HelidonServiceLoader` is now part of `helidon-common` module
 - Introduction of `@Weight`, `Weighted` and `Weights` instead of `@Priority` and `Prioritized`, to base ordering on a double (allows to fit a component between any other two components), all modules using priority are refactored (except for MicroProfile where required by specifications).
-  - higher weight means a component is more important 
-  - moved priority related types to MP config (as that is the lowest level MP module)
-  - replaces all instances in SE that use priority with weight (no dependency on Jakarta, predictible and easy to understand behavior)
+    - higher weight means a component is more important
+    - moved priority related types to MP config (as that is the lowest level MP module)
+    - replaces all instances in SE that use priority with weight (no dependency on Jakarta, predictible and easy to understand behavior)
 - Introduction of `MediaType` as the abstraction of any media type, as used by Config, static content and HTTP in general. See `MediaType` and `MediaTypes`
 - `MapperManager` now supports mapping qualifiers
 - new `helidon-common-parameters` module contains an abstraction of a container that has named values (one or more); this is used in path parameters, query parameters, form parameters etc.
 - new `helidon-common-uri` module contains URI abstraction (path with possible parameters, query, and fragment)
 - Header processing now uses `HeaderName` and `HeaderValue` types. This allows you to prepare constants with custom names and values that
-  are often reused. It also allows us to improve parsing speed of HTTP requests. 
+  are often reused. It also allows us to improve parsing speed of HTTP requests.
 
 ### CHANGES
 

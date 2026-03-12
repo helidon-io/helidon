@@ -17,7 +17,6 @@
 package io.helidon.webserver.cors;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.builder.api.Option;
@@ -96,15 +95,4 @@ interface CorsConfigBlueprint extends Prototype.Factory<CorsFeature>, Weighted {
     default boolean addDefaults() {
         return true;
     }
-
-    /**
-     * Access to config that was used to create this feature.
-     *
-     * @return configuration
-     * @deprecated this method will be removed without a replacement, path based configuration is now handled by
-     *         {@link #paths()}
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    Optional<io.helidon.common.config.Config> config();
 }

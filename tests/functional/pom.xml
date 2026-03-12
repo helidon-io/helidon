@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.tests</groupId>
         <artifactId>helidon-tests-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.tests.functional</groupId>
@@ -35,16 +35,6 @@
 
     <modules>
         <module>bookstore</module>
-        <module>multiport</module>
-        <module>jax-rs-subresource</module>
-        <module>context-propagation</module>
-        <module>mp-synthetic-app</module>
-        <module>mp-compression</module>
-        <module>request-scope</module>
-        <module>request-scope-cdi</module>
-        <module>request-scope-injection</module>
-        <module>jax-rs-multiple-apps</module>
-        <module>param-converter-provider</module>
         <module>config-profiles</module>
     </modules>
 </project>

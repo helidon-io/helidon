@@ -57,36 +57,9 @@ public class MultiPartSupport implements MediaSupport {
      *
      * @param config must not be {@code null}
      * @return a new {@link MultiPartSupport}
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    @SuppressWarnings("removal")
-    public static MediaSupport create(io.helidon.common.config.Config config) {
-        return create(config, "multi-part");
-    }
-
-    /**
-     * Creates a new {@link MultiPartSupport}.
-     *
-     * @param config must not be {@code null}
-     * @return a new {@link MultiPartSupport}
      */
     public static MediaSupport create(Config config) {
         return create(config, "multi-part");
-    }
-
-    /**
-     * Creates a new named {@link MultiPartSupport}.
-     *
-     * @param config must not be {@code null}
-     * @param name name of the multi-part support
-     * @return a new {@link MultiPartSupport}
-     * @deprecated use {@link #create(io.helidon.config.Config, String)} instead
-     */
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    @SuppressWarnings("removal")
-    public static MediaSupport create(io.helidon.common.config.Config config, String name) {
-        return new MultiPartSupport(name);
     }
 
     /**

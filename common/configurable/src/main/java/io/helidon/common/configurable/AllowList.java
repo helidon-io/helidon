@@ -88,19 +88,6 @@ public class AllowList implements Predicate<String>, RuntimeType.Api<AllowListCo
      *
      * @param config configuration
      * @return a new configured {@code AllowList}
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static AllowList create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Create {@code AllowList} from configurtion.
-     *
-     * @param config configuration
-     * @return a new configured {@code AllowList}
      */
     public static AllowList create(Config config) {
         return builder().config(config).build();

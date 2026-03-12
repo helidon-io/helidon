@@ -93,19 +93,6 @@ public abstract class TracingConfig extends Traceable {
      *
      * @param config configuration of tracing
      * @return tracing configuration
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static TracingConfig create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Create new tracing configuration based on the provided config.
-     *
-     * @param config configuration of tracing
-     * @return tracing configuration
      */
     public static TracingConfig create(Config config) {
         return builder().config(config).build();
@@ -183,18 +170,6 @@ public abstract class TracingConfig extends Traceable {
         @Override
         public TracingConfig build() {
             return new RootTracingConfig("helidon", new HashMap<>(components), enabled);
-        }
-
-        /**
-         * Update this builder from configuration.
-         *
-         * @param config Config with tracing configuration
-         * @return updated builder instance
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

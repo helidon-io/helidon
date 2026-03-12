@@ -29,7 +29,6 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.config.ConfigException;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigMapper;
@@ -242,9 +241,8 @@ import io.helidon.service.registry.Services;
  * config system merges these together so that values from config sources with higher {@link io.helidon.common.Weight weight}
  * have priority over values from config sources with lower weight.
  */
-@SuppressWarnings("removal")
 @Service.Contract
-public interface Config extends io.helidon.common.config.Config {
+public interface Config {
     /**
      * Generic type of configuration.
      */
@@ -423,59 +421,32 @@ public interface Config extends io.helidon.common.config.Config {
     }
 
     /**
-     * Either return the registered global config, or get a config from ServiceRegistry and register
-     * it as global.
-     * The instance returned may differ from {@link io.helidon.common.config.GlobalConfig#config()} in case the
-     * global config registered in not an instance of this type.
-     * <p>
-     * NOTE: Behavior of this method will change in the next major version of Helidon, as we are discontinuing the support
-     * for {@link io.helidon.common.config.GlobalConfig} class; this method will then return the current config instance
-     * from {@link io.helidon.service.registry.ServiceRegistry#get(Class)}
+     * Either return the registered global config, or create one and remember it for future access.
      *
      * @return global config instance, or {@link io.helidon.service.registry.ServiceRegistry} instance if not registered
      */
-    @SuppressWarnings("removal")
     static Config global() {
-        if (io.helidon.common.config.GlobalConfig.configured()) {
-            io.helidon.common.config.Config global = io.helidon.common.config.GlobalConfig.config();
-            if (global instanceof Config cfg) {
-                return cfg;
-            }
+        try {
+            return Services.get(Config.class);
+        } catch (Exception ignored) {
             return BuilderImpl.GlobalConfigHolder.get();
         }
-        Config config = Services.get(Config.class);
-        io.helidon.common.config.GlobalConfig.config(config, true);
-        return config;
     }
 
     /**
      * Configure the provided configuration as the global configuration.
-     * This method registers also {@link io.helidon.common.config.GlobalConfig} instance.
-     *
      * @param config to configure as global
      * @deprecated use {@link io.helidon.service.registry.Services#set(Class, Object[])} to register a static instance for the
      *      global service registry; when using a custom service registry instance, set is on the registry configuration builder
      */
-    @SuppressWarnings("removal")
     @Deprecated(forRemoval = true, since = "4.2.0")
     static void global(Config config) {
-        io.helidon.common.config.GlobalConfig.config(config, false);
         BuilderImpl.GlobalConfigHolder.set(config);
-    }
-
-    /**
-     * Used for backward compatibility in generated code.
-     * <p>
-     * This method either returns the same instance (if instance of this interface), or creates a wrapper for the provided
-     * common config instance that implements this interface.
-     *
-     * @param commonConfig common config to wrap
-     * @return an instance of this interface
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "4.3.0")
-    static Config config(io.helidon.common.config.Config commonConfig) {
-        return ConfigProvider.wrapCommon(commonConfig);
+        try {
+            Services.set(Config.class, config);
+        } catch (Exception ignored) {
+            // Service registry might already be initialized with a different config.
+        }
     }
 
     /**
@@ -528,7 +499,6 @@ public interface Config extends io.helidon.common.config.Config {
      * @return current config node key
      * @see #name()
      */
-    @Override
     Key key();
 
     /**
@@ -561,7 +531,6 @@ public interface Config extends io.helidon.common.config.Config {
      * @see #key()
      * @see Key#name()
      */
-    @Override
     default String name() {
         return key().name();
     }
@@ -575,7 +544,6 @@ public interface Config extends io.helidon.common.config.Config {
      * @return config node for specified sub-key, never returns {@code null}.
      * @see #get(Key)
      */
-    @Override
     default Config get(String key) {
         Objects.requireNonNull(key, "Key argument is null.");
 
@@ -588,7 +556,6 @@ public interface Config extends io.helidon.common.config.Config {
      *
      * @return root of this configuration tree
      */
-    @Override
     Config root();
 
     /**
@@ -640,7 +607,6 @@ public interface Config extends io.helidon.common.config.Config {
      *
      * @return returns detached Config instance of same config node
      */
-    @Override
     Config detach();
 
     /**
@@ -656,7 +622,6 @@ public interface Config extends io.helidon.common.config.Config {
      *
      * @return {@code true} if the node exists
      */
-    @Override
     default boolean exists() {
         return type().exists();
     }
@@ -670,7 +635,6 @@ public interface Config extends io.helidon.common.config.Config {
      * @return {@code true} if the node is existing leaf node, {@code false}
      *         otherwise.
      */
-    @Override
     default boolean isLeaf() {
         return type().isLeaf();
     }
@@ -681,7 +645,6 @@ public interface Config extends io.helidon.common.config.Config {
      * @return {@code true} if the node exists and is Type#Object, {@code false}
      *         otherwise.
      */
-    @Override
     default boolean isObject() {
         return (Type.OBJECT == type());
     }
@@ -692,7 +655,6 @@ public interface Config extends io.helidon.common.config.Config {
      * @return {@code true} if the node exists and is Type#List, {@code false}
      *         otherwise.
      */
-    @Override
     default boolean isList() {
         return (Type.LIST == type());
     }
@@ -706,7 +668,6 @@ public interface Config extends io.helidon.common.config.Config {
      *
      * @return {@code true} if the node has direct value, {@code false} otherwise.
      */
-    @Override
     boolean hasValue();
 
     /**
@@ -818,7 +779,6 @@ public interface Config extends io.helidon.common.config.Config {
      * @see ConfigValue#get()
      * @see ConfigValue#orElse(Object)
      */
-    @Override
     <T> ConfigValue<T> as(Class<T> type);
 
     /**
@@ -831,26 +791,6 @@ public interface Config extends io.helidon.common.config.Config {
      * @return typed value
      */
     <T> ConfigValue<T> as(Function<Config, T> mapper);
-
-    /**
-     * Typed value as a {@link io.helidon.common.config.ConfigValue} created from factory method.
-     * To convert from String, you can use
-     * {@link #asString() config.asString()}{@link io.helidon.common.config.ConfigValue#as(java.util.function.Function) .as(Function)}.
-     *
-     * @param mapper method to create an instance from config
-     * @param <T>    type
-     * @return typed value
-     *
-     * @deprecated use {@link #as(java.util.function.Function)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "4.3.0")
-    @Override
-    default <T> io.helidon.common.config.ConfigValue<T> map(Function<io.helidon.common.config.Config, T> mapper) {
-        return as(mapper::apply);
-    }
-
-    // shortcut methods
 
     /**
      * Boolean typed value.
@@ -905,7 +845,6 @@ public interface Config extends io.helidon.common.config.Config {
      * @return a typed list with values
      * @throws ConfigMappingException in case of problem to map property value.
      */
-    @Override
     <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigMappingException;
 
     /**
@@ -917,24 +856,6 @@ public interface Config extends io.helidon.common.config.Config {
      * @throws ConfigMappingException in case the mapper fails to map the values
      */
     <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException;
-
-    /**
-     * Returns this node as a list mapping each list value using the provided mapper.
-     *
-     * @param mapper mapper to convert each list node into a typed value
-     * @param <T>    type of list elements
-     * @return a typed list with values
-     * @throws io.helidon.common.config.ConfigException in case the mapper fails to map the values
-     *
-     * @deprecated use {@link #asList(java.util.function.Function)} instead
-     */
-    @SuppressWarnings("removal")
-    @Override
-    @Deprecated(forRemoval = true, since = "4.3.0")
-    default <T> io.helidon.common.config.ConfigValue<List<T>> mapList(Function<io.helidon.common.config.Config, T> mapper)
-            throws ConfigException {
-        return asList(mapper::apply);
-    }
 
     /**
      * Returns existing current config node as {@link io.helidon.config.ConfigValue}.
@@ -956,8 +877,6 @@ public interface Config extends io.helidon.common.config.Config {
      * @return a list of {@code Type#OBJECT} members or a list of {@code Type#LIST} members
      * @throws io.helidon.config.ConfigException in case the node is {@code Type#VALUE}
      */
-    @Override
-    @SuppressWarnings("unchecked")
     ConfigValue<List<Config>> asNodeList() throws ConfigMappingException;
 
     /**
@@ -991,7 +910,6 @@ public interface Config extends io.helidon.common.config.Config {
      * @see #traverse()
      * @see #detach()
      */
-    @Override
     ConfigValue<Map<String, String>> asMap() throws MissingValueException;
 
     //
@@ -1041,7 +959,7 @@ public interface Config extends io.helidon.common.config.Config {
      *
      * @see Config#key()
      */
-    interface Key extends io.helidon.common.config.Config.Key {
+    interface Key extends Comparable<Key> {
         /**
          * Returns instance of Key that represents key of parent config node.
          * <p>
@@ -1051,7 +969,6 @@ public interface Config extends io.helidon.common.config.Config {
          * @see #isRoot()
          * @throws java.lang.IllegalStateException in case you attempt to call this method on a root node
          */
-        @Override
         Key parent();
 
         /**
@@ -1060,8 +977,7 @@ public interface Config extends io.helidon.common.config.Config {
          * @param key child key (relative to current key)
          * @return a new resolved key
          */
-        @Override
-        Key child(io.helidon.common.config.Config.Key key);
+        Key child(Key key);
 
         /**
          * Returns {@code true} in case the key represents root config node,
@@ -1071,7 +987,6 @@ public interface Config extends io.helidon.common.config.Config {
          * @see #parent()
          * @throws io.helidon.config.ConfigException if not defined
          */
-        @Override
         boolean isRoot();
 
         /**
@@ -1089,7 +1004,6 @@ public interface Config extends io.helidon.common.config.Config {
          *
          * @return name of config node
          */
-        @Override
         String name();
 
         /**
@@ -1097,7 +1011,6 @@ public interface Config extends io.helidon.common.config.Config {
          *
          * @return formatted fully-qualified key.
          */
-        @Override
         String toString();
 
         /**

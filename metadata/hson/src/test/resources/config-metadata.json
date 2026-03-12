@@ -8,7 +8,7 @@
                 "is": true,
                 "number": 49,
                 "producers": [
-                    "io.helidon.common.configurable.ResourceConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.common.configurable.ResourceConfig#create(io.helidon.config.Config)",
                     "io.helidon.common.configurable.ResourceConfig#builder()",
                     "io.helidon.common.configurable.Resource#create(io.helidon.common.configurable.ResourceConfig)"
                 ],
@@ -71,7 +71,7 @@
                 "annotatedType": "io.helidon.common.configurable.AllowListConfig",
                 "type": "io.helidon.common.configurable.AllowList",
                 "producers": [
-                    "io.helidon.common.configurable.AllowListConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.common.configurable.AllowListConfig#create(io.helidon.config.Config)",
                     "io.helidon.common.configurable.AllowListConfig#builder()",
                     "io.helidon.common.configurable.AllowList#create(io.helidon.common.configurable.AllowListConfig)"
                 ],
@@ -139,7 +139,7 @@
                 "annotatedType": "io.helidon.common.configurable.ThreadPoolConfig",
                 "type": "io.helidon.common.configurable.ThreadPoolSupplier",
                 "producers": [
-                    "io.helidon.common.configurable.ThreadPoolConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.common.configurable.ThreadPoolConfig#create(io.helidon.config.Config)",
                     "io.helidon.common.configurable.ThreadPoolConfig#builder()",
                     "io.helidon.common.configurable.ThreadPoolSupplier#create(io.helidon.common.configurable.ThreadPoolConfig)"
                 ],
@@ -222,7 +222,7 @@
                 "annotatedType": "io.helidon.common.configurable.LruCacheConfig",
                 "type": "io.helidon.common.configurable.LruCache",
                 "producers": [
-                    "io.helidon.common.configurable.LruCacheConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.common.configurable.LruCacheConfig#create(io.helidon.config.Config)",
                     "io.helidon.common.configurable.LruCacheConfig#builder()",
                     "io.helidon.common.configurable.LruCache#create(io.helidon.common.configurable.LruCacheConfig)"
                 ],
@@ -240,7 +240,7 @@
                 "annotatedType": "io.helidon.common.configurable.ScheduledThreadPoolConfig",
                 "type": "io.helidon.common.configurable.ScheduledThreadPoolSupplier",
                 "producers": [
-                    "io.helidon.common.configurable.ScheduledThreadPoolConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.common.configurable.ScheduledThreadPoolConfig#create(io.helidon.config.Config)",
                     "io.helidon.common.configurable.ScheduledThreadPoolConfig#builder()",
                     "io.helidon.common.configurable.ScheduledThreadPoolSupplier#create(io.helidon.common.configurable.ScheduledThreadPoolConfig)"
                 ],

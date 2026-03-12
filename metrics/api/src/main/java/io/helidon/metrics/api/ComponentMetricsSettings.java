@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics.api;
 
-import io.helidon.common.DeprecationSupport;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -27,19 +26,6 @@ import io.helidon.config.metadata.ConfiguredOption;
  * </p>
  */
 public interface ComponentMetricsSettings {
-
-    /**
-     * Returns component metrics settings created from configuration.
-     *
-     * @param config configuration
-     * @return new settings reflecting the config, using defaults as needed
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    static ComponentMetricsSettings create(io.helidon.common.config.Config config) {
-        return builder(config).build();
-    }
 
     /**
      * Returns component metrics settings created from a {@code Config} node, by convention the {@code metrics} config
@@ -60,19 +46,6 @@ public interface ComponentMetricsSettings {
      */
     static ComponentMetricsSettings.Builder builder() {
         return new ComponentMetricsSettingsImpl.Builder();
-    }
-
-    /**
-     * Returns a configured builder.
-     *
-     * @param config configuration
-     * @return new builder initialized with the config settings
-     * @deprecated use {@link #builder(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    static ComponentMetricsSettings.Builder builder(io.helidon.common.config.Config config) {
-        return builder().config(config);
     }
 
     /**
@@ -129,26 +102,7 @@ public interface ComponentMetricsSettings {
          *
          * @param config the component's {@code metrics} config section
          * @return updated builder
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
          */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        default ComponentMetricsSettings.Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
-         * Updates the builder using the provided metrics config.
-         *
-         * @param config the component's {@code metrics} config section
-         * @return updated builder
-         */
-        @SuppressWarnings("removal")
-        default ComponentMetricsSettings.Builder config(Config config) {
-            // default to preserve backward compatibility
-            // require the deprecated variant to be implemented
-            DeprecationSupport.requireOverride(this, Builder.class, "config", io.helidon.common.config.Config.class);
-            return config((io.helidon.common.config.Config) config);
-        }
+        ComponentMetricsSettings.Builder config(Config config);
     }
 }

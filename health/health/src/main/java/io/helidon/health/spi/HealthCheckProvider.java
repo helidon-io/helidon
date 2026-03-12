@@ -18,6 +18,7 @@ package io.helidon.health.spi;
 
 import java.util.List;
 
+import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 
 /**
@@ -30,6 +31,5 @@ public interface HealthCheckProvider {
      * @param config configuration instance located on root node of this application
      * @return list of health checks
      */
-    @SuppressWarnings("removal")
-    List<HealthCheck> healthChecks(io.helidon.common.config.Config config);
+    List<HealthCheck> healthChecks(Config config);
 }

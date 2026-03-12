@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ include::{rootdir}/includes/se.adoc[]
 * <<Maven Coordinates, Maven Coordinates>>
 * <<API Usage, API Usage>>
 * <<Providers, Providers>>
-** <<Eureka,Eureka>>
 * <<Integrations, Integrations>>
 ** <<Web Client Discovery Integration, Web Client>>
 * <<References, References>>
@@ -168,149 +167,10 @@ include::{sourcedir}/se/DiscoverySnippets.java[tag=snippet_2,indent=0]
 
 == Providers
 
-The Discovery API is implemented at runtime by a _Discovery provider_. Helidon currently ships with a <<Eureka,Eureka
-Discovery provider>>. Others may follow in the future.
+The Discovery API is implemented at runtime by a _Discovery provider_.
 
 To use a Discovery provider, include it on your runtime classpath. See the provider's documentation for details about
 installing, configuring, and using the provider.
-
-=== Eureka
-
-The Helidon Eureka Discovery provider implements the Discovery API at runtime by communicating with a
-link:https://github.com/Netflix/eureka/tree/v{version-lib-eureka-server}[Netflix Eureka server] (version
-{version-lib-eureka-server} or later).
-
-==== Maven Coordinates
-
-To use the Helidon Eureka Discovery provider, add the following dependency to your project’s `pom.xml` (see
-xref:{rootdir}/about/managing-dependencies.adoc[Managing Dependencies]).
-
-[source,xml]
-.`pom.xml`
-----
-<dependencies>
-    <dependency>
-        <groupId>io.helidon.discovery.providers</groupId>
-        <artifactId>helidon-discovery-providers-eureka</artifactId> <!--1-->
-        <scope>runtime</scope> <!--2-->
-    </dependency>
-</dependencies>
-----
-<1> Helidon Eureka Discovery provider dependency.
-<2> The scope for the provider. Use `runtime` if you have no interest in provider-specific classes and methods (the most
-    common case). Use `compile` if you plan to call provider-specific methods.
-
-==== Configuration
-
-The Helidon Eureka Discovery provider can be configured using xref:config/introduction.adoc[Helidon Config]. Examples
-shown below are in YAML, but are expressible in any format and any location that Helidon Config supports.
-
-Configuration for the Helidon Eureka Discovery provider is found under a top-level `discovery.eureka` key path.
-
-Generated documentation normatively describing the provider's configuration in full can be found in Helidon's
-link:../config/io_helidon_discovery_providers_eureka_EurekaDiscovery[Configuration Reference]. Some common usages and
-examples are detailed below.
-
-===== Configuring the Location of the Eureka Server
-
-In order for the Helidon Eureka Discovery provider to do any meaningful work, you must tell it where the Eureka server
-is. (Discovery cannot bootstrap itself!) This is the only configuration that is effectively required. (If it is omitted,
-no error will occur, but the provider will log a message and effectively do nothing.)
-
-To do this, you specify attributes about the internal xref:webclient.adoc[HTTP client] it uses, specifically its
-link:../config/io_helidon_webclient_api_HttpClientConfig[`base-uri` property]:
-
-[source,yaml]
-.`application.yaml`
-----
-discovery: #<1>
-  eureka: #<2>
-    client: #<3>
-      base-uri: "http://example.com:8761/eureka" #<4>
-----
-<1> `discovery` is the topmost key of the provider's logical configuration tree.
-<2> `eureka` is the configuration name of the Helidon Eureka Discovery provider.
-<3> `client` identifies link:../config/io_helidon_webclient_api_HttpClientConfig[HTTP client configuration].
-<4> `base-uri` is a link:../config/io_helidon_webclient_api_HttpClientConfig[property of the HTTP client] identifying
-    the location of a Netflix Eureka server (version {version-lib-eureka-server} or later). Eureka servers are normally
-    hosted on port `8761`.
-
-===== Configuring Caching
-
-The Helidon Eureka Discovery provider uses a local cache of discovered URIs by default. You can configure, among
-link:../config/io_helidon_discovery_providers_eureka_CacheConfig[other things]:
-
-* whether the cache is enabled
-* how often the cache refreshes
-* whether the cache is computed or fully replaced
-
-[source,yaml]
-.`application.yaml`
-----
-discovery: #<1>
-  eureka: #<2>
-    cache: #<3>
-      compute-changes: true # <4>
-      defer-sync: false # <5>
-      enabled: true # <6>
-      fetch-thread-name: "Eureka registry fetch thread" # <7>
-      sync-interval: "PT30S" # <8>
-----
-<1> `discovery` is the topmost key of the provider's logical configuration tree.
-<2> `eureka` is the configuration name of the Helidon Eureka Discovery provider.
-<3> `cache` identifies configuration related to the local cache of Eureka-supplied information.
-<4> `compute-changes` controls how the cache's content is determined: if `true`, by applying a series of changes against an initial
-    state; if `false`, by replacing the contents of the cache with a new copy. `true` by default.
-<5> `defer-sync` controls whether the cache should be synchronized as late as possible (`true`), or as early as possible
-    (`false`). `false` by default.
-<6> `enabled` controls whether the cache is enabled. If `false`, then none of the other configuration items in the `cache` tree
-    are relevant, and every invocation of the
-    link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html#uris(java.lang.String,java.net.URI)[`Discovery#uris(String,
-    URI)` method] will result in a network call.
-<7> `fetch-thread-name` contains the name of the thread that synchronizes the cache. `Eureka registry fetch thread` by
-    default.
-<8> `sync-interval` controls the time between synchronizations of the cache. `PT30S` (30 seconds) by default.
-
-===== Configuring IP Address vs. Hostname
-
-The Helidon Eureka Discovery provider can be configured to prefer IP addresses in URIs when possible (instead of
-hostnames).
-
-[source,yaml]
-.`application.yaml`
-----
-discovery: # <1>
-  eureka: # <2>
-    preferIpAddress: false # <3>
-----
-<1> `discovery` is the topmost key of the provider's logical configuration tree.
-<2> `eureka` is the configuration name of the Helidon Eureka Discovery provider.
-<3> `preferIpAddress` controls whether the host component of a URI should use an IP address, when possible (`true`), or
-a hostname (`false`). `false` by default.
-
-===== Disabling the Provider
-
-In some testing scenarios, it may be useful to disable the Helidon Eureka Discovery provider entirely. (When any
-Discovery provider is disabled, only default values supplied to the
-link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html#uris(java.lang.String,java.net.URI)[`Discovery#uris(String,
-URI)` method] will be returned.)
-
-[source,yaml]
-.`application.yaml`
-----
-discovery: # <1>
-  eureka: # <2>
-    enabled: false # <3>
-----
-<1> `discovery` is the topmost key of the provider's logical configuration tree.
-<2> `eureka` is the configuration name of the Helidon Eureka Discovery provider.
-<3> `enabled` controls whether the provider is enabled at all (`true`) or completely disabled (`false`), in which case
-    all other configuration pertaining to it is irrelevant. `true` by default.
-
-==== Related Documentation
-
-Users of the Helidon Eureka Discovery provider may also be interested in the (related)
-xref:{docdir}/integrations/eureka/eureka-registration.adoc[Eureka Server Service Instance Registration] feature.
 
 == Integrations
 
@@ -322,9 +182,9 @@ Helidon integrates a <<Providers,Discovery provider>> with xref:webclient.adoc[W
 
 ==== Maven Coordinates
 
-To include the Helidon Web Client Discovery integration in your project, you add the Web Client Discovery integration
-dependency as well as a <<Providers,Discovery provider>> dependency (see
-xref:{rootdir}/about/managing-dependencies.adoc[Managing Dependencies]):
+To include the Helidon Web Client Discovery integration in your project, add the Web Client Discovery integration
+dependency (see xref:{rootdir}/about/managing-dependencies.adoc[Managing Dependencies]). Any Discovery provider you use
+must also be present on the runtime classpath.
 
 [source,xml]
 .`pom.xml`
@@ -332,21 +192,11 @@ xref:{rootdir}/about/managing-dependencies.adoc[Managing Dependencies]):
 <dependencies>
     <dependency>
         <groupId>io.helidon.webclient</groupId>
-        <artifactId>helidon-webclient-discovery</artifactId> <!--1-->
-        <scope>runtime</scope> <!--2-->
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.discovery.providers</groupId>
-        <artifactId>helidon-discovery-providers-eureka</artifactId> <!--3-->
-        <scope>runtime</scope> <!--4-->
+        <artifactId>helidon-webclient-discovery</artifactId>
+        <scope>runtime</scope>
     </dependency>
 </dependencies>
 ----
-<1> Helidon Web Client Discovery integration dependency.
-<2> The scope for the integration. `runtime` since the integration is never required at compile time.
-<3> Helidon <<Eureka, Eureka Discovery provider>> dependency (for example).
-<4> The scope for the provider. Use `runtime` if you have no interest in provider-specific classes and methods (the most
-    common case). Use `compile` if you plan to call provider-specific methods.
 
 The behavior of the Web Client Discovery integration is
 link:{webclient-discovery-javadoc-base-url}/io/helidon/webclient/discovery/WebClientDiscovery.html#handle(io.helidon.webclient.spi.WebClientService.Chain,io.helidon.webclient.api.WebClientServiceRequest)[fully
@@ -371,9 +221,6 @@ webclient:
 ----
 <1> Indicates that the Web Client Discovery integration should apply to this Web Client configuration. More configuration
     is required; see below.
-
-You also configure the Discovery provider in use following its documentation. See, for example,
-<<_configuration,Eureka configuration>>.
 
 ==== Configuring URIs
 
@@ -400,6 +247,5 @@ webclient:
 == References
 
 * link:{discovery-javadoc-base-url}/module-summary.html[Discovery Javadoc]
-* link:{discovery-providers-eureka-javadoc-base-url}/module-summary.html[Eureka Discovery Provider Javadoc]
 * link:{webclient-discovery-javadoc-base-url}/module-summary.html[Web Client Discovery Integration Javadoc]
 * xref:webclient.adoc[Helidon Web Client]

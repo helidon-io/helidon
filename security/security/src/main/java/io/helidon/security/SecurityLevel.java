@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -226,7 +226,7 @@ public class SecurityLevel {
     }
 
     /**
-     * Type of the class this level represents (such as a JAX-RS resource class, Rest endpoint).
+     * Type of the class this level represents (such as an endpoint class).
      *
      * @return the type name
      */

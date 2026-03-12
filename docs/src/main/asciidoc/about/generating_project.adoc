@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,38 +22,26 @@
 
 https://helidon.io/starter[Helidon Project Starter] allows you to choose from a set of archetypes with pre-defined feature sets and lets you customize it by providing a host of options.
 
-== Select a Flavor
-
-
-=== Helidon SE
-
-=== Helidon MP
-
-
 == Choose an Application Type
 Helidon provides the following set of archetypes to bootstrap your application development journey.
 
 === QuickStart 
-This option creates a Helidon project that includes multiple REST operations along with default observability setup and a set of dependencies to enable ease of development e.g. in case of Helidon MP, it uses `helidon-microprofile` bundle instead of minimal `helidon-microprofile-core` bundle.
+This option creates a Helidon SE project that includes multiple REST operations along with default observability setup.
 
 === Database
-This option builds on `QuickStart` to demonstrate how to integrate with database (in-memory H2, by default). In case of, Helidon SE that uses the DbClient API while for Helidon MP that uses JPA.
+This option builds on `QuickStart` to demonstrate how to integrate with a database (in-memory H2, by default) using the DB Client API.
 
 === Custom
 This option enables user to create Helidon project of their choice, suitable to start from scratch i.e. bare minimum, if default values are chosen Or choose from many options available.
-
-=== OCI (MP Only)
-This option builds on `QuickStart` to demonstrate integration with Oracle Cloud Infrastructure (OCI) services using the OCI SDK. Generated project showcases OpenApi-driven development approach where the practice of designing and building APIs is done first, then creating the rest of an application around them is implemented next. This is available for Helidon MP only.
-
 
 == Media Support Options
 
 === Jackson JSON 
 
 === JSON-B
-Default.
 
-=== JSON-P (SE Only)
+=== JSON-P
+Default.
 
 == Customize Project
 
@@ -77,7 +65,6 @@ Click *Download* and Project Starter generates the files in a directory named af
 * application configuration file(s)
 
 * Readme file with instructions to build and run application/test
-
 
 
 

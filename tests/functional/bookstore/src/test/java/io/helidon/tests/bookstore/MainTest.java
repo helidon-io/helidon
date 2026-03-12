@@ -61,10 +61,8 @@ import static org.hamcrest.Matchers.startsWith;
 class MainTest {
 
     private static String appJarPathSE = System.getProperty("app.jar.path.se", "please-set-app.jar.path.se");
-    private static String appJarPathMP = System.getProperty("app.jar.path.mp", "please-set-app.jar.path.mp");
 
     private static final LocalPlatform localPlatform = LocalPlatform.get();
-    private static final String MODULE_NAME_MP = "io.helidon.tests.apps.bookstore.mp";
     private static final String MODULE_NAME_SE = "io.helidon.tests.apps.bookstore.se";
     private static final System.Logger LOGGER = System.getLogger(MainTest.class.getName());
 
@@ -151,7 +149,6 @@ class MainTest {
     @BeforeAll
     static void setup() {
         appJarPathSE = Paths.get(appJarPathSE).normalize().toString();
-        appJarPathMP = Paths.get(appJarPathMP).normalize().toString();
     }
 
     /**
@@ -189,17 +186,12 @@ class MainTest {
 
     @Test
     void exitOnStartedSe() throws Exception {
-        runExitOnStartedTest("se");
+        runExitOnStartedTest();
     }
 
-    @Test
-    void exitOnStartedMp() throws Exception {
-        runExitOnStartedTest("mp");
-    }
-
-    private void runExitOnStartedTest(String edition) throws Exception {
+    private void runExitOnStartedTest() throws Exception {
         int port = localPlatform.getAvailablePorts().next();
-        Arguments args = toArguments(editionToJarPath(edition), List.of("-Dexit.on.started=!"), null, port);
+        Arguments args = toArguments(editionToJarPath("se"), List.of("-Dexit.on.started=!"), null, port);
         CapturingApplicationConsole console = new CapturingApplicationConsole();
         Application application = localPlatform.launch("java", args, Console.of(console));
         Queue<String> stdOut = console.getCapturedOutputLines();
@@ -212,7 +204,7 @@ class MainTest {
         } while (System.currentTimeMillis() < maxTime);
 
         String eol = System.lineSeparator();
-        Assertions.fail("quickstart " + edition + " did not exit as expected." + eol
+        Assertions.fail("quickstart " + "se" + " did not exit as expected." + eol
                 + eol
                 + "stdOut: " + stdOut + eol
                 + eol
@@ -221,7 +213,7 @@ class MainTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"se", "mp"})
+    @ValueSource(strings = {"se"})
     void basicTestJson(String edition) throws Exception {
         // Run using the default json library for the edition
         runJsonFunctionalTest(edition, "");
@@ -240,7 +232,7 @@ class MainTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"se", "mp"})
+    @ValueSource(strings = {"se"})
     void basicTestMetricsHealth(String edition) throws Exception {
         runMetricsAndHealthTest(edition, "", false);
     }
@@ -256,7 +248,7 @@ class MainTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"se", "mp"})
+    @ValueSource(strings = {"se"})
     void basicTestMetricsHealthModules(String edition) throws Exception {
         runMetricsAndHealthTest(edition, "", true);
     }
@@ -267,7 +259,7 @@ class MainTest {
      * So we set a system property to select the library to use before starting
      * the server
      *
-     * @param edition "mp", "se"
+     * @param edition "se"
      * @param jsonLibrary "jsonp" or "jsonb"
      * @throws Exception on test failure
      */
@@ -327,7 +319,7 @@ class MainTest {
      * So we set a system property to select the library to use before starting
      * the server
      *
-     * @param edition "mp", "se"
+     * @param edition "se"
      * @param jsonLibrary "jsonp", "jsonb" or "jackson"
      * @param useModules true to use modulepath, false to use classpath
      * @throws Exception on test failure
@@ -379,17 +371,13 @@ class MainTest {
                     .header(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                     .requestEntity(JsonObject.class);
             assertThat("Checking health status", jsonObject.getString("status"), is("UP"));
-            if (edition.equals("mp")) {
-                assertThat("Checking built-in health checks disabled",
-                        jsonObject.getJsonArray("checks").size(), is(0));
-            }
         } finally {
             application.stop();
         }
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"se", "mp"})
+    @ValueSource(strings = {"se"})
     void routing(String edition) throws Exception {
         HelidonApplication application = startTheApplication(editionToJarPath(edition), Collections.emptyList());
         try {
@@ -437,20 +425,16 @@ class MainTest {
     private static String editionToJarPath(String edition) {
         if ("se".equals(edition)) {
             return appJarPathSE;
-        } else if ("mp".equals(edition)) {
-            return appJarPathMP;
         } else {
-            throw new IllegalArgumentException("Invalid edition '" + edition + "'. Must be 'se' or 'mp'");
+            throw new IllegalArgumentException("Invalid edition '" + edition + "'. Must be 'se'");
         }
     }
 
     private static String editionToModuleName(String edition) {
         if ("se".equals(edition)) {
             return MODULE_NAME_SE;
-        } else if ("mp".equals(edition)) {
-            return MODULE_NAME_MP;
         } else {
-            throw new IllegalArgumentException("Invalid edition '" + edition + "'. Must be 'se' or 'mp'");
+            throw new IllegalArgumentException("Invalid edition '" + edition + "'. Must be 'se'");
         }
     }
 }

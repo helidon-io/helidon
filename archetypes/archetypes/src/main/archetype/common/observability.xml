@@ -28,18 +28,6 @@
                      default="false"
                      optional="true">
                 <inputs>
-                    <enum id="provider"
-                          name="Select a Metrics Provider"
-                          default="microprofile"
-                          optional="true"
-                          if="${flavor} == 'mp'">
-                        <option value="microprofile"
-                                name="MicroProfile"
-                                description="Expose metrics using the MicroProfile API"/>
-                        <option value="micrometer"
-                                name="Micrometer"
-                                description="Expose metrics using the Micrometer API"/>
-                    </enum>
                     <boolean id="builtin"
                              name="Built-in Metrics"
                              description="Expose common metrics"
@@ -107,34 +95,6 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/observe/metrics
                              optional="true">
                         <output>
                             <model>
-                                <list key="dependencies" if="${flavor} == 'mp'">
-                                    <map order="800">
-                                        <value key="groupId">io.helidon.microprofile.health</value>
-                                        <value key="artifactId">helidon-microprofile-health</value>
-                                    </map>
-                                </list>
-                                <list key="MainTest-methods" if="${flavor} == 'mp'">
-                                    <value><![CDATA[
-    @Test
-    void testHealth() {
-        Response response = target
-                .path("health")
-                .request()
-                .get();
-        assertThat(response.getStatus(), is(200));
-    }]]></value>
-                                </list>
-                                <list key="readme-sections" if="${flavor} == 'mp'">
-                                    <value><![CDATA[
-## Try health
-
-```
-curl -s -X GET http://localhost:8080/health
-{"outcome":"UP",...
-
-```
-]]></value>
-                                </list>
                                 <list key="dependencies" if="${flavor} == 'se'">
                                     <map order="800">
                                         <value key="groupId">io.helidon.webserver.observe</value>
@@ -227,18 +187,11 @@ curl -X GET http://localhost:8080/observe/health/ready
             <!-- TODO https://github.com/oracle/helidon-build-tools/issues/609 -->
             <model>
                 <value key="metrics" if="${metrics}">true</value>
-                <value key="metrics.provider" if="${metrics} &amp;&amp; ${flavor} == 'mp'">${metrics.provider}</value>
                 <value key="metrics.builtin" if="${metrics}">${metrics.builtin}</value>
                 <value key="health" if="${health}">true</value>
                 <value key="health.builtin" if="${health}">${health.builtin}</value>
                 <value key="tracing" if="${tracing}">true</value>
                 <value key="tracing.provider" if="${tracing}">${tracing.provider}</value>
-                <list key="dependencies" if="${flavor} == 'mp' &amp;&amp; ${extra} contains 'fault-tolerance'">
-                    <map if="!${metrics}">
-                        <value key="groupId">io.helidon.microprofile.metrics</value>
-                        <value key="artifactId">helidon-microprofile-metrics</value>
-                    </map>
-                </list>
             </model>
         </output>
     </step>

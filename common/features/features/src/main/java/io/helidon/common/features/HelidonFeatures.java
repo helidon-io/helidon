@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,21 +47,16 @@ import io.helidon.common.features.metadata.Flavor;
  * All registered features can be printed using {@link #print(HelidonFlavor, String, boolean)} as a simple line
  * such as:
  * <br>
- * {@code Helidon MP 2.0.0 features: [CDI, Config, JAX-RS, JPA, JTA, Server]}
+ * {@code Helidon SE 2.0.0 features: [WebServer, Config]}
  * <br>
  * Using this class' logger.
  * <p>
  * When details are enabled, an additional log statement is logged, such as:
  * <pre>
  * Detailed feature tree:
- * CDI
+ * WebServer
  * Config
  *   YAML
- * JAX-RS
- * JPA
- *   Hibernate
- * JTA
- * Server
  * </pre>
  */
 public final class HelidonFeatures {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ module io.helidon.security.providers.oidc.common {
     requires io.helidon.common.crypto;
     requires io.helidon.common.parameters;
     requires io.helidon.common.pki;
-    requires io.helidon.cors;
     requires io.helidon.http.media.jsonp;
     requires io.helidon.security.providers.common;
     requires io.helidon.security.providers.httpauth;
@@ -32,6 +31,7 @@ module io.helidon.security.providers.oidc.common {
 
     requires static io.helidon.config.metadata;
 
+    requires transitive io.helidon.config;
     requires transitive io.helidon.security.jwt;
     requires transitive io.helidon.security.util; // TokenHandler is part of API
     requires transitive io.helidon.security;

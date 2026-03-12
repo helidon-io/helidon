@@ -332,19 +332,6 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
 
         /**
          * Will read roles allowed from configuration.
-         *
-         * @param config configuration located on key "roles-allowed"
-         * @return roles config for the configuration
-         * @deprecated use {@link #create(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public static RoleConfig create(io.helidon.common.config.Config config) {
-            return builder().config(config).build();
-        }
-
-        /**
-         * Will read roles allowed from configuration.
          * Format (yaml):
          * <pre>
          * roles-allowed:
@@ -461,19 +448,6 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
             public Builder addServiceRoles(Collection<String> rolesAllowed) {
                 this.serviceRolesAllowed.addAll(rolesAllowed);
                 return this;
-            }
-
-            /**
-             * Load configuration data from configuration.
-             *
-             * @param config configuration located the key of this attribute config
-             * @return updated builder instance
-             * @deprecated use {@link #config(io.helidon.config.Config)} instead
-             */
-            @SuppressWarnings("removal")
-            @Deprecated(since = "4.4.0", forRemoval = true)
-            public Builder config(io.helidon.common.config.Config config) {
-                return config(Config.config(config));
             }
 
             /**

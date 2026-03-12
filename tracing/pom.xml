@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <groupId>io.helidon.tracing</groupId>
@@ -31,8 +31,6 @@
 
     <modules>
         <module>tracing</module>
-        <module>jersey-client</module>
-        <module>jersey</module>
         <module>config</module>
         <module>tracer-resolver</module>
         <module>providers</module>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
-import io.helidon.cors.CrossOriginConfig;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
@@ -62,7 +61,6 @@ import io.helidon.security.providers.oidc.common.spi.TenantConfigProvider;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
-import io.helidon.webserver.cors.CorsSupport;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
@@ -167,8 +165,6 @@ public final class OidcFeature implements HttpFeature {
     private final OidcCookieHandler tenantCookieHandler;
     private final OidcCookieHandler stateCookieHandler;
     private final boolean enabled;
-    private final CorsSupport corsSupport;
-
     private OidcFeature(Builder builder) {
         this.oidcConfig = builder.oidcConfig;
         this.enabled = builder.enabled;
@@ -178,7 +174,6 @@ public final class OidcFeature implements HttpFeature {
             this.refreshTokenCookieHandler = oidcConfig.refreshTokenCookieHandler();
             this.tenantCookieHandler = oidcConfig.tenantCookieHandler();
             this.stateCookieHandler = oidcConfig.stateCookieHandler();
-            this.corsSupport = prepareCrossOriginSupport(oidcConfig.redirectUri(), oidcConfig.crossOriginConfig());
             this.oidcConfigFinders = List.copyOf(builder.tenantConfigFinders);
             this.oidcConfigFinders.forEach(tenantConfigFinder -> tenantConfigFinder.onChange(tenants::remove));
         } else {
@@ -187,7 +182,6 @@ public final class OidcFeature implements HttpFeature {
             this.refreshTokenCookieHandler = null;
             this.tenantCookieHandler = null;
             this.stateCookieHandler = null;
-            this.corsSupport = null;
             this.oidcConfigFinders = List.of();
         }
     }
@@ -248,14 +242,8 @@ public final class OidcFeature implements HttpFeature {
     @Override
     public void setup(HttpRouting.Builder routing) {
         if (enabled) {
-            if (corsSupport != null) {
-                routing.any(oidcConfig.redirectUri(), corsSupport);
-            }
             routing.get(oidcConfig.redirectUri(), this::processOidcRedirect);
             if (oidcConfig.logoutEnabled()) {
-                if (corsSupport != null) {
-                    routing.any(oidcConfig.logoutUri(), corsSupport);
-                }
                 routing.get(oidcConfig.logoutUri(), this::processLogout);
             }
             routing.any(this::addRequestAsHeader);
@@ -645,14 +633,6 @@ public final class OidcFeature implements HttpFeature {
 
         res.status(Status.BAD_REQUEST_400);
         res.send("{\"error\": \"" + error + "\", \"error_description\": \"" + errorDescription + "\"}");
-    }
-
-    private CorsSupport prepareCrossOriginSupport(String path, CrossOriginConfig crossOriginConfig) {
-        return crossOriginConfig == null
-                ? null
-                : CorsSupport.builder()
-                        .addCrossOrigin(path, crossOriginConfig)
-                        .build();
     }
 
     /**

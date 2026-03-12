@@ -288,6 +288,7 @@ class WebServerSnippets {
     }
 
     // tag::snippet_26[]
+    @io.helidon.json.binding.Json.Entity
     public class Person {
 
         private String name;

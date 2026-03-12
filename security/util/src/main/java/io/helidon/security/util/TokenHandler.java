@@ -104,19 +104,6 @@ public final class TokenHandler {
 
     /**
      * Create a {@link TokenHandler} from configuration.
-     *
-     * @param config config to parse into an instance of this object
-     * @return a new instance configured from config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static TokenHandler create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Create a {@link TokenHandler} from configuration.
      * Expected configuration (to be located on token key):
      * <pre>
      * token {
@@ -292,19 +279,6 @@ public final class TokenHandler {
         public TokenHandler build() {
             Objects.requireNonNull(tokenHeader, "Token header must be configured");
             return new TokenHandler(this);
-        }
-
-        /**
-         * Update builder from config.
-         *
-         * @param config Configuration to update from
-         * @return update builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

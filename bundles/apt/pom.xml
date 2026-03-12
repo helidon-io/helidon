@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.bundles</groupId>
         <artifactId>helidon-bundles-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-bundles-apt</artifactId>
@@ -37,7 +37,6 @@
         - Helidon Declarative
         - Helidon Data
         - Helidon JSON Schema
-        - Helidon LangChain4j
         - Helidon JSON
         Does not contain:
         - Helidon Copyright extension
@@ -73,10 +72,6 @@
         <dependency>
             <groupId>io.helidon.json.schema</groupId>
             <artifactId>helidon-json-schema-codegen</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.langchain4j</groupId>
-            <artifactId>helidon-integrations-langchain4j-codegen</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.json</groupId>

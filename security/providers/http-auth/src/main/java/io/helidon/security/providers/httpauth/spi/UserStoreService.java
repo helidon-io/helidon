@@ -15,7 +15,6 @@
  */
 package io.helidon.security.providers.httpauth.spi;
 
-import io.helidon.common.DeprecationSupport;
 import io.helidon.config.Config;
 import io.helidon.security.providers.httpauth.SecureUserStore;
 
@@ -35,30 +34,6 @@ public interface UserStoreService {
      *
      * @param config configuration located on {@link #configKey()}
      * @return a user store to be used by providers
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
      */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    default SecureUserStore create(io.helidon.common.config.Config config) {
-        // default to avoid forcing deprecated symbols references
-        return create(Config.config(config));
-    }
-
-    /**
-     * Create the secure user store to use with these providers.
-     * <p>
-     * API Note: the default method implementation is provided for backward compatibility
-     * and <b>will be removed in the next major version</b>
-     *
-     * @param config configuration located on {@link #configKey()}
-     * @return a user store to be used by providers
-     * @since 4.4.0
-     */
-    @SuppressWarnings("removal")
-    default SecureUserStore create(Config config) {
-        // default to preserve backward compatibility
-        // require the deprecated variant to be implemented
-        DeprecationSupport.requireOverride(this, UserStoreService.class, "create", io.helidon.common.config.Config.class);
-        return create((io.helidon.common.config.Config) config);
-    }
+    SecureUserStore create(Config config);
 }

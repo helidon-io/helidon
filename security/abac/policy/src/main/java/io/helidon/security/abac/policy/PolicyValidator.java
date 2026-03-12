@@ -49,11 +49,6 @@ import io.helidon.security.providers.abac.spi.AbacValidator;
  * and is delegated to another module implementing the {@link PolicyExecutor} obtained through a {@link PolicyExecutorService}
  * java service.
  * <p>
- * Implementations provided by Helidon security:
- * <ul>
- * <li>Java EE expression language support, artifact id: "helidon-security-abac-policy-el"</li>
- * </ul>
- *
  * Example of a policy statement:<br>
  * <code>&#64;PolicyStatement("${env.time.year &gt;= 2017 &amp;&amp; object.owner == subject.principal.id}")</code>
  */
@@ -82,19 +77,6 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
      */
     public static Builder builder() {
         return new Builder();
-    }
-
-    /**
-     * Create an instance from configuration.
-     *
-     * @param config configuration to load this class from
-     * @return a new instance from config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static PolicyValidator create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
     }
 
     /**
@@ -242,19 +224,6 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
          *
          * @param config configuration instance located on {@link PolicyValidatorService#configKey()}
          * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
-         * Update this builder from configuration.
-         *
-         * @param config configuration instance located on {@link PolicyValidatorService#configKey()}
-         * @return updated builder instance
          */
         public Builder config(Config config) {
             this.config = config;
@@ -366,19 +335,6 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
             public Builder inherit(boolean inherit) {
                 this.inherit = inherit;
                 return this;
-            }
-
-            /**
-             * Update this builder from configuration.
-             *
-             * @param config config instance located on the key {@link PolicyValidator#configKey()}
-             * @return updated builder instance
-             * @deprecated use {@link #config(io.helidon.config.Config)} instead
-             */
-            @SuppressWarnings("removal")
-            @Deprecated(since = "4.4.0", forRemoval = true)
-            public Builder config(io.helidon.common.config.Config config) {
-                return config(Config.config(config));
             }
 
             /**

@@ -18,15 +18,12 @@ package io.helidon.config;
 /**
  * To be used with {@link io.helidon.config.ConfiguredProvider}, each configured service may have a name.
  */
-@SuppressWarnings("removal")
-public interface NamedService extends io.helidon.common.config.NamedService {
+public interface NamedService {
     /**
-     * Name of this implementation, as provided in
-     * {@link io.helidon.config.ConfiguredProvider#create(io.helidon.common.config.Config, String)}.
+     * Name of this implementation, as provided in {@link io.helidon.config.ConfiguredProvider#create(Config, String)}.
      *
      * @return name of this service
      */
-    @Override
     String name();
 
     /**
@@ -35,6 +32,5 @@ public interface NamedService extends io.helidon.common.config.NamedService {
      *
      * @return type of this service
      */
-    @Override
     String type();
 }

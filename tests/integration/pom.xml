@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.tests</groupId>
         <artifactId>helidon-tests-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.tests.integration</groupId>
     <artifactId>helidon-tests-integration-project</artifactId>
@@ -30,45 +30,16 @@
 
     <name>Helidon Tests Integration Project</name>
 
-    <properties>
-        <version.lib.testcontainers.keycloak>2.3.0</version.lib.testcontainers.keycloak>
-    </properties>
-
     <modules>
         <module>config</module>
         <module>dbclient</module>
         <module>discovery</module>
-        <module>eureka</module>
         <module>harness</module>
-        <module>health</module>
         <module>jep290</module>
-        <module>jms</module>
-        <module>jpa</module>
-        <module>mp-bean-validation</module>
-        <module>mp-gh-2421</module>
-        <module>mp-gh-2461</module>
-        <module>mp-gh-3246</module>
-        <module>mp-gh-3974</module>
-        <module>mp-gh-4123</module>
-        <module>mp-gh-4654</module>
-        <module>mp-gh-5328</module>
-        <module>mp-gh-8349</module>
-        <module>mp-gh-8478</module>
-        <module>mp-gh-8495</module>
-        <module>mp-gh-8493</module>
-        <module>mp-graphql</module>
-        <module>mp-security-client</module>
-        <module>mp-ws-services</module>
         <module>packaging</module>
-        <module>restclient</module>
-        <module>restclient-connector</module>
         <module>security</module>
-        <module>zipkin-mp-2.2</module>
         <module>tls-revocation-config</module>
         <module>h2spec</module>
-        <module>mp-telemetry</module>
-        <module>mp-jaxrs-preserve-headers</module>
-        <module>mp-metrics-gh-9995</module>
         <module>context-http-propagation</module>
     </modules>
 
@@ -82,30 +53,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <dependency>
-                <groupId>com.github.dasniko</groupId>
-                <artifactId>testcontainers-keycloak</artifactId>
-                <version>${version.lib.testcontainers.keycloak}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <profiles>
-        <profile>
-            <id>long-tests</id>
-            <activation>
-                <property>
-                    <name>!long-tests</name>
-                </property>
-            </activation>
-            <modules>
-                <module>kafka</module>
-                <module>oidc</module>
-                <module>vault</module>
-                <module>crac</module>
-                <module>transaction</module>
-            </modules>
-        </profile>
-    </profiles>
 
 </project>

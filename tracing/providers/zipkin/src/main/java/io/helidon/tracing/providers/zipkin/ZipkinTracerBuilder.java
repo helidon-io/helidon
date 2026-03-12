@@ -147,19 +147,6 @@ public class ZipkinTracerBuilder implements OpenTracingTracerBuilder<ZipkinTrace
     }
 
     /**
-     * Create a instance from configuration.
-     *
-     * @param config configuration
-     * @return a new builder instance.
-     * @deprecated use {@link #config(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static ZipkinTracerBuilder create(io.helidon.common.config.Config config) {
-        return create().config(config);
-    }
-
-    /**
      * Create a new builder based on values in configuration.
      * This requires at least a key "service" in the provided config.
      *

@@ -84,7 +84,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
      */
     protected static final String ACCESS_TOKEN_KEY = "access_token";
     /**
-     * Property sent with JAX-RS requests to override parent span context in outbound calls.
+     * Property sent with client requests to override parent span context in outbound calls.
      * We cannot use the constant declared in {@code ClientTracingFilter}, as it is not a required dependency.
      */
     protected static final String PARENT_CONTEXT_CLIENT_PROPERTY = "io.helidon.tracing.span-context";
@@ -279,19 +279,6 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
          * Default constructor.
          */
         protected Builder() {
-        }
-
-        /**
-         * Update this builder state from configuration.
-         *
-         * @param config current node must have "oidc-config" as one of its children
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public B config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webserver</groupId>
         <artifactId>helidon-webserver-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-webserver-validation</artifactId>
@@ -35,6 +35,10 @@
         <dependency>
             <groupId>io.helidon.validation</groupId>
             <artifactId>helidon-validation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>

@@ -29,9 +29,6 @@ module io.helidon.health.checks {
 
     requires java.management;
 
-    requires static jakarta.cdi;
-    requires static jakarta.inject;
-
     requires io.helidon.common;
     requires io.helidon.config;
     requires transitive io.helidon.health;

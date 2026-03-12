@@ -36,10 +36,7 @@ Run the curl command and check the response:
 ```
 curl http://localhost:9411/api/v2/services
 ```
-Response body
-```
-["helidon-mp-1"]
-```
+The response should list the services which have reported traces to Zipkin, including your generated application once it has emitted spans.
 
 ### View Tracing Using Zipkin UI
 

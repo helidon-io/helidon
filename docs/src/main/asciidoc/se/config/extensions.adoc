@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -380,8 +380,7 @@ The "watcher" then watches for changes of the source and notifies the listener w
 This is designed to support sources that can react on changes (such as file system).
 When a polling mechanism is needed, please check `PollingStrategy` above.
 
-The config system offers a change watcher for any `Path` based config source (such as `FileConfigSource`) and for the
- `etcd` config source.
+The config system offers a change watcher for any `Path` based config source (such as `FileConfigSource`).
 
 To use a change watcher, simply create a config source using its builder and register the change watcher on the builder
  (the config source must support appropriate type of change watchers).
@@ -436,4 +435,3 @@ In either case `cancel` returns `true` if the retry was aborted without a succes
 
 To support retry policies in config profiles, also implement the Java service loader SPI
 `RetryPolicyProvider`.
-

@@ -102,7 +102,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-22.04, windows-2022 ]
-        moduleSet: [ core, it, jpa, jpa-oracle, dbclient, dbclient-oracle, others, data, data-oracle ]
+        moduleSet: [ core, it, dbclient, dbclient-oracle, others, data, data-oracle ]
         include:
           - { os: ubuntu-22.04, platform: linux }
           - { os: windows-2022, platform: windows }
@@ -123,33 +123,12 @@ jobs:
               -DmoduleSet=${{ matrix.moduleSet }} \
               -Dsurefire.reportNameSuffix=${{ matrix.platform }} \
               verify
-  _tck:
-    needs: build
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        moduleSet: [ cdi, rest, others ]
-    runs-on: ubuntu-22.04
-    name: tests/tck-${{ matrix.moduleSet }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          build-cache: read-only
-          test-artifact-name: tests-tck-${{ matrix.moduleSet }}
-          run: |
-            mvn ${MVN_ARGS} \
-              -DreactorRule=tck \
-              -DmoduleSet=${{ matrix.moduleSet }} \
-              verify
   _spotbugs:
     needs: build
     timeout-minutes: 30
     strategy:
       matrix:
-        moduleSet: [ core, integrations, others ]
+        moduleSet: [ core, others ]
     runs-on: ubuntu-22.04
     name: spotbugs/${{ matrix.moduleSet }}
     steps:
@@ -172,7 +151,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        moduleSet: [ core, integrations, others ]
+        moduleSet: [ core, others ]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -215,29 +194,6 @@ jobs:
               -f docs/pom.xml \
               -Pjavadoc \
               install
-  quickstarts:
-    needs: build
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        os: [ ubuntu-22.04, macos-14 ]
-        include:
-          - { os: ubuntu-22.04, platform: linux }
-          - { os: macos-14, platform: macos }
-    runs-on: ${{ matrix.os }}
-    name: quickstarts/${{ matrix.platform }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          free-space: true
-          build-cache: read-only
-          native-image: true
-          test-artifact-name: tests-quickstarts-${{ matrix.platform }}
-          run: |
-            etc/scripts/test-quickstarts.sh
   examples:
     needs: build
     timeout-minutes: 30
@@ -343,36 +299,6 @@ jobs:
               -f tests/integration/packaging/pom.xml \
               -P${{ matrix.packaging }}-image \
               verify
-  _native-image:
-    needs: build
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        os: [ ubuntu-22.04, macos-14, windows-2022 ]
-        module: [ se-1, inject ]
-        include:
-          - { os: ubuntu-22.04, platform: linux }
-          - { os: macos-14, platform: macos }
-          - { os: windows-2022, platform: windows }
-    runs-on: ${{ matrix.os }}
-    name: tests/native-image-${{ matrix.module }}-${{ matrix.platform }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          free-space: true
-          build-cache: read-only
-          native-image: true
-          test-artifact-name: tests-native-image-${{ matrix.module }}-${{ matrix.platform }}
-          run: |
-            mvn ${MVN_ARGS} \
-              -f tests/integration/packaging/pom.xml \
-              -pl ${{ matrix.module }} \
-              -Pnative-image \
-              -am \
-              verify
   archetype-results:
     runs-on: ubuntu-22.04
     needs: [ archetypes, legacy-archetypes ]
@@ -384,7 +310,7 @@ jobs:
           pattern: "archetypes-*-projects"
   test-results:
     runs-on: ubuntu-22.04
-    needs: [ _tests, _tck, packaging, _native-image ]
+    needs: [ _tests, packaging ]
     name: tests/results
     steps:
       - uses: actions/upload-artifact/merge@v4

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.webserver.servicecommon;
 import java.util.Objects;
 
 import io.helidon.config.Config;
-import io.helidon.cors.CrossOriginConfig;
 
 /**
  * Implementation of {@link RestServiceSettings}.
@@ -27,7 +26,6 @@ class RestServiceSettingsImpl implements RestServiceSettings {
 
     private final String webContext;
     private final String routing;
-    private final CrossOriginConfig crossOriginConfig;
     private final boolean enabled;
 
     private RestServiceSettingsImpl(Builder builder) {
@@ -37,7 +35,6 @@ class RestServiceSettingsImpl implements RestServiceSettings {
         }
         this.routing = builder.routing;
         this.enabled = builder.enabled;
-        this.crossOriginConfig = builder.crossOriginConfigBuilder.build();
     }
 
     @Override
@@ -50,12 +47,6 @@ class RestServiceSettingsImpl implements RestServiceSettings {
         return routing;
     }
 
-    @Override
-    public CrossOriginConfig crossOriginConfig() {
-        return crossOriginConfig;
-    }
-
-    @Override
     public boolean enabled() {
         return enabled;
     }
@@ -65,7 +56,6 @@ class RestServiceSettingsImpl implements RestServiceSettings {
         private String webContext;
         private String routing;
         private boolean enabled = true;
-        private CrossOriginConfig.Builder crossOriginConfigBuilder = CrossOriginConfig.builder();
 
         static Builder create() {
             return new Builder();
@@ -84,20 +74,8 @@ class RestServiceSettingsImpl implements RestServiceSettings {
         }
 
         @Override
-        public RestServiceSettings.Builder crossOriginConfig(CrossOriginConfig.Builder crossOriginConfigBuilder) {
-            this.crossOriginConfigBuilder = crossOriginConfigBuilder;
-            return this;
-        }
-
-        @Override
         public RestServiceSettings.Builder enabled(boolean enabled) {
             this.enabled = enabled;
-            return this;
-        }
-
-        @Override
-        public RestServiceSettings.Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
-            crossOriginConfigBuilder = CrossOriginConfig.builder(crossOriginConfig);
             return this;
         }
 

@@ -217,7 +217,7 @@ Each component and its spans can be configured using Config.
 The traced configuration has the following layers:
 
 - `TracingConfig` - the overall configuration of traced components of Helidon
-- `ComponentTracingConfig` - a component of Helidon that traces spans (such as `web-server`, `security`, `jax-rs`)
+- `ComponentTracingConfig` - a component of Helidon that traces spans (such as `web-server` and `security`)
 - `SpanTracingConfig` - a single traced span within a component (such as `security:atn`)
 - `SpanLogTracingConfig` - a single log event on a span (such as `security.user` in span `security:atn`)
 
@@ -368,4 +368,3 @@ include::{rootdir}/includes/tracing/tracer-otel.adoc[tag=exporters]
 
 * link:https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API]
 * link:https://opentracing.io/[Opentracing Project (now part of OpenTelemetry)]
-

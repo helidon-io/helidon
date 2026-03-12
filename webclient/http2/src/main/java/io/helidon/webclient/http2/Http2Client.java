@@ -79,19 +79,6 @@ public interface Http2Client extends HttpClient<Http2ClientRequest>, RuntimeType
     }
 
     /**
-     * Create a new instance from configuration.
-     *
-     * @param config client config
-     * @return a new HTTP/2 client
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    static Http2Client create(io.helidon.common.config.Config config) {
-        return create(it -> it.config(config));
-    }
-
-    /**
      * Create a new instance based on {@link io.helidon.config.Config}.
      *
      * @param config client config

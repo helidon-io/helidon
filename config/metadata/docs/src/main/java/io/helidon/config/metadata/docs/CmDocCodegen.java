@@ -266,8 +266,6 @@ class CmDocCodegen {
         var context = new HashMap<String, Object>();
         context.put("roots", resolver.roots().stream()
                 .flatMap(it -> it.type().stream())
-                // exclude mp server from the root page
-                .filter(it -> !"io.helidon.microprofile.server.Server" .equals(it.type()))
                 .sorted((o1, o2) -> {
                     var p1 = o1.prefix().orElseThrow();
                     var p2 = o2.prefix().orElseThrow();

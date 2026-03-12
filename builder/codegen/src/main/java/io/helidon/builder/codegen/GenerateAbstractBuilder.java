@@ -45,7 +45,6 @@ import io.helidon.common.types.TypeNames;
 
 import static io.helidon.builder.codegen.BuilderCodegen.generateCustomPrototypeMethods;
 import static io.helidon.builder.codegen.Types.BUILDER_SUPPORT;
-import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
 import static io.helidon.builder.codegen.Types.CONFIG;
 import static io.helidon.builder.codegen.Types.CONFIG_BUILDER_SUPPORT;
 import static io.helidon.builder.codegen.Types.REGISTRY_BUILDER_SUPPORT;
@@ -57,10 +56,6 @@ import static io.helidon.common.types.TypeNames.SET;
 final class GenerateAbstractBuilder {
 
     private static final String SERVICE_REGISTRY_CONFIG_KEY = "service-registry";
-    private static final TypeName OPTIONAL_COMMON_CONFIG = TypeName.builder(TypeNames.OPTIONAL)
-            .addTypeArgument(COMMON_CONFIG)
-            .build();
-
     private GenerateAbstractBuilder() {
     }
 
@@ -294,22 +289,6 @@ final class GenerateAbstractBuilder {
                 .addLine("If a value is present in configuration, it would override currently configured values.")
                 .build();
 
-        // backward compatibility
-        classBuilder.addMethod(commonConfig -> commonConfig
-                .name("config")
-                .javadoc(Javadoc.builder(javadoc)
-                                 .addTag("deprecated", "use {@link #config(" + Types.CONFIG.fqName() + ")}")
-                                 .build())
-                .returnType(TypeArgument.create("BUILDER"), "updated builder instance")
-                .addParameter(param -> param.name("config")
-                        .type(Types.COMMON_CONFIG)
-                        .description("configuration instance used to obtain values to update this builder"))
-                .addAnnotation(Annotations.DEPRECATED)
-                .addContent("return config(")
-                .addContent(Types.CONFIG)
-                .addContentLine(".config(config));")
-        );
-
         Method.Builder builder = Method.builder()
                 .name("config")
                 .javadoc(javadoc)
@@ -474,7 +453,7 @@ final class GenerateAbstractBuilder {
         if (type.isOptional()) {
             type = type.typeArguments().getFirst();
         }
-        return type.equals(COMMON_CONFIG) || type.equals(CONFIG);
+        return type.equals(CONFIG);
     }
 
     private static void preBuildPrototypeMethod(List<BuilderCodegenExtension> extensions,
@@ -501,9 +480,7 @@ final class GenerateAbstractBuilder {
 
             if (configured && hasConfiguredRegistryServiceOrProvider(options)) {
                 // need to have a non-null config instance
-                preBuildBuilder.addContent("var config = config().map(")
-                        .addContent(CONFIG)
-                        .addContent("::config).orElseGet(")
+                preBuildBuilder.addContent("var config = config().orElseGet(")
                         .addContent(CONFIG)
                         .addContentLine("::empty);");
             }
@@ -1291,7 +1268,7 @@ final class GenerateAbstractBuilder {
             constructor.addContent("this." + option.name() + " = ");
             TypeName declaredType = option.declaredType();
 
-            if (declaredType.isOptional() || declaredType.equals(OPTIONAL_COMMON_CONFIG)) {
+            if (declaredType.isOptional()) {
                 constructor.addContent("builder." + getterName + "().map(")
                         .addContent(Function.class)
                         .addContentLine(".identity());");

@@ -25,7 +25,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
         <relativePath>./dependencies/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-project</artifactId>
@@ -62,22 +62,10 @@
 
         Changing these version requires approval for a new third party dependency!
         -->
-        <version.lib.arquillian>1.7.0.Final</version.lib.arquillian>
         <version.lib.asm>9.8</version.lib.asm>
         <version.lib.checkstyle>10.12.5</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
-        <!-- Force upgrade fourth party dependency of jlama langchain4j provider  -->
-        <version.lib.jinjava>2.8.3</version.lib.jinjava>
         <!-- Dependencies convergence via jinjava -->
-        <version.lib.immutables-exceptions>1.9</version.lib.immutables-exceptions>
-        <version.lib.microprofile-core-profile>10.0.3</version.lib.microprofile-core-profile>
-        <version.lib.sigtest>1.4</version.lib.sigtest>
-        <version.lib.jsonp-tck>2.1.1</version.lib.jsonp-tck>
-        <version.lib.microprofile-cdi-tck>4.0.13</version.lib.microprofile-cdi-tck>
-        <version.lib.microprofile-restful-tck>3.1.5</version.lib.microprofile-restful-tck>
-        <version.lib.jsoup>1.15.3</version.lib.jsoup>
-        <version.lib.junit4>4.13.1</version.lib.junit4>
-        <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mockserver>5.15.0</version.lib.mockserver>
         <version.lib.restito>0.9.1</version.lib.restito>
@@ -88,24 +76,17 @@
         <!-- 2.x versions used http (not https) to access maven central -->
         <version.lib.shrinkwrap-resolver>3.0.1</version.lib.shrinkwrap-resolver>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
-        <version.lib.surefire.testng>3.1.2</version.lib.surefire.testng>
         <version.lib.testng>7.8.0</version.lib.testng>
         <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
         <version.lib.bedrock>7.0.1</version.lib.bedrock>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
-        <version.lib.weld-junit>3.0.0.Final</version.lib.weld-junit>
         <version.lib.jmh>1.23</version.lib.jmh>
         <version.lib.vertx-core>4.3.8</version.lib.vertx-core>
-        <version.lib.wiremock>2.26.3</version.lib.wiremock>
-        <version.lib.commons-lang3>3.18.0</version.lib.commons-lang3>
         <version.lib.commons-text>1.15.0</version.lib.commons-text>
         <version.lib.classgraph>4.8.165</version.lib.classgraph>
-        <version.lib.plexus.classworlds>2.7.0</version.lib.plexus.classworlds>
-        <version.lib.plexus.utils>3.3.0</version.lib.plexus.utils>
         <version.lib.maven.plugin.annotations>3.9.0</version.lib.maven.plugin.annotations>
         <version.lib.maven.plugin.api>3.9.3</version.lib.maven.plugin.api>
         <version.lib.maven.plugin.project>2.2.1</version.lib.maven.plugin.project>
-        <version.lib.apiguardian.api>1.1.2</version.lib.apiguardian.api>
         <version.lib.groovy>2.4.16</version.lib.groovy>
         <version.lib.nimbus.jose.jwt>10.4</version.lib.nimbus.jose.jwt>
         <!--
@@ -113,7 +94,6 @@
         -->
 
         <!-- maven plugin versions -->
-        <version.plugin.archetype-packaging>3.1.2</version.plugin.archetype-packaging>
         <version.plugin.archetype>3.1.2</version.plugin.archetype>
         <version.plugin.ant>3.1.0</version.plugin.ant>
         <version.plugin.build-helper>3.4.0</version.plugin.build-helper>
@@ -121,7 +101,6 @@
         <version.plugin.compiler>3.11.0</version.plugin.compiler>
         <version.plugin.dependency>3.6.0</version.plugin.dependency>
         <version.plugin.directory>1.0</version.plugin.directory>
-        <version.plugin.eclipselink>2.7.5.1</version.plugin.eclipselink>
         <version.plugin.enforcer>3.3.0</version.plugin.enforcer>
         <version.plugin.exec>3.1.0</version.plugin.exec>
         <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
@@ -130,7 +109,6 @@
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.install>3.1.2</version.plugin.install>
         <version.plugin.invoker>3.2.2</version.plugin.invoker>
-        <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>${version.lib.jandex}</version.plugin.jandex>
         <version.plugin.jar>3.3.0</version.plugin.jar>
         <version.plugin.javadoc>3.6.2</version.plugin.javadoc>
@@ -149,16 +127,12 @@
         <version.plugin.dependency-check>12.1.9</version.plugin.dependency-check>
         <version.plugin.surefire>3.1.0</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
-        <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
         <version.plugin.buildnumber>3.1.0</version.plugin.buildnumber>
         <version.plugin.wiremock>2.14.0</version.plugin.wiremock>
         <version.plugin.replacer>1.4.1</version.plugin.replacer>
 
-        <version.helidon-cli>3.0.0</version.helidon-cli>
 
         <!-- Links to external javadocs. If you see a hardcoded version it means the javadocs for the version we use is not available. -->
-        <javadoc.link.jakarta-jaxrs>https://jakarta.ee/specifications/restful-ws/3.1/apidocs/</javadoc.link.jakarta-jaxrs>
-        <javadoc.link.jakarta-cdi>https://jakarta.ee/specifications/cdi/4.0/apidocs/</javadoc.link.jakarta-cdi>
         <javadoc.link.jakarta-jsonb>https://jakarta.ee/specifications/jsonb/3.0/apidocs/</javadoc.link.jakarta-jsonb>
         <javadoc.link.jakarta-persistence>https://jakarta.ee/specifications/persistence/3.1/apidocs/</javadoc.link.jakarta-persistence>
         <javadoc.link.jakarta-jsonp>https://jakarta.ee/specifications/jsonp/2.1/apidocs/</javadoc.link.jakarta-jsonp>
@@ -166,22 +140,6 @@
         <javadoc.link.jakarta-jaxb>https://jakarta.ee/specifications/xml-binding/4.0/apidocs/</javadoc.link.jakarta-jaxb>
         <javadoc.link.jakarta-transaction>https://jakarta.ee/specifications/transactions/2.0/apidocs/</javadoc.link.jakarta-transaction>
 
-        <javadoc.link.microprofile-config>https://download.eclipse.org/microprofile/microprofile-config-${version.lib.microprofile-config}/apidocs/</javadoc.link.microprofile-config>
-        <javadoc.link.microprofile-health>https://download.eclipse.org/microprofile/microprofile-health-${version.lib.microprofile-health}/apidocs/</javadoc.link.microprofile-health>
-        <javadoc.link.microprofile-metrics>https://download.eclipse.org/microprofile/microprofile-metrics-${version.lib.microprofile-metrics-api}/apidocs/</javadoc.link.microprofile-metrics>
-        <javadoc.link.microprofile-fault-tolerance-api>https://download.eclipse.org/microprofile/microprofile-fault-tolerance-${version.lib.microprofile-fault-tolerance-api}/apidocs/</javadoc.link.microprofile-fault-tolerance-api>
-        <javadoc.link.microprofile-graphql>https://download.eclipse.org/microprofile/microprofile-graphql-${version.lib.microprofile-graphql}/apidocs/</javadoc.link.microprofile-graphql>
-        <javadoc.link.microprofile-jwt>https://download.eclipse.org/microprofile/microprofile-jwt-auth-${version.lib.microprofile-jwt}/apidocs/</javadoc.link.microprofile-jwt>
-        <javadoc.link.microprofile-openapi-api>https://download.eclipse.org/microprofile/microprofile-open-api-${version.lib.microprofile-openapi-api}/apidocs/</javadoc.link.microprofile-openapi-api>
-        <javadoc.link.microprofile-reactive-messaging-api>https://download.eclipse.org/microprofile/microprofile-reactive-messaging-${version.lib.microprofile-reactive-messaging-api}/apidocs/</javadoc.link.microprofile-reactive-messaging-api>
-        <javadoc.link.microprofile-reactive-streams-operators-api>https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-${version.lib.microprofile-reactive-streams-operators-api}/apidocs</javadoc.link.microprofile-reactive-streams-operators-api>
-        <javadoc.link.microprofile-rest-client>https://download.eclipse.org/microprofile/microprofile-rest-client-${version.lib.microprofile-rest-client}/apidocs</javadoc.link.microprofile-rest-client>
-        <javadoc.link.microprofile-tracing>https://download.eclipse.org/microprofile/microprofile-opentracing-${version.lib.microprofile-tracing}/apidocs/</javadoc.link.microprofile-tracing>
-        <javadoc.link.microprofile-lra-api>https://download.eclipse.org/microprofile/microprofile-lra-${version.lib.microprofile-lra-api}/apidocs/</javadoc.link.microprofile-lra-api>
-
-
-        <javadoc.link.jersey>https://eclipse-ee4j.github.io/jersey.github.io/apidocs/${version.lib.jersey}/jersey</javadoc.link.jersey>
-        <javadoc.link.weld>https://javadoc.io/doc/org.jboss.weld/weld-spi/${version.lib.weld-api}</javadoc.link.weld>
         <javadoc.link.narayana>https://narayana.io/docs/api/</javadoc.link.narayana>
         <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/4.0/</javadoc.link.eclipselink>
         <javadoc.link.hibernate>https://docs.jboss.org/hibernate/orm/${version.lib.hibernate.family}/javadocs/</javadoc.link.hibernate>
@@ -192,8 +150,6 @@
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
         <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-core>
         <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-databind>
-        <javadoc.link.oci-common>https://javadoc.io/static/com.oracle.oci.sdk/oci-java-sdk-common/${version.lib.oci}/</javadoc.link.oci-common>
-        <javadoc.link.oci-addons-oke-workload-identity>https://javadoc.io/static/com.oracle.oci.sdk/oci-java-sdk-addons-oke-workload-identity/${version.lib.oci}/</javadoc.link.oci-addons-oke-workload-identity>
         <javadoc.link.reactive-streams>https://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</javadoc.link.reactive-streams>
         <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</javadoc.link.typesafe-config>
         <javadoc.link.opentracing>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</javadoc.link.opentracing>
@@ -213,7 +169,6 @@
         <module>bundles</module>
         <module>common</module>
         <module>config</module>
-        <module>cors</module>
         <module>dbclient</module>
         <module>dependencies</module>
         <module>fault-tolerance</module>
@@ -222,15 +177,10 @@
         <module>health</module>
         <module>helidon</module>
         <module>http</module>
-        <module>integrations</module>
         <module>jsonrpc</module>
-        <module>jersey</module>
         <module>licensing</module>
         <module>logging</module>
-        <module>lra</module>
-        <module>messaging</module>
         <module>metrics</module>
-        <module>microprofile</module>
         <module>openapi</module>
         <module>parent</module>
         <module>scheduling</module>
@@ -314,24 +264,12 @@
                                 <location>${javadoc.pkg.dir}/jackson-databind</location>
                             </offlineLink>
                             <offlineLink>
-                                <url>${javadoc.link.jakarta-jaxrs}</url>
-                                <location>${javadoc.pkg.dir}/jakarta-jaxrs</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.jakarta-cdi}</url>
-                                <location>${javadoc.pkg.dir}/jakarta-cdi</location>
-                            </offlineLink>
-                            <offlineLink>
                                 <url>${javadoc.link.jakarta-inject}</url>
                                 <location>${javadoc.pkg.dir}/jakarta-inject</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.reactive-streams}</url>
                                 <location>${javadoc.pkg.dir}/reactive-streams</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.jersey}</url>
-                                <location>${javadoc.pkg.dir}/jersey</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.typesafe-config}</url>
@@ -370,61 +308,6 @@
                                 <location>${javadoc.pkg.dir}/jakarta-transaction</location>
                             </offlineLink>
                             <offlineLink>
-                                <url>${javadoc.link.microprofile-config}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-config</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-health}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-health</location>
-                            </offlineLink>
-
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-metrics}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-metrics</location>
-                            </offlineLink>
-
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-fault-tolerance-api}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-fault-tolerance-api</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-graphql}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-graphql</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-jwt}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-jwt</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-lra-api}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-lra-api</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-openapi-api}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-openapi-api</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-reactive-messaging-api}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-reactive-messaging-api</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-reactive-streams-operators-api}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-reactive-streams-operators-api</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-rest-client}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-rest-client</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-tracing}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-tracing</location>
-                            </offlineLink>
-
-                            <offlineLink>
-                                <url>${javadoc.link.weld}</url>
-                                <location>${javadoc.pkg.dir}/weld</location>
-                            </offlineLink>
-                            <offlineLink>
                                 <url>${javadoc.link.narayana}</url>
                                 <location>${javadoc.pkg.dir}/narayana</location>
                             </offlineLink>
@@ -443,14 +326,6 @@
                             <offlineLink>
                                 <url>${javadoc.link.ucp}</url>
                                 <location>${javadoc.pkg.dir}/ucp</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.oci-common}</url>
-                                <location>${javadoc.pkg.dir}/oci-common</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.oci-addons-oke-workload-identity}</url>
-                                <location>${javadoc.pkg.dir}/oci-addons-oke-workload-identity</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.grpc-api}</url>
@@ -673,7 +548,6 @@
                             <exclude>io.helidon.config.tests*</exclude>
                             <exclude>io.helidon.test*</exclude>
                             <exclude>io.helidon.examples*</exclude>
-                            <exclude>io.helidon.microprofile.tests*</exclude>
                             <!-- This should be excluded by above, but for some reason it persists -->
                             <exclude>org.testng:testng</exclude>
                         </excludes>
@@ -936,15 +810,6 @@
                             <rules>
                                 <dependencyConvergence>
                                     <uniqueVersions>true</uniqueVersions>
-                                    <excludes>
-                                        <!-- These artifacts consistently show up in dependency convergence violations -->
-                                        <!-- They are brought in by deprecated helidon-security-providers-google-login  -->
-                                        <!-- We exclude them from enforcement rather than use messy work-arounds -->
-                                        <exclude>com.google.http-client:google-http-client</exclude>
-                                        <exclude>com.google.http-client:google-http-client-gson</exclude>
-                                        <exclude>com.google.errorprone:error_prone_annotations</exclude>
-                                        <exclude>com.google.j2objc:j2objc-annotations</exclude>
-                                    </excludes>
                                 </dependencyConvergence>
                             </rules>
                         </configuration>
@@ -1035,55 +900,6 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <!-- Force upgrade. Used by jlama langchain4j provider  -->
-                <groupId>com.hubspot.jinjava</groupId>
-                <artifactId>jinjava</artifactId>
-                <version>${version.lib.jinjava}</version>
-                <exclusions>
-                    <!-- For dependency convergence -->
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <!-- Dependency convergence. Used via jinjava -->
-                <groupId>com.hubspot.immutables</groupId>
-                <artifactId>immutables-exceptions</artifactId>
-                <version>${version.lib.immutables-exceptions}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.kafka</groupId>
-                <artifactId>kafka_2.12</artifactId>
-                <version>${version.lib.kafka}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.scala-lang</groupId>
-                        <artifactId>scala-library</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.scala-lang</groupId>
-                        <artifactId>scala-reflect</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>com.salesforce.kafka.test</groupId>
-                <artifactId>kafka-junit5</artifactId>
-                <version>${version.lib.kafka-junit5}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${version.lib.zookeeper}</version>
@@ -1098,36 +914,6 @@
                 <groupId>io.opentracing</groupId>
                 <artifactId>opentracing-mock</artifactId>
                 <version>${version.lib.opentracing}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.ee.tck.coreprofile</groupId>
-                <artifactId>core-profile-tck-impl</artifactId>
-                <version>${version.lib.microprofile-core-profile}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.netbeans.tools</groupId>
-                <artifactId>sigtest-maven-plugin</artifactId>
-                <version>${version.lib.sigtest}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.enterprise</groupId>
-                <artifactId>cdi-tck-core-impl</artifactId>
-                <version>${version.lib.microprofile-cdi-tck}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.enterprise</groupId>
-                <artifactId>cdi-tck-api</artifactId>
-                <version>${version.lib.microprofile-cdi-tck}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.enterprise</groupId>
-                <artifactId>cdi-tck-lang-model</artifactId>
-                <version>${version.lib.microprofile-cdi-tck}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.ws.rs</groupId>
-                <artifactId>jakarta-restful-ws-tck</artifactId>
-                <version>${version.lib.microprofile-restful-tck}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.akarnokd</groupId>
@@ -1160,11 +946,6 @@
                 <version>${version.lib.jgit}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss.weld</groupId>
-                <artifactId>weld-porting-package-tck</artifactId>
-                <version>${version.lib.weld}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.zipkin.zipkin2</groupId>
                 <artifactId>zipkin-junit</artifactId>
                 <version>${version.lib.zipkin.junit}</version>
@@ -1195,11 +976,6 @@
                 <version>${version.lib.vertx-core}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.maven.wagon</groupId>
-                <artifactId>wagon-provider-api</artifactId>
-                <version>${version.lib.maven-wagon}</version>
-            </dependency>
-            <dependency>
                 <!-- for dependency convergence with handlebars and force upgrade -->
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
@@ -1217,73 +993,6 @@
                 <version>${version.lib.hamcrest}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss.weld.se</groupId>
-                <artifactId>weld-se-core</artifactId>
-                <version>${version.lib.weld}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.codehaus.groovy</groupId>
-                        <artifactId>groovy-all</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.weld</groupId>
-                <artifactId>weld-junit5</artifactId>
-                <version>${version.lib.weld-junit}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.health</groupId>
-                <artifactId>microprofile-health-tck</artifactId>
-                <version>${version.lib.microprofile-health}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.jwt</groupId>
-                <artifactId>microprofile-jwt-auth-tck</artifactId>
-                <version>${version.lib.microprofile-jwt}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.jwt</groupId>
-                <artifactId>microprofile-jwt-auth-tck</artifactId>
-                <version>${version.lib.microprofile-jwt}</version>
-                <type>test-jar</type>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.fault-tolerance</groupId>
-                <artifactId>microprofile-fault-tolerance-tck</artifactId>
-                <version>${version.lib.microprofile-fault-tolerance-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.opentracing</groupId>
-                <artifactId>microprofile-opentracing-tck</artifactId>
-                <version>${version.lib.microprofile-tracing}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.opentracing</groupId>
-                <artifactId>microprofile-opentracing-tck-rest-client</artifactId>
-                <version>${version.lib.microprofile-tracing}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.rest.client</groupId>
-                <artifactId>microprofile-rest-client-tck</artifactId>
-                <version>${version.lib.microprofile-rest-client}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.openapi</groupId>
-                <artifactId>microprofile-openapi-tck</artifactId>
-                <version>${version.lib.microprofile-openapi-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
-                <artifactId>microprofile-reactive-streams-operators-tck</artifactId>
-                <version>${version.lib.microprofile-reactive-streams-operators-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
-                <artifactId>microprofile-reactive-messaging-tck</artifactId>
-                <version>${version.lib.microprofile-reactive-messaging-api}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
                 <version>${version.lib.testng}</version>
@@ -1293,46 +1002,6 @@
                         <artifactId>jsr305</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.junit</groupId>
-                <artifactId>arquillian-junit-container</artifactId>
-                <version>${version.lib.arquillian}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.junit5</groupId>
-                <artifactId>arquillian-junit5-core</artifactId>
-                <version>${version.lib.arquillian}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.testenricher</groupId>
-                <artifactId>arquillian-testenricher-cdi-jakarta</artifactId>
-                <version>${version.lib.arquillian}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-container-test-spi</artifactId>
-                <version>${version.lib.arquillian}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.protocol</groupId>
-                <artifactId>arquillian-protocol-servlet</artifactId>
-                <version>${version.lib.arquillian}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.testng</groupId>
-                <artifactId>arquillian-testng-container</artifactId>
-                <version>${version.lib.arquillian}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.test</groupId>
-                <artifactId>arquillian-test-spi</artifactId>
-                <version>${version.lib.arquillian}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-container-spi</artifactId>
-                <version>${version.lib.arquillian}</version>
             </dependency>
             <!-- Force update of shrinkwrap version used by arquillian -->
             <dependency>
@@ -1344,21 +1013,6 @@
                 <groupId>org.jboss.shrinkwrap.resolver</groupId>
                 <artifactId>shrinkwrap-resolver-api-maven</artifactId>
                 <version>${version.lib.shrinkwrap-resolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.config</groupId>
-                <artifactId>microprofile-config-tck</artifactId>
-                <version>${version.lib.microprofile-config}</version>
-                <exclusions>
-                    <exclusion>
-                        <!--
-                        There is a security issue in this dependency.
-                        If needed, add a dependency management for version >= 2.0b6
-                        -->
-                        <groupId>org.beanshell</groupId>
-                        <artifactId>bsh</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.awaitility</groupId>
@@ -1376,27 +1030,10 @@
                 <version>${version.lib.jmh}</version>
             </dependency>
             <dependency>
-                <groupId>com.github.tomakehurst</groupId>
-                <artifactId>wiremock</artifactId>
-                <version>${version.lib.wiremock}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.commons</groupId>
-                        <artifactId>commons-lang3</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <!-- used for classpath scanning in native image extension -->
                 <groupId>io.github.classgraph</groupId>
                 <artifactId>classgraph</artifactId>
                 <version>${version.lib.classgraph}</version>
-            </dependency>
-            <!-- Used for OIDC integration tests -->
-            <dependency>
-                <groupId>org.jsoup</groupId>
-                <artifactId>jsoup</artifactId>
-                <version>${version.lib.jsoup}</version>
             </dependency>
             <!-- Injection TCK tests -->
             <dependency>
@@ -1434,12 +1071,6 @@
                 <artifactId>maven-project</artifactId>
                 <version>${version.lib.maven.plugin.project}</version>
                 <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <!-- dependency convergence -->
-                <groupId>org.apiguardian</groupId>
-                <artifactId>apiguardian-api</artifactId>
-                <version>${version.lib.apiguardian.api}</version>
             </dependency>
             <!-- For JWE testing -->
             <dependency>

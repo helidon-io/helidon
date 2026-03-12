@@ -104,19 +104,6 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
      *
      * @param config provided config
      * @return updated builder instance
-     * @deprecated use {@link #config(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public B config(io.helidon.common.config.Config config) {
-        return config(Config.config(config));
-    }
-
-    /**
-     * Update this builder with values from configuration.
-     *
-     * @param config provided config
-     * @return updated builder instance
      */
     public B config(Config config) {
         config.get("client-id").asString().ifPresent(this::clientId);

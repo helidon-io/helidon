@@ -17,7 +17,6 @@ package io.helidon.metrics.spi;
 
 import java.util.Collection;
 
-import io.helidon.common.DeprecationSupport;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
@@ -26,25 +25,6 @@ import io.helidon.metrics.api.MetricsFactory;
  * Creates new instances of {@link io.helidon.metrics.api.MetricsFactory}.
  */
 public interface MetricsFactoryProvider {
-
-    /**
-     * Creates a new instance from configuration.
-     *
-     * @param rootConfig      root config node
-     * @param metricsConfig   metrics config
-     * @param metersProviders group of providers
-     * @return new metrics factory
-     * @deprecated use {@link #create(io.helidon.config.Config, io.helidon.metrics.api.MetricsConfig, java.util.Collection)}
-     * instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    default MetricsFactory create(io.helidon.common.config.Config rootConfig,
-                          MetricsConfig metricsConfig,
-                          Collection<MetersProvider> metersProviders) {
-        // default to avoid forcing deprecated symbols references
-        return create(Config.config(rootConfig), metricsConfig, metersProviders);
-    }
 
     /**
      * Creates a new {@link io.helidon.metrics.api.MetricsFactory} from which the caller can obtain
@@ -65,16 +45,7 @@ public interface MetricsFactoryProvider {
      * @return new metrics factory
      * @since 4.4.0
      */
-    @SuppressWarnings("removal")
-    default MetricsFactory create(Config rootConfig, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders) {
-        // default to preserve backward compatibility
-        // require the deprecated variant to be implemented
-        DeprecationSupport.requireOverride(this, MetricsFactoryProvider.class, "create",
-                io.helidon.common.config.Config.class,
-                MetricsConfig.class,
-                Collection.class);
-        return create((io.helidon.common.config.Config) rootConfig, metricsConfig, metersProviders);
-    }
+    MetricsFactory create(Config rootConfig, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders);
 
     /**
      * Closes all metrics factories created by this provider.

@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.metrics</groupId>
         <artifactId>helidon-metrics-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-metrics-system-meters</artifactId>
@@ -53,7 +53,6 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
-            <scope>test</scope>
         </dependency>
         <!-- We need a full metrics implementation to test that config affects system meter names correctly. -->
         <dependency>

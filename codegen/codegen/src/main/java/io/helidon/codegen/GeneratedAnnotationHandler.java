@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ final class GeneratedAnnotationHandler {
         return PROVIDER.create(generator, trigger, generatedType, versionId, comments);
     }
 
-    // @Generated(value = "io.helidon.inject.tools.ActivatorCreatorDefault", comments = "version=1")
+    // @Generated(value = "io.helidon.service.codegen.SomeCodegenClass", comments = "version=1")
     private static class DefaultProvider implements GeneratedAnnotationProvider {
         @Override
         public Annotation create(TypeName generator,

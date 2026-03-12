@@ -33,7 +33,6 @@ import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.cors.CrossOriginConfig;
 import io.helidon.http.SetCookie;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.jsonp.JsonpSupport;
@@ -205,7 +204,7 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>oidc-metadata.resource</td>
  *     <td>identity-uri/.well-known/openid-configuration</td>
  *     <td>Resource configuration for OIDC Metadata containing endpoints to various identity services, as well as information
- *     about the identity server. See {@link Resource#create(io.helidon.common.config.Config)}</td>
+ *     about the identity server. See {@link Resource#create(io.helidon.config.Config)}</td>
  * </tr>
  * <tr>
  *     <td>token-endpoint-uri</td>
@@ -228,7 +227,7 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>"jwks-uri" in OIDC metadata, or identity-uri/admin/v1/SigningCert/jwk if not available, only needed
  *              when jwt validation is done by us</td>
  *     <td>A resource pointing to JWK with public keys of signing certificates used to validate JWT.
- *     See {@link Resource#create(io.helidon.common.config.Config)}</td>
+ *     See {@link Resource#create(io.helidon.config.Config)}</td>
  * </tr>
  * <tr>
  *     <td>introspect-endpoint-uri</td>
@@ -303,11 +302,6 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>{@code logout-enabled}</td>
  *     <td>{@code false}</td>
  *     <td>Whether logout support should be enabled. Requires encryption of cookies (and cookies must be used).</td>
- * </tr>
- * <tr>
- *     <td>{@code cors}</td>
- *     <td>&nbsp;</td>
- *     <td>Cross-origin resource sharing settings. See {@link io.helidon.cors.CrossOriginConfig}.</td>
  * </tr>
  * <tr>
  *     <td>{@code force-https-redirects}</td>
@@ -390,7 +384,6 @@ public final class OidcConfig extends TenantConfigImpl {
     private final String redirectAttemptParam;
     private final int maxRedirects;
     private final URI postLogoutUri;
-    private final CrossOriginConfig crossOriginConfig;
     private final boolean forceHttpsRedirects;
     private final Duration tokenRefreshSkew;
     private final boolean relativeUris;
@@ -428,7 +421,6 @@ public final class OidcConfig extends TenantConfigImpl {
         this.redirectAttemptParam = builder.redirectAttemptParam;
         this.maxRedirects = builder.maxRedirects;
         this.forceHttpsRedirects = builder.forceHttpsRedirects;
-        this.crossOriginConfig = builder.crossOriginConfig;
         this.tokenRefreshSkew = builder.tokenRefreshSkew;
         this.tenantConfigurations = Map.copyOf(builder.tenantConfigurations);
         this.webClient = builder.webClient;
@@ -470,22 +462,7 @@ public final class OidcConfig extends TenantConfigImpl {
     }
 
     /**
-     * Create a new instance from {@link io.helidon.common.config.Config}.
-     *
-     * @param config configuration used to obtain OIDC integration values
-     * @return a new instance of this class configured from provided config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static OidcConfig create(io.helidon.common.config.Config config) {
-        return OidcConfig.builder()
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Create a new instance from {@link io.helidon.common.config.Config}.
+     * Create a new instance from {@link io.helidon.config.Config}.
      * The config instance has to be on the node containing keys used by this class (e.g. client-id).
      *
      * @param config configuration used to obtain OIDC integration values
@@ -713,15 +690,6 @@ public final class OidcConfig extends TenantConfigImpl {
      */
     public int maxRedirects() {
         return maxRedirects;
-    }
-
-    /**
-     * Cross-origin resource sharing settings.
-     *
-     * @return CORS settings
-     */
-    public CrossOriginConfig crossOriginConfig() {
-        return crossOriginConfig;
     }
 
     /**
@@ -1002,7 +970,6 @@ public final class OidcConfig extends TenantConfigImpl {
         private String redirectAttemptParam = DEFAULT_ATTEMPT_PARAM;
         private int maxRedirects = DEFAULT_MAX_REDIRECTS;
         private URI postLogoutUri;
-        private CrossOriginConfig crossOriginConfig;
         private boolean forceHttpsRedirects = DEFAULT_FORCE_HTTPS_REDIRECTS;
         private Duration tokenRefreshSkew = DEFAULT_TOKEN_REFRESH_SKEW;
         private String proxyHost;
@@ -1196,8 +1163,6 @@ public final class OidcConfig extends TenantConfigImpl {
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("force-https-redirects").asBoolean().ifPresent(this::forceHttpsRedirects);
 
-            config.get("cors").as(CrossOriginConfig::create).ifPresent(this::crossOriginConfig);
-
             config.get("token-refresh-before-expiration").as(Duration.class).ifPresent(this::tokenRefreshSkew);
 
             config.get("token-signature-validation").asBoolean().ifPresent(this::tokenSignatureValidation);
@@ -1230,23 +1195,6 @@ public final class OidcConfig extends TenantConfigImpl {
          */
         public Builder tokenRefreshSkew(Duration tokenRefreshSkew) {
             this.tokenRefreshSkew = tokenRefreshSkew;
-            return this;
-        }
-
-        /**
-         * Assign cross-origin resource sharing settings.
-         *
-         * @param crossOriginConfig cross-origin settings to apply to the redirect endpoint
-         * @return updated builder instance
-         * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
-         *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
-         *  server feature
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(forRemoval = true, since = "4.4.0")
-        @ConfiguredOption(key = "cors")
-        public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
-            this.crossOriginConfig = crossOriginConfig;
             return this;
         }
 

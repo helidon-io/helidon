@@ -295,8 +295,6 @@ Metrics has changed significantly in Helidon 4.x. For more information, see xref
 
 * Changed modules:
 - `helidon-security-integration-grpc` was removed
-- `helidon-security-integration-jersey` moved to the module `helidon-microprofile-security`
-- `helidon-security-integration-jersey-client` moved to the module `helidon-microprofile-security`
 - `helidon-security-integration-webserver` moved to the module `helidon-webserver-security`
 
 * Significant class name changes:

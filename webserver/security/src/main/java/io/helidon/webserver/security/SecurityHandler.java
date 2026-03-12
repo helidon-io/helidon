@@ -64,7 +64,7 @@ import static io.helidon.security.AuditEvent.AuditParam.plain;
 /**
  * Handles security for web server. This handler is registered either by hand on router config,
  * or automatically from configuration when integration done through {@link io.helidon.webserver.security.SecurityFeature},
- * or {@link SecurityHttpFeature#create(io.helidon.common.config.Config)}.
+ * or {@link SecurityHttpFeature#create(Config)}.
  */
 // we need to have all fields optional and this is cleaner than checking for null
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -87,7 +87,7 @@ public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityH
     private final Optional<String> auditMessageFormat;
     private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
     private final boolean combined;
-    private final Map<String, io.helidon.common.config.Config> configMap = new HashMap<>();
+    private final Map<String, Config> configMap = new HashMap<>();
 
     // lazily initialized (as it requires a context value to first create it)
     private final AtomicReference<SecurityHandler> combinedHandler = new AtomicReference<>();
@@ -145,20 +145,6 @@ public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityH
         return builder()
                 .update(consumer)
                 .build();
-    }
-
-    /**
-     * Create an instance from configuration.
-     *
-     * @param config   configuration
-     * @param defaults Default value
-     * @return an instance configured from the config
-     * @deprecated use {@link #create(io.helidon.config.Config, SecurityHandler)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static SecurityHandler create(io.helidon.common.config.Config config, SecurityHandler defaults) {
-        return create(Config.config(config), defaults);
     }
 
     /**

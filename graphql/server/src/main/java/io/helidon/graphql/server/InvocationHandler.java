@@ -138,19 +138,6 @@ public interface InvocationHandler {
         /**
          * Update builder from configuration.
          *
-         * @param config configuration to use
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
-         * Update builder from configuration.
-         *
          * Configuration options:
          * <table class="config">
          * <caption>Optional configuration parameters</caption>

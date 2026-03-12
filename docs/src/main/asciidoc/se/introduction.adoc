@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Introduction
-:keywords: helidon, java, microservices, microprofile
+:keywords: helidon, java, microservices
 :description: Helidon SE introduction
 :keywords: helidon, java, SE, microservices, Netty
 :rootdir: {docdir}/..
@@ -107,14 +107,6 @@ Instrumentation to expose metrics of your applications.
 [icon=donut_large,link=openapi/openapi.adoc]
 --
 Support OpenAPI from your application.
---
-
-//Reactive Messaging
-[CARD]
-.Reactive Messaging
-[icon=message,link=reactive-messaging.adoc]
---
-Use prepared tools for repetitive use case scenarios.
 --
 
 //Reactive Streams

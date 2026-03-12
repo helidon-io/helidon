@@ -46,19 +46,6 @@ public class DbClientTracing extends DbClientServiceBase {
      *
      * @param config configuration node for this interceptor
      * @return a new tracing interceptor
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static DbClientTracing create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Create a new tracing interceptor based on the configuration.
-     *
-     * @param config configuration node for this interceptor
-     * @return a new tracing interceptor
      */
     public static DbClientTracing create(Config config) {
         return builder().config(config).build();

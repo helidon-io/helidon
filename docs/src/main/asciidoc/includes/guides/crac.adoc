@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -84,17 +84,6 @@ The archetype generates a Maven project in your current directory
 cd helidon-quickstart-{flavor-lc}
 ----
 
-Add dependency for Helidon CRaC support to `pom.xml`. This allows Helidon to properly close and
-reopen resources which would normally break snapshot creation.
-
-[source,xml,subs="attributes+"]
-----
-<dependency>
-    <groupId>io.helidon.integrations.crac</groupId>
-    <artifactId>helidon-integrations-crac</artifactId>
-</dependency>
-----
-
 Build the project.
 
 [source,bash,subs="attributes+"]
@@ -133,14 +122,6 @@ Started all channels in 9 milliseconds. 521 milliseconds since JVM startup. Java
 WEB server is up! http://localhost:8080/simple-greet
 ----
 endif::se-flavor[]
-ifdef::mp-flavor[]
-[source,bash,subs="attributes+"]
-----
-Started all channels in 10 milliseconds. 1937 milliseconds since JVM startup. Java {zulu-version}
-Server started on http://localhost:8080 in 1941 milliseconds (since JVM startup).
-Helidon MP {helidon-version} features: [CDI, CRaC, Config, Health, Metrics, Open API, Server]
-----
-endif::mp-flavor[]
 
 In another shell test an endpoint:
 

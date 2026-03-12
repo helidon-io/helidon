@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -45,11 +45,8 @@ dependencies {
     // import Helidon dependency management
     implementation enforcedPlatform("io.helidon:helidon-dependencies:${project.helidonversion}")
 
-    implementation 'io.helidon.microprofile.bundles:helidon-microprofile'
-    implementation 'org.glassfish.jersey.media:jersey-media-json-binding'
-
-    runtimeOnly 'io.smallrye:jandex'
-    runtimeOnly 'jakarta.activation:jakarta.activation-api'
+    implementation 'io.helidon.applications:helidon-se'
+    implementation 'io.helidon.http.media:helidon-http-media-jsonp'
 
     testCompileOnly 'org.junit.jupiter:junit-jupiter-api:'
 }

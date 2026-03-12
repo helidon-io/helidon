@@ -28,8 +28,8 @@ module io.helidon.faulttolerance {
 
     requires io.helidon.common;
     requires io.helidon.common.configurable;
-    requires io.helidon.common.config;
     requires io.helidon.builder.api;
+    requires io.helidon.config;
     requires io.helidon.metrics.api;
     requires io.helidon.service.registry;
 

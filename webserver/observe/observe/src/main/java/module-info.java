@@ -33,10 +33,7 @@ module io.helidon.webserver.observe {
     requires io.helidon.webserver;
 
     requires transitive io.helidon.builder.api;
-    requires transitive io.helidon.common.config;
-    requires transitive io.helidon.cors;
-    requires transitive io.helidon.webserver.cors;
-
+    requires transitive io.helidon.config;
     exports io.helidon.webserver.observe;
     exports io.helidon.webserver.observe.spi;
 

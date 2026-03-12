@@ -50,26 +50,14 @@ Fourth Party Runtime Dependencies
                 <consumer>helidon-integrations-cdi-jta-weld</consumer>
                 <consumer>helidon-integrations-cdi-reference-counted-context</consumer>
                 <consumer>helidon-integrations-micrometer-cdi</consumer>
-                <consumer>helidon-integrations-micronaut-cdi</consumer>
-                <consumer>helidon-integrations-micronaut-data</consumer>
                 <consumer>helidon-integrations-microstream-cdi</consumer>
                 <consumer>helidon-integrations-oci-sdk-cdi</consumer>
                 <consumer>helidon-integrations-vault-cdi</consumer>
-                <consumer>helidon-jersey-client</consumer>
                 <consumer>helidon-messaging-aq</consumer>
                 <consumer>helidon-messaging-jms</consumer>
                 <consumer>helidon-messaging-kafka</consumer>
                 <consumer>helidon-messaging-mock</consumer>
                 <consumer>helidon-messaging-wls-jms</consumer>
-                <consumer>helidon-microprofile-config</consumer>
-                <consumer>helidon-microprofile-cors</consumer>
-                <consumer>helidon-microprofile-fault-tolerance</consumer>
-                <consumer>helidon-microprofile-metrics</consumer>
-                <consumer>helidon-microprofile-server</consumer>
-                <consumer>helidon-microprofile-service-common</consumer>
-                <consumer>helidon-microprofile-telemetry</consumer>
-                <consumer>helidon-microprofile-tracing</consumer>
-                <consumer>helidon-microprofile-websocket</consumer>
                 <consumer>weld-se-core</consumer>
             </consumers>
             <attribution>Jakarta CDI API (jakarta.enterprise:jakarta.enterprise.cdi-api)
@@ -181,12 +169,10 @@ See full text at the bottom of this document for license: GPLv2-CPE
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
-                <consumer>helidon-dbclient-jsonp</consumer>
                 <consumer>helidon-dbclient-mongodb</consumer>
                 <consumer>helidon-graal-native-image-extension</consumer>
                 <consumer>helidon-http-media-jsonp</consumer>
                 <consumer>helidon-lra-coordinator-server</consumer>
-                <consumer>helidon-microprofile-server</consumer>
                 <consumer>helidon-mp-graal-native-image-extension</consumer>
                 <consumer>helidon-security-jwt</consumer>
             </consumers>
@@ -282,9 +268,6 @@ EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
             <version>2.0.4</version>
             <licensor>Oracle</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-websocket</consumer>
-            </consumers>
             <attribution>Eclipse Tyrus (org.glassfish.tyrus:tyrus-*)
   Copyright (c) 2007,2022 Oracle and/or its affiliates. All rights reserved.
 --------------------------------------------
@@ -375,7 +358,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <licenseName>Multiple Licenses</licenseName>
             <consumers>
                 <consumer>helidon-http-media-jsonb</consumer>
-                <consumer>helidon-microprofile</consumer>
                 <consumer>helidon-webserver-graphql</consumer>
             </consumers>
             <attribution>Eclipse Yasson
@@ -629,7 +611,6 @@ See full text at the bottom of this document for license: GPLv2-CPE
             <licensor>Google</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-security-providers-google-login</consumer>
             </consumers>
             <attribution>Google APIs Client Library for Java (com.google.api-client:google-api-client)
   Copyright 2010,2015 Google Inc.
@@ -860,9 +841,6 @@ The Apache Software Foundation (https://www.apache.org/).
             <version>7.0.2.Final</version>
             <licensor>Hibernate</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-bean-validation</consumer>
-            </consumers>
             <attribution>Hibernate Validator 
   Copyright 2007-2021 Red Hat, Inc. All Rights Reserved
   Copyright 2009 IIZUKA Software Technologies Ltd
@@ -978,191 +956,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             <version>3.5.3.Final</version>
             <licensor>Apache 2.0</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-cdi</consumer>
-            </consumers>
             <attribution>JBoss Logging 3 (org.jboss.logging:jboss-logging)
   Copyright 2023 Red Hat, Inc.
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-</attribution>
-        </dependency>
-        <dependency>
-            <id>150602</id>
-            <name>JGit Core</name>
-            <version>6.7.0.202309050840-r</version>
-            <licensor>Eclipse Foundation</licensor>
-            <licenseName>Eclipse Distribution License 1.0</licenseName>
-            <consumers>
-                <consumer>helidon-config-git</consumer>
-            </consumers>
-            <attribution>JGit - Core (org.eclipse.jgit:org.eclipse.jgit)
-  Copyright (C) 2011, Abhishek Bhatnagar &lt;abhatnag@redhat.com&gt; and others
-  Copyright (C) 2009, Alex Blewitt &lt;alex.blewitt@gmail.com&gt;
-  Copyright (C) 2014, Alexey Kuznetsov &lt;axet@me.com&gt;
-  Copyright (C) 2018- 2022, Andre Bossert &lt;andre.bossert@siemens.com&gt; and others
-  Copyright (C) 2014,2021 Andrey Loskutov &lt;loskutov@gmx.de&gt; and others
-  Copyright (C) 2014, André de Oliveira &lt;andre.oliveira@liferay.com&gt; and others
-  Copyright (C) 2014, Arthur Daussy &lt;arthur.daussy@obeo.fr&gt; and others
-  Copyright (C) 2014, Axel Richard &lt;axel.richard@obeo.fr&gt; and others
-  Copyright (C) 2008, Charles O'Farrell &lt;charleso@charleso.org&gt;
-  Copyright (C) 2010,2022 Chris Aniszczyk &lt;caniszczyk@gmail.com&gt; and others
-  Copyright (C) 2009,2021 Christian Halstrick &lt;christian.halstrick@sap.com&gt; and others
-  Copyright (C) 2013, CloudBees, Inc. and others
-  Copyright (C) 2009,2010 Constantine Plotnikov &lt;constantine.plotnikov@gmail.com&gt;
-  Copyright (C) 2012, Daniel Megert &lt;daniel_megert@ch.ibm.com&gt; and others
-  Copyright (C) 2007, Dave Watson &lt;dwatson@mimvista.com&gt;
-  Copyright (C) 2017,2022 David Pursehouse &lt;david.pursehouse@gmail.com&gt; and others
-  Copyright (C) 2015,2017 Ericsson and others
-  Copyright (C) 2021, Fabio Ponciroli &lt;ponch@gerritforge.com&gt;
-  Copyright (C) 2008, Florian Köberle &lt;florianskarten@web.de&gt; and others
-  Copyright (C) 2011, GEBIT Solutions and others
-  Copyright (C) 2010, Garmin International
-  Copyright (C) 2011,2023 GitHub Inc. and others
-  Copyright (C) 2008,2023 Google Inc. and others
-  Copyright (C) 2013, Gunnar Wagenknecht
-  Copyright (C) 2013,2014 Gustaf Lundh &lt;gustaf.lundh@sonymobile.com&gt; and others
-  Copyright (C) 2011,2012 IBM Corporation and others. and others
-  Copyright (C) 2009, Igor Fedorenko &lt;igor@ifedorenko.com&gt;
-  Copyright (C) 2008, Imran M Yousuf &lt;imyousuf@smartitengineering.com&gt;
-  Copyright (C) 2015,2022 Ivan Motsch &lt;ivan.motsch@bsiag.com&gt; and others
-  Copyright (C) 2016,2020 JGit contributors
-  Copyright (C) 2010, Jens Baumgart &lt;jens.baumgart@sap.com&gt; and others
-  Copyright (C) 2009,2022 JetBrains s.r.o. and others
-  Copyright (C) 2008- 2021, Johannes E. Schindelin &lt;johannes.schindelin@gmx.de&gt; and others
-  Copyright (C) 2009, Johannes Schindelin &lt;johannes.schindelin@gmx.de&gt; and others
-  Copyright (C) 2008,2009 Jonas Fonseca &lt;fonseca@diku.dk&gt;
-  Copyright (c) 2020,2022 Julian Ruppel &lt;julian.ruppel@sap.com&gt; and others
-  Copyright (C) 2015, Kaloyan Raev &lt;kaloyan.r@zend.com&gt; and others
-  Copyright (C) 2011, Ketan Padegaonkar &lt;ketanpadegaonkar@gmail.com&gt; and others
-  Copyright (c) 2014, Konrad Kügler and others
-  Copyright (C) 2018, Konrad Windszus &lt;konrad_w@gmx.de&gt; and others
-  Copyright (C) 2016,2021 Laurent Delaigue &lt;laurent.delaigue@obeo.fr&gt; and others
-  Copyright (C) 2014 Laurent Goujon &lt;lgoujon@twitter.com&gt; and others
-  Copyright 2017 Marc Stevens &lt;marc@marc-stevens.nl&gt;, Dan Shumow &lt;danshu@microsoft.com&gt;
-  Copyright (C) 2010,2019 Marc Strapetz &lt;marc.strapetz@syntevo.com&gt;
-  Copyright (C) 2008,2022 Marek Zawirski &lt;marek.zawirski@gmail.com&gt; and others
-  Copyright (C) 2009, Mark Struberg &lt;struberg@yahoo.de&gt;
-  Copyright (C) 2018, Markus Duft &lt;markus.duft@ssi-schaefer.com&gt; and others
-  Copyright (C) 2010,2020 Mathias Kinzler &lt;mathias.kinzler@sap.com&gt; and others
-  Copyright (C) 2010,2023 Matthias Sohn &lt;matthias.sohn@sap.com&gt; and others
-  Copyright (C) 2020, Michael Dardis. and others
-  Copyright (C) 2008, Mike Ralphson &lt;mike@abacus.co.uk&gt;
-  Copyright (C) 2009, Mykola Nikishov &lt;mn@mn.com.ua&gt;
-  Copyright (C) 2015,2022 Obeo and others
-  Copyright (C) 2015, Patrick Steinhardt &lt;ps@pks.im&gt; and others
-  Copyright (C) 2011, Philipp Thun &lt;philipp.thun@sap.com&gt; and others
-  Copyright (c) 2021,2023 Qualcomm Innovation Center, Inc.
-  Copyright (C) 2010,2021 Red Hat Inc. and others
-  Copyright (C) 2012,2021 Research In Motion Limited and others
-  Copyright (C) 2011, Roberto Tyley &lt;roberto.tyley@gmail.com&gt; and others
-  Copyright (C) 2006- 2018, Robin Rosenberg &lt;robin.rosenberg@dewire.com&gt;
-  Copyright (C) 2012, 2022, Robin Rosenberg and others
-  Copyright (C) 2011,2013 Robin Stocker &lt;robin@nibor.org&gt;
-  Copyright (C) 2010-2011 2012, Robin Stocker &lt;robin@nibor.org&gt; and others
-  Copyright (C) 2013,2014 Robin Stocker &lt;robin@nibor.org&gt; and others
-  Copyright (C) 2008, Roger C. Soares &lt;rogersoares@intelinet.com.br&gt;
-  Copyright (C) 2023, SAP SE and others
-  Copyright (C) 2018,2022 Salesforce and others
-  Copyright (C) 2009,2013 Sasa Zivkov &lt;sasa.zivkov@sap.com&gt;
-  Copyright (C) 2014, Sasa Zivkov &lt;sasa.zivkov@sap.com&gt;, SAP AG and others
-  Copyright (C) 2006, 2022, Shawn O. Pearce &lt;spearce@spearce.org&gt; and others
-  Copyright (C) 2021 Simeon Andreev &lt;simeon.danailov.andreev@gmail.com&gt; and others
-  Copyright (C) 2022, Simeon Andreev and others
-  Copyright (C) 2010, 2014, Stefan Lay &lt;stefan.lay@sap.com&gt;
-  Copyright (C) 2021,2023 Tencent.
-  Copyright (C) 2008, Thad Hughes &lt;thadh@thad.corp.google.com&gt; and others
-  Copyright (C) 2009, The Android Open Source Project
-  Copyright (C) 2007 The Guava Authors
-  Copyright (C) 2017, 2023, Thomas Wolf &lt;twolf@apache.org&gt; and others
-  Copyright (C) 2018- 2019, Tim Neumann &lt;Tim.Neumann@advantest.com&gt;
-  Copyright (C) 2011, Tomasz Zarna &lt;Tomasz.Zarna@pl.ibm.com&gt; and others
-  Copyright (C) 2009, Tor Arne Vestbø &lt;torarnv@gmail.com&gt; and others
-  Copyright (C) 2017, Two Sigma Open Source and others
-  Copyright (C) 2009, Vasyl' Vavrychuk &lt;vvavrychuk@gmail.com&gt; and others
-  Copyright (C) 2017, Wim Jongman &lt;wim.jongman@remainsoftware.com&gt; and others
-  Copyright (C) 2022, Workday Inc.
-  Copyright (C) 2009, Yann Simon &lt;yann.simon.fr@gmail.com&gt; and others
-  Copyright (C) 2011,2022 Christoph Brill &lt;egore911@egore911.de&gt; and others
-  Copyright (C) 2022, Fabio Ponciroli &lt;ponch78@gmail.com&gt; and others
---------------------------------------------
-This program and the accompanying materials are made available
-under the terms of the Eclipse Distribution License v1.0 which
-accompanies this distribution, is reproduced below, and is
-available at http://www.eclipse.org/org/documents/edl-v10.php
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following
-conditions are met:
-
-- Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-
-- Redistributions in binary form must reproduce the above
-  copyright notice, this list of conditions and the following
-  disclaimer in the documentation and/or other materials provided
-  with the distribution.
-
-- Neither the name of the Eclipse Foundation, Inc. nor the
-  names of its contributors may be used to endorse or promote
-  products derived from this software without specific prior
-  written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
-INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
---------------------------------------------
-Fourth Party Dependencies
---------------------------------------------
-"SLF4J API Module" (org.slf4j:slf4j-api)
-  Copyright (c) 2004-2011 QOS.ch
-
-The MIT License SPDX short identifier: MIT
-
-Further resources on the MIT License Copyright &lt;YEAR&gt; &lt;COPYRIGHT HOLDER&gt;
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
---------------------------------------------
-"JavaEWAH" (com.googlecode.javaewah:JavaEWAH)
-  Copyright 2009- 2016, Daniel Lemire, Cliff Moon, David McIntosh, Robert Becho,
-            Google Inc., Veronika Zenz, Owen Kaser, Gregory Ssi-Yan-Kai, Rory Graves
-  Copyright 2012, Google Inc.
-Apache License 2.0
---------------------------------------------
-"Apache Commons Codec" (commons-codec:commons-codec)
-    Copyright 2002-2023 The Apache Software Foundation
-
-    This product includes software developed at
-    The Apache Software Foundation (https://www.apache.org/).
-Apache License 2.0
 --------------------------------------------
 See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
@@ -1203,18 +998,13 @@ See full text at the bottom of this document for license: Apache-2.0
                 <consumer>helidon-integrations-cdi-datasource-ucp</consumer>
                 <consumer>helidon-integrations-cdi-jpa</consumer>
                 <consumer>helidon-integrations-cdi-jta</consumer>
-                <consumer>helidon-integrations-micronaut-cdi-processor</consumer>
-                <consumer>helidon-integrations-micronaut-data</consumer>
                 <consumer>helidon-integrations-microstream-cdi</consumer>
                 <consumer>helidon-integrations-oci-sdk-cdi</consumer>
                 <consumer>helidon-integrations-oci-sdk-tests-test-application</consumer>
                 <consumer>helidon-integrations-oci-sdk-tests-test-module1</consumer>
                 <consumer>helidon-integrations-oci-sdk-tests-test-module2</consumer>
                 <consumer>helidon-integrations-oci-tls-certificates</consumer>
-                <consumer>helidon-jersey-client</consumer>
                 <consumer>helidon-messaging-mock</consumer>
-                <consumer>helidon-microprofile-fault-tolerance</consumer>
-                <consumer>helidon-microprofile-telemetry</consumer>
                 <consumer>weld-se-core</consumer>
             </consumers>
             <attribution>Jakarta Annotations API (jakarta.annotation:jakarta.annotation-api)
@@ -1267,9 +1057,6 @@ See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
             <version>5.0.0</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-bean-validation</consumer>
-            </consumers>
             <attribution>Eclipse Expressly (org.glassfish.expressly:expressly)
   Copyright (c) 2021 Payara Services Ltd.
   Copyright (c) 2018, 2022 Eclipse Foundation. All rights reserved.
@@ -1340,7 +1127,6 @@ EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
-                <consumer>helidon-security-abac-policy-el</consumer>
                 <consumer>weld-se-core</consumer>
             </consumers>
             <attribution>Jakarta Expression Language API (EL) (jakarta.el:jakarta.el-api)
@@ -1401,14 +1187,6 @@ See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
-                <consumer>helidon-microprofile-access-log</consumer>
-                <consumer>helidon-microprofile-jwt-auth</consumer>
-                <consumer>helidon-microprofile-messaging</consumer>
-                <consumer>helidon-microprofile-openapi</consumer>
-                <consumer>helidon-microprofile-scheduling</consumer>
-                <consumer>helidon-microprofile-security</consumer>
-                <consumer>helidon-microprofile-server</consumer>
-                <consumer>helidon-microprofile-telemetry</consumer>
                 <consumer>weld-se-core</consumer>
             </consumers>
             <attribution>Jakarta Interceptors (jakarta.interceptor:jakarta.interceptor-api)
@@ -1479,7 +1257,6 @@ Fourth Party Dependencies
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
                 <consumer>helidon-http-media-jsonb</consumer>
-                <consumer>helidon-microprofile</consumer>
             </consumers>
             <attribution>Jakarta JSON Binding API (JSON-B) (jakarta.json.bind:jakarta.json.bind-api)
   Copyright (c) 2015,2020 Oracle and/or its affiliates. All rights reserved.
@@ -1565,20 +1342,6 @@ The project maintains the following source code repositories:
 
 This project leverages the following third party content.
 
-javax.ws.rs-api:2.0.1 (2.0.1)
-
-* License: (CDDL-1.1 OR GPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0) AND
-   Apache-2.0
-* Project: https://github.com/jax-rs/api
-* Source: https://github.com/jax-rs/api
-
-javax.ws.rs:jsr311-api:jar:1.1.1 (1.1.1)
-
-* License: CDDL-1.0 AND Apache-2.0
-* Project: https://github.com/jax-rs/api
-* Source:
-   http://search.maven.org/remotecontent?filepath=javax/ws/rs/jsr311-api/1.1.1/jsr311-api-1.1.1-sources.jar
-
 javax:javaee-web-api:jar:7.0 (7.0)
 
 * License: (CDDL-1.0 OR GPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0) AND
@@ -1609,7 +1372,6 @@ permitted.</attribution>
             <consumers>
                 <consumer>helidon-http-media-jsonb</consumer>
                 <consumer>helidon-http-media-jsonp</consumer>
-                <consumer>helidon-microprofile-server</consumer>
                 <consumer>helidon-security-jwt</consumer>
                 <consumer>helidon-webserver-observe-config</consumer>
                 <consumer>helidon-webserver-observe-health</consumer>
@@ -1810,131 +1572,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</attribution>
         </dependency>
         <dependency>
-            <id>141984</id>
-            <name>Jakarta Restful Web Services JAX-RS API</name>
-            <version>3.1.0</version>
-            <licensor>Eclipse Foundation</licensor>
-            <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-integrations-oci-sdk-cdi</consumer>
-                <consumer>helidon-microprofile-bean-validation</consumer>
-                <consumer>helidon-microprofile-cors</consumer>
-                <consumer>helidon-microprofile-rest-client</consumer>
-            </consumers>
-            <attribution># Notices for Jakarta RESTful Web Services
-
-This content is produced and maintained by the **Jakarta RESTful Web Services**
-project.
-
-* Project home: https://projects.eclipse.org/projects/ee4j.jaxrs
-
-## Trademarks
-
-**Jakarta RESTful Web Services** is a trademark of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Public License v. 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
-available under the following Secondary Licenses when the conditions for such
-availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
-General Public License, version 2 with the GNU Classpath Exception which is
-available at https://www.gnu.org/software/classpath/license.html.
-
-SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
-## Source Code
-
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jaxrs-api
-
-## Cryptography
-
-Content may contain encryption software. The country in which you are currently
-may have restrictions on the import, possession, and use, and/or re-export to
-another country, of encryption software. BEFORE using any encryption software,
-please check the country's laws, regulations and policies concerning the import,
-possession, or use, and re-export of encryption software, to see if this is
-permitted.
----
-jakarta RESTful Web Services API (JAX-RS) (jakarta.ws.rs:jakarta.ws.rs-api)
-Copyright (c) 2011, 2021 Oracle and/or its affiliates. All rights reserved.
-
-    This program and the accompanying materials are made available under the
-    terms of the Eclipse Public License v. 2.0, which is available at
-    http://www.eclipse.org/legal/epl-2.0.
-
-    This Source Code may also be made available under the following Secondary
-    Licenses when the conditions for such availability set forth in the
-    Eclipse Public License v. 2.0 are satisfied: GNU General Public License,
-    version 2 with the GNU Classpath Exception, which is available at
-    https://www.gnu.org/software/classpath/license.html.
-
-    SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
---------------------------------------------
-See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
----
-
-##----------------------------------------------------------------------
-/*
- * Copyright (c) 2018 Markus KARG. All rights reserved.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0, which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the
- * Eclipse Public License v. 2.0 are satisfied: GNU General Public License,
- * version 2 with the GNU Classpath Exception, which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- */
---------------------------------------------
-Fourth Party Dependencies
---------------------------------------------
-Jakarta Activation API (JAF) (jakarta.activation:jakarta.activation-api)
-
-Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-  - Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-
-  - Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-
-  - Neither the name of the Eclipse Foundation, Inc. nor the names of its
-    contributors may be used to endorse or promote products derived
-    from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</attribution>
-        </dependency>
-        <dependency>
             <id>112923</id>
             <name>Jakarta Transactions API (JTA API)</name>
             <version>2.0.0</version>
@@ -2075,9 +1712,6 @@ The project maintains the following source code repositories:
             <version>2.1.0</version>
             <licensor>Oracle</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-websocket</consumer>
-            </consumers>
             <attribution>Jakarta WebSocket
   Copyright (c) 2018,2022 Oracle and/or its affiliates and others.
 Eclipse Public License 2.0
@@ -2275,16 +1909,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <consumer>helidon-integrations-cdi-datasource</consumer>
                 <consumer>helidon-integrations-cdi-datasource-hikaricp</consumer>
                 <consumer>helidon-integrations-cdi-datasource-ucp</consumer>
-                <consumer>helidon-integrations-micronaut-cdi</consumer>
                 <consumer>helidon-integrations-oci-sdk-cdi</consumer>
                 <consumer>helidon-integrations-oci-secrets-mp-config-source</consumer>
                 <consumer>helidon-integrations-vault-cdi</consumer>
                 <consumer>helidon-messaging-mock</consumer>
-                <consumer>helidon-microprofile-cdi</consumer>
-                <consumer>helidon-microprofile-fault-tolerance</consumer>
-                <consumer>helidon-microprofile-health</consumer>
-                <consumer>helidon-microprofile-openapi</consumer>
-                <consumer>helidon-microprofile-service-common</consumer>
             </consumers>
             <attribution>MicroProfile Config API (org.eclipse.microprofile.config:microprofile-config-api)
   Copyright (c) 2009-2020 Contributors to the Eclipse Foundation
@@ -2326,9 +1954,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <version>4.0.2</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-fault-tolerance</consumer>
-            </consumers>
             <attribution>microProfile-fault-tolerance-api (org.eclipse.microprofile.fault-tolerance:microprofile-fault-tolerance-api)
   Copyright (c) 2017-2019 Contributors to the Eclipse Foundation
 --------------------------------------------
@@ -2363,9 +1988,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <version>2.0</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-graphql-server</consumer>
-            </consumers>
             <attribution>MicroProfile GraphQL :: API (org.eclipse.microprofile.graphql:microprofile-graphql-api)
   Copyright (c) 2020 Contributors to the Eclipse Foundation
 --------------------------------------------
@@ -2378,9 +2000,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <version>4.0.1</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-health</consumer>
-            </consumers>
             <attribution>MicroProfile Health API (org.eclipse.microprofile.health:microprofile-health-api)
   Copyright (c) 2017-2021 Contributors to the Eclipse Foundation
 --------------------------------------------
@@ -2411,9 +2030,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <version>2.1</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-jwt-auth</consumer>
-            </consumers>
             <attribution>MicroProfile JWT Auth API (org.eclipse.microprofile.jwt:microprofile-jwt-auth-api)
   Copyright (c) 2016-2022 Contributors to the Eclipse Foundation
 ======================================================================
@@ -2440,7 +2056,6 @@ See full text at the bottom of this document for license: Apache-2.0
                 <consumer>helidon-lra-coordinator-client-spi</consumer>
                 <consumer>helidon-lra-coordinator-narayana-client</consumer>
                 <consumer>helidon-lra-coordinator-server</consumer>
-                <consumer>helidon-microprofile-lra</consumer>
             </consumers>
             <attribution>MicroProfile LRA API (org.eclipse.microprofile.lra:microprofile-lra-api)
   Copyright (c) 2018-2021 Contributors to the Eclipse Foundation
@@ -2478,8 +2093,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <licenseName>Apache 2.0</licenseName>
             <consumers>
                 <consumer>helidon-integrations-cdi-datasource-hikaricp</consumer>
-                <consumer>helidon-microprofile-fault-tolerance</consumer>
-                <consumer>helidon-microprofile-metrics</consumer>
             </consumers>
             <attribution>MicroProfile Metrics API (org.eclipse.microprofile.metrics:microprofile-metrics-api)
   Copyright (c) 2017,2023 Contributors to the Eclipse Foundation
@@ -2544,9 +2157,6 @@ See full text at the bottom of this document for license: GPLv2-CPE
             <version>3.0</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-tracing</consumer>
-            </consumers>
             <attribution>MicroProfile OpenTracing API (org.eclipse.microprofile.opentracing:microprofile-opentracing-api)
   Copyright (c) 2017-2021 Contributors to the Eclipse Foundation
 --------------------------------------------
@@ -2580,7 +2190,6 @@ Kevin Grigorenko kevin.grigorenko@us.ibm.com
                 <consumer>helidon-messaging-jms</consumer>
                 <consumer>helidon-messaging-kafka</consumer>
                 <consumer>helidon-messaging-mock</consumer>
-                <consumer>helidon-microprofile-messaging</consumer>
             </consumers>
             <attribution>MicroProfile Reactive Messaging API (org.eclipse.microprofile.reactive.messaging:microprofile-reactive-messaging-api)
   Copyright (c) 2018,2022 Contributors to the Eclipse Foundation
@@ -2614,7 +2223,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <consumers>
                 <consumer>helidon-messaging</consumer>
                 <consumer>helidon-messaging-mock</consumer>
-                <consumer>helidon-microprofile-reactive-streams</consumer>
             </consumers>
             <attribution>Eclipse MicroProfile Reactive Streams Operators (org.eclipse.microprofile.reactive-streams-operators:microprofile-reactive-streams-operators-*)
   Copyright (c) 2018,2022 Contributors to the Eclipse Foundation
@@ -2667,10 +2275,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             <version>3.0</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-rest-client</consumer>
-                <consumer>helidon-microprofile-tracing</consumer>
-            </consumers>
             <attribution>MicroProfile Rest Client API (org.eclipse.microprofile.rest.client:microprofile-rest-client-api)
   Copyright (c) 2016-2020 Contributors to the Eclipse Foundation
 --------------------------------------------
@@ -2715,7 +2319,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <licenseName>Apache 2.0</licenseName>
             <consumers>
                 <consumer>helidon-config-yaml</consumer>
-                <consumer>helidon-microprofile-openapi</consumer>
                 <consumer>helidon-openapi</consumer>
             </consumers>
             <attribution>SnakeYAML
@@ -2740,7 +2343,6 @@ Copyright (c) 2008, SnakeYAML
             <licensor>Typesafe Inc.</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-config-etcd</consumer>
                 <consumer>helidon-config-hocon</consumer>
                 <consumer>helidon-config-hocon-mp</consumer>
                 <consumer>helidon-config-tests-test-bundle</consumer>
@@ -2760,7 +2362,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <licenseName>Apache 2.0</licenseName>
             <consumers>
                 <consumer>helidon-integrations-cdi-jta-weld</consumer>
-                <consumer>helidon-microprofile-fault-tolerance</consumer>
                 <consumer>weld-se-core</consumer>
             </consumers>
             <attribution>Weld APIs (org.jboss.weld:weld-api, weld-spi)
@@ -2833,7 +2434,6 @@ See full text at the bottom of this document for license: GPLv2-CPE
             <licenseName>Apache 2.0</licenseName>
             <consumers>
                 <consumer>helidon-integrations-cdi-jta-weld</consumer>
-                <consumer>helidon-microprofile-cdi</consumer>
                 <consumer>weld-core-impl</consumer>
                 <consumer>weld-se-core</consumer>
             </consumers>
@@ -3047,7 +2647,6 @@ Apache License Version 2
             <licensor>Jurriaan Mous</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-config-etcd</consumer>
             </consumers>
             <attribution>etcd4j (org.mousio:etcd4j)
   Copyright (c) 2015, Jurriaan Mous and contributors as indicated by the @author tags.
@@ -3294,9 +2893,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <version>18.3</version>
             <licensor>Brad Baker</licensor>
             <licenseName>MIT</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-graphql-server</consumer>
-            </consumers>
             <attribution>graphql-java-extended-scalars (com.graphql-java:graphql-java-extended-scalars)
 
 The MIT License (MIT)
@@ -3432,7 +3028,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <licensor>The gRPC Authors</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-config-etcd</consumer>
                 <consumer>helidon-webserver-grpc</consumer>
             </consumers>
             <attribution>grpc-java (io.grpc:grpc-*)
@@ -4573,18 +4168,12 @@ NOTICE: same as jackson-databind</attribution>
                 <consumer>helidon-integrations-cdi-datasource-hikaricp</consumer>
                 <consumer>helidon-integrations-cdi-datasource-ucp</consumer>
                 <consumer>helidon-integrations-cdi-hibernate</consumer>
-                <consumer>helidon-integrations-micronaut-cdi-processor</consumer>
                 <consumer>helidon-integrations-oci-sdk-cdi</consumer>
                 <consumer>helidon-integrations-oci-sdk-runtime</consumer>
                 <consumer>helidon-integrations-oci-sdk-tests-test-application</consumer>
                 <consumer>helidon-integrations-oci-sdk-tests-test-module1</consumer>
                 <consumer>helidon-integrations-oci-sdk-tests-test-module2</consumer>
                 <consumer>helidon-integrations-oci-tls-certificates</consumer>
-                <consumer>helidon-jersey-client</consumer>
-                <consumer>helidon-jersey-connector</consumer>
-                <consumer>helidon-jersey-server</consumer>
-                <consumer>helidon-microprofile-cdi</consumer>
-                <consumer>helidon-microprofile-config</consumer>
                 <consumer>helidon-security-providers-oidc</consumer>
                 <consumer>helidon-webserver</consumer>
                 <consumer>weld-se-core</consumer>
@@ -4648,9 +4237,6 @@ See full text at the bottom of this document for license: Apache-2.0
                 <consumer>helidon-integrations-cdi-jta</consumer>
                 <consumer>helidon-integrations-cdi-reference-counted-context</consumer>
                 <consumer>helidon-integrations-oci-sdk-cdi</consumer>
-                <consumer>helidon-microprofile-graphql-server</consumer>
-                <consumer>helidon-microprofile-lra</consumer>
-                <consumer>helidon-microprofile-openapi</consumer>
             </consumers>
             <attribution>Jandex: Core (io.smallrye:jandex)
   Copyright 2013,2021 Red Hat, Inc., and individual contributors
@@ -4760,9 +4346,6 @@ Fourth Party Dependencies
             <version>1.3.0.Final</version>
             <licensor>Red Hat</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-cdi</consumer>
-            </consumers>
             <attribution>classfilewriter (org.jboss.classfilewriter:jboss-classfilewriter)
   Copyright 2012,2019 Red Hat, Inc.
   Copyright 2015, Red Hat, Inc., and individual contributors
@@ -4788,87 +4371,6 @@ See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
-            <id>148453</id>
-            <name>jersey-client</name>
-            <version>3.1.3</version>
-            <licensor>Eclipse Foundation</licensor>
-            <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-jersey-client</consumer>
-                <consumer>helidon-jersey-connector</consumer>
-            </consumers>
-            <attribution>jersey-core-client (org.glassfish.jersey.core:jersey-client)
-  Copyright (c) 2010,2023 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
-  Copyright (c) 2018,2019 Payara Foundation and/or its affiliates.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-# Notice for Jersey 
-This content is produced and maintained by the Eclipse Jersey project.
-
-*  Project home: https://projects.eclipse.org/projects/ee4j.jersey
-
-## Trademarks
-Eclipse Jersey is a trademark of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Public License v. 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
-available under the following Secondary Licenses when the conditions for such
-availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
-General Public License, version 2 with the GNU Classpath Exception which is
-available at https://www.gnu.org/software/classpath/license.html.
-
-SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
-## Source Code
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jersey
---------------------------------------------
-See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
-----------------------------------------------------------------------------------------------------------------------
-Fourth Party Dependencies
---------------------------------------------
-"jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Markus KARG. All rights reserved.
-  Copyright (c) 2006 Google Inc.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2023 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Payara Foundation and/or its affiliates.
-  Copyright (c) 2022 Payara Foundation and/or its affiliates.
-  Copyright (C) 2006,2014 The Guava Authors
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2022 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2019, 2021 Eclipse Foundation. All rights reserved.&lt;br&gt;
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"OSGi resource locator" (org.glassfish.hk2:osgi-resource-locator)
-  Copyright (c) 2009,2018 Oracle and/or its affiliates. All rights reserved.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Jakarta Dependency Injection" (jakarta.inject:jakarta.inject-api)
-  Copyright (C) 2009 The JSR-330 Expert Group
-  Copyright (c) 2018,2020 Eclipse Foundation.
-  Apache License 2.0
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
-</attribution>
-        </dependency>
-        <dependency>
             <id>148454</id>
             <name>jersey-hk2</name>
             <version>3.1.3</version>
@@ -4877,9 +4379,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <consumers>
                 <consumer>helidon-integrations-oci-sdk-cdi</consumer>
                 <consumer>helidon-integrations-oci-secrets-config-source</consumer>
-                <consumer>helidon-jersey-client</consumer>
-                <consumer>helidon-jersey-connector</consumer>
-                <consumer>helidon-jersey-server</consumer>
             </consumers>
             <attribution>jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2)
   Copyright (c) 2017,2023 Oracle and/or its affiliates. All rights reserved.
@@ -4957,10 +4456,6 @@ Javassist Version 3.25.0-GA
 * Project: http://www.javassist.org/
 * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
 
-Jackson JAX-RS Providers Version 2.14.1
-* License: Apache License, 2.0
-* Project: https://github.com/FasterXML/jackson-jaxrs-providers
-* Copyright: (c) 2009-2022 FasterXML, LLC. All rights reserved unless otherwise indicated.
 
 jQuery v1.12.4
 * License: jquery.org/license
@@ -5133,10 +4628,6 @@ Javassist Version 3.25.0-GA
 * Project: http://www.javassist.org/
 * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
 
-Jackson JAX-RS Providers Version 2.14.1
-* License: Apache License, 2.0
-* Project: https://github.com/FasterXML/jackson-jaxrs-providers
-* Copyright: (c) 2009-2022 FasterXML, LLC. All rights reserved unless otherwise indicated.
 
 jQuery v1.12.4
 * License: jquery.org/license
@@ -5179,14 +4670,6 @@ Technology, Institut National de Recherche en Informatique et en Automatique, Ke
 All Rights Reserved. http://www.w3.org/Consortium/Legal/
 
 --------------------------------------------
-"jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api) v3.1.0
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Markus KARG. All rights reserved.
-  Copyright (c) 2006 Google Inc.
-  Copyright (c) 2021 Eclipse Foundation
-  Eclipse Public License 2.0 + GPL v.2 with CPE
-  
-# Notices for Jakarta RESTful Web Services
 
 This content is produced and maintained by the **Jakarta RESTful Web Services**
 project.
@@ -6095,9 +5578,6 @@ See full text at the bottom of this document for license: LGPL-2.1-only
             <version>3.1.3</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile</consumer>
-            </consumers>
             <attribution>jersey-media-json-binding (org.glassfish.jersey.media:jersey-media-json-binding)
   Copyright (c) 2017,2023 Oracle and/or its affiliates. All rights reserved.
 --------------------------------------------
@@ -6173,10 +5653,6 @@ Javassist Version 3.25.0-GA
 * Project: http://www.javassist.org/
 * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
 
-Jackson JAX-RS Providers Version 2.14.1
-* License: Apache License, 2.0
-* Project: https://github.com/FasterXML/jackson-jaxrs-providers
-* Copyright: (c) 2009-2022 FasterXML, LLC. All rights reserved unless otherwise indicated.
 
 jQuery v1.12.4
 * License: jquery.org/license
@@ -6346,10 +5822,6 @@ Javassist Version 3.25.0-GA
 * Project: http://www.javassist.org/
 * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
 
-Jackson JAX-RS Providers Version 2.14.1
-* License: Apache License, 2.0
-* Project: https://github.com/FasterXML/jackson-jaxrs-providers
-* Copyright: (c) 2009-2022 FasterXML, LLC. All rights reserved unless otherwise indicated.
 
 jQuery v1.12.4
 * License: jquery.org/license
@@ -6392,73 +5864,6 @@ Technology, Institut National de Recherche en Informatique et en Automatique, Ke
 All Rights Reserved. http://www.w3.org/Consortium/Legal/
 
 --------------------------------------------
-"jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Markus KARG. All rights reserved.
-  Copyright (c) 2006 Google Inc.
-  Copyright (c) 2021 Eclipse Foundation
-  Eclipse Public License 2.0 + GPL v.2 with CPE
-  
-# Notices for Jakarta RESTful Web Services
-
-This content is produced and maintained by the **Jakarta RESTful Web Services**
-project.
-
-* Project home: https://projects.eclipse.org/projects/ee4j.jaxrs
-
-## Trademarks
-
-**Jakarta RESTful Web Services** is a trademark of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Public License v. 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
-available under the following Secondary Licenses when the conditions for such
-availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
-General Public License, version 2 with the GNU Classpath Exception which is
-available at https://www.gnu.org/software/classpath/license.html.
-
-SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
-## Source Code
-
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jaxrs-api
-
-## Third-party Content
-
-This project leverages the following third party content.
-
-javaee-api (7.0)
-
-* License: Apache-2.0 AND W3C
-
-JUnit (4.11)
-
-* License: Common Public License 1.0
-
-Mockito (2.16.0)
-
-* Project: http://site.mockito.org
-* Source: https://github.com/mockito/mockito/releases/tag/v2.16.0
-
-## Cryptography
-
-Content may contain encryption software. The country in which you are currently
-may have restrictions on the import, possession, and use, and/or re-export to
-another country, of encryption software. BEFORE using any encryption software,
-please check the country's laws, regulations and policies concerning the import,
-possession, or use, and re-export of encryption software, to see if this is
-permitted.
 
 --------------------------------------------
 "Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
@@ -6562,20 +5967,6 @@ The project maintains the following source code repositories:
 ## Third-party Content
 
 This project leverages the following third party content.
-
-javax.ws.rs-api:2.0.1 (2.0.1)
-
-* License: (CDDL-1.1 OR GPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0) AND
-   Apache-2.0
-* Project: https://github.com/jax-rs/api
-* Source: https://github.com/jax-rs/api
-
-javax.ws.rs:jsr311-api:jar:1.1.1 (1.1.1)
-
-* License: CDDL-1.0 AND Apache-2.0
-* Project: https://github.com/jax-rs/api
-* Source:
-   http://search.maven.org/remotecontent?filepath=javax/ws/rs/jsr311-api/1.1.1/jsr311-api-1.1.1-sources.jar
 
 javax:javaee-web-api:jar:7.0 (7.0)
 
@@ -6911,104 +6302,11 @@ See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
-            <id>148451</id>
-            <name>jersey-media-json-processing</name>
-            <version>3.1.3</version>
-            <licensor>Eclipse Foundation</licensor>
-            <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-jersey-media-jsonp</consumer>
-            </consumers>
-            <attribution>jersey-media-json-processing (org.glassfish.jersey.media:jersey-media-json-processing)
-  Copyright (c) 2011,2023 Oracle and/or its affiliates. All rights reserved.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-# Notice for Jersey 
-This content is produced and maintained by the Eclipse Jersey project.
-
-*  Project home: https://projects.eclipse.org/projects/ee4j.jersey
-
-## Trademarks
-Eclipse Jersey is a trademark of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Public License v. 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
-available under the following Secondary Licenses when the conditions for such
-availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
-General Public License, version 2 with the GNU Classpath Exception which is
-available at https://www.gnu.org/software/classpath/license.html.
-
-SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
-## Source Code
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jersey
---------------------------------------------
-See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
-----------------------------------------------------------------------------------------------------------------------
-Fourth Party Dependencies
---------------------------------------------
-"jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2023 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Payara Foundation and/or its affiliates.
-  Copyright (C) 2006,2014 The Guava Authors
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Markus KARG. All rights reserved.
-  Copyright (c) 2006 Google Inc.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2022 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2019,2021 Eclipse Foundation. All rights reserved.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"OSGi resource locator" (org.glassfish.hk2:osgi-resource-locator)
-  Copyright (c) 2009,2018 Oracle and/or its affiliates. All rights reserved.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Jakarta JSON Processing API" (jakarta.json:jakarta.json-api)
-  Copyright (c) 2011,2022 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2019,2022 Eclipse Foundation. All rights reserved.&lt;br&gt;
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Eclipse Parsson" (org.eclipse.parsson:parsson)
-  Copyright (c) 2011,2022 Oracle and/or its affiliates. All rights reserved.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Eclipse Parsson Media for Jakarta RESTful Web Services" (org.eclipse.parsson:parsson-media)
-  Copyright (c) 2012,2022 Oracle and/or its affiliates. All rights reserved.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Jakarta Dependency Injection" (jakarta.inject:jakarta.inject-api)
-  Copyright (C) 2009 The JSR-330 Expert Group
-  Copyright (c) 2018,2020 Eclipse Foundation.
-  Apache License 2.0
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
-</attribution>
-        </dependency>
-        <dependency>
             <id>148450</id>
             <name>jersey-mp-rest-client</name>
             <version>3.1.3</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-rest-client</consumer>
-            </consumers>
             <attribution>jersey-mp-rest-client (org.glassfish.jersey.ext.microprofile:jersey-mp-rest-client)
   Copyright (c) 2019,2023 Oracle and/or its affiliates. All rights reserved.
   Copyright (c) 2019,2021 Payara Foundation and/or its affiliates. All rights reserved.
@@ -7104,12 +6402,7 @@ Jakarta Expression Language API (EL) (jakarta.el:jakarta.el-api)
   Copyright 2004 The Apache Software Foundation
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
-"jakarta.ws.rs-api" jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Markus KARG. All rights reserved.
-  Copyright (c) 2006 Google Inc.
-  Copyright (c) 2021 Eclipse Foundation
-  EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+
 --------------------------------------------
 "JSON-P Default Provider" (org.glassfish:jakarta.json)
   Copyright (c) 2011,2020 Oracle and/or its affiliates. All rights reserved.
@@ -7236,111 +6529,11 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 </attribution>
         </dependency>
         <dependency>
-            <id>148449</id>
-            <name>jersey-server</name>
-            <version>3.1.3</version>
-            <licensor>Eclipse Foundation</licensor>
-            <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-jersey-server</consumer>
-            </consumers>
-            <attribution>jersey-core-server (org.glassfish.jersey.core:jersey-server)
-  Copyright (c) 2010,2023 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2000-2011 INRIA, France Telecom
-  Copyright (c) 2018 Markus KARG. All rights reserved.
-  Copyright (c) 2018 Payara Foundation and/or its affiliates.
-  Copyright 2010,2013 Coda Hale and Yammer, Inc.
---------------------------------------------
-# Notice for Jersey 
-This content is produced and maintained by the Eclipse Jersey project.
-
-*  Project home: https://projects.eclipse.org/projects/ee4j.jersey
-
-## Trademarks
-Eclipse Jersey is a trademark of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Public License v. 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
-available under the following Secondary Licenses when the conditions for such
-availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
-General Public License, version 2 with the GNU Classpath Exception which is
-available at https://www.gnu.org/software/classpath/license.html.
-
-SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
-## Source Code
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jersey
---------------------------------------------
-See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
-----------------------------------------------------------------------------------------------------------------------
-Fourth Party Dependencies
---------------------------------------------
-"jersey-core-client" (org.glassfish.jersey.core:jersey-client)
-  Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
-  Copyright (c) 2018,2019 Payara Foundation and/or its affiliates.
-  Copyright (c) 2010,2023 Oracle and/or its affiliates. All rights reserved.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"jersey-core-common" (org.glassfish.jersey.core:jersey-common)
-  Copyright (c) 2007,2023 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Payara Foundation and/or its affiliates.
-  Copyright (c) 2022 Payara Foundation and/or its affiliates. All rights reserved.
-  Copyright (C) 2006,2014 The Guava Authors
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"OSGi resource locator" (org.glassfish.hk2:osgi-resource-locator)
-  Copyright (c) 2009,2018 Oracle and/or its affiliates. All rights reserved.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Markus KARG. All rights reserved.
-  Copyright (c) 2006 Google Inc.
-  Copyright (c) 2021 Eclipse Foundation
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2005,2022 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2019, 2021 Eclipse Foundation. All rights reserved.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
---------------------------------------------
-"Jakarta Dependency Injection" (jakarta.inject:jakarta.inject-api)
-  Copyright (C) 2009 The JSR-330 Expert Group
-  Copyright (c) 2018,2020 Eclipse Foundation.
-  Apache License 2.0
---------------------------------------------
-"Jakarta Bean Validation API" (jakarta.validation:jakarta.validation-api)
-  Copyright (c) 2020 Eclipse Foundation.
-  Apache License 2.0
-  This program and the accompanying materials are made available under the terms
-  of the Apache License, Version 2.0 which is available at
-  https://www.apache.org/licenses/LICENSE-2.0.
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-</attribution>
-        </dependency>
-        <dependency>
             <id>148448</id>
             <name>jersey-weld2-se</name>
             <version>3.1.3</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-fault-tolerance</consumer>
-                <consumer>helidon-microprofile-server</consumer>
-            </consumers>
             <attribution>jersey-ext-weld2-se (org.glassfish.jersey.ext.cdi:jersey-weld2-se)
   Copyright (c) 2014,2023 Oracle and/or its affiliates. All rights reserved.
 --------------------------------------------
@@ -7403,12 +6596,7 @@ Fourth Party Dependencies
   Copyright (c) 2013,2023 Oracle and/or its affiliates. All rights reserved.
   Eclipse Public License 2.0 + GPL v.2 with CPE
 --------------------------------------------
-"jakarta.ws.rs-api" (jakarta.ws.rs:jakarta.ws.rs-api)
-  Copyright (c) 2010,2021 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2018 Markus KARG. All rights reserved.
-  Copyright (c) 2021 Eclipse Foundation
-  Copyright (c) 2006 Google Inc.
-  Eclipse Public License 2.0 + GPL v.2 with CPE
+
 --------------------------------------------
 "Jakarta Expression Language API" (jakarta.el:jakarta.el-api)
   Copyright (c) 2018, 2022 Eclipse Foundation. All rights reserved.
@@ -8399,193 +7587,6 @@ Apache License 2.0
 --------------------------------------------
 </attribution>
         </dependency>
-        <dependency>
-            <id>151309</id>
-            <name>micronaut-aop</name>
-            <version>3.8.7</version>
-            <licensor>original author or authors</licensor>
-            <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-integrations-micronaut-cdi</consumer>
-            </consumers>
-            <attribution>Micronaut AOP (io.micronaut:micronaut-aop)
-  Copyright 2017-2021 original authors
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-Fourth Party Runtime Dependencies
---------------------------------------------
-"SLF4J API Module" (org.slf4j:slf4j-api)
-  Copyright (c) 2004-2011 QOS.ch
-
-The MIT License SPDX short identifier: MIT
-
-Further resources on the MIT License Copyright &lt;YEAR&gt; &lt;COPYRIGHT HOLDER&gt;
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
---------------------------------------------
-"Micronaut" (io.micronaut:micronaut-inject)
-  Copyright 2017-2022 original authors
-  Apache License 2.0
---------------------------------------------
-"Jakarta Dependency Injection" (jakarta.inject:jakarta.inject-api)
-  Copyright (C) 2009 The JSR-330 Expert Group
-  Copyright &amp;#169; 2018,2020 Eclipse Foundation.
-  Apache License 2.0
---------------------------------------------
-"SnakeYAML" (org.yaml:snakeyaml)
-  Copyright 2003-2010 Christian d'Heureuse, Inventec Informatik AG, Zurich, Switzerland
-  Copyright (c) 2008, SnakeYAML
-  Apache License 2.0
---------------------------------------------
-"Micronaut" (io.micronaut:micronaut-core)
-  Copyright 2010,2012 Google Inc. All Rights Reserved.
-  Copyright 2017-2022 original authors
-  Apache License 2.0
---------------------------------------------
-"Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2019, 2021 Eclipse Foundation. All rights reserved.
-  Copyright (c) 2005,2022 Oracle and/or its affiliates. All rights reserved.
-  EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
---------------------------------------------
-See full text at the bottom of this document for license: EPL-2.0
---------------------------------------------
-See full text at the bottom of this document for license: GPLv2-CPE
-</attribution>
-        </dependency>
-        <dependency>
-            <id>151306</id>
-            <name>micronaut-core</name>
-            <version>3.8.7</version>
-            <licensor>original author or authors</licensor>
-            <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-integrations-micronaut-cdi</consumer>
-                <consumer>helidon-integrations-micronaut-cdi-processor</consumer>
-            </consumers>
-            <attribution>Micronaut Core (io.micronaut:micronaut-core)
-  Copyright 2010,2012 Google Inc. All Rights Reserved.
-  Copyright 2017-2022 original authors
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-Fourth Party Runtime Dependencies
---------------------------------------------
-"SLF4J API Module" (org.slf4j:slf4j-api)
-  Copyright (c) 2004-2011 QOS.ch
-
-The MIT License SPDX short identifier: MIT
-
-Further resources on the MIT License Copyright &lt;YEAR&gt; &lt;COPYRIGHT HOLDER&gt;
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
---------------------------------------------
-
-</attribution>
-        </dependency>
-        <dependency>
-            <id>151305</id>
-            <name>micronaut-inject-java</name>
-            <version>3.8.7</version>
-            <licensor>original author or authors</licensor>
-            <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-integrations-micronaut-cdi</consumer>
-                <consumer>helidon-integrations-micronaut-cdi-processor</consumer>
-                <consumer>helidon-integrations-micronaut-data</consumer>
-            </consumers>
-            <attribution>Micronaut Inject Java (io.micronaut:micronaut-inject-java)
-  Copyright 2017-2022 original authors
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-Fourth Party Runtime Dependencies
---------------------------------------------
-"SLF4J API Module" (org.slf4j:slf4j-api)
-  Copyright (c) 2004-2011 QOS.ch
-
-The MIT License SPDX short identifier: MIT
-
-Further resources on the MIT License Copyright &lt;YEAR&gt; &lt;COPYRIGHT HOLDER&gt;
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
---------------------------------------------
-"Micronaut" (io.micronaut:micronaut-inject)
-  Copyright 2017-2022 original authors
-  Apache License 2.0
---------------------------------------------
-"Jakarta Dependency Injection" (jakarta.inject:jakarta.inject-api)
-  Copyright (C) 2009 The JSR-330 Expert Group
-  Copyright (c) 2018,2020 Eclipse Foundation.
-  Apache License 2.0
---------------------------------------------
-"Micronaut" (io.micronaut:micronaut-core)
-  Copyright 2010,2012 Google Inc. All Rights Reserved.
-  Copyright 2017-2022 original authors
-  Apache License 2.0
---------------------------------------------
-"SnakeYAML" (org.yaml:snakeyaml)
-  Copyright 2003-2010 Christian d'Heureuse, Inventec Informatik AG, Zurich, Switzerland
-  Copyright (c) 2008, SnakeYAML
-  Apache License 2.0
---------------------------------------------
-"Micronaut" (io.micronaut:micronaut-aop)
-  Copyright 2017-2021 original authors
-  Apache License 2.0
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-"Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
-  Copyright (c) 2019, 2021 Eclipse Foundation. All rights reserved.
-  Copyright (c) 2005,2022 Oracle and/or its affiliates. All rights reserved.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
 See full text at the bottom of this document for license: EPL-2.0
@@ -8599,9 +7600,6 @@ See full text at the bottom of this document for license: GPLv2-CPE
             <version>3.1.1</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-openapi</consumer>
-            </consumers>
             <attribution>MicroProfile OpenAPI API (org.eclipse.microprofile.openapi:microprofile-openapi-api)
   Copyright 2017 SmartBear Software
   Copyright (c) 2017,2022 Contributors to the Eclipse Foundation
@@ -9178,9 +8176,6 @@ Apache License 2.0
             <version>1.22.0</version>
             <licensor>OpenTelemetry authors</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-telemetry</consumer>
-            </consumers>
             <attribution>OpenTelemetry Java (io.opentelemetry:opentelemetry-context)
   Copyright 2015 The gRPC Authors
   Copyright The OpenTelemetry Authors
@@ -9352,9 +8347,6 @@ Fourth Party Dependencies
             <version>1.22.0</version>
             <licensor>OpenTelemetry authors</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-telemetry</consumer>
-            </consumers>
             <attribution>OpenTelemetry Instrumentation for Java (io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations)
   Copyright The OpenTelemetry Authors
 --------------------------------------------
@@ -9383,9 +8375,6 @@ Fourth Party Dependencies
             <version>1.22.0-alpha</version>
             <licensor>OpenTelemetry authors</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-tracing</consumer>
-            </consumers>
             <attribution>OpenTelemetry Java (io.opentelemetry:opentelemetry-opentracing-shim)
   Copyright The OpenTelemetry Authors
 --------------------------------------------
@@ -9424,7 +8413,6 @@ Fourth Party Dependencies
             <licensor>OpenTelemetry authors</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-microprofile-telemetry</consumer>
                 <consumer>helidon-tracing-providers-jaeger</consumer>
             </consumers>
             <attribution>OpenTelemetry Java (io.opentelemetry:opentelemetry-sdk)
@@ -9477,9 +8465,6 @@ Fourth Party Dependencies
             <version>1.22.0-alpha</version>
             <licensor>OpenTelemetry authors</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-telemetry</consumer>
-            </consumers>
             <attribution>OpenTelemetry Java (io.opentelemetry:opentelemetry-sdk-extension-autoconfigure)
   Copyright The OpenTelemetry Authors
 --------------------------------------------
@@ -9566,9 +8551,6 @@ See full text at the bottom of this document for license: Apache-2.0
             <version>1.0.4</version>
             <licensor>Reactive Streams</licensor>
             <licenseName>MIT</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-reactive-streams</consumer>
-            </consumers>
             <attribution>MIT No Attribution
 
 Copyright 2014 Reactive Streams
@@ -9847,9 +8829,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             <version>3.3.4</version>
             <licensor>Red Hat, Inc.</licensor>
             <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-openapi</consumer>
-            </consumers>
             <attribution>SmallRye: OpenAPI Core (io.smallrye:smallrye-open-api-core)
   Copyright 2018 Red Hat, Inc.
   Copyright 2020 Red Hat, Inc.
@@ -9942,119 +8921,6 @@ Fourth Party Dependencies
   A list of contributors may be found from CREDITS(-2.x) file, which is included
   in some artifacts (usually source distributions); but is always available
   from the source code management (SCM) system project uses.
---------------------------------------------
-</attribution>
-        </dependency>
-        <dependency>
-            <id>150418</id>
-            <name>smallrye-open-api-jaxrs</name>
-            <version>3.3.4</version>
-            <licensor>Red Hat, Inc.</licensor>
-            <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-microprofile-openapi</consumer>
-            </consumers>
-            <attribution>SmallRye: OpenAPI extension - JAX-RS (io.smallrye:smallrye-open-api-jaxrs)
-  Copyright 2018 Red Hat, Inc.
-  Copyright 2020 Red Hat, Inc.
-  Copyright 2017,2019 Red Hat, Inc, and individual contributors.
---------------------------------------------
-See full text at the bottom of this document for license: Apache-2.0
---------------------------------------------
-Fourth Party Dependencies
---------------------------------------------
-"SmallRye: OpenAPI Core" (io.smallrye:smallrye-open-api-core)
-  Copyright 2018 Red Hat, Inc.
-  Copyright 2020 Red Hat, Inc.
-  Copyright 2017,2019 Red Hat, Inc, and individual contributors.
-  Apache License 2.0
---------------------------------------------
-"MicroProfile OpenAPI API" (org.eclipse.microprofile.openapi:microprofile-openapi-api)
-  Copyright 2017 SmartBear Software
-  Copyright (c) 2017,2022 Contributors to the Eclipse Foundation
-  Apache License 2.0
-  The majority of this software were originally based on the following:
-  * Swagger Core
-    https://github.com/swagger-api/swagger-core
-    under Apache License, v2.0
-
-  SPDXVersion: SPDX-2.1
-  PackageName: Eclipse MicroProfile
-  PackageHomePage: http://www.eclipse.org/microprofile
-  PackageLicenseDeclared: Apache-2.0
-
-  PackageCopyrightText: &lt;text&gt;
-  Arthur De Magalhaes arthurdm@ca.ibm.com
-  &lt;/text&gt;
---------------------------------------------
-"MicroProfile Config API" (org.eclipse.microprofile.config:microprofile-config-api)
-  Copyright (c) 2009-2020 Contributors to the Eclipse Foundation
-  Apache License 2.0
-  This product includes software developed at
-  The Apache Software Foundation (http://www.apache.org/).
-
-  Portions of this software were originally based on the following:
-  * Apache DeltaSpike Config
-    https://deltaspike.apache.org
-    under Apache License, v2.0
-
-  SPDXVersion: SPDX-2.1
-  PackageName: Eclipse Microprofile
-  PackageHomePage: http://www.eclipse.org/microprofile
-  PackageLicenseDeclared: Apache-2.0
-
-  PackageCopyrightText: &lt;text&gt;
-  Mark Struberg struberg@apache.org,
-  Gerhard Petracek gpetracek@apache.org,
-  Romain Manni-Bucau rmannibucau@apache.org,
-  Ron Smeral rsmeral@apache.org,
-  Emily Jiang emijiang@uk.ibm.com,
-  Ondrej Mihalyi ondrej.mihalyi@gmail.com,
-  Gunnar Morling gunnar@hibernate.org
-  &lt;/text&gt;
---------------------------------------------
-"Jackson" (com.fasterxml.jackson.*:jackson-*)
-  com.fasterxml.jackson.core:jackson-databind
-  com.fasterxml.jackson.core:jackson-annotations
-  com.fasterxml.jackson.dataformat:jackson-dataformat-yaml
-  Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
-  Copyright 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
-  Copyright 2018-2020 Raffaello Giulietti
-  Copyright 2010,2011 Google Inc. All Rights Reserved.
-  Apache License Version 2
-
-  # Jackson JSON processor
-
-  Jackson is a high-performance, Free/Open Source JSON processing library.
-  It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
-  been in development since 2007.
-  It is currently developed by a community of developers.
-
-  ## Licensing
-
-  Jackson 2.x core and extension components are licensed under Apache License 2.0
-  To find the details that apply to this artifact see the accompanying LICENSE file.
-
-  ## Credits
-
-  A list of contributors may be found from CREDITS(-2.x) file, which is included
-  in some artifacts (usually source distributions); but is always available
-  from the source code management (SCM) system project uses.
---------------------------------------------
-"SnakeYAML" (org.yaml:snakeyaml)
-  Copyright 2003-2010 Christian d'Heureuse, Inventec Informatik AG, Zurich, Switzerland
-  Copyright (c) 2008, SnakeYAML
-  Copyright (c) 2008 Google Inc.
-  Apache License 2.0
---------------------------------------------
-"Jandex: Core"  (io.smallrye:jandex)
-  Copyright 2013,2021 Red Hat, Inc., and individual contributors
-  Apache License 2.0
---------------------------------------------
-"JBoss Logging 3" Final (org.jboss.logging:jboss-logging)
-  Copyright 2010,2011 Red Hat, Inc., and individual contributors
-  Copyright 2010,2019 Red Hat, Inc.
-  Apache License 2.0
 --------------------------------------------
 </attribution>
         </dependency>

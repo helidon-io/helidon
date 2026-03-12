@@ -35,9 +35,6 @@ module io.helidon.declarative.tests.http {
     requires io.helidon.security.abac.role;
     requires io.helidon.security.integration.common;
     requires io.helidon.security.annotations;
-    // this module will not be needed in the future, as CORS will be a feature added separately
-    // now included through other modules (observability in this case)
-    requires io.helidon.webserver.cors;
 
     exports io.helidon.declarative.tests.http;
 }

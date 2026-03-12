@@ -50,22 +50,6 @@ public interface DbStatements {
      *
      * @param config configuration of the statements
      * @return statements as read from the configuration
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    static DbStatements create(io.helidon.common.config.Config config) {
-        return DbStatements.builder()
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Create statements from configuration.
-     * Statement configuration is expected to be a map of name to statement pairs.
-     *
-     * @param config configuration of the statements
-     * @return statements as read from the configuration
      */
     static DbStatements create(Config config) {
         return DbStatements.builder()
@@ -94,20 +78,6 @@ public interface DbStatements {
             Objects.requireNonNull(statement, "Statement body must be provided");
             configuredStatements.put(name, statement);
             return this;
-        }
-
-        /**
-         * Set statements from configuration. Each key in the current node is treated as a name of the statement,
-         * each value as the statement content.
-         *
-         * @param config config node located on correct node
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
         }
 
         /**

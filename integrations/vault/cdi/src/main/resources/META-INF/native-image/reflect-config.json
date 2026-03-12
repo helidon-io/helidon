@@ -1,7 +1,0 @@
-[
-    {
-        "name": "io.helidon.integrations.vault.cdi.VaultInternal",
-        "allDeclaredMethods": true,
-        "allPublicMethods": true
-    }
-]

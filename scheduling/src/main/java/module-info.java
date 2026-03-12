@@ -27,9 +27,9 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.scheduling {
 
     requires com.cronutils;
-    requires io.helidon.common.config;
     requires io.helidon.common.configurable;
     requires io.helidon.builder.api;
+    requires io.helidon.config;
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;

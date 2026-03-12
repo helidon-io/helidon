@@ -100,19 +100,6 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
      *
      * @param config located on the node of the tls configuration (usually this is {@code ssl})
      * @return a new TLS configuration
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static Tls create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Create TLS configuration from config.
-     *
-     * @param config located on the node of the tls configuration (usually this is {@code ssl})
-     * @return a new TLS configuration
      */
     public static Tls create(Config config) {
         return builder().config(config).build();

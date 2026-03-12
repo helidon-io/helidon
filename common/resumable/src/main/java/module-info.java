@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,6 @@ module io.helidon.common.resumable {
 
     uses io.helidon.common.resumable.ResumableSupport;
 
-    exports io.helidon.common.resumable to
-            io.helidon,
-            io.helidon.integrations.crac,
-            io.helidon.integrations.jta.cdi,
-            io.helidon.microprofile.server,
-            io.helidon.webserver,
-            io.helidon.webclient.api,
-            io.helidon.metrics.systemmeters;
-
+    // This will be an internal API
+    exports io.helidon.common.resumable;
 }

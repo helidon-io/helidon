@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@
 = Performance Tuning
 :description: Helidon SE Performance Tuning
 :feature-name: Performance Tuning
-:microprofile-bundle: false
 :keywords: helidon, se, performance, tuning
 :rootdir: {docdir}/../..
 
@@ -32,4 +31,3 @@ Most of this concerns tuning Helidon WebServer, but you should also consider con
 Java heap size as per any Java application.
 
 include::{rootdir}/includes/guides/performance-tuning.adoc[]
-

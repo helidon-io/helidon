@@ -81,26 +81,12 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
 
     /**
      * Get a builder instance to construct a new security provider.
-     * Alternative approach is {@link #create(io.helidon.common.config.Config)} (or {@link HttpBasicAuthProvider#create(Config)}).
+     * Alternative approach is {@link HttpBasicAuthProvider#create(Config)}.
      *
      * @return builder to fluently construct Basic security provider
      */
     public static Builder builder() {
         return new Builder();
-    }
-
-    /**
-     * Load this provider from configuration.
-     *
-     * @param config Configuration located at this provider's configuration (e.g. child is either http-basic-auth or
-     *               http-digest-auth)
-     * @return instance of provider configured from provided config
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static HttpBasicAuthProvider create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
     }
 
     /**
@@ -329,18 +315,6 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
         /**
          * Update this builder from configuration.
          *
-         * @param config configuration
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public Builder config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
-         * Update this builder from configuration.
          * @param config configuration to read, located on the node of the http basic authentication provider
          * @return updated builder instance
          */

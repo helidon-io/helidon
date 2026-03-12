@@ -10,7 +10,6 @@ The following modules for handling config metadata exist:
 
 - `io.helidon.config:helidon-config-metadata`: annotations to add to non-Blueprint types to generate documentation
 - `io.helidon.config.metadata:helidon-config-metadata-codegen`: code generator that reads annotations and creates `config-metadata.json`
-- `io.helidon.config:helidon-config-metadata-processor`: deprecated processor that does the same as `codegen` above
 - `io.helidon.config.metadata:helidon-config-metadata-docs`: code generator that reads `config.metadata.json` and generates Helidon `.adoc` files that are part of Helidon Config reference documentation
 
 How to handle each task is described below.

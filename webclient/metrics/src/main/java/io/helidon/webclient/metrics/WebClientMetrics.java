@@ -76,19 +76,6 @@ public class WebClientMetrics implements WebClientService {
      *
      * @param config config
      * @return client metrics instance
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static WebClientMetrics create(io.helidon.common.config.Config config) {
-        return create(Config.config(config));
-    }
-
-    /**
-     * Creates new client metrics based on config.
-     *
-     * @param config config
-     * @return client metrics instance
      */
     public static WebClientMetrics create(Config config) {
         WebClientMetrics.Builder builder = new Builder();

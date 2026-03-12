@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.Weight;
+import io.helidon.config.Config;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.providers.oidc.common.spi.TenantIdFinder;
 import io.helidon.security.providers.oidc.common.spi.TenantIdProvider;
@@ -37,7 +38,7 @@ class DefaultTenantIdProvider implements TenantIdProvider {
     static final Optional<String> DEFAULT_TENANT_ID_VALUE = Optional.of(DEFAULT_TENANT_ID);
 
     @Override
-    public TenantIdFinder createTenantIdFinder(io.helidon.common.config.Config config) {
+    public TenantIdFinder createTenantIdFinder(Config config) {
         boolean multiTenant = config.get("multi-tenant").asBoolean().orElse(false);
 
         if (multiTenant) {

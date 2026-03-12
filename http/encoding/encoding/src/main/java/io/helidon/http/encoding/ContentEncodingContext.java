@@ -41,19 +41,6 @@ public interface ContentEncodingContext extends RuntimeType.Api<ContentEncodingC
      *
      * @param config configuration to use
      * @return content encoding support
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    static ContentEncodingContext create(io.helidon.common.config.Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Create a new encoding support and apply provided configuration.
-     *
-     * @param config configuration to use
-     * @return content encoding support
      */
     static ContentEncodingContext create(Config config) {
         return builder().config(config).build();

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,8 +33,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Reference, Reference>>
 
 == Overview
-Helidon integrates with link:https://projects.eclipse.org/projects/ee4j.tyrus[Tyrus] to provide support for the
-{jakarta-websocket-spec-url}[Jakarta WebSocket API].
+Helidon provides support for WebSocket.
 The WebSocket API enables Java applications to participate in WebSocket interactions
 as both servers and clients. The server API supports two flavors: annotated and
 programmatic endpoints.

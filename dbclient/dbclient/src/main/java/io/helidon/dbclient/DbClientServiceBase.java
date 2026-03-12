@@ -87,19 +87,6 @@ public abstract class DbClientServiceBase implements DbClientService {
 
         /**
          * Configure this client service from config.
-         *
-         * @param config configuration on the node of this service
-         * @return updated builder instance
-         * @deprecated use {@link #config(io.helidon.config.Config)} instead
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public B config(io.helidon.common.config.Config config) {
-            return config(Config.config(config));
-        }
-
-        /**
-         * Configure this client service from config.
          * <p>
          * Supported keys:
          * <table class="config">

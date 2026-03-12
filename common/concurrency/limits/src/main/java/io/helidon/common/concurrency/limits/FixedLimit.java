@@ -103,21 +103,6 @@ public class FixedLimit extends SemaphoreLimitBase implements RuntimeType.Api<Fi
      *
      * @param config configuration of the fixed limit
      * @return a new limit instance configured from {@code config}
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    public static FixedLimit create(io.helidon.common.config.Config config) {
-        return builder()
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Create a new instance from configuration.
-     *
-     * @param config configuration of the fixed limit
-     * @return a new limit instance configured from {@code config}
      */
     public static FixedLimit create(Config config) {
         return builder()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,24 +29,20 @@ import io.helidon.security.spi.AuthenticationProvider;
 /**
  * An annotation used to specify server resources with enforced authorization.
  * <p>
- * The following sample shows examples of use of &#64;Authorized annotation in a JAX-RS/Jersey application:
+ * The following sample shows examples of use of &#64;Authorized annotation on application endpoints:
  *
  * <pre>
  *  &#64;Authorized
  *  &#64;Authenticated
- *  &#64;ApplicationPath("myApp")
- *  public class SecuredApplication extends jakarta.ws.rs.core.Application { ... }
+ *  public class SecuredEndpoint { ... }
  *
  *  &#64;Authorized(false)
- *  &#64;Path("/")
- *  public class PublicResource {
- *    &#64;GET
+ *  public class PublicEndpoint {
  *    public String getResourceContent() { ... }
  *
  *    // Only authenticated users can update the content of the public resource
  *    &#64;Authorized
- *    &#64;PUT
- *    public Response setNewResourceContent(String content) { ... }
+ *    public String setNewResourceContent(String content) { ... }
  *  }
  * </pre>
  * <p>
