@@ -573,8 +573,8 @@ public final class SmileGenerator extends JsonGeneratorBase {
             return;
         }
         ensureCapacity(2);
-        buffer[index++] = (byte) (SmileConstants.VALUE_SHARED_LONG_MIN |
-                                          ((ref >> 8) & SmileConstants.LONG_SHARED_REFERENCE_PREFIX_MASK));
+        buffer[index++] = (byte) (SmileConstants.VALUE_SHARED_LONG_MIN
+                                          | ((ref >> 8) & SmileConstants.LONG_SHARED_REFERENCE_PREFIX_MASK));
         buffer[index++] = (byte) (ref & 0xFF);
     }
 
