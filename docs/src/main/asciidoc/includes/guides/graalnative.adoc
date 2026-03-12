@@ -43,7 +43,7 @@ or use the GraalVM installation as your Java home.
 [source,bash]
 ----
 # Your path might be different
-export GRAALVM_HOME=/usr/local/graalvm-jdk-21+35.1/Contents/Home/
+export GRAALVM_HOME=/usr/local/graalvm-jdk-25/Contents/Home/
 ----
 
 Then verify:
