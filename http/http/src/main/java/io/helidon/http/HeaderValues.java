@@ -55,6 +55,10 @@ public final class HeaderValues {
      */
     public static final Header CONTENT_TYPE_JSON = createCached(HeaderNames.CONTENT_TYPE, "application/json");
     /**
+     * Content type application/json with no charset.
+     */
+    public static final Header CONTENT_TYPE_SMILE = createCached(HeaderNames.CONTENT_TYPE, "application/x-jackson-smile");
+    /**
      * Content type text plain with no charset.
      */
     public static final Header CONTENT_TYPE_TEXT_PLAIN = createCached(HeaderNames.CONTENT_TYPE, "text/plain");
