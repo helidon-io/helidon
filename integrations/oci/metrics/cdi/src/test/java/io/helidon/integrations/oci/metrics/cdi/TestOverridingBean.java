@@ -19,6 +19,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
 
 import io.helidon.integrations.oci.metrics.OciMetricsConfig;
+import io.helidon.integrations.oci.metrics.OciMetricsConfigBase;
 import io.helidon.integrations.oci.metrics.OciMetricsSupport;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
@@ -89,7 +90,8 @@ class TestOverridingBean {
 
             OciMetricsConfig prototype = (OciMetricsConfig) prototypeMethod.invoke(delegate);
 
-            var getterMethodForRequestedField = OciMetricsConfig.class.getDeclaredMethod(fieldName);
+            // Account for the fact that OciMetricsConfig inherits the base interface which is where the method is declared.
+            var getterMethodForRequestedField = OciMetricsConfigBase.class.getDeclaredMethod(fieldName);
             getterMethodForRequestedField.setAccessible(true);
 
             // This test only attempts to fetch Optional<String> values, so just cast the return value that way.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,18 +76,14 @@ import static org.junit.jupiter.api.Assertions.fail;
 // Add an extension that will simulate a mocked OciExtension that will inject a mocked Monitoring object
 @AddExtension(OciMetricsCdiExtensionTest.MockOciMonitoringExtension.class)
 // ConfigSources
-@AddConfigBlock(type = "yaml",
-                value = """
-                        metrics:
-                          publishers:
-                            - type: oci
-                              compartment-id: "dummy.compartmentId"
-                              namespace: "dummy-namespace"
-                              resource-group: dummy_resourceGroup
-                              initial-delay: PT1S
-                              delay: PT1S
-                            - type: prometheus
-                        """)
+@AddConfig(key = "ocimetrics.compartmentId",
+           value = OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.compartmentId)
+@AddConfig(key = "ocimetrics.namespace",
+           value = OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.namespace)
+@AddConfig(key = "ocimetrics.resourceGroup",
+           value = OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.resourceGroup)
+@AddConfig(key = "ocimetrics.initialDelay", value = "1")
+@AddConfig(key = "ocimetrics.delay", value = "1")
 class OciMetricsCdiExtensionTest {
     private static String METRIC_NAME_SUFFIX = "DummyCounter";
     private static volatile int testMetricCount = 0;
@@ -108,7 +104,7 @@ class OciMetricsCdiExtensionTest {
     }
 
     @Test
-    @AddConfig(key = "metrics.publishers.0.enabled", value = "true")
+    @AddConfig(key = "ocimetrics.enabled", value = "true")
     void testEnableOciMetrics() throws InterruptedException {
         validateOciMetricsSupport(true);
     }
@@ -119,7 +115,7 @@ class OciMetricsCdiExtensionTest {
     }
 
     @Test
-    @AddConfig(key = "metrics.publishers.0.enabled", value = "false")
+    @AddConfig(key = "ocimetrics.enabled", value = "false")
     void testDisableOciMetrics() throws InterruptedException {
         validateOciMetricsSupport(false);
     }
