@@ -20,44 +20,34 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.json.tests</groupId>
-        <artifactId>helidon-json-tests-project</artifactId>
+        <groupId>io.helidon.json</groupId>
+        <artifactId>helidon-json-project</artifactId>
         <version>4.4.0-SNAPSHOT</version>
     </parent>
 
-    <name>Helidon JSON Tests Binding</name>
-    <artifactId>helidon-json-tests-binding</artifactId>
-
+    <name>Helidon JSON Smile</name>
+    <artifactId>helidon-json-smile</artifactId>
     <dependencies>
         <dependency>
             <groupId>io.helidon.json</groupId>
-            <artifactId>helidon-json-binding</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.json</groupId>
             <artifactId>helidon-json</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.json</groupId>
-            <artifactId>helidon-json-smile</artifactId>
-            <scope>test</scope>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-registry</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-types</artifactId>
-            <scope>test</scope>
+            <artifactId>helidon-common-buffers</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common.features</groupId>
+            <artifactId>helidon-common-features-api</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -70,19 +60,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.testing</groupId>
-            <artifactId>helidon-testing-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -100,16 +79,46 @@
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>io.helidon.bundles</groupId>
-                            <artifactId>helidon-bundles-apt</artifactId>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>io.helidon.bundles</groupId>
-                        <artifactId>helidon-bundles-apt</artifactId>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.builder</groupId>
+                        <artifactId>helidon-builder-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>

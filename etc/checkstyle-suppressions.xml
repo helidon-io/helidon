@@ -45,6 +45,8 @@ record here.
             checks="FileLength"/>
     <suppress files="json/json/src/main/java/io/helidon/json/JsonParserArray\.java"
             checks="FileLength"/>
+    <suppress files="json/smile/src/main/java/io/helidon/json/smile/SmileInputStreamParser\.java"
+            checks="FileLength"/>
 
     <suppress files="integrations/cdi/jpa-cdi/src/main/java/io/helidon/integrations/cdi/jpa/JpaExtension\.java"
             checks="FileLength"/>

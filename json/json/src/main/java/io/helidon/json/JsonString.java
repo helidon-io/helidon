@@ -71,7 +71,7 @@ public final class JsonString extends JsonValue {
      * @param length the number of bytes that belong to the string value
      * @return a new JsonString
      */
-    static JsonString create(byte[] buffer, int start, int length) {
+    public static JsonString create(byte[] buffer, int start, int length) {
         return new JsonString(buffer, start, length);
     }
 
