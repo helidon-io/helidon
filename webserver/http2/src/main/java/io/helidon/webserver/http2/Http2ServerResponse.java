@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,22 +19,29 @@ package io.helidon.webserver.http2;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.util.List;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
-import java.util.List;
-import java.util.ServiceLoader;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpException;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Headers;
+import io.helidon.http.media.EntityWriter;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
@@ -44,13 +51,6 @@ import io.helidon.webserver.http.ServerResponseBase;
 import io.helidon.webserver.http.spi.Sink;
 import io.helidon.webserver.http.spi.SinkProvider;
 import io.helidon.webserver.http.spi.SinkProviderContext;
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.http.HttpException;
-import io.helidon.common.GenericType;
-import io.helidon.common.media.type.MediaType;
-import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.WritableHeaders;
-import io.helidon.http.media.EntityWriter;
 
 class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private static final System.Logger LOGGER = System.getLogger(Http2ServerResponse.class.getName());
@@ -64,7 +64,11 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private boolean isSent;
     private boolean streamingEntity;
     private long bytesWritten;
-    private static final List<SinkProvider> SINK_PROVIDERS = HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build().asList();
+    private static final List<SinkProvider> SINK_PROVIDERS =
+            HelidonServiceLoader
+                    .builder(ServiceLoader.load(SinkProvider.class))
+                    .build()
+                    .asList();
 
     private BlockingOutputStream outputStream;
     private UnaryOperator<OutputStream> outputStreamFilter;
