@@ -33,12 +33,6 @@ class ConfigKeyImpl implements Config.Key {
     private final String fullKey;
 
     private ConfigKeyImpl(ConfigKeyImpl parent, String name) {
-        Objects.requireNonNull(name, "name is mandatory");
-
-        if (name.contains(".")) {
-            throw new IllegalArgumentException("Illegal key token format. Dot character ('.') is not supported.");
-        }
-
         this.parent = parent;
         List<String> path = new ArrayList<>();
         StringBuilder fullSB = new StringBuilder();
@@ -126,6 +120,9 @@ class ConfigKeyImpl implements Config.Key {
         for (String name : path) {
             if (name.isEmpty()) {
                 continue;
+            }
+            if (name.contains(".")) {
+                throw new IllegalArgumentException("Illegal key token format. Dot character ('.') is not supported.");
             }
             result = new ConfigKeyImpl(result, name);
         }
