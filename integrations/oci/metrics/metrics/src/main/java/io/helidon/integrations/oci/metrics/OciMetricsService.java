@@ -28,38 +28,43 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.resumable.Resumable;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsPublisher;
-import io.helidon.service.registry.Services;
 import io.helidon.spi.HelidonShutdownHandler;
 
-import com.oracle.bmc.monitoring.Monitoring;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
 import com.oracle.bmc.monitoring.model.PostMetricDataDetails;
 import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
 
 /**
- * When configured as a metrics publisher of type {@value TYPE}, periodically transmits Helidon metrics to the configured OCI
- * metrics backend. The class relies on the service registry to provide a correctly-configured instance
- * of {@link com.oracle.bmc.monitoring.Monitoring}.
+ * Periodically transmits Helidon metrics to an OCI metrics backend.
+ * <p>
+ * This service is configured as a metrics publisher of type
+ * {@value TYPE} and uses either the instance of {@link com.oracle.bmc.monitoring.Monitoring} that was explicitly configured on
+ * {@link io.helidon.integrations.oci.metrics.OciMetricsConfig} or, if not set in the config, obtained from the service registry.
+ * The {@code Monitoring} instance determines how to connect to the backend; this service manages the periodic use of that
+ * instance to send the metrics data to the backend.
  */
-class OciMetricsService implements MetricsPublisher, Resumable, HelidonShutdownHandler, AutoCloseable,
+class OciMetricsService implements MetricsPublisher,
+                                   Resumable,
+                                   HelidonShutdownHandler,
+                                   AutoCloseable,
                                    RuntimeType.Api<OciMetricsConfig> {
 
     static final String TYPE = "oci";
+
     private static final System.Logger LOGGER = System.getLogger(OciMetricsService.class.getName());
     private static final UnitConverter STORAGE_UNIT_CONVERTER = UnitConverter.storageUnitConverter();
     private static final UnitConverter TIME_UNIT_CONVERTER = UnitConverter.timeUnitConverter();
     private static final List<UnitConverter> UNIT_CONVERTERS = List.of(STORAGE_UNIT_CONVERTER, TIME_UNIT_CONVERTER);
+
     private final OciMetricsConfig prototype;
+
     private ScheduledExecutorService scheduledExecutorService;
-    private Monitoring monitoringClient;
     private OciMetricsData ociMetricsData;
 
     private OciMetricsService(OciMetricsConfig prototype) {
         this.prototype = prototype;
-        if (isEligibleForTransmission()) {
-            monitoringClient = prototype.monitoringClient().orElseGet(() -> Services.get(Monitoring.class));
-            prepareTransmission();
-        }
+        prepareAutoStartup();
+        prepareAutoShutdown();
     }
 
     static OciMetricsConfig.Builder builder() {
@@ -127,7 +132,6 @@ class OciMetricsService implements MetricsPublisher, Resumable, HelidonShutdownH
 
     @Override
     public void shutdown() {
-        // Shutdown executor if created
         if (scheduledExecutorService != null) {
             LOGGER.log(System.Logger.Level.TRACE, "Shutting down OCI Metrics service {0}", name());
             scheduledExecutorService.shutdownNow();
@@ -140,9 +144,24 @@ class OciMetricsService implements MetricsPublisher, Resumable, HelidonShutdownH
         }
     }
 
+    /**
+     * Prepares for automatic start-up of the periodic "push" processing when this class is instantiated. Might be
+     * overridden by a subclass that provides for explicit start-up and shutdown.
+     */
+    void prepareAutoStartup() {
+        startup();
+    }
+
+    /**
+     * Prepares for automatic shutdown of the periodic "push" processing when the server shuts down. Might be overridden
+     * by a subclass that provides for explicit start-up and shutdown.
+     */
+    void prepareAutoShutdown() {
+        Main.addShutdownHandler(this);
+    }
+
     private void prepareTransmission() {
         LOGGER.log(System.Logger.Level.TRACE, "Starting OCI Metrics publisher {0}", name());
-        Main.addShutdownHandler(this);
 
         ociMetricsData = new OciMetricsData(
                 prototype.scopes(),
@@ -229,19 +248,20 @@ class OciMetricsService implements MetricsPublisher, Resumable, HelidonShutdownH
                                 m.getMetadata()));
                     });
         }
-        String originalMonitoringEndpoint = this.monitoringClient.getEndpoint();
+        var monitoringClient = prototype.monitoringClient();
+        String originalMonitoringEndpoint = monitoringClient.getEndpoint();
         try {
             // Use the ingestion endpoint for posting
-            this.monitoringClient.setEndpoint(
+            monitoringClient.setEndpoint(
                     monitoringClient.getEndpoint().replaceFirst("telemetry\\.", "telemetry-ingestion."));
-            this.monitoringClient.postMetricData(postMetricDataRequest);
+            monitoringClient.postMetricData(postMetricDataRequest);
             LOGGER.log(System.Logger.Level.TRACE,
                        String.format("Successfully posted %d metrics to OCI", metricDataDetailsList.size()));
         } catch (Throwable e) {
             LOGGER.log(System.Logger.Level.WARNING, String.format("Unable to send metrics to OCI: %s", e.getMessage()));
         } finally {
             // restore original endpoint
-            this.monitoringClient.setEndpoint(originalMonitoringEndpoint);
+            monitoringClient.setEndpoint(originalMonitoringEndpoint);
         }
     }
 }
