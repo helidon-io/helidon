@@ -32,6 +32,9 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Lookup;
+import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 import io.helidon.webserver.WebServer;
@@ -85,7 +88,6 @@ class OciMetricsServiceTest {
         // Save the mocked monitorincClient so the OCI metrics publisher will get that one when it
         // asks the service registry for it.
         Services.set(Monitoring.class, monitoringClient);
-        var start = System.nanoTime();
         /*
         Specify oci as a publisher to trigger the periodic push of the metrics data to OCI, and keep
         prometheus so there is a functional Micrometer meter registry to hold meter data.
@@ -452,7 +454,6 @@ class OciMetricsServiceTest {
     private HttpRouting.Builder createRouting() {
         return HttpRouting.builder()
                 .put("/test", (req, res) -> res.send());
-//                .register(ociMetricsServiceBuilder);
     }
 
     private void validateMetricCount(String scopesList, int expectedMetricCount) {
@@ -511,7 +512,7 @@ class OciMetricsServiceTest {
         }
     }
 
-    private void countDownLatchWait(CountDownLatch countDownLatch) throws InterruptedException {
+    void countDownLatchWait(CountDownLatch countDownLatch) throws InterruptedException {
         if (!countDownLatch.await(10, TimeUnit.SECONDS)) {
             fail("CountDownLatch timed out");
         }
