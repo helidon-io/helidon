@@ -20,7 +20,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -33,40 +34,46 @@ public class SerializeNullsTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testJsonNullableOnRecord() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testJsonNullableOnRecordParameterized(BindingMethod bindingMethod) {
         JsonNullableOnRecord instance = new JsonNullableOnRecord(null, null);
-        assertEquals("{\"someField\":null,\"someField2\":null}", jsonBinding.serialize(instance));
+        assertEquals("{\"someField\":null,\"someField2\":null}", bindingMethod.serialize(jsonBinding, instance));
     }
 
-    @Test
-    public void testJsonNullableOnRecordComponent() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testJsonNullableOnRecordComponentParameterized(BindingMethod bindingMethod) {
         JsonNullableOnRecordComponent instance = new JsonNullableOnRecordComponent(null, null);
-        assertEquals("{\"someField\":null}", jsonBinding.serialize(instance));
+        assertEquals("{\"someField\":null}", bindingMethod.serialize(jsonBinding, instance));
     }
 
-    @Test
-    public void testJsonNullableOverrideOnField() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testJsonNullableOverrideOnFieldParameterized(BindingMethod bindingMethod) {
         NullableOverrideOnField instance = new NullableOverrideOnField();
-        assertEquals("{\"field2\":null}", jsonBinding.serialize(instance));
+        assertEquals("{\"field2\":null}", bindingMethod.serialize(jsonBinding, instance));
     }
 
-    @Test
-    public void testJsonNullableOverrideOnMethod() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testJsonNullableOverrideOnMethodParameterized(BindingMethod bindingMethod) {
         NullableOverrideOnMethod instance = new NullableOverrideOnMethod();
-        assertEquals("{\"field2\":null}", jsonBinding.serialize(instance));
+        assertEquals("{\"field2\":null}", bindingMethod.serialize(jsonBinding, instance));
     }
 
-    @Test
-    public void testJsonNullableFromParent() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testJsonNullableFromParentParameterized(BindingMethod bindingMethod) {
         NullableChild instance = new NullableChild();
-        assertEquals("{\"field\":null}", jsonBinding.serialize(instance));
+        assertEquals("{\"field\":null}", bindingMethod.serialize(jsonBinding, instance));
     }
 
-    @Test
-    public void testJsonNullableFromParentOverride() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testJsonNullableFromParentOverrideParameterized(BindingMethod bindingMethod) {
         NonNullableChild instance = new NonNullableChild();
-        assertEquals("{}", jsonBinding.serialize(instance));
+        assertEquals("{}", bindingMethod.serialize(jsonBinding, instance));
     }
 
     @Json.Entity
@@ -112,5 +119,4 @@ public class SerializeNullsTest {
     static class NonNullableChild extends NullableParent {
         String field = null;
     }
-
 }

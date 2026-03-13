@@ -31,6 +31,8 @@ import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -47,81 +49,91 @@ public class MiscEdgeCasesTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testNullObjectSerialization() {
-        String json = jsonBinding.serialize(null);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testNullObjectSerializationParameterized(BindingMethod bindingMethod) {
+        String json = bindingMethod.serialize(jsonBinding, null);
         assertThat(json, is("null"));
     }
 
-    @Test
-    public void testNullDeserialization() {
-        TestBean deserialized = jsonBinding.deserialize("null", TestBean.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testNullDeserializationParameterized(BindingMethod bindingMethod) {
+        TestBean deserialized = bindingMethod.deserialize(jsonBinding, "null", TestBean.class);
         assertThat(deserialized, is(nullValue()));
     }
 
-    @Test
-    public void testEmptyJsonObject() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testEmptyJsonObjectParameterized(BindingMethod bindingMethod) {
         String json = "{}";
-        EmptyBean bean = jsonBinding.deserialize(json, EmptyBean.class);
+        EmptyBean bean = bindingMethod.deserialize(jsonBinding, json, EmptyBean.class);
         assertThat(bean, is(instanceOf(EmptyBean.class)));
     }
 
-    @Test
-    public void testEmptyArrayDeserialization() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testEmptyArrayDeserializationParameterized(BindingMethod bindingMethod) {
         GenericType<List<String>> listType = new GenericType<>() { };
-        List<String> list = jsonBinding.deserialize("[]", listType);
+        List<String> list = bindingMethod.deserialize(jsonBinding, "[]", listType);
         assertThat(list.size(), is(0));
     }
 
-    @Test
-    public void testEmptyMapDeserialization() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testEmptyMapDeserializationParameterized(BindingMethod bindingMethod) {
         GenericType<Map<String, String>> mapType = new GenericType<>() { };
-        Map<String, String> map = jsonBinding.deserialize("{}", mapType);
+        Map<String, String> map = bindingMethod.deserialize(jsonBinding, "{}", mapType);
         assertThat(map.size(), is(0));
     }
 
-    @Test
-    public void testInvalidJsonThrowsException() {
-        assertThrows(JsonException.class, () -> jsonBinding.deserialize("{invalid", TestBean.class));
-        assertThrows(JsonException.class, () -> jsonBinding.deserialize("[invalid", List.class));
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testInvalidJsonThrowsExceptionParameterized(BindingMethod bindingMethod) {
+        assertThrows(JsonException.class, () -> bindingMethod.deserialize(jsonBinding, "{invalid", TestBean.class));
+        assertThrows(JsonException.class, () -> bindingMethod.deserialize(jsonBinding, "[invalid", List.class));
     }
 
-    @Test
-    public void testArraysWithNulls() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testArraysWithNullsParameterized(BindingMethod bindingMethod) {
         String[] arrayWithNulls = {"first", null, "third"};
-        String json = jsonBinding.serialize(arrayWithNulls);
+        String json = bindingMethod.serialize(jsonBinding, arrayWithNulls);
         assertThat(json, is("[\"first\",null,\"third\"]"));
 
-        String[] deserialized = jsonBinding.deserialize(json, String[].class);
+        String[] deserialized = bindingMethod.deserialize(jsonBinding, json, String[].class);
         assertThat(deserialized[0], is("first"));
         assertThat(deserialized[1], is(nullValue()));
         assertThat(deserialized[2], is("third"));
     }
 
-    @Test
-    public void testNestedNullsInObjects() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testNestedNullsInObjectsParameterized(BindingMethod bindingMethod) {
         NestedBean bean = new NestedBean();
         bean.setNested(null);
         bean.setValue("test");
 
-        String json = jsonBinding.serialize(bean);
+        String json = bindingMethod.serialize(jsonBinding, bean);
         assertThat(json, is("{\"value\":\"test\"}"));
 
-        NestedBean deserialized = jsonBinding.deserialize("{\"nested\":null,\"value\":\"test\"}", NestedBean.class);
+        NestedBean deserialized =
+                bindingMethod.deserialize(jsonBinding, "{\"nested\":null,\"value\":\"test\"}", NestedBean.class);
         assertThat(deserialized.getNested(), is(nullValue()));
         assertThat(deserialized.getValue(), is("test"));
     }
 
-    @Test
-    public void testEmptyCollections() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testEmptyCollectionsParameterized(BindingMethod bindingMethod) {
         CollectionBean bean = new CollectionBean();
         bean.setEmptyList(Collections.emptyList());
         bean.setEmptyMap(Collections.emptyMap());
 
-        String json = jsonBinding.serialize(bean);
+        String json = bindingMethod.serialize(jsonBinding, bean);
         assertThat(json, is("{\"emptyList\":[],\"emptyMap\":{}}"));
 
-        CollectionBean deserialized = jsonBinding.deserialize(json, CollectionBean.class);
+        CollectionBean deserialized = bindingMethod.deserialize(jsonBinding, json, CollectionBean.class);
         assertThat(deserialized.getEmptyList().size(), is(0));
         assertThat(deserialized.getEmptyMap().size(), is(0));
     }
@@ -144,25 +156,27 @@ public class MiscEdgeCasesTest {
         }
     }
 
-    @Test
-    public void testBooleanPrimitives() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBooleanPrimitivesParameterized(BindingMethod bindingMethod) {
         boolean[] booleans = {true, false, true};
-        String json = jsonBinding.serialize(booleans);
+        String json = bindingMethod.serialize(jsonBinding, booleans);
         assertThat(json, is("[true,false,true]"));
 
-        boolean[] deserialized = jsonBinding.deserialize(json, boolean[].class);
+        boolean[] deserialized = bindingMethod.deserialize(jsonBinding, json, boolean[].class);
         assertThat(deserialized[0], is(true));
         assertThat(deserialized[1], is(false));
         assertThat(deserialized[2], is(true));
     }
 
-    @Test
-    public void testCharPrimitives() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testCharPrimitivesParameterized(BindingMethod bindingMethod) {
         char[] chars = {'a', 'b', 'c'};
-        String json = jsonBinding.serialize(chars);
+        String json = bindingMethod.serialize(jsonBinding, chars);
         assertThat(json, is("[\"a\",\"b\",\"c\"]"));
 
-        char[] deserialized = jsonBinding.deserialize(json, char[].class);
+        char[] deserialized = bindingMethod.deserialize(jsonBinding, json, char[].class);
         assertThat(deserialized[0], is('a'));
         assertThat(deserialized[1], is('b'));
         assertThat(deserialized[2], is('c'));

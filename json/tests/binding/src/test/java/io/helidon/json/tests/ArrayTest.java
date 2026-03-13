@@ -20,7 +20,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -35,63 +36,74 @@ public class ArrayTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testOneDimensionPrimitiveArray() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testOneDimensionPrimitiveArrayParameterized(BindingMethod bindingMethod) {
         int[] expectedArray = {1, 2, 3};
         OneDimensionPrimitiveArray recordWithArray = new OneDimensionPrimitiveArray(expectedArray);
-        String serializedJson = jsonBinding.serialize(recordWithArray);
+        String serializedJson = bindingMethod.serialize(jsonBinding, recordWithArray);
         assertThat(serializedJson, is("{\"intArray\":[1,2,3]}"));
 
-        OneDimensionPrimitiveArray deserialized = jsonBinding.deserialize(serializedJson, OneDimensionPrimitiveArray.class);
+        OneDimensionPrimitiveArray deserialized = bindingMethod.deserialize(jsonBinding,
+                                                                            serializedJson,
+                                                                            OneDimensionPrimitiveArray.class);
         assertThat(deserialized, notNullValue());
         assertThat(deserialized.intArray(), is(expectedArray));
     }
 
-    @Test
-    public void testTwoDimensionPrimitiveArray() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testTwoDimensionPrimitiveArrayParameterized(BindingMethod bindingMethod) {
         int[][] expectedArray = {{1, 2, 3}, {4, 5}, {7}};
         TwoDimensionPrimitiveArray recordWithArray = new TwoDimensionPrimitiveArray(expectedArray);
-        String serializedJson = jsonBinding.serialize(recordWithArray);
+        String serializedJson = bindingMethod.serialize(jsonBinding, recordWithArray);
         assertThat(serializedJson, is("{\"intArray\":[[1,2,3],[4,5],[7]]}"));
 
-        TwoDimensionPrimitiveArray deserialized = jsonBinding.deserialize(serializedJson, TwoDimensionPrimitiveArray.class);
+        TwoDimensionPrimitiveArray deserialized = bindingMethod.deserialize(jsonBinding,
+                                                                            serializedJson,
+                                                                            TwoDimensionPrimitiveArray.class);
         assertThat(deserialized, notNullValue());
         assertThat(deserialized.intArray(), is(expectedArray));
     }
 
-    @Test
-    public void testOneDimensionReferenceTypeArray() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testOneDimensionReferenceTypeArrayParameterized(BindingMethod bindingMethod) {
         String[] expectedArray = {"Hi", "Hello"};
         OneDimensionReferenceTypeArray recordWithArray = new OneDimensionReferenceTypeArray(expectedArray);
-        String serializedJson = jsonBinding.serialize(recordWithArray);
+        String serializedJson = bindingMethod.serialize(jsonBinding, recordWithArray);
         assertThat(serializedJson, is("{\"stringArray\":[\"Hi\",\"Hello\"]}"));
 
-        OneDimensionReferenceTypeArray deserialized = jsonBinding.deserialize(serializedJson,
-                                                                              OneDimensionReferenceTypeArray.class);
+        OneDimensionReferenceTypeArray deserialized = bindingMethod.deserialize(jsonBinding,
+                                                                                serializedJson,
+                                                                                OneDimensionReferenceTypeArray.class);
         assertThat(deserialized, notNullValue());
         assertThat(deserialized.stringArray(), is(expectedArray));
     }
 
-    @Test
-    public void testTwoDimensionReferenceTypeArray() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testTwoDimensionReferenceTypeArrayParameterized(BindingMethod bindingMethod) {
         String[][] expectedArray = {{"Hi", "Hello"}, {"Test", "value", "is here"}};
         TwoDimensionReferenceTypeArray recordWithArray = new TwoDimensionReferenceTypeArray(expectedArray);
-        String serializedJson = jsonBinding.serialize(recordWithArray);
+        String serializedJson = bindingMethod.serialize(jsonBinding, recordWithArray);
         assertThat(serializedJson, is("{\"stringArray\":[[\"Hi\",\"Hello\"],[\"Test\",\"value\",\"is here\"]]}"));
 
-        TwoDimensionReferenceTypeArray deserialized = jsonBinding.deserialize(serializedJson,
-                                                                              TwoDimensionReferenceTypeArray.class);
+        TwoDimensionReferenceTypeArray deserialized = bindingMethod.deserialize(jsonBinding,
+                                                                                serializedJson,
+                                                                                TwoDimensionReferenceTypeArray.class);
         assertThat(deserialized, notNullValue());
         assertThat(deserialized.stringArray(), is(expectedArray));
     }
 
-    @Test
-    public void testCharArray() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testCharArrayParameterized(BindingMethod bindingMethod) {
         char[] expectedArray = {'a', 'b', 'c'};
-        String serializedJson = jsonBinding.serialize(expectedArray);
+        String serializedJson = bindingMethod.serialize(jsonBinding, expectedArray);
         assertThat(serializedJson, is("[\"a\",\"b\",\"c\"]"));
 
-        char[] deserialized = jsonBinding.deserialize(serializedJson, char[].class);
+        char[] deserialized = bindingMethod.deserialize(jsonBinding, serializedJson, char[].class);
         assertThat(deserialized, notNullValue());
         assertThat(deserialized, is(expectedArray));
     }
@@ -111,5 +123,4 @@ public class ArrayTest {
     @Json.Entity
     record TwoDimensionReferenceTypeArray(String[][] stringArray) {
     }
-
 }
