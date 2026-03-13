@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@ import java.time.format.DateTimeFormatter;
  * Default time format is {@value DEFAULT_FORMAT}.
  */
 public final class TimestampLogEntry extends AbstractLogEntry {
-    private static final String DEFAULT_FORMAT = "'['dd/MMM/YYYY:HH:mm:ss ZZZ']'";
+    // use calendar year (y) instead of week based year (Y)
+    private static final String DEFAULT_FORMAT = "'['dd/MMM/yyyy:HH:mm:ss ZZZ']'";
     private static final DateTimeFormatter DEFAULT_FORMATTER = DateTimeFormatter.ofPattern(DEFAULT_FORMAT);
     private final DateTimeFormatter formatter;
 
