@@ -17,12 +17,21 @@
 package io.helidon.integrations.oci.metrics;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.metrics.api.MetricsPublisherConfig;
+import io.helidon.service.registry.Services;
 
-/**
- * OCI metrics configuration blueprint.
- */
-@Prototype.Blueprint(decorator = OciMetricsConfigSupport.BuilderDecorator.class)
-@Prototype.Configured
-interface OciMetricsConfigBlueprint extends OciMetricsConfigBase, MetricsPublisherConfig, Prototype.Factory<OciMetricsService> {
+import com.oracle.bmc.monitoring.Monitoring;
+
+class OciMetricsConfigSupport {
+
+    private OciMetricsConfigSupport() {
+    }
+
+    static class BuilderDecorator implements Prototype.BuilderDecorator<OciMetricsConfig.BuilderBase<?, ?>> {
+        @Override
+        public void decorate(OciMetricsConfig.BuilderBase<?, ?> target) {
+            if (target.monitoringClient().isEmpty()) {
+                target.monitoringClient(Services.get(Monitoring.class));
+            }
+        }
+    }
 }

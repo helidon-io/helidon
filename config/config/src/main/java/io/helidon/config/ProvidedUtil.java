@@ -17,6 +17,7 @@
 package io.helidon.config;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -339,8 +340,8 @@ final class ProvidedUtil {
         Map<String, T> allProvidersByType = new HashMap<>();
         Map<String, T> unusedProvidersByType = new LinkedHashMap<>();
         serviceLoader.forEach(it -> {
-            allProvidersByType.put(it.configKey(), it);
-            unusedProvidersByType.put(it.configKey(), it);
+            allProvidersByType.putIfAbsent(it.configKey(), it);
+            unusedProvidersByType.putIfAbsent(it.configKey(), it);
         });
 
         List<S> result = new ArrayList<S>();

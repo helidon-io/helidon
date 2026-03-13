@@ -31,11 +31,14 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.microprofile.testing.AddConfigBlock;
+import io.helidon.microprofile.testing.AddConfigBlocks;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.AddExtension;
 import io.helidon.microprofile.testing.junit5.DisableDiscovery;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
+import io.helidon.service.registry.Services;
 
 import com.oracle.bmc.monitoring.Monitoring;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
@@ -54,6 +57,7 @@ import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
 import jakarta.enterprise.inject.spi.configurator.BeanConfigurator;
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -72,20 +76,29 @@ import static org.junit.jupiter.api.Assertions.fail;
 // Add an extension that will simulate a mocked OciExtension that will inject a mocked Monitoring object
 @AddExtension(OciMetricsCdiExtensionTest.MockOciMonitoringExtension.class)
 // ConfigSources
-@AddConfig(key = "ocimetrics.compartmentId",
-           value = OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.compartmentId)
-@AddConfig(key = "ocimetrics.namespace",
-           value = OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.namespace)
-@AddConfig(key = "ocimetrics.resourceGroup",
-           value = OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.resourceGroup)
-@AddConfig(key = "ocimetrics.initialDelay", value = "1")
-@AddConfig(key = "ocimetrics.delay", value = "1")
+@AddConfigBlock(type = "yaml",
+                value = """
+                        metrics:
+                          publishers:
+                            - type: oci
+                              compartment-id: "dummy.compartmentId"
+                              namespace: "dummy-namespace"
+                              resource-group: dummy_resourceGroup
+                              initial-delay: PT1S
+                              delay: PT1S
+                            - type: prometheus
+                        """)
 class OciMetricsCdiExtensionTest {
     private static String METRIC_NAME_SUFFIX = "DummyCounter";
     private static volatile int testMetricCount = 0;
     private static CountDownLatch countDownLatch = new CountDownLatch(1);
     private static PostMetricDataDetails postMetricDataDetails;
     private static boolean activateOciMetricsSupportIsInvoked;
+
+    @BeforeAll
+    static void beforeAll() {
+        Services.set(Monitoring.class, MockOciMonitoringExtension.getMockedMonitoring());
+    }
 
     @AfterEach
     void resetState() {
@@ -95,7 +108,7 @@ class OciMetricsCdiExtensionTest {
     }
 
     @Test
-    @AddConfig(key = "ocimetrics.enabled", value = "true")
+    @AddConfig(key = "metrics.publishers.0.enabled", value = "true")
     void testEnableOciMetrics() throws InterruptedException {
         validateOciMetricsSupport(true);
     }
@@ -106,7 +119,7 @@ class OciMetricsCdiExtensionTest {
     }
 
     @Test
-    @AddConfig(key = "ocimetrics.enabled", value = "false")
+    @AddConfig(key = "metrics.publishers.0.enabled", value = "false")
     void testDisableOciMetrics() throws InterruptedException {
         validateOciMetricsSupport(false);
     }
@@ -179,7 +192,7 @@ class OciMetricsCdiExtensionTest {
             }
         }
 
-        Monitoring getMockedMonitoring() {
+        static Monitoring getMockedMonitoring() {
             // Use Proxy to mock only getEndPoint() and postMetricDataDetails() methods of the Monitoring interface,
             // as those are the only ones needed by the test
             return
@@ -212,16 +225,16 @@ class OciMetricsCdiExtensionTest {
         }
 
         void afterBeanDiscovery(@Observes AfterBeanDiscovery event) {
-            if (monitoringFound) {
-                BeanConfigurator<Object> beanConfigurator = event.addBean()
-                        .types(Monitoring.class)
-                        .scope(ApplicationScoped.class)
-                        .addQualifiers(monitoringQualifiers);
-                beanConfigurator = monitoringQualifiers != null ? beanConfigurator.addQualifiers(monitoringQualifiers) :
-                        beanConfigurator.addQualifier(Default.Literal.INSTANCE);
-                // Add the mocked Monitoring as a bean
-                beanConfigurator.produceWith(obj -> getMockedMonitoring());
-            } else {
+            if (!monitoringFound) {
+//                Services.set(Monitoring.class, getMockedMonitoring());
+//                BeanConfigurator<Object> beanConfigurator = event.addBean()
+//                        .types(Monitoring.class)
+//                        .scope(ApplicationScoped.class)
+//                        .addQualifiers(monitoringQualifiers);
+//                beanConfigurator = monitoringQualifiers != null ? beanConfigurator.addQualifiers(monitoringQualifiers) :
+//                        beanConfigurator.addQualifier(Default.Literal.INSTANCE);
+//                // Add the mocked Monitoring as a bean
+//                beanConfigurator.produceWith(obj -> getMockedMonitoring());
                 throw new IllegalStateException("Monitoring was never injected. Check if OciMetricsBean.registerOciMetrics() "
                                                             + "has changed and does not inject Monitoring anymore.");
             }
