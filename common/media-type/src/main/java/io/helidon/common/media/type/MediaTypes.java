@@ -170,6 +170,10 @@ public final class MediaTypes {
     /**
      * String value of media type: {@value}.
      */
+    public static final String APPLICATION_X_JACKSON_SMILE_VALUE = "application/x-jackson-smile";
+    /**
+     * String value of media type: {@value}.
+     */
     public static final String APPLICATION_STREAM_JSON_VALUE = "application/stream+json";
     /**
      * String value of media type: {@value}.
