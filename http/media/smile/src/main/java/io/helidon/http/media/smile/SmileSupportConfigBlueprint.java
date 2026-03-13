@@ -46,13 +46,33 @@ interface SmileSupportConfigBlueprint extends MediaSupportConfig, Prototype.Fact
      */
     JsonBinding jsonBinding();
 
+    /**
+     * Smile generator configuration.
+     *
+     * @return smile generator configuration
+     */
     SmileConfig smileConfig();
 
+    /**
+     * Types accepted by this media support.
+     * When server processes the response, it checks the {@code Accept} header, to choose the right
+     * media support, if there are more supports available for the provided entity object.
+     * <p>
+     * Supported accepted types defaults to {@value io.helidon.common.media.type.MediaTypes#APPLICATION_X_JACKSON_SMILE_VALUE}.
+     *
+     * @return accepted media types
+     */
     @Override
     @Option.Singular
     @Option.DefaultCode("@java.util.Set@.of(@io.helidon.common.media.type.MediaTypes@.APPLICATION_X_JACKSON_SMILE)")
     Set<MediaType> acceptedMediaTypes();
 
+    /**
+     * Content type to use if not configured (in response headers for server, and in request headers for client).
+     *
+     * @return content type to use, defaults
+     * to {@value io.helidon.common.media.type.MediaTypes#APPLICATION_X_JACKSON_SMILE_VALUE}
+     */
     @Override
     @Option.DefaultCode("@io.helidon.http.HttpMediaType@.create("
             + "@io.helidon.common.media.type.MediaTypes@.APPLICATION_X_JACKSON_SMILE)")
