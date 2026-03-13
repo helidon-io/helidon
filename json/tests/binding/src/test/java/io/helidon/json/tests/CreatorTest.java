@@ -23,7 +23,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,80 +39,89 @@ public class CreatorTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testRootConstructor() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRootConstructorParameterized(BindingMethod bindingMethod) {
         String json = "{\"str1\":\"abc\",\"str2\":\"def\",\"bigDec\":25}";
-        CreatorConstructorPojo pojo = jsonBinding.deserialize(json, CreatorConstructorPojo.class);
+        CreatorConstructorPojo pojo = bindingMethod.deserialize(jsonBinding, json, CreatorConstructorPojo.class);
         assertThat(pojo.str1, is("abc"));
         assertThat(pojo.str2, is("def"));
         assertThat(pojo.bigDec, is(new BigDecimal("25")));
     }
 
-    @Test
-    public void testRootFactoryMethod() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRootFactoryMethodParameterized(BindingMethod bindingMethod) {
         String json = "{\"str1\":\"abc\",\"str2\":\"def\",\"bigDec\":25}";
-        CreatorFactoryMethodPojo pojo = jsonBinding.deserialize(json, CreatorFactoryMethodPojo.class);
+        CreatorFactoryMethodPojo pojo = bindingMethod.deserialize(jsonBinding, json, CreatorFactoryMethodPojo.class);
         assertThat(pojo.str1, is("abc"));
         assertThat(pojo.str2, is("def"));
         assertThat(pojo.bigDec, is(new BigDecimal("25")));
     }
 
-    @Test
-    public void testCreatorWithNullParameters() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testCreatorWithNullParametersParameterized(BindingMethod bindingMethod) {
         String json = "{\"str1\":\"abc\",\"str2\":null,\"bigDec\":25}";
-        CreatorConstructorPojo pojo = jsonBinding.deserialize(json, CreatorConstructorPojo.class);
+        CreatorConstructorPojo pojo = bindingMethod.deserialize(jsonBinding, json, CreatorConstructorPojo.class);
         assertThat(pojo.str1, is("abc"));
         assertThat(pojo.str2, nullValue());
         assertThat(pojo.bigDec, is(new BigDecimal("25")));
     }
 
-    @Test
-    public void testCreatorWithMissingParameters() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testCreatorWithMissingParametersParameterized(BindingMethod bindingMethod) {
         String json = "{\"str1\":\"abc\",\"bigDec\":25}";
-        CreatorConstructorPojo pojo = jsonBinding.deserialize(json, CreatorConstructorPojo.class);
+        CreatorConstructorPojo pojo = bindingMethod.deserialize(jsonBinding, json, CreatorConstructorPojo.class);
         assertThat(pojo.str1, is("abc"));
         assertThat(pojo.str2, nullValue());
         assertThat(pojo.bigDec, is(new BigDecimal("25")));
     }
 
-    @Test
-    public void testCreatorWithExtraProperties() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testCreatorWithExtraPropertiesParameterized(BindingMethod bindingMethod) {
         String json = "{\"str1\":\"abc\",\"str2\":\"def\",\"bigDec\":25,\"extra\":\"ignored\"}";
-        CreatorConstructorPojo pojo = jsonBinding.deserialize(json, CreatorConstructorPojo.class);
+        CreatorConstructorPojo pojo = bindingMethod.deserialize(jsonBinding, json, CreatorConstructorPojo.class);
         assertThat(pojo.str1, is("abc"));
         assertThat(pojo.str2, is("def"));
         assertThat(pojo.bigDec, is(new BigDecimal("25")));
     }
 
-    @Test
-    public void testEmptyObjectDeserialization() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testEmptyObjectDeserializationParameterized(BindingMethod bindingMethod) {
         String json = "{}";
-        CreatorConstructorPojo pojo = jsonBinding.deserialize(json, CreatorConstructorPojo.class);
+        CreatorConstructorPojo pojo = bindingMethod.deserialize(jsonBinding, json, CreatorConstructorPojo.class);
         assertThat(pojo.str1, nullValue());
         assertThat(pojo.str2, nullValue());
         assertThat(pojo.bigDec, nullValue());
     }
 
-    @Test
-    public void testCreatorWithPrimitiveTypes() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testCreatorWithPrimitiveTypesParameterized(BindingMethod bindingMethod) {
         String json = "{\"value\":42}";
-        CreatorWithPrimitives pojo = jsonBinding.deserialize(json, CreatorWithPrimitives.class);
+        CreatorWithPrimitives pojo = bindingMethod.deserialize(jsonBinding, json, CreatorWithPrimitives.class);
         assertThat(pojo.value, is(42));
         assertThat(pojo.flag, is(false)); // default value
     }
 
-    @Test
-    public void testGenericCreatorParameter() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testGenericCreatorParameterParameterized(BindingMethod bindingMethod) {
         String json = "{\"testPersons\": [{\"name\": \"name1\"}]}";
-        Persons persons = jsonBinding.deserialize(json, Persons.class);
+        Persons persons = bindingMethod.deserialize(jsonBinding, json, Persons.class);
         assertThat(persons.hiddenPersons.size(), is(1));
         assertThat(persons.hiddenPersons.iterator().next().getName(), is("name1"));
     }
 
-    @Test
-    public void testCreatorParameterNaming() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testCreatorParameterNamingParameterized(BindingMethod bindingMethod) {
         String json = "{\"string\":\"someText\", \"someParam\":null }";
-        ParameterNameTester result = jsonBinding.deserialize(json, ParameterNameTester.class);
+        ParameterNameTester result = bindingMethod.deserialize(jsonBinding, json, ParameterNameTester.class);
         assertThat(result.name, is("someText"));
         assertThat(result.secondParam, nullValue());
     }
@@ -220,5 +230,4 @@ public class CreatorTest {
             this.secondParam = someParam;
         }
     }
-
 }

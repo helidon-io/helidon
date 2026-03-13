@@ -23,7 +23,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -37,46 +38,50 @@ public class MiscConvertersTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testUuidConverter() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testUuidConverterParameterized(BindingMethod bindingMethod) {
         UUID original = UUID.randomUUID();
-        String json = jsonBinding.serialize(original);
+        String json = bindingMethod.serialize(jsonBinding, original);
         assertThat(json, is("\"" + original + "\""));
-        UUID deserialized = jsonBinding.deserialize(json, UUID.class);
+        UUID deserialized = bindingMethod.deserialize(jsonBinding, json, UUID.class);
         assertThat(deserialized, is(original));
     }
 
-    @Test
-    public void testBigIntegerConverter() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBigIntegerConverterParameterized(BindingMethod bindingMethod) {
         BigInteger original = new BigInteger("123456789012345678901234567890");
-        String json = jsonBinding.serialize(original);
+        String json = bindingMethod.serialize(jsonBinding, original);
         assertThat(json, is("\"123456789012345678901234567890\""));
-        BigInteger deserialized = jsonBinding.deserialize(json, BigInteger.class);
+        BigInteger deserialized = bindingMethod.deserialize(jsonBinding, json, BigInteger.class);
         assertThat(deserialized, is(original));
     }
 
-    @Test
-    public void testUuidInBean() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testUuidInBeanParameterized(BindingMethod bindingMethod) {
         UuidBean bean = new UuidBean();
         bean.setId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"));
         bean.setName("Test Bean");
 
-        String json = jsonBinding.serialize(bean);
+        String json = bindingMethod.serialize(jsonBinding, bean);
         assertThat(json, is("{\"id\":\"550e8400-e29b-41d4-a716-446655440000\",\"name\":\"Test Bean\"}"));
 
-        UuidBean deserialized = jsonBinding.deserialize(json, UuidBean.class);
+        UuidBean deserialized = bindingMethod.deserialize(jsonBinding, json, UuidBean.class);
         assertThat(deserialized.getId(), is(bean.getId()));
         assertThat(deserialized.getName(), is(bean.getName()));
     }
 
-    @Test
-    public void testBigIntegerInBean() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBigIntegerInBeanParameterized(BindingMethod bindingMethod) {
         BigIntegerBean bean = new BigIntegerBean();
         bean.setValue(new BigInteger("999999999999999999999999999999"));
         bean.setDescription("Large number");
 
-        String json = jsonBinding.serialize(bean);
-        BigIntegerBean deserialized = jsonBinding.deserialize(json, BigIntegerBean.class);
+        String json = bindingMethod.serialize(jsonBinding, bean);
+        BigIntegerBean deserialized = bindingMethod.deserialize(jsonBinding, json, BigIntegerBean.class);
 
         assertThat(deserialized.getValue(), is(bean.getValue()));
         assertThat(deserialized.getDescription(), is(bean.getDescription()));

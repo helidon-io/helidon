@@ -24,7 +24,8 @@ import io.helidon.json.binding.JsonBinding;
 import io.helidon.json.binding.JsonConverter;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,8 +39,9 @@ public class CustomConverterTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testCustomConverterOverTheBuilder() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testCustomConverterOverTheBuilderParameterized(BindingMethod bindingMethod) {
         JsonBinding jsonBinding = JsonBinding.builder()
                 .addConverter(new StringConverter())
                 .build();
@@ -47,12 +49,13 @@ public class CustomConverterTest {
         String original = "string value";
         String expected = "\"string value_custom_converter\"";
         String expectedDeserialized = "string value" + "_deserialized";
-        assertThat(jsonBinding.serialize(original), is(expected));
-        assertThat(jsonBinding.deserialize(expected, String.class), is(expectedDeserialized));
+        assertThat(bindingMethod.serialize(jsonBinding, original), is(expected));
+        assertThat(bindingMethod.deserialize(jsonBinding, expected, String.class), is(expectedDeserialized));
     }
 
-    @Test
-    public void testCustomDeserializerOverTheBuilder() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testCustomDeserializerOverTheBuilderParameterized(BindingMethod bindingMethod) {
         JsonBinding jsonBinding = JsonBinding.builder()
                 .addDeserializer(new StringConverter())
                 .build();
@@ -60,12 +63,13 @@ public class CustomConverterTest {
         String original = "string value";
         String expected = "\"string value\"";
         String expectedDeserialized = "string value" + "_deserialized";
-        assertThat(jsonBinding.serialize(original), is(expected));
-        assertThat(jsonBinding.deserialize(expected, String.class), is(expectedDeserialized));
+        assertThat(bindingMethod.serialize(jsonBinding, original), is(expected));
+        assertThat(bindingMethod.deserialize(jsonBinding, expected, String.class), is(expectedDeserialized));
     }
 
-    @Test
-    public void testCustomSerializerOverTheBuilder() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testCustomSerializerOverTheBuilderParameterized(BindingMethod bindingMethod) {
         JsonBinding jsonBinding = JsonBinding.builder()
                 .addSerializer(new StringConverter())
                 .build();
@@ -73,30 +77,32 @@ public class CustomConverterTest {
         String original = "string value";
         String expected = "\"string value_custom_converter\"";
         String expectedDeserialized = "string value_custom_converter";
-        assertThat(jsonBinding.serialize(original), is(expected));
-        assertThat(jsonBinding.deserialize(expected, String.class), is(expectedDeserialized));
+        assertThat(bindingMethod.serialize(jsonBinding, original), is(expected));
+        assertThat(bindingMethod.deserialize(jsonBinding, expected, String.class), is(expectedDeserialized));
     }
 
-    @Test
-    public void testCustomSerializerOnTheField() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testCustomSerializerOnTheFieldParameterized(BindingMethod bindingMethod) {
         CustomFieldSerializer instance = new CustomFieldSerializer("without serializer", "with serializer");
         String expected = "{\"fieldWithoutSerializer\":\"without serializer\","
                 + "\"fieldWithSerializer\":\"with serializer_custom_converter\"}";
         CustomFieldSerializer expectedDeserialized = new CustomFieldSerializer("without serializer",
                                                                                "with serializer_custom_converter");
-        assertThat(jsonBinding.serialize(instance), is(expected));
-        assertThat(jsonBinding.deserialize(expected, CustomFieldSerializer.class), is(expectedDeserialized));
+        assertThat(bindingMethod.serialize(jsonBinding, instance), is(expected));
+        assertThat(bindingMethod.deserialize(jsonBinding, expected, CustomFieldSerializer.class), is(expectedDeserialized));
     }
 
-    @Test
-    public void testCustomDeserializerOnTheField() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testCustomDeserializerOnTheFieldParameterized(BindingMethod bindingMethod) {
         CustomFieldDeserializer instance = new CustomFieldDeserializer("without deserializer", "with deserializer");
         String expected = "{\"fieldWithoutDeserializer\":\"without deserializer\","
                 + "\"fieldWithDeserializer\":\"with deserializer\"}";
         CustomFieldDeserializer expectedDeserialized = new CustomFieldDeserializer("without deserializer",
                                                                                    "with deserializer_deserialized");
-        assertThat(jsonBinding.serialize(instance), is(expected));
-        assertThat(jsonBinding.deserialize(expected, CustomFieldDeserializer.class), is(expectedDeserialized));
+        assertThat(bindingMethod.serialize(jsonBinding, instance), is(expected));
+        assertThat(bindingMethod.deserialize(jsonBinding, expected, CustomFieldDeserializer.class), is(expectedDeserialized));
     }
 
     static class StringConverter implements JsonConverter<String> {
@@ -135,5 +141,4 @@ public class CustomConverterTest {
     record CustomFieldDeserializer(String fieldWithoutDeserializer,
                                    @Json.Deserializer(StringConverter.class) String fieldWithDeserializer) {
     }
-
 }

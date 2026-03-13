@@ -20,7 +20,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -35,47 +36,54 @@ public class DoubleTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testDoubleSerialization() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDoubleSerializationParameterized(BindingMethod bindingMethod) {
         DoubleModel model = new DoubleModel(123.456, 456.789);
 
         String expected = "{\"object\":123.456,\"primitive\":456.789}";
-        assertThat(jsonBinding.serialize(model), is(expected));
+        assertThat(bindingMethod.serialize(jsonBinding, model), is(expected));
     }
 
-    @Test
-    public void testDoubleDeserializationFromDoubleAsStringValue() {
-        DoubleModel doubleModel = jsonBinding.deserialize("{\"object\":\"123.456\",\"primitive\":\"456.789\"}",
-                                                          DoubleModel.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDoubleDeserializationFromDoubleAsStringValueParameterized(BindingMethod bindingMethod) {
+        DoubleModel doubleModel = bindingMethod.deserialize(jsonBinding,
+                                                            "{\"object\":\"123.456\",\"primitive\":\"456.789\"}",
+                                                            DoubleModel.class);
         assertThat(doubleModel.object, is(123.456));
         assertThat(doubleModel.primitive, is(456.789));
     }
 
-    @Test
-    public void testDoubleDeserializationFromDoubleRawValue() {
-        DoubleModel doubleModel = jsonBinding.deserialize("{\"object\":123.456,\"primitive\":456.789}", DoubleModel.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDoubleDeserializationFromDoubleRawValueParameterized(BindingMethod bindingMethod) {
+        DoubleModel doubleModel = bindingMethod.deserialize(jsonBinding,
+                                                            "{\"object\":123.456,\"primitive\":456.789}",
+                                                            DoubleModel.class);
         assertThat(doubleModel.object, is(123.456));
         assertThat(doubleModel.primitive, is(456.789));
     }
 
-    @Test
-    public void testRawDoubles() {
-        Double value = jsonBinding.deserialize("123.456", Double.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRawDoublesParameterized(BindingMethod bindingMethod) {
+        Double value = bindingMethod.deserialize(jsonBinding, "123.456", Double.class);
         assertThat(value, is(123.456));
-        value = jsonBinding.deserialize("123.456", double.class);
+        value = bindingMethod.deserialize(jsonBinding, "123.456", double.class);
         assertThat(value, is(123.456));
-        value = jsonBinding.deserialize("\"123.456\"", Double.class);
+        value = bindingMethod.deserialize(jsonBinding, "\"123.456\"", Double.class);
         assertThat(value, is(123.456));
-        value = jsonBinding.deserialize("\"123.456\"", double.class);
+        value = bindingMethod.deserialize(jsonBinding, "\"123.456\"", double.class);
         assertThat(value, is(123.456));
-        value = jsonBinding.deserialize("null", Double.class);
+        value = bindingMethod.deserialize(jsonBinding, "null", Double.class);
         assertThat(value, is(nullValue()));
-        value = jsonBinding.deserialize("null", double.class);
+        value = bindingMethod.deserialize(jsonBinding, "null", double.class);
         assertThat(value, is(0.0));
 
-        String serialized = jsonBinding.serialize(123.456);
+        String serialized = bindingMethod.serialize(jsonBinding, 123.456);
         assertThat(serialized, is("123.456"));
-        serialized = jsonBinding.serialize(Double.valueOf(123.456));
+        serialized = bindingMethod.serialize(jsonBinding, Double.valueOf(123.456));
         assertThat(serialized, is("123.456"));
     }
 
@@ -83,5 +91,4 @@ public class DoubleTest {
     record DoubleModel(Double object, double primitive) {
 
     }
-
 }

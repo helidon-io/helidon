@@ -20,7 +20,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -35,46 +36,54 @@ public class LongTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testLongSerialization() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testLongSerializationParameterized(BindingMethod bindingMethod) {
         LongModel model = new LongModel(123L, 456);
 
         String expected = "{\"object\":123,\"primitive\":456}";
-        assertThat(jsonBinding.serialize(model), is(expected));
+        assertThat(bindingMethod.serialize(jsonBinding, model), is(expected));
     }
 
-    @Test
-    public void testLongDeserializationFromLongAsStringValue() {
-        LongModel longModel = jsonBinding.deserialize("{\"object\":\"123\",\"primitive\":\"456\"}", LongModel.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testLongDeserializationFromLongAsStringValueParameterized(BindingMethod bindingMethod) {
+        LongModel longModel = bindingMethod.deserialize(jsonBinding,
+                                                        "{\"object\":\"123\",\"primitive\":\"456\"}",
+                                                        LongModel.class);
         assertThat(longModel.object, is(123L));
         assertThat(longModel.primitive, is(456L));
     }
 
-    @Test
-    public void testLongDeserializationFromLongRawValue() {
-        LongModel longModel = jsonBinding.deserialize("{\"object\":123,\"primitive\":456}", LongModel.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testLongDeserializationFromLongRawValueParameterized(BindingMethod bindingMethod) {
+        LongModel longModel = bindingMethod.deserialize(jsonBinding,
+                                                        "{\"object\":123,\"primitive\":456}",
+                                                        LongModel.class);
         assertThat(longModel.object, is(123L));
         assertThat(longModel.primitive, is(456L));
     }
 
-    @Test
-    public void testRawLongs() {
-        Long value = jsonBinding.deserialize("123", Long.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRawLongsParameterized(BindingMethod bindingMethod) {
+        Long value = bindingMethod.deserialize(jsonBinding, "123", Long.class);
         assertThat(value, is(123L));
-        value = jsonBinding.deserialize("123", long.class);
+        value = bindingMethod.deserialize(jsonBinding, "123", long.class);
         assertThat(value, is(123L));
-        value = jsonBinding.deserialize("\"123\"", Long.class);
+        value = bindingMethod.deserialize(jsonBinding, "\"123\"", Long.class);
         assertThat(value, is(123L));
-        value = jsonBinding.deserialize("\"123\"", long.class);
+        value = bindingMethod.deserialize(jsonBinding, "\"123\"", long.class);
         assertThat(value, is(123L));
-        value = jsonBinding.deserialize("null", Long.class);
+        value = bindingMethod.deserialize(jsonBinding, "null", Long.class);
         assertThat(value, is(nullValue()));
-        value = jsonBinding.deserialize("null", long.class);
+        value = bindingMethod.deserialize(jsonBinding, "null", long.class);
         assertThat(value, is(0L));
 
-        String serialized = jsonBinding.serialize(123L);
+        String serialized = bindingMethod.serialize(jsonBinding, 123L);
         assertThat(serialized, is("123"));
-        serialized = jsonBinding.serialize(Long.valueOf(123L));
+        serialized = bindingMethod.serialize(jsonBinding, Long.valueOf(123L));
         assertThat(serialized, is("123"));
     }
 
@@ -82,5 +91,4 @@ public class LongTest {
     record LongModel(Long object, long primitive) {
 
     }
-
 }

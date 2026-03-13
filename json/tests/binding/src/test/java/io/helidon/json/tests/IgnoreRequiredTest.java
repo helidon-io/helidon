@@ -21,7 +21,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -37,111 +38,128 @@ public class IgnoreRequiredTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testIgnoreField() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testIgnoreFieldParameterized(BindingMethod bindingMethod) {
         IgnoreField entity = new IgnoreField("included", "ignored");
-        String json = jsonBinding.serialize(entity);
+        String json = bindingMethod.serialize(jsonBinding, entity);
         assertThat(json, is("{\"includedField\":\"included\"}"));
 
-        IgnoreField deserialized = jsonBinding.deserialize("{\"includedField\":\"test\",\"ignoredField\":\"should_be_ignored\"}",
-                                                           IgnoreField.class);
+        IgnoreField deserialized = bindingMethod.deserialize(jsonBinding,
+                                                             "{\"includedField\":\"test\","
+                                                                     + "\"ignoredField\":\"should_be_ignored\"}",
+                                                             IgnoreField.class);
         assertThat(deserialized.getIncludedField(), is("test"));
         assertThat(deserialized.getIgnoredField(), nullValue());
     }
 
-    @Test
-    public void testTransientField() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testTransientFieldParameterized(BindingMethod bindingMethod) {
         TransientField entity = new TransientField("included", "ignored");
-        String json = jsonBinding.serialize(entity);
+        String json = bindingMethod.serialize(jsonBinding, entity);
         assertThat(json, is("{\"includedField\":\"included\"}"));
 
-        TransientField deserialized = jsonBinding.deserialize(
+        TransientField deserialized = bindingMethod.deserialize(
+                jsonBinding,
                 "{\"includedField\":\"test\",\"ignoredField\":\"should_be_ignored\"}",
                 TransientField.class);
         assertThat(deserialized.getIncludedField(), is("test"));
         assertThat(deserialized.getIgnoredField(), nullValue());
     }
 
-    @Test
-    public void testIgnoreMethod() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testIgnoreMethodParameterized(BindingMethod bindingMethod) {
         IgnoreMethod entity = new IgnoreMethod("included", "ignored");
-        String json = jsonBinding.serialize(entity);
+        String json = bindingMethod.serialize(jsonBinding, entity);
         assertThat(json, is("{\"includedField\":\"included\"}"));
 
-        IgnoreMethod deserialized = jsonBinding.deserialize("{\"includedField\":\"test\",\"ignoredField\":\"should_be_ignored\"}",
-                                                            IgnoreMethod.class);
+        IgnoreMethod deserialized = bindingMethod.deserialize(jsonBinding,
+                                                              "{\"includedField\":\"test\","
+                                                                      + "\"ignoredField\":\"should_be_ignored\"}",
+                                                              IgnoreMethod.class);
         assertThat(deserialized.getIncludedField(), is("test"));
         assertThat(deserialized.getIgnoredField(), nullValue());
     }
 
-    @Test
-    public void testRequiredFieldPresent() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRequiredFieldPresentParameterized(BindingMethod bindingMethod) {
         String json = "{\"requiredField\":\"value\",\"optionalField\":\"optional\"}";
-        RequiredField entity = jsonBinding.deserialize(json, RequiredField.class);
+        RequiredField entity = bindingMethod.deserialize(jsonBinding, json, RequiredField.class);
         assertThat(entity.requiredField, is("value"));
         assertThat(entity.optionalField, is("optional"));
     }
 
-    @Test
-    public void testRequiredFieldMissing() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRequiredFieldMissingParameterized(BindingMethod bindingMethod) {
         String json = "{\"optionalField\":\"optional\"}";
-        assertThrows(JsonException.class, () -> jsonBinding.deserialize(json, RequiredField.class));
+        assertThrows(JsonException.class, () -> bindingMethod.deserialize(jsonBinding, json, RequiredField.class));
     }
 
-    @Test
-    public void testRequiredFieldNull() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRequiredFieldNullParameterized(BindingMethod bindingMethod) {
         String json = "{\"requiredField\":null,\"optionalField\":\"optional\"}";
-        RequiredField entity = jsonBinding.deserialize(json, RequiredField.class);
+        RequiredField entity = bindingMethod.deserialize(jsonBinding, json, RequiredField.class);
         assertThat(entity.requiredField, is(nullValue()));
         assertThat(entity.optionalField, is("optional"));
     }
 
-    @Test
-    public void testRequiredMethodPresent() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRequiredMethodPresentParameterized(BindingMethod bindingMethod) {
         String json = "{\"requiredProperty\":\"value\",\"optionalProperty\":\"optional\"}";
-        RequiredMethod entity = jsonBinding.deserialize(json, RequiredMethod.class);
+        RequiredMethod entity = bindingMethod.deserialize(jsonBinding, json, RequiredMethod.class);
         assertThat(entity.getRequiredProperty(), is("value"));
         assertThat(entity.getOptionalProperty(), is("optional"));
     }
 
-    @Test
-    public void testRequiredMethodMissing() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRequiredMethodMissingParameterized(BindingMethod bindingMethod) {
         String json = "{\"optionalProperty\":\"optional\"}";
-        assertThrows(JsonException.class, () -> jsonBinding.deserialize(json, RequiredMethod.class));
+        assertThrows(JsonException.class, () -> bindingMethod.deserialize(jsonBinding, json, RequiredMethod.class));
     }
 
-    @Test
-    public void testRequiredMethodNull() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRequiredMethodNullParameterized(BindingMethod bindingMethod) {
         String json = "{\"requiredProperty\":null,\"optionalProperty\":\"optional\"}";
-        RequiredMethod entity = jsonBinding.deserialize(json, RequiredMethod.class);
+        RequiredMethod entity = bindingMethod.deserialize(jsonBinding, json, RequiredMethod.class);
         assertThat(entity.getRequiredProperty(), is(nullValue()));
         assertThat(entity.getOptionalProperty(), is("optional"));
     }
 
-    @Test
-    public void testMultipleRequiredFields() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testMultipleRequiredFieldsParameterized(BindingMethod bindingMethod) {
         String json = "{\"field1\":\"value1\",\"field2\":\"value2\",\"field3\":\"value3\"}";
-        MultipleRequired entity = jsonBinding.deserialize(json, MultipleRequired.class);
+        MultipleRequired entity = bindingMethod.deserialize(jsonBinding, json, MultipleRequired.class);
         assertThat(entity.field1, is("value1"));
         assertThat(entity.field2, is("value2"));
         assertThat(entity.field3, is("value3"));
     }
 
-    @Test
-    public void testMultipleRequiredFieldsOneMissing() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testMultipleRequiredFieldsOneMissingParameterized(BindingMethod bindingMethod) {
         String json = "{\"field1\":\"value1\",\"field3\":\"value3\"}";
-        assertThrows(JsonException.class, () -> jsonBinding.deserialize(json, MultipleRequired.class));
+        assertThrows(JsonException.class, () -> bindingMethod.deserialize(jsonBinding, json, MultipleRequired.class));
     }
 
-    @Test
-    public void testIgnoreAndRequiredCombination() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testIgnoreAndRequiredCombinationParameterized(BindingMethod bindingMethod) {
         IgnoreAndRequired entity = new IgnoreAndRequired("included", "ignored", "required");
-        String json = jsonBinding.serialize(entity);
+        String json = bindingMethod.serialize(jsonBinding, entity);
         assertThat(json, is("{\"includedField\":\"included\",\"requiredField\":\"required\"}"));
 
         String toDeserialize = "{\"includedField\":\"included\",\"ignoredField\":\"ignored\",\"requiredField\":\"required\"}";
 
-        IgnoreAndRequired deserialized = jsonBinding.deserialize(toDeserialize, IgnoreAndRequired.class);
+        IgnoreAndRequired deserialized = bindingMethod.deserialize(jsonBinding, toDeserialize, IgnoreAndRequired.class);
         assertThat(deserialized.includedField, is("included"));
         assertThat(deserialized.ignoredField, nullValue());
         assertThat(deserialized.requiredField, is("required"));
