@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,7 @@ import io.helidon.metadata.MetadataFile;
  *     <li>{@code full} to enable full tracing (including sizes, depth etc.)</li>
  * </ul>
  */
+@Api.Stable
 public final class SerializationConfig {
     static final String PROP_WRONG_CONFIG_ACTION = "helidon.serialFilter.failure.action";
     static final String PROP_NO_CONFIG_ACTION = "helidon.serialFilter.missing.action";
