@@ -48,6 +48,12 @@ version() {
 HELIDON_VERSION=$(version "${WS_DIR}/bom/pom.xml")
 readonly HELIDON_VERSION
 
+# No helidon-examples branch for 27.x yet (repo has dev-4.x for 4.x only)
+if [[ "${HELIDON_VERSION}" == 27.* ]]; then
+  echo "Skipping examples build: helidon-examples has no branch for ${HELIDON_VERSION} (only dev-4.x for 4.x)."
+  exit 0
+fi
+
 # If needed we clone the helidon-examples repo
 if [ ! -d "${WS_DIR}/helidon-examples" ]; then
   echo "Cloning examples repository into ${WS_DIR}/helidon-examples"
