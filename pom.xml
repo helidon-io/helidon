@@ -64,7 +64,6 @@
         -->
         <version.lib.asm>9.8</version.lib.asm>
         <version.lib.checkstyle>10.12.5</version.lib.checkstyle>
-        <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <!-- Dependencies convergence via jinjava -->
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mockserver>5.15.0</version.lib.mockserver>
@@ -87,7 +86,8 @@
         <version.lib.maven.plugin.annotations>3.15.1</version.lib.maven.plugin.annotations>
         <version.lib.maven.plugin.api>3.9.3</version.lib.maven.plugin.api>
         <version.lib.maven.plugin.project>2.2.1</version.lib.maven.plugin.project>
-        <version.lib.groovy>2.4.16</version.lib.groovy>
+        <version.lib.groovy>2.5.23</version.lib.groovy>
+        <version.lib.groovy-all>${version.lib.groovy}</version.lib.groovy-all>
         <version.lib.nimbus.jose.jwt>10.4</version.lib.nimbus.jose.jwt>
         <!--
         !Version statement! - end
