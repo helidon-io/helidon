@@ -57,6 +57,9 @@ class LlmModelBlueprintBuilder extends IntrospectionBlueprintBuilder {
 
         initClassModel(blueprintTypeName, lc4jProviderTypeInfo.typeName(), Optional.of(lc4jProviderTypeInfo.typeName()));
         classModelBuilder()
+                .description(lc4jProviderTypeInfo.description()
+                                     .filter(it -> !it.isBlank())
+                                     .orElseGet(this::defaultBlueprintDescription))
                 .addField(Field.builder()
                                   .name("PROVIDER_KEY")
                                   .isFinal(true)
@@ -100,5 +103,9 @@ class LlmModelBlueprintBuilder extends IntrospectionBlueprintBuilder {
                                  .build());
 
         classModelBuilder().addMethod(methodBuilder.build());
+    }
+
+    private String defaultBlueprintDescription() {
+        return "Configuration blueprint for LangChain4j model " + namePrefix + ".";
     }
 }
