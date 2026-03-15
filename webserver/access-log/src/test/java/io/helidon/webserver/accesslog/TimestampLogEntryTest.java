@@ -46,8 +46,8 @@ class TimestampLogEntryTest {
         assertThat(value, startsWith("["));
         assertThat(value, CoreMatchers.endsWith("]"));
 
-        // this is as used by Apache HTTP server for common log format
-        DateTimeFormatter defaultPattern = DateTimeFormatter.ofPattern("dd/MMM/YYYY:HH:mm:ss ZZZ");
+        // this is as used by Apache HTTP server for common log format (yyyy = calendar year)
+        DateTimeFormatter defaultPattern = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss ZZZ");
         assertThat(value.substring(1, value.length() - 1), is(defaultPattern.format(TEST_TIME)));
     }
 
