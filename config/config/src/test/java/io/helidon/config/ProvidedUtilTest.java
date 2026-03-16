@@ -64,11 +64,6 @@ public class ProvidedUtilTest {
     }
 
     @Test
-    @Disabled
-    void testServiceLoaderOrdering() {
-    }
-
-    @Test
     void testServiceRegistryOrdering() {
 
         ServiceDescriptor<?> higher = ExistingInstanceDescriptor.create(
