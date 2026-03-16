@@ -32,6 +32,17 @@
     <name>Helidon Service Tests Maven Plugin</name>
     <description>Tests for Maven Plugin</description>
 
+
+    <properties>
+        <!--
+         These libraries need to be upgraded/version managed
+         so we support the latest Java version
+         -->
+        <version.lib.apache-groovy>5.0.4</version.lib.apache-groovy>
+        <version.lib.archetype-common>3.4.1</version.lib.archetype-common>
+        <version.lib.commons-io>2.20.0</version.lib.commons-io>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -62,6 +73,31 @@
         </dependency>
     </dependencies>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.helidon.build-tools.archetype</groupId>
+                <artifactId>helidon-archetype-engine-v2</artifactId>
+                <version>${version.plugin.helidon-build-tools}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.build-tools.common</groupId>
+                <artifactId>helidon-build-common-maven-url-support</artifactId>
+                <version>${version.plugin.helidon-build-tools}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy</artifactId>
+                <version>${version.lib.apache-groovy}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${version.lib.commons-io}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <build>
         <plugins>
             <plugin>
@@ -85,6 +121,18 @@
                         </goals>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.groovy</groupId>
+                        <artifactId>groovy</artifactId>
+                        <version>${version.lib.apache-groovy}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.maven.archetype</groupId>
+                        <artifactId>archetype-common</artifactId>
+                        <version>${version.lib.archetype-common}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
