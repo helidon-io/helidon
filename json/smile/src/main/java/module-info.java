@@ -18,28 +18,20 @@ import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
- * Helidon JSON Binding Media Support.
- * Provides JSON Binding media type support for HTTP requests and responses,
- * enabling automatic serialization and deserialization of JSON data.
+ * Smile binary JSON support for Helidon JSON.
  */
-@Features.Name("Helidon JSON Binding")
-@Features.Description("Helidon JSON Binding media support")
+@Features.Name("JSON Smile")
+@Features.Description("JSON Smile implementation")
 @Features.Flavor(HelidonFlavor.SE)
-@Features.Path({"Media", "JSON Binding"})
-module io.helidon.http.media.json.binding {
+@Features.Path({"JSON", "Smile"})
+@Features.Incubating
+module io.helidon.json.smile {
 
     requires static io.helidon.common.features.api;
-    requires static io.helidon.config.metadata;
 
-    requires io.helidon.builder.api;
-    requires io.helidon.http.media;
     requires io.helidon.json;
-    requires io.helidon.json.binding;
+    requires io.helidon.common.buffers;
+    requires io.helidon.builder.api;
 
-    requires transitive io.helidon.config;
-
-    exports io.helidon.http.media.json.binding;
-
-    provides io.helidon.http.media.spi.MediaSupportProvider
-            with io.helidon.http.media.json.binding.JsonBindingMediaSupportProvider;
+    exports io.helidon.json.smile;
 }
