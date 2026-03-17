@@ -16,6 +16,10 @@
 
 package io.helidon.webclient.api;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Optional;
+
 import io.helidon.common.GenericType;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
@@ -50,7 +54,7 @@ class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
         T entity;
         RuntimeException thrown;
         try {
-            entity = response.entity().as(entityType);
+            entity = entity(response, entityType);
             thrown = null;
         } catch (RuntimeException e) {
             thrown = e;
@@ -92,5 +96,49 @@ class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
     @Override
     public void close() {
         response.close();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T entity(HttpClientResponse response, GenericType<T> entityType) {
+        GenericType<?> optionalEntityType = optionalEntityType(entityType);
+        if (optionalEntityType != null) {
+            if (noEntity(response)) {
+                return (T) Optional.empty();
+            }
+            return (T) response.entity().asOptional(optionalEntityType);
+        }
+        return response.entity().as(entityType);
+    }
+
+    private static boolean noEntity(HttpClientResponse response) {
+        Status status = response.status();
+        if (status.family() == Status.Family.INFORMATIONAL) {
+            return true;
+        }
+
+        int statusCode = status.code();
+        if (statusCode == Status.NO_CONTENT_204.code()
+                || statusCode == Status.RESET_CONTENT_205.code()
+                || statusCode == Status.NOT_MODIFIED_304.code()
+                || statusCode == Status.NOT_FOUND_404.code()) {
+            return true;
+        }
+
+        return response.headers().contentLength().orElse(-1) == 0;
+    }
+
+    private static GenericType<?> optionalEntityType(GenericType<?> entityType) {
+        if (!Optional.class.equals(entityType.rawType())) {
+            return null;
+        }
+        Type genericType = entityType.type();
+        if (!(genericType instanceof ParameterizedType parameterizedType)) {
+            return null;
+        }
+        Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+        if (actualTypeArguments.length != 1) {
+            return null;
+        }
+        return GenericType.create(actualTypeArguments[0]);
     }
 }

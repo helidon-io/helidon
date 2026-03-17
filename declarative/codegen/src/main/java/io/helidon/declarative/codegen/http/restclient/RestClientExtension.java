@@ -467,7 +467,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
         var returnType = method.returnType();
         boolean useGenericType;
         String genericTypeField;
-        if (hasResponse && !returnType.typeArguments().isEmpty() && !returnType.isOptional()) {
+        if (hasResponse && !returnType.typeArguments().isEmpty()) {
             // we have a return type, and it has type arguments
             useGenericType = true;
             TypeName genType = TypeName.builder(TypeNames.GENERIC_TYPE)
