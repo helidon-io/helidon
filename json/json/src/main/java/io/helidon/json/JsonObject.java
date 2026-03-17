@@ -117,6 +117,17 @@ public final class JsonObject extends JsonValue {
     }
 
     /**
+     * Return the value associated with the specified key, or the empty value if the key is not present.
+     *
+     * @param key the key to look up
+     * @return the value associated with the key, or empty
+     */
+    public Optional<JsonValue> value(String key) {
+        ensureResolvedKeys();
+        return Optional.ofNullable(content.get(key));
+    }
+
+    /**
      * Return the boolean value associated with the specified key as an Optional.
      *
      * @param key the key to look up

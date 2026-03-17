@@ -152,6 +152,37 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
         serialize(outputStream, obj, serializer(type));
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public void serialize(JsonGenerator generator, Object obj) {
+        if (obj == null) {
+            generator.writeNull();
+            return;
+        }
+        JsonSerializer<Object> serializer = (JsonSerializer<Object>) serializer(obj.getClass());
+        serializer.serialize(generator, obj, false);
+    }
+
+    @Override
+    public <T> void serialize(JsonGenerator generator, T obj, Class<? super T> type) {
+        if (obj == null) {
+            generator.writeNull();
+            return;
+        }
+        JsonSerializer<? super T> serializer = serializer(type);
+        serializer.serialize(generator, obj, false);
+    }
+
+    @Override
+    public <T> void serialize(JsonGenerator generator, T obj, GenericType<? super T> type) {
+        if (obj == null) {
+            generator.writeNull();
+            return;
+        }
+        JsonSerializer<? super T> serializer = serializer(type);
+        serializer.serialize(generator, obj, false);
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public void serialize(Writer writer, Object obj) {
@@ -271,6 +302,18 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     public <T> T deserialize(JsonValue jsonValue, GenericType<T> type) {
         JsonDeserializer<T> deserializer = deserializer(type);
         JsonParser parser = JsonParser.create(jsonValue);
+        return Deserializers.deserialize(parser, deserializer);
+    }
+
+    @Override
+    public <T> T deserialize(JsonParser parser, Class<T> type) {
+        JsonDeserializer<T> deserializer = deserializer(type);
+        return Deserializers.deserialize(parser, deserializer);
+    }
+
+    @Override
+    public <T> T deserialize(JsonParser parser, GenericType<T> type) {
+        JsonDeserializer<T> deserializer = deserializer(type);
         return Deserializers.deserialize(parser, deserializer);
     }
 
