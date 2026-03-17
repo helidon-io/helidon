@@ -32,6 +32,11 @@ enum GeneratorMethod {
                 }
 
                 @Override
+                public JsonGenerator createPrettyGenerator() {
+                    return JsonGenerator.create(writer, true);
+                }
+
+                @Override
                 public String generatedJson() {
                     return writer.toString();
                 }
@@ -49,6 +54,11 @@ enum GeneratorMethod {
                 }
 
                 @Override
+                public JsonGenerator createPrettyGenerator() {
+                    return JsonGenerator.create(outputStream, true);
+                }
+
+                @Override
                 public String generatedJson() {
                     return outputStream.toString(StandardCharsets.UTF_8);
                 }
@@ -60,6 +70,8 @@ enum GeneratorMethod {
 
     interface Target {
         JsonGenerator createGenerator();
+
+        JsonGenerator createPrettyGenerator();
 
         String generatedJson();
     }

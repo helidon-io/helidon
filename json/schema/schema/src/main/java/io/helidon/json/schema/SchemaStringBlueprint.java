@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.metadata.hson.Hson;
+import io.helidon.json.JsonObject;
 
 /**
  * Json schema related to the strings.
@@ -55,7 +55,7 @@ interface SchemaStringBlueprint extends SchemaItemBlueprint {
     SchemaType schemaType();
 
     @Override
-    default void generate(Hson.Struct.Builder builder) {
+    default void generate(JsonObject.Builder builder) {
         SchemaItemBlueprint.super.generate(builder);
         maxLength().ifPresent(maxLength -> builder.set("maxLength", maxLength));
         minLength().ifPresent(minLength -> builder.set("minLength", minLength));
