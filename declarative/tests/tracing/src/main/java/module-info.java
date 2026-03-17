@@ -25,7 +25,9 @@ module io.helidon.declarative.tests.tracing {
     requires io.helidon.metrics.api;
     requires io.helidon.config.yaml;
     requires io.helidon.webserver.observe.tracing;
-
+    requires io.helidon.webserver.context;
+    requires io.helidon.webserver.observe;
+    requires io.helidon.webserver.concurrency.limits;
 
     exports io.helidon.declarative.tests.tracing;
 }

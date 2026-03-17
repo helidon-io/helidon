@@ -36,5 +36,9 @@ module io.helidon.declarative.tests.http {
     requires io.helidon.security.integration.common;
     requires io.helidon.security.annotations;
 
+    // required for generated binding
+    requires io.helidon.webserver.context;
+    requires io.helidon.webserver.observe;
+
     exports io.helidon.declarative.tests.http;
 }
