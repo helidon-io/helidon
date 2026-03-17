@@ -137,7 +137,7 @@ xref:{guidesdir}/quickstart.adoc[Helidon {flavor-uc} Quickstart Guide].
 
 == Creating snapshot
 
-In another shell trigger the snapshot creation with https://docs.oracle.com/en/java/javase/25/docs/specs/man/jcmd.html[jcmd] command `JDK.checkpoint`:
+In another shell trigger the snapshot creation with https://docs.oracle.com/en/java/javase/26/docs/specs/man/jcmd.html[jcmd] command `JDK.checkpoint`:
 
 [source,bash,subs="attributes+"]
 ----

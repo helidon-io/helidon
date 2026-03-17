@@ -18,13 +18,13 @@
 Project Helidon is a set of Java Libraries for writing microservices.
 Your application is a Java SE program running on the
 new Helidon Níma WebServer that has been written from the ground up to
-use Java 25 Virtual Threads. With Helidon 4 you get the high throughput of a reactive server with the simplicity of thread-per-request style programming.
+use Java 21 Virtual Threads. With Helidon 4 you get the high throughput of a reactive server with the simplicity of thread-per-request style programming.
 
 The Helidon SE API in Helidon 4 has changed significantly from Helidon 3. The use of virtual threads has enabled these APIs to change from asynchronous to blocking. This results in much simpler code that is easier to write, maintain, debug and understand. Earlier Helidon SE code will require modification to run on these new APIs. For more information see the [Helidon SE Upgrade Guide](https://helidon.io/docs/v4/se/guides/upgrade_4x).
 
 New to Helidon? Then jump in and [get started](https://helidon.io/docs/v4/about/prerequisites).
 
-Java 25 is required to use Helidon 27.
+Java 26 is required to use Helidon 27.
 
 
 ## License
@@ -71,7 +71,7 @@ See this [document](HELIDON-CLI.md) for more info.
 
 ## Build
 
-You need JDK 25 to build Helidon 27.
+You need JDK 26 to build Helidon 27.
 
 You also need Maven. We recommend 3.8.0 or newer.
 

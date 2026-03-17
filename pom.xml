@@ -35,7 +35,7 @@
     <description>Java libraries for writing microservices</description>
 
     <properties>
-        <version.java>25</version.java>
+        <version.java>26</version.java>
 
         <doclint>all</doclint>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -62,7 +62,7 @@
 
         Changing these version requires approval for a new third party dependency!
         -->
-        <version.lib.asm>9.8</version.lib.asm>
+        <version.lib.asm>9.9.1</version.lib.asm>
         <version.lib.checkstyle>10.12.5</version.lib.checkstyle>
         <!-- Dependencies convergence via jinjava -->
         <version.lib.mockito>2.23.4</version.lib.mockito>

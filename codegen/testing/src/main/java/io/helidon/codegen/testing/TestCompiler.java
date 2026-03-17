@@ -423,7 +423,7 @@ public final class TestCompiler {
         }
 
         /**
-         * Add an option with a name and a value (i.e. {@code --release 25}).
+         * Add an option with a name and a value (i.e. {@code --release 26}).
          *
          * @param option option name
          * @param value  option value

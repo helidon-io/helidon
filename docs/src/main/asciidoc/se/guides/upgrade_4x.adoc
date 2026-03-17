@@ -37,7 +37,7 @@ TIP: The link:{helidon-github-examples-url}/[Helidon Examples repository] is a g
 
 === Java SE Support
 
-Helidon 4.x removes support for Java SE 17. You must use Java SE 21 or later. If you are using Helidon 4.3.0 or later, using Java SE 25 or later is recommended.
+Helidon 4.x removes support for Java SE 17. You must use Java SE 21 or later. If you are using Helidon 4.3.0 or later, using Java SE 26 or later is recommended.
 
 === Programming Paradigm Shift
 
