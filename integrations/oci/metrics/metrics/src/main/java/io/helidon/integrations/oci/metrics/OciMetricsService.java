@@ -26,6 +26,7 @@ import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.resumable.Resumable;
+import io.helidon.common.resumable.ResumableSupport;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsPublisher;
 import io.helidon.spi.HelidonShutdownHandler;
@@ -63,6 +64,7 @@ class OciMetricsService implements MetricsPublisher,
 
     private OciMetricsService(OciMetricsConfig prototype) {
         this.prototype = prototype;
+        ResumableSupport.get().register(this);
         prepareAutoStartup();
         prepareAutoShutdown();
     }
