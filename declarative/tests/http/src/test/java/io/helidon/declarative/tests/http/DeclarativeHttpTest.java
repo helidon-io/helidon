@@ -210,4 +210,30 @@ class DeclarativeHttpTest {
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("hello"));
     }
+
+    @Test
+    void testTypedClientOptionalResponse() {
+        GreetServiceClient typedClient = registry.get(Lookup.builder()
+                                                              .addContract(GreetServiceClient.class)
+                                                              .addQualifier(Qualifier.create(RestClient.Client.class))
+                                                              .build());
+
+        JsonObject expected = typedClient.getMessageHandler("optional");
+        var rawPresent = client.get("/greet/optional-present/optional").request(JsonObject.class);
+        assertThat(rawPresent.status(), is(Status.OK_200));
+        assertThat(rawPresent.entity(), is(expected));
+        Optional<JsonObject> present = typedClient.optionalMessage("optional");
+        assertThat(present.isPresent(), is(true));
+        assertThat(present.orElseThrow(), is(expected));
+
+        var rawEmpty = client.get("/greet/optional/empty").request();
+        assertThat(rawEmpty.status(), is(Status.NO_CONTENT_204));
+        Optional<JsonObject> empty = typedClient.optionalMessageEmpty();
+        assertThat(empty.isEmpty(), is(true));
+
+        var rawNotFound = client.get("/greet/optional/not-found").request();
+        assertThat(rawNotFound.status(), is(Status.NOT_FOUND_404));
+        Optional<JsonObject> notFound = typedClient.optionalMessageNotFound();
+        assertThat(notFound.isEmpty(), is(true));
+    }
 }

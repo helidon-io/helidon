@@ -16,8 +16,11 @@
 
 package io.helidon.declarative.tests.http;
 
+import java.util.Optional;
+
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Http;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.api.RestClient;
 
 /**
@@ -35,4 +38,19 @@ public interface GreetServiceClient extends GreetService {
     @Http.Produces(MediaTypes.TEXT_PLAIN_VALUE)
     @RestClient.ComputedHeader(name = ClientHeaderFunction.HEADER_NAME, function = ClientHeaderFunction.SERVICE_NAME)
     String getDefaultMessageHandlerPlain();
+
+    @Http.GET
+    @Http.Path("/optional-present/{name}")
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    Optional<JsonObject> optionalMessage(@Http.PathParam("name") String name);
+
+    @Http.GET
+    @Http.Path("/optional/empty")
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    Optional<JsonObject> optionalMessageEmpty();
+
+    @Http.GET
+    @Http.Path("/optional/not-found")
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    Optional<JsonObject> optionalMessageNotFound();
 }
