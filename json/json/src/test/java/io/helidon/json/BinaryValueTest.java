@@ -18,52 +18,58 @@ package io.helidon.json;
 
 import java.util.Base64;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-abstract class BinaryValueTest {
+class BinaryValueTest {
 
-    @Test
-    public void testReadBinaryEmpty() {
-        JsonParser parser = createParser("\"\"");
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadBinaryEmpty(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"\"");
         assertArrayEquals(new byte[0], parser.readBinary());
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testReadBinarySingleByte() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadBinarySingleByte(ParserMethod parserMethod) {
         byte[] bytes = new byte[] {42};
-        JsonParser parser = createParser("\"" + Base64.getEncoder().encodeToString(bytes) + "\"");
+        JsonParser parser = parserMethod.createParser("\"" + Base64.getEncoder().encodeToString(bytes) + "\"");
         assertArrayEquals(bytes, parser.readBinary());
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testReadBinaryPaddingVariants() {
-        assertArrayEquals(new byte[] {1}, createParser("\"AQ==\"").readBinary());
-        assertArrayEquals(new byte[] {1, 2}, createParser("\"AQI=\"").readBinary());
-        assertArrayEquals(new byte[] {1, 2, 3}, createParser("\"AQID\"").readBinary());
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadBinaryPaddingVariants(ParserMethod parserMethod) {
+        assertArrayEquals(new byte[] {1}, parserMethod.createParser("\"AQ==\"").readBinary());
+        assertArrayEquals(new byte[] {1, 2}, parserMethod.createParser("\"AQI=\"").readBinary());
+        assertArrayEquals(new byte[] {1, 2, 3}, parserMethod.createParser("\"AQID\"").readBinary());
     }
 
-    @Test
-    public void testReadBinaryLarge() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadBinaryLarge(ParserMethod parserMethod) {
         byte[] expected = new byte[4096];
         for (int i = 0; i < expected.length; i++) {
             expected[i] = (byte) (i & 0xFF);
         }
-        JsonParser parser = createParser("\"" + Base64.getEncoder().encodeToString(expected) + "\"");
+        JsonParser parser = parserMethod.createParser("\"" + Base64.getEncoder().encodeToString(expected) + "\"");
         assertArrayEquals(expected, parser.readBinary());
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testReadBinaryFromObjectValue() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadBinaryFromObjectValue(ParserMethod parserMethod) {
         byte[] bytes = new byte[] {-1, 0, 1, 2, 127};
-        JsonParser parser = createParser("{\"payload\":\"" + Base64.getEncoder().encodeToString(bytes) + "\"}");
+        JsonParser parser = parserMethod.createParser("{\"payload\":\"" + Base64.getEncoder().encodeToString(bytes) + "\"}");
         parser.nextToken(); // key
         parser.readString();
         parser.nextToken(); // colon
@@ -71,11 +77,12 @@ abstract class BinaryValueTest {
         assertArrayEquals(bytes, parser.readBinary());
     }
 
-    @Test
-    public void testReadBinaryFromArrayValue() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadBinaryFromArrayValue(ParserMethod parserMethod) {
         byte[] first = new byte[] {10, 11};
         byte[] second = new byte[] {12, 13, 14};
-        JsonParser parser = createParser("[\""
+        JsonParser parser = parserMethod.createParser("[\""
                                                  + Base64.getEncoder().encodeToString(first)
                                                  + "\",\""
                                                  + Base64.getEncoder().encodeToString(second)
@@ -87,17 +94,17 @@ abstract class BinaryValueTest {
         assertArrayEquals(second, parser.readBinary());
     }
 
-    @Test
-    public void testReadBinaryRejectsNonStringValue() {
-        JsonParser parser = createParser("123");
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadBinaryRejectsNonStringValue(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("123");
         assertThrows(JsonException.class, parser::readBinary);
     }
 
-    @Test
-    public void testReadBinaryRejectsInvalidBase64() {
-        JsonParser parser = createParser("\"not-base64***\"");
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadBinaryRejectsInvalidBase64(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"not-base64***\"");
         assertThrows(IllegalArgumentException.class, parser::readBinary);
     }
-
-    abstract JsonParser createParser(String template);
 }

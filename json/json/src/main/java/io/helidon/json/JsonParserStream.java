@@ -834,8 +834,11 @@ final class JsonParserStream extends JsonParserBase {
             if (finished) {
                 throw createException("End of the string expected. Incomplete JSON");
             }
+            int previousIndex = currentIndex;
             readMoreData();
-            currentIndex++;
+            if (currentIndex < previousIndex) {
+                currentIndex++;
+            }
         }
 
         while (true) {
@@ -860,8 +863,11 @@ final class JsonParserStream extends JsonParserBase {
             if (finished) {
                 throw createException("End of the string expected. Incomplete JSON");
             }
+            int previousIndex = currentIndex;
             readMoreData();
-            currentIndex++;
+            if (currentIndex < previousIndex) {
+                currentIndex++;
+            }
         }
     }
 
