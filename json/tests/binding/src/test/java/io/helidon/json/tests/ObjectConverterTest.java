@@ -20,13 +20,13 @@ import io.helidon.json.JsonObject;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Testing.Test
 public class ObjectConverterTest {
@@ -37,25 +37,28 @@ public class ObjectConverterTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testDeserializeStringToObject() {
-        Object result = jsonBinding.deserialize("\"hello world\"", Object.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDeserializeStringToObject(BindingMethod bindingMethod) {
+        Object result = bindingMethod.deserialize(jsonBinding, "\"hello world\"", Object.class);
         assertThat(result, instanceOf(String.class));
         assertThat(result, is("hello world"));
     }
 
-    @Test
-    public void testDeserializeObjectToObject() {
-        Object result = jsonBinding.deserialize("{\"key\":\"value\"}", Object.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDeserializeObjectToObject(BindingMethod bindingMethod) {
+        Object result = bindingMethod.deserialize(jsonBinding, "{\"key\":\"value\"}", Object.class);
         assertThat(result, instanceOf(JsonObject.class));
         JsonObject jsonObject = (JsonObject) result;
         assertThat(jsonObject.stringValue("key").isPresent(), is(true));
         assertThat(jsonObject.stringValue("key").orElseThrow(), is("value"));
     }
 
-    @Test
-    public void testDeserializeArrayToObject() {
-        Object result = jsonBinding.deserialize("[\"item1\", \"item2\"]", Object.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDeserializeArrayToObject(BindingMethod bindingMethod) {
+        Object result = bindingMethod.deserialize(jsonBinding, "[\"item1\", \"item2\"]", Object.class);
         assertThat(result, instanceOf(Object[].class));
         Object[] array = (Object[]) result;
         assertThat(array.length, is(2));
@@ -63,111 +66,129 @@ public class ObjectConverterTest {
         assertThat(array[1], is("item2"));
     }
 
-    @Test
-    public void testDeserializeBooleanTrueToObject() {
-        Object result = jsonBinding.deserialize("true", Object.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDeserializeBooleanTrueToObject(BindingMethod bindingMethod) {
+        Object result = bindingMethod.deserialize(jsonBinding, "true", Object.class);
         assertThat(result, instanceOf(Boolean.class));
         assertThat(result, is(true));
     }
 
-    @Test
-    public void testDeserializeBooleanFalseToObject() {
-        Object result = jsonBinding.deserialize("false", Object.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDeserializeBooleanFalseToObject(BindingMethod bindingMethod) {
+        Object result = bindingMethod.deserialize(jsonBinding, "false", Object.class);
         assertThat(result, instanceOf(Boolean.class));
         assertThat(result, is(false));
     }
 
-    @Test
-    public void testDeserializeIntegerNumberToObject() {
-        Object result = jsonBinding.deserialize("42", Object.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDeserializeIntegerNumberToObject(BindingMethod bindingMethod) {
+        Object result = bindingMethod.deserialize(jsonBinding, "42", Object.class);
         assertThat(result, instanceOf(Double.class));
         assertThat(result, is(42.0));
     }
 
-    @Test
-    public void testDeserializeFloatNumberToObject() {
-        Object result = jsonBinding.deserialize("3.14", Object.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDeserializeFloatNumberToObject(BindingMethod bindingMethod) {
+        Object result = bindingMethod.deserialize(jsonBinding, "3.14", Object.class);
         assertThat(result, instanceOf(Double.class));
         assertThat(result, is(3.14));
     }
 
-    @Test
-    public void testDeserializeNegativeNumberToObject() {
-        Object result = jsonBinding.deserialize("-123", Object.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDeserializeNegativeNumberToObject(BindingMethod bindingMethod) {
+        Object result = bindingMethod.deserialize(jsonBinding, "-123", Object.class);
         assertThat(result, instanceOf(Double.class));
         assertThat(result, is(-123.0));
     }
 
-    @Test
-    public void testDeserializeScientificNotationToObject() {
-        Object result = jsonBinding.deserialize("1.23e4", Object.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDeserializeScientificNotationToObject(BindingMethod bindingMethod) {
+        Object result = bindingMethod.deserialize(jsonBinding, "1.23e4", Object.class);
         assertThat(result, instanceOf(Double.class));
         assertThat(result, is(12300.0));
     }
 
-    @Test
-    public void testDeserializeNull() {
-        Object value = jsonBinding.deserialize("null", Object.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDeserializeNull(BindingMethod bindingMethod) {
+        Object value = bindingMethod.deserialize(jsonBinding, "null", Object.class);
         assertThat(value, nullValue());
     }
 
-    @Test
-    public void testSerializeString() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testSerializeString(BindingMethod bindingMethod) {
         String original = "test string";
-        String json = jsonBinding.serialize(original, Object.class);
+        String json = bindingMethod.serialize(jsonBinding, original, Object.class);
         assertThat(json, is("\"test string\""));
     }
 
-    @Test
-    public void testSerializeInteger() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testSerializeInteger(BindingMethod bindingMethod) {
         Integer original = 123;
-        String json = jsonBinding.serialize(original, Object.class);
+        String json = bindingMethod.serialize(jsonBinding, original, Object.class);
         assertThat(json, is("123"));
     }
 
-    @Test
-    public void testSerializeBoolean() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testSerializeBoolean(BindingMethod bindingMethod) {
         Boolean original = true;
-        String json = jsonBinding.serialize(original, Object.class);
+        String json = bindingMethod.serialize(jsonBinding, original, Object.class);
         assertThat(json, is("true"));
     }
 
-    @Test
-    public void testSerializeArray() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testSerializeArray(BindingMethod bindingMethod) {
         String[] original = {"a", "b", "c"};
-        String json = jsonBinding.serialize(original, Object.class);
+        String json = bindingMethod.serialize(jsonBinding, original, Object.class);
         assertThat(json, is("[\"a\",\"b\",\"c\"]"));
     }
 
-    @Test
-    public void testSerializeJsonObject() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testSerializeJsonObject(BindingMethod bindingMethod) {
         JsonObject original = JsonObject.builder().set("key", "value").build();
-        String json = jsonBinding.serialize(original, Object.class);
+        String json = bindingMethod.serialize(jsonBinding, original, Object.class);
         assertThat(json, is("{\"key\":\"value\"}"));
     }
 
-    @Test
-    public void testDeserializeEmptyObject() {
-        Object result = jsonBinding.deserialize("{}", Object.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDeserializeEmptyObject(BindingMethod bindingMethod) {
+        Object result = bindingMethod.deserialize(jsonBinding, "{}", Object.class);
         assertThat(result, instanceOf(JsonObject.class));
         JsonObject jsonObject = (JsonObject) result;
         assertThat(jsonObject.size(), is(0));
     }
 
-    @Test
-    public void testDeserializeEmptyArray() {
-        Object result = jsonBinding.deserialize("[]", Object.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDeserializeEmptyArray(BindingMethod bindingMethod) {
+        Object result = bindingMethod.deserialize(jsonBinding, "[]", Object.class);
         assertThat(result, instanceOf(Object[].class));
         Object[] array = (Object[]) result;
         assertThat(array.length, is(0));
     }
 
-    @Test
-    public void testDeserializeNestedStructures() {
-        Object result = jsonBinding.deserialize("{\"array\": [1, 2, 3], \"object\": {\"nested\": true}}", Object.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDeserializeNestedStructures(BindingMethod bindingMethod) {
+        Object result = bindingMethod.deserialize(jsonBinding,
+                                                  "{\"array\": [1, 2, 3], \"object\": {\"nested\": true}}",
+                                                  Object.class);
         assertThat(result, instanceOf(JsonObject.class));
         JsonObject jsonObject = (JsonObject) result;
         assertThat(jsonObject.containsKey("array"), is(true));
         assertThat(jsonObject.containsKey("object"), is(true));
     }
+
 }

@@ -21,7 +21,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -37,41 +38,45 @@ public class EnumTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testRootEnumProcessing() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRootEnumProcessingParameterized(BindingMethod bindingMethod) {
         String expected = "\"VALUE1\"";
-        String json = jsonBinding.serialize(TestEnum.VALUE1);
+        String json = bindingMethod.serialize(jsonBinding, TestEnum.VALUE1);
         assertThat(json, is(expected));
 
-        TestEnum testEnum = jsonBinding.deserialize(expected, TestEnum.class);
+        TestEnum testEnum = bindingMethod.deserialize(jsonBinding, expected, TestEnum.class);
         assertThat(testEnum, is(TestEnum.VALUE1));
     }
 
-    @Test
-    public void testEnumInObject() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testEnumInObjectParameterized(BindingMethod bindingMethod) {
         String expected = "{\"enumValue\":\"VALUE2\"}";
-        String json = jsonBinding.serialize(new RecordWithEnum(TestEnum.VALUE2));
+        String json = bindingMethod.serialize(jsonBinding, new RecordWithEnum(TestEnum.VALUE2));
         assertThat(json, is(expected));
 
-        RecordWithEnum recordWithEnum = jsonBinding.deserialize(expected, RecordWithEnum.class);
+        RecordWithEnum recordWithEnum = bindingMethod.deserialize(jsonBinding, expected, RecordWithEnum.class);
         assertThat(recordWithEnum.enumValue, is(TestEnum.VALUE2));
     }
 
-    @Test
-    public void testEnumInObjectAsNull() {
-        String json = jsonBinding.serialize(new RecordWithEnum(null));
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testEnumInObjectAsNullParameterized(BindingMethod bindingMethod) {
+        String json = bindingMethod.serialize(jsonBinding, new RecordWithEnum(null));
         assertThat(json, is("{}"));
 
         String expected = "{\"enumValue\":null}";
-        RecordWithEnum recordWithEnum = jsonBinding.deserialize(expected, RecordWithEnum.class);
+        RecordWithEnum recordWithEnum = bindingMethod.deserialize(jsonBinding, expected, RecordWithEnum.class);
         assertThat(recordWithEnum.enumValue, is(nullValue()));
-        recordWithEnum = jsonBinding.deserialize("{}", RecordWithEnum.class);
+        recordWithEnum = bindingMethod.deserialize(jsonBinding, "{}", RecordWithEnum.class);
         assertThat(recordWithEnum.enumValue, is(nullValue()));
     }
 
-    @Test
-    public void testInvalidEnumValue() {
-        assertThrows(JsonException.class, () -> jsonBinding.deserialize("\"INVALID\"", TestEnum.class));
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testInvalidEnumValueParameterized(BindingMethod bindingMethod) {
+        assertThrows(JsonException.class, () -> bindingMethod.deserialize(jsonBinding, "\"INVALID\"", TestEnum.class));
     }
 
     enum TestEnum {
@@ -83,5 +88,4 @@ public class EnumTest {
     @Json.Entity
     record RecordWithEnum(TestEnum enumValue) {
     }
-
 }

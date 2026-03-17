@@ -103,7 +103,7 @@ class JsonParserArray extends JsonParserBase {
     JsonParserArray(byte[] buffer, int start, int length) {
         this.buffer = buffer;
         this.currentIndex = start;
-        this.bufferLength = length;
+        this.bufferLength = start + length;
     }
 
     @Override

@@ -20,7 +20,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -35,46 +36,54 @@ public class IntegerTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testIntegerSerialization() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testIntegerSerializationParameterized(BindingMethod bindingMethod) {
         IntegerModel model = new IntegerModel(123, 456);
 
         String expected = "{\"object\":123,\"primitive\":456}";
-        assertThat(jsonBinding.serialize(model), is(expected));
+        assertThat(bindingMethod.serialize(jsonBinding, model), is(expected));
     }
 
-    @Test
-    public void testIntegerDeserializationFromIntegerAsStringValue() {
-        IntegerModel integerModel = jsonBinding.deserialize("{\"object\":\"123\",\"primitive\":\"456\"}", IntegerModel.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testIntegerDeserializationFromIntegerAsStringValueParameterized(BindingMethod bindingMethod) {
+        IntegerModel integerModel = bindingMethod.deserialize(jsonBinding,
+                                                              "{\"object\":\"123\",\"primitive\":\"456\"}",
+                                                              IntegerModel.class);
         assertThat(integerModel.object, is(123));
         assertThat(integerModel.primitive, is(456));
     }
 
-    @Test
-    public void testIntegerDeserializationFromIntegerRawValue() {
-        IntegerModel integerModel = jsonBinding.deserialize("{\"object\":123,\"primitive\":456}", IntegerModel.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testIntegerDeserializationFromIntegerRawValueParameterized(BindingMethod bindingMethod) {
+        IntegerModel integerModel = bindingMethod.deserialize(jsonBinding,
+                                                              "{\"object\":123,\"primitive\":456}",
+                                                              IntegerModel.class);
         assertThat(integerModel.object, is(123));
         assertThat(integerModel.primitive, is(456));
     }
 
-    @Test
-    public void testRawIntegers() {
-        Integer value = jsonBinding.deserialize("123", Integer.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRawIntegersParameterized(BindingMethod bindingMethod) {
+        Integer value = bindingMethod.deserialize(jsonBinding, "123", Integer.class);
         assertThat(value, is(123));
-        value = jsonBinding.deserialize("123", int.class);
+        value = bindingMethod.deserialize(jsonBinding, "123", int.class);
         assertThat(value, is(123));
-        value = jsonBinding.deserialize("\"123\"", Integer.class);
+        value = bindingMethod.deserialize(jsonBinding, "\"123\"", Integer.class);
         assertThat(value, is(123));
-        value = jsonBinding.deserialize("\"123\"", int.class);
+        value = bindingMethod.deserialize(jsonBinding, "\"123\"", int.class);
         assertThat(value, is(123));
-        value = jsonBinding.deserialize("null", Integer.class);
+        value = bindingMethod.deserialize(jsonBinding, "null", Integer.class);
         assertThat(value, is(nullValue()));
-        value = jsonBinding.deserialize("null", int.class);
+        value = bindingMethod.deserialize(jsonBinding, "null", int.class);
         assertThat(value, is(0));
 
-        String serialized = jsonBinding.serialize(123);
+        String serialized = bindingMethod.serialize(jsonBinding, 123);
         assertThat(serialized, is("123"));
-        serialized = jsonBinding.serialize(Integer.valueOf(123));
+        serialized = bindingMethod.serialize(jsonBinding, Integer.valueOf(123));
         assertThat(serialized, is("123"));
     }
 
@@ -82,5 +91,4 @@ public class IntegerTest {
     record IntegerModel(Integer object, int primitive) {
 
     }
-
 }
