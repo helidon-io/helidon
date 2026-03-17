@@ -964,11 +964,6 @@
                 <version>${version.lib.mockserver}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.jgit</groupId>
-                <artifactId>org.eclipse.jgit.junit</artifactId>
-                <version>${version.lib.jgit}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.zipkin.zipkin2</groupId>
                 <artifactId>zipkin-junit</artifactId>
                 <version>${version.lib.zipkin.junit}</version>

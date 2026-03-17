@@ -546,12 +546,6 @@
                 <version>${version.lib.guava}</version>
             </dependency>
             <dependency>
-                <!-- if needed for dependency convergence -->
-                <groupId>org.codehaus.groovy</groupId>
-                <artifactId>groovy-all</artifactId>
-                <version>${version.lib.groovy-all}</version>
-            </dependency>
-            <dependency>
                 <!-- Force upgrade -->
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
