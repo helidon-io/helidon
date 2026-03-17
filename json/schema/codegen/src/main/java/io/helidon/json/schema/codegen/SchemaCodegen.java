@@ -17,7 +17,6 @@
 package io.helidon.json.schema.codegen;
 
 import java.io.ByteArrayOutputStream;
-import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 
@@ -34,7 +33,8 @@ import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
-import io.helidon.metadata.hson.Hson;
+import io.helidon.json.JsonGenerator;
+import io.helidon.json.JsonObject;
 
 class SchemaCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(SchemaCodegen.class);
@@ -62,7 +62,7 @@ class SchemaCodegen implements CodegenExtension {
         TypeName annotatedTypeName = schema.typeName();
         SchemaInfo schemaInfo = SchemaInfo.create(schema, ctx);
         TypeName typeName = schemaInfo.generatedSchema();
-        Hson.Struct helidonSchema = schemaInfo.schema();
+        JsonObject helidonSchema = schemaInfo.schema();
         TypeName returnType = TypeName.builder()
                 .type(Class.class)
                 .addTypeArgument(TypeArgument.create("?"))
@@ -119,11 +119,11 @@ class SchemaCodegen implements CodegenExtension {
                                       schema.originatingElement().orElse(annotatedTypeName));
     }
 
-    private String generateSchemaString(Hson.Struct helidonSchema) {
+    private String generateSchemaString(JsonObject helidonSchema) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (PrintWriter writer = new PrintWriter(baos, true, StandardCharsets.UTF_8)) {
-            helidonSchema.write(writer, true);
-        }
+        JsonGenerator.create(baos, true)
+                .write(helidonSchema)
+                .close();
         return baos.toString(StandardCharsets.UTF_8);
     }
 

@@ -29,7 +29,7 @@ import io.helidon.common.features.api.Features;
 @Features.Incubating
 module io.helidon.json.schema {
     requires static io.helidon.common.features.api;
-    requires transitive io.helidon.metadata.hson;
+    requires transitive io.helidon.json;
     requires transitive io.helidon.builder.api;
 
     requires io.helidon.service.registry;

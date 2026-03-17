@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.metadata.hson.Hson;
+import io.helidon.json.JsonObject;
 
 /**
  * Json schema related to the numbers.
@@ -77,7 +77,7 @@ interface SchemaNumberBlueprint extends SchemaItemBlueprint {
     SchemaType schemaType();
 
     @Override
-    default void generate(Hson.Struct.Builder builder) {
+    default void generate(JsonObject.Builder builder) {
         SchemaItemBlueprint.super.generate(builder);
         multipleOf().ifPresent(multipleOf -> builder.set("multipleOf", multipleOf));
         minimum().ifPresent(minimum -> builder.set("minimum", minimum));
