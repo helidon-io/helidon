@@ -23,6 +23,7 @@ import java.util.Optional;
 import io.helidon.common.GenericType;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.service.registry.Service;
 
 @Service.Singleton
@@ -49,6 +50,9 @@ class DefaultErrorHandling implements RestClient.ErrorHandling {
 
     @Override
     public void handle(String uri, ClientRequestHeaders requestHeaders, ClientResponseTyped<?> response, GenericType<?> type) {
+        if (Optional.class.equals(type.rawType()) && response.status() == Status.NOT_FOUND_404) {
+            return;
+        }
         for (RestClient.ErrorHandler errorHandler : errorHandlers) {
             if (errorHandler.handles(uri, requestHeaders, response.status(), response.headers())) {
                 var maybeException = errorHandler.handleError(uri, requestHeaders, response, type);
