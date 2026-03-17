@@ -16,7 +16,8 @@
 
 package io.helidon.json;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -27,296 +28,326 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Tests for ArrayJsonParser number parsing functionality.
  * Covers integers, floating point numbers, scientific notation, and edge cases.
  */
-abstract class NumericValueTest {
+class NumericValueTest {
 
     // Integer parsing tests
-    @Test
-    public void testParseByteZero() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseByteZero(ParserMethod parserMethod) {
         String json = "0";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         byte result = parser.readByte();
 
         assertThat(result, is((byte) 0));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseBytePositive() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBytePositive(ParserMethod parserMethod) {
         String json = "127";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         byte result = parser.readByte();
 
         assertThat(result, is(Byte.MAX_VALUE));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseByteNegative() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseByteNegative(ParserMethod parserMethod) {
         String json = "-128";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         byte result = parser.readByte();
 
         assertThat(result, is(Byte.MIN_VALUE));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseByteOverflow() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseByteOverflow(ParserMethod parserMethod) {
         String json = "128";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readByte);
     }
 
-    @Test
-    public void testParseShortZero() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseShortZero(ParserMethod parserMethod) {
         String json = "0";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         short result = parser.readShort();
 
         assertThat(result, is((short) 0));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseShortMaxValue() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseShortMaxValue(ParserMethod parserMethod) {
         String json = "32767";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         short result = parser.readShort();
 
         assertThat(result, is(Short.MAX_VALUE));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseShortMinValue() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseShortMinValue(ParserMethod parserMethod) {
         String json = "-32768";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         short result = parser.readShort();
 
         assertThat(result, is(Short.MIN_VALUE));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseShortOverflow() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseShortOverflow(ParserMethod parserMethod) {
         String json = "32768";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readShort);
     }
 
-    @Test
-    public void testParseIntZero() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseIntZero(ParserMethod parserMethod) {
         String json = "0";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         int result = parser.readInt();
 
         assertThat(result, is(0));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseIntMaxValue() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseIntMaxValue(ParserMethod parserMethod) {
         String json = "2147483647";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         int result = parser.readInt();
 
         assertThat(result, is(Integer.MAX_VALUE));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseIntMinValue() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseIntMinValue(ParserMethod parserMethod) {
         String json = "-2147483648";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         int result = parser.readInt();
 
         assertThat(result, is(Integer.MIN_VALUE));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseIntOverflow() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseIntOverflow(ParserMethod parserMethod) {
         String json = "2147483648";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readInt);
     }
 
-    @Test
-    public void testParseLongZero() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseLongZero(ParserMethod parserMethod) {
         String json = "0";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         long result = parser.readLong();
 
         assertThat(result, is(0L));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseLongMaxValue() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseLongMaxValue(ParserMethod parserMethod) {
         String json = "9223372036854775807";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         long result = parser.readLong();
 
         assertThat(result, is(Long.MAX_VALUE));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseLongMinValue() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseLongMinValue(ParserMethod parserMethod) {
         String json = "-9223372036854775808";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         long result = parser.readLong();
 
         assertThat(result, is(Long.MIN_VALUE));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseLongOverflow() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseLongOverflow(ParserMethod parserMethod) {
         String json = "9223372036854775808";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readLong);
     }
 
     // Floating point parsing tests
-    @Test
-    public void testParseFloatZero() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatZero(ParserMethod parserMethod) {
         String json = "0.0";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         float result = parser.readFloat();
 
         assertEquals(0.0f, result, 0.0001f);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseFloatPositive() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatPositive(ParserMethod parserMethod) {
         String json = "123.456";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         float result = parser.readFloat();
 
         assertEquals(123.456f, result, 0.0001f);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseFloatNegative() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatNegative(ParserMethod parserMethod) {
         String json = "-123.456";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         float result = parser.readFloat();
 
         assertEquals(-123.456f, result, 0.0001f);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseFloatScientificPositive() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatScientificPositive(ParserMethod parserMethod) {
         String json = "1.23e10";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         float result = parser.readFloat();
 
         assertEquals(1.23e10f, result, 1e6f); // Allow some precision loss
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseFloatScientificNegative() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatScientificNegative(ParserMethod parserMethod) {
         String json = "1.23e-10";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         float result = parser.readFloat();
 
         assertEquals(1.23e-10f, result, 1e-14f);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseFloatScientificUppercase() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatScientificUppercase(ParserMethod parserMethod) {
         String json = "1.23E5";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         float result = parser.readFloat();
 
         assertEquals(1.23E5f, result, 0.1f);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseFloatIntegerPartOnly() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatIntegerPartOnly(ParserMethod parserMethod) {
         String json = "42";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         float result = parser.readFloat();
 
         assertEquals(42.0f, result, 0.0001f);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseFloatFractionalPartOnly() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatFractionalPartOnly(ParserMethod parserMethod) {
         String json = "0.5";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         float result = parser.readFloat();
 
         assertEquals(0.5f, result, 0.0001f);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseDoubleZero() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseDoubleZero(ParserMethod parserMethod) {
         String json = "0.0";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         double result = parser.readDouble();
 
         assertEquals(0.0, result, 0.0001);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseDoublePositive() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseDoublePositive(ParserMethod parserMethod) {
         String json = "123.456789";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         double result = parser.readDouble();
 
         assertEquals(123.456789, result, 0.0001);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseDoubleNegative() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseDoubleNegative(ParserMethod parserMethod) {
         String json = "-123.456789";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         double result = parser.readDouble();
 
         assertEquals(-123.456789, result, 0.0001);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseDoubleScientificLarge() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseDoubleScientificLarge(ParserMethod parserMethod) {
         String json = "1.23e100";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         double result = parser.readDouble();
 
         assertEquals(1.23e100, result, 1e96);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseDoubleScientificSmall() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseDoubleScientificSmall(ParserMethod parserMethod) {
         String json = "1.23e-100";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         double result = parser.readDouble();
 
         assertEquals(1.23e-100, result, 1e-104);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseDoubleMaxPrecision() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseDoubleMaxPrecision(ParserMethod parserMethod) {
         String json = "0.123456789012345678901234567890123456789";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         double result = parser.readDouble();
 
         // Double has about 15 decimal digits of precision
@@ -325,98 +356,109 @@ abstract class NumericValueTest {
     }
 
     // Edge cases and error conditions
-    @Test
-    public void testParseIntLeadingZeros() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseIntLeadingZeros(ParserMethod parserMethod) {
         String json = "007";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         int result = parser.readInt();
 
         assertThat(result, is(7));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseFloatLeadingZeros() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatLeadingZeros(ParserMethod parserMethod) {
         String json = "007.5";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         float result = parser.readFloat();
 
         assertEquals(7.5f, result, 0.0001f);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseFloatMultipleDecimalPoints() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatMultipleDecimalPoints(ParserMethod parserMethod) {
         String json = "1.2.3";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readFloat);
     }
 
-    @Test
-    public void testParseFloatMultipleExponents() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatMultipleExponents(ParserMethod parserMethod) {
         String json = "1.2e3e4";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readFloat);
     }
 
-    @Test
-    public void testParseFloatExponentWithoutNumber() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatExponentWithoutNumber(ParserMethod parserMethod) {
         String json = "1.2e";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readFloat);
     }
 
-    @Test
-    public void testParseIntNonNumeric() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseIntNonNumeric(ParserMethod parserMethod) {
         String json = "abc";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readInt);
     }
 
-    @Test
-    public void testParseFloatNonNumeric() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatNonNumeric(ParserMethod parserMethod) {
         String json = "abc";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readFloat);
     }
 
-    @Test
-    public void testParseFloatJustExponent() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatJustExponent(ParserMethod parserMethod) {
         String json = "e10";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readFloat);
     }
 
-    @Test
-    public void testParseFloatExponentWithPlus() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatExponentWithPlus(ParserMethod parserMethod) {
         String json = "1.23e+10";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         float result = parser.readFloat();
 
         assertEquals(1.23e10f, result, 1e6f);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseFloatExponentWithMinus() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatExponentWithMinus(ParserMethod parserMethod) {
         String json = "1.23e-5";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         float result = parser.readFloat();
 
         assertEquals(1.23e-5f, result, 1e-9f);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseFloatLargeExponent() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatLargeExponent(ParserMethod parserMethod) {
         String json = "1.0e1000";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         float result = parser.readFloat();
 
         // Very large exponents should result in infinity
@@ -424,10 +466,11 @@ abstract class NumericValueTest {
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseFloatSmallExponent() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatSmallExponent(ParserMethod parserMethod) {
         String json = "1.0e-1000";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         float result = parser.readFloat();
 
         // Very small exponents should result in zero
@@ -435,10 +478,11 @@ abstract class NumericValueTest {
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseDoubleLargeExponent() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseDoubleLargeExponent(ParserMethod parserMethod) {
         String json = "1.0e1000";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         double result = parser.readDouble();
 
         // Very large exponents should result in infinity
@@ -446,10 +490,11 @@ abstract class NumericValueTest {
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseDoubleSmallExponent() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseDoubleSmallExponent(ParserMethod parserMethod) {
         String json = "1.0e-1000";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         double result = parser.readDouble();
 
         // Very small exponents should result in zero
@@ -457,29 +502,32 @@ abstract class NumericValueTest {
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseLongVeryLargeNumber() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseLongVeryLargeNumber(ParserMethod parserMethod) {
         String json = "999999999999999999999999999999";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readLong);
     }
 
-    @Test
-    public void testParseIntVeryLargeNumber() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseIntVeryLargeNumber(ParserMethod parserMethod) {
         String json = "999999999999999999999999999999";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readInt);
     }
 
-    @Test
-    public void testParseIntFromDecimalSkipsFraction() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseIntFromDecimalSkipsFraction(ParserMethod parserMethod) {
         // Reading an int from a decimal number should consume the integer part (123),
         // leave the parser positioned at the last digit of the fractional part ('6'),
         // and allow parsing to continue.
         String json = "123.456 true";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         int result = parser.readInt();
         assertThat(result, is(123));
@@ -496,46 +544,48 @@ abstract class NumericValueTest {
     }
 
     // Test different number formats and representations
-    @Test
-    public void testParseFloatNegativeExponent() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatNegativeExponent(ParserMethod parserMethod) {
         String json = "123.456E-10";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         float result = parser.readFloat();
 
         assertEquals(123.456e-10f, result, 1e-14f);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseDoubleNegativeExponent() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseDoubleNegativeExponent(ParserMethod parserMethod) {
         String json = "123.456E-10";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         double result = parser.readDouble();
 
         assertEquals(123.456e-10, result, 1e-14);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseFloatUppercaseExponent() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloatUppercaseExponent(ParserMethod parserMethod) {
         String json = "1.5E5";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         float result = parser.readFloat();
 
         assertEquals(150000.0f, result, 0.1f);
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseDoubleUppercaseExponent() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseDoubleUppercaseExponent(ParserMethod parserMethod) {
         String json = "1.5E5";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         double result = parser.readDouble();
 
         assertEquals(150000.0, result, 0.1);
         assertThat(parser.hasNext(), is(false));
     }
-
-    abstract JsonParser createParser(String template);
 
 }

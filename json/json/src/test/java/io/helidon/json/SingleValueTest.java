@@ -16,108 +16,116 @@
 
 package io.helidon.json;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-abstract class SingleValueTest {
+class SingleValueTest {
 
-    @Test
-    public void testParseString() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseString(ParserMethod parserMethod) {
         String expected = "Test String value";
-        JsonParser parser = createParser("\"" + expected + "\"");
+        JsonParser parser = parserMethod.createParser("\"" + expected + "\"");
 
         assertThat(parser.readString(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseByte() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseByte(ParserMethod parserMethod) {
         byte expected = 125;
         String template = "125";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.readByte(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseShort() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseShort(ParserMethod parserMethod) {
         short expected = 12345;
         String template = "12345";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.readShort(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseInt() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseInt(ParserMethod parserMethod) {
         int expected = 1234;
         String template = "1234";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.readInt(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseLong() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseLong(ParserMethod parserMethod) {
         long expected = 123456789123456L;
         String template = "123456789123456";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.readLong(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseDouble() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseDouble(ParserMethod parserMethod) {
         double expected = 123.456e10;
         String template = "123.456e10";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.readDouble(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseFloat() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloat(ParserMethod parserMethod) {
         float expected = 123.456e10F;
         String template = "123.456e10";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.readFloat(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseBoolean() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBoolean(ParserMethod parserMethod) {
         boolean expected = true;
         String template = "true";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.readBoolean(), is(expected));
         assertThat(parser.hasNext(), is(false));
 
         expected = false;
         template = "false";
-        parser = createParser(template);
+        parser = parserMethod.createParser(template);
 
         assertThat(parser.readBoolean(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseNull() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseNull(ParserMethod parserMethod) {
         String template = "null";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.checkNull(), is(true));
         assertThat(parser.hasNext(), is(false));
     }
-
-    abstract JsonParser createParser(String template);
 
 }

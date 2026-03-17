@@ -20,7 +20,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -37,72 +38,77 @@ public class AnnotationsTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testWithoutEntity() {
-        assertThrows(IllegalStateException.class, () -> jsonBinding.serialize(new WithoutEntity()));
-        assertThrows(IllegalStateException.class, () -> jsonBinding.deserialize("{}", WithoutEntity.class));
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testWithoutEntityParameterized(BindingMethod bindingMethod) {
+        assertThrows(IllegalStateException.class, () -> bindingMethod.serialize(jsonBinding, new WithoutEntity()));
+        assertThrows(IllegalStateException.class, () -> bindingMethod.deserialize(jsonBinding, "{}", WithoutEntity.class));
     }
 
-    @Test
-    public void testWithEntity() {
-        String json = jsonBinding.serialize(new WithEntity());
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testWithEntityParameterized(BindingMethod bindingMethod) {
+        String json = bindingMethod.serialize(jsonBinding, new WithEntity());
         assertThat(json, is("{}"));
 
-        WithEntity deserialize = jsonBinding.deserialize(json, WithEntity.class);
-        assertThat(deserialize, notNullValue());
+        WithEntity deserialized = bindingMethod.deserialize(jsonBinding, json, WithEntity.class);
+        assertThat(deserialized, notNullValue());
     }
 
-    @Test
-    public void testPropertyNameOnTheField() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testPropertyNameOnTheFieldParameterized(BindingMethod bindingMethod) {
         PropertyNameChangeField entity = new PropertyNameChangeField();
         entity.property1 = "property1";
         entity.property2 = "property2";
 
-        String json = jsonBinding.serialize(entity);
+        String json = bindingMethod.serialize(jsonBinding, entity);
         assertThat(json, is("{\"property1\":\"property1\",\"prop2\":\"property2\"}"));
 
-        PropertyNameChangeField deserialize = jsonBinding.deserialize(json, PropertyNameChangeField.class);
+        PropertyNameChangeField deserialize = bindingMethod.deserialize(jsonBinding, json, PropertyNameChangeField.class);
         assertThat(deserialize, notNullValue());
         assertThat(deserialize.property1, is("property1"));
         assertThat(deserialize.property2, is("property2"));
     }
 
-    @Test
-    public void testPropertyNameOnTheAccessor() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testPropertyNameOnTheAccessorParameterized(BindingMethod bindingMethod) {
         PropertyNameChangeAccessor entity = new PropertyNameChangeAccessor();
         entity.property1 = "property1";
         entity.property2 = "property2";
 
-        String json = jsonBinding.serialize(entity);
+        String json = bindingMethod.serialize(jsonBinding, entity);
         assertThat(json, is("{\"property1\":\"property1\",\"prop2\":\"property2\"}"));
 
-        PropertyNameChangeAccessor deserialize = jsonBinding.deserialize(json, PropertyNameChangeAccessor.class);
+        PropertyNameChangeAccessor deserialize = bindingMethod.deserialize(jsonBinding, json, PropertyNameChangeAccessor.class);
         assertThat(deserialize, notNullValue());
         assertThat(deserialize.property1, nullValue());
         assertThat(deserialize.property2, nullValue());
 
         String toDeserialize = "{\"prop1\":\"property1\",\"property2\":\"property2\"}";
-        deserialize = jsonBinding.deserialize(toDeserialize, PropertyNameChangeAccessor.class);
+        deserialize = bindingMethod.deserialize(jsonBinding, toDeserialize, PropertyNameChangeAccessor.class);
         assertThat(deserialize.property1, is("property1"));
         assertThat(deserialize.property2, is("property2"));
     }
 
-    @Test
-    public void testPropertyNameOverride() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testPropertyNameOverrideParameterized(BindingMethod bindingMethod) {
         PropertyNameOverride entity = new PropertyNameOverride();
         entity.property1 = "property1";
         entity.property2 = "property2";
 
-        String json = jsonBinding.serialize(entity);
+        String json = bindingMethod.serialize(jsonBinding, entity);
         assertThat(json, is("{\"myProperty1\":\"property1\",\"prop2\":\"property2\"}"));
 
-        PropertyNameOverride deserialize = jsonBinding.deserialize(json, PropertyNameOverride.class);
+        PropertyNameOverride deserialize = bindingMethod.deserialize(jsonBinding, json, PropertyNameOverride.class);
         assertThat(deserialize, notNullValue());
         assertThat(deserialize.property1, nullValue());
         assertThat(deserialize.property2, nullValue());
 
         String toDeserialize = "{\"prop1\":\"property1\",\"myProperty2\":\"property2\"}";
-        deserialize = jsonBinding.deserialize(toDeserialize, PropertyNameOverride.class);
+        deserialize = bindingMethod.deserialize(jsonBinding, toDeserialize, PropertyNameOverride.class);
         assertThat(deserialize.property1, is("property1"));
         assertThat(deserialize.property2, is("property2"));
     }
@@ -170,5 +176,4 @@ public class AnnotationsTest {
             this.property2 = property2;
         }
     }
-
 }

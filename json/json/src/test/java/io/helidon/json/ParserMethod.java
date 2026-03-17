@@ -19,12 +19,23 @@ package io.helidon.json;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
-class StreamParserNumberTest extends NumericValueTest {
+enum ParserMethod {
+    ARRAY {
+        @Override
+        JsonParser createParser(String template, int streamBufferSize) {
+            return JsonParser.create(template);
+        }
+    },
+    STREAM {
+        @Override
+        JsonParser createParser(String template, int streamBufferSize) {
+            return JsonParser.create(new ByteArrayInputStream(template.getBytes(StandardCharsets.UTF_8)), streamBufferSize);
+        }
+    };
 
-    @Override
     JsonParser createParser(String template) {
-        ByteArrayInputStream stream = new ByteArrayInputStream(template.getBytes(StandardCharsets.UTF_8));
-        return JsonParser.create(stream, 6);
+        return createParser(template, 6);
     }
 
+    abstract JsonParser createParser(String template, int streamBufferSize);
 }

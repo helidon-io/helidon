@@ -21,7 +21,8 @@ import io.helidon.json.binding.JsonBinding;
 import io.helidon.json.binding.Order;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -35,31 +36,35 @@ public class PropertyOrderTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testDefaultPropertyOrder() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDefaultPropertyOrderParameterized(BindingMethod bindingMethod) {
         DefaultPropertyOrderRecord testRecord = new DefaultPropertyOrderRecord("Full value", "first name", "last name");
-        assertThat(jsonBinding.serialize(testRecord),
+        assertThat(bindingMethod.serialize(jsonBinding, testRecord),
                    is("{\"fullName\":\"Full value\",\"firstName\":\"first name\",\"lastName\":\"last name\"}"));
     }
 
-    @Test
-    public void testAnyPropertyOrder() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testAnyPropertyOrderParameterized(BindingMethod bindingMethod) {
         AnyOrderRecord testRecord = new AnyOrderRecord("Full value", "first name", "last name");
-        assertThat(jsonBinding.serialize(testRecord),
+        assertThat(bindingMethod.serialize(jsonBinding, testRecord),
                    is("{\"fullName\":\"Full value\",\"firstName\":\"first name\",\"lastName\":\"last name\"}"));
     }
 
-    @Test
-    public void testAlphabeticalPropertyOrder() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testAlphabeticalPropertyOrderParameterized(BindingMethod bindingMethod) {
         AlphabeticalOrderRecord testRecord = new AlphabeticalOrderRecord("Full value", "first name", "last name");
-        assertThat(jsonBinding.serialize(testRecord),
+        assertThat(bindingMethod.serialize(jsonBinding, testRecord),
                    is("{\"firstName\":\"first name\",\"fullName\":\"Full value\",\"lastName\":\"last name\"}"));
     }
 
-    @Test
-    public void testReversePropertyOrder() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testReversePropertyOrderParameterized(BindingMethod bindingMethod) {
         ReverseOrderRecord testRecord = new ReverseOrderRecord("Full value", "first name", "last name");
-        assertThat(jsonBinding.serialize(testRecord),
+        assertThat(bindingMethod.serialize(jsonBinding, testRecord),
                    is("{\"lastName\":\"last name\",\"fullName\":\"Full value\",\"firstName\":\"first name\"}"));
     }
 
@@ -81,5 +86,4 @@ public class PropertyOrderTest {
     @Json.PropertyOrder(Order.REVERSE_ALPHABETICAL)
     record ReverseOrderRecord(String fullName, String firstName, String lastName) {
     }
-
 }

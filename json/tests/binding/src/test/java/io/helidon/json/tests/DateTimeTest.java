@@ -22,7 +22,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.Period;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -40,7 +39,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -54,129 +54,139 @@ public class DateTimeTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testLocalDate() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testLocalDateParameterized(BindingMethod bindingMethod) {
         LocalDate original = LocalDate.of(2023, 10, 15);
-        String json = jsonBinding.serialize(original);
+        String json = bindingMethod.serialize(jsonBinding, original);
         assertThat(json, is("\"2023-10-15\""));
-        LocalDate deserialized = jsonBinding.deserialize(json, LocalDate.class);
+        LocalDate deserialized = bindingMethod.deserialize(jsonBinding, json, LocalDate.class);
         assertThat(deserialized, is(original));
     }
 
-    @Test
-    public void testLocalTime() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testLocalTimeParameterized(BindingMethod bindingMethod) {
         LocalTime original = LocalTime.of(14, 30, 45);
-        String json = jsonBinding.serialize(original);
+        String json = bindingMethod.serialize(jsonBinding, original);
         assertThat(json, is("\"14:30:45\""));
-        LocalTime deserialized = jsonBinding.deserialize(json, LocalTime.class);
+        LocalTime deserialized = bindingMethod.deserialize(jsonBinding, json, LocalTime.class);
         assertThat(deserialized, is(original));
     }
 
-    @Test
-    public void testLocalDateTime() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testLocalDateTimeParameterized(BindingMethod bindingMethod) {
         LocalDateTime original = LocalDateTime.of(2023, 10, 15, 14, 30, 45);
-        String json = jsonBinding.serialize(original);
+        String json = bindingMethod.serialize(jsonBinding, original);
         assertThat(json, is("\"2023-10-15T14:30:45\""));
-        LocalDateTime deserialized = jsonBinding.deserialize(json, LocalDateTime.class);
+        LocalDateTime deserialized = bindingMethod.deserialize(jsonBinding, json, LocalDateTime.class);
         assertThat(deserialized, is(original));
     }
 
-    @Test
-    public void testOffsetDateTime() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testOffsetDateTimeParameterized(BindingMethod bindingMethod) {
         OffsetDateTime original = OffsetDateTime.of(2023, 10, 15, 14, 30, 45, 0, ZoneOffset.ofHours(2));
-        String json = jsonBinding.serialize(original);
+        String json = bindingMethod.serialize(jsonBinding, original);
         assertThat(json, is("\"2023-10-15T14:30:45+02:00\""));
-        OffsetDateTime deserialized = jsonBinding.deserialize(json, OffsetDateTime.class);
+        OffsetDateTime deserialized = bindingMethod.deserialize(jsonBinding, json, OffsetDateTime.class);
         assertThat(deserialized, is(original));
     }
 
-    @Test
-    public void testZonedDateTime() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testZonedDateTimeParameterized(BindingMethod bindingMethod) {
         ZonedDateTime original = ZonedDateTime.of(2023, 10, 15, 14, 30, 45, 0, ZoneOffset.ofHours(2));
-        String json = jsonBinding.serialize(original);
+        String json = bindingMethod.serialize(jsonBinding, original);
         assertThat(json, is("\"2023-10-15T14:30:45+02:00\""));
-        ZonedDateTime deserialized = jsonBinding.deserialize(json, ZonedDateTime.class);
+        ZonedDateTime deserialized = bindingMethod.deserialize(jsonBinding, json, ZonedDateTime.class);
         assertThat(deserialized, is(original));
     }
 
-    @Test
-    public void testInstant() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testInstantParameterized(BindingMethod bindingMethod) {
         Instant original = Instant.parse("2023-10-15T12:30:45Z");
-        String json = jsonBinding.serialize(original);
+        String json = bindingMethod.serialize(jsonBinding, original);
         assertThat(json, is("\"2023-10-15T12:30:45Z\""));
-        Instant deserialized = jsonBinding.deserialize(json, Instant.class);
+        Instant deserialized = bindingMethod.deserialize(jsonBinding, json, Instant.class);
         assertThat(deserialized, is(original));
     }
 
-    @Test
-    public void testPeriod() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testPeriodParameterized(BindingMethod bindingMethod) {
         Period original = Period.of(1, 2, 3);
-        String json = jsonBinding.serialize(original);
+        String json = bindingMethod.serialize(jsonBinding, original);
         assertThat(json, is("\"P1Y2M3D\""));
-        Period deserialized = jsonBinding.deserialize(json, Period.class);
+        Period deserialized = bindingMethod.deserialize(jsonBinding, json, Period.class);
         assertThat(deserialized, is(original));
     }
 
-    @Test
-    public void testDate() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDateParameterized(BindingMethod bindingMethod) {
         Date original = Date.from(Instant.parse("2023-10-15T12:30:45Z"));
-        String json = jsonBinding.serialize(original);
+        String json = bindingMethod.serialize(jsonBinding, original);
         assertThat(json, is("\"2023-10-15T12:30:45Z\""));
-        Date deserialized = jsonBinding.deserialize(json, Date.class);
+        Date deserialized = bindingMethod.deserialize(jsonBinding, json, Date.class);
         assertThat(deserialized, is(original));
     }
 
-    @Test
-    public void testCalendar() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testCalendarParameterized(BindingMethod bindingMethod) {
         Calendar original = Calendar.getInstance();
         original.setTime(Date.from(Instant.parse("2023-10-15T12:30:45Z")));
         original.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String json = jsonBinding.serialize(original);
+        String json = bindingMethod.serialize(jsonBinding, original);
         assertThat(json, is("\"2023-10-15T12:30:45Z[UTC]\""));
-        // Calendar serialization depends on the default timezone, so we'll just verify it deserializes correctly
-        Calendar deserialized = jsonBinding.deserialize(json, Calendar.class);
+        Calendar deserialized = bindingMethod.deserialize(jsonBinding, json, Calendar.class);
         assertThat(deserialized.getTime(), is(original.getTime()));
     }
 
-    @Test
-    public void testGregorianCalendarConverter() {
-        // Note: month is 0-based
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testGregorianCalendarConverterParameterized(BindingMethod bindingMethod) {
         GregorianCalendar original = new GregorianCalendar(2023, 9, 15, 14, 30, 45);
         original.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String json = jsonBinding.serialize(original);
+        String json = bindingMethod.serialize(jsonBinding, original);
         assertThat(json, is("\"2023-10-15T14:30:45Z[UTC]\""));
-        GregorianCalendar deserialized = jsonBinding.deserialize(json, GregorianCalendar.class);
+        GregorianCalendar deserialized = bindingMethod.deserialize(jsonBinding, json, GregorianCalendar.class);
         assertThat(deserialized.getTimeInMillis(), is(original.getTimeInMillis()));
     }
 
-    @Test
-    public void testDateTimeBean() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDateTimeBeanParameterized(BindingMethod bindingMethod) {
         DateTimeBean bean = new DateTimeBean();
         bean.setLocalDate(LocalDate.of(2023, 10, 15));
         bean.setInstant(Instant.parse("2023-10-15T12:30:45Z"));
         bean.setPeriod(Period.of(1, 2, 3));
 
-        String json = jsonBinding.serialize(bean);
+        String json = bindingMethod.serialize(jsonBinding, bean);
         assertThat(json, is("{\"localDate\":\"2023-10-15\",\"instant\":\"2023-10-15T12:30:45Z\",\"period\":\"P1Y2M3D\"}"));
-        DateTimeBean deserialized = jsonBinding.deserialize(json, DateTimeBean.class);
+        DateTimeBean deserialized = bindingMethod.deserialize(jsonBinding, json, DateTimeBean.class);
 
         assertThat(deserialized.getLocalDate(), is(bean.getLocalDate()));
         assertThat(deserialized.getInstant(), is(bean.getInstant()));
         assertThat(deserialized.getPeriod(), is(bean.getPeriod()));
     }
 
-    @Test
-    public void testDateTimeCollections() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDateTimeCollectionsParameterized(BindingMethod bindingMethod) {
         List<LocalDate> dateList = new ArrayList<>();
         dateList.add(LocalDate.of(2023, 10, 15));
         dateList.add(LocalDate.of(2023, 10, 16));
         dateList.add(LocalDate.of(2023, 10, 17));
 
-        String json = jsonBinding.serialize(dateList);
+        String json = bindingMethod.serialize(jsonBinding, dateList);
         assertThat(json, is("[\"2023-10-15\",\"2023-10-16\",\"2023-10-17\"]"));
 
         GenericType<List<LocalDate>> listType = new GenericType<>() { };
-        List<LocalDate> deserialized = jsonBinding.deserialize(json, listType);
+        List<LocalDate> deserialized = bindingMethod.deserialize(jsonBinding, json, listType);
 
         assertThat(deserialized.size(), is(3));
         assertThat(deserialized.get(0), is(dateList.get(0)));
@@ -184,35 +194,37 @@ public class DateTimeTest {
         assertThat(deserialized.get(2), is(dateList.get(2)));
     }
 
-    @Test
-    public void testDateTimeMap() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDateTimeMapParameterized(BindingMethod bindingMethod) {
         Map<String, OffsetDateTime> dateTimeMap = new LinkedHashMap<>();
         dateTimeMap.put("start", OffsetDateTime.of(2023, 10, 15, 9, 1, 1, 0, ZoneOffset.ofHours(1)));
         dateTimeMap.put("end", OffsetDateTime.of(2023, 10, 15, 17, 0, 0, 0, ZoneOffset.ofHours(1)));
 
-        String json = jsonBinding.serialize(dateTimeMap);
+        String json = bindingMethod.serialize(jsonBinding, dateTimeMap);
         assertThat(json, is("{\"start\":\"2023-10-15T09:01:01+01:00\",\"end\":\"2023-10-15T17:00+01:00\"}"));
 
         GenericType<Map<String, OffsetDateTime>> mapType = new GenericType<>() { };
-        Map<String, OffsetDateTime> deserialized = jsonBinding.deserialize(json, mapType);
+        Map<String, OffsetDateTime> deserialized = bindingMethod.deserialize(jsonBinding, json, mapType);
 
         assertThat(deserialized.size(), is(2));
         assertThat(deserialized.get("start"), is(dateTimeMap.get("start")));
         assertThat(deserialized.get("end"), is(dateTimeMap.get("end")));
     }
 
-    @Test
-    public void testOptionalDateTime() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testOptionalDateTimeParameterized(BindingMethod bindingMethod) {
         OptionalDateTimeModel model = new OptionalDateTimeModel(
                 Optional.of(LocalDate.of(2023, 10, 15)),
                 Optional.of(Instant.parse("2023-10-15T12:30:45Z")),
                 Optional.empty()
         );
 
-        String json = jsonBinding.serialize(model);
+        String json = bindingMethod.serialize(jsonBinding, model);
         assertThat(json, is("{\"optionalLocalDate\":\"2023-10-15\","
                                     + "\"optionalInstant\":\"2023-10-15T12:30:45Z\"}"));
-        OptionalDateTimeModel deserialized = jsonBinding.deserialize(json, OptionalDateTimeModel.class);
+        OptionalDateTimeModel deserialized = bindingMethod.deserialize(jsonBinding, json, OptionalDateTimeModel.class);
 
         assertThat(deserialized.optionalLocalDate, is(model.optionalLocalDate));
         assertThat(deserialized.optionalInstant, is(model.optionalInstant));
@@ -255,5 +267,4 @@ public class DateTimeTest {
                                  Optional<Instant> optionalInstant,
                                  Optional<Period> optionalPeriod) {
     }
-
 }

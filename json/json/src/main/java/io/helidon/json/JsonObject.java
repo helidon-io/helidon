@@ -117,6 +117,17 @@ public final class JsonObject extends JsonValue {
     }
 
     /**
+     * Return the value associated with the specified key, or the empty value if the key is not present.
+     *
+     * @param key the key to look up
+     * @return the value associated with the key, or empty
+     */
+    public Optional<JsonValue> value(String key) {
+        ensureResolvedKeys();
+        return Optional.ofNullable(content.get(key));
+    }
+
+    /**
      * Return the boolean value associated with the specified key as an Optional.
      *
      * @param key the key to look up
@@ -433,6 +444,19 @@ public final class JsonObject extends JsonValue {
         @Override
         public JsonObject build() {
             return new JsonObject(new LinkedHashMap<>(values));
+        }
+
+        /**
+         * Copies all properties from the provided object into this builder.
+         *
+         * @param object the object to copy values from
+         * @return this builder for method chaining
+         */
+        public Builder from(JsonObject object) {
+            Objects.requireNonNull(object, "object cannot be null");
+            object.ensureResolvedKeys();
+            values.putAll(object.content);
+            return this;
         }
 
         /**

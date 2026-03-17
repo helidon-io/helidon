@@ -642,6 +642,7 @@ final class JsonParserStream extends JsonParserBase {
                     fetchData();
                 }
             } else {
+                currentIndex--;
                 break;
             }
         }
@@ -661,44 +662,52 @@ final class JsonParserStream extends JsonParserBase {
             decimalExponent = -(leadingZerosAfterDecimal + significantDigits);
         }
 
-        // Parse explicit exponent
-        int explicitExp = 0;
-        b = buffer[currentIndex];
-        if (b == 'e' || b == 'E') {
-            boolean expNegative = false;
-            if (hasNext()) {
-                b = buffer[++currentIndex];
-                if (b == '-') {
-                    expNegative = true;
-                    currentIndex++;
-                } else if (b == '+') {
-                    currentIndex++;
+        if (currentIndex + 1 < bufferLength) {
+            // Parse explicit exponent
+            int explicitExp = 0;
+            b = buffer[++currentIndex];
+            if (b == 'e' || b == 'E') {
+                boolean expNegative = false;
+                if (hasNext()) {
+                    b = buffer[++currentIndex];
+                    if (b == '-') {
+                        expNegative = true;
+                        currentIndex++;
+                    } else if (b == '+') {
+                        currentIndex++;
+                    }
+                } else {
+                    throw createException("Missing exponent value");
                 }
-            } else {
-                throw createException("Missing exponent value");
-            }
-            if (currentIndex == bufferLength) {
-                fetchData();
-            }
-
-            int digit = -1;
-            while ((currentIndex < bufferLength) && (digit = WHOLE_NUMBER_PARTS[buffer[currentIndex] & 0xFF]) > -1) {
-                explicitExp = explicitExp * 10 + digit;
-                if (explicitExp > 1000) {
-                    break;
-                }
-                currentIndex++;
-                if (currentIndex == bufferLength && !finished) {
+                if (currentIndex == bufferLength) {
                     fetchData();
                 }
-            }
-            if (digit == -1) {
-                b = buffer[currentIndex];
-                if (b == 'e' || b == 'E' || b == '.') {
-                    throw createException("Duplicit exponent or decimal point detected");
+
+                int digit = -1;
+                while ((currentIndex < bufferLength) && (digit = WHOLE_NUMBER_PARTS[buffer[currentIndex] & 0xFF]) > -1) {
+                    explicitExp = explicitExp * 10 + digit;
+                    if (explicitExp > 1000) {
+                        break;
+                    }
+                    currentIndex++;
+                    if (currentIndex == bufferLength && !finished) {
+                        fetchData();
+                    }
                 }
+                if (digit == -1) {
+                    b = buffer[currentIndex];
+                    if (b == 'e' || b == 'E' || b == '.') {
+                        throw createException("Duplicit exponent or decimal point detected");
+                    }
+                }
+                decimalExponent += expNegative ? -explicitExp : explicitExp;
+            } else {
+                //Other character than "e" detected
+                currentIndex--;
             }
-            decimalExponent += expNegative ? -explicitExp : explicitExp;
+        } else {
+            //Probably a single value detected
+            currentIndex--;
         }
 
         // Handle zero
@@ -737,7 +746,7 @@ final class JsonParserStream extends JsonParserBase {
         int start = currentIndex;
         if (buffer[start] == '"') {
             ensure(1);
-            start++;
+            start = ++currentIndex;
             inString = true;
         }
         bufferingJsonValue = true;
@@ -825,8 +834,11 @@ final class JsonParserStream extends JsonParserBase {
             if (finished) {
                 throw createException("End of the string expected. Incomplete JSON");
             }
+            int previousIndex = currentIndex;
             readMoreData();
-            currentIndex++;
+            if (currentIndex < previousIndex) {
+                currentIndex++;
+            }
         }
 
         while (true) {
@@ -851,8 +863,11 @@ final class JsonParserStream extends JsonParserBase {
             if (finished) {
                 throw createException("End of the string expected. Incomplete JSON");
             }
+            int previousIndex = currentIndex;
             readMoreData();
-            currentIndex++;
+            if (currentIndex < previousIndex) {
+                currentIndex++;
+            }
         }
     }
 
