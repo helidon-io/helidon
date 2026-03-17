@@ -18,45 +18,49 @@ package io.helidon.json;
 
 import java.math.BigDecimal;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-abstract class JsonValueParsingTest {
+class JsonValueParsingTest {
 
-    @Test
-    public void testJsonStringValueParsing() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testJsonStringValueParsing(ParserMethod parserMethod) {
         String json = "\"stringValue\"";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         JsonValue jsonValue = parser.readJsonValue();
 
         assertThat(jsonValue.type(), is(JsonValueType.STRING));
         assertThat(jsonValue.asString().value(), is("stringValue"));
     }
 
-    @Test
-    public void testJsonNumberValueParsing() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testJsonNumberValueParsing(ParserMethod parserMethod) {
         String json = "123";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         JsonValue jsonValue = parser.readJsonValue();
 
         assertThat(jsonValue.type(), is(JsonValueType.NUMBER));
         assertThat(jsonValue.asNumber().doubleValue(), is(123.0));
 
         json = "123.456";
-        parser = createParser(json);
+        parser = parserMethod.createParser(json);
         jsonValue = parser.readJsonValue();
 
         assertThat(jsonValue.type(), is(JsonValueType.NUMBER));
         assertThat(jsonValue.asNumber().doubleValue(), is(123.456));
     }
 
-    @Test
-    public void testJsonObjectParsing() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testJsonObjectParsing(ParserMethod parserMethod) {
         String expected = "value".repeat(6);
         String json = "{\"test\":\"" + expected + "\"}";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         JsonValue jsonValue = parser.readJsonValue();
 
         assertThat(jsonValue.type(), is(JsonValueType.OBJECT));
@@ -65,11 +69,12 @@ abstract class JsonValueParsingTest {
         assertThat(jsonValue.asObject().containsKey("missing"), is(false));
     }
 
-    @Test
-    public void testJsonObjectWithNumberParsing() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testJsonObjectWithNumberParsing(ParserMethod parserMethod) {
         String expected = "123".repeat(3);
         String json = "{\"test\":" + expected + "}";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         JsonValue jsonValue = parser.readJsonValue();
 
         assertThat(jsonValue.type(), is(JsonValueType.OBJECT));
@@ -78,30 +83,33 @@ abstract class JsonValueParsingTest {
         assertThat(jsonValue.asObject().containsKey("missing"), is(false));
     }
 
-    @Test
-    public void testJsonBooleanValueParsingTrue() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testJsonBooleanValueParsingTrue(ParserMethod parserMethod) {
         String json = "true";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         JsonValue jsonValue = parser.readJsonValue();
 
         assertThat(jsonValue.type(), is(JsonValueType.BOOLEAN));
         assertThat(jsonValue.asBoolean().value(), is(true));
     }
 
-    @Test
-    public void testJsonBooleanValueParsingFalse() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testJsonBooleanValueParsingFalse(ParserMethod parserMethod) {
         String json = "false";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         JsonValue jsonValue = parser.readJsonValue();
 
         assertThat(jsonValue.type(), is(JsonValueType.BOOLEAN));
         assertThat(jsonValue.asBoolean().value(), is(false));
     }
 
-    @Test
-    public void testJsonObjectWithBooleanParsing() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testJsonObjectWithBooleanParsing(ParserMethod parserMethod) {
         String json = "{\"flag\":true,\"enabled\":false}";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         JsonValue jsonValue = parser.readJsonValue();
 
         assertThat(jsonValue.type(), is(JsonValueType.OBJECT));
@@ -109,7 +117,5 @@ abstract class JsonValueParsingTest {
         assertThat(jsonValue.asObject().booleanValue("enabled").orElseThrow(), is(false));
         assertThat(jsonValue.asObject().containsKey("missing"), is(false));
     }
-
-    abstract JsonParser createParser(String template);
 
 }

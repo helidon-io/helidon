@@ -25,6 +25,11 @@ import java.math.BigDecimal;
  */
 public final class JsonNumber extends JsonValue {
 
+    private static final BigDecimal LONG_MAX = BigDecimal.valueOf(Long.MAX_VALUE);
+    private static final BigDecimal LONG_MIN = BigDecimal.valueOf(Long.MIN_VALUE);
+    private static final BigDecimal DOUBLE_MAX = BigDecimal.valueOf(Double.MAX_VALUE);
+    private static final BigDecimal DOUBLE_MIN = BigDecimal.valueOf(Double.MIN_VALUE);
+
     private final byte[] buffer;
     private final int start;
     private final int length;
@@ -101,7 +106,7 @@ public final class JsonNumber extends JsonValue {
      */
     public double doubleValue() {
         if (doubleValue == null) {
-            JsonParser parser = new JsonParserArray(buffer, start, start + length);
+            JsonParser parser = new JsonParserArray(buffer, start, length);
             doubleValue = parser.readDouble();
         }
         return doubleValue;
@@ -114,7 +119,7 @@ public final class JsonNumber extends JsonValue {
      */
     public int intValue() {
         if (intValue == null) {
-            JsonParser parser = new JsonParserArray(buffer, start, start + length);
+            JsonParser parser = new JsonParserArray(buffer, start, length);
             intValue = parser.readInt();
         }
         return intValue;
@@ -130,7 +135,7 @@ public final class JsonNumber extends JsonValue {
             if (doubleValue != null) {
                 bigDecimalValue = BigDecimal.valueOf(doubleValue);
             } else {
-                JsonParser parser = new JsonParserArray(buffer, start, start + length);
+                JsonParser parser = new JsonParserArray(buffer, start, length);
                 bigDecimalValue = parser.readBigDecimal();
             }
         }
@@ -145,7 +150,16 @@ public final class JsonNumber extends JsonValue {
     @Override
     public void toJson(JsonGenerator generator) {
         if (bigDecimalValue != null) {
-            generator.write(bigDecimalValue);
+            if (bigDecimalValue.scale() <= 0
+                    && bigDecimalValue.compareTo(LONG_MIN) >= 0
+                    && bigDecimalValue.compareTo(LONG_MAX) <= 0) {
+                generator.write(bigDecimalValue.longValueExact());
+            } else if (bigDecimalValue.compareTo(DOUBLE_MIN) >= 0
+                    && bigDecimalValue.compareTo(DOUBLE_MAX) <= 0) {
+                generator.write(bigDecimalValue.doubleValue());
+            } else {
+                generator.write(bigDecimalValue);
+            }
             return;
         }
         if (buffer.length == 0) {
@@ -153,7 +167,7 @@ public final class JsonNumber extends JsonValue {
             return;
         }
 
-        JsonParser parser = new JsonParserArray(buffer, start, start + length);
+        JsonParser parser = new JsonParserArray(buffer, start, length);
         generator.write(parser.readBigDecimal());
     }
 }

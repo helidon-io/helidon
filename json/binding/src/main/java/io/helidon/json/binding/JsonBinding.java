@@ -24,6 +24,8 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.GenericType;
+import io.helidon.json.JsonGenerator;
+import io.helidon.json.JsonParser;
 import io.helidon.json.JsonValue;
 
 /**
@@ -147,6 +149,37 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param <T>          the type of the object
      */
     <T> void serialize(OutputStream outputStream, T obj, GenericType<? super T> type);
+
+    /**
+     * Serializes an object to JSON using the provided generator.
+     * If the provided object is null, writes {@code null} to the generator.
+     *
+     * @param generator the JSON generator to write to
+     * @param obj       the object to serialize, this parameter may be {@code null}
+     */
+    void serialize(JsonGenerator generator, Object obj);
+
+    /**
+     * Serializes an object of a specific type to JSON using the provided generator.
+     * If the provided object is null, writes {@code null} to the generator.
+     *
+     * @param generator the JSON generator to write to
+     * @param obj       the object to serialize, this parameter may be {@code null}
+     * @param type      the class type of the object
+     * @param <T>       the type of the object
+     */
+    <T> void serialize(JsonGenerator generator, T obj, Class<? super T> type);
+
+    /**
+     * Serializes an object of a generic type to JSON using the provided generator.
+     * If the provided object is null, writes {@code null} to the generator.
+     *
+     * @param generator the JSON generator to write to
+     * @param obj       the object to serialize, this parameter may be {@code null}
+     * @param type      the generic type of the object
+     * @param <T>       the type of the object
+     */
+    <T> void serialize(JsonGenerator generator, T obj, GenericType<? super T> type);
 
     /**
      * Serializes an object to JSON and writes it to a Writer.
@@ -300,5 +333,25 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @return          the deserialized object
      */
     <T> T deserialize(JsonValue jsonValue, GenericType<T> type);
+
+    /**
+     * Deserializes JSON from a parser to an object of the specified type.
+     *
+     * @param parser the parser containing JSON data
+     * @param type   the class type to deserialize to
+     * @param <T>    the type of the object
+     * @return       the deserialized object
+     */
+    <T> T deserialize(JsonParser parser, Class<T> type);
+
+    /**
+     * Deserializes JSON from a parser to an object of the specified generic type.
+     *
+     * @param parser the parser containing JSON data
+     * @param type   the generic type to deserialize to
+     * @param <T>    the type of the object
+     * @return       the deserialized object
+     */
+    <T> T deserialize(JsonParser parser, GenericType<T> type);
 
 }

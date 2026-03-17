@@ -16,7 +16,8 @@
 
 package io.helidon.json;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -26,23 +27,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Tests for ArrayJsonParser boolean parsing functionality.
  * Covers true/false values, case sensitivity, and edge cases.
  */
-abstract class BooleanValueTest {
+class BooleanValueTest {
 
     // Basic boolean parsing tests
-    @Test
-    public void testParseBooleanTrue() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanTrue(ParserMethod parserMethod) {
         String json = "true";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         boolean result = parser.readBoolean();
 
         assertThat(result, is(true));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseBooleanFalse() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanFalse(ParserMethod parserMethod) {
         String json = "false";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
         boolean result = parser.readBoolean();
 
         assertThat(result, is(false));
@@ -50,144 +53,159 @@ abstract class BooleanValueTest {
     }
 
     // Case sensitivity tests (JSON booleans are case-sensitive)
-    @Test
-    public void testParseBooleanTrueCaseSensitive() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanTrueCaseSensitive(ParserMethod parserMethod) {
         String json = "True";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
-    @Test
-    public void testParseBooleanFalseCaseSensitive() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanFalseCaseSensitive(ParserMethod parserMethod) {
         String json = "False";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
-    @Test
-    public void testParseBooleanTrueUppercase() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanTrueUppercase(ParserMethod parserMethod) {
         String json = "TRUE";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
-    @Test
-    public void testParseBooleanFalseUppercase() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanFalseUppercase(ParserMethod parserMethod) {
         String json = "FALSE";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
-    @Test
-    public void testParseBooleanTrueMixedCase() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanTrueMixedCase(ParserMethod parserMethod) {
         String json = "tRuE";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
-    @Test
-    public void testParseBooleanFalseMixedCase() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanFalseMixedCase(ParserMethod parserMethod) {
         String json = "fAlSe";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
     // Invalid boolean formats
-    @Test
-    public void testParseBooleanInvalidFormat() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanInvalidFormat(ParserMethod parserMethod) {
         String json = "yes";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
-    @Test
-    public void testParseBooleanNumericOne() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanNumericOne(ParserMethod parserMethod) {
         String json = "1";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
-    @Test
-    public void testParseBooleanNumericZero() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanNumericZero(ParserMethod parserMethod) {
         String json = "0";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
-    @Test
-    public void testParseBooleanEmptyString() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanEmptyString(ParserMethod parserMethod) {
         String json = "\"\"";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
-    @Test
-    public void testParseBooleanStringTrue() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanStringTrue(ParserMethod parserMethod) {
         String json = "\"true\"";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
-    @Test
-    public void testParseBooleanStringFalse() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanStringFalse(ParserMethod parserMethod) {
         String json = "\"false\"";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
-    @Test
-    public void testParseBooleanNull() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanNull(ParserMethod parserMethod) {
         String json = "null";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
-    @Test
-    public void testParseBooleanEmptyObject() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanEmptyObject(ParserMethod parserMethod) {
         String json = "{}";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
-    @Test
-    public void testParseBooleanEmptyArray() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanEmptyArray(ParserMethod parserMethod) {
         String json = "[]";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
     // Partial matches that should fail
-    @Test
-    public void testParseBooleanTruePartialMatch() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanTruePartialMatch(ParserMethod parserMethod) {
         String json = "tru";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
 
-    @Test
-    public void testParseBooleanFalsePartialMatch() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBooleanFalsePartialMatch(ParserMethod parserMethod) {
         String json = "fals";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThrows(JsonException.class, parser::readBoolean);
     }
-
-    abstract JsonParser createParser(String template);
 
 }
