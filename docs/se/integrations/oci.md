@@ -23,8 +23,8 @@ clients][the-oracle-cloud] into your Helidon applications.
 > annotation processors needed?][why-are-annotati]
 
 > [!NOTE]
-> If you are interested in our MP based support of OCI than this [Guide for
-> Helidon MP application on OCI](../../mp/guides/oci.md), describes the basics
+> If you are interested in our MP based support of OCI then this [Guide for
+> Helidon MP application on OCI](../../mp/guides/oci.md) describes the basics
 > of developing and deploying a Helidon MP application based on our [Project
 > Starter][project-starter].
 
@@ -70,14 +70,26 @@ Adding the Helidon OCI SDK Integration dependency for OKE Workload:
 </dependency>
 ```
 
+Adding the Helidon OCI Metrics Integration dependency:
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.integrations.oci.metrics</groupId>
+  <artifactId>helidon-integrations-oci-metrics</artifactId>
+</dependency>
+```
+
 ## Usage
 
-All you need to do is configure and create an OCI SDK Client object. The
+Generally, all you need to do is configure and create an OCI SDK Client object. The
 configuration primarily consists of setting up authentication with OCI. It is
 recommended that you configure authentication first and then verify your
 configuration by using the [OCI CLI][the-oracle-cloud] to access the service.
 Once you have authentication with OCI configured, you can use it to access any
 OCI service supported by the OCI SDK.
+
+For automatic transmission of Helidon metrics to OCI Monitoring, see
+[Monitoring](#monitoring).
 
 ### Configuring Authentication
 
@@ -216,12 +228,25 @@ The following information is made available from IMDS in
 - hostName - Host Name of the Instance.
 - canonicalRegionName - Canonical Region Name of where the Instance exists.
 - region - Short Region Name of where the Instance exists.
-- ociAdName - Physical Availaibility Domain Name where the Instance exists.
+- ociAdName - Physical Availability Domain Name where the Instance exists.
 - faultDomain - Fault Domain Name where the Instance exists.
 - tenantId - Tenant Id where the Instance was provisioned.
 - compartmentId - Compartment Id where the Instance was provisioned.
 - jsonObject - A JsonObject containing full information about the Instance from
   IMDS.
+
+## Monitoring
+
+Follow these steps to arrange automatic transmission of Helidon metrics to an
+OCI Monitoring backend system.
+
+1. Prepare an instance of the OCI `Monitoring` type. Either configure the
+   [OCI authentication details](#configuration) so Helidon can create a
+   `Monitoring` instance automatically, or create an instance in your code and
+   pass it to `OciMetricsConfig.builder().monitoringClient(...)`.
+2. Configure how Helidon transmits the metrics data using the `oci` metrics
+   publisher shown below, or use `OciMetricsConfig.builder()` to configure and
+   build the publisher programmatically.
 
 ## Configuration
 
@@ -266,6 +291,25 @@ helidon.oci:
   tenant-id: "ocid1.tenancy.oc1..mytenancyid" # optional, OCI tenant id for Instance Principal, Resource Principal or OKE Workload.
 ```
 <!--@mdc :: -->
+
+To set up automatic transmission to an OCI metrics backend, configure a metrics
+publisher in `application.yaml`:
+
+```yaml [application.yaml]
+metrics:
+  publishers:
+    - type: oci
+      compartment-id: my-compartment
+      resource-group: my-resource-group
+      delay: PT2.5S
+      initial-delay: PT10S
+```
+
+This configuration sends metrics to OCI Monitoring every 2.5 seconds after an
+initial delay of 10 seconds, using the specified compartment and resource group.
+
+See the [OCI metrics configuration reference](../../config/io.helidon.integrations.oci.metrics.OciMetricsService.md)
+for all available settings.
 
 ## Reference
 
