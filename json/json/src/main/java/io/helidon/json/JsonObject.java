@@ -447,6 +447,19 @@ public final class JsonObject extends JsonValue {
         }
 
         /**
+         * Copies all properties from the provided object into this builder.
+         *
+         * @param object the object to copy values from
+         * @return this builder for method chaining
+         */
+        public Builder from(JsonObject object) {
+            Objects.requireNonNull(object, "object cannot be null");
+            object.ensureResolvedKeys();
+            values.putAll(object.content);
+            return this;
+        }
+
+        /**
          * Removes the property with the specified key from this builder.
          *
          * @param key the key to remove
