@@ -33,6 +33,7 @@ include::{rootdir}/includes/se.adoc[]
 ** <<_accessing_oci_services, Accessing OCI Services>>
 ** <<_region, Region Information>>
 ** <<_imds, Instance Metadata Service Instance Information>>
+** <<_monitoring, Monitoring>>
 * <<Configuration, Configuration>>
 * <<References, References>>
 
@@ -44,7 +45,7 @@ link:{oci-javasdk-url}[The Oracle Cloud Infrastructure SDK for Java] enables you
 
 NOTE: This Helidon module requires xref:../injection/injection.adoc#Programmatic Lookup[ServiceRegistry]. ServiceRegistry requires the use of annotation processors, see xref:../injection/injection.adoc#Build time[Why are annotation processors needed?]
 
-NOTE: If you are interested in our MP based support of OCI than this xref:{rootdir}/mp/guides/oci-guide.adoc[Guide for Helidon MP application on OCI], describes the basics of developing and deploying a Helidon MP application based on our link:https://helidon.io/starter/{helidon-version}[Project Starter].
+NOTE: If you are interested in our MP based support of OCI then this xref:{rootdir}/mp/guides/oci-guide.adoc[Guide for Helidon MP application on OCI] describes the basics of developing and deploying a Helidon MP application based on our link:https://helidon.io/starter/{helidon-version}[Project Starter].
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -84,9 +85,19 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
+[source,xml]
+.Adding the Helidon OCI Metrics Integration dependency
+----
+<dependency>
+    <groupId>io.helidon.integration.oci.metrics</groupId>
+    <artifactId>helidon-integrations-oci-metrics</artifactId>
+</dependency>
+----
 == Usage
 
-All you need to do is configure and create an OCI SDK Client object. The configuration primarily consists of setting up authentication with OCI. It is recommended that you configure authentication first and then verify your configuration by using the link:{oci-javasdk-url}[OCI CLI] to access the service. Once you have authentication with OCI configured, you can use it to access any OCI service supported by the OCI SDK.
+Generally, all you need to do is configure and create an OCI SDK Client object. The configuration primarily consists of setting up authentication with OCI. It is recommended that you configure authentication first and then verify your configuration by using the link:{oci-javasdk-url}[OCI CLI] to access the service. Once you have authentication with OCI configured, you can use it to access any OCI service supported by the OCI SDK.
+
+Integration with OCI Monitoring does not use an OCI SDK client object. See the later <<#_monitoring,metrics section>> which describes how to periodically transmit Helidon metrics to the OCI Monitoring backend system.
 
 [#_configuring_authentication]
 === Configuring Authentication
@@ -192,14 +203,27 @@ The following information is made available from IMDS in `io.helidon.integration
 * hostName - Host Name of the Instance.
 * canonicalRegionName - Canonical Region Name of where the Instance exists.
 * region - Short Region Name of where the Instance exists.
-* ociAdName - Physical Availaibility Domain Name where the Instance exists.
+* ociAdName - Physical Availability Domain Name where the Instance exists.
 * faultDomain - Fault Domain Name where the Instance exists.
 * tenantId - Tenant Id where the Instance was provisioned.
 * compartmentId - Compartment Id where the Instance was provisioned.
 * jsonObject - A JsonObject containing full information about the Instance from IMDS.
 
+[#_monitoring]
+== Monitoring
+
+Follow these steps to arrange automatic transmission of Helidon metrics to an OCI Monitoring backend system.
+
+. Prepare an instance of the OCI `Monitoring` type. Either:
+   * Configure the OCI authentication details (<<#_auth-config,illustrated below>>) so Helidon can use them to create a `Monitoring` instance automatically, or
+   * Create an instance of `Monitoring` in your code and pass it to the `OciMetricsService` builder.
+. Prescribe how you want Helidon to transmit the metrics data. Either:
+   * Add configuration of the `oci` metrics publisher (see the <<_metrics-config,example>> below), or
+   * Use the `OciMetricsService` builder to set up the transmission behavior.
+
 == Configuration
 
+[#_auth-config]
 [source,yaml]
 .oci-config.yaml auth config
 ----
@@ -239,6 +263,27 @@ helidon.oci:
   federation-endpoint: "https://auth.us-myregion-1.oraclecloud.com" # optional, federation endpoint for authentication providers.
   tenant-id: "ocid1.tenancy.oc1..mytenancyid" # optional, OCI tenant id for Instance Principal, Resource Principal or OKE Workload.
 ----
+
+[#_metrics-config]
+To set up automatic transmission to an OCI metrics backend, you can use Helidon configuration (such as in `application.yaml`) to specify a metrics publisher.
+
+[source,yaml]
+.Example OCI Metrics transmission config in `application.yaml`
+----
+metrics:
+  publishers:
+    - type: oci                         # <1>
+      compartment-id: my-compartment    # <2>
+      resource-group: my-resource-group # <2>
+      delay: PT2.5S                     # <3>
+      initial-delay: PT10S              # <4>
+----
+<1> Indicates you want to use an `oci` publisher.
+<2> Adds the identifying compartment and resource group.
+<3> Sets up periodic transmissions to the OCI monitoring backend each 2.5 seconds.
+<4> Waits for 10 seconds before sending the first metrics transmission.
+
+include::{rootdir}/config/io_helidon_integrations_oci_metrics_OciMetricsService.adoc[tag=config,levelOffset=+3]
 
 == References
 
