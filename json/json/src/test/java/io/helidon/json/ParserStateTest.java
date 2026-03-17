@@ -125,7 +125,7 @@ class ParserStateTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = ParserMethod.class, names = "STREAM")
+    @EnumSource(value = ParserMethod.class)
     public void testParserWithLargeArrays(ParserMethod parserMethod) {
         // Create a large array to test parser performance and state management
         StringBuilder json = new StringBuilder();

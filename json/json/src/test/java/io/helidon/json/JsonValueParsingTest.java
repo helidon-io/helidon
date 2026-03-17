@@ -70,7 +70,7 @@ class JsonValueParsingTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = ParserMethod.class, names = "STREAM")
+    @EnumSource(ParserMethod.class)
     public void testJsonObjectWithNumberParsing(ParserMethod parserMethod) {
         String expected = "123".repeat(3);
         String json = "{\"test\":" + expected + "}";

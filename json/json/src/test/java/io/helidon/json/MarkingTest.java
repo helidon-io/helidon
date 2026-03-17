@@ -94,7 +94,7 @@ class MarkingTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = ParserMethod.class, names = "STREAM")
+    @EnumSource(value = ParserMethod.class)
     public void testMarkAndResetToMarkWithObject(ParserMethod parserMethod) {
         String json = "{\"key1\": \"value1\", \"key2\": 42}";
         JsonParser parser = parserMethod.createParser(json);
@@ -115,7 +115,7 @@ class MarkingTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = ParserMethod.class, names = "STREAM")
+    @EnumSource(value = ParserMethod.class)
     public void testMarkAndResetToMarkWithArray(ParserMethod parserMethod) {
         String json = "[\"item1\", 123, true]";
         JsonParser parser = parserMethod.createParser(json);
