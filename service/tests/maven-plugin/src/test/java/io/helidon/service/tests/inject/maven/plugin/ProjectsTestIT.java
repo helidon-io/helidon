@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package io.helidon.service.tests.inject.maven.plugin;
 
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import io.helidon.build.common.test.utils.ConfigurationParameterSource;
-
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.common.test.utils.FileMatchers.fileExists;
+import static io.helidon.common.testing.junit5.FileMatchers.fileExists;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -32,13 +31,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Integration test that verifies the projects under {@code src/it/projects}.
  */
 public class ProjectsTestIT {
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
+    @Test
     @DisplayName("Test default binding and main class names")
-    void test1(String basedir) {
+    void test1() {
         // test the first project under src/it/projects/test1 (referenced from postbuild.groovy)
         // make sure all the required types are created
-        Path projectPath = Paths.get(basedir);
+        Path projectPath = projectPath("test1");
         Path compiledClasses = projectPath.resolve("target/classes/my/module");
         Path generatedSources = projectPath.resolve("target/generated-sources/annotations/my/module");
 
@@ -66,13 +64,12 @@ public class ProjectsTestIT {
 
     }
 
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
+    @Test
     @DisplayName("Test custom binding and main class names and custom package")
-    void test2(String basedir) {
+    void test2() {
         // test the first project under src/it/projects/test1 (referenced from postbuild.groovy)
         // make sure all the required types are created
-        Path projectPath = Paths.get(basedir);
+        Path projectPath = projectPath("test2");
         Path compiledClasses = projectPath.resolve("target/classes/my/module");
         Path compiledCustomClasses = projectPath.resolve("target/classes/my/updated");
         Path generatedSources = projectPath.resolve("target/generated-sources/annotations/my/module");
@@ -110,13 +107,12 @@ public class ProjectsTestIT {
 
     }
 
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
+    @Test
     @DisplayName("Test binding and main class generation disabled")
-    void test3(String basedir) {
+    void test3() {
         // test the first project under src/it/projects/test1 (referenced from postbuild.groovy)
         // make sure all the required types are created
-        Path projectPath = Paths.get(basedir);
+        Path projectPath = projectPath("test3");
         Path compiledClasses = projectPath.resolve("target/classes/my/module");
         Path generatedSources = projectPath.resolve("target/generated-sources/annotations/my/module");
 
@@ -150,5 +146,15 @@ public class ProjectsTestIT {
                    not(fileExists()));
         assertThat("Compiled service", compiledClasses.resolve("ServiceType.class"), fileExists());
 
+    }
+
+    private Path projectPath(String projectName) {
+        try {
+            var testClasses = Paths.get(getClass().getProtectionDomain()
+                    .getCodeSource().getLocation().toURI());
+            return testClasses.resolve("../it/projects").resolve(projectName).normalize();
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException("Cannot resolve invoker project path for " + projectName, e);
+        }
     }
 }
