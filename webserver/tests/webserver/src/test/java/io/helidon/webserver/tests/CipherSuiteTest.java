@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,8 +49,6 @@ class CipherSuiteTest {
     private final WebClient invalidClient;
 
     CipherSuiteTest(@Socket("@default") URI defaultUri, @Socket("invalid") URI invalidUri) {
-        // the "valid" algorithm was updated for Java 24, as the previous is no longer valid
-        // the current setup works both in Java 21 and in Java 24
         this.defaultClient = WebClient.builder()
                 .baseUri(defaultUri)
                 .tls(tls -> tls.enabledCipherSuites(List.of("TLS_DHE_RSA_WITH_AES_256_GCM_SHA384"))

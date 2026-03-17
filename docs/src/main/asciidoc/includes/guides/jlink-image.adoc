@@ -158,13 +158,6 @@ reported at the end of the build output.
 If you want to skip the creation of the on-disk cache you can do so by
 executing your build like this:
 
-==== For Java 24 or earlier
-[source,bash]
-----
-mvn package -Pjlink-image -Djlink.image.addClassDataSharingArchive=false
-----
-
-==== For Java 25 or later
 [source,bash]
 ----
 mvn package -Pjlink-image -Djlink.image.aotCache=false

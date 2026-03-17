@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,59 +18,22 @@ package io.helidon.webserver.testing.junit5;
 
 import java.util.Arrays;
 
-import io.helidon.common.testing.virtualthreads.PinningAssertionError;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.http.HttpRouting;
 
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledForJreRange;
-import org.junit.jupiter.api.condition.DisabledIf;
-import org.junit.jupiter.api.condition.DisabledOnJre;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.junit.jupiter.api.condition.EnabledOnJre;
-import org.junit.jupiter.api.condition.JRE;
 import org.junit.platform.testkit.engine.EngineTestKit;
 import org.junit.platform.testkit.engine.Event;
-import org.junit.platform.testkit.engine.Events;
 
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 import static org.junit.platform.testkit.engine.EventConditions.displayName;
-import static org.junit.platform.testkit.engine.EventConditions.event;
-import static org.junit.platform.testkit.engine.EventConditions.finishedWithFailure;
-import static org.junit.platform.testkit.engine.TestExecutionResultConditions.instanceOf;
-import static org.junit.platform.testkit.engine.TestExecutionResultConditions.message;
 
 class TestPinnedThread {
 
     @Test
-    @EnabledOnJre(JRE.JAVA_21)
-    void engineTest() {
-        Events events = EngineTestKit.engine("junit-jupiter")
-                .selectors(
-                        selectClass(PinningTestCase.class),
-                        selectClass(PinningExtraThreadTestCase.class),
-                        selectClass(NoPinningTestCase.class),
-                        selectClass(NoPinningExtraThreadTestCase.class)
-                )
-                .execute()
-                .containerEvents()
-                .assertStatistics(stats -> stats
-                        .failed(2)
-                        .succeeded(3));
-
-        events.failed()
-                .assertEventsMatchExactly(
-                        event(displayClass(PinningTestCase.class), failedWithPinningException("lambda$routing$0")),
-                        event(displayClass(PinningExtraThreadTestCase.class), failedWithPinningException("lambda$pinningTest$0"))
-                );
-    }
-
-    @Test
-    // disable for Java 21, which pins on synchronized, current "tip" of Java is 24, which is not pinning
-    @DisabledOnJre(JRE.JAVA_21)
-    void engineTestNewJava() {
+    void engineTestJava() {
         // synchronized no longer pins in Java 24
         EngineTestKit.engine("junit-jupiter")
                 .selectors(
@@ -84,18 +47,6 @@ class TestPinnedThread {
                 .assertStatistics(stats -> stats
                         .failed(0)
                         .succeeded(5));
-    }
-
-    private Condition<org.junit.platform.testkit.engine.Event> failedWithPinningException(String expectedPinningMethodName) {
-        return finishedWithFailure(
-                instanceOf(PinningAssertionError.class),
-                message(m -> m.startsWith("Pinned virtual threads were detected"))
-                , new Condition<>(
-                        t -> Arrays.stream(t.getStackTrace())
-                                .anyMatch(e -> e.getMethodName()
-                                        .equals(expectedPinningMethodName)),
-                        "Method with pinning is missing from stack strace.")
-        );
     }
 
     private Condition<Event> displayClass(Class<?> clazz) {
