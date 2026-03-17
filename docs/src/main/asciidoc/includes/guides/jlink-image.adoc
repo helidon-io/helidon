@@ -37,7 +37,7 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 == Verify JDK
 
-As noted in the prerequisites above, Java 21 or newer is required (Java 25 or newer is recommended).
+As noted in the prerequisites above, Java 26 or newer is required.
 
 [source,bash]
 ----
@@ -145,7 +145,7 @@ is also included in your custom image by default. The CDS archive
 improves your application's startup performance and in-memory footprint.
 You can learn more about Class Data Sharing in the link:{jdk-doc-url}/vm/class-data-sharing.html[JDK documentation].
 
-If you are building with Java 25 or later an AOT Cache is created instead of a
+If you are building with Java 26 or later an AOT Cache is created instead of a
 CDS archive. The AOT Cache is more advanced than the CDS archive and over time
 will contain more optimizations for improving application startup performance.
 You can learn more about the AOT Cache in the following JEPS: link:https://openjdk.org/jeps/483[JEP 483],
@@ -158,13 +158,6 @@ reported at the end of the build output.
 If you want to skip the creation of the on-disk cache you can do so by
 executing your build like this:
 
-==== For Java 24 or earlier
-[source,bash]
-----
-mvn package -Pjlink-image -Djlink.image.addClassDataSharingArchive=false
-----
-
-==== For Java 25 or later
 [source,bash]
 ----
 mvn package -Pjlink-image -Djlink.image.aotCache=false

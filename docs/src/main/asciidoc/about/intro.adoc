@@ -33,7 +33,7 @@ include::{rootdir}/includes/attributes.adoc[]
 
 * Converted other _reactive_ API modules to _blocking_ style APIs. The `io.helidon.common.reactive` APIs will stay as general purpose reactive utilities and operators. Learn more: <<Helidon SE, Helidon SE>>
 
-* Java 21 is required to use Helidon 4. Java 25 or newer is recommended.
+* Java 26 is required to use Helidon 27.
 
 
 
@@ -59,4 +59,3 @@ include::{sourcedir}/about/IntroSnippets.java[tag=snippet_1, indent=0]
 ----
 include::{sourcedir}/about/IntroSnippets.java[tag=snippet_2, indent=0]
 ----
-

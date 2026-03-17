@@ -46,8 +46,8 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites-crac]
 
 There are two JDK builds with CRaC support as of now to choose from.
 
-- https://www.azul.com/downloads/?version=java-21-lts&package=jdk-crac#zulu[Azul Zulu]
-- https://bell-sw.com/pages/downloads/?package=jdk-crac&version=java-21[BellSoft Liberica JDK]
+- https://www.azul.com/downloads/?package=jdk-crac#zulu[Azul Zulu]
+- https://bell-sw.com/pages/downloads/?package=jdk-crac[BellSoft Liberica JDK]
 
 In this example we will use Azul implementation with Warp CRaC engine.
 Warp CRaC engine allows creating snapshots without elevated privileges.
@@ -137,7 +137,7 @@ xref:{guidesdir}/quickstart.adoc[Helidon {flavor-uc} Quickstart Guide].
 
 == Creating snapshot
 
-In another shell trigger the snapshot creation with https://docs.oracle.com/en/java/javase/21/docs/specs/man/jcmd.html[jcmd] command `JDK.checkpoint`:
+In another shell trigger the snapshot creation with https://docs.oracle.com/en/java/javase/26/docs/specs/man/jcmd.html[jcmd] command `JDK.checkpoint`:
 
 [source,bash,subs="attributes+"]
 ----

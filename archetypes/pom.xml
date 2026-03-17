@@ -32,7 +32,9 @@
 
     <modules>
         <module>archetypes</module>
+        <!-- Removed, as current version of groovy does not support Java 26
         <module>legacy</module>
+        -->
     </modules>
 
     <build>

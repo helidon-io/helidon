@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ import java.util.SequencedSet;
  * <ol>
  *
  * <li>They are <dfn>immutable</dfn>, following the <a
- * href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Collection.html#unmodview">definition of
+ * href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Collection.html#unmodview">definition of
  * immutability</a> in the Java Collections Framework. They are thus by definition also safe for concurrent use by
  * multiple threads.</li>
  *

@@ -65,9 +65,9 @@ endif::[]
 :version-lib-micrometer: 1.11.1
 :version-lib-smallrye-open-api: 3.3.4
 
-:jdk-version: 21
+:jdk-version: 26
 
-:jdk-doc-url: https://docs.oracle.com/en/java/javase/21
+:jdk-doc-url: https://docs.oracle.com/en/java/javase/26
 :jdk-javadoc-url: {jdk-doc-url}/docs/api
 
 :helidon-maven-plugin-doc-url: https://github.com/helidon-io/helidon-build-tools/blob/{version-plugin-helidon}/maven-plugins/helidon-maven-plugin/README.md
@@ -214,7 +214,7 @@ endif::[]
 :openmetrics-format-doc-url: https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md
 
 // GraalVM
-:graalvm-jdk-version: 21
+:graalvm-jdk-version: 25
 :graalvm-doc-url: https://www.graalvm.org/jdk{graalvm-jdk-version}/
 
 endif::attributes-included[]

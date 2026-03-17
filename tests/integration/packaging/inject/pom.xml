@@ -203,6 +203,14 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-maven-plugin</artifactId>
+                        <configuration>
+                            <!-- Java 26 currently fails to start the generated image with AOT cache enabled. -->
+                            <aotCache>cds</aotCache>
+                        </configuration>
+                    </plugin>
+                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>

@@ -17,10 +17,6 @@
 name: 'Common Job Steps'
 description: A composite action that abstracts the common steps needed to implement a job
 inputs:
-  native-image:
-    description: Whether to setup GraalVM native-image
-    required: false
-    default: 'false'
   maven-cache:
     description: Whether to cache the Maven local repository (read-only or read-write)
     required: false
@@ -103,14 +99,6 @@ runs:
           unzip apache-maven-${MVN_VERSION}-bin.zip -d .tools
         fi
         echo ${PWD}/.tools/apache-maven-${MVN_VERSION}/bin >> "${GITHUB_PATH}"
-    - name: Set up GraalVM
-      if: ${{ inputs.native-image == 'true' }}
-      uses: graalvm/setup-graalvm@v1.2.4
-      with:
-        java-version: ${{ env.GRAALVM_VERSION || env.JAVA_VERSION }}
-        components: ${{ env.GRAALVM_COMPONENTS }}
-        check-for-updates: 'false'
-        set-java-home: 'false'
     - name: Set up JDK
       if: ${{ inputs.setup-latest-java == 'false' }}
       uses: actions/setup-java@v4.1.0

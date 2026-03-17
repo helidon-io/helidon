@@ -54,21 +54,21 @@ Make sure you set the `JAVA_HOME` environment variable.
 .Set `JAVA_HOME` on Linux
 ----
 # Enter the appropriate path to your JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-21
+export JAVA_HOME=/usr/lib/jvm/jdk-26
 ----
 
 [source,bash]
 .Set `JAVA_HOME` on macOS
 ----
 # Enter the appropriate path to your JDK
-export JAVA_HOME=`/usr/libexec/java_home -v 21`
+export JAVA_HOME=`/usr/libexec/java_home -v 26`
 ----
 
 [source,cmd]
 .Set `JAVA_HOME` on Windows
 ----
 # Enter the appropriate path to your JDK
-setx JAVA_HOME=C:\\PROGRA~1\\Java\\jdk-21
+setx JAVA_HOME=C:\\PROGRA~1\\Java\\jdk-26
 ----
 
 == Next Steps
