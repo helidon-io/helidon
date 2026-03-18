@@ -19,11 +19,11 @@ import java.util.List;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.Method;
+import io.helidon.json.JsonObject;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
