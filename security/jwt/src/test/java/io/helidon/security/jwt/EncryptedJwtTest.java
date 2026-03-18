@@ -22,6 +22,7 @@ import java.text.ParseException;
 import java.util.Optional;
 
 import io.helidon.common.configurable.Resource;
+import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.EncryptedJwt.SupportedAlgorithm;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.jwt.jwk.JwkRSA;
@@ -35,7 +36,6 @@ import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.RSADecrypter;
 import com.nimbusds.jose.crypto.RSAEncrypter;
 import com.nimbusds.jwt.SignedJWT;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -99,10 +99,10 @@ public class EncryptedJwtTest {
                 .encryption(aesAlgorithm)
                 .build();
         JsonObject headers = encryptedJwt.headers().headerJson();
-        assertThat(headers.getString("alg"), is(rsaAlgorithm.toString()));
-        assertThat(headers.getString("enc"), is(aesAlgorithm.toString()));
-        assertThat(headers.getString("cty"), is("JWT"));
-        assertThat(headers.getString("kid"), is(kid));
+        assertThat(headers.stringValue("alg").orElseThrow(), is(rsaAlgorithm.toString()));
+        assertThat(headers.stringValue("enc").orElseThrow(), is(aesAlgorithm.toString()));
+        assertThat(headers.stringValue("cty").orElseThrow(), is("JWT"));
+        assertThat(headers.stringValue("kid").orElseThrow(), is(kid));
     }
 
     @Test

@@ -21,9 +21,8 @@ import java.net.URI;
 import java.util.Optional;
 
 import io.helidon.common.Errors;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.api.WebClient;
-
-import jakarta.json.JsonObject;
 
 final class OidcMetadata {
     private static final System.Logger LOGGER = System.getLogger(OidcMetadata.class.getName());
@@ -59,12 +58,12 @@ final class OidcMetadata {
             }
         } else {
             // get it from metadata
-            String jsonValue = oidcMetadata.getString(metaKey, null);
-            if (jsonValue != null) {
+            Optional<String> jsonValue = oidcMetadata.stringValue(metaKey);
+            if (jsonValue.isPresent()) {
                 if (LOGGER.isLoggable(Level.TRACE)) {
-                    LOGGER.log(Level.TRACE, metaKey + " loaded from well known metadata: " + jsonValue);
+                    LOGGER.log(Level.TRACE, metaKey + " loaded from well known metadata: " + jsonValue.get());
                 }
-                foundValue = URI.create(jsonValue);
+                foundValue = URI.create(jsonValue.get());
             }
         }
 
@@ -88,7 +87,7 @@ final class OidcMetadata {
 
     public Optional<String> getString(String key) {
         return Optional.ofNullable(oidcMetadata)
-                .map(it -> it.getString(key, null));
+                .flatMap(it -> it.stringValue(key));
     }
 
     static class Builder implements io.helidon.common.Builder<Builder, OidcMetadata> {

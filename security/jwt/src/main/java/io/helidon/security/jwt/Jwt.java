@@ -37,16 +37,13 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.helidon.common.Errors;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonNull;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonString;
+import io.helidon.json.JsonValue;
+import io.helidon.json.JsonValueType;
 import io.helidon.security.jwt.jwk.Jwk;
-
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
 
 /**
  * JWT token.
@@ -90,8 +87,6 @@ public class Jwt {
     static final String C_HASH = "c_hash";
     static final String NONCE = "nonce";
     static final String SCOPE = "scope";
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /*
      All header information.
@@ -268,16 +263,16 @@ public class Jwt {
         this.issueTime = JwtUtil.toInstant(payloadJson, ISSUED_AT);
         this.notBefore = JwtUtil.toInstant(payloadJson, NOT_BEFORE);
         this.subject = JwtUtil.getString(payloadJson, SUBJECT);
-        JsonValue groups = payloadJson.get(USER_GROUPS);
-        if (groups instanceof JsonArray) {
+        JsonValue groups = payloadJson.value(USER_GROUPS).orElse(JsonNull.instance());
+        if (groups.type() == JsonValueType.ARRAY) {
             this.userGroups = JwtUtil.getStrings(payloadJson, USER_GROUPS);
         } else {
             this.userGroups = JwtUtil.getString(payloadJson, USER_GROUPS).map(List::of);
         }
 
-        JsonValue aud = payloadJson.get(AUDIENCE);
+        JsonValue aud = payloadJson.value(AUDIENCE).orElse(JsonNull.instance());
         // support both a single string and an array
-        if (aud instanceof JsonArray) {
+        if (aud.type() == JsonValueType.ARRAY) {
             this.audience = JwtUtil.getStrings(payloadJson, AUDIENCE);
         } else {
             this.audience = JwtUtil.getString(payloadJson, AUDIENCE).map(List::of);
@@ -515,7 +510,9 @@ public class Jwt {
     }
 
     private Map<String, JsonValue> getClaims(JsonObject headerJson) {
-        return Collections.unmodifiableMap(headerJson);
+        Map<String, JsonValue> result = new HashMap<>();
+        headerJson.keysAsStrings().forEach(key -> result.put(key, headerJson.value(key).orElseThrow()));
+        return Collections.unmodifiableMap(result);
     }
 
     /**
@@ -547,19 +544,20 @@ public class Jwt {
         JsonValue rawValue = payloadClaims.get(claim);
 
         if (claim.equals(AUDIENCE)) {
-            return Optional.ofNullable(ensureJsonArray(rawValue));
+            if (rawValue == null) {
+                return Optional.empty();
+            }
+            return Optional.of(ensureJsonArray(rawValue));
         }
         return Optional.ofNullable(rawValue);
     }
 
     private JsonValue ensureJsonArray(JsonValue rawValue) {
-        if (rawValue instanceof JsonArray) {
+        if (rawValue.type() == JsonValueType.ARRAY) {
             return rawValue;
         }
 
-        return JSON.createArrayBuilder()
-                .add(rawValue)
-                .build();
+        return JsonArray.create(rawValue);
     }
 
     /**
@@ -910,53 +908,45 @@ public class Jwt {
      * @return JsonObject for payload
      */
     public JsonObject payloadJson() {
-        JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
-        payloadClaims.forEach(objectBuilder::add);
+        JsonObject.Builder objectBuilder = JsonObject.builder();
+        payloadClaims.forEach(objectBuilder::set);
 
         // known payload
-        this.issuer.ifPresent(it -> objectBuilder.add(ISSUER, it));
-        this.expirationTime.ifPresent(it -> objectBuilder.add(EXPIRATION, it.getEpochSecond()));
-        this.issueTime.ifPresent(it -> objectBuilder.add(ISSUED_AT, it.getEpochSecond()));
-        this.notBefore.ifPresent(it -> objectBuilder.add(NOT_BEFORE, it.getEpochSecond()));
-        this.subject.ifPresent(it -> objectBuilder.add(SUBJECT, it));
-        this.userPrincipal.ifPresent(it -> objectBuilder.add(USER_PRINCIPAL, it));
-        this.userGroups.ifPresent(it -> {
-            JsonArrayBuilder jab = JSON.createArrayBuilder();
-            it.forEach(jab::add);
-            objectBuilder.add(USER_GROUPS, jab);
-        });
-        this.audience.ifPresent(it -> {
-            JsonArrayBuilder jab = JSON.createArrayBuilder();
-            it.forEach(jab::add);
-            objectBuilder.add(AUDIENCE, jab);
-        });
-        this.jwtId.ifPresent(it -> objectBuilder.add(JWT_ID, it));
-        this.email.ifPresent(it -> objectBuilder.add(EMAIL, it));
-        this.emailVerified.ifPresent(it -> objectBuilder.add(EMAIL_VERIFIED, it));
-        this.fullName.ifPresent(it -> objectBuilder.add(FULL_NAME, it));
-        this.givenName.ifPresent(it -> objectBuilder.add(GIVEN_NAME, it));
-        this.middleName.ifPresent(it -> objectBuilder.add(MIDDLE_NAME, it));
-        this.familyName.ifPresent(it -> objectBuilder.add(FAMILY_NAME, it));
-        this.locale.ifPresent(it -> objectBuilder.add(LOCALE, it.toLanguageTag()));
-        this.nickname.ifPresent(it -> objectBuilder.add(NICKNAME, it));
-        this.preferredUsername.ifPresent(it -> objectBuilder.add(PREFERRED_USERNAME, it));
-        this.profile.ifPresent(it -> objectBuilder.add(PROFILE, it.toASCIIString()));
-        this.picture.ifPresent(it -> objectBuilder.add(PICTURE, it.toASCIIString()));
-        this.website.ifPresent(it -> objectBuilder.add(WEBSITE, it.toASCIIString()));
-        this.gender.ifPresent(it -> objectBuilder.add(GENDER, it));
-        this.birthday.ifPresent(it -> objectBuilder.add(BIRTHDAY, JwtUtil.toDate(it)));
-        this.timeZone.ifPresent(it -> objectBuilder.add(ZONE_INFO, it.getId()));
-        this.phoneNumber.ifPresent(it -> objectBuilder.add(PHONE_NUMBER, it));
-        this.phoneNumberVerified.ifPresent(it -> objectBuilder.add(PHONE_NUMBER_VERIFIED, it));
-        this.updatedAt.ifPresent(it -> objectBuilder.add(UPDATED_AT, it.getEpochSecond()));
-        this.address.ifPresent(it -> objectBuilder.add(ADDRESS, it.getJson()));
-        this.atHash.ifPresent(it -> objectBuilder.add(AT_HASH, JwtUtil.base64Url(it)));
-        this.cHash.ifPresent(it -> objectBuilder.add(C_HASH, JwtUtil.base64Url(it)));
-        this.nonce.ifPresent(it -> objectBuilder.add(NONCE, it));
+        this.issuer.ifPresent(it -> objectBuilder.set(ISSUER, it));
+        this.expirationTime.ifPresent(it -> objectBuilder.set(EXPIRATION, it.getEpochSecond()));
+        this.issueTime.ifPresent(it -> objectBuilder.set(ISSUED_AT, it.getEpochSecond()));
+        this.notBefore.ifPresent(it -> objectBuilder.set(NOT_BEFORE, it.getEpochSecond()));
+        this.subject.ifPresent(it -> objectBuilder.set(SUBJECT, it));
+        this.userPrincipal.ifPresent(it -> objectBuilder.set(USER_PRINCIPAL, it));
+        this.userGroups.ifPresent(it -> objectBuilder.setStrings(USER_GROUPS, it));
+        this.audience.ifPresent(it -> objectBuilder.setStrings(AUDIENCE, it));
+        this.jwtId.ifPresent(it -> objectBuilder.set(JWT_ID, it));
+        this.email.ifPresent(it -> objectBuilder.set(EMAIL, it));
+        this.emailVerified.ifPresent(it -> objectBuilder.set(EMAIL_VERIFIED, it));
+        this.fullName.ifPresent(it -> objectBuilder.set(FULL_NAME, it));
+        this.givenName.ifPresent(it -> objectBuilder.set(GIVEN_NAME, it));
+        this.middleName.ifPresent(it -> objectBuilder.set(MIDDLE_NAME, it));
+        this.familyName.ifPresent(it -> objectBuilder.set(FAMILY_NAME, it));
+        this.locale.ifPresent(it -> objectBuilder.set(LOCALE, it.toLanguageTag()));
+        this.nickname.ifPresent(it -> objectBuilder.set(NICKNAME, it));
+        this.preferredUsername.ifPresent(it -> objectBuilder.set(PREFERRED_USERNAME, it));
+        this.profile.ifPresent(it -> objectBuilder.set(PROFILE, it.toASCIIString()));
+        this.picture.ifPresent(it -> objectBuilder.set(PICTURE, it.toASCIIString()));
+        this.website.ifPresent(it -> objectBuilder.set(WEBSITE, it.toASCIIString()));
+        this.gender.ifPresent(it -> objectBuilder.set(GENDER, it));
+        this.birthday.ifPresent(it -> objectBuilder.set(BIRTHDAY, JwtUtil.toDate(it)));
+        this.timeZone.ifPresent(it -> objectBuilder.set(ZONE_INFO, it.getId()));
+        this.phoneNumber.ifPresent(it -> objectBuilder.set(PHONE_NUMBER, it));
+        this.phoneNumberVerified.ifPresent(it -> objectBuilder.set(PHONE_NUMBER_VERIFIED, it));
+        this.updatedAt.ifPresent(it -> objectBuilder.set(UPDATED_AT, it.getEpochSecond()));
+        this.address.ifPresent(it -> objectBuilder.set(ADDRESS, it.getJson()));
+        this.atHash.ifPresent(it -> objectBuilder.set(AT_HASH, JwtUtil.base64Url(it)));
+        this.cHash.ifPresent(it -> objectBuilder.set(C_HASH, JwtUtil.base64Url(it)));
+        this.nonce.ifPresent(it -> objectBuilder.set(NONCE, it));
 
         this.scopes.ifPresent(it -> {
             String scopesString = String.join(" ", it);
-            objectBuilder.add(SCOPE, scopesString);
+            objectBuilder.set(SCOPE, scopesString);
         });
 
         return objectBuilder.build();
@@ -1229,7 +1219,8 @@ public class Jwt {
                                                      boolean mandatory) {
 
             return create(jwt -> jwt.headerClaim(fieldKey)
-                                  .map(it -> ((JsonString) it).getString()),
+                                  .map(JsonValue::asString)
+                                  .map(JsonString::value),
                           name,
                           expectedValue,
                           mandatory);
@@ -1264,7 +1255,8 @@ public class Jwt {
                                                       String expectedValue,
                                                       boolean mandatory) {
             return create(jwt -> jwt.payloadClaim(fieldKey)
-                                  .map(it -> ((JsonString) it).getString()),
+                                  .map(JsonValue::asString)
+                                  .map(JsonString::value),
                           name,
                           expectedValue,
                           false);

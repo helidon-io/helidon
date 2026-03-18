@@ -22,8 +22,8 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import io.helidon.common.Errors;
-
-import jakarta.json.JsonString;
+import io.helidon.json.JsonString;
+import io.helidon.json.JsonValue;
 
 /**
  * Validator of a string field obtained from the JWT.
@@ -140,9 +140,9 @@ public final class FieldValidator extends OptionalValidator {
                     collector.fatal(getClass(), "Field accessor or claim key name has to be set.");
                 }
                 if (scope() == JwtScope.PAYLOAD) {
-                    fieldAccessor = jwt -> jwt.payloadClaim(claimKey).map(it -> ((JsonString) it).getString());
+                    fieldAccessor = jwt -> jwt.payloadClaim(claimKey).map(JsonValue::asString).map(JsonString::value);
                 } else {
-                    fieldAccessor = jwt -> jwt.headerClaim(claimKey).map(it -> ((JsonString) it).getString());
+                    fieldAccessor = jwt -> jwt.headerClaim(claimKey).map(JsonValue::asString).map(JsonString::value);
                 }
             }
             collector.collect().checkValid();

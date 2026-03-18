@@ -23,9 +23,8 @@ import java.util.Optional;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.jwk.JwkKeys;
-
-import jakarta.json.JsonObject;
 
 /**
  * Tenant configuration.

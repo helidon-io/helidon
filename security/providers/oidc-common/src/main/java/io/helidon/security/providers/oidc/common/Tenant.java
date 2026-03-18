@@ -19,6 +19,7 @@ package io.helidon.security.providers.oidc.common;
 import java.net.URI;
 
 import io.helidon.common.Errors;
+import io.helidon.json.JsonObject;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -28,8 +29,6 @@ import io.helidon.security.providers.httpauth.HttpBasicOutboundConfig;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientConfig;
 import io.helidon.webclient.security.WebClientSecurity;
-
-import jakarta.json.JsonObject;
 
 /**
  * Holder of the tenant configuration resolved at runtime. Used for OIDC lazy loading.

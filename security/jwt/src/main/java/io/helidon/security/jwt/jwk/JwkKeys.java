@@ -28,11 +28,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.configurable.Resource;
-
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReaderFactory;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 
 /**
  * A representation of the JSON web keys document - a map of key ids to corresponding web keys.
@@ -50,8 +48,6 @@ import jakarta.json.JsonReaderFactory;
  */
 public final class JwkKeys {
     private static final System.Logger LOGGER = System.getLogger(JwkKeys.class.getName());
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
-
     private final Map<String, Jwk> keyMap = new HashMap<>();
     private final List<Jwk> noKeyIdKeys = new LinkedList<>();
 
@@ -147,7 +143,7 @@ public final class JwkKeys {
         public Builder resource(Resource resource) {
             Objects.requireNonNull(resource, "Json resource must not be null");
             try (InputStream is = resource.stream()) {
-                JsonObject jsonObject = JSON.createReader(is).readObject();
+                JsonObject jsonObject = JsonParser.create(is).readJsonObject();
                 addKeys(jsonObject);
             } catch (IOException e) {
                 LOGGER.log(Level.WARNING, "Failed to close input stream on resource: " + resource);
@@ -168,9 +164,9 @@ public final class JwkKeys {
         }
 
         private void addKeys(JsonObject jsonObject) {
-            JsonArray keyArray = jsonObject.getJsonArray("keys");
-            keyArray.forEach(it -> {
-                JsonObject aKey = (JsonObject) it;
+            JsonArray keyArray = jsonObject.arrayValue("keys").orElseThrow();
+            keyArray.values().forEach(it -> {
+                JsonObject aKey = it.asObject();
                 try {
                     addKey(Jwk.create(aKey));
                 } catch (Exception e) {

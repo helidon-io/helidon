@@ -23,12 +23,11 @@ import io.helidon.common.parameters.Parameters;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
-
-import jakarta.json.JsonObject;
 
 /**
  * Oracle IDCS specific implementations for {@code idcs} server type.
@@ -65,7 +64,7 @@ class IdcsSupport {
             if (response.status().family() == Status.Family.SUCCESSFUL) {
                 JsonObject json = response.as(JsonObject.class);
 
-                String accessToken = json.getString("access_token");
+                String accessToken = json.stringValue("access_token").orElseThrow();
 
                 // get the jwk from server
                 JsonObject jwkJson = generalClient.get()

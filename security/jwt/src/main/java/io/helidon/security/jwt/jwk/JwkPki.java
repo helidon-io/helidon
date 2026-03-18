@@ -31,10 +31,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
-
-import jakarta.json.JsonObject;
 
 /**
  * PKI specific features of a JWK (Public/private key types of keys).

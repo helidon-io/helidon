@@ -30,6 +30,7 @@ module io.helidon.security.providers.idcs.mapper {
 
     requires io.helidon.common.context;
     requires io.helidon.common;
+    requires io.helidon.json;
     requires io.helidon.security.integration.common;
     requires io.helidon.security.providers.common;
     requires io.helidon.security.util;

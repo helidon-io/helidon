@@ -32,9 +32,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.JwtException;
-
-import jakarta.json.JsonObject;
 
 import static io.helidon.security.jwt.JwtUtil.asBigInteger;
 import static io.helidon.security.jwt.JwtUtil.asString;
