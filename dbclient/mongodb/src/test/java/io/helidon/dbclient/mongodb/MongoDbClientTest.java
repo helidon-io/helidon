@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,15 +27,14 @@ import io.helidon.dbclient.DbExecute;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-
 import org.bson.Document;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -95,7 +94,7 @@ class MongoDbClientTest {
         TestDbClientService service = new TestDbClientService();
         MongoDbClient dbClient = createClient(builder -> builder.addService(service));
         DbExecute exec = dbClient.execute();
-        long ignored = exec.query("{\"operation\": \"command\", \"query\": { ping: 1 }}").count();
+        long _ = exec.query("{\"operation\": \"command\", \"query\": { ping: 1 }}").count();
         assertThat(service.resultFuture.isDone(), is(true));
         assertThat(service.resultFuture.isCompletedExceptionally(), is(false));
         assertThat(service.statementFuture.isDone(), is(true));
@@ -107,11 +106,11 @@ class MongoDbClientTest {
         TestDbClientService service = new TestDbClientService();
         MongoDbClient dbClient = createClient(builder -> builder.addService(service));
         DbExecute exec = dbClient.execute();
-        long ignored = exec.insert("{"
-                                + "\"collection\": \"foo\","
-                                + "\"operation\": \"insert\","
-                                + "\"value\": { \"name\": \"bar\" }"
-                                + "}");
+        long _ = exec.insert("{"
+                                     + "\"collection\": \"foo\","
+                                     + "\"operation\": \"insert\","
+                                     + "\"value\": { \"name\": \"bar\" }"
+                                     + "}");
         assertThat(service.resultFuture.isDone(), is(true));
         assertThat(service.resultFuture.isCompletedExceptionally(), is(false));
         assertThat(service.statementFuture.isDone(), is(true));

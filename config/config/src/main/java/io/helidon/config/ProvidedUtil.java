@@ -548,7 +548,7 @@ final class ProvidedUtil {
     }
 
     private static final class StaticAccessRegistry implements RegistryWrap {
-        public static final StaticAccessRegistry INSTANCE = new StaticAccessRegistry();
+        private static final StaticAccessRegistry INSTANCE = new StaticAccessRegistry();
 
         @Override
         public <T> List<T> all(Class<T> type) {

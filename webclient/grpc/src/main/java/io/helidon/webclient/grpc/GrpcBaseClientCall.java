@@ -81,17 +81,17 @@ import static java.lang.System.Logger.Level.TRACE;
 abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private static final System.Logger LOGGER = System.getLogger(GrpcBaseClientCall.class.getName());
 
-    protected static final Metadata EMPTY_METADATA = new Metadata();
-    protected static final Header GRPC_ACCEPT_ENCODING = HeaderValues.create(HeaderNames.ACCEPT_ENCODING, "gzip");
-    protected static final Header GRPC_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE, "application/grpc");
-    protected static final HeaderName STATUS_NAME = HeaderNames.createFromLowercase("grpc-status");
+    static final Metadata EMPTY_METADATA = new Metadata();
+    static final Header GRPC_ACCEPT_ENCODING = HeaderValues.create(HeaderNames.ACCEPT_ENCODING, "gzip");
+    static final Header GRPC_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE, "application/grpc");
+    static final HeaderName STATUS_NAME = HeaderNames.createFromLowercase("grpc-status");
 
-    protected static final BufferData PING_FRAME = BufferData.create("PING");
-    protected static final BufferData EMPTY_BUFFER_DATA = BufferData.empty();
-    protected static final int DATA_PREFIX_LENGTH = 5;
-    protected static final Tag OK_TAG = Tag.create("grpc.status", "OK");
+    static final BufferData PING_FRAME = BufferData.create("PING");
+    static final BufferData EMPTY_BUFFER_DATA = BufferData.empty();
+    static final int DATA_PREFIX_LENGTH = 5;
+    static final Tag OK_TAG = Tag.create("grpc.status", "OK");
 
-    protected record MethodMetrics(Counter callStarted,
+    record MethodMetrics(Counter callStarted,
                                    Timer callDuration,
                                    DistributionSummary sentMessageSize,
                                    DistributionSummary recvMessageSize) { }
@@ -217,7 +217,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
      *
      * @return data for gRPC frame or {@code null}
      */
-    protected BufferData readGrpcFrame() {
+    BufferData readGrpcFrame() {
         // attempt to read HTTP/2 frame
         Http2FrameData frameData;
         try {
@@ -270,7 +270,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
      * gRPC invocation. This method submits an empty task for that purpose. There
      * may be a better way to achieve this.
      */
-    protected void unblockUnaryExecutor() {
+    void unblockUnaryExecutor() {
         Executor executor = callOptions.getExecutor();
         if (executor != null) {
             try {
@@ -282,11 +282,11 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         }
     }
 
-    protected GrpcClientImpl grpcClient() {
+    GrpcClientImpl grpcClient() {
         return grpcClient;
     }
 
-    protected ClientConnection clientConnection(ClientUri clientUri) {
+    ClientConnection clientConnection(ClientUri clientUri) {
         WebClient webClient = grpcClient.webClient();
         GrpcClientConfig clientConfig = grpcClient.prototype();
 
@@ -317,12 +317,12 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                                           }).connect();
     }
 
-    protected boolean isRemoteOpen() {
+    boolean isRemoteOpen() {
         return clientStream.streamState() != Http2StreamState.HALF_CLOSED_REMOTE
                 && clientStream.streamState() != Http2StreamState.CLOSED;
     }
 
-    protected ResT toResponse(BufferData bufferData) {
+    ResT toResponse(BufferData bufferData) {
         bufferData.read();                  // compression
         bufferData.readUnsignedInt32();     // length prefixed
         return responseMarshaller.parse(new InputStream() {
@@ -333,7 +333,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         });
     }
 
-    protected byte[] serializeMessage(ReqT message) {
+    byte[] serializeMessage(ReqT message) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(initBufferSize);
         try (InputStream is = requestMarshaller().stream(message)) {
             is.transferTo(baos);
@@ -343,55 +343,55 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         return baos.toByteArray();
     }
 
-    protected Duration heartbeatPeriod() {
+    Duration heartbeatPeriod() {
         return heartbeatPeriod;
     }
 
-    protected boolean abortPollTimeExpired() {
+    boolean abortPollTimeExpired() {
         return abortPollTimeExpired;
     }
 
-    protected Duration pollWaitTime() {
+    Duration pollWaitTime() {
         return pollWaitTime;
     }
 
-    protected Http2ClientConnection connection() {
+    Http2ClientConnection connection() {
         return connection;
     }
 
-    protected MethodDescriptor.Marshaller<ReqT> requestMarshaller() {
+    MethodDescriptor.Marshaller<ReqT> requestMarshaller() {
         return requestMarshaller;
     }
 
-    protected GrpcClientStream clientStream() {
+    GrpcClientStream clientStream() {
         return clientStream;
     }
 
-    protected Listener<ResT> responseListener() {
+    Listener<ResT> responseListener() {
         return responseListener;
     }
 
-    protected HelidonSocket socket() {
+    HelidonSocket socket() {
         return socket;
     }
 
-    protected MethodMetrics methodMetrics() {
+    MethodMetrics methodMetrics() {
         return methodMetrics;
     }
 
-    protected long startMillis() {
+    long startMillis() {
         return startMillis;
     }
 
-    protected boolean enableMetrics() {
+    boolean enableMetrics() {
         return grpcConfig.enableMetrics();
     }
 
-    protected AtomicLong bytesSent() {
+    AtomicLong bytesSent() {
         return bytesSent;
     }
 
-    protected AtomicLong bytesRcvd() {
+    AtomicLong bytesRcvd() {
         return bytesRcvd;
     }
 
@@ -407,7 +407,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 : clientUriSupplier.next();
     }
 
-    protected void handleStreamTimeout(StreamTimeoutException e) {
+    void handleStreamTimeout(StreamTimeoutException e) {
         if (abortPollTimeExpired()) {
             socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, aborting");
             throw e;
@@ -426,7 +426,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 .build();
     }
 
-    protected void initMetrics() {
+    void initMetrics() {
         String baseUri = grpcChannel.baseUri().toString();
         String methodName = methodDescriptor.getFullMethodName();
 

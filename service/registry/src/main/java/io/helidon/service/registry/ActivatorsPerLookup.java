@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,14 +57,14 @@ final class ActivatorsPerLookup {
      * Created for a service within each scope.
      */
     static class SingleServiceActivator<T> extends Activators.BaseActivator<T> {
-        protected OnDemandInstance<T> serviceInstance;
+        OnDemandInstance<T> serviceInstance;
 
         SingleServiceActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
             super(provider, dependencyContext);
         }
 
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances() {
+        Optional<List<QualifiedInstance<T>>> targetInstances() {
             if (serviceInstance == null) {
                 return Optional.empty();
             }
@@ -73,14 +73,14 @@ final class ActivatorsPerLookup {
         }
 
         @Override
-        protected void construct(ActivationResult.Builder response) {
+        void construct(ActivationResult.Builder response) {
             this.serviceInstance = new OnDemandInstance<>(dependencyContext,
                                                           provider.interceptionMetadata(),
                                                           provider.descriptor());
         }
 
         @Override
-        protected void preDestroy(ActivationResult.Builder response) {
+        void preDestroy(ActivationResult.Builder response) {
             this.serviceInstance = null;
         }
     }
@@ -94,7 +94,7 @@ final class ActivatorsPerLookup {
         }
 
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+        Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             if (requestedProvider(lookup, FactoryType.SUPPLIER)) {
                 if (serviceInstance == null) {
                     return Optional.empty();
@@ -108,7 +108,7 @@ final class ActivatorsPerLookup {
 
         @SuppressWarnings({"unchecked", "rawtypes"})
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances() {
+        Optional<List<QualifiedInstance<T>>> targetInstances() {
             if (serviceInstance == null) {
                 return Optional.empty();
             }
@@ -116,7 +116,7 @@ final class ActivatorsPerLookup {
             T x = instanceSupplier.get();
             if (x instanceof Optional opt) {
                 // a small optimization here - create an activator for Supplier<Optional<T>>, this is a bit hackish
-                return opt.map(value -> List.of(QualifiedInstance.create(value,
+                return opt.map(aValue -> List.of(QualifiedInstance.create(aValue,
                                                                          provider.descriptor().qualifiers())));
             }
             return Optional.of(List.of(QualifiedInstance.create(x,
@@ -145,7 +145,7 @@ final class ActivatorsPerLookup {
         }
 
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+        Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             if (serviceInstance == null) {
                 return Optional.empty();
             }
@@ -191,7 +191,7 @@ final class ActivatorsPerLookup {
 
         @SuppressWarnings("unchecked")
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+        Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             if (serviceInstance == null) {
                 return Optional.empty();
             }
@@ -222,7 +222,7 @@ final class ActivatorsPerLookup {
 
         @SuppressWarnings("unchecked")
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+        Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             Service.ServicesFactory<T> instanceSupplier = (Service.ServicesFactory<T>) serviceInstance.get(currentPhase);
 
             if (requestedProvider(lookup, FactoryType.SERVICES)) {
@@ -263,7 +263,7 @@ final class ActivatorsPerLookup {
         }
 
         @Override
-        protected void construct(ActivationResult.Builder response) {
+        void construct(ActivationResult.Builder response) {
             // at this moment, we must resolve services that are driving this instance
             List<ServiceInfo> services = registry.servicesByContract(createFor);
 
@@ -279,7 +279,7 @@ final class ActivatorsPerLookup {
         }
 
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances() {
+        Optional<List<QualifiedInstance<T>>> targetInstances() {
             return Optional.of(serviceInstances.stream()
                                        .map(it -> QualifiedInstance.create(it.serviceInstance()
                                                                                    .get(currentPhase),
@@ -288,7 +288,7 @@ final class ActivatorsPerLookup {
         }
 
         @Override
-        protected void preDestroy(ActivationResult.Builder response) {
+        void preDestroy(ActivationResult.Builder response) {
             this.serviceInstances = null;
         }
     }

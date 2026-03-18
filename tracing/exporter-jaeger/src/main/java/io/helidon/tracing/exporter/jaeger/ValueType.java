@@ -19,15 +19,15 @@ package io.helidon.tracing.exporter.jaeger;
 import io.opentelemetry.exporter.internal.marshal.ProtoEnumInfo;
 
 final class ValueType {
-    public static final ProtoEnumInfo STRING = ProtoEnumInfo.create(0, "STRING");
+    static final ProtoEnumInfo STRING = ProtoEnumInfo.create(0, "STRING");
 
-    public static final ProtoEnumInfo BOOL = ProtoEnumInfo.create(1, "BOOL");
+    static final ProtoEnumInfo BOOL = ProtoEnumInfo.create(1, "BOOL");
 
-    public static final ProtoEnumInfo INT64 = ProtoEnumInfo.create(2, "INT64");
+    static final ProtoEnumInfo INT64 = ProtoEnumInfo.create(2, "INT64");
 
-    public static final ProtoEnumInfo FLOAT64 = ProtoEnumInfo.create(3, "FLOAT64");
+    static final ProtoEnumInfo FLOAT64 = ProtoEnumInfo.create(3, "FLOAT64");
 
-    public static final ProtoEnumInfo BINARY = ProtoEnumInfo.create(4, "BINARY");
+    static final ProtoEnumInfo BINARY = ProtoEnumInfo.create(4, "BINARY");
 
     private ValueType() {
     }

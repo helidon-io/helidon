@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ class TestTracerAndSpanPropagation {
         assertThat("Tracer in use is the global tracer", tracer, sameInstance(Tracer.global()));
         final var rootSpan = tracer.spanBuilder(getClass().getSimpleName()).start();
         LOGGER.log(System.Logger.Level.INFO, "traceId: {0}", rootSpan.context().traceId());
-        try (var ignored = rootSpan.activate()) {
+        try (var _ = rootSpan.activate()) {
             assertThat("rootSpan activate",
                        Span.current().map(Span::context).map(SpanContext::spanId),
                        OptionalMatcher.optionalValue(is(rootSpan.context().spanId())));
@@ -118,7 +118,7 @@ class TestTracerAndSpanPropagation {
             final var spanContext = span.context();
             final var childSpan = tracer.spanBuilder(threadName)
                     .parent(spanContext).start();
-            try (var ignored = childSpan.activate()) {
+            try (var _ = childSpan.activate()) {
 
                 assertThat("childSpan NOT activated",
                            Span.current().map(Span::context).map(SpanContext::spanId),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,11 +62,12 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     /*
     Specify more fine-grained log levels, to allow printing only what needed
      */
-    protected static final System.Logger LOGGER_REQ_ENTITY = System.getLogger(CLASS_NAME + ".req.entity");
-    protected static final System.Logger LOGGER_REQ_PROLOGUE = System.getLogger(CLASS_NAME + ".req.prologue");
-    protected static final System.Logger LOGGER_REQ_HEADERS = System.getLogger(CLASS_NAME + ".req.headers");
-    protected static final System.Logger LOGGER_RES_STATUS = System.getLogger(CLASS_NAME + ".res.status");
-    protected static final System.Logger LOGGER_RES_HEADERS = System.getLogger(CLASS_NAME + ".res.headers");
+    static final System.Logger LOGGER_REQ_ENTITY = System.getLogger(CLASS_NAME + ".req.entity");
+    static final System.Logger LOGGER_REQ_PROLOGUE = System.getLogger(CLASS_NAME + ".req.prologue");
+    static final System.Logger LOGGER_REQ_HEADERS = System.getLogger(CLASS_NAME + ".req.headers");
+    static final System.Logger LOGGER_RES_STATUS = System.getLogger(CLASS_NAME + ".res.status");
+    static final System.Logger LOGGER_RES_HEADERS = System.getLogger(CLASS_NAME + ".res.headers");
+
     private static final System.Logger LOGGER_RES_ENTITY = System.getLogger(CLASS_NAME + ".res.entity");
 
     private static final Supplier<IllegalArgumentException> INVALID_SIZE_EXCEPTION_SUPPLIER =
@@ -234,7 +235,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         return whenComplete;
     }
 
-    protected WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
+    WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
                                                     ClientConnection connection,
                                                     DataReader reader) {
         Status responseStatus;

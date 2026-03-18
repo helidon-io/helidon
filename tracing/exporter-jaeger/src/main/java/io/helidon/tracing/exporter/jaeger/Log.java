@@ -19,9 +19,9 @@ package io.helidon.tracing.exporter.jaeger;
 import io.opentelemetry.exporter.internal.marshal.ProtoFieldInfo;
 
 final class Log {
-    public static final ProtoFieldInfo TIMESTAMP = ProtoFieldInfo.create(1, 10, "timestamp");
+    static final ProtoFieldInfo TIMESTAMP = ProtoFieldInfo.create(1, 10, "timestamp");
 
-    public static final ProtoFieldInfo FIELDS = ProtoFieldInfo.create(2, 18, "fields");
+    static final ProtoFieldInfo FIELDS = ProtoFieldInfo.create(2, 18, "fields");
 
     private Log() {
     }

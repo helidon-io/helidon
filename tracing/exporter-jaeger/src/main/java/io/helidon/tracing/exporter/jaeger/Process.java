@@ -19,9 +19,9 @@ package io.helidon.tracing.exporter.jaeger;
 import io.opentelemetry.exporter.internal.marshal.ProtoFieldInfo;
 
 final class Process {
-    public static final ProtoFieldInfo SERVICE_NAME = ProtoFieldInfo.create(1, 10, "serviceName");
+    static final ProtoFieldInfo SERVICE_NAME = ProtoFieldInfo.create(1, 10, "serviceName");
 
-    public static final ProtoFieldInfo TAGS = ProtoFieldInfo.create(2, 18, "tags");
+    static final ProtoFieldInfo TAGS = ProtoFieldInfo.create(2, 18, "tags");
 
     private Process() {
     }

@@ -91,7 +91,7 @@ public final class FileSourceHelper {
             FileLock lock = null;
             try {
                 lock = fis.getChannel().tryLock(0L, Long.MAX_VALUE, false);
-            } catch (NonWritableChannelException ignored) {
+            } catch (NonWritableChannelException _) {
                 // non writable channel means that we do not need to lock it
             }
             try {

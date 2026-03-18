@@ -19,19 +19,19 @@ package io.helidon.tracing.exporter.jaeger;
 import io.opentelemetry.exporter.internal.marshal.ProtoFieldInfo;
 
 final class KeyValue {
-    public static final ProtoFieldInfo KEY = ProtoFieldInfo.create(1, 10, "key");
+    static final ProtoFieldInfo KEY = ProtoFieldInfo.create(1, 10, "key");
 
-    public static final ProtoFieldInfo V_TYPE = ProtoFieldInfo.create(2, 16, "vType");
+    static final ProtoFieldInfo V_TYPE = ProtoFieldInfo.create(2, 16, "vType");
 
-    public static final ProtoFieldInfo V_STR = ProtoFieldInfo.create(3, 26, "vStr");
+    static final ProtoFieldInfo V_STR = ProtoFieldInfo.create(3, 26, "vStr");
 
-    public static final ProtoFieldInfo V_BOOL = ProtoFieldInfo.create(4, 32, "vBool");
+    static final ProtoFieldInfo V_BOOL = ProtoFieldInfo.create(4, 32, "vBool");
 
-    public static final ProtoFieldInfo V_INT64 = ProtoFieldInfo.create(5, 40, "vInt64");
+    static final ProtoFieldInfo V_INT64 = ProtoFieldInfo.create(5, 40, "vInt64");
 
-    public static final ProtoFieldInfo V_FLOAT64 = ProtoFieldInfo.create(6, 49, "vFloat64");
+    static final ProtoFieldInfo V_FLOAT64 = ProtoFieldInfo.create(6, 49, "vFloat64");
 
-    public static final ProtoFieldInfo V_BINARY = ProtoFieldInfo.create(7, 58, "vBinary");
+    static final ProtoFieldInfo V_BINARY = ProtoFieldInfo.create(7, 58, "vBinary");
 
     private KeyValue() {
     }

@@ -19,9 +19,9 @@ package io.helidon.tracing.exporter.jaeger;
 import io.opentelemetry.exporter.internal.marshal.ProtoEnumInfo;
 
 final class SpanRefType {
-    public static final ProtoEnumInfo CHILD_OF = ProtoEnumInfo.create(0, "CHILD_OF");
+    static final ProtoEnumInfo CHILD_OF = ProtoEnumInfo.create(0, "CHILD_OF");
 
-    public static final ProtoEnumInfo FOLLOWS_FROM = ProtoEnumInfo.create(1, "FOLLOWS_FROM");
+    static final ProtoEnumInfo FOLLOWS_FROM = ProtoEnumInfo.create(1, "FOLLOWS_FROM");
 
     private SpanRefType() {
     }

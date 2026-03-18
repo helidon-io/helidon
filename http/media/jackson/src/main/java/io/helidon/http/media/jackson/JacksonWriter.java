@@ -78,7 +78,7 @@ class JacksonWriter<T> extends EntityWriterBase<T> {
 
         try {
             out.close();
-        } catch (IOException ignored) {
+        } catch (IOException _) {
             // ignore failure, the stream is most likely closed
         }
     }
