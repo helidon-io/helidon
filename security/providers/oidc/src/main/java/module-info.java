@@ -28,6 +28,7 @@ module io.helidon.security.providers.oidc {
 
     requires io.helidon.common.crypto;
     requires io.helidon.common;
+    requires io.helidon.json;
     requires io.helidon.webclient;
     requires io.helidon.security.abac.scope;
     requires io.helidon.security.jwt;
