@@ -25,8 +25,6 @@ import io.helidon.Main;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.resumable.Resumable;
-import io.helidon.common.resumable.ResumableSupport;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsPublisher;
 import io.helidon.spi.HelidonShutdownHandler;
@@ -36,7 +34,7 @@ import com.oracle.bmc.monitoring.model.PostMetricDataDetails;
 import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
 
 /**
- * Periodically transmits Helidon metrics to an OCI metrics backend.
+ * Periodically transmits Helidon metrics to an OCI Monitoring backend.
  * <p>
  * This service is configured as a metrics publisher of type
  * {@value TYPE} and uses either the instance of {@link com.oracle.bmc.monitoring.Monitoring} that was explicitly configured on
@@ -45,7 +43,6 @@ import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
  * instance to send the metrics data to the backend.
  */
 class OciMetricsService implements MetricsPublisher,
-                                   Resumable,
                                    HelidonShutdownHandler,
                                    AutoCloseable,
                                    RuntimeType.Api<OciMetricsConfig> {
@@ -64,7 +61,6 @@ class OciMetricsService implements MetricsPublisher,
 
     private OciMetricsService(OciMetricsConfig prototype) {
         this.prototype = prototype;
-        ResumableSupport.get().register(this);
         prepareAutoStartup();
         prepareAutoShutdown();
     }
@@ -105,16 +101,6 @@ class OciMetricsService implements MetricsPublisher,
     @Override
     public void close() {
         shutdown();
-    }
-
-    @Override
-    public void suspend() {
-        shutdown();
-    }
-
-    @Override
-    public void resume() {
-        startup();
     }
 
     @Override
