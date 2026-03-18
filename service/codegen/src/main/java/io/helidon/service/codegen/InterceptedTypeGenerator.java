@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,10 +40,11 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.LIST_OF_ANNOTATIONS
 import static io.helidon.service.codegen.ServiceCodegenTypes.SET_OF_QUALIFIERS;
 
 class InterceptedTypeGenerator {
-    public static final String INTERCEPT_META_PARAM = "helidonInject__interceptMeta";
-    public static final String SERVICE_DESCRIPTOR_PARAM = "helidonInject__serviceDescriptor";
-    public static final String TYPE_QUALIFIERS_PARAM = "helidonInject__typeQualifiers";
-    public static final String TYPE_ANNOTATIONS_PARAM = "helidonInject__typeAnnotations";
+    static final String INTERCEPT_META_PARAM = "helidonInject__interceptMeta";
+    static final String SERVICE_DESCRIPTOR_PARAM = "helidonInject__serviceDescriptor";
+    static final String TYPE_QUALIFIERS_PARAM = "helidonInject__typeQualifiers";
+    static final String TYPE_ANNOTATIONS_PARAM = "helidonInject__typeAnnotations";
+
     private static final TypeName GENERATOR = TypeName.create(InterceptedTypeGenerator.class);
     private static final TypeName RUNTIME_EXCEPTION_TYPE = TypeName.create(RuntimeException.class);
     private final TypeName serviceType;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -321,9 +321,9 @@ class ValidatorsService {
             typeName = TypeName.create(value.getClass());
         } else {
             typeName = switch (value) {
-                case Map<?, ?> ignored -> TypeNames.MAP;
-                case Set<?> ignored -> TypeNames.SET;
-                case List<?> ignored -> TypeNames.LIST;
+                case Map<?, ?> _ -> TypeNames.MAP;
+                case Set<?> _ -> TypeNames.SET;
+                case List<?> _ -> TypeNames.LIST;
                 default -> throw new ValidationException(
                         "Collection size constraint is only valid on an array, collection, or a "
                                 + "map.");
@@ -339,22 +339,22 @@ class ValidatorsService {
         }
 
         return switch (value) {
-            case Date ignored -> TypeName.create(Date.class);
-            case Calendar ignored -> TypeName.create(Calendar.class);
-            case Instant ignored -> TypeName.create(Instant.class);
-            case LocalDate ignored -> TypeName.create(LocalDate.class);
-            case LocalDateTime ignored -> TypeName.create(LocalDateTime.class);
-            case LocalTime ignored -> TypeName.create(LocalTime.class);
-            case MonthDay ignored -> TypeName.create(MonthDay.class);
-            case OffsetDateTime ignored -> TypeName.create(OffsetDateTime.class);
-            case OffsetTime ignored -> TypeName.create(OffsetTime.class);
-            case Year ignored -> TypeName.create(Year.class);
-            case YearMonth ignored -> TypeName.create(YearMonth.class);
-            case ZonedDateTime ignored -> TypeName.create(ZonedDateTime.class);
-            case HijrahDate ignored -> TypeName.create(HijrahDate.class);
-            case JapaneseDate ignored -> TypeName.create(JapaneseDate.class);
-            case MinguoDate ignored -> TypeName.create(MinguoDate.class);
-            case ThaiBuddhistDate ignored -> TypeName.create(ThaiBuddhistDate.class);
+            case Date _ -> TypeName.create(Date.class);
+            case Calendar _ -> TypeName.create(Calendar.class);
+            case Instant _ -> TypeName.create(Instant.class);
+            case LocalDate _ -> TypeName.create(LocalDate.class);
+            case LocalDateTime _ -> TypeName.create(LocalDateTime.class);
+            case LocalTime _ -> TypeName.create(LocalTime.class);
+            case MonthDay _ -> TypeName.create(MonthDay.class);
+            case OffsetDateTime _ -> TypeName.create(OffsetDateTime.class);
+            case OffsetTime _ -> TypeName.create(OffsetTime.class);
+            case Year _ -> TypeName.create(Year.class);
+            case YearMonth _ -> TypeName.create(YearMonth.class);
+            case ZonedDateTime _ -> TypeName.create(ZonedDateTime.class);
+            case HijrahDate _ -> TypeName.create(HijrahDate.class);
+            case JapaneseDate _ -> TypeName.create(JapaneseDate.class);
+            case MinguoDate _ -> TypeName.create(MinguoDate.class);
+            case ThaiBuddhistDate _ -> TypeName.create(ThaiBuddhistDate.class);
             default -> throw new ValidationException("Invalid type for calendar validation constraint: "
                                                              + value.getClass().getName());
         };

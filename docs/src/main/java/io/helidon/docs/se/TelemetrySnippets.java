@@ -93,7 +93,7 @@ class TelemetrySnippets {
                 .setSpanKind(SpanKind.SERVER)
                 .startSpan();
 
-        try (Scope ignored = mySpan.makeCurrent()) {
+        try (Scope _ = mySpan.makeCurrent()) {
 
             // Do work worth tracing.
 

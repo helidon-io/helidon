@@ -59,6 +59,9 @@ interface MetricsConfigBlueprint {
      */
     String KEY_PERFORMANCE_INDICATORS_CONFIG_KEY = "key-performance-indicators";
 
+    /**
+     * Default JSON unit.
+     */
     TimeUnit DEFAULT_JSON_UNITS_DEFAULT = TimeUnit.SECONDS;
 
     /**

@@ -19,29 +19,29 @@ package io.helidon.tracing.exporter.jaeger;
 import io.opentelemetry.exporter.internal.marshal.ProtoFieldInfo;
 
 final class Span {
-    public static final ProtoFieldInfo TRACE_ID = ProtoFieldInfo.create(1, 10, "traceId");
+    static final ProtoFieldInfo TRACE_ID = ProtoFieldInfo.create(1, 10, "traceId");
 
-    public static final ProtoFieldInfo SPAN_ID = ProtoFieldInfo.create(2, 18, "spanId");
+    static final ProtoFieldInfo SPAN_ID = ProtoFieldInfo.create(2, 18, "spanId");
 
-    public static final ProtoFieldInfo OPERATION_NAME = ProtoFieldInfo.create(3, 26, "operationName");
+    static final ProtoFieldInfo OPERATION_NAME = ProtoFieldInfo.create(3, 26, "operationName");
 
-    public static final ProtoFieldInfo REFERENCES = ProtoFieldInfo.create(4, 34, "references");
+    static final ProtoFieldInfo REFERENCES = ProtoFieldInfo.create(4, 34, "references");
 
-    public static final ProtoFieldInfo FLAGS = ProtoFieldInfo.create(5, 40, "flags");
+    static final ProtoFieldInfo FLAGS = ProtoFieldInfo.create(5, 40, "flags");
 
-    public static final ProtoFieldInfo START_TIME = ProtoFieldInfo.create(6, 50, "startTime");
+    static final ProtoFieldInfo START_TIME = ProtoFieldInfo.create(6, 50, "startTime");
 
-    public static final ProtoFieldInfo DURATION = ProtoFieldInfo.create(7, 58, "duration");
+    static final ProtoFieldInfo DURATION = ProtoFieldInfo.create(7, 58, "duration");
 
-    public static final ProtoFieldInfo TAGS = ProtoFieldInfo.create(8, 66, "tags");
+    static final ProtoFieldInfo TAGS = ProtoFieldInfo.create(8, 66, "tags");
 
-    public static final ProtoFieldInfo LOGS = ProtoFieldInfo.create(9, 74, "logs");
+    static final ProtoFieldInfo LOGS = ProtoFieldInfo.create(9, 74, "logs");
 
-    public static final ProtoFieldInfo PROCESS = ProtoFieldInfo.create(10, 82, "process");
+    static final ProtoFieldInfo PROCESS = ProtoFieldInfo.create(10, 82, "process");
 
-    public static final ProtoFieldInfo PROCESS_ID = ProtoFieldInfo.create(11, 90, "processId");
+    static final ProtoFieldInfo PROCESS_ID = ProtoFieldInfo.create(11, 90, "processId");
 
-    public static final ProtoFieldInfo WARNINGS = ProtoFieldInfo.create(12, 98, "warnings");
+    static final ProtoFieldInfo WARNINGS = ProtoFieldInfo.create(12, 98, "warnings");
 
     private Span() {
     }

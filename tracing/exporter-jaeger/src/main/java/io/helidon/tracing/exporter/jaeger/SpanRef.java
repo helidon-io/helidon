@@ -19,11 +19,11 @@ package io.helidon.tracing.exporter.jaeger;
 import io.opentelemetry.exporter.internal.marshal.ProtoFieldInfo;
 
 final class SpanRef {
-    public static final ProtoFieldInfo TRACE_ID = ProtoFieldInfo.create(1, 10, "traceId");
+    static final ProtoFieldInfo TRACE_ID = ProtoFieldInfo.create(1, 10, "traceId");
 
-    public static final ProtoFieldInfo SPAN_ID = ProtoFieldInfo.create(2, 18, "spanId");
+    static final ProtoFieldInfo SPAN_ID = ProtoFieldInfo.create(2, 18, "spanId");
 
-    public static final ProtoFieldInfo REF_TYPE = ProtoFieldInfo.create(3, 24, "refType");
+    static final ProtoFieldInfo REF_TYPE = ProtoFieldInfo.create(3, 24, "refType");
 
     private SpanRef() {
     }

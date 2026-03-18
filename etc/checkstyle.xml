@@ -124,7 +124,7 @@
             <property name="scope" value="protected"/>
         </module>
         <module name="JavadocVariable">
-            <property name="scope" value="protected"/>
+            <property name="accessModifiers" value="protected,public"/>
         </module>
         <module name="JavadocStyle"/>
 

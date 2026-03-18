@@ -428,7 +428,7 @@ public interface Config {
     static Config global() {
         try {
             return Services.get(Config.class);
-        } catch (Exception ignored) {
+        } catch (Exception _) {
             return BuilderImpl.GlobalConfigHolder.get();
         }
     }
@@ -444,7 +444,7 @@ public interface Config {
         BuilderImpl.GlobalConfigHolder.set(config);
         try {
             Services.set(Config.class, config);
-        } catch (Exception ignored) {
+        } catch (Exception _) {
             // Service registry might already be initialized with a different config.
         }
     }
