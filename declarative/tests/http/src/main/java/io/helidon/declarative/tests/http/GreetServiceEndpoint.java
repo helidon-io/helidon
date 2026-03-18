@@ -70,14 +70,15 @@ class GreetServiceEndpoint implements GreetService {
     private final AtomicReference<String> greeting = new AtomicReference<>();
 
     /**
-     * Injection of per-request supplier.
+     * A per-request supplier.
      */
-    @Service.Inject
-    Supplier<ServerRequest> serverRequestSupplier;
+    private final Supplier<ServerRequest> serverRequestSupplier;
 
     @Service.Inject
-    GreetServiceEndpoint(@Configuration.Value("app.greeting") @Default.Value("Ciao") String greeting) {
+    GreetServiceEndpoint(@Configuration.Value("app.greeting") @Default.Value("Ciao") String greeting,
+                         Supplier<ServerRequest> serverRequestSupplier) {
         this.greeting.set(greeting);
+        this.serverRequestSupplier = serverRequestSupplier;
     }
 
     @Http.GET
