@@ -42,8 +42,8 @@
             <artifactId>mongodb-driver-sync</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.parsson</groupId>
-            <artifactId>parsson</artifactId>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>

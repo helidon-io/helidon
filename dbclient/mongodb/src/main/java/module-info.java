@@ -34,7 +34,7 @@ module io.helidon.dbclient.mongodb {
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.dbclient;
-    requires transitive jakarta.json;
+    requires transitive io.helidon.json;
 
     exports io.helidon.dbclient.mongodb;
 

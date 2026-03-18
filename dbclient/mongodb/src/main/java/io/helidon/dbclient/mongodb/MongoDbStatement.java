@@ -18,6 +18,7 @@ package io.helidon.dbclient.mongodb;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.math.BigDecimal;
 
 import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbExecuteContext;
@@ -27,9 +28,10 @@ import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.DbStatementBase;
 import io.helidon.dbclient.DbStatementParameters;
 import io.helidon.dbclient.DbStatementType;
+import io.helidon.json.JsonNumber;
+import io.helidon.json.JsonObject;
 
 import com.mongodb.client.MongoDatabase;
-import jakarta.json.Json;
 import org.bson.Document;
 
 import static io.helidon.dbclient.mongodb.MongoDbStatement.MongoOperation.COMMAND;
@@ -48,7 +50,7 @@ abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBas
     /**
      * Empty JSON object.
      */
-    static final Document EMPTY = Document.parse(Json.createObjectBuilder().build().toString());
+    static final Document EMPTY = Document.parse(JsonObject.empty().toString());
 
     /**
      * Operation JSON parameter name.
