@@ -39,5 +39,9 @@ module io.helidon.declarative.tests.http {
     // now included through other modules (observability in this case)
     requires io.helidon.webserver.cors;
 
+    // required for generated binding
+    requires io.helidon.webserver.context;
+    requires io.helidon.webserver.observe;
+
     exports io.helidon.declarative.tests.http;
 }

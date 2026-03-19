@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,11 +126,15 @@ public final class Service {
      * Injections to different scopes are supported, but must be through a {@link java.util.function.Supplier},
      * as we do not provide a proxy mechanism for instances.
      * <p>
-     * Request scope is not started by default. If you want to use request scope, you can add the following
-     * library to your classpath to add support for it:
-     * <ul>
-     *     <li>{@code io.helidon.declarative.webserver:helidon-declarative-webserver-request-scope}</li>
-     * </ul>
+     * Request scope is not enabled by default in the Webserver. To do so, enable the feature
+     * as follows:
+     * <pre>
+     * server:
+     *   features:
+     *
+     * request-scope:
+     *       enabled: true
+     * </pre>
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
