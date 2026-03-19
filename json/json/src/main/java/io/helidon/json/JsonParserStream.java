@@ -468,7 +468,10 @@ final class JsonParserStream extends JsonParserBase {
         bufferingJsonValue = true;
         jsonValueStart = currentIndex;
         skipNumber();
-        int length = currentIndex - jsonValueStart + 1;
+        int length = currentIndex - jsonValueStart;
+        if (currentIndex < bufferLength) {
+            length++;
+        }
         byte[] numberBytes = new byte[length];
         System.arraycopy(buffer, jsonValueStart, numberBytes, 0, length);
         bufferingJsonValue = false;
@@ -752,7 +755,10 @@ final class JsonParserStream extends JsonParserBase {
         bufferingJsonValue = true;
         jsonValueStart = start;
         skipNumber();
-        int length = currentIndex - jsonValueStart + 1;
+        int length = currentIndex - jsonValueStart;
+        if (currentIndex < bufferLength) {
+            length++;
+        }
         BigInteger bigInteger = new BigInteger(new String(buffer, jsonValueStart, length, StandardCharsets.US_ASCII));
         bufferingJsonValue = false;
         if (inString) {

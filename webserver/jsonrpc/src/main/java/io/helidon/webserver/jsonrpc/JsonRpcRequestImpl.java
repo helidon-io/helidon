@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,15 +28,13 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.media.ReadableEntity;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.jsonrpc.core.JsonRpcParams;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.http.HttpSecurity;
 import io.helidon.webserver.http.ServerRequest;
-
-import jakarta.json.JsonObject;
-import jakarta.json.JsonStructure;
-import jakarta.json.JsonValue;
 
 /**
  * An implementation of a JSON-RPC request.
@@ -53,26 +51,26 @@ class JsonRpcRequestImpl implements JsonRpcRequest {
 
     @Override
     public String version() {
-        return request.getString("jsonrpc");
+        return request.stringValue("jsonrpc")
+                .orElseThrow(() -> new IllegalStateException("Missing JSON-RPC version"));
     }
 
     @Override
     public String rpcMethod() {
-        return request.getString("method");
+        return request.stringValue("method")
+                .orElseThrow(() -> new IllegalStateException("Missing JSON-RPC method"));
     }
 
     @Override
     public Optional<JsonValue> rpcId() {
-        return Optional.ofNullable(request.get("id"));
+        return request.value("id");
     }
 
     @Override
     public JsonRpcParams params() {
-        JsonValue value = request.get("params");
-        if (value == null) {
-            value = JsonValue.EMPTY_JSON_OBJECT;
-        }
-        return JsonRpcParams.create((JsonStructure) value);
+        JsonValue value = request.value("params")
+                .orElseGet(JsonObject::empty);
+        return JsonRpcParams.create(value);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,24 +25,21 @@ import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonException;
+import io.helidon.json.JsonNull;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.spi.Sink;
 
-import jakarta.json.JsonArray;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonStructure;
-import jakarta.json.JsonValue;
-import jakarta.json.stream.JsonParsingException;
-
 import static io.helidon.jsonrpc.core.JsonRpcError.INTERNAL_ERROR;
 import static io.helidon.jsonrpc.core.JsonRpcError.INVALID_REQUEST;
 import static io.helidon.jsonrpc.core.JsonRpcError.METHOD_NOT_FOUND;
 import static io.helidon.jsonrpc.core.JsonRpcError.PARSE_ERROR;
-import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
 
 /**
  * JSON-RPC routing is an HTTP Service, as it is based on HTTP protocol.
@@ -88,35 +85,37 @@ public class JsonRpcRouting implements HttpService {
             String pathPattern = rule.pathPattern();
             JsonRpcHandlers handlers = rule.handlers();
             Map<String, JsonRpcHandler> handlersMap = handlers.handlersMap();
-            JsonRpcErrorHandler errorHandler = handlers.errorHandler().orElse(null);
+            Optional<JsonRpcErrorHandler> errorHandler = handlers.errorHandler();
 
             httpRules.post(pathPattern, (req, res) -> {
                 // attempt to parse request as JSON
-                JsonStructure jsonRequest;
+                JsonValue jsonRequest;
                 try {
-                    jsonRequest = req.content().as(JsonStructure.class);
-                } catch (JsonParsingException e) {
-                    JsonObject parseError = jsonRpcError(PARSE_ERROR_ERROR, res, null);
+                    jsonRequest = req.content().as(JsonValue.class);
+                } catch (JsonException e) {
+                    JsonObject parseError = jsonRpcError(PARSE_ERROR_ERROR, res, Optional.empty());
                     res.status(Status.OK_200).send(parseError);
                     return;
                 }
 
                 // is this a single request?
                 if (jsonRequest instanceof JsonObject jsonObject) {
+                    Optional<JsonValue> requestId = jsonObject.value("id");
                     // if request fails verification, return JSON-RPC error
                     JsonRpcError error = verifyJsonRpc(jsonObject, handlersMap);
                     if (error != null) {
                         // Use error if returned by error handler
-                        if (errorHandler != null) {
-                            Optional<JsonRpcError> userError = errorHandler.handle(req, jsonObject);
+                        if (errorHandler.isPresent()) {
+                            Optional<JsonRpcError> userError = errorHandler.get().handle(req, jsonObject);
                             if (userError.isPresent()) {
-                                res.status(Status.OK_200).send(jsonRpcError(userError.get(), res, jsonObject.get("id")));
+                                res.status(Status.OK_200)
+                                        .send(jsonRpcError(userError.get(), res, requestId));
                             } else {
                                 res.status(Status.OK_200).send();
                             }
                         } else {
                             // otherwise return error
-                            JsonObject verifyError = jsonRpcError(error, res, jsonObject);
+                            JsonObject verifyError = jsonRpcError(error, res, requestId);
                             res.status(Status.OK_200).send(verifyError);
                         }
                         return;
@@ -124,10 +123,9 @@ public class JsonRpcRouting implements HttpService {
 
                     // prepare and call method handler
                     AtomicBoolean sendCalled = new AtomicBoolean();
-                    JsonRpcHandler handler = handlersMap.get(jsonObject.getString("method"));
+                    JsonRpcHandler handler = handlersMap.get(requestMethod(jsonObject));
                     JsonRpcRequest jsonReq = new JsonRpcRequestImpl(req, jsonObject);
-                    JsonValue rpcId = jsonReq.rpcId().orElse(null);
-                    JsonRpcResponse jsonRes = new JsonRpcSingleResponse(rpcId, res, sendCalled);
+                    JsonRpcResponse jsonRes = new JsonRpcSingleResponse(jsonReq.rpcId().orElse(null), res, sendCalled);
 
                     // invoke single handler
                     try {
@@ -143,55 +141,57 @@ public class JsonRpcRouting implements HttpService {
 
                             // use error if returned, otherwise internal error
                             if (mappedError.isPresent()) {
-                                JsonObject jsonRpcError = jsonRpcError(mappedError.get(), res, jsonObject.get("id"));
+                                JsonObject jsonRpcError = jsonRpcError(mappedError.get(), res, requestId);
                                 res.status(Status.OK_200).send(jsonRpcError);
                                 return;
                             }
                         } catch (Throwable throwable2) {
                             // falls through
                         }
-                        sendInternalError(res, jsonObject.get("id"));
+                        sendInternalError(res, requestId);
                     }
                 } else if (jsonRequest instanceof JsonArray jsonArray) {
                     // we must receive at least one request
-                    int size = jsonArray.size();
+                    int size = jsonArray.values().size();
                     if (size == 0) {
                         sendInvalidRequest(res);
                         return;
                     }
 
                     // process batch requests
-                    JsonArrayBuilder arrayBuilder = JSON_BUILDER_FACTORY.createArrayBuilder();
+                    List<JsonValue> responses = new ArrayList<>();
                     for (int i = 0; i < size; i++) {
-                        JsonValue jsonValue = jsonArray.get(i);
+                        int index = i;
+                        JsonValue jsonValue = jsonArray.get(index)
+                                .orElseThrow(() -> new IllegalStateException("Missing batch request at index " + index));
 
                         // requests must be objects
                         if (!(jsonValue instanceof JsonObject jsonObject)) {
-                            JsonObject invalidRequest = jsonRpcError(INVALID_REQUEST_ERROR, res, null);
-                            arrayBuilder.add(invalidRequest);
+                            JsonObject invalidRequest = jsonRpcError(INVALID_REQUEST_ERROR, res, Optional.empty());
+                            responses.add(invalidRequest);
                             continue;       // skip bad request
                         }
 
+                        Optional<JsonValue> requestId = jsonObject.value("id");
                         // check if request passes validation before proceeding
                         JsonRpcError error = verifyJsonRpc(jsonObject, handlersMap);
                         if (error != null) {
                             // Use error if returned by error handler
-                            if (errorHandler != null) {
-                                Optional<JsonRpcError> userError = errorHandler.handle(req, jsonObject);
+                            if (errorHandler.isPresent()) {
+                                Optional<JsonRpcError> userError = errorHandler.get().handle(req, jsonObject);
                                 userError.ifPresent(
-                                        e -> arrayBuilder.add(jsonRpcError(e, res, jsonObject.get("id"))));
+                                        e -> responses.add(jsonRpcError(e, res, requestId)));
                             } else {
-                                JsonObject verifyError = jsonRpcError(error, res, jsonObject.get("id"));
-                                arrayBuilder.add(verifyError);
+                                JsonObject verifyError = jsonRpcError(error, res, requestId);
+                                responses.add(verifyError);
                             }
                             continue;
                         }
 
                         // prepare and call method handler
-                        JsonRpcHandler handler = handlersMap.get(jsonObject.getString("method"));
+                        JsonRpcHandler handler = handlersMap.get(requestMethod(jsonObject));
                         JsonRpcRequest jsonReq = new JsonRpcRequestImpl(req, jsonObject);
-                        JsonValue rpcId = jsonReq.rpcId().orElse(null);
-                        JsonRpcResponse jsonRes = new MyJsonRpcBatchResponse(rpcId, res, arrayBuilder);
+                        JsonRpcResponse jsonRes = new MyJsonRpcBatchResponse(jsonReq.rpcId().orElse(null), res, responses);
 
                         // invoke handler
                         try {
@@ -203,21 +203,21 @@ public class JsonRpcRouting implements HttpService {
 
                                 // use error if returned, otherwise internal error
                                 if (mappedError.isPresent()) {
-                                    JsonObject jsonRpcError = jsonRpcError(mappedError.get(), res, jsonObject.get("id"));
-                                    arrayBuilder.add(jsonRpcError);
+                                    JsonObject jsonRpcError = jsonRpcError(mappedError.get(), res, requestId);
+                                    responses.add(jsonRpcError);
                                     continue;
                                 }
                             } catch (Throwable throwable2) {
                                 // falls through
                             }
-                            JsonObject internalError = jsonRpcError(INTERNAL_ERROR_ERROR, res, jsonObject.get("id"));
-                            arrayBuilder.add(internalError);
+                            JsonObject internalError = jsonRpcError(INTERNAL_ERROR_ERROR, res, requestId);
+                            responses.add(internalError);
                         }
                     }
 
                     // respond to batch request always with 200
-                    JsonArray result = arrayBuilder.build();
-                    if (result.isEmpty()) {
+                    JsonArray result = JsonArray.create(responses);
+                    if (result.values().isEmpty()) {
                         res.status(Status.OK_200).send();
                     } else {
                         res.status(Status.OK_200).send(result);
@@ -245,27 +245,29 @@ public class JsonRpcRouting implements HttpService {
 
     private JsonRpcError verifyJsonRpc(JsonObject object, Map<String, JsonRpcHandler> handlersMap) {
         try {
-            String version = object.getString("jsonrpc");
+            String version = object.stringValue("jsonrpc")
+                    .orElseThrow(() -> new IllegalStateException("Missing JSON-RPC version"));
             if (!"2.0".equals(version)) {
                 return INVALID_REQUEST_ERROR;
             }
-            if (object.containsKey("method")) {
-                String method = object.getString("method");
-                if (handlersMap.get(method) != null) {
-                    return null;                // method found
-                }
+            Optional<String> method = object.stringValue("method");
+            if (method.isPresent() && handlersMap.get(method.get()) != null) {
+                return null;                // method found
             }
             return METHOD_NOT_FOUND_ERROR;
-        } catch (ClassCastException e) {
+        } catch (RuntimeException e) {
             return INVALID_REQUEST_ERROR;       // malformed
         }
     }
 
-    private JsonObject jsonRpcError(JsonRpcError error, ServerResponse res, JsonValue id) {
-        JsonRpcResponse rpcRes = new JsonRpcResponseImpl(JsonValue.NULL, res);
-        if (id != null) {
-            rpcRes.rpcId(id);
-        }
+    private String requestMethod(JsonObject object) {
+        return object.stringValue("method")
+                .orElseThrow(() -> new IllegalStateException("Missing JSON-RPC method"));
+    }
+
+    private JsonObject jsonRpcError(JsonRpcError error, ServerResponse res, Optional<JsonValue> id) {
+        JsonRpcResponse rpcRes = new JsonRpcResponseImpl(JsonNull.instance(), res);
+        id.ifPresent(rpcRes::rpcId);
         if (error.data().isEmpty()) {
             rpcRes.error(error.code(), error.message());
         } else {
@@ -274,13 +276,13 @@ public class JsonRpcRouting implements HttpService {
         return rpcRes.asJsonObject();
     }
 
-    private void sendInternalError(ServerResponse res, JsonValue id) {
+    private void sendInternalError(ServerResponse res, Optional<JsonValue> id) {
         JsonObject internalError = jsonRpcError(INTERNAL_ERROR_ERROR, res, id);
         res.status(Status.OK_200).send(internalError);
     }
 
     private void sendInvalidRequest(ServerResponse res) {
-        JsonObject invalidRequest = jsonRpcError(INVALID_REQUEST_ERROR, res, null);
+        JsonObject invalidRequest = jsonRpcError(INVALID_REQUEST_ERROR, res, Optional.empty());
         res.status(Status.OK_200).send(invalidRequest);
     }
 
@@ -370,7 +372,7 @@ public class JsonRpcRouting implements HttpService {
                 }
                 sendCalled.set(true);
             } catch (Exception e) {
-                sendInternalError(res, rpcId().orElse(null));
+                sendInternalError(res, rpcId());
             }
         }
 
@@ -383,12 +385,12 @@ public class JsonRpcRouting implements HttpService {
 
     private class MyJsonRpcBatchResponse extends JsonRpcResponseImpl {
         private final ServerResponse res;
-        private final JsonArrayBuilder arrayBuilder;
+        private final List<JsonValue> responses;
 
-        MyJsonRpcBatchResponse(JsonValue rpcId, ServerResponse res, JsonArrayBuilder arrayBuilder) {
+        MyJsonRpcBatchResponse(JsonValue rpcId, ServerResponse res, List<JsonValue> responses) {
             super(rpcId, res);
             this.res = res;
-            this.arrayBuilder = arrayBuilder;
+            this.responses = responses;
         }
 
         @Override
@@ -396,10 +398,10 @@ public class JsonRpcRouting implements HttpService {
             try {
                 if (rpcId().isPresent()) {
                     res.header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_JSON_VALUE);
-                    arrayBuilder.add(asJsonObject());
+                    responses.add(asJsonObject());
                 }
             } catch (Exception e) {
-                sendInternalError(res, rpcId().orElse(null));
+                sendInternalError(res, rpcId());
             }
         }
     }

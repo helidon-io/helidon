@@ -29,8 +29,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Since("4.3.0")
 module io.helidon.webclient.jsonrpc {
 
-    requires jakarta.json;
-    requires jakarta.json.bind;
+    requires io.helidon.json;
     requires io.helidon.jsonrpc.core;
     requires io.helidon.builder.api;
     requires io.helidon.webclient;

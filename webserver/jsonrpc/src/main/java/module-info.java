@@ -32,8 +32,7 @@ module io.helidon.webserver.jsonrpc {
     requires io.helidon.builder.api;
     requires io.helidon.webserver;
     requires io.helidon.jsonrpc.core;
-    requires jakarta.json;
-    requires jakarta.json.bind;
+    requires io.helidon.json;
     requires io.helidon.common.features.api;
 
     exports io.helidon.webserver.jsonrpc;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,11 @@
  */
 package io.helidon.webserver.tests.jsonrpc;
 
-import java.util.Optional;
-
 import io.helidon.http.Status;
+import io.helidon.json.JsonValue;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.jsonrpc.JsonRpcClient;
 import io.helidon.webserver.testing.junit5.ServerTest;
-
-import jakarta.json.Json;
-import jakarta.json.JsonValue;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -45,9 +41,8 @@ class JsonRpcTest extends JsonRpcBaseTest {
                 .path("/rpc/machine")
                 .submit()) {
             assertThat(res.status(), is(Status.OK_200));
-            assertThat(res.rpcId(), is(Optional.of(Json.createValue(1))));
-            assertThat(res.result().isPresent(), is(true));
-            StartStopResult result = res.result().get().as(StartStopResult.class);
+            assertThat(res.rpcId().orElseThrow().asNumber().intValue(), is(1));
+            StartStopResult result = res.result().orElseThrow().as(StartStopResult.class);
             assertThat(result.status(), is("RUNNING"));
         }
     }
@@ -60,9 +55,8 @@ class JsonRpcTest extends JsonRpcBaseTest {
                 .path("/rpc/machine")
                 .submit()) {
             assertThat(res.status(), is(Status.OK_200));
-            assertThat(res.rpcId(), is(Optional.of(Json.createValue(2))));
-            assertThat(res.result().isPresent(), is(true));
-            StartStopResult result = res.result().get().as(StartStopResult.class);
+            assertThat(res.rpcId().orElseThrow().asNumber().intValue(), is(2));
+            StartStopResult result = res.result().orElseThrow().as(StartStopResult.class);
             assertThat(result.status(), is("STOPPED"));
         }
     }
@@ -76,10 +70,9 @@ class JsonRpcTest extends JsonRpcBaseTest {
                 .path("/rpc/calculator")
                 .submit()) {
             assertThat(res.status(), is(Status.OK_200));
-            assertThat(res.rpcId(), is(Optional.of(Json.createValue(1))));
-            assertThat(res.result().isPresent(), is(true));
-            JsonValue result = res.result().get().asJsonValue();
-            assertThat(result, is(Json.createValue(45)));
+            assertThat(res.rpcId().orElseThrow().asNumber().intValue(), is(1));
+            JsonValue result = res.result().orElseThrow().asJsonValue();
+            assertThat(result.asNumber().intValue(), is(45));
         }
     }
 

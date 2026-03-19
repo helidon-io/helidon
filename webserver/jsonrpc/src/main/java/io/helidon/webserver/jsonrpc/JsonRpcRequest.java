@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,10 @@ package io.helidon.webserver.jsonrpc;
 
 import java.util.Optional;
 
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.jsonrpc.core.JsonRpcParams;
 import io.helidon.webserver.http.ServerRequest;
-
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 
 /**
  * A representation of a JSON-RPC request.
@@ -51,7 +50,7 @@ public interface JsonRpcRequest extends ServerRequest {
 
     /**
      * The params associated with the request. If omitted in the request, then
-     * internally initialized using {@link JsonValue#EMPTY_JSON_OBJECT}.
+     * internally initialized using an empty JSON object.
      *
      * @return the params
      */

@@ -16,6 +16,7 @@
 
 package io.helidon.json.tests;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.UUID;
 
@@ -53,9 +54,25 @@ public class MiscConvertersTest {
     public void testBigIntegerConverterParameterized(BindingMethod bindingMethod) {
         BigInteger original = new BigInteger("123456789012345678901234567890");
         String json = bindingMethod.serialize(jsonBinding, original);
-        assertThat(json, is("\"123456789012345678901234567890\""));
+        assertThat(json, is("123456789012345678901234567890"));
         BigInteger deserialized = bindingMethod.deserialize(jsonBinding, json, BigInteger.class);
         assertThat(deserialized, is(original));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBigIntegerFromQuotedStringParameterized(BindingMethod bindingMethod) {
+        String json = "\"123456789012345678901234567890\"";
+        BigInteger deserialized = bindingMethod.deserialize(jsonBinding, json, BigInteger.class);
+        assertThat(deserialized, is(new BigInteger("123456789012345678901234567890")));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBigDecimalFromQuotedStringParameterized(BindingMethod bindingMethod) {
+        String json = "\"12345678901234567890.1234567890\"";
+        BigDecimal deserialized = bindingMethod.deserialize(jsonBinding, json, BigDecimal.class);
+        assertThat(deserialized, is(new BigDecimal("12345678901234567890.1234567890")));
     }
 
     @ParameterizedTest
