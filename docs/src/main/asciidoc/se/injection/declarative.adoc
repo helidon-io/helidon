@@ -603,6 +603,6 @@ include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_18, indent=0]
 
 === Health Checks [[Dec-Health]]
 
-To add a declarative Health Check, create a service that implements `io.helidon.health.HealthCheck` (or is a factory of it).
-The WebServer Health observer will find all such services and use them to provide Health response. The lookup is done only once
-(i.e. you must not use `@Service.PerRequest` scope, recommended is `@Service.Singleton` scope).
+To add a declarative health check, create a service that implements io.helidon.health.HealthCheck or produces an instance of it.
+The WebServer health observer discovers all such services and uses them to contribute to the health response. Because the lookup is performed only once, you must not use the @Service.PerRequest scope. The recommended scope is @Service.Singleton.
+
