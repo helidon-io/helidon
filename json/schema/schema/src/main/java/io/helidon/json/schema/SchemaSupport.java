@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -220,7 +220,8 @@ final class SchemaSupport {
                         properties.keysAsStrings()
                                 .forEach(key -> {
                                     JsonObject object = properties.objectValue(key)
-                                            .orElseThrow(() -> new JsonSchemaException("Missing required property '" + key + "'"));
+                                            .orElseThrow(() -> new JsonSchemaException(
+                                                    "Missing required property '" + key + "'"));
                                     SchemaType type = type(object);
                                     switch (type) {
                                     case OBJECT -> objectBuilder.addObjectProperty(key, objectBuilder2 -> {
@@ -295,11 +296,12 @@ final class SchemaSupport {
 
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         private static void addRoot(Schema.BuilderBase<?, ?> target, Optional<? extends SchemaItem> item) {
-            if (target.root().isEmpty()) {
-                item.ifPresent(target::root);
-            } else if (item.isPresent()) {
-                throw new JsonSchemaException("Only one root type is supported");
-            }
+            item.ifPresent(schemaItem -> {
+                if (target.root().isPresent()) {
+                    throw new JsonSchemaException("Only one root type is supported");
+                }
+                target.root(schemaItem);
+            });
         }
 
     }
@@ -334,11 +336,12 @@ final class SchemaSupport {
 
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         private static void addRoot(SchemaArray.BuilderBase<?, ?> target, Optional<? extends SchemaItem> item) {
-            if (target.items().isEmpty()) {
-                item.ifPresent(target::items);
-            } else if (item.isPresent()) {
-                throw new JsonSchemaException("Only one array items type is supported");
-            }
+            item.ifPresent(schemaItem -> {
+                if (target.items().isPresent()) {
+                    throw new JsonSchemaException("Only one array items type is supported");
+                }
+                target.items(schemaItem);
+            });
         }
 
     }
