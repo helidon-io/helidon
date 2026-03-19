@@ -47,13 +47,13 @@ class TimestampLogEntryTest {
         assertThat(value, CoreMatchers.endsWith("]"));
 
         // this is as used by Apache HTTP server for common log format
-        DateTimeFormatter defaultPattern = DateTimeFormatter.ofPattern("dd/MMM/YYYY:HH:mm:ss ZZZ");
+        DateTimeFormatter defaultPattern = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss ZZZ");
         assertThat(value.substring(1, value.length() - 1), is(defaultPattern.format(TEST_TIME)));
     }
 
     @Test
     void testCustomFormat() {
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("'-'YYYYMMdd-HHmmss.SSS Z'-'");
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("'-'yyyyMMdd-HHmmss.SSS Z'-'");
 
         TimestampLogEntry entry = TimestampLogEntry.builder()
                 .formatter(dateTimeFormatter)
