@@ -33,6 +33,7 @@ module io.helidon.webserver.jsonrpc {
     requires io.helidon.webserver;
     requires io.helidon.jsonrpc.core;
     requires io.helidon.json;
+    requires io.helidon.json.binding;
     requires io.helidon.http.media.json;
     requires io.helidon.common.features.api;
 

@@ -54,8 +54,8 @@
             <artifactId>helidon-json</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.http.media</groupId>
-            <artifactId>helidon-http-media-json</artifactId>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json-binding</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>
