@@ -200,4 +200,14 @@ class DeclarativeHttpTest {
         jsonMessage = typedClient.updateGreetingHandlerReturningCurrent(newGreeting);
         assertThat(jsonMessage.stringValue("message", "bad"), is("Ahoj World!"));
     }
+
+    @Test
+    void testServerRequestInjection() {
+        var response = client.post("/greet/server-request")
+                .queryParam("greet", "hello")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("hello"));
+    }
 }

@@ -22,9 +22,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import io.helidon.common.Default;
 import io.helidon.common.context.Context;
+import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Configuration;
 import io.helidon.faulttolerance.Ft;
@@ -37,6 +39,7 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.abac.role.RoleValidator;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.RestServer;
+import io.helidon.webserver.http.ServerRequest;
 
 /**
  * A simple endpoint to greet you. Examples:
@@ -66,9 +69,16 @@ class GreetServiceEndpoint implements GreetService {
      */
     private final AtomicReference<String> greeting = new AtomicReference<>();
 
+    /**
+     * A per-request supplier.
+     */
+    private final Supplier<ServerRequest> serverRequestSupplier;
+
     @Service.Inject
-    GreetServiceEndpoint(@Configuration.Value("app.greeting") @Default.Value("Ciao") String greeting) {
+    GreetServiceEndpoint(@Configuration.Value("app.greeting") @Default.Value("Ciao") String greeting,
+                         Supplier<ServerRequest> serverRequestSupplier) {
         this.greeting.set(greeting);
+        this.serverRequestSupplier = serverRequestSupplier;
     }
 
     @Http.GET
@@ -225,6 +235,15 @@ class GreetServiceEndpoint implements GreetService {
         JsonObject response = response(securityContext.userName());
         greeting.set(greetingMessage.stringValue("greeting", greeting.get()));
         return response;
+    }
+
+    @Http.POST
+    @Http.Path("/server-request")
+    @Http.Produces(MediaTypes.TEXT_PLAIN_VALUE)
+    String serverRequestInjection() {
+        ServerRequest serverRequest = serverRequestSupplier.get();
+        OptionalValue<String> greet = serverRequest.query().first("greet");
+        return greet.get();
     }
 
     private JsonObject response(String name) {

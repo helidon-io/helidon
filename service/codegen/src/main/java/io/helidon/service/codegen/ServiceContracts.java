@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -247,11 +247,15 @@ public class ServiceContracts {
                             }
                         }
                         if (!wildcards.isEmpty()) {
+                            // Circle raw type
+                            contractSet.add(ResolvedType.create(withGenerics.genericTypeName()));
+
                             contractSet.add(ResolvedType.create(
                                     TypeName.builder()
                                             .from(withGenerics)
                                             .typeArguments(wildcards)
                                             .build()));
+
                             if (extendsValid) {
                                 contractSet.add(ResolvedType.create(
                                         TypeName.builder()

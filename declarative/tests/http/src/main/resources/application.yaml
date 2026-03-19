@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025 Oracle and/or its affiliates.
+# Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ server:
     # THIS MUST NOT BE USED IN PRODUCTION!
     # exception message will be sent back over the network - this may give potential attackers information about your application
     include-entity: true
+  features:
+    request-scope:
+      enabled: true
 
 greet-service.client:
   uri: "http://localhost:${test.server.port}"

@@ -27,5 +27,8 @@ module io.helidon.declarative.tests.metrics {
     // needed for generated binding
     requires io.helidon.config.yaml;
 
+    // required for generated binding
+    requires io.helidon.webserver.observe;
+
     exports io.helidon.declarative.tests.metrics;
 }
