@@ -46,6 +46,8 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     /**
      * Protected default constructor for subclasses.
+     *
+     * @param prettyPrint whether to pretty print generated JSON output
      */
     protected JsonGeneratorBase(boolean prettyPrint) {
         this.prettyPrint = prettyPrint;
