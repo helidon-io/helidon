@@ -22,7 +22,6 @@ import java.time.format.DateTimeFormatter;
  * Default time format is {@value DEFAULT_FORMAT}.
  */
 public final class TimestampLogEntry extends AbstractLogEntry {
-    // use calendar year (y) instead of week based year (Y)
     private static final String DEFAULT_FORMAT = "'['dd/MMM/yyyy:HH:mm:ss ZZZ']'";
     private static final DateTimeFormatter DEFAULT_FORMATTER = DateTimeFormatter.ofPattern(DEFAULT_FORMAT);
     private final DateTimeFormatter formatter;
