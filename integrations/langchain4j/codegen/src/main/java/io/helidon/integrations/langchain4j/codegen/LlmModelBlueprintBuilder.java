@@ -106,6 +106,6 @@ class LlmModelBlueprintBuilder extends IntrospectionBlueprintBuilder {
     }
 
     private String defaultBlueprintDescription() {
-        return "Configuration blueprint for LangChain4j model " + namePrefix + ".";
+        return "Configuration for LangChain4j model " + namePrefix + ".";
     }
 }
