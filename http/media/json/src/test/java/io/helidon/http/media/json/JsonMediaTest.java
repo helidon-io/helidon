@@ -77,7 +77,7 @@ class JsonMediaTest {
         res.supplier().get()
                 .write(JSON_OBJECT_TYPE, createObject("test-title"), os, headers);
 
-        assertThat(headers, HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, HttpMediaTypes.JSON_UTF_8.text()));
+        assertThat(headers, HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, HttpMediaTypes.JSON.text()));
         String result = os.toString(StandardCharsets.UTF_8);
         assertThat(result, containsString("\"title\""));
         assertThat(result, containsString("\"test-title\""));
@@ -105,7 +105,7 @@ class JsonMediaTest {
                 .get()
                 .write(JSON_ARRAY_TYPE, jsonArray, os, headers);
 
-        assertThat(headers, HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, HttpMediaTypes.JSON_UTF_8.text()));
+        assertThat(headers, HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, HttpMediaTypes.JSON.text()));
         String result = os.toString(StandardCharsets.UTF_8);
         assertThat(result, containsString("\"title\""));
         assertThat(result, containsString("\"first\""));
