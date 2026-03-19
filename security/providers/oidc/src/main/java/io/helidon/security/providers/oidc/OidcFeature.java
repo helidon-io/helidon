@@ -16,7 +16,6 @@
 
 package io.helidon.security.providers.oidc;
 
-import java.io.StringReader;
 import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.net.URLEncoder;

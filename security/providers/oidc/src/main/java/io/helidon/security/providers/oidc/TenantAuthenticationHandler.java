@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,7 @@ import io.helidon.security.util.TokenHandler;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
+
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
 /**
@@ -276,7 +277,8 @@ class TenantAuthenticationHandler {
                             if (oidcConfig.accessTokenIpCheck()) {
                                 Object userIp = providerRequest.env().abacAttribute("userIp").orElseThrow();
                                 String remotePeer = jsonObject.stringValue("remotePeer")
-                                        .orElseThrow(() -> new IllegalStateException("Access token cookie is missing remotePeer"));
+                                        .orElseThrow(() ->
+                                                new IllegalStateException("Access token cookie is missing remotePeer"));
                                 if (!remotePeer.equals(userIp)) {
                                     if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                                         LOGGER.log(System.Logger.Level.DEBUG,
