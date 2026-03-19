@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.common.media.type.MediaTypes.APPLICATION_JSON;
 import static io.helidon.http.HeaderNames.ACCEPT_ENCODING;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
@@ -83,7 +84,7 @@ class EurekaRegistrationServerFeatureIT {
             .config(c.get("helidon.server"))
             .routing(rb -> rb.get("/hello", (req, res) -> res.send("Hello World!")))
             .build();
-        assertThat(this.ws.prototype().features().get(0), instanceOf(EurekaRegistrationServerFeature.class));
+        assertThat(this.ws.prototype().features(), hasItem(instanceOf(EurekaRegistrationServerFeature.class)));
         this.ws.start();
     }
 
@@ -104,7 +105,10 @@ class EurekaRegistrationServerFeatureIT {
         try (var response = this.wc
              .get("/v2/apps/" + ((EurekaRegistrationServerFeature)this.ws.prototype()
                                  .features()
-                                 .get(0))
+                                 .stream()
+                                 .filter(f -> f instanceof EurekaRegistrationServerFeature)
+                                 .toList()
+                                 .getFirst())
                   .prototype()
                   .instanceInfo()
                   .appName())
