@@ -89,6 +89,7 @@ The following features are currently implemented:
 - <<Dec-WebSocket-Server, WebSocket Server>>
 - <<Dec-WebSocket-Client, WebSocket Client>>
 - <<Dec-CORS, WebServer CORS>>
+- <<Dec-Health, Health Checks>>
 
 A Helidon Declarative application should be started using the generated application binding, to ensure no lookup and no reflection.
 The call to `ServiceRegistryManager.start` ensures that all services with a defined `RunLevel` are started, including Helidon WebServer, Scheduled services etc.
@@ -599,3 +600,9 @@ include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_18, indent=0]
 <2> Configure headers the script can send to this host
 <3> Configure allowed methods for CORS requests
 <4> Configure max age to be 3 minutes
+
+=== Health Checks [[Dec-Health]]
+
+To add a declarative health check, create a service that implements io.helidon.health.HealthCheck or produces an instance of it.
+The WebServer health observer discovers all such services and uses them to contribute to the health response. Because the lookup is performed only once, you must not use the @Service.PerRequest scope. The recommended scope is @Service.Singleton.
+
