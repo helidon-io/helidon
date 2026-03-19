@@ -32,6 +32,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-apt</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.declarative</groupId>
             <artifactId>helidon-declarative-codegen</artifactId>
             <scope>test</scope>
@@ -89,6 +94,12 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-cors</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-testing</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
