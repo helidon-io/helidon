@@ -110,6 +110,6 @@ public class ValidationCodegenTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, containsString("error:"));
         assertThat(diagnostics, containsString("private Integer id"));
-        assertThat(diagnostics, containsString("Only non-private fields, methods, constructors, and inner types are supported"));
+        assertThat(diagnostics, containsString("Only non-private fields and getter methods are supported"));
     }
 }

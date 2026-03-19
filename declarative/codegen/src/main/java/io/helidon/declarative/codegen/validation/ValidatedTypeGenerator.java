@@ -219,12 +219,24 @@ class ValidatedTypeGenerator {
                         return true;
                     }
                     var kind = it.kind();
-                    if (kind == ElementKind.FIELD
-                            || kind == ElementKind.METHOD
-                            || kind == ElementKind.CLASS
-                            || kind == ElementKind.CONSTRUCTOR) {
-                        // these are all supported
+                    if (kind == ElementKind.METHOD) {
+                        if (ElementInfoPredicates.isStatic(it)) {
+                            // static methods not supported
+                            return true;
+                        }
+                        if (!ElementInfoPredicates.hasNoArgs(it)) {
+                            // only getters are supported
+                            return true;
+                        }
+                        if (ElementInfoPredicates.isVoid(it)) {
+                            // only getters are supported
+                            return true;
+                        }
                         return false;
+                    }
+                    if (kind == ElementKind.FIELD) {
+                        // static fields not supported, other fields are supported
+                        return ElementInfoPredicates.isStatic(it);
                     }
                     // all other kinds are an issue
                     return true;
@@ -233,19 +245,18 @@ class ValidatedTypeGenerator {
                 .toArray(Object[]::new);
 
         if (badElements.length != 0) {
-            throw new CodegenException("Validation annotations on unsupported elements. Only non-private fields, methods, constructors, and inner types are supported. ",
+            throw new CodegenException("Validation annotations on unsupported elements. Only non-private fields and"
+                                               + " getter methods are supported.",
                                       badElements);
         }
 
         // non-private non-static methods that match getter pattern (we only add those annotated with a constraint or Valid)
-        type.elementInfo()
-                .stream()
+        needWork.stream()
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(Predicate.not(ElementInfoPredicates::isPrivate))
                 .filter(Predicate.not(ElementInfoPredicates::isStatic))
                 .filter(ElementInfoPredicates::hasNoArgs)
                 .filter(Predicate.not(ElementInfoPredicates::isVoid))
-                .filter(it -> needsWork(constraintAnnotations, it))
                 .forEach(element -> {
                     String propertyName = element.elementName();
                     if (isPropertyGetter(propertyName)) {
@@ -273,12 +284,10 @@ class ValidatedTypeGenerator {
                 });
 
         // non-private non-static fields
-        type.elementInfo()
-                .stream()
+        needWork.stream()
                 .filter(ElementInfoPredicates::isField)
                 .filter(Predicate.not(ElementInfoPredicates::isPrivate))
                 .filter(Predicate.not(ElementInfoPredicates::isStatic))
-                .filter(it -> needsWork(constraintAnnotations, it))
                 .forEach(element -> {
                     String propertyName = element.elementName();
                     Property property = new Property(propertyName,
