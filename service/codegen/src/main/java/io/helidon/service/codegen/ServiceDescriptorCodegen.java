@@ -1249,7 +1249,7 @@ public class ServiceDescriptorCodegen {
                                 qualifier.values()
                                         .keySet()
                                         .forEach(propertyName -> {
-                                            it.addContent(".putValue(\"")
+                                            it.addContent(".property(\"")
                                                     .addContent(propertyName)
                                                     .addContent("\", ");
                                             addAnnotationValue(it, qualifier.objectValue(propertyName).get());

@@ -81,7 +81,7 @@ class ValidatedTypeGenerator {
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addAnnotation(Annotation.builder()
                                        .typeName(ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED_BY_TYPE)
-                                       .putValue("value", triggerType)
+                                       .property("value", triggerType)
                                        .build())
                 .addInterface(TypeName.builder()
                                       .from(TYPE_VALIDATOR)
@@ -204,6 +204,38 @@ class ValidatedTypeGenerator {
                                        Method.Builder checkMethod) {
 
         List<Property> properties = new ArrayList<>();
+
+        // first find all elements that need validation work
+        List<TypedElementInfo> needWork = type.elementInfo()
+                .stream()
+                .filter(it -> needsWork(constraintAnnotations, it))
+                .toList();
+
+        // then check if any of them is not supported (i.e. not method or field, or private)
+        var badElements = needWork.stream()
+                .filter(it -> {
+                    if (it.accessModifier() == AccessModifier.PRIVATE) {
+                        // anything private is an issue
+                        return true;
+                    }
+                    var kind = it.kind();
+                    if (kind == ElementKind.FIELD
+                            || kind == ElementKind.METHOD
+                            || kind == ElementKind.CLASS
+                            || kind == ElementKind.CONSTRUCTOR) {
+                        // these are all supported
+                        return false;
+                    }
+                    // all other kinds are an issue
+                    return true;
+                })
+                .map(TypedElementInfo::originatingElementValue)
+                .toArray(Object[]::new);
+
+        if (badElements.length != 0) {
+            throw new CodegenException("Validation annotations on unsupported elements. Only non-private fields, methods, constructors, and inner types are supported. ",
+                                      badElements);
+        }
 
         // non-private non-static methods that match getter pattern (we only add those annotated with a constraint or Valid)
         type.elementInfo()
@@ -369,7 +401,7 @@ class ValidatedTypeGenerator {
                         .type(VALIDATION_CONTEXT))
                 .addParameter(propertyName -> propertyName.name("propertyName")
                         .type(TypeNames.STRING))
-                .addParameter(value -> value.name("value")
+                .addParameter(aValue -> aValue.name("value")
                         .type(TypeNames.OBJECT))
                 .addContentLine("switch (propertyName) {");
 
@@ -405,7 +437,7 @@ class ValidatedTypeGenerator {
                 .accessModifier(AccessModifier.PRIVATE)
                 .addParameter(context -> context.name("validation__ctx")
                         .type(VALIDATION_CONTEXT))
-                .addParameter(value -> value.name("value")
+                .addParameter(aValue -> aValue.name("value")
                         .type(element.typeName()))
                 .update(it -> processValidatedElement(generatedType,
                                                       constraintAnnotations,
