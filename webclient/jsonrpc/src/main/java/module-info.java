@@ -31,6 +31,7 @@ module io.helidon.webclient.jsonrpc {
 
     requires io.helidon.json;
     requires io.helidon.jsonrpc.core;
+    requires io.helidon.http.media.json;
     requires io.helidon.builder.api;
     requires io.helidon.webclient;
     requires io.helidon.common.features.api;
