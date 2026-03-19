@@ -19,6 +19,7 @@ package io.helidon.integrations.langchain4j;
 import java.net.URI;
 import java.time.Duration;
 
+import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
 
 import org.junit.jupiter.api.Test;
@@ -51,6 +52,9 @@ public class McpClientConfigTest {
                       tool-execution-timeout-error-message: Tool timeout!!!
                       log-requests: true
                       log-responses: true
+                      tls:
+                        trust-all: true
+                        endpoint-identification-algorithm: NONE
                 """;
         var c = Config.just(cfg, APPLICATION_YAML);
         var mcpClientConfig = McpClientFactory.configure(c).findFirst().get();
@@ -68,6 +72,11 @@ public class McpClientConfigTest {
         assertThat(mcpClientConfig.toolExecutionTimeoutErrorMessage(), optionalValue(is("Tool timeout!!!")));
         assertThat(mcpClientConfig.logRequests(), optionalValue(is(true)));
         assertThat(mcpClientConfig.logResponses(), optionalValue(is(true)));
+        assertThat(mcpClientConfig.tls().isPresent(), is(true));
+        assertThat(mcpClientConfig.tls().get().enabled(), is(true));
+        assertThat(mcpClientConfig.tls().get().prototype().trustAll(), is(true));
+        assertThat(mcpClientConfig.tls().get().prototype().endpointIdentificationAlgorithm(),
+                   is(Tls.ENDPOINT_IDENTIFICATION_NONE));
     }
 
     @Test
