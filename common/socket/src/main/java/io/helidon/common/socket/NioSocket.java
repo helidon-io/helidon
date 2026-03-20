@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,7 +144,11 @@ public sealed class NioSocket implements HelidonSocket permits TlsNioSocket {
                 writeBuffer.clear();
                 buffer.writeTo(writeBuffer, buffer.available());
                 writeBuffer.flip();
-                delegate.write(writeBuffer);
+                // SocketChannel.write may complete partially, so we must drain the staged bytes before
+                // advancing the source buffer again.
+                while (writeBuffer.hasRemaining()) {
+                    delegate.write(writeBuffer);
+                }
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
