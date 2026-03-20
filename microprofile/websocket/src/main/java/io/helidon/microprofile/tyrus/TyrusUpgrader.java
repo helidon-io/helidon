@@ -39,6 +39,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.RequestException;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.spi.ServerConnection;
@@ -133,7 +134,19 @@ public class TyrusUpgrader extends WsUpgrader {
         }
 
         // Protocol handshake with Tyrus
-        WebSocketEngine.UpgradeInfo upgradeInfo = protocolHandshake(routing, headers, query, path);
+        TyrusHandshake handshake = protocolHandshake(routing, headers, query, path);
+        WebSocketEngine.UpgradeInfo upgradeInfo = handshake.upgradeInfo();
+        if (upgradeInfo.getStatus() == WebSocketEngine.UpgradeStatus.NOT_APPLICABLE) {
+            return null;
+        }
+        if (upgradeInfo.getStatus() != WebSocketEngine.UpgradeStatus.SUCCESS) {
+            TyrusUpgradeResponse upgradeResponse = handshake.upgradeResponse();
+            throw RequestException.builder()
+                    .type(DirectHandler.EventType.OTHER)
+                    .status(Status.create(upgradeResponse.getStatus(), upgradeResponse.getReasonPhrase()))
+                    .message("WebSocket handshake rejected")
+                    .build();
+        }
 
         // todo support subprotocols (must be provided by route)
         // Sec-WebSocket-Protocol: sub-protocol (list provided in PROTOCOL header, separated by comma space
@@ -152,10 +165,10 @@ public class TyrusUpgrader extends WsUpgrader {
         return super.origins();
     }
 
-    WebSocketEngine.UpgradeInfo protocolHandshake(TyrusRouting routing,
-                                                  WritableHeaders<?> headers,
-                                                  UriQuery uriQuery,
-                                                  String path) {
+    TyrusHandshake protocolHandshake(TyrusRouting routing,
+                                     WritableHeaders<?> headers,
+                                     UriQuery uriQuery,
+                                     String path) {
         LOGGER.log(Level.DEBUG, "Initiating WebSocket handshake with Tyrus...");
 
         // Create Tyrus request context, copy request headers and query params
@@ -181,7 +194,10 @@ public class TyrusUpgrader extends WsUpgrader {
                         HeaderValues.create(
                                 HeaderNames.create(key, key.toLowerCase(Locale.ROOT)),
                                 value)));
-        return upgradeInfo;
+        return new TyrusHandshake(upgradeInfo, upgradeResponse);
+    }
+
+    private record TyrusHandshake(WebSocketEngine.UpgradeInfo upgradeInfo, TyrusUpgradeResponse upgradeResponse) {
     }
 
     // to initialize Tyrus only once
