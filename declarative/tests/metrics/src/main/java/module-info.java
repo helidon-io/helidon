@@ -30,5 +30,8 @@ module io.helidon.declarative.tests.metrics {
     // now included through other modules (metrics in this case)
     requires io.helidon.webserver.cors;
 
+    // required for generated binding
+    requires io.helidon.webserver.observe;
+
     exports io.helidon.declarative.tests.metrics;
 }

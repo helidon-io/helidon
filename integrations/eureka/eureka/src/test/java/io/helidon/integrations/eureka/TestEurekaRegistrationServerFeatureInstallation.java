@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.greaterThan;
 
 final class TestEurekaRegistrationServerFeatureInstallation {
 
@@ -60,8 +61,13 @@ final class TestEurekaRegistrationServerFeatureInstallation {
     void testEurekaRegistrationServerFeatureInstallationWasSuccessful() {
         assertThat(this.ws.isRunning(), is(true));
         List<?> serverFeatures = this.ws.prototype().features();
-        assertThat(serverFeatures.size(), is(1));
-        EurekaRegistrationConfig prototype = ((EurekaRegistrationServerFeature)serverFeatures.get(0)).prototype();
+        assertThat(serverFeatures.size(), is(greaterThan(0)));
+        EurekaRegistrationConfig prototype = ((EurekaRegistrationServerFeature)serverFeatures
+                .stream()
+                .filter(f -> f instanceof EurekaRegistrationServerFeature)
+                .toList()
+                .getFirst())
+                .prototype();
         assertThat(prototype.enabled(), is(true));
     }
 
