@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@
         <version.lib.hibernate>5.4.25.Final</version.lib.hibernate>
         <version.lib.hikaricp>3.4.1</version.lib.hikaricp>
         <version.lib.inject>1</version.lib.inject>
-        <version.lib.jackson>2.15.2</version.lib.jackson>
+        <version.lib.jackson>2.21.1</version.lib.jackson>
         <version.lib.jackson-bom>${version.lib.jackson}</version.lib.jackson-bom>
         <!-- Force upgrade to more current version -->
         <version.lib.okio>3.4.0</version.lib.okio>
@@ -87,7 +87,7 @@
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mysql-connector-java>8.0.29</version.lib.mysql-connector-java>
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
-        <version.lib.netty>4.1.126.Final</version.lib.netty>
+        <version.lib.netty>4.1.130.Final</version.lib.netty>
         <version.lib.oci-java-sdk-objectstorage>2.81.0</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>19.3.0.0</version.lib.ojdbc8>
         <version.lib.opentracing>0.32.0</version.lib.opentracing>
