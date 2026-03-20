@@ -43,7 +43,7 @@ module io.helidon.tracing.exporter.jaeger {
     requires com.google.protobuf;
     requires java.annotation;
     requires io.grpc.protobuf;
-    requires io.helidon.common.features.api;
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.tracing.exporter.jaeger;
 
