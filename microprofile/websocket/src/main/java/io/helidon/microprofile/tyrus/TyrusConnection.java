@@ -201,12 +201,16 @@ class TyrusConnection implements ServerConnection, WsSession {
 
         @Override
         public void onClose(WsSession session, int status, String reason) {
-            connection.close(new CloseReason(getCloseCode(status), reason));
+            if (connection != null) {
+                connection.close(new CloseReason(getCloseCode(status), reason));
+            }
         }
 
         @Override
         public void onError(WsSession session, Throwable t) {
-            connection.close(new CloseReason(UNEXPECTED_CONDITION, t.getMessage()));
+            if (connection != null) {
+                connection.close(new CloseReason(UNEXPECTED_CONDITION, t.getMessage()));
+            }
         }
 
         @Override
@@ -225,6 +229,9 @@ class TyrusConnection implements ServerConnection, WsSession {
                 }
             };
             connection = upgradeInfo.createConnection(writer, TyrusListener::close);
+            if (connection == null) {
+                throw new IllegalStateException("WebSocket handshake did not create a connection");
+            }
         }
 
         /**
