@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ public class SslCipherSuiteTest {
                             public HttpURLConnection getConnection(final URL url) throws IOException {
                                 HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
                                 String[] array = new String[1];
-                                array[0] = "TLS_RSA_WITH_AES_128_GCM_SHA256";
+                                array[0] = "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256";
                                 connection.setSSLSocketFactory(new TestCustomFactory(array));
                                 connection.setHostnameVerifier((s, sslSession) -> true);
                                 return connection;
