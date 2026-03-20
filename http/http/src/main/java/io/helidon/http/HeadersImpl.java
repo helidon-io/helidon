@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,9 @@ import java.util.function.Supplier;
 @SuppressWarnings("unchecked")
 class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     static final int KNOWN_HEADER_SIZE = HeaderNameEnum.values().length;
+    // must be one higher to avoid bit set expansion
+    private static final int NBITS = KNOWN_HEADER_SIZE + 1;
+
     /*
      Optimization for most commonly used header names
      */
@@ -38,7 +41,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
 
     // custom (unknown) headers are slower
     private Map<HeaderName, Header> customHeaders = null;
-    private final BitSet knownHeaderIndices = new BitSet(KNOWN_HEADER_SIZE);
+    private final BitSet knownHeaderIndices = new BitSet(NBITS);
 
     HeadersImpl() {
     }
