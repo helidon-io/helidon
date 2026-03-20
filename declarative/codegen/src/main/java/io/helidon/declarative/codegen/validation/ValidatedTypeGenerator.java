@@ -81,7 +81,7 @@ class ValidatedTypeGenerator {
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addAnnotation(Annotation.builder()
                                        .typeName(ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED_BY_TYPE)
-                                       .putValue("value", triggerType)
+                                       .property("value", triggerType)
                                        .build())
                 .addInterface(TypeName.builder()
                                       .from(TYPE_VALIDATOR)
@@ -205,15 +205,58 @@ class ValidatedTypeGenerator {
 
         List<Property> properties = new ArrayList<>();
 
-        // non-private non-static methods that match getter pattern (we only add those annotated with a constraint or Valid)
-        type.elementInfo()
+        // first find all elements that need validation work
+        List<TypedElementInfo> needWork = type.elementInfo()
                 .stream()
+                .filter(it -> needsWork(constraintAnnotations, it))
+                .toList();
+
+        // then check if any of them is not supported (i.e. not method or field, or private)
+        var badElements = needWork.stream()
+                .filter(it -> {
+                    if (it.accessModifier() == AccessModifier.PRIVATE) {
+                        // anything private is an issue
+                        return true;
+                    }
+                    var kind = it.kind();
+                    if (kind == ElementKind.METHOD) {
+                        if (ElementInfoPredicates.isStatic(it)) {
+                            // static methods not supported
+                            return true;
+                        }
+                        if (!ElementInfoPredicates.hasNoArgs(it)) {
+                            // only getters are supported
+                            return true;
+                        }
+                        if (ElementInfoPredicates.isVoid(it)) {
+                            // only getters are supported
+                            return true;
+                        }
+                        return false;
+                    }
+                    if (kind == ElementKind.FIELD) {
+                        // static fields not supported, other fields are supported
+                        return ElementInfoPredicates.isStatic(it);
+                    }
+                    // all other kinds are an issue
+                    return true;
+                })
+                .map(TypedElementInfo::originatingElementValue)
+                .toArray(Object[]::new);
+
+        if (badElements.length != 0) {
+            throw new CodegenException("Validation annotations on unsupported elements. Only non-private fields and"
+                                               + " getter methods are supported.",
+                                      badElements);
+        }
+
+        // non-private non-static methods that match getter pattern (we only add those annotated with a constraint or Valid)
+        needWork.stream()
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(Predicate.not(ElementInfoPredicates::isPrivate))
                 .filter(Predicate.not(ElementInfoPredicates::isStatic))
                 .filter(ElementInfoPredicates::hasNoArgs)
                 .filter(Predicate.not(ElementInfoPredicates::isVoid))
-                .filter(it -> needsWork(constraintAnnotations, it))
                 .forEach(element -> {
                     String propertyName = element.elementName();
                     if (isPropertyGetter(propertyName)) {
@@ -241,12 +284,10 @@ class ValidatedTypeGenerator {
                 });
 
         // non-private non-static fields
-        type.elementInfo()
-                .stream()
+        needWork.stream()
                 .filter(ElementInfoPredicates::isField)
                 .filter(Predicate.not(ElementInfoPredicates::isPrivate))
                 .filter(Predicate.not(ElementInfoPredicates::isStatic))
-                .filter(it -> needsWork(constraintAnnotations, it))
                 .forEach(element -> {
                     String propertyName = element.elementName();
                     Property property = new Property(propertyName,
@@ -369,7 +410,7 @@ class ValidatedTypeGenerator {
                         .type(VALIDATION_CONTEXT))
                 .addParameter(propertyName -> propertyName.name("propertyName")
                         .type(TypeNames.STRING))
-                .addParameter(value -> value.name("value")
+                .addParameter(aValue -> aValue.name("value")
                         .type(TypeNames.OBJECT))
                 .addContentLine("switch (propertyName) {");
 
@@ -405,7 +446,7 @@ class ValidatedTypeGenerator {
                 .accessModifier(AccessModifier.PRIVATE)
                 .addParameter(context -> context.name("validation__ctx")
                         .type(VALIDATION_CONTEXT))
-                .addParameter(value -> value.name("value")
+                .addParameter(aValue -> aValue.name("value")
                         .type(element.typeName()))
                 .update(it -> processValidatedElement(generatedType,
                                                       constraintAnnotations,
