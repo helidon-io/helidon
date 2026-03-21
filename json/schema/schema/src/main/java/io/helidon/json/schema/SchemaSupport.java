@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 
 package io.helidon.json.schema;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonGenerator;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
+import io.helidon.json.JsonValue;
 import io.helidon.json.schema.spi.JsonSchemaProvider;
-import io.helidon.metadata.hson.Hson;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Services;
 
@@ -72,11 +72,7 @@ final class SchemaSupport {
          */
         @Prototype.PrototypeMethod
         static String generate(Schema schema) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (PrintWriter writer = new PrintWriter(baos, true, StandardCharsets.UTF_8)) {
-                generateObject(schema).write(writer, true);
-            }
-            return baos.toString(StandardCharsets.UTF_8);
+            return toJsonString(generateObject(schema));
         }
 
         /**
@@ -88,21 +84,17 @@ final class SchemaSupport {
          */
         @Prototype.PrototypeMethod
         static String generateNoKeywords(Schema schema) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (PrintWriter writer = new PrintWriter(baos, true, StandardCharsets.UTF_8)) {
-                generateObjectNoKeywords(schema).write(writer, true);
-            }
-            return baos.toString(StandardCharsets.UTF_8);
+            return toJsonString(generateObjectNoKeywords(schema));
         }
 
         /**
-         * Generate the {@link io.helidon.metadata.hson.Hson.Struct} object of this schema.
+         * Generate the {@link io.helidon.json.JsonObject} object of this schema.
          *
          * @param schema schema
-         * @return struct object
+         * @return json object
          */
-        static Hson.Struct generateObject(Schema schema) {
-            Hson.Struct.Builder builder = Hson.structBuilder();
+        static JsonObject generateObject(Schema schema) {
+            JsonObject.Builder builder = JsonObject.builder();
             builder.set("$schema", "https://json-schema.org/draft/2020-12/schema");
             schema.id().ifPresent(id -> builder.set("$id", id.toString()));
             schema.root().generate(builder);
@@ -110,14 +102,14 @@ final class SchemaSupport {
         }
 
         /**
-         * Generate the {@link io.helidon.metadata.hson.Hson.Struct} object of this schema without schema keywords.
+         * Generate the {@link io.helidon.json.JsonObject} object of this schema without schema keywords.
          * Keywords like {@code $schema} or {@code $id} will not be included.
          *
          * @param schema schema
-         * @return struct object
+         * @return json object
          */
-        static Hson.Struct generateObjectNoKeywords(Schema schema) {
-            Hson.Struct.Builder builder = Hson.structBuilder();
+        static JsonObject generateObjectNoKeywords(Schema schema) {
+            JsonObject.Builder builder = JsonObject.builder();
             schema.root().generate(builder);
             return builder.build();
         }
@@ -147,40 +139,35 @@ final class SchemaSupport {
         @Prototype.PrototypeFactoryMethod
         static Schema parse(String jsonSchema) {
             Schema.Builder builder = Schema.builder();
-            try (InputStream is = new ByteArrayInputStream(jsonSchema.getBytes(StandardCharsets.UTF_8))) {
-                Hson.Value<?> parsed = Hson.parse(is);
-                Hson.Struct struct = parsed.asStruct();
-                struct.stringValue("$id").map(URI::create).ifPresent(builder::id);
-                SchemaType type = type(struct);
-                switch (type) {
-                case STRING -> builder.rootString(stringBuilder -> parseString(stringBuilder, struct));
-                case INTEGER -> builder.rootInteger(integerBuilder -> parseInteger(integerBuilder, struct));
-                case NUMBER -> builder.rootNumber(numberBuilder -> parseNumber(numberBuilder, struct));
-                case BOOLEAN -> builder.rootBoolean(booleanBuilder -> parseCommon(booleanBuilder, struct));
-                case OBJECT -> builder.rootObject(objectBuilder -> parseObject(objectBuilder, struct));
-                case ARRAY -> builder.rootArray(arrayBuilder -> parseArray(arrayBuilder, struct));
-                case NULL -> builder.rootNull(nullBuilder -> parseCommon(nullBuilder, struct));
-                default -> throw new JsonSchemaException("Unsupported root type: " + type);
-                }
-            } catch (IOException e) {
-                throw new JsonSchemaException("Failed to parse JSON Schema", e);
+            JsonObject struct = JsonParser.create(jsonSchema).readJsonObject();
+            struct.stringValue("$id").map(URI::create).ifPresent(builder::id);
+            SchemaType type = type(struct);
+            switch (type) {
+            case STRING -> builder.rootString(stringBuilder -> parseString(stringBuilder, struct));
+            case INTEGER -> builder.rootInteger(integerBuilder -> parseInteger(integerBuilder, struct));
+            case NUMBER -> builder.rootNumber(numberBuilder -> parseNumber(numberBuilder, struct));
+            case BOOLEAN -> builder.rootBoolean(booleanBuilder -> parseCommon(booleanBuilder, struct));
+            case OBJECT -> builder.rootObject(objectBuilder -> parseObject(objectBuilder, struct));
+            case ARRAY -> builder.rootArray(arrayBuilder -> parseArray(arrayBuilder, struct));
+            case NULL -> builder.rootNull(nullBuilder -> parseCommon(nullBuilder, struct));
+            default -> throw new JsonSchemaException("Unsupported root type: " + type);
             }
             return builder.build();
         }
 
-        private static void parseCommon(SchemaItem.BuilderBase<?, ?> itemBuilder, Hson.Struct jsonObject) {
+        private static void parseCommon(SchemaItem.BuilderBase<?, ?> itemBuilder, JsonObject jsonObject) {
             jsonObject.stringValue("description").ifPresent(itemBuilder::description);
             jsonObject.stringValue("title").ifPresent(itemBuilder::title);
         }
 
-        private static void parseString(SchemaString.Builder stringBuilder, Hson.Struct jsonObject) {
+        private static void parseString(SchemaString.Builder stringBuilder, JsonObject jsonObject) {
             parseCommon(stringBuilder, jsonObject);
             jsonObject.numberValue("maxLength").ifPresent(it -> stringBuilder.maxLength(it.longValue()));
             jsonObject.numberValue("minLength").ifPresent(it -> stringBuilder.minLength(it.longValue()));
             jsonObject.stringValue("pattern").ifPresent(stringBuilder::pattern);
         }
 
-        private static void parseInteger(SchemaInteger.Builder integerBuilder, Hson.Struct jsonObject) {
+        private static void parseInteger(SchemaInteger.Builder integerBuilder, JsonObject jsonObject) {
             parseCommon(integerBuilder, jsonObject);
             jsonObject.numberValue("multipleOf").ifPresent(it -> integerBuilder.multipleOf(it.longValue()));
             jsonObject.numberValue("minimum").ifPresent(it -> integerBuilder.minimum(it.longValue()));
@@ -189,7 +176,7 @@ final class SchemaSupport {
             jsonObject.numberValue("exclusiveMinimum").ifPresent(it -> integerBuilder.exclusiveMinimum(it.longValue()));
         }
 
-        private static void parseNumber(SchemaNumber.Builder numberBuilder, Hson.Struct jsonObject) {
+        private static void parseNumber(SchemaNumber.Builder numberBuilder, JsonObject jsonObject) {
             parseCommon(numberBuilder, jsonObject);
             jsonObject.doubleValue("multipleOf").ifPresent(numberBuilder::multipleOf);
             jsonObject.doubleValue("minimum").ifPresent(numberBuilder::minimum);
@@ -198,13 +185,13 @@ final class SchemaSupport {
             jsonObject.doubleValue("exclusiveMaximum").ifPresent(numberBuilder::exclusiveMaximum);
         }
 
-        private static void parseArray(SchemaArray.Builder arrayBuilder, Hson.Struct jsonObject) {
+        private static void parseArray(SchemaArray.Builder arrayBuilder, JsonObject jsonObject) {
             parseCommon(arrayBuilder, jsonObject);
             jsonObject.intValue("maxItems").ifPresent(arrayBuilder::maxItems);
             jsonObject.intValue("minItems").ifPresent(arrayBuilder::minItems);
             jsonObject.booleanValue("uniqueItems").ifPresent(arrayBuilder::uniqueItems);
 
-            jsonObject.structValue("items")
+            jsonObject.objectValue("items")
                     .ifPresent(items -> {
                         SchemaType type = type(items);
                         switch (type) {
@@ -220,19 +207,21 @@ final class SchemaSupport {
                     });
         }
 
-        private static void parseObject(SchemaObject.Builder objectBuilder, Hson.Struct jsonObject) {
+        private static void parseObject(SchemaObject.Builder objectBuilder, JsonObject jsonObject) {
             parseCommon(objectBuilder, jsonObject);
             jsonObject.intValue("maxProperties").ifPresent(objectBuilder::maxProperties);
             jsonObject.intValue("minProperties").ifPresent(objectBuilder::minProperties);
             jsonObject.booleanValue("additionalProperties").ifPresent(objectBuilder::additionalProperties);
-            jsonObject.structValue("properties")
+            jsonObject.objectValue("properties")
                     .ifPresent(properties -> {
-                        List<String> requiredProperties = jsonObject.stringArray("required").orElse(List.of());
-                        properties.keys()
+                        List<String> requiredProperties = jsonObject.arrayValue("required")
+                                .map(SchemaCustomMethods::stringArray)
+                                .orElse(List.of());
+                        properties.keysAsStrings()
                                 .forEach(key -> {
-                                    Hson.Struct object = properties.structValue(key)
-                                            .orElseThrow(() -> new JsonSchemaException("Missing required property '"
-                                                                                               + key + "'"));
+                                    JsonObject object = properties.objectValue(key)
+                                            .orElseThrow(() -> new JsonSchemaException(
+                                                    "Missing required property '" + key + "'"));
                                     SchemaType type = type(object);
                                     switch (type) {
                                     case OBJECT -> objectBuilder.addObjectProperty(key, objectBuilder2 -> {
@@ -269,7 +258,22 @@ final class SchemaSupport {
                     });
         }
 
-        private static SchemaType type(Hson.Struct struct) {
+        private static List<String> stringArray(JsonArray jsonArray) {
+            return jsonArray.values().stream()
+                    .map(JsonValue::asString)
+                    .map(it -> it.value())
+                    .toList();
+        }
+
+        private static String toJsonString(JsonObject jsonObject) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            JsonGenerator.create(baos, true)
+                    .write(jsonObject)
+                    .close();
+            return baos.toString(StandardCharsets.UTF_8);
+        }
+
+        private static SchemaType type(JsonObject struct) {
             return struct.stringValue("type")
                     .map(SchemaType::fromType)
                     .orElseThrow(() -> new JsonSchemaException(
@@ -292,11 +296,12 @@ final class SchemaSupport {
 
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         private static void addRoot(Schema.BuilderBase<?, ?> target, Optional<? extends SchemaItem> item) {
-            if (target.root().isEmpty()) {
-                item.ifPresent(target::root);
-            } else if (item.isPresent()) {
-                throw new JsonSchemaException("Only one root type is supported");
-            }
+            item.ifPresent(schemaItem -> {
+                if (target.root().isPresent()) {
+                    throw new JsonSchemaException("Only one root type is supported");
+                }
+                target.root(schemaItem);
+            });
         }
 
     }
@@ -331,11 +336,12 @@ final class SchemaSupport {
 
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         private static void addRoot(SchemaArray.BuilderBase<?, ?> target, Optional<? extends SchemaItem> item) {
-            if (target.items().isEmpty()) {
-                item.ifPresent(target::items);
-            } else if (item.isPresent()) {
-                throw new JsonSchemaException("Only one array items type is supported");
-            }
+            item.ifPresent(schemaItem -> {
+                if (target.items().isPresent()) {
+                    throw new JsonSchemaException("Only one array items type is supported");
+                }
+                target.items(schemaItem);
+            });
         }
 
     }

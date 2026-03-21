@@ -31,6 +31,14 @@ import io.helidon.builder.api.Prototype;
 interface JsonBindingConfigBlueprint extends Prototype.Factory<JsonBinding> {
 
     /**
+     * Whether serialization should pretty print JSON output.
+     *
+     * @return {@code true} for pretty printed output
+     */
+    @Option.DefaultBoolean(false)
+    boolean prettyPrint();
+
+    /**
      * Registered type serializers.
      *
      * @return registered serializers

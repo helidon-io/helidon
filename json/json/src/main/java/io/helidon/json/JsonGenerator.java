@@ -43,7 +43,18 @@ public interface JsonGenerator extends AutoCloseable {
      * @return new Generator instance
      */
     static JsonGenerator create(OutputStream outputStream) {
-        return new JsonGeneratorOutputStream(outputStream);
+        return create(outputStream, false);
+    }
+
+    /**
+     * Create a {@link JsonGenerator} instance to write to the provided {@link OutputStream}.
+     *
+     * @param outputStream output stream to write to
+     * @param prettyPrint whether to pretty print the generated JSON
+     * @return new Generator instance
+     */
+    static JsonGenerator create(OutputStream outputStream, boolean prettyPrint) {
+        return new JsonGeneratorOutputStream(outputStream, prettyPrint);
     }
 
     /**
@@ -53,7 +64,18 @@ public interface JsonGenerator extends AutoCloseable {
      * @return new Generator instance
      */
     static JsonGenerator create(Writer writer) {
-        return new JsonGeneratorWriter(writer);
+        return create(writer, false);
+    }
+
+    /**
+     * Create a {@link JsonGenerator} instance to write to the provided {@link Writer}.
+     *
+     * @param writer writer to write to
+     * @param prettyPrint whether to pretty print the generated JSON
+     * @return new Generator instance
+     */
+    static JsonGenerator create(Writer writer, boolean prettyPrint) {
+        return new JsonGeneratorWriter(writer, prettyPrint);
     }
 
     /**

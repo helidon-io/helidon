@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.metadata.hson.Hson;
+import io.helidon.json.JsonObject;
 
 /**
  * Json schema related to the array.
@@ -113,13 +113,13 @@ interface SchemaArrayBlueprint extends SchemaItemBlueprint {
     SchemaType schemaType();
 
     @Override
-    default void generate(Hson.Struct.Builder builder) {
+    default void generate(JsonObject.Builder builder) {
         SchemaItemBlueprint.super.generate(builder);
         maxItems().ifPresent(maxItems -> builder.set("maxItems", maxItems));
         minItems().ifPresent(minItems -> builder.set("minItems", minItems));
         uniqueItems().ifPresent(uniqueItems -> builder.set("uniqueItems", uniqueItems));
         items().ifPresent(items -> {
-            Hson.Struct.Builder objectBuilder = Hson.structBuilder();
+            JsonObject.Builder objectBuilder = JsonObject.builder();
             items.generate(objectBuilder);
             builder.set("items", objectBuilder.build());
         });
