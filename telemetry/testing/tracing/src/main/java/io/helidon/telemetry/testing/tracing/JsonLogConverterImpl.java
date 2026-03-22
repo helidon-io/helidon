@@ -28,13 +28,12 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import io.helidon.common.testing.junit5.MatcherWithRetry;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
+import io.helidon.json.JsonValue;
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter;
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
-import jakarta.json.JsonValue;
 
 import static org.hamcrest.Matchers.hasSize;
 
@@ -94,8 +93,9 @@ class JsonLogConverterImpl implements JsonLogConverter {
      * @return {@code SpanInfo} describing the span
      */
     private JsonLogConverter.LogResourceScopeSpans fromJson(String jsonText) {
-        JsonReader jsonReader = Json.createReader(new StringReader(jsonText));
-        JsonObject topLevelJsonObject = jsonReader.readObject();
+        JsonObject topLevelJsonObject = JsonParser.create(new StringReader(jsonText))
+                .readJsonValue()
+                .asObject();
 
         LogResource resource = resource(topLevelJsonObject);
         List<LogScopeSpans> scopeSpans = scopeSpansFromTopLevelJson(topLevelJsonObject);
@@ -112,9 +112,9 @@ class JsonLogConverterImpl implements JsonLogConverter {
      * @return {@code LogResource} corresponding to the
      */
     private LogResource resource(JsonObject jsonObject) {
-        return new LogResource(jsonObject.containsKey("resource")
-                                       ? attributes(jsonObject.getJsonObject("resource"))
-                                       : Map.of());
+        return new LogResource(jsonObject.objectValue("resource")
+                                       .map(this::attributes)
+                                       .orElseGet(Map::of));
     }
 
     /**
@@ -125,15 +125,15 @@ class JsonLogConverterImpl implements JsonLogConverter {
      * @return Map containing key/value pairs for the attributes
      */
     private Map<String, Object> attributes(JsonObject jsonObject) {
-        return jsonObject.containsKey("attributes")
-                ? jsonObject.getJsonArray("attributes")
+        return jsonObject.arrayValue("attributes")
+                .map(JsonArray::values)
+                .orElseGet(List::of)
                 .stream()
-                .map(JsonValue::asJsonObject)
+                .map(JsonValue::asObject)
                 .map(this::attribute)
                 .collect(HashMap::new,
                          (map, entry) -> map.put(entry.getKey(), entry.getValue()),
-                         HashMap::putAll)
-                : Map.of();
+                         HashMap::putAll);
     }
 
     /**
@@ -145,14 +145,13 @@ class JsonLogConverterImpl implements JsonLogConverter {
      * @return list of {@code LogScopeSpans} objects
      */
     private List<LogScopeSpans> scopeSpansFromTopLevelJson(JsonObject topLevelJsonObject) {
-
-        return topLevelJsonObject.containsKey("scopeSpans")
-                ? topLevelJsonObject.getJsonArray("scopeSpans")
+        return topLevelJsonObject.arrayValue("scopeSpans")
+                .orElse(JsonArray.empty())
+                .values()
                 .stream()
-                .map(JsonValue::asJsonObject)
+                .map(JsonValue::asObject)
                 .map(this::scopeSpans)
-                .toList()
-                : List.of();
+                .toList();
     }
 
     /**
@@ -163,40 +162,40 @@ class JsonLogConverterImpl implements JsonLogConverter {
      * @return {@code LogScopeSpans} representation of the scope and spans
      */
     private LogScopeSpans scopeSpans(JsonObject scopeAndSpansJsonObject) {
-        return scopeAndSpansJsonObject.containsKey("scope")
-                ? new LogScopeSpans(logScope(scopeAndSpansJsonObject.getJsonObject("scope")),
-                                    logSpans(scopeAndSpansJsonObject.getJsonArray("spans")))
-                : new LogScopeSpans(new LogScope("empty", Map.of()),
-                                    List.of());
+        return scopeAndSpansJsonObject.objectValue("scope")
+                .map(scope -> new LogScopeSpans(logScope(scope),
+                                                scopeAndSpansJsonObject.arrayValue("spans")
+                                                        .map(this::logSpans)
+                                                        .orElseGet(List::of)))
+                .orElseGet(() -> new LogScopeSpans(new LogScope("empty", Map.of()),
+                                                   List.of()));
     }
 
     private LogScope logScope(JsonObject scopeJsonObject) {
-        return new LogScope(scopeJsonObject.getString("name", "no-name"),
+        return new LogScope(scopeJsonObject.stringValue("name", "no-name"),
                             attributes(scopeJsonObject));
     }
 
     private List<LogSpan> logSpans(JsonArray spansJsonArray) {
-        return (spansJsonArray == null || spansJsonArray.isEmpty())
+        return (spansJsonArray == null || spansJsonArray.values().isEmpty())
                 ? List.of()
-                : spansJsonArray.stream()
-                        .map(JsonValue::asJsonObject)
+                : spansJsonArray.values().stream()
+                        .map(JsonValue::asObject)
                         .map(this::span)
                         .toList();
     }
 
     private LogSpan span(JsonObject spanJsonObject) {
 
-        String traceId = spanJsonObject.getString("traceId");
-        String spanId = spanJsonObject.getString("spanId");
+        String traceId = spanJsonObject.stringValue("traceId").orElseThrow();
+        String spanId = spanJsonObject.stringValue("spanId").orElseThrow();
 
-        String parentSpanId = spanJsonObject.containsKey("parentSpanId")
-                ? spanJsonObject.getString("parentSpanId")
-                : "";
+        String parentSpanId = spanJsonObject.stringValue("parentSpanId", "");
 
-        String name = spanJsonObject.getString("name");
-        int kind = spanJsonObject.getInt("kind");
-        long startTimeUnixNano = Long.parseLong(spanJsonObject.getJsonString("startTimeUnixNano").getString());
-        long endTimeUnixNano = Long.parseLong(spanJsonObject.getJsonString("endTimeUnixNano").getString());
+        String name = spanJsonObject.stringValue("name").orElseThrow();
+        int kind = spanJsonObject.intValue("kind").orElseThrow();
+        long startTimeUnixNano = Long.parseLong(spanJsonObject.stringValue("startTimeUnixNano").orElseThrow());
+        long endTimeUnixNano = Long.parseLong(spanJsonObject.stringValue("endTimeUnixNano").orElseThrow());
 
         return new LogSpan(traceId,
                            spanId,
@@ -228,8 +227,8 @@ class JsonLogConverterImpl implements JsonLogConverter {
      * @return name/value pair
      */
     private Map.Entry<String, ?> attribute(JsonObject jsonAttributeElement) {
-        String key = jsonAttributeElement.getString("key");
-        JsonObject value = jsonAttributeElement.get("value").asJsonObject();
+        String key = jsonAttributeElement.stringValue("key").orElseThrow();
+        JsonObject value = jsonAttributeElement.value("value").orElseThrow().asObject();
 
         /*
         Normally, every attribute value, regardless of type, is represented in the JSON as a string in double quotes.
@@ -239,11 +238,11 @@ class JsonLogConverterImpl implements JsonLogConverter {
         An attribute with an empty value (an empty string) will not have any value keyset in the JSON which OpenTelemetry
         generates, so for those return a map entry with an empty string value.
          */
-        return value.keySet()
+        return value.keysAsStrings()
                 .stream()
                 .map(k -> new AbstractMap.SimpleEntry<>(key,
                                                         DATA_TYPE_MAPPERS.get(k)
-                                                                .apply(value.getString(k))))
+                                                                .apply(value.stringValue(k).orElseThrow())))
                 .findFirst()
                 .orElseGet(() -> new AbstractMap.SimpleEntry<>(key, ""));
 

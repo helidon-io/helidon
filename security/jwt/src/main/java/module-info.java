@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ module io.helidon.security.jwt {
     requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.common;
     requires transitive io.helidon.config;
-    requires transitive jakarta.json;
+    requires transitive io.helidon.json;
 
     exports io.helidon.security.jwt;
     exports io.helidon.security.jwt.jwk;

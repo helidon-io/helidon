@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.DbStatementBase;
 import io.helidon.dbclient.DbStatementParameters;
 import io.helidon.dbclient.DbStatementType;
+import io.helidon.json.JsonObject;
 
 import com.mongodb.client.MongoDatabase;
-import jakarta.json.Json;
 import org.bson.Document;
 
 import static io.helidon.dbclient.mongodb.MongoDbStatement.MongoOperation.COMMAND;
@@ -48,7 +48,7 @@ abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBas
     /**
      * Empty JSON object.
      */
-    static final Document EMPTY = Document.parse(Json.createObjectBuilder().build().toString());
+    static final Document EMPTY = Document.parse(JsonObject.empty().toString());
 
     /**
      * Operation JSON parameter name.

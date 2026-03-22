@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,16 @@
 
 package io.helidon.declarative.tests.metrics;
 
+import java.util.Optional;
+
+import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
-import jakarta.json.JsonNumber;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -92,19 +94,19 @@ class DeclarativeMetricsTest {
                 .request(JsonObject.class);
         assertThat(response.status(), is(Status.OK_200));
         JsonObject metrics = response.entity();
-        JsonObject appMetrics = metrics.getJsonObject("application");
+        Optional<JsonObject> appMetrics = metrics.objectValue("application");
         // absolute metric name
-        JsonObject timed = appMetrics.getJsonObject("my-timed-metric");
-        assertThat(timed, notNullValue());
+        Optional<JsonObject> timed = appMetrics.flatMap(it -> it.objectValue("my-timed-metric"));
+        assertThat(timed, OptionalMatcher.optionalPresent());
 
         // relative metric name + tags from type and annotation
-        JsonNumber counted = appMetrics.getJsonNumber("TestEndpoint.counted;application=MyNiceApp;endpoint=TestEndpoint;location=method");
-        assertThat(counted, notNullValue());
-        assertThat(counted.intValue(), is(1));
+        var counted = appMetrics.flatMap(it -> it.numberValue("TestEndpoint.counted;application=MyNiceApp;endpoint=TestEndpoint;location=method"));
+        assertThat(counted, OptionalMatcher.optionalPresent());
+        assertThat(counted.orElseThrow().intValueExact(), is(1));
 
         // relative metric name + tags from type
-        JsonNumber gauge = appMetrics.getJsonNumber("TestEndpoint.gaugeValue;application=MyNiceApp;endpoint=TestEndpoint");
-        assertThat(gauge, notNullValue());
-        assertThat(gauge.intValue(), is(42));
+        var gauge = appMetrics.flatMap(it -> it.numberValue("TestEndpoint.gaugeValue;application=MyNiceApp;endpoint=TestEndpoint"));
+        assertThat(gauge, OptionalMatcher.optionalPresent());
+        assertThat(gauge.orElseThrow().intValueExact(), is(42));
     }
 }

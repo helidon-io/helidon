@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import jakarta.json.Json;
+import io.helidon.json.JsonBoolean;
+import io.helidon.json.JsonNumber;
+import io.helidon.json.JsonString;
 
 /**
  * Statement parameter parsers.
@@ -43,29 +45,29 @@ final class StatementParsers {
      */
     static String toJson(Object value) {
         if ((value instanceof Integer) || (value instanceof Short) || (value instanceof Byte)) {
-            return Json.createValue(((Number) value).intValue()).toString();
+            return JsonNumber.create(BigDecimal.valueOf(((Number) value).intValue())).toString();
         }
         if (value instanceof Long) {
-            return Json.createValue((Long) value).toString();
+            return JsonNumber.create(BigDecimal.valueOf((Long) value)).toString();
         }
         if ((value instanceof Double) || (value instanceof Float)) {
-            return Json.createValue(((Number) value).doubleValue()).toString();
+            return JsonNumber.create(((Number) value).doubleValue()).toString();
         }
         if (value instanceof BigInteger) {
-            return Json.createValue((BigInteger) value).toString();
+            return JsonNumber.create(new BigDecimal((BigInteger) value)).toString();
         }
         if (value instanceof BigDecimal) {
-            return Json.createValue((BigDecimal) value).toString();
+            return JsonNumber.create((BigDecimal) value).toString();
         }
         if (value instanceof Boolean) {
-            return value.toString();
+            return JsonBoolean.create((Boolean) value).toString();
         }
         // Check instanceof Number is more expensive than final types, it shall be at the end
         if (value instanceof Number) {
             return value.toString();
         }
         // String.valueOf handles null value
-        return Json.createValue(String.valueOf(value)).toString();
+        return JsonString.create(String.valueOf(value)).toString();
     }
 
     private StatementParsers() {

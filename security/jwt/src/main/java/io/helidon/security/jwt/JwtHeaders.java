@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,14 +30,9 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
 import io.helidon.common.GenericType;
-
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
+import io.helidon.json.JsonValueType;
 
 /**
  * Representation of the header section of a JWT.
@@ -65,8 +60,6 @@ public class JwtHeaders extends JwtClaims {
     static final String AGREEMENT_PARTYUINFO = "apu";
     static final String AGREEMENT_PARTYVINFO = "apv";
     static final String EPHEMERAL_PUBLIC_KEY = "epk";
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private final Optional<String> algorithm;
     private final Optional<String> encryption;
@@ -157,10 +150,7 @@ public class JwtHeaders extends JwtClaims {
      * @return JsonObject for header
      */
     public JsonObject headerJson() {
-        JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
-        headerClaims.forEach(objectBuilder::add);
-
-        return objectBuilder.build();
+        return JsonObject.create(headerClaims);
     }
 
     /**
@@ -524,12 +514,11 @@ public class JwtHeaders extends JwtClaims {
         }
 
         private static List<String> jsonToStringList(JsonValue jsonValue) {
-            if (jsonValue instanceof JsonString) {
-                return List.of(((JsonString) jsonValue).getString());
+            if (jsonValue.type() == JsonValueType.STRING) {
+                return List.of(jsonValue.asString().value());
             }
-            if (jsonValue instanceof JsonArray) {
-                return ((JsonArray) jsonValue)
-                        .stream()
+            if (jsonValue.type() == JsonValueType.ARRAY) {
+                return jsonValue.asArray().values().stream()
                         .map(KnownField::jsonToString)
                         .collect(Collectors.toList());
             }
@@ -541,7 +530,8 @@ public class JwtHeaders extends JwtClaims {
         }
 
         void fromJson(JsonObject headerJson) {
-            headerJson.forEach((claim, value) -> {
+            headerJson.keysAsStrings().forEach(claim -> {
+                JsonValue value = headerJson.value(claim).orElseThrow();
                 KnownField<?> knownField = KNOWN_HEADER_CLAIMS.get(claim);
                 if (knownField == null) {
                     addHeaderClaim(claim, value);
@@ -573,8 +563,8 @@ public class JwtHeaders extends JwtClaims {
         }
 
         private static String jsonToString(JsonValue jsonValue) {
-            if (jsonValue instanceof JsonString) {
-                return ((JsonString) jsonValue).getString();
+            if (jsonValue.type() == JsonValueType.STRING) {
+                return jsonValue.asString().value();
             }
             throw new JwtException("Json value should have been a String, but is " + jsonValue);
         }

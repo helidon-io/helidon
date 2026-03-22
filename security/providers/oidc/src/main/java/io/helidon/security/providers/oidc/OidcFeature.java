@@ -16,7 +16,6 @@
 
 package io.helidon.security.providers.oidc;
 
-import java.io.StringReader;
 import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -45,6 +44,8 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.EncryptedJwt;
@@ -66,11 +67,6 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.security.SecurityHttpFeature;
-
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReaderFactory;
 
 import static io.helidon.http.HeaderNames.HOST;
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
@@ -149,8 +145,6 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
  */
 @Weight(800)
 public final class OidcFeature implements HttpFeature {
-    static final JsonReaderFactory JSON_READER_FACTORY = Json.createReaderFactory(Map.of());
-    static final JsonBuilderFactory JSON_BUILDER_FACTORY = Json.createBuilderFactory(Map.of());
     private static final System.Logger LOGGER = System.getLogger(OidcFeature.class.getName());
     private static final String CODE_PARAM_NAME = "code";
     private static final String STATE_PARAM_NAME = "state";
@@ -393,10 +387,11 @@ public final class OidcFeature implements HttpFeature {
             return;
         }
         String stateBase64 = new String(Base64.getDecoder().decode(maybeStateCookie.get()), StandardCharsets.UTF_8);
-        JsonObject stateCookie = JSON_READER_FACTORY.createReader(new StringReader(stateBase64)).readObject();
+        JsonObject stateCookie = JsonParser.create(stateBase64).readJsonObject();
         //Remove state cookie
         res.headers().addCookie(stateCookieHandler.removeCookie().build());
-        String state = stateCookie.getString("state");
+        String state = stateCookie.stringValue("state")
+                .orElseThrow(() -> new IllegalStateException("State cookie is missing state"));
         String queryState = req.query().get("state");
         if (!state.equals(queryState)) {
             processError(res,
@@ -415,7 +410,8 @@ public final class OidcFeature implements HttpFeature {
                 .add("redirect_uri", redirectUri(req, tenantName));
 
         if (oidcConfig.pkceEnabled()) {
-            String verifier = stateCookie.getString("pkceVerifier");
+            String verifier = stateCookie.stringValue(TenantAuthenticationHandler.PKCE_VERIFIER)
+                    .orElseThrow(() -> new IllegalStateException("State cookie is missing pkceVerifier"));
             form.add("code_verifier", verifier);
         }
 
@@ -491,34 +487,44 @@ public final class OidcFeature implements HttpFeature {
                                        String tenantName,
                                        JsonObject stateCookie,
                                        Tenant tenant) {
-        String accessToken = json.getString("access_token");
-        String idToken = json.getString("id_token", null);
-        String refreshToken = json.getString("refresh_token", null);
-        JwtHeaders jwtHeaders = JwtHeaders.parseToken(idToken);
-        TenantConfig tenantConfig = tenant.tenantConfig();
+        String accessToken = json.stringValue("access_token")
+                .orElseThrow(() -> new IllegalStateException("Token endpoint response is missing access_token"));
+        Optional<String> idToken = json.stringValue("id_token");
+        Optional<String> refreshToken = json.stringValue("refresh_token");
 
+        TenantConfig tenantConfig = tenant.tenantConfig();
         Jwt idTokenJwt;
-        if (jwtHeaders.encryption().isPresent() && tenantConfig.contentKeyDecryptionKeys().isPresent()) {
-            EncryptedJwt encryptedJwt = EncryptedJwt.parseToken(jwtHeaders, idToken);
-            JwkKeys jwkKeys = tenantConfig.contentKeyDecryptionKeys().get();
-            idTokenJwt = encryptedJwt.decrypt(jwkKeys, jwkKeys.keys().getFirst()).getJwt();
-        } else {
-            idTokenJwt = SignedJwt.parseToken(idToken).getJwt();
-        }
-        String nonceOriginal = stateCookie.getString("nonce");
-        String nonceIdToken = idTokenJwt.nonce()
-                .orElseThrow(() -> new IllegalStateException("Nonce is required to be present in the id token"));
-        if (!nonceIdToken.equals(nonceOriginal)) {
-            throw new IllegalStateException("Original nonce and the one obtained from id token does not match");
+        if (idToken.isPresent()) {
+            String idTokenString = idToken.get();
+            JwtHeaders jwtHeaders = JwtHeaders.parseToken(idTokenString);
+            if (jwtHeaders.encryption().isPresent() && tenantConfig.contentKeyDecryptionKeys().isPresent()) {
+                EncryptedJwt encryptedJwt = EncryptedJwt.parseToken(jwtHeaders, idTokenString);
+                JwkKeys jwkKeys = tenantConfig.contentKeyDecryptionKeys().get();
+                idTokenJwt = encryptedJwt.decrypt(jwkKeys, jwkKeys.keys().getFirst()).getJwt();
+            } else {
+                idTokenJwt = SignedJwt.parseToken(idTokenString).getJwt();
+            }
+
+            /*
+             * String value used to associate a Client session with an ID Token, and to mitigate replay attacks.
+             * The value is passed through unmodified from the Authentication Request to the ID Token.
+             */
+            String nonceOriginal = stateCookie.stringValue("nonce")
+                    .orElseThrow(() -> new IllegalStateException("State cookie is missing nonce"));
+            String nonceIdToken = idTokenJwt.nonce()
+                    .orElseThrow(() -> new IllegalStateException("Nonce is required to be present in the id token"));
+            if (!nonceIdToken.equals(nonceOriginal)) {
+                throw new IllegalStateException("Original nonce and the one obtained from id token does not match");
+            }
         }
 
         //redirect to "originalUri"
-        String originalUri = stateCookie.getString("originalUri", DEFAULT_REDIRECT);
+        String originalUri = stateCookie.stringValue("originalUri", DEFAULT_REDIRECT);
         res.status(Status.TEMPORARY_REDIRECT_307);
         if (oidcConfig.useParam()) {
             originalUri += (originalUri.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + accessToken;
-            if (idToken != null) {
-                originalUri += "&" + encode(oidcConfig.idTokenParamName()) + "=" + idToken;
+            if (idToken.isPresent()) {
+                originalUri += "&" + encode(oidcConfig.idTokenParamName()) + "=" + idToken.get();
             }
             if (!DEFAULT_TENANT_ID.equals(tenantName)) {
                 originalUri += "&" + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
@@ -530,9 +536,9 @@ public final class OidcFeature implements HttpFeature {
 
         if (oidcConfig.useCookie()) {
             try {
-                JsonObject accessTokenJson = JSON_BUILDER_FACTORY.createObjectBuilder()
-                        .add("accessToken", accessToken)
-                        .add("remotePeer", req.remotePeer().host())
+                JsonObject accessTokenJson = JsonObject.builder()
+                        .set("accessToken", accessToken)
+                        .set("remotePeer", req.remotePeer().host())
                         .build();
                 String encodedAccessToken = Base64.getEncoder()
                         .encodeToString(accessTokenJson.toString().getBytes(StandardCharsets.UTF_8));
@@ -543,13 +549,10 @@ public final class OidcFeature implements HttpFeature {
 
                 headers.addCookie(tenantCookieHandler.createCookie(tenantName).build()); //Add tenant name cookie
                 headers.addCookie(tokenCookieHandler.createCookie(encodedAccessToken).build());  //Add token cookie
-                if (refreshToken != null) {
-                    headers.addCookie(refreshTokenCookieHandler.createCookie(refreshToken).build());  //Add refresh token cookie
-                }
-
-                if (idToken != null) {
-                    headers.addCookie(idTokenCookieHandler.createCookie(idToken).build());  //Add token id cookie
-                }
+                //Add refresh token cookie
+                refreshToken.ifPresent(string -> headers.addCookie(refreshTokenCookieHandler.createCookie(string).build()));
+                //Add token id cookie
+                idToken.ifPresent(string -> headers.addCookie(idTokenCookieHandler.createCookie(string).build()));
                 res.send();
 
             } catch (Exception e) {

@@ -36,6 +36,8 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -51,9 +53,6 @@ import io.helidon.security.spi.SubjectMappingProvider;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
-
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
 
 /**
  * Common functionality for IDCS role mapping using {@link io.helidon.webclient.http1.Http1Client}.
@@ -229,23 +228,23 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
     }
 
     private List<? extends Grant> processServerResponse(JsonObject jsonObject, String subjectName) {
-        JsonArray groups = jsonObject.getJsonArray("groups");
-        JsonArray appRoles = jsonObject.getJsonArray("appRoles");
+        Optional<JsonArray> groups = jsonObject.arrayValue("groups");
+        Optional<JsonArray> appRoles = jsonObject.arrayValue("appRoles");
 
-        if ((null == groups) && (null == appRoles)) {
+        if (groups.isEmpty() && appRoles.isEmpty()) {
             LOGGER.log(Level.TRACE, () -> "Neither groups nor app roles found for user " + subjectName);
             return List.of();
         }
 
         List<Role> result = new ArrayList<>();
         for (String type : Arrays.asList(ROLE_GROUP, ROLE_APPROLE)) {
-            JsonArray types = jsonObject.getJsonArray(type);
-            if (null != types) {
-                for (int i = 0; i < types.size(); i++) {
-                    JsonObject typeJson = types.getJsonObject(i);
-                    String name = typeJson.getString("display");
-                    String id = typeJson.getString("value");
-                    String ref = typeJson.getString("$ref");
+            Optional<JsonArray> types = jsonObject.arrayValue(type);
+            if (types.isPresent()) {
+                for (var value : types.get().values()) {
+                    JsonObject typeJson = value.asObject();
+                    String name = typeJson.stringValue("display").orElseThrow();
+                    String id = typeJson.stringValue("value").orElseThrow();
+                    String ref = typeJson.stringValue("$ref").orElseThrow();
 
                     Role role = Role.builder()
                             .name(name)
@@ -460,7 +459,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
                 if (response.status().family() == Status.Family.SUCCESSFUL) {
                     try {
                         JsonObject jsonObject = response.as(JsonObject.class);
-                        String accessToken = jsonObject.getString(ACCESS_TOKEN_KEY);
+                        String accessToken = jsonObject.stringValue(ACCESS_TOKEN_KEY).orElseThrow();
                         LOGGER.log(Level.TRACE, () -> "Access token: " + accessToken);
                         SignedJwt signedJwt = SignedJwt.parseToken(accessToken);
                         return new AppTokenData(accessToken, signedJwt.getJwt());
