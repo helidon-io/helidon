@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@ package io.helidon.jsonrpc.core;
 
 import java.util.Optional;
 
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonStructure;
-import jakarta.json.JsonValue;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 
 /**
  * A representation of a JSON-RPC params.
@@ -33,7 +32,7 @@ public interface JsonRpcParams {
      * @param params the structure
      * @return a new instance of this class
      */
-    static JsonRpcParams create(JsonStructure params) {
+    static JsonRpcParams create(JsonValue params) {
         return new JsonRpcParamsImpl(params);
     }
 
@@ -54,11 +53,11 @@ public interface JsonRpcParams {
     JsonArray asJsonArray();
 
     /**
-     * Access all request params as a single JSON structure.
+     * Access all request params as a single JSON value.
      *
-     * @return a JSON structure
+     * @return a JSON value
      */
-    JsonStructure asJsonStructure();
+    JsonValue asJsonValue();
 
     /**
      * Get a single param by name as a JSON value.
@@ -120,12 +119,12 @@ public interface JsonRpcParams {
     Optional<JsonValue> find(int index);
 
     /**
-     * Map all request params to a bean class type using JSONB.
+     * Map all request params to a bean class type using Helidon JSON binding.
      *
      * @param type the bean class
      * @param <T>  the bean type
      * @return an instance of the bean type
-     * @throws jakarta.json.bind.JsonbException if an error occurs during mapping
+     * @throws io.helidon.json.binding.JsonBindingException if an error occurs during mapping
      */
     <T> T as(Class<T> type);
 }

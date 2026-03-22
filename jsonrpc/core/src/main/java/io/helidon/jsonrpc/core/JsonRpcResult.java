@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ package io.helidon.jsonrpc.core;
 
 import java.util.Optional;
 
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 
 /**
  * A representation of a JSON-RPC response result.
@@ -120,12 +120,12 @@ public interface JsonRpcResult {
 
     /**
      * Access a response result as a Java object. This method will bind the result
-     * using JSONB.
+     * using Helidon JSON binding.
      *
      * @param type the bean class
      * @param <T>  the bean type
      * @return an instance of the bean type
-     * @throws jakarta.json.bind.JsonbException if an error occurs during mapping
+     * @throws io.helidon.json.binding.JsonBindingException if an error occurs during mapping
      */
     <T> T as(Class<T> type);
 }

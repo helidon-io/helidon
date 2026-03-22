@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,23 +25,21 @@ import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
-import io.helidon.http.HeaderNames;
+import io.helidon.http.HttpMediaType;
 import io.helidon.http.Status;
 import io.helidon.http.media.ReadableEntity;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.spi.Source;
-
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-
-import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
 
 /**
  * A representation of JSON-RPC client batch response.
  */
 class JsonRpcClientBatchResponseImpl implements JsonRpcClientBatchResponse {
-    private static final JsonArray EMPTY_JSON_ARRAY = JSON_BUILDER_FACTORY.createArrayBuilder().build();
+    private static final JsonArray EMPTY_JSON_ARRAY = JsonArray.empty();
 
     private final HttpClientResponse delegate;
     private JsonArray jsonArray;
@@ -53,7 +51,7 @@ class JsonRpcClientBatchResponseImpl implements JsonRpcClientBatchResponse {
 
     @Override
     public int size() {
-        return asJsonArray().size();
+        return asJsonArray().values().size();
     }
 
     @Override
@@ -61,8 +59,8 @@ class JsonRpcClientBatchResponseImpl implements JsonRpcClientBatchResponse {
         if (responses == null) {
             responses = new ArrayList<>();
             JsonArray array = asJsonArray();
-            for (jakarta.json.JsonValue jsonValue : array) {
-                JsonObject object = jsonValue.asJsonObject();
+            for (JsonValue jsonValue : array.values()) {
+                JsonObject object = jsonValue.asObject();
                 responses.add(new JsonRpcClientResponseImpl(delegate, object));
             }
         }
@@ -77,7 +75,7 @@ class JsonRpcClientBatchResponseImpl implements JsonRpcClientBatchResponse {
 
             @Override
             public boolean hasNext() {
-                return array.size() > index;
+                return array.values().size() > index;
             }
 
             @Override
@@ -90,10 +88,9 @@ class JsonRpcClientBatchResponseImpl implements JsonRpcClientBatchResponse {
     public JsonArray asJsonArray() {
         if (jsonArray == null) {
             ClientResponseHeaders headers = delegate.headers();
-            if (headers.contains(HeaderNames.CONTENT_TYPE)) {
-                Optional<String> contentType = headers.first(HeaderNames.CONTENT_TYPE);
-                if (contentType.isEmpty()
-                        || !contentType.get().equalsIgnoreCase(MediaTypes.APPLICATION_JSON_VALUE)) {
+            Optional<HttpMediaType> contentType = headers.contentType();
+            if (contentType.isPresent()) {
+                if (!contentType.get().test(MediaTypes.APPLICATION_JSON)) {
                     throw new IllegalStateException("Response contains invalid Content-Type header");
                 }
                 jsonArray = delegate.entity().as(JsonArray.class);

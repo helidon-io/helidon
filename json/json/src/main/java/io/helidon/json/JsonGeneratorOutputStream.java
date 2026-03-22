@@ -207,32 +207,21 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
 
     @Override
     protected void writeBigDecimal(BigDecimal value) {
-        String stringValue = value.toString();
-        int len = stringValue.length();
-        ensureCapacity(1);
-        buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
-        ensureCapacity(len);
-        for (int i = 0; i < len; i++) {
-            buffer[index + i] = (byte) stringValue.charAt(i);
-        }
-        index += len;
-        ensureCapacity(1);
-        buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
+        writeRawNumber(value.toString());
     }
 
     @Override
     protected void writeBigInteger(BigInteger value) {
-        String stringValue = value.toString();
-        int len = stringValue.length();
-        ensureCapacity(1);
-        buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
+        writeRawNumber(value.toString());
+    }
+
+    private void writeRawNumber(String value) {
+        int len = value.length();
         ensureCapacity(len);
         for (int i = 0; i < len; i++) {
-            buffer[index + i] = (byte) stringValue.charAt(i);
+            buffer[index + i] = (byte) value.charAt(i);
         }
         index += len;
-        ensureCapacity(1);
-        buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
     }
 
     @Override

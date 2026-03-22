@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,13 @@
  */
 package io.helidon.webclient.jsonrpc;
 
-import io.helidon.webclient.api.ClientRequest;
+import java.math.BigDecimal;
 
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
+import io.helidon.json.JsonNumber;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonString;
+import io.helidon.json.JsonValue;
+import io.helidon.webclient.api.ClientRequest;
 
 /**
  * A representation of JSON-RPC client request.
@@ -52,7 +54,7 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
      * @return this request
      */
     default JsonRpcClientRequest rpcId(int value) {
-        return rpcId(Json.createValue(value));
+        return rpcId(JsonNumber.create(BigDecimal.valueOf(value)));
     }
 
     /**
@@ -62,7 +64,7 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
      * @return this request
      */
     default JsonRpcClientRequest rpcId(String value) {
-        return rpcId(Json.createValue(value));
+        return rpcId(JsonString.create(value));
     }
 
     /**
@@ -82,7 +84,7 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
      * @return this request
      */
     default JsonRpcClientRequest param(String name, String value) {
-        return param(name, Json.createValue(value));
+        return param(name, JsonString.create(value));
     }
 
     /**
@@ -93,7 +95,7 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
      * @return this request
      */
     default JsonRpcClientRequest param(String name, int value) {
-        return param(name, Json.createValue(value));
+        return param(name, JsonNumber.create(BigDecimal.valueOf(value)));
     }
 
     /**
@@ -111,7 +113,7 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
      * @return this request
      */
     default JsonRpcClientRequest addParam(int value) {
-        return addParam(Json.createValue(value));
+        return addParam(JsonNumber.create(BigDecimal.valueOf(value)));
     }
 
     /**
@@ -121,7 +123,7 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
      * @return this request
      */
     default JsonRpcClientRequest addParam(String value) {
-        return addParam(Json.createValue(value));
+        return addParam(JsonString.create(value));
     }
 
     /**

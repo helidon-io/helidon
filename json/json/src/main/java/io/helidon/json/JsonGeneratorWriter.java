@@ -78,12 +78,20 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
 
     @Override
     protected void writeBigDecimal(BigDecimal value) {
-        writeString(value.toString());
+        try {
+            writer.write(value.toString());
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to write number value.", e);
+        }
     }
 
     @Override
     protected void writeBigInteger(BigInteger value) {
-        writeString(value.toString());
+        try {
+            writer.write(value.toString());
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to write number value.", e);
+        }
     }
 
     @Override

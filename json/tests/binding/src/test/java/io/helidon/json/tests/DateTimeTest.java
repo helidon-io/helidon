@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.Duration;
 import java.time.Period;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -126,6 +127,16 @@ public class DateTimeTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    public void testDurationParameterized(BindingMethod bindingMethod) {
+        Duration original = Duration.ofHours(2).plusMinutes(3).plusSeconds(4);
+        String json = bindingMethod.serialize(jsonBinding, original);
+        assertThat(json, is("\"PT2H3M4S\""));
+        Duration deserialized = bindingMethod.deserialize(jsonBinding, json, Duration.class);
+        assertThat(deserialized, is(original));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     public void testDateParameterized(BindingMethod bindingMethod) {
         Date original = Date.from(Instant.parse("2023-10-15T12:30:45Z"));
         String json = bindingMethod.serialize(jsonBinding, original);
@@ -164,14 +175,18 @@ public class DateTimeTest {
         bean.setLocalDate(LocalDate.of(2023, 10, 15));
         bean.setInstant(Instant.parse("2023-10-15T12:30:45Z"));
         bean.setPeriod(Period.of(1, 2, 3));
+        bean.setDuration(Duration.ofMinutes(90));
 
         String json = bindingMethod.serialize(jsonBinding, bean);
-        assertThat(json, is("{\"localDate\":\"2023-10-15\",\"instant\":\"2023-10-15T12:30:45Z\",\"period\":\"P1Y2M3D\"}"));
+        assertThat(json,
+                   is("{\"localDate\":\"2023-10-15\",\"instant\":\"2023-10-15T12:30:45Z\","
+                              + "\"period\":\"P1Y2M3D\",\"duration\":\"PT1H30M\"}"));
         DateTimeBean deserialized = bindingMethod.deserialize(jsonBinding, json, DateTimeBean.class);
 
         assertThat(deserialized.getLocalDate(), is(bean.getLocalDate()));
         assertThat(deserialized.getInstant(), is(bean.getInstant()));
         assertThat(deserialized.getPeriod(), is(bean.getPeriod()));
+        assertThat(deserialized.getDuration(), is(bean.getDuration()));
     }
 
     @ParameterizedTest
@@ -218,17 +233,20 @@ public class DateTimeTest {
         OptionalDateTimeModel model = new OptionalDateTimeModel(
                 Optional.of(LocalDate.of(2023, 10, 15)),
                 Optional.of(Instant.parse("2023-10-15T12:30:45Z")),
-                Optional.empty()
+                Optional.empty(),
+                Optional.of(Duration.ofSeconds(5))
         );
 
         String json = bindingMethod.serialize(jsonBinding, model);
         assertThat(json, is("{\"optionalLocalDate\":\"2023-10-15\","
-                                    + "\"optionalInstant\":\"2023-10-15T12:30:45Z\"}"));
+                                    + "\"optionalInstant\":\"2023-10-15T12:30:45Z\","
+                                    + "\"optionalDuration\":\"PT5S\"}"));
         OptionalDateTimeModel deserialized = bindingMethod.deserialize(jsonBinding, json, OptionalDateTimeModel.class);
 
         assertThat(deserialized.optionalLocalDate, is(model.optionalLocalDate));
         assertThat(deserialized.optionalInstant, is(model.optionalInstant));
         assertThat(deserialized.optionalPeriod.isEmpty(), is(true));
+        assertThat(deserialized.optionalDuration, is(model.optionalDuration));
     }
 
     @Json.Entity
@@ -236,6 +254,7 @@ public class DateTimeTest {
         private LocalDate localDate;
         private Instant instant;
         private Period period;
+        private Duration duration;
 
         public LocalDate getLocalDate() {
             return localDate;
@@ -260,11 +279,20 @@ public class DateTimeTest {
         public void setPeriod(Period period) {
             this.period = period;
         }
+
+        public Duration getDuration() {
+            return duration;
+        }
+
+        public void setDuration(Duration duration) {
+            this.duration = duration;
+        }
     }
 
     @Json.Entity
     record OptionalDateTimeModel(Optional<LocalDate> optionalLocalDate,
                                  Optional<Instant> optionalInstant,
-                                 Optional<Period> optionalPeriod) {
+                                 Optional<Period> optionalPeriod,
+                                 Optional<Duration> optionalDuration) {
     }
 }
