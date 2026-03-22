@@ -83,6 +83,7 @@ public final class Api {
      * API may add this annotation to mark the first version that contains it.
      * It is recommended to include it with {@link io.helidon.common.Api.Deprecated} and {@link io.helidon.common.Api.Stable}.
      */
+    @Api.Stable
     public @interface Since {
         /**
          * Version of Helidon this API was introduced in.
@@ -107,6 +108,7 @@ public final class Api {
      *     <li>{@link io.helidon.common.Api.Deprecated} - the feature will be removed in next major version of Helidon</li>
      * </ul>
      */
+    @Api.Stable
     @Target({ElementType.TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
     public @interface Preview {
@@ -132,6 +134,7 @@ public final class Api {
      *     <li>Removal - we may remove the feature if it does not bring the expected benefits</li>
      * </ul>
      */
+    @Api.Stable
     @Target({ElementType.TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
     public @interface Incubating {
@@ -145,6 +148,7 @@ public final class Api {
      * <p>
      * Mutually exclusive with other API stability annotations.
      */
+    @Api.Stable
     @Target({ElementType.TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
     public @interface Internal {
@@ -157,6 +161,7 @@ public final class Api {
      * <p>
      * Mutually exclusive with other API stability annotations.
      */
+    @Api.Stable
     @Target({ElementType.TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
     public @interface Deprecated {
@@ -179,6 +184,7 @@ public final class Api {
      *     <li>{@link io.helidon.common.Api.Deprecated} - we may decide to deprecate rather than directly remove</li>
      * </ul>
      */
+    @Api.Stable
     @Target({ElementType.TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
     public @interface Stable {

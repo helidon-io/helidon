@@ -24,8 +24,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import javax.annotation.processing.Processor;
+import javax.lang.model.SourceVersion;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
@@ -40,7 +42,12 @@ import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 public class ApiStabilityProcessorTest {
 
@@ -77,6 +84,167 @@ public class ApiStabilityProcessorTest {
         ));
     }
 
+    @Test
+    void testSupportedCompilerOptionsDeclared() {
+        assertThat(new ApiStabilityProcessor().getSupportedOptions(),
+                   is(Set.of("helidon.api",
+                             "helidon.api.preview",
+                             "helidon.api.incubating",
+                             "helidon.api.internal",
+                             "helidon.api.deprecated")));
+    }
+
+    @Test
+    void testSpecificCompilerOptionsSupported() throws IOException {
+        for (var testCase : List.of(
+                new CompilerOptionCase("helidon.api.preview", "@Api.Preview", "PreviewApi"),
+                new CompilerOptionCase("helidon.api.incubating", "@Api.Incubating", "IncubatingApi"),
+                new CompilerOptionCase("helidon.api.internal", "@Api.Internal", "InternalApi"),
+                new CompilerOptionCase("helidon.api.deprecated", "@Api.Deprecated", "DeprecatedApi")
+        )) {
+            var messages = compile(new ApiStabilityProcessor(),
+                                   paths(Api.class),
+                                   List.of("-A" + testCase.option() + "=ignore"),
+                                   new JavaSourceFromString(testCase.apiClassName() + ".java",
+                                                            apiSource(testCase.apiAnnotation(), testCase.apiClassName())),
+                                   new JavaSourceFromString("Uses" + testCase.apiClassName() + ".java",
+                                                            usageSource("Uses" + testCase.apiClassName(),
+                                                                        testCase.apiClassName())));
+
+            assertThat("Expected compiler option " + testCase.option() + " to suppress "
+                               + testCase.apiClassName() + " usages",
+                       messages,
+                       empty());
+        }
+    }
+
+    @Test
+    void testGlobalCompilerOptionSupported() throws IOException {
+        var messages = compile(new ApiStabilityProcessor(),
+                               paths(Api.class),
+                               List.of("-Ahelidon.api=ignore"),
+                               new JavaSourceFromString("PreviewApi.java", apiSource("@Api.Preview", "PreviewApi")),
+                               new JavaSourceFromString("IncubatingApi.java", apiSource("@Api.Incubating",
+                                                                                         "IncubatingApi")),
+                               new JavaSourceFromString("InternalApi.java", apiSource("@Api.Internal", "InternalApi")),
+                               new JavaSourceFromString("DeprecatedApi.java", apiSource("@Api.Deprecated",
+                                                                                         "DeprecatedApi")),
+                               new JavaSourceFromString("UsesAllApis.java", """
+                                       package com.example;
+                                       
+                                       class UsesAllApis {
+                                           PreviewApi preview;
+                                           IncubatingApi incubating;
+                                           InternalApi internal;
+                                           DeprecatedApi deprecatedApi;
+                                       }
+                                       """));
+
+        assertThat(messages, empty());
+    }
+
+    @Test
+    void testOtherHelidonOptionsDoNotFailProcessorInitialization() throws IOException {
+        var messages = compile(new ApiStabilityProcessor(),
+                               paths(Api.class),
+                               List.of("-Ahelidon.codegen.scope=production"),
+                               new JavaSourceFromString("MyClass.java", """
+                                       package com.example;
+                                       
+                                       class MyClass {
+                                       }
+                                       """));
+
+        assertThat(messages,
+                   not(hasItem(containsString("Unrecognized/unsupported Helidon option configured"))));
+    }
+
+    @Test
+    void testSourceVersionFollowsCompiler() {
+        assertThat(new ApiStabilityProcessor().getSupportedSourceVersion(), is(SourceVersion.latestSupported()));
+    }
+
+    @Test
+    void testJavaAllSuppressionSupported() throws IOException {
+        var messages = compile(new ApiStabilityProcessor(),
+                               paths(Api.class),
+                               List.of("-Ahelidon.api.internal=fail"),
+                               new JavaSourceFromString("InternalApi.java", """
+                                       package com.example;
+                                       
+                                       import io.helidon.common.Api;
+                                       
+                                       @Api.Internal
+                                       public class InternalApi {
+                                       }
+                                       """),
+                               new JavaSourceFromString("UsesInternalApi.java", """
+                                       package com.example;
+                                       
+                                       @SuppressWarnings("all")
+                                       class UsesInternalApi {
+                                           InternalApi api;
+                                       }
+                                       """));
+
+        assertThat(messages, empty());
+    }
+
+    @Test
+    void testSupportedSuppressionsSupported() throws IOException {
+        for (var testCase : List.of(
+                new SuppressionCase(Api.SUPPRESS_ALL, "@Api.Internal", "InternalApi"),
+                new SuppressionCase(Api.SUPPRESS_PREVIEW, "@Api.Preview", "PreviewApi"),
+                new SuppressionCase(Api.SUPPRESS_INCUBATING, "@Api.Incubating", "IncubatingApi"),
+                new SuppressionCase(Api.SUPPRESS_INTERNAL, "@Api.Internal", "InternalApi"),
+                new SuppressionCase(Api.SUPPRESS_DEPRECATED, "@Api.Deprecated", "DeprecatedApi"),
+                new SuppressionCase(ApiStabilityProcessor.SUPPRESS_DEPRECATION, "@Api.Deprecated", "DeprecatedApi")
+        )) {
+            var messages = compile(new ApiStabilityProcessor(),
+                                   paths(Api.class),
+                                   List.of("-Ahelidon.api=fail"),
+                                   new JavaSourceFromString(testCase.apiClassName() + ".java",
+                                                            apiSource(testCase.apiAnnotation(), testCase.apiClassName())),
+                                   new JavaSourceFromString("Uses" + testCase.apiClassName() + ".java",
+                                                            suppressedUsageSource("Uses" + testCase.apiClassName(),
+                                                                                  testCase.apiClassName(),
+                                                                                  testCase.suppression())));
+
+            assertThat("Expected suppression " + testCase.suppression() + " to suppress "
+                               + testCase.apiClassName() + " usages",
+                       messages,
+                       empty());
+        }
+    }
+
+    @Test
+    void testLocalVariableSuppressionSupported() throws IOException {
+        var messages = compile(new ApiStabilityProcessor(),
+                               paths(Api.class),
+                               List.of("-Ahelidon.api.internal=fail"),
+                               new JavaSourceFromString("InternalApi.java", """
+                                       package com.example;
+                                       
+                                       import io.helidon.common.Api;
+                                       
+                                       @Api.Internal
+                                       public class InternalApi {
+                                       }
+                                       """),
+                               new JavaSourceFromString("UsesInternalApi.java", """
+                                       package com.example;
+                                       
+                                       class UsesInternalApi {
+                                           void use() {
+                                               @SuppressWarnings("helidon:api:internal")
+                                               InternalApi api = null;
+                                           }
+                                       }
+                                       """));
+
+        assertThat(messages, empty());
+    }
+
     private static List<String> compile(Processor processor,
                                         List<Path> classpath,
                                         List<String> compilerArguments,
@@ -100,6 +268,39 @@ public class ApiStabilityProcessorTest {
             messages.add(diagnostic.toString());
         }
         return messages;
+    }
+
+    private static String apiSource(String apiAnnotation, String className) {
+        return """
+                package com.example;
+                
+                import io.helidon.common.Api;
+                
+                %s
+                public class %s {
+                }
+                """.formatted(apiAnnotation, className);
+    }
+
+    private static String usageSource(String className, String usedType) {
+        return """
+                package com.example;
+                
+                class %s {
+                    %s api;
+                }
+                """.formatted(className, usedType);
+    }
+
+    private static String suppressedUsageSource(String className, String usedType, String suppression) {
+        return """
+                package com.example;
+                
+                @SuppressWarnings("%s")
+                class %s {
+                    %s api;
+                }
+                """.formatted(suppression, className, usedType);
     }
 
     private static List<Path> paths(Class<?>... classes) {
@@ -127,5 +328,15 @@ public class ApiStabilityProcessorTest {
         public CharSequence getCharContent(boolean ignoreEncodingErrors) {
             return code;
         }
+    }
+
+    private record CompilerOptionCase(String option,
+                                      String apiAnnotation,
+                                      String apiClassName) {
+    }
+
+    private record SuppressionCase(String suppression,
+                                   String apiAnnotation,
+                                   String apiClassName) {
     }
 }

@@ -27,6 +27,8 @@ import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.Option;
 
 class StabilityOptions implements CodegenOptions {
+    private static final String API_OPTION = "helidon.api";
+
     private final ProcessingEnvironment env;
 
     StabilityOptions(ProcessingEnvironment env) {
@@ -43,7 +45,7 @@ class StabilityOptions implements CodegenOptions {
         Set<String> helidonOptions = env.getOptions()
                 .keySet()
                 .stream()
-                .filter(it -> it.startsWith("helidon."))
+                .filter(it -> API_OPTION.equals(it) || it.startsWith(API_OPTION + "."))
                 .collect(Collectors.toSet());
 
         // now remove all expected

@@ -49,7 +49,7 @@ public class ApiStabilityEnforcerProcessor extends AbstractProcessor {
 
     @Override
     public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.RELEASE_21;
+        return SourceVersion.latestSupported();
     }
 
     @Override
@@ -64,6 +64,16 @@ public class ApiStabilityEnforcerProcessor extends AbstractProcessor {
         var deprecatedAnnotation = elements.getTypeElement("io.helidon.common.Api.Deprecated");
         var stableAnnotation = elements.getTypeElement("io.helidon.common.Api.Stable");
 
+        if (previewAnnotation == null
+                || incubatingAnnotation == null
+                || internalAnnotation == null
+                || deprecatedAnnotation == null
+                || stableAnnotation == null) {
+            this.stabilityAnnotations = Set.of();
+            this.messager = processingEnv.getMessager();
+            return;
+        }
+
         this.stabilityAnnotations = Set.of(internalAnnotation,
                                            incubatingAnnotation,
                                            previewAnnotation,
@@ -75,6 +85,10 @@ public class ApiStabilityEnforcerProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        if (stabilityAnnotations.isEmpty()) {
+            return false;
+        }
+
         Set<? extends Element> rootElements = roundEnv.getRootElements();
         for (Element rootElement : rootElements) {
             if (rootElement instanceof TypeElement type) {

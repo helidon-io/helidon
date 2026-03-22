@@ -118,7 +118,11 @@ public class ApiStabilityProcessor extends AbstractProcessor {
         super.init(processingEnv);
 
         CodegenOptions options = new StabilityOptions(processingEnv);
-        options.validate(Set.of(API_ACTION, PREVIEW_ACTION, INCUBATING_ACTION, INTERNAL_ACTION));
+        options.validate(Set.of(API_ACTION,
+                                PREVIEW_ACTION,
+                                INCUBATING_ACTION,
+                                INTERNAL_ACTION,
+                                DEPRECATED_ACTION));
 
         this.messager = processingEnv.getMessager();
 
@@ -207,7 +211,7 @@ public class ApiStabilityProcessor extends AbstractProcessor {
 
     @Override
     public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.RELEASE_21;
+        return SourceVersion.latestSupported();
     }
 
     @Override
@@ -215,7 +219,8 @@ public class ApiStabilityProcessor extends AbstractProcessor {
         return Set.of(API_ACTION.name(),
                       PREVIEW_ACTION.name(),
                       INCUBATING_ACTION.name(),
-                      INTERNAL_ACTION.name());
+                      INTERNAL_ACTION.name(),
+                      DEPRECATED_ACTION.name());
     }
 
     private void log(Action previewAction, StabilityMeta meta, Set<Ref> usages) {
