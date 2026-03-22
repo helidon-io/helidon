@@ -24,6 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Service;
 
 /**
@@ -40,11 +41,9 @@ import io.helidon.service.registry.Service;
  * <li>{@link io.helidon.http.HeaderValues}</li>
  * <li>{@link io.helidon.http.DateTime}</li>
  * </ul>
- *
- * @deprecated this API is part of incubating features of Helidon. This API may change including backward incompatible changes
- *               and full removal. We welcome feedback for incubating features.
  */
-@Deprecated
+@Api.Incubating
+@Api.Since("4.3.0")
 public final class Http {
     private Http() {
     }

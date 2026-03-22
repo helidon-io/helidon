@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weighted;
@@ -42,6 +43,7 @@ import io.helidon.common.mapper.spi.MapperProvider;
  * @deprecated use {@link io.helidon.common.mapper.Mappers} instead
  */
 @Deprecated(forRemoval = true, since = "4.2.0")
+@Api.Deprecated
 public interface MapperManager extends Mappers {
     /**
      * Get an instance of the configured global manager. If none is explicitly set, an instance is created using
@@ -144,6 +146,7 @@ public interface MapperManager extends Mappers {
      *
      * @deprecated use {@link io.helidon.common.mapper.MappersConfig.Builder}, obtained from {@link Mappers#builder()}
      */
+    @Api.Deprecated
     @Deprecated(since = "4.2.0", forRemoval = true)
     final class Builder implements io.helidon.common.Builder<Builder, MapperManager> {
         private HelidonServiceLoader.Builder<MapperProvider> providers = HelidonServiceLoader
