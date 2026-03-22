@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
@@ -47,6 +46,7 @@ import static io.helidon.common.Api.SUPPRESS_INTERNAL;
 import static io.helidon.common.Api.SUPPRESS_PREVIEW;
 
 class ApiStabilityScanner extends TreeScanner<Void, Void> {
+    private static final String SUPPRESS_JAVA_ALL = "all";
 
     private final Trees trees;
     private final CompilationUnitTree unit;
@@ -226,6 +226,9 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
             var annot = e.getAnnotation(SuppressWarnings.class);
             if (annot != null) {
                 for (var s : annot.value()) {
+                    if (SUPPRESS_JAVA_ALL.equals(s)) {
+                        return true;
+                    }
                     if (SUPPRESS_ALL.equals(s)) {
                         return true;
                     }
@@ -246,7 +249,7 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
             switch (n.getLeaf().getKind()) {
             case VARIABLE -> {
                 var elt = trees.getElement(n);
-                if (elt != null && elt.getKind() == ElementKind.FIELD) {
+                if (elt != null) {
                     return elt;
                 }
             }

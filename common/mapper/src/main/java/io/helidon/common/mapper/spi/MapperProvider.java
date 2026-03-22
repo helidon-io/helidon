@@ -69,6 +69,7 @@ public interface MapperProvider {
     /**
      * How does this provider support the type.
      */
+    @Api.Stable
     enum Support {
         /**
          * Correct type(s) and expected qualifier.
@@ -90,6 +91,7 @@ public interface MapperProvider {
      * @param support how is this supported
      * @param mapper mapper to map the type, or null if support is {@link Support#UNSUPPORTED}
      */
+    @Api.Stable
     record ProviderResponse(Support support, Mapper<?, ?> mapper) {
         private static final ProviderResponse UNSUPPORTED = new ProviderResponse(Support.UNSUPPORTED, null);
 

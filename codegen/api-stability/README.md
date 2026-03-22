@@ -59,6 +59,8 @@ Other public APIs cannot be removed;
 
 Suppression in code:
 
+`@SuppressWarnings("all")`
+`@SuppressWarnings("helidon:api")`
 `@SuppressWarnings("helidon:api:preview")`
 `@SuppressWarnings("helidon:api:incubating")`
 `@SuppressWarnings("helidon:api:internal")`

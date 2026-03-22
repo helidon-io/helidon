@@ -160,6 +160,7 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
      *
      * @param <T> type of the service to be loaded
      */
+    @Api.Stable
     public static final class Builder<T> implements io.helidon.common.Builder<Builder<T>, HelidonServiceLoader<T>> {
         private final ServiceLoader<T> serviceLoader;
         private final List<ServiceWithWeight<T>> customServices = new LinkedList<ServiceWithWeight<T>>();

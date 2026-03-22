@@ -156,6 +156,7 @@ public interface Size {
     /**
      * Kind of units, used for printing out the correct unit.
      */
+    @Api.Stable
     enum UnitKind {
         /**
          * The first letter (if two lettered) is lower case, the second is upper case, such ase
@@ -191,6 +192,7 @@ public interface Size {
     /**
      * Units that can be used.
      */
+    @Api.Stable
     enum Unit {
         /**
          * Bytes.

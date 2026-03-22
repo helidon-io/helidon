@@ -146,6 +146,7 @@ public interface MapperManager extends Mappers {
      *
      * @deprecated use {@link io.helidon.common.mapper.MappersConfig.Builder}, obtained from {@link Mappers#builder()}
      */
+    @Api.Deprecated
     @Deprecated(since = "4.2.0", forRemoval = true)
     final class Builder implements io.helidon.common.Builder<Builder, MapperManager> {
         private HelidonServiceLoader.Builder<MapperProvider> providers = HelidonServiceLoader
