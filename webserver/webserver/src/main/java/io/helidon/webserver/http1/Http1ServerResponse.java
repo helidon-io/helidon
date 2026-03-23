@@ -144,18 +144,44 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         // either content-length or chunked encoding
         // if content length - make sure to compare it when writing actual entity (streaming and send(entity))
-        if (keepAlive) {
-            headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
-        } else {
+        if (!keepAlive) {
             // we must override even if user sets keep alive, as close was requested
             headers.set(HeaderValues.CONNECTION_CLOSE);
         }
+        /*
+        RFC 9112, Section 9.3. HTTP/1.1 makes persistence the default: if the message is HTTP/1.1 and th
+        ere is no Connection: close, the connection remains persistent after the response. The same section says a se
+        rver that does not support persistent connections must send Connection: close in responses. It does not requi
+        re Connection: keep-alive for normal HTTP/1.1 responses. (rfc-editor.org(https://www.rfc-editor.org/rfc/rfc9112.html))
+         */
 
         // write headers followed by empty line
         writeHeaders(headers, buffer, validateHeaders);
 
         buffer.write('\r');        // "\r\n" - empty line after headers
         buffer.write('\n');
+    }
+
+    static int nonEntityBytesLength(io.helidon.http.Headers headers, Status status, boolean keepAlive) {
+        int length = statusLineLength(effectiveNonEntityStatus(headers, status));
+        if (!headers.contains(HeaderNames.DATE)) {
+            length += DATE.length + DateTime.http1Bytes().length;
+        }
+
+        for (Header header : headers) {
+            if (header.headerName().index() == HeaderNames.CONNECTION.index()) {
+                if (!keepAlive) {
+                    continue;
+                }
+            }
+            length += http1HeaderLength(header);
+        }
+
+        if (!keepAlive) {
+            length += http1HeaderLength(HeaderValues.CONNECTION_CLOSE);
+        }
+
+        return length + CRLF_LENGTH;
     }
 
     @Override
@@ -411,7 +437,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
 
         boolean forcedChunkedEncoding = false;
-        headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
 
         if (headers.contains(HeaderNames.TRANSFER_ENCODING) && headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             headers.remove(HeaderNames.CONTENT_LENGTH);
@@ -483,6 +508,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             bos.checkResponseHeaders();     // headers can be augmented by encoders
         }
         return outputStreamFilter == null ? encodedOutputStream : outputStreamFilter.apply(encodedOutputStream);
+    }
+
+    boolean keepConnectionOpen() {
+        return keepAlive && !headers.contains(HeaderValues.CONNECTION_CLOSE);
     }
 
     private static Status noEntityInternalError(Status status) {
