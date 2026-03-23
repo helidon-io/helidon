@@ -835,10 +835,12 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
          * Audience expected in inbound JWTs.
          *
          * @param audience audience string
+         * @return updated builder instance
          */
         @ConfiguredOption(key = "atn-token.jwt-audience")
-        public void expectedAudience(String audience) {
+        public Builder expectedAudience(String audience) {
             this.expectedAudience = audience;
+            return this;
         }
 
         /**
