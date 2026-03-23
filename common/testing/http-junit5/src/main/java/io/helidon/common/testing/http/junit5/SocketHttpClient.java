@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
@@ -56,9 +57,12 @@ public class SocketHttpClient implements AutoCloseable {
 
     private static final String EOL = "\r\n";
     private static final Pattern FIRST_LINE_PATTERN = Pattern.compile("HTTP/\\d+\\.\\d+ (\\d\\d\\d) (.*)");
+    private static final Consumer<Socket> NO_OP_SOCKET_CONFIGURATOR = socket -> {
+    };
     private final String host;
     private final int port;
     private final Duration timeout;
+    private final Consumer<Socket> socketConfigurator;
 
     private Socket socket;
     private boolean connected;
@@ -73,9 +77,22 @@ public class SocketHttpClient implements AutoCloseable {
      * @param timeout socket timeout
      */
     protected SocketHttpClient(String host, int port, Duration timeout) {
+        this(host, port, timeout, NO_OP_SOCKET_CONFIGURATOR);
+    }
+
+    /**
+     * Create a new client connecting to the specified coordinates.
+     *
+     * @param host host to connect to
+     * @param port port to connect to
+     * @param timeout socket timeout
+     * @param socketConfigurator socket configuration applied before connect
+     */
+    protected SocketHttpClient(String host, int port, Duration timeout, Consumer<Socket> socketConfigurator) {
         this.host = host;
         this.port = port;
         this.timeout = timeout;
+        this.socketConfigurator = socketConfigurator == null ? NO_OP_SOCKET_CONFIGURATOR : socketConfigurator;
     }
 
     /**
@@ -91,6 +108,22 @@ public class SocketHttpClient implements AutoCloseable {
     }
 
     /**
+     * Socket client that allows sending any content with custom socket configuration.
+     *
+     * @param host host to connect to
+     * @param port port to connect to
+     * @param timeout socket timeout
+     * @param socketConfigurator socket configuration applied before connect
+     * @return a new (disconnected) client
+     */
+    public static SocketHttpClient create(String host,
+                                          int port,
+                                          Duration timeout,
+                                          Consumer<Socket> socketConfigurator) {
+        return new SocketHttpClient(host, port, timeout, socketConfigurator);
+    }
+
+    /**
      * Socket client that allows sending any content.
      * Uses localhost and timeout of 5 seconds.
      *
@@ -99,6 +132,18 @@ public class SocketHttpClient implements AutoCloseable {
      */
     public static SocketHttpClient create(int port) {
         return create("localhost", port, Duration.ofSeconds(5));
+    }
+
+    /**
+     * Socket client that allows sending any content.
+     * Uses localhost and timeout of 5 seconds.
+     *
+     * @param port port to connect to
+     * @param socketConfigurator socket configuration applied before connect
+     * @return a new (disconnected) client
+     */
+    public static SocketHttpClient create(int port, Consumer<Socket> socketConfigurator) {
+        return create("localhost", port, Duration.ofSeconds(5), socketConfigurator);
     }
 
     /**
@@ -536,7 +581,9 @@ public class SocketHttpClient implements AutoCloseable {
             connected = false;
         }
         try {
-            socket = new Socket(host, port);
+            socket = new Socket();
+            socketConfigurator.accept(socket);
+            socket.connect(new InetSocketAddress(host, port), (int) timeout.toMillis());
             socket.setSoTimeout((int) timeout.toMillis());
             socketInputStream = socket.getInputStream();
             connected = true;
