@@ -48,6 +48,7 @@ import org.junit.jupiter.api.Test;
 import static java.lang.System.Logger.Level.DEBUG;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 
 @HelidonTest
@@ -83,13 +84,20 @@ public class AckMpTest extends AbstractMPTest {
     @Test
     void resendAckTest(SeContainer cdi) {
         ChannelAck channelAck = cdi.select(ChannelAck.class).get();
-        //Messages starting with NO_ACK are not acked by ChannelAck bean
-        List<String> testData = List.of("0", "1", "2", "NO_ACK-1", "NO_ACK-2", "NO_ACK-3");
-        produce(TEST_QUEUE_ACK, testData, m -> {});
+        List<String> ackedData = List.of("0", "1", "2");
+        List<String> noAckData = List.of("NO_ACK-1", "NO_ACK-2", "NO_ACK-3");
+        List<String> testData = new ArrayList<>(ackedData);
+        testData.addAll(noAckData);
+
+        // In CLIENT_ACKNOWLEDGE, ack() applies to all messages already consumed on the session.
+        // Deliver the acked batch first so the NO_ACK batch stays unacknowledged until recover().
+        produce(TEST_QUEUE_ACK, ackedData, m -> {});
+        assertThat("Not all acked items acknowledged in time.", channelAck.awaitAcked(), is(true));
+        produce(TEST_QUEUE_ACK, noAckData, m -> {});
         assertThat("Not all initial items delivered in time.", channelAck.awaitDelivered(), is(true));
         assertThat(channelAck.delivered(), contains(testData.toArray(String[]::new)));
         assertThat("Not all redelivered items delivered in time.", channelAck.awaitRedelivered(), is(true));
-        assertThat(channelAck.redelivered(), contains("NO_ACK-1", "NO_ACK-2", "NO_ACK-3"));
+        assertThat(channelAck.redelivered(), containsInAnyOrder(noAckData.toArray(String[]::new)));
     }
 
     @AfterAll
@@ -141,6 +149,10 @@ public class AckMpTest extends AbstractMPTest {
 
         boolean awaitDelivered() {
             return await(deliveredLatch);
+        }
+
+        boolean awaitAcked() {
+            return await(ackedLatch);
         }
 
         boolean awaitRedelivered() {
