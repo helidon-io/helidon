@@ -22,13 +22,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import io.helidon.common.socket.SocketOptions;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
@@ -128,17 +129,28 @@ class FixedLengthPartialWriteTest {
     }
 
     private String requestSlowly(String path) throws Exception {
-        try (Socket socket = new Socket()) {
-            socket.setReceiveBufferSize(READ_BUFFER_SIZE);
-            socket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
-            socket.connect(new InetSocketAddress(uri.getHost(), uri.getPort()));
-            socket.getOutputStream().write(httpRequest(uri, path).getBytes(StandardCharsets.UTF_8));
-            socket.getOutputStream().flush();
+        try (SocketHttpClient socketHttpClient = socketHttpClient()) {
+            socketHttpClient.requestRaw(httpRequest(uri, path));
 
             Thread.sleep(INITIAL_READ_DELAY_MILLIS);
 
-            String rawResponse = readSlowly(socket.getInputStream());
+            String rawResponse = readSlowly(socketHttpClient.socketInputStream());
             return decodeFixedLengthJson(rawResponse);
+        }
+    }
+
+    private SocketHttpClient socketHttpClient() {
+        return SocketHttpClient.create(uri.getHost(),
+                                       uri.getPort(),
+                                       Duration.ofMillis(SOCKET_TIMEOUT_MILLIS),
+                                       FixedLengthPartialWriteTest::configureSocket);
+    }
+
+    private static void configureSocket(Socket socket) {
+        try {
+            socket.setReceiveBufferSize(READ_BUFFER_SIZE);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to configure test client socket", e);
         }
     }
 
