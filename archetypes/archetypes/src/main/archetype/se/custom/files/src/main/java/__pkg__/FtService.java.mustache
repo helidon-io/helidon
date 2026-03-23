@@ -8,10 +8,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.helidon.faulttolerance.Async;
 import io.helidon.faulttolerance.Bulkhead;
 import io.helidon.faulttolerance.CircuitBreaker;
+import io.helidon.faulttolerance.CircuitBreakerOpenException;
 import io.helidon.faulttolerance.Fallback;
 import io.helidon.faulttolerance.FallbackConfig;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.Timeout;
+import io.helidon.faulttolerance.TimeoutException;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -59,7 +62,11 @@ public class FtService implements HttpService {
     private void timeoutHandler(ServerRequest request, ServerResponse response) {
         long sleep = request.path().pathParameters().first("millis").getLong();
 
-        response.send(timeout.invoke(() -> sleep(sleep)));
+        try {
+            response.send(timeout.invoke(() -> sleep(sleep)));
+        } catch (TimeoutException ex) {
+            response.status(Status.REQUEST_TIMEOUT_408).send("timeout");
+        }
     }
 
     private void retryHandler(ServerRequest request, ServerResponse response) {
@@ -68,14 +75,19 @@ public class FtService implements HttpService {
         AtomicInteger call = new AtomicInteger(1);
         AtomicInteger failures = new AtomicInteger();
 
-        response.send(retry.invoke(() -> {
-            int current = call.getAndIncrement();
-            if (current < count) {
-                failures.incrementAndGet();
-                return reactiveFailure();
-            }
-            return "calls/failures: " + current + "/" + failures.get();
-        }));
+        try {
+            response.send(retry.invoke(() -> {
+                int current = call.getAndIncrement();
+                if (current < count) {
+                    failures.incrementAndGet();
+                    return reactiveFailure();
+                }
+                return "calls/failures: " + current + "/" + failures.get();
+            }));
+        } catch (RuntimeException ex) {
+            response.status(Status.INTERNAL_SERVER_ERROR_500)
+                    .send(ex.getClass().getName() + ": " + ex.getMessage());
+        }
     }
 
     private void fallbackHandler(ServerRequest request, ServerResponse response) {
@@ -89,10 +101,14 @@ public class FtService implements HttpService {
 
     private void circuitBreakerHandler(ServerRequest request, ServerResponse response) {
         boolean success = request.path().pathParameters().first("success").getBoolean();
-        if (success) {
-            response.send(circuitBreaker.invoke(this::reactiveData));
-        } else {
-            response.send(circuitBreaker.invoke(this::reactiveFailure));
+        try {
+            if (success) {
+                response.send(circuitBreaker.invoke(this::reactiveData));
+            } else {
+                response.send(circuitBreaker.invoke(this::reactiveFailure));
+            }
+        } catch (CircuitBreakerOpenException ex) {
+            response.status(Status.SERVICE_UNAVAILABLE_503).send("circuit breaker");
         }
     }
 
