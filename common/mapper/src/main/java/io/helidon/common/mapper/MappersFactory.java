@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,8 @@ import io.helidon.common.mapper.spi.MapperProvider;
 import io.helidon.service.registry.Service;
 
 @Service.Singleton
-class MappersFactory implements Supplier<Mappers> {
+@SuppressWarnings("removal")
+class MappersFactory implements Supplier<MapperManager> {
     private final List<MapperProvider> mapperProviders;
     private final List<Mapper<?, ?>> mappers;
 
@@ -34,12 +35,12 @@ class MappersFactory implements Supplier<Mappers> {
     }
 
     @Override
-    public Mappers get() {
-        return Mappers.builder()
+    public MapperManager get() {
+        return new MappersImpl(Mappers.builder()
                 .mapperProvidersDiscoverServices(false)
                 .mappersDiscoverServices(false)
                 .update(it -> mappers.forEach(it::addMapper))
                 .update(it -> mapperProviders.forEach(it::addMapperProvider))
-                .build();
+                .buildPrototype());
     }
 }
