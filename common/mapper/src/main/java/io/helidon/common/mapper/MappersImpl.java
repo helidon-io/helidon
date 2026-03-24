@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.function.BiFunction;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weights;
 import io.helidon.common.mapper.spi.MapperProvider;
-import io.helidon.service.registry.Service;
 
 /**
  * Implementation of {@link io.helidon.common.mapper.Mappers}.
@@ -40,7 +39,6 @@ final class MappersImpl implements MapperManager, Mappers {
     private final List<MapperProvider> providers;
     private final MappersConfig prototype;
 
-    @Service.Inject
     MappersImpl() {
         this(MappersConfig.create());
     }
