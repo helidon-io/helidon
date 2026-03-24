@@ -31,8 +31,7 @@ import io.helidon.common.mapper.spi.MapperProvider;
 /**
  * Implementation of {@link io.helidon.common.mapper.Mappers}.
  */
-@SuppressWarnings("removal")
-final class MappersImpl implements MapperManager, Mappers {
+final class MappersImpl implements Mappers {
     private final Map<ClassCacheKey, Mapper<?, ?>> classCache = new ConcurrentHashMap<>();
     private final Map<GenericCacheKey, Mapper<?, ?>> typeCache = new ConcurrentHashMap<>();
 
@@ -48,15 +47,6 @@ final class MappersImpl implements MapperManager, Mappers {
         List<MapperProvider> providers = new ArrayList<>(prototype.mapperProviders());
         Weights.sort(providers);
         this.providers = providers;
-    }
-
-    @SuppressWarnings("removal")
-    MappersImpl(MapperManager.Builder builder) {
-        this.prototype = MappersConfig.builder()
-                .useBuiltInMappers(false)
-                .mapperProviders(builder.mapperProviders())
-                .buildPrototype();
-        this.providers = builder.mapperProviders();
     }
 
     @Override

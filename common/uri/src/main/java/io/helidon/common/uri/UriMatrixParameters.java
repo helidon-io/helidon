@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.mapper.Value;
 import io.helidon.common.parameters.Parameters;
+import io.helidon.service.registry.Services;
 
 import static io.helidon.common.uri.UriEncoding.decodeUri;
 
@@ -36,11 +37,11 @@ class UriMatrixParameters implements Parameters {
     private static final String COMPONENT = "uri/matrix";
     private static final String[] QUALIFIERS = new String[] {"uri", "matrix"};
     private final Map<String, List<String>> matrixParams;
-    private final MapperManager mapperManager;
+    private final Mappers mapperManager;
 
     private UriMatrixParameters(Map<String, List<String>> matrixParams) {
         this.matrixParams = matrixParams;
-        this.mapperManager = MapperManager.global();
+        this.mapperManager = Services.get(Mappers.class);
     }
 
     static Parameters create(String rawPath) {
@@ -131,7 +132,7 @@ class UriMatrixParameters implements Parameters {
     public OptionalValue<String> first(String name) {
         List<String> value = matrixParams.get(name);
         if (value == null) {
-            return OptionalValue.create(mapperManager, name, GenericType.STRING, QUALIFIERS);
+            return OptionalValue.createEmpty(name, QUALIFIERS);
         }
         return OptionalValue.create(mapperManager, name, value.get(0), GenericType.STRING, QUALIFIERS);
     }

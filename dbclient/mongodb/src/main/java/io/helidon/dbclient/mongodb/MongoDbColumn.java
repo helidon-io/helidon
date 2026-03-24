@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package io.helidon.dbclient.mongodb;
 
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.dbclient.DbColumnBase;
 
 /**
@@ -32,7 +32,7 @@ public final class MongoDbColumn extends DbColumnBase {
      * @param name          name
      * @param value         value
      */
-    MongoDbColumn(MapperManager mapperManager, String name, Object value) {
+    MongoDbColumn(Mappers mapperManager, String name, Object value) {
         super(value, mapperManager, "dbclient-mongo");
         this.name = name;
     }

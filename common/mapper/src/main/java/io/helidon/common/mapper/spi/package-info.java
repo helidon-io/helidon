@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
- * SPI to provide {@link io.helidon.common.mapper.Mapper mappers} for {@link io.helidon.common.mapper.MapperManager}.
+ * SPI to provide {@link io.helidon.common.mapper.Mapper mappers} for {@link io.helidon.common.mapper.Mappers}.
  *
  * @see io.helidon.common.mapper.spi.MapperProvider
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package io.helidon.dbclient;
 
 import java.util.List;
 
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 
 /**
  * Database context.
@@ -52,7 +52,7 @@ public interface DbContext {
      *
      * @return mapper manager
      */
-    MapperManager mapperManager();
+    Mappers mapperManager();
 
     /**
      * Configured client services (interceptors).

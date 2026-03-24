@@ -19,17 +19,16 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.dbclient.DbColumn;
 import io.helidon.dbclient.DbColumnBase;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRowBase;
 import io.helidon.json.JsonArray;
-import io.helidon.json.JsonNull;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonString;
-import io.helidon.json.JsonValue;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.Test;
 
@@ -105,7 +104,7 @@ class JsonMapperTest {
     }
 
     private static DbColumnBase column(String name, Class<?> javaType, Object value) {
-        return new DbColumnBase(value, MapperManager.create()) {
+        return new DbColumnBase(value, Services.get(Mappers.class)) {
 
             @Override
             public Class<?> javaType() {

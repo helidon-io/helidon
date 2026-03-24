@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,41 @@ public interface Value<T> {
     /**
      * Create a value backed by data. The type of the value is "guessed" from the instance provided.
      *
+     * @param name       name of the value
+     * @param value      value, must not be null
+     * @param qualifiers qualifiers of the mapper
+     * @param <T>        type of the value
+     * @return a value backed by data
+     */
+    static <T> Value<T> create(String name, T value, String... qualifiers) {
+        Objects.requireNonNull(name, "Name of the Value must not be null");
+        Objects.requireNonNull(value,
+                               "Value content for Value " + name
+                                       + " must not be null, use OptionalValue.createEmpty(String) instead");
+        return new ValueBackedNoMappers<>(name, value, qualifiers);
+    }
+
+    /**
+     * Create a value backed by data.
+     *
+     * @param name       name of the value
+     * @param value      value, must not be null
+     * @param type       a more precise type that could be guessed form an instance
+     * @param qualifiers qualifiers of the mapper
+     * @param <T>        type of the value
+     * @return a value backed by data
+     */
+    static <T> Value<T> create(String name, T value, GenericType<T> type, String... qualifiers) {
+        Objects.requireNonNull(name, "Name of the Value must not be null");
+        Objects.requireNonNull(value,
+                               "Value content for Value " + name
+                                       + " must not be null, use OptionalValue.createEmpty(String) instead");
+        return new ValueBackedNoMappers<>(name, value, type, qualifiers);
+    }
+
+    /**
+     * Create a value backed by data. The type of the value is "guessed" from the instance provided.
+     *
      * @param mapperManager mapper manager to use for mapping types
      * @param name          name of the value
      * @param value         value, must not be null
@@ -44,7 +79,9 @@ public interface Value<T> {
      */
     static <T> Value<T> create(Mappers mapperManager, String name, T value, String... qualifiers) {
         Objects.requireNonNull(name, "Name of the Value must not be null");
-        Objects.requireNonNull(value, "Value content for Value " + name + " must not be null, use empty(String) instead");
+        Objects.requireNonNull(value,
+                               "Value content for Value " + name
+                                       + " must not be null, use OptionalValue.createEmpty(String) instead");
         return new ValueBacked<>(mapperManager, name, value, qualifiers);
     }
 
@@ -61,7 +98,9 @@ public interface Value<T> {
      */
     static <T> Value<T> create(Mappers mapperManager, String name, T value, GenericType<T> type, String... qualifiers) {
         Objects.requireNonNull(name, "Name of the Value must not be null");
-        Objects.requireNonNull(value, "Value content for Value " + name + " must not be null, use empty(String) instead");
+        Objects.requireNonNull(value,
+                               "Value content for Value " + name
+                                       + " must not be null, use OptionalValue.createEmpty(String) instead");
         return new ValueBacked<>(mapperManager, name, value, type, qualifiers);
     }
 

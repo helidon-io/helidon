@@ -21,7 +21,7 @@ import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.config.Config;
 import io.helidon.dbclient.spi.DbClientBuilder;
 import io.helidon.dbclient.spi.DbClientProvider;
@@ -34,7 +34,7 @@ import io.helidon.dbclient.spi.DbMapperProvider;
 public interface DbClient extends AutoCloseable {
 
     /**
-     * Qualifier used for mapping using {@link io.helidon.common.mapper.MapperManager#map(Object, Class, Class, String...)}.
+     * Qualifier used for mapping using {@link io.helidon.common.mapper.Mappers#map(Object, Class, Class, String...)}.
      */
     String MAPPING_QUALIFIER = "dbclient";
 
@@ -246,7 +246,7 @@ public interface DbClient extends AutoCloseable {
          * @param manager mapper manager
          * @return updated builder instance
          */
-        public Builder mapperManager(MapperManager manager) {
+        public Builder mapperManager(Mappers manager) {
             clientBuilder.mapperManager(manager);
             return this;
         }
