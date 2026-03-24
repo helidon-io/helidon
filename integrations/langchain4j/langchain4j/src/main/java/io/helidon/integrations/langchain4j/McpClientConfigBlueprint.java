@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.tls.Tls;
 
 /**
  * Configuration for LangChain4j MCP (Model Context Protocol) clients.
@@ -51,6 +52,14 @@ interface McpClientConfigBlueprint {
     @Option.Required
     @Option.Configured
     URI uri();
+
+    /**
+     * TLS configuration for the MCP server connection.
+     *
+     * @return tls configuration
+     */
+    @Option.Configured
+    Optional<Tls> tls();
 
     /**
      * Sets the name that the client will use to identify itself to the

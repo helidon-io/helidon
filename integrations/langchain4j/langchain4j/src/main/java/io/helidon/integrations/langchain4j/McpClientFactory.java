@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
@@ -51,15 +52,23 @@ class McpClientFactory implements Service.ServicesFactory<McpClient> {
                 );
     }
 
-    private static Service.QualifiedInstance<McpClient> create(McpClientConfig mcpClientConfig) {
+    static StreamableHttpMcpTransport createTransport(McpClientConfig mcpClientConfig) {
         StreamableHttpMcpTransport.Builder transport = new StreamableHttpMcpTransport.Builder()
                 .url(mcpClientConfig.uri().toString());
 
         mcpClientConfig.logRequests().ifPresent(transport::logRequests);
         mcpClientConfig.logResponses().ifPresent(transport::logResponses);
+        mcpClientConfig.tls()
+                .filter(Tls::enabled)
+                .map(Tls::sslContext)
+                .ifPresent(transport::sslContext);
 
+        return transport.build();
+    }
+
+    private static Service.QualifiedInstance<McpClient> create(McpClientConfig mcpClientConfig) {
         DefaultMcpClient.Builder builder = new DefaultMcpClient.Builder()
-                .transport(transport.build());
+                .transport(createTransport(mcpClientConfig));
 
         mcpClientConfig.key().ifPresent(builder::key);
         mcpClientConfig.clientVersion().ifPresent(builder::clientVersion);
