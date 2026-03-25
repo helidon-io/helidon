@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,19 @@
  */
 package io.helidon.dbclient.mongodb;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.mapper.MapperException;
 import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbIndexedStatementParameters;
+import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbNamedStatementParameters;
 import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.DbStatementBase;
@@ -44,6 +50,8 @@ import static io.helidon.dbclient.mongodb.MongoDbStatement.MongoOperation.UPDATE
  * @param <S> type of subclass
  */
 abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBase<S> {
+
+    private static final String ERROR_NO_MAPPER_FOUND = "Failed to find DB mapper.";
 
     /**
      * Empty JSON object.
@@ -106,13 +114,124 @@ abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBas
         String statement = serviceContext.statement();
         DbStatementParameters stmtParams = serviceContext.statementParameters();
         if (stmtParams instanceof DbIndexedStatementParameters indexed) {
-            List<Object> params = indexed.parameters();
+            List<Object> params = indexed.parameters().stream()
+                    .map(this::normalizeParameter)
+                    .toList();
             return StatementParsers.indexedParser(statement, params).convert();
         } else if (stmtParams instanceof DbNamedStatementParameters named) {
-            Map<String, Object> params = named.parameters();
-            return StatementParsers.namedParser(statement, params).convert();
+            return StatementParsers.namedParser(statement, prepareNamedParameters(named)).convert();
         }
         return statement;
+    }
+
+    private Map<String, Object> prepareNamedParameters(DbNamedStatementParameters named) {
+        Map<String, Object> params = new LinkedHashMap<>(named.parameters().size());
+        Map<String, Object> flattened = new LinkedHashMap<>();
+        named.parameters().forEach((key, value) -> {
+            NamedParameter namedParameter = normalizeNamedParameter(value);
+            params.put(key, namedParameter.value());
+            namedParameter.flattenedValues().forEach(flattened::putIfAbsent);
+        });
+        flattened.forEach(params::putIfAbsent);
+        return params;
+    }
+
+    private Object normalizeParameter(Object value) {
+        if ((value == null) || isScalar(value)) {
+            return value;
+        }
+        if (value instanceof Map<?, ?> valueMap) {
+            return normalizeMap(valueMap);
+        }
+        if (value instanceof Iterable<?> iterable) {
+            return normalizeList(iterable);
+        }
+        if (value.getClass().isArray()) {
+            return normalizeArray(value);
+        }
+        Map<String, Object> mappedValue = mappedValue(value);
+        return mappedValue == null ? value : mappedValue;
+    }
+
+    private NamedParameter normalizeNamedParameter(Object value) {
+        if ((value == null) || isScalar(value)) {
+            return NamedParameter.create(value);
+        }
+        if (value instanceof Map<?, ?> valueMap) {
+            return NamedParameter.create(normalizeMap(valueMap));
+        }
+        if (value instanceof Iterable<?> iterable) {
+            return NamedParameter.create(normalizeList(iterable));
+        }
+        if (value.getClass().isArray()) {
+            return NamedParameter.create(normalizeArray(value));
+        }
+        Map<String, Object> mappedValue = mappedValue(value);
+        if (mappedValue == null) {
+            return NamedParameter.create(value);
+        }
+        return new NamedParameter(mappedValue, mappedValue);
+    }
+
+    private Map<String, Object> normalizeMap(Map<?, ?> valueMap) {
+        Map<String, Object> normalized = new LinkedHashMap<>(valueMap.size());
+        valueMap.forEach((key, nestedValue) -> normalized.put(String.valueOf(key), normalizeParameter(nestedValue)));
+        return normalized;
+    }
+
+    private List<Object> normalizeList(Iterable<?> iterable) {
+        List<Object> normalized = new ArrayList<>();
+        iterable.forEach(nestedValue -> normalized.add(normalizeParameter(nestedValue)));
+        return normalized;
+    }
+
+    private List<Object> normalizeArray(Object value) {
+        int length = Array.getLength(value);
+        List<Object> normalized = new ArrayList<>(length);
+        for (int i = 0; i < length; i++) {
+            normalized.add(normalizeParameter(Array.get(value, i)));
+        }
+        return normalized;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> mappedValue(Object value) {
+        Class<Object> valueClass = (Class<Object>) value.getClass();
+        try {
+            return normalizeMap(context().dbMapperManager().toNamedParameters(value, valueClass));
+        } catch (MapperException e) {
+            if (isMissingMapper(e, valueClass)) {
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    private boolean isMissingMapper(MapperException exception, Class<?> valueClass) {
+        // DbMapperManager only exposes mapping operations, so we fall back
+        // only when the manager reports its specific "no mapper found" error.
+        String expectedMessage = "Failed to map "
+                + GenericType.create(valueClass).getTypeName()
+                + " to "
+                + DbMapperManager.TYPE_NAMED_PARAMS.getTypeName()
+                + ": "
+                + ERROR_NO_MAPPER_FOUND;
+        return expectedMessage.equals(exception.getMessage());
+    }
+
+    private static boolean isScalar(Object value) {
+        return value instanceof CharSequence
+                || value instanceof Number
+                || value instanceof Boolean
+                || value instanceof Character
+                || value instanceof Enum<?>
+                || value instanceof jakarta.json.JsonValue;
+    }
+
+    private record NamedParameter(Object value, Map<String, Object> flattenedValues) {
+        private static NamedParameter create(Object value) {
+            return new NamedParameter(value, Map.of());
+        }
     }
 
     /**
