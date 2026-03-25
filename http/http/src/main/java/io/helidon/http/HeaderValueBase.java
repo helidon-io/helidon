@@ -70,7 +70,7 @@ abstract class HeaderValueBase implements Header {
 
     @Override
     public <N> Value<N> as(Function<? super String, ? extends N> mapper) {
-        return Value.create(Services.get(Mappers.class), name(), mapper.apply(get()), QUALIFIER);
+        return Value.create(name(), mapper.apply(get()), QUALIFIER);
     }
 
     @Override

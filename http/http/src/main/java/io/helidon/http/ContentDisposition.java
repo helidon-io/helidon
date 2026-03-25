@@ -31,9 +31,7 @@ import java.util.regex.Pattern;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
-import io.helidon.common.mapper.Mappers;
 import io.helidon.common.mapper.Value;
-import io.helidon.service.registry.Services;
 
 /**
  * A generic representation of the {@code Content-Disposition} header.
@@ -187,7 +185,7 @@ public class ContentDisposition implements Header {
 
     @Override
     public Value<String> asString() {
-        return Value.create(Services.get(Mappers.class), name(), get(), GenericType.STRING, "http", "header");
+        return Value.create(name(), get(), GenericType.STRING, "http", "header");
     }
 
     @Override
