@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,17 @@
 package io.helidon.dbclient.mongodb;
 
 import java.lang.System.Logger.Level;
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import jakarta.json.Json;
+import jakarta.json.JsonValue;
 
 /**
  * Statement parameter parsers.
@@ -42,6 +45,21 @@ final class StatementParsers {
      * @return JSON value
      */
     static String toJson(Object value) {
+        if (value == null) {
+            return JsonValue.NULL.toString();
+        }
+        if (value instanceof JsonValue jsonValue) {
+            return jsonValue.toString();
+        }
+        if (value instanceof Map<?, ?> map) {
+            return toJsonObject(map);
+        }
+        if (value instanceof Iterable<?> iterable) {
+            return toJsonArray(iterable);
+        }
+        if (value.getClass().isArray()) {
+            return toJsonArray(value);
+        }
         if ((value instanceof Integer) || (value instanceof Short) || (value instanceof Byte)) {
             return Json.createValue(((Number) value).intValue()).toString();
         }
@@ -66,6 +84,45 @@ final class StatementParsers {
         }
         // String.valueOf handles null value
         return Json.createValue(String.valueOf(value)).toString();
+    }
+
+    private static String toJsonObject(Map<?, ?> value) {
+        StringBuilder builder = new StringBuilder("{");
+        Iterator<? extends Map.Entry<?, ?>> iterator = value.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<?, ?> entry = iterator.next();
+            builder.append(Json.createValue(String.valueOf(entry.getKey())));
+            builder.append(':');
+            builder.append(toJson(entry.getValue()));
+            if (iterator.hasNext()) {
+                builder.append(',');
+            }
+        }
+        return builder.append('}').toString();
+    }
+
+    private static String toJsonArray(Iterable<?> value) {
+        StringBuilder builder = new StringBuilder("[");
+        Iterator<?> iterator = value.iterator();
+        while (iterator.hasNext()) {
+            builder.append(toJson(iterator.next()));
+            if (iterator.hasNext()) {
+                builder.append(',');
+            }
+        }
+        return builder.append(']').toString();
+    }
+
+    private static String toJsonArray(Object value) {
+        StringBuilder builder = new StringBuilder("[");
+        int length = Array.getLength(value);
+        for (int i = 0; i < length; i++) {
+            builder.append(toJson(Array.get(value, i)));
+            if (i + 1 < length) {
+                builder.append(',');
+            }
+        }
+        return builder.append(']').toString();
     }
 
     private StatementParsers() {
