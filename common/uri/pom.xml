@@ -46,11 +46,6 @@
             <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-registry</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>

@@ -27,10 +27,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.mapper.Mappers;
 import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.mapper.Value;
-import io.helidon.service.registry.Services;
 
 final class UriQueryWriteableImpl implements UriQueryWriteable {
     private final Map<String, List<String>> rawQueryParams = new HashMap<>();
@@ -174,7 +172,7 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
             throw new NoSuchElementException("Query parameter \"" + name + "\" is not available");
         }
         return values.stream()
-                .map(it -> Value.create(Services.get(Mappers.class), name, it, GenericType.STRING, "uri", "query"))
+                .map(it -> Value.create(name, it, GenericType.STRING, "uri", "query"))
                 .collect(Collectors.toList());
     }
 

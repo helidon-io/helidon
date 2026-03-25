@@ -25,11 +25,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.mapper.Mappers;
 import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.mapper.Value;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.service.registry.Services;
 
 import static io.helidon.common.uri.UriEncoding.decodeUri;
 
@@ -37,11 +35,9 @@ class UriMatrixParameters implements Parameters {
     private static final String COMPONENT = "uri/matrix";
     private static final String[] QUALIFIERS = new String[] {"uri", "matrix"};
     private final Map<String, List<String>> matrixParams;
-    private final Mappers mapperManager;
 
     private UriMatrixParameters(Map<String, List<String>> matrixParams) {
         this.matrixParams = matrixParams;
-        this.mapperManager = Services.get(Mappers.class);
     }
 
     static Parameters create(String rawPath) {
@@ -85,13 +81,13 @@ class UriMatrixParameters implements Parameters {
                 // param now contains the path parameter
                 int eq = param.indexOf('=');
                 if (eq == -1) {
-                    pathParams.computeIfAbsent(decodeUri(param), it -> new ArrayList<>(1))
+                    pathParams.computeIfAbsent(decodeUri(param), _ -> new ArrayList<>(1))
                             .add("");
                 } else {
                     // now each value may be comma separated
                     String[] values = param.substring(eq + 1).split(",");
                     List<String> valueList = pathParams.computeIfAbsent(decodeUri(param.substring(0, eq)),
-                                                                        it -> new ArrayList<>(1));
+                                                                        _ -> new ArrayList<>(1));
                     for (String value : values) {
                         valueList.add(decodeUri(value));
                     }
@@ -99,7 +95,7 @@ class UriMatrixParameters implements Parameters {
             }
         }
 
-        pathParams.replaceAll((name, values) -> List.copyOf(values));
+        pathParams.replaceAll((_, values) -> List.copyOf(values));
         return new UriMatrixParameters(pathParams);
     }
 
@@ -115,7 +111,7 @@ class UriMatrixParameters implements Parameters {
     @Override
     public List<Value<String>> allValues(String name) throws NoSuchElementException {
         return all(name).stream()
-                .map(it -> Value.create(mapperManager, name, it, GenericType.STRING, QUALIFIERS))
+                .map(it -> Value.create(name, it, GenericType.STRING, QUALIFIERS))
                 .collect(Collectors.toList());
     }
 
@@ -125,7 +121,7 @@ class UriMatrixParameters implements Parameters {
         if (value == null) {
             throw new NoSuchElementException("This path does not contain parameter named \"" + name + "\"");
         }
-        return value.get(0);
+        return value.getFirst();
     }
 
     @Override
@@ -134,7 +130,7 @@ class UriMatrixParameters implements Parameters {
         if (value == null) {
             return OptionalValue.createEmpty(name, QUALIFIERS);
         }
-        return OptionalValue.create(mapperManager, name, value.get(0), GenericType.STRING, QUALIFIERS);
+        return OptionalValue.create(name, value.getFirst(), GenericType.STRING, QUALIFIERS);
     }
 
     @Override
