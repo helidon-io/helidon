@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,9 @@ import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.mapper.Value;
+import io.helidon.service.registry.Services;
 
 abstract class HeaderValueBase implements Header {
     private static final String[] QUALIFIER = new String[] {"http", "header"};
@@ -64,12 +65,12 @@ abstract class HeaderValueBase implements Header {
 
     @Override
     public <T> T get(Class<T> type) {
-        return MapperManager.global().map(get(), String.class, type, QUALIFIER);
+        return Services.get(Mappers.class).map(get(), String.class, type, QUALIFIER);
     }
 
     @Override
     public <N> Value<N> as(Function<? super String, ? extends N> mapper) {
-        return Value.create(MapperManager.global(), name(), mapper.apply(get()), QUALIFIER);
+        return Value.create(name(), mapper.apply(get()), QUALIFIER);
     }
 
     @Override
@@ -154,7 +155,6 @@ abstract class HeaderValueBase implements Header {
                 + "sensitive=" + sensitive + ']';
     }
 
-    @SuppressWarnings("removal")
     private static final class UnmappedValue<T> implements Value<T> {
         private final String name;
         private final T value;
@@ -186,7 +186,7 @@ abstract class HeaderValueBase implements Header {
             if (isType(type)) {
                 return (Value<N>) this;
             }
-            return Value.create(MapperManager.global(), name, value, this.type, QUALIFIER)
+            return Value.create(Services.get(Mappers.class), name, value, this.type, QUALIFIER)
                     .as(type);
         }
 
@@ -196,7 +196,7 @@ abstract class HeaderValueBase implements Header {
                 //noinspection unchecked
                 return (Value<N>) this;
             }
-            return Value.create(MapperManager.global(), name, value, this.type, QUALIFIER)
+            return Value.create(Services.get(Mappers.class), name, value, this.type, QUALIFIER)
                     .as(type);
         }
 
@@ -217,7 +217,7 @@ abstract class HeaderValueBase implements Header {
             if (isType(Boolean.class) || isType(boolean.class)) {
                 return (Value<Boolean>) this;
             }
-            return Value.create(MapperManager.global(), name, value, this.type, QUALIFIER)
+            return Value.create(Services.get(Mappers.class), name, value, this.type, QUALIFIER)
                     .asBoolean();
         }
 
@@ -227,7 +227,7 @@ abstract class HeaderValueBase implements Header {
             if (isType(String.class)) {
                 return (Value<String>) this;
             }
-            return Value.create(MapperManager.global(), name, value, this.type, QUALIFIER)
+            return Value.create(Services.get(Mappers.class), name, value, this.type, QUALIFIER)
                     .asString();
         }
 
@@ -237,7 +237,7 @@ abstract class HeaderValueBase implements Header {
             if (isType(Integer.class) || isType(int.class)) {
                 return (Value<Integer>) this;
             }
-            return Value.create(MapperManager.global(), name, value, this.type, QUALIFIER)
+            return Value.create(Services.get(Mappers.class), name, value, this.type, QUALIFIER)
                     .asInt();
         }
 
@@ -247,7 +247,7 @@ abstract class HeaderValueBase implements Header {
             if (isType(Long.class) || isType(long.class)) {
                 return (Value<Long>) this;
             }
-            return Value.create(MapperManager.global(), name, value, this.type, QUALIFIER)
+            return Value.create(Services.get(Mappers.class), name, value, this.type, QUALIFIER)
                     .asLong();
         }
 
@@ -257,7 +257,7 @@ abstract class HeaderValueBase implements Header {
             if (isType(Double.class) || isType(double.class)) {
                 return (Value<Double>) this;
             }
-            return Value.create(MapperManager.global(), name, value, this.type, QUALIFIER)
+            return Value.create(Services.get(Mappers.class), name, value, this.type, QUALIFIER)
                     .asDouble();
         }
 

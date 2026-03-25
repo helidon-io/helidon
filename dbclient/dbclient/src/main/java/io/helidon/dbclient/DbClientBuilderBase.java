@@ -20,7 +20,8 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
+import io.helidon.common.mapper.MappersConfig;
 import io.helidon.config.Config;
 import io.helidon.dbclient.spi.DbClientBuilder;
 import io.helidon.dbclient.spi.DbMapperProvider;
@@ -34,14 +35,15 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
         implements DbClientBuilder<T> {
 
     private final DbMapperManager.Builder dbMapperBuilder = DbMapperManager.builder();
-    private final MapperManager.Builder mapperBuilder = MapperManager.builder();
+    private final MappersConfig.Builder mapperBuilder = Mappers.builder()
+            .useBuiltInMappers(false);
 
     private String url;
     private String username;
     private String password;
     private boolean missingMapParametersAsNull;
     private DbStatements statements;
-    private MapperManager mapperManager;
+    private Mappers mapperManager;
     private DbMapperManager dbMapperManager;
     private final List<DbClientService> clientServices;
 
@@ -143,7 +145,7 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
     }
 
     @Override
-    public T mapperManager(MapperManager manager) {
+    public T mapperManager(Mappers manager) {
         this.mapperManager = manager;
         return identity();
     }
@@ -228,7 +230,7 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
      *
      * @return {@code Mapper} manager.
      */
-    public MapperManager mapperManager() {
+    public Mappers mapperManager() {
         return mapperManager;
     }
 

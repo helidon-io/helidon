@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.mapper.OptionalValue;
 
 /**
@@ -29,7 +29,7 @@ import io.helidon.common.mapper.OptionalValue;
 public abstract class DbColumnBase implements DbColumn {
 
     private final Object value;
-    private final MapperManager mapperManager;
+    private final Mappers mapperManager;
     private final String[] mappingQualifiers;
 
     /**
@@ -39,7 +39,7 @@ public abstract class DbColumnBase implements DbColumn {
      * @param mapperManager     mapper manager
      * @param mappingQualifiers mapping qualifiers
      */
-    protected DbColumnBase(Object value, MapperManager mapperManager, String... mappingQualifiers) {
+    protected DbColumnBase(Object value, Mappers mapperManager, String... mappingQualifiers) {
         this.value = value;
         this.mapperManager = mapperManager;
         this.mappingQualifiers = mappingQualifiers;
@@ -82,7 +82,7 @@ public abstract class DbColumnBase implements DbColumn {
     @Override
     public <N> OptionalValue<N> as(Class<N> type) throws MapperException {
         if (value == null) {
-            return OptionalValue.create(mapperManager, name(), type, "dbclient", "column");
+            return OptionalValue.createEmpty(name(), "dbclient", "column");
         }
         return OptionalValue.create(mapperManager, name(), get(type), "dbclient", "column");
     }
@@ -90,7 +90,7 @@ public abstract class DbColumnBase implements DbColumn {
     @Override
     public <N> OptionalValue<N> as(GenericType<N> type) throws MapperException {
         if (value == null) {
-            return OptionalValue.create(mapperManager, name(), type, "dbclient", "column");
+            return OptionalValue.createEmpty(name(), "dbclient", "column");
         }
         return OptionalValue.create(mapperManager, name(), get(type), "dbclient", "column");
     }
@@ -99,7 +99,7 @@ public abstract class DbColumnBase implements DbColumn {
     @Override
     public <N> OptionalValue<N> as(Function<? super Object, ? extends N> mapper) {
         if (value == null) {
-            return OptionalValue.create(mapperManager, name(), (Class<N>) javaType(), "dbclient", "column");
+            return OptionalValue.createEmpty(name(), "dbclient", "column");
         }
         return OptionalValue.create(mapperManager, name(), mapper.apply(value), "dbclient", "column");
     }

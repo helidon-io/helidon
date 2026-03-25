@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbColumnBase;
 
@@ -33,7 +33,7 @@ class JdbcColumn extends DbColumnBase {
 
     private final MetaData metaData;
 
-    private JdbcColumn(Object value, MetaData metaData, MapperManager mapperManager) {
+    private JdbcColumn(Object value, MetaData metaData, Mappers mapperManager) {
         super(value, mapperManager, DbClient.MAPPING_QUALIFIER);
         this.metaData = metaData;
     }
@@ -69,7 +69,7 @@ class JdbcColumn extends DbColumnBase {
      * @return column metadata
      * @throws SQLException if a database access error occurs or this method is called on a closed result set
      */
-    static JdbcColumn create(ResultSet rs, MetaData metaData, MapperManager mapperManager, int index) throws SQLException {
+    static JdbcColumn create(ResultSet rs, MetaData metaData, Mappers mapperManager, int index) throws SQLException {
         return new JdbcColumn(
                 rs.getObject(index),
                 metaData,

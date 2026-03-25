@@ -23,8 +23,7 @@ import io.helidon.common.mapper.spi.MapperProvider;
 import io.helidon.service.registry.Service;
 
 @Service.Singleton
-@SuppressWarnings("removal")
-class MappersFactory implements Supplier<MapperManager> {
+class MappersFactory implements Supplier<Mappers> {
     private final List<MapperProvider> mapperProviders;
     private final List<Mapper<?, ?>> mappers;
 
@@ -35,12 +34,12 @@ class MappersFactory implements Supplier<MapperManager> {
     }
 
     @Override
-    public MapperManager get() {
-        return new MappersImpl(Mappers.builder()
+    public Mappers get() {
+        return Mappers.builder()
                 .mapperProvidersDiscoverServices(false)
                 .mappersDiscoverServices(false)
                 .update(it -> mappers.forEach(it::addMapper))
                 .update(it -> mapperProviders.forEach(it::addMapperProvider))
-                .buildPrototype());
+                .build();
     }
 }
