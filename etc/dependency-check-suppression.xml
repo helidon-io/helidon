@@ -31,7 +31,7 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
 </suppress>
 
 <!--
-    This CVE is against DOMPurify brought in by javascript in the smallrye UI component.
+    These CVEs are against DOMPurify brought in by javascript in the smallrye UI component.
     In 4.x we made this component "provided". We can't do that in 2.x and 3.x due to compatiblity concerns.
     Also, this is primarily a developer feature and not intended for a production runtime.
 -->
@@ -41,6 +41,20 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    ]]></notes>
    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
    <vulnerabilityName>CVE-2025-26791</vulnerabilityName>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: smallrye-open-api-ui-3.13.0.jar: swagger-ui-bundle.js
+   ]]></notes>
+   <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+   <cve>CVE-2026-0540</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: smallrye-open-api-ui-3.13.0.jar: swagger-ui-bundle.js
+   ]]></notes>
+   <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+   <cve>CVE-2025-15599</cve>
 </suppress>
 
 
