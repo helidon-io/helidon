@@ -17,14 +17,14 @@
 package io.helidon.webserver.tests.http2;
 
 import java.time.Duration;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.RequestException;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2ErrorCode;
@@ -41,7 +41,7 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.testing.junit5.http2.Http2TestClient;
 import io.helidon.webserver.testing.junit5.http2.Http2TestConnection;
 
-import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -54,8 +54,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 class ContentLengthTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(100);
-    private static CompletableFuture<Exception> consumeExceptionFuture = new CompletableFuture<>();
-    private static CompletableFuture<Exception> sendExceptionFuture = new CompletableFuture<>();
+    private static final HeaderName PROBE_ID = HeaderNames.create("test-probe-id");
+    // The server is shared across the whole class, so route-side state must be keyed per request.
+    private static final Map<String, TestProbe> TEST_PROBES = new ConcurrentHashMap<>();
+
+    private String probeId;
+    private TestProbe testProbe;
 
     static {
         LogConfig.configureRuntime();
@@ -64,15 +68,23 @@ class ContentLengthTest {
     @SetUpRoute
     static void router(HttpRouting.Builder router) {
         router.route(Http2Route.route(POST, "/", (req, res) -> {
+            TestProbe testProbe = req.headers()
+                    .first(PROBE_ID)
+                    .map(TEST_PROBES::get)
+                    .orElse(null);
             try {
                 req.content().consume();
             } catch (Exception e) {
-                consumeExceptionFuture.complete(e);
+                if (testProbe != null) {
+                    testProbe.consumeExceptionFuture().complete(e);
+                }
             }
             try {
                 res.send("pong");
             } catch (Exception e) {
-                sendExceptionFuture.complete(e);
+                if (testProbe != null) {
+                    testProbe.sendExceptionFuture().complete(e);
+                }
             }
         }));
     }
@@ -87,16 +99,21 @@ class ContentLengthTest {
 
     @BeforeEach
     void beforeEach() {
-        consumeExceptionFuture = new CompletableFuture<>();
-        sendExceptionFuture = new CompletableFuture<>();
+        probeId = UUID.randomUUID().toString();
+        testProbe = new TestProbe();
+        TEST_PROBES.put(probeId, testProbe);
+    }
+
+    @AfterEach
+    void afterEach() {
+        TEST_PROBES.remove(probeId);
     }
 
     @Test
     void shorterData(Http2TestClient client) {
         Http2TestConnection h2conn = client.createConnection();
 
-        var headers = WritableHeaders.create();
-        headers.add(HeaderNames.CONTENT_LENGTH, 5);
+        var headers = headers(5);
         h2conn.request(1, POST, "/", headers, BufferData.create("fra"));
 
         h2conn.assertSettings(TIMEOUT);
@@ -108,19 +125,16 @@ class ContentLengthTest {
         byte[] responseBytes = h2conn.assertNextFrame(Http2FrameType.DATA, TIMEOUT).data().readBytes();
         assertThat(new String(responseBytes), is("pong"));
 
-        assertFalse(consumeExceptionFuture.isDone());
-        assertFalse(sendExceptionFuture.isDone());
+        assertNoHandlerExceptions();
     }
 
     @Test
     void longerData(Http2TestClient client) {
         Http2TestConnection h2conn = client.createConnection();
 
-        assertFalse(consumeExceptionFuture.isDone());
-        assertFalse(sendExceptionFuture.isDone());
+        assertNoHandlerExceptions();
 
-        var headers = WritableHeaders.create();
-        headers.add(HeaderNames.CONTENT_LENGTH, 2);
+        var headers = headers(2);
         h2conn.request(1, POST, "/", headers, BufferData.create("frank"));
 
         h2conn.assertSettings(TIMEOUT);
@@ -138,12 +152,11 @@ class ContentLengthTest {
     }
 
     @Test
-    void longerDataSecondStream(Http2TestClient client) throws ExecutionException, InterruptedException, TimeoutException {
+    void longerDataSecondStream(Http2TestClient client) {
         Http2TestConnection h2conn = client.createConnection();
 
         // First send payload with proper data length
-        var headers = WritableHeaders.create();
-        headers.add(HeaderNames.CONTENT_LENGTH, 5);
+        var headers = headers(5);
         h2conn.request(1, POST, "/", headers, BufferData.create("frank"));
 
         h2conn.assertSettings(TIMEOUT);
@@ -153,12 +166,10 @@ class ContentLengthTest {
         h2conn.assertNextFrame(Http2FrameType.HEADERS, TIMEOUT);
         h2conn.assertNextFrame(Http2FrameType.DATA, TIMEOUT);
 
-        assertFalse(consumeExceptionFuture.isDone());
-        assertFalse(sendExceptionFuture.isDone());
+        assertNoHandlerExceptions();
 
         // Now send payload larger than advertised data length
-        headers = WritableHeaders.create();
-        headers.add(HeaderNames.CONTENT_LENGTH, 2);
+        headers = headers(2);
         h2conn.request(3, POST, "/", headers, BufferData.create("frank"));
 
         h2conn.assertRstStream(3, TIMEOUT);
@@ -171,5 +182,24 @@ class ContentLengthTest {
         The original block of code should have been removed when changes for unix domain sockets were done, as in
         longerData() above.
          */
+    }
+
+    private WritableHeaders<?> headers(long contentLength) {
+        var headers = WritableHeaders.create();
+        headers.add(HeaderNames.CONTENT_LENGTH, contentLength);
+        headers.add(PROBE_ID, probeId);
+        return headers;
+    }
+
+    private void assertNoHandlerExceptions() {
+        assertFalse(testProbe.consumeExceptionFuture().isDone());
+        assertFalse(testProbe.sendExceptionFuture().isDone());
+    }
+
+    private record TestProbe(CompletableFuture<Exception> consumeExceptionFuture,
+                             CompletableFuture<Exception> sendExceptionFuture) {
+        private TestProbe() {
+            this(new CompletableFuture<>(), new CompletableFuture<>());
+        }
     }
 }
