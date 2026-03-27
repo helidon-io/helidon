@@ -40,6 +40,7 @@ import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2HuffmanDecoder;
 import io.helidon.http.http2.Http2LoggingFrameListener;
+import io.helidon.http.http2.Http2Ping;
 import io.helidon.http.http2.Http2Priority;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2Settings;
@@ -344,7 +345,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * Sends PING frame to server. Can be used to check if connection is healthy.
      */
     public void sendPing() {
-        connection.sendPing();
+        connection.writer().write(Http2Ping.create().toFrameData());
     }
 
     /**

@@ -22,7 +22,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -42,6 +41,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class Http2ClientConnectionPingTest {
+    private static final Duration TEST_WAIT_TIMEOUT = Duration.ofSeconds(10);
     private static final Http2StreamConfig STREAM_CONFIG = new Http2StreamConfig() {
         @Override
         public boolean priorKnowledge() {
@@ -77,45 +77,39 @@ class Http2ClientConnectionPingTest {
     @Test
     void pingWaitsForMatchingAck() throws Exception {
         MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofSeconds(1));
-        CompletableFuture<Long> payloadFuture = new CompletableFuture<>();
+        CompletableFuture<Boolean> pingFuture = startPing(test);
 
-        Thread.ofPlatform().start(() -> {
-            try {
-                long pingPayload = readPingPayloadId(test.awaitWrite());
-                payloadFuture.complete(pingPayload);
-                test.connection().pong(pingPayload + 1);
-                Thread.sleep(50);
-                test.connection().pong(pingPayload);
-            } catch (Throwable t) {
-                payloadFuture.completeExceptionally(t);
-            }
-        });
-
-        boolean pingResult = test.connection().ping();
-        long pingPayload = payloadFuture.get(1, TimeUnit.SECONDS);
+        long pingPayload = readPingPayloadId(test.awaitWrite());
         assertThat(pingPayload, is(1L));
-        assertThat(pingResult, is(true));
+        test.connection().pong(pingPayload + 1);
+        assertThat(pingFuture.isDone(), is(false));
+        test.connection().pong(pingPayload);
+
+        assertThat(pingFuture.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS), is(true));
     }
 
     @Test
     void pingTimesOutWhenOnlyUnmatchedAckArrives() throws Exception {
         MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
-        CompletableFuture<Long> payloadFuture = new CompletableFuture<>();
+        CompletableFuture<Boolean> pingFuture = startPing(test);
 
+        long pingPayload = readPingPayloadId(test.awaitWrite());
+        assertThat(pingPayload, is(1L));
+        test.connection().pong(pingPayload + 1);
+
+        assertThat(pingFuture.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS), is(false));
+    }
+
+    private static CompletableFuture<Boolean> startPing(MockedConnectionTestContext test) {
+        CompletableFuture<Boolean> pingFuture = new CompletableFuture<>();
         Thread.ofPlatform().start(() -> {
             try {
-                long pingPayload = readPingPayloadId(test.awaitWrite());
-                payloadFuture.complete(pingPayload);
-                test.connection().pong(pingPayload + 1);
+                pingFuture.complete(test.connection().ping());
             } catch (Throwable t) {
-                payloadFuture.completeExceptionally(t);
+                pingFuture.completeExceptionally(t);
             }
         });
-
-        boolean pingResult = test.connection().ping();
-        long pingPayload = payloadFuture.get(1, TimeUnit.SECONDS);
-        assertThat(pingPayload, is(1L));
-        assertThat(pingResult, is(false));
+        return pingFuture;
     }
 
     private static long readPingPayloadId(BufferData frame) {
@@ -167,7 +161,7 @@ class Http2ClientConnectionPingTest {
         }
 
         private BufferData awaitWrite() throws InterruptedException {
-            BufferData write = dataWriter.asyncWrites.poll(5, TimeUnit.SECONDS);
+            BufferData write = dataWriter.asyncWrites.poll(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             if (write == null) {
                 fail("Timed out waiting for ping write");
             }
