@@ -217,10 +217,6 @@ public class Http2ClientConnection {
         return state.get().closed() || (protocolConfig.ping() && !ping());
     }
 
-    void sendPing() {
-        writer().write(Http2Ping.create().toFrameData());
-    }
-
     /**
      * Sends a connection health-check PING and waits for the matching ACK.
      * This method tracks a single in-flight health-check ping per connection.
@@ -234,7 +230,7 @@ public class Http2ClientConnection {
         pingPongSemaphore.drainPermits();
         expectedPingAck = pingId;
         try {
-            this.writer().write(frameData);
+            this.writer().writeData(frameData, FlowControl.Outbound.NOOP);
             boolean pongReceived = pingPongSemaphore.tryAcquire(protocolConfig.pingTimeout().toMillis(), TimeUnit.MILLISECONDS);
             if (!pongReceived) {
                 pingPongSemaphore.drainPermits();
