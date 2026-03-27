@@ -77,3 +77,6 @@ user.txt
 ObjectStore/
 PutObjectStoreDirHere/
 RUNTIMEDB/
+
+# OCA
+.oca/
