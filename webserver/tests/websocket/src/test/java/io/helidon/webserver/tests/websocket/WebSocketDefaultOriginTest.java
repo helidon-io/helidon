@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,20 +29,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.http1.Http1Config;
-import io.helidon.webserver.http1.Http1ConnectionSelector;
-import io.helidon.webserver.websocket.WsConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.websocket.WsRouting;
 import io.helidon.websocket.WsCloseCodes;
 import io.helidon.websocket.WsListener;
 import io.helidon.websocket.WsSession;
-import io.helidon.webserver.websocket.WsRouting;
-import io.helidon.webserver.websocket.WsUpgrader;
 
 import org.junit.jupiter.api.Test;
 
@@ -53,43 +47,31 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
-class WebSocketOriginTest {
-    private static final String ALLOWED_ORIGIN = "http://allowed.example";
-    private static final String BLOCKED_ORIGIN = "http://blocked.example";
+class WebSocketDefaultOriginTest {
     private final HttpClient client;
     private final WebServer webServer;
 
-    public WebSocketOriginTest(WebServer webServer) {
+    WebSocketDefaultOriginTest(WebServer webServer) {
         this.client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
         this.webServer = webServer;
     }
 
-    @SetUpServer
-    static void updateServer(WebServerConfig.Builder builder) {
-        builder.addConnectionSelector(Http1ConnectionSelector.builder()
-                                              .config(Http1Config.create())
-                                              .addUpgrader(WsUpgrader.create(WsConfig.builder()
-                                                                                     .addOrigin(ALLOWED_ORIGIN)
-                                                                                     .build()))
-                                              .build());
-    }
-
     @SetUpRoute
     static void routing(Router.RouterBuilder<?> router) {
         router.addRouting(WsRouting.builder()
-                                  .endpoint("/single", WebSocketOriginTest::single));
+                                  .endpoint("/single", WebSocketDefaultOriginTest::single));
     }
 
     @Test
-    void testSingle() throws ExecutionException, InterruptedException, TimeoutException {
+    void testSameOriginAllowedByDefault() throws ExecutionException, InterruptedException, TimeoutException {
         int port = webServer.port();
         List<String> received = new LinkedList<>();
         CompletableFuture<Boolean> wsCompleted = new CompletableFuture<>();
 
         java.net.http.WebSocket webSocket = client.newWebSocketBuilder()
-                .header("Origin", ALLOWED_ORIGIN)
+                .header("Origin", "http://localhost:" + port)
                 .buildAsync(URI.create("ws://localhost:" + port + "/single"),
                             new java.net.http.WebSocket.Listener() {
                                 @Override
@@ -110,10 +92,10 @@ class WebSocketOriginTest {
     }
 
     @Test
-    void testRejectedOrigin() {
+    void testCrossOriginRejectedByDefault() {
         int port = webServer.port();
         CompletableFuture<java.net.http.WebSocket> future = client.newWebSocketBuilder()
-                .header("Origin", BLOCKED_ORIGIN)
+                .header("Origin", "http://example.com")
                 .buildAsync(URI.create("ws://localhost:" + port + "/single"),
                             new java.net.http.WebSocket.Listener() {
                             });

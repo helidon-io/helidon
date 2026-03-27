@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package io.helidon.webserver.websocket;
 
 import java.lang.System.Logger.Level;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -25,6 +27,7 @@ import java.util.Set;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
@@ -34,6 +37,8 @@ import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.RequestException;
+import io.helidon.http.RequestedUriDiscoveryContext;
+import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
@@ -92,6 +97,9 @@ public class WsUpgrader implements Http1Upgrader {
     protected static final Header SUPPORTED_VERSION_HEADER = HeaderValues.create(WS_VERSION, SUPPORTED_VERSION);
     static final Headers EMPTY_HEADERS = WritableHeaders.create();
     private static final System.Logger LOGGER = System.getLogger(WsUpgrader.class.getName());
+    private static final RequestedUriDiscoveryContext DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT =
+            RequestedUriDiscoveryContext.builder()
+                    .build();
     private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(US_ASCII);
     private static final int KEY_SUFFIX_LENGTH = KEY_SUFFIX.length;
     private static final Base64.Decoder B64_DECODER = Base64.getDecoder();
@@ -154,16 +162,8 @@ public class WsUpgrader implements Http1Upgrader {
             return null;
         }
 
-        if (!anyOrigin()) {
-            if (headers.contains(HeaderNames.ORIGIN)) {
-                String origin = headers.get(HeaderNames.ORIGIN).get();
-                if (!origins().contains(origin)) {
-                    throw RequestException.builder()
-                            .message("Invalid Origin")
-                            .type(DirectHandler.EventType.FORBIDDEN)
-                            .build();
-                }
-            }
+        if (headers.contains(HeaderNames.ORIGIN)) {
+            validateOrigin(ctx, prologue, headers, headers.get(HeaderNames.ORIGIN).get());
         }
 
         // invoke user-provided HTTP upgrade handler
@@ -203,6 +203,67 @@ public class WsUpgrader implements Http1Upgrader {
 
     protected Set<String> origins() {
         return origins;
+    }
+
+    private void validateOrigin(ConnectionContext ctx,
+                                HttpPrologue prologue,
+                                WritableHeaders<?> headers,
+                                String origin) {
+        if (!anyOrigin()) {
+            if (origins().contains(origin)) {
+                return;
+            }
+        } else if (sameOrigin(ctx, prologue, headers, origin)) {
+            return;
+        }
+
+        throw RequestException.builder()
+                .message("Invalid Origin")
+                .type(DirectHandler.EventType.FORBIDDEN)
+                .build();
+    }
+
+    private boolean sameOrigin(ConnectionContext ctx,
+                               HttpPrologue prologue,
+                               WritableHeaders<?> headers,
+                               String origin) {
+        URI originUri;
+        try {
+            originUri = new URI(origin);
+        } catch (URISyntaxException e) {
+            return false;
+        }
+
+        if (originUri.getScheme() == null || originUri.getHost() == null) {
+            return false;
+        }
+
+        UriInfo requestedUri = ctx.listenerContext()
+                .config()
+                .requestedUriDiscoveryContext()
+                .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT)
+                .uriInfo(ctx.remotePeer().address(),
+                         ctx.localPeer().address(),
+                         prologue.uriPath().rawPath(),
+                         ServerRequestHeaders.create(headers),
+                         prologue.query(),
+                         ctx.isSecure());
+
+        return normalizeOrigin(originUri).equals(normalizedRequestedUri(requestedUri));
+    }
+
+    private static String normalizedRequestedUri(UriInfo requestedUri) {
+        return requestedUri.scheme() + "://" + requestedUri.host() + ":" + requestedUri.port();
+    }
+
+    private static String normalizeOrigin(URI originUri) {
+        String scheme = originUri.getScheme().toLowerCase();
+        String host = originUri.getHost().toLowerCase();
+        int port = originUri.getPort();
+        if (port == -1) {
+            port = "https".equals(scheme) ? 443 : 80;
+        }
+        return scheme + "://" + host + ":" + port;
     }
 
     protected String hash(ConnectionContext ctx, String wsKey) {
