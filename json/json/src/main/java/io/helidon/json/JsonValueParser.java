@@ -162,13 +162,7 @@ class JsonValueParser implements JsonParser {
 
     @Override
     public int readStringAsHash() {
-        String key = current.asString().value();
-        int fnvHash = JsonParserArray.FNV_OFFSET_BASIS;
-        for (byte b : key.getBytes(StandardCharsets.UTF_8)) {
-            fnvHash ^= (b & 0xFF);
-            fnvHash *= JsonParserArray.FNV_PRIME;
-        }
-        return fnvHash;
+        return JsonParserArray.fnv1aHashUtf8(current.asString().value());
     }
 
     @Override
@@ -203,11 +197,20 @@ class JsonValueParser implements JsonParser {
 
     @Override
     public float readFloat() {
-        return (float) current.asNumber().doubleValue();
+        return (float) readDouble();
     }
 
     @Override
     public double readDouble() {
+        if (current.type() == JsonValueType.STRING) {
+            String value = current.asString().value();
+            return switch (value) {
+                case "NaN" -> Double.NaN;
+                case "Infinity", "infinity" -> Double.POSITIVE_INFINITY;
+                case "-Infinity", "-infinity" -> Double.NEGATIVE_INFINITY;
+                default -> throw createException("Invalid double number");
+            };
+        }
         return current.asNumber().doubleValue();
     }
 

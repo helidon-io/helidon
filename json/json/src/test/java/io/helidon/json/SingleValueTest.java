@@ -102,6 +102,60 @@ class SingleValueTest {
 
     @ParameterizedTest
     @EnumSource(ParserMethod.class)
+    public void testParseQuotedDoubleNaN(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"NaN\"");
+
+        assertThat(Double.isNaN(parser.readDouble()), is(true));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseQuotedDoublePositiveInfinity(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"Infinity\"");
+
+        assertThat(parser.readDouble(), is(Double.POSITIVE_INFINITY));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseQuotedDoubleNegativeInfinity(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"-Infinity\"");
+
+        assertThat(parser.readDouble(), is(Double.NEGATIVE_INFINITY));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseQuotedFloatNaN(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"NaN\"");
+
+        assertThat(Float.isNaN(parser.readFloat()), is(true));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseQuotedFloatPositiveInfinity(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"Infinity\"");
+
+        assertThat(parser.readFloat(), is(Float.POSITIVE_INFINITY));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseQuotedFloatNegativeInfinity(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"-Infinity\"");
+
+        assertThat(parser.readFloat(), is(Float.NEGATIVE_INFINITY));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
     public void testParseBoolean(ParserMethod parserMethod) {
         boolean expected = true;
         String template = "true";

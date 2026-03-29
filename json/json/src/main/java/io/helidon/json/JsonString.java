@@ -16,8 +16,6 @@
 
 package io.helidon.json;
 
-import java.nio.charset.StandardCharsets;
-
 /**
  * Represents a JSON string value.
  * <p>
@@ -93,7 +91,7 @@ public final class JsonString extends JsonValue {
     }
 
     private void resolveValue() {
-        resolvedValue = new String(buffer, start, length, StandardCharsets.UTF_8);
+        resolvedValue = Parsers.decodeJsonString(buffer, start, length);
     }
 
     @Override

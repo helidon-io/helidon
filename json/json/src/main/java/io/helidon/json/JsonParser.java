@@ -23,6 +23,8 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+import static io.helidon.json.JsonParserArray.WHITESPACE_CHARS;
+
 /**
  * A JSON parser interface for parsing JSON data from various sources.
  * <p>
@@ -63,7 +65,11 @@ public interface JsonParser {
         if (json.length == 0) {
             throw new JsonException("Empty byte array provided");
         }
-        return new JsonParserArray(json);
+        JsonParserArray parser = new JsonParserArray(json);
+        if (WHITESPACE_CHARS[json[0] & 0xff]) {
+            parser.nextToken();
+        }
+        return parser;
     }
 
     /**
@@ -84,7 +90,11 @@ public interface JsonParser {
             throw new JsonException("Invalid start/length: start="
                                             + start + ", length=" + length + ", array length=" + json.length);
         }
-        return new JsonParserArray(json, start, length);
+        JsonParserArray parser = new JsonParserArray(json, start, length);
+        if (WHITESPACE_CHARS[json[start] & 0xff]) {
+            parser.nextToken();
+        }
+        return parser;
     }
 
     /**
@@ -100,7 +110,11 @@ public interface JsonParser {
      */
     static JsonParser create(InputStream inputStream) {
         Objects.requireNonNull(inputStream);
-        return new JsonParserStream(inputStream);
+        JsonParserStream parser = new JsonParserStream(inputStream);
+        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
+            parser.nextToken();
+        }
+        return parser;
     }
 
     /**
@@ -120,7 +134,11 @@ public interface JsonParser {
         if (bufferSize <= 5) {
             throw new IllegalArgumentException("Buffer size must be greater than 5");
         }
-        return new JsonParserStream(inputStream, bufferSize);
+        JsonParserStream parser = new JsonParserStream(inputStream, bufferSize);
+        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
+            parser.nextToken();
+        }
+        return parser;
     }
 
     /**
@@ -350,6 +368,8 @@ public interface JsonParser {
      * Reads a numeric value as a float.
      * <p>
      * This method expects the next token to be a number and converts it to a float.
+     * It also accepts quoted {@code NaN}, {@code Infinity}, and {@code -Infinity}
+     * values emitted by the JSON generator.
      * </p>
      *
      * @return the float value
@@ -361,6 +381,8 @@ public interface JsonParser {
      * Reads a numeric value as a double.
      * <p>
      * This method expects the next token to be a number and converts it to a double.
+     * It also accepts quoted {@code NaN}, {@code Infinity}, and {@code -Infinity}
+     * values emitted by the JSON generator.
      * </p>
      *
      * @return the double value

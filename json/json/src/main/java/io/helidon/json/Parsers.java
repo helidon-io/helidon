@@ -16,6 +16,7 @@
 
 package io.helidon.json;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 /**
@@ -86,6 +87,151 @@ public final class Parsers {
             return "0" + hexString;
         }
         return hexString;
+    }
+
+    static int translateHex(byte b) {
+        int val = HEX_DIGITS[b & 0xFF];
+        if (val == -1) {
+            throw new JsonException("Invalid hex digit found");
+        }
+        return val;
+    }
+
+    static boolean isControlCharacter(byte b) {
+        return b >= 0 && b < 0x20;
+    }
+
+    static int requireUtf8Continuation(byte b, JsonParser parser) {
+        int value = b & 0xFF;
+        if ((value & 0xC0) != 0x80) {
+            throw parser.createException("Invalid UTF-8 continuation byte", b);
+        }
+        return value & 0x3F;
+    }
+
+    static int decodeUtf8TwoByte(byte firstByte, byte secondByte, JsonParser parser) {
+        int codePoint = ((firstByte & 0x1F) << 6)
+                | requireUtf8Continuation(secondByte, parser);
+        if (codePoint < 0x80) {
+            throw parser.createException("Overlong UTF-8 sequence", firstByte);
+        }
+        return codePoint;
+    }
+
+    static int decodeUtf8ThreeByte(byte firstByte, byte secondByte, byte thirdByte, JsonParser parser) {
+        int codePoint = ((firstByte & 0x0F) << 12)
+                | (requireUtf8Continuation(secondByte, parser) << 6)
+                | requireUtf8Continuation(thirdByte, parser);
+        if (codePoint < 0x800) {
+            throw parser.createException("Overlong UTF-8 sequence", firstByte);
+        }
+        if (Character.isSurrogate((char) codePoint)) {
+            throw parser.createException("UTF-8 surrogate code points are not allowed", firstByte);
+        }
+        return codePoint;
+    }
+
+    static int decodeUtf8FourByte(byte firstByte, byte secondByte, byte thirdByte, byte fourthByte, JsonParser parser) {
+        int codePoint = ((firstByte & 0x07) << 18)
+                | (requireUtf8Continuation(secondByte, parser) << 12)
+                | (requireUtf8Continuation(thirdByte, parser) << 6)
+                | requireUtf8Continuation(fourthByte, parser);
+        if (codePoint < 0x10000) {
+            throw parser.createException("Overlong UTF-8 sequence", firstByte);
+        }
+        if (codePoint > 0x10FFFF) {
+            throw parser.createException("Invalid UTF-8 code point", firstByte);
+        }
+        return codePoint;
+    }
+
+    static String decodeJsonString(byte[] buffer, int start, int length) {
+        int end = start + length;
+        for (int i = start; i < end; i++) {
+            byte b = buffer[i];
+            if (b == '\\') {
+                return decodeEscapedJsonString(buffer, start, end);
+            }
+            if (isControlCharacter(b)) {
+                throw new JsonException("Unescaped control character in JSON string");
+            }
+        }
+        return new String(buffer, start, length, StandardCharsets.UTF_8);
+    }
+
+    private static String decodeEscapedJsonString(byte[] buffer, int start, int end) {
+        StringBuilder builder = new StringBuilder(end - start);
+        int segmentStart = start;
+        boolean expectLowSurrogate = false;
+
+        for (int i = start; i < end; i++) {
+            byte current = buffer[i];
+            if (current == '\\') {
+                if (segmentStart < i) {
+                    if (expectLowSurrogate) {
+                        throw new JsonException("Low surrogate must follow the high surrogate.");
+                    }
+                    builder.append(new String(buffer, segmentStart, i - segmentStart, StandardCharsets.UTF_8));
+                }
+                if (++i == end) {
+                    throw new JsonException("Incomplete escaped JSON string");
+                }
+                byte escaped = buffer[i];
+                if (expectLowSurrogate && escaped != 'u') {
+                    throw new JsonException("Low surrogate must follow the high surrogate.");
+                }
+                char decoded = switch (escaped) {
+                    case '\\', '"', '/' -> (char) escaped;
+                    case 'b' -> '\b';
+                    case 'f' -> '\f';
+                    case 'n' -> '\n';
+                    case 'r' -> '\r';
+                    case 't' -> '\t';
+                    case 'u' -> {
+                        if (i + 4 >= end) {
+                            throw new JsonException("Incomplete escaped JSON string");
+                        }
+                        char ch = (char) (
+                                (translateHex(buffer[++i]) << 12)
+                                        + (translateHex(buffer[++i]) << 8)
+                                        + (translateHex(buffer[++i]) << 4)
+                                        + translateHex(buffer[++i]));
+                        if (Character.isHighSurrogate(ch)) {
+                            if (expectLowSurrogate) {
+                                throw new JsonException("A high surrogate must always be followed by a low surrogate");
+                            }
+                            expectLowSurrogate = true;
+                        } else if (Character.isLowSurrogate(ch)) {
+                            if (!expectLowSurrogate) {
+                                throw new JsonException("A low surrogate must always follow a high surrogate");
+                            }
+                            expectLowSurrogate = false;
+                        } else if (expectLowSurrogate) {
+                            throw new JsonException("Low surrogate must follow the high surrogate.");
+                        }
+                        yield ch;
+                    }
+                    default -> throw new JsonException("Invalid escaped value");
+                };
+                builder.append(decoded);
+                segmentStart = i + 1;
+                continue;
+            }
+            if (isControlCharacter(current)) {
+                throw new JsonException("Unescaped control character in JSON string");
+            }
+        }
+
+        if (segmentStart < end) {
+            if (expectLowSurrogate) {
+                throw new JsonException("Low surrogate must follow the high surrogate.");
+            }
+            builder.append(new String(buffer, segmentStart, end - segmentStart, StandardCharsets.UTF_8));
+        } else if (expectLowSurrogate) {
+            throw new JsonException("Low surrogate must follow the high surrogate.");
+        }
+
+        return builder.toString();
     }
 
 }

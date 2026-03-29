@@ -359,8 +359,6 @@ class ValueSkipTest {
         String json = "  \t\n  \"string\"  \t\n  followed content";
         JsonParser parser = parserMethod.createParser(json);
 
-        // Skip whitespace to value
-        parser.nextToken();
         parser.skip();
 
         assertThat(parser.currentByte(), is((byte) '"'));

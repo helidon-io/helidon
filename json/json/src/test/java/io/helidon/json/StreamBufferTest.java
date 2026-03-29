@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for JsonStreamParser buffer management and edge cases.
@@ -141,9 +142,7 @@ class StreamBufferTest {
     @Test
     public void testStreamParserWithEmptyStream() {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(new byte[0]);
-        JsonParser parser = JsonParser.create(inputStream, 10);
-
-        assertThat(parser.hasNext(), is(false));
+        assertThrows(JsonException.class, () -> JsonParser.create(inputStream, 10));
     }
 
     @Test

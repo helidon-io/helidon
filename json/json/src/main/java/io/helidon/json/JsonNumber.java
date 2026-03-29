@@ -25,11 +25,6 @@ import java.math.BigDecimal;
  */
 public final class JsonNumber extends JsonValue {
 
-    private static final BigDecimal LONG_MAX = BigDecimal.valueOf(Long.MAX_VALUE);
-    private static final BigDecimal LONG_MIN = BigDecimal.valueOf(Long.MIN_VALUE);
-    private static final BigDecimal DOUBLE_MAX = BigDecimal.valueOf(Double.MAX_VALUE);
-    private static final BigDecimal DOUBLE_MIN = BigDecimal.valueOf(Double.MIN_VALUE);
-
     private final byte[] buffer;
     private final int start;
     private final int length;
@@ -150,13 +145,8 @@ public final class JsonNumber extends JsonValue {
     @Override
     public void toJson(JsonGenerator generator) {
         if (bigDecimalValue != null) {
-            if (bigDecimalValue.scale() <= 0
-                    && bigDecimalValue.compareTo(LONG_MIN) >= 0
-                    && bigDecimalValue.compareTo(LONG_MAX) <= 0) {
-                generator.write(bigDecimalValue.longValueExact());
-            } else if (bigDecimalValue.compareTo(DOUBLE_MIN) >= 0
-                    && bigDecimalValue.compareTo(DOUBLE_MAX) <= 0) {
-                generator.write(bigDecimalValue.doubleValue());
+            if (bigDecimalValue.scale() <= 0) {
+                generator.write(bigDecimalValue.toBigInteger());
             } else {
                 generator.write(bigDecimalValue);
             }
@@ -166,8 +156,11 @@ public final class JsonNumber extends JsonValue {
             generator.write(doubleValue);
             return;
         }
-
-        JsonParser parser = new JsonParserArray(buffer, start, length);
-        generator.write(parser.readBigDecimal());
+        BigDecimal bigDecimal = bigDecimalValue();
+        if (bigDecimal.scale() <= 0) {
+            generator.write(bigDecimal.toBigInteger());
+        } else {
+            generator.write(bigDecimal);
+        }
     }
 }

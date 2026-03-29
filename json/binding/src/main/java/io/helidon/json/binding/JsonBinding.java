@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
@@ -118,6 +119,37 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @return     the JSON string representation
      */
     <T> String serialize(T obj, GenericType<? super T> type);
+
+    /**
+     * Serializes an object to JSON bytes encoded using UTF-8.
+     * If the provided object is null, returns the bytes of the string {@code null}.
+     *
+     * @param obj the object to serialize, this parameter may be {@code null}
+     * @return the JSON bytes encoded using UTF-8
+     */
+    byte[] serializeToBytes(Object obj);
+
+    /**
+     * Serializes an object of a specific type to JSON bytes encoded using UTF-8.
+     * If the provided object is null, returns the bytes of the string {@code null}.
+     *
+     * @param obj  the object to serialize, this parameter may be {@code null}
+     * @param type the class type of the object
+     * @param <T>  the type of the object
+     * @return the JSON bytes encoded using UTF-8
+     */
+    <T> byte[] serializeToBytes(T obj, Class<? super T> type);
+
+    /**
+     * Serializes an object of a generic type to JSON bytes encoded using UTF-8.
+     * If the provided object is null, returns the bytes of the string {@code null}.
+     *
+     * @param obj  the object to serialize, this parameter may be {@code null}
+     * @param type the generic type of the object
+     * @param <T>  the type of the object
+     * @return the JSON bytes encoded using UTF-8
+     */
+    <T> byte[] serializeToBytes(T obj, GenericType<? super T> type);
 
     /**
      * Serializes an object to JSON and writes it to an OutputStream.

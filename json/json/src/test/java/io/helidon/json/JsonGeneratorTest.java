@@ -16,6 +16,8 @@
 
 package io.helidon.json;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Base64;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -253,6 +255,58 @@ class JsonGeneratorTest {
         }
 
         assertThat(target.generatedJson(), is("{\"name\":\"John\",\"nickname\":null}"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testWriteObjectWithJsonNumberValue(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.writeObjectStart()
+                    .write("id", JsonNumber.create(new BigDecimal("1")))
+                    .writeObjectEnd();
+        }
+
+        assertThat(target.generatedJson(), is("{\"id\":1}"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testWriteBigDecimalAsNumber(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.write(new BigDecimal("12345678901234567890.123456789"));
+        }
+
+        assertThat(target.generatedJson(), is("12345678901234567890.123456789"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testWriteBigIntegerAsNumber(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.write(new BigInteger("123456789012345678901234567890"));
+        }
+
+        assertThat(target.generatedJson(), is("123456789012345678901234567890"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testWriteObjectWithNestedJsonObjectValue(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        JsonObject nested = JsonObject.builder()
+                .set("code", JsonNumber.create(new BigDecimal("7")))
+                .build();
+
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.writeObjectStart()
+                    .write("error", nested)
+                    .writeObjectEnd();
+        }
+
+        assertThat(target.generatedJson(), is("{\"error\":{\"code\":7}}"));
     }
 
     // Array tests
@@ -507,7 +561,7 @@ class JsonGeneratorTest {
             generator.write(Float.NaN);
         }
 
-        assertThat(target.generatedJson(), is("NaN"));
+        assertThat(target.generatedJson(), is("\"NaN\""));
     }
 
     @ParameterizedTest
@@ -518,7 +572,7 @@ class JsonGeneratorTest {
             generator.write(Float.POSITIVE_INFINITY);
         }
 
-        assertThat(target.generatedJson(), is("Infinity"));
+        assertThat(target.generatedJson(), is("\"Infinity\""));
     }
 
     @ParameterizedTest
@@ -529,7 +583,7 @@ class JsonGeneratorTest {
             generator.write(Float.NEGATIVE_INFINITY);
         }
 
-        assertThat(target.generatedJson(), is("-Infinity"));
+        assertThat(target.generatedJson(), is("\"-Infinity\""));
     }
 
     @ParameterizedTest
@@ -540,7 +594,7 @@ class JsonGeneratorTest {
             generator.write(Double.NaN);
         }
 
-        assertThat(target.generatedJson(), is("NaN"));
+        assertThat(target.generatedJson(), is("\"NaN\""));
     }
 
     @ParameterizedTest
@@ -550,7 +604,7 @@ class JsonGeneratorTest {
         try (JsonGenerator generator = target.createGenerator()) {
             generator.write(Double.NEGATIVE_INFINITY);
         }
-        assertThat(target.generatedJson(), is("-Infinity"));
+        assertThat(target.generatedJson(), is("\"-Infinity\""));
     }
 
     @ParameterizedTest
@@ -560,7 +614,7 @@ class JsonGeneratorTest {
         try (JsonGenerator generator = target.createGenerator()) {
             generator.write(Double.POSITIVE_INFINITY);
         }
-        assertThat(target.generatedJson(), is("Infinity"));
+        assertThat(target.generatedJson(), is("\"Infinity\""));
     }
 
 }

@@ -40,19 +40,9 @@ import io.helidon.json.JsonValue;
 
 final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
 
+    private static final int DEFAULT_STREAM_BUFFER_SIZE = 512;
     private static final byte[] NULL_BYTES = "null".getBytes(StandardCharsets.UTF_8);
     private static final char[] NULL_CHARS = "null".toCharArray();
-    private static final boolean[] WHITESPACE_CHARS = new boolean[256];
-
-    static {
-        // ASCII whitespace
-        WHITESPACE_CHARS[0x09] = true; // TAB
-        WHITESPACE_CHARS[0x0A] = true; // LF
-        WHITESPACE_CHARS[0x0B] = true; // VT
-        WHITESPACE_CHARS[0x0C] = true; // FF
-        WHITESPACE_CHARS[0x0D] = true; // CR
-        WHITESPACE_CHARS[0x20] = true; // SPACE
-    }
 
     private final JsonBindingConfig config;
     private final Map<Class<?>, JsonSerializer<?>> initialIdentitySerializers = new IdentityHashMap<>();
@@ -105,23 +95,38 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
 
     @Override
     public String serialize(Object obj) {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        serialize(outputStream, obj);
-        return outputStream.toString(StandardCharsets.UTF_8);
+        return new String(serializeToBytes(obj), StandardCharsets.UTF_8);
     }
 
     @Override
     public <T> String serialize(T obj, Class<? super T> type) {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        serialize(outputStream, obj, type);
-        return outputStream.toString(StandardCharsets.UTF_8);
+        return new String(serializeToBytes(obj, type), StandardCharsets.UTF_8);
     }
 
     @Override
     public <T> String serialize(T obj, GenericType<? super T> type) {
+        return new String(serializeToBytes(obj, type), StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public byte[] serializeToBytes(Object obj) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        serialize(outputStream, obj);
+        return outputStream.toByteArray();
+    }
+
+    @Override
+    public <T> byte[] serializeToBytes(T obj, Class<? super T> type) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         serialize(outputStream, obj, type);
-        return outputStream.toString(StandardCharsets.UTF_8);
+        return outputStream.toByteArray();
+    }
+
+    @Override
+    public <T> byte[] serializeToBytes(T obj, GenericType<? super T> type) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        serialize(outputStream, obj, type);
+        return outputStream.toByteArray();
     }
 
     @Override
@@ -215,9 +220,6 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     public <T> T deserialize(byte[] bytes, Class<T> type) {
         JsonDeserializer<T> deserializer = deserializer(type);
         JsonParser parser = JsonParser.create(bytes);
-        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
-            parser.nextToken();
-        }
         return Deserializers.deserialize(parser, deserializer);
     }
 
@@ -225,9 +227,6 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     public <T> T deserialize(byte[] bytes, GenericType<T> type) {
         JsonDeserializer<T> deserializer = deserializer(type);
         JsonParser parser = JsonParser.create(bytes);
-        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
-            parser.nextToken();
-        }
         return Deserializers.deserialize(parser, deserializer);
     }
 
@@ -243,31 +242,25 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
 
     @Override
     public <T> T deserialize(InputStream inputStream, Class<T> type) {
-        return deserialize(inputStream, 512, type);
+        return deserialize(inputStream, DEFAULT_STREAM_BUFFER_SIZE, type);
     }
 
     @Override
     public <T> T deserialize(InputStream inputStream, int bufferSize, Class<T> type) {
         JsonDeserializer<T> deserializer = deserializer(type);
         JsonParser parser = JsonParser.create(inputStream, bufferSize);
-        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
-            parser.nextToken();
-        }
         return Deserializers.deserialize(parser, deserializer);
     }
 
     @Override
     public <T> T deserialize(InputStream inputStream, GenericType<T> type) {
-        return deserialize(inputStream, 512, type);
+        return deserialize(inputStream, DEFAULT_STREAM_BUFFER_SIZE, type);
     }
 
     @Override
     public <T> T deserialize(InputStream inputStream, int bufferSize, GenericType<T> type) {
         JsonDeserializer<T> deserializer = deserializer(type);
-        JsonParser parser = JsonParser.create(inputStream);
-        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
-            parser.nextToken();
-        }
+        JsonParser parser = JsonParser.create(inputStream, bufferSize);
         return Deserializers.deserialize(parser, deserializer);
     }
 
@@ -275,9 +268,6 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     public <T> T deserialize(Reader reader, Class<T> type) {
         JsonDeserializer<T> deserializer = deserializer(type);
         JsonParser parser = JsonParser.create(reader);
-        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
-            parser.nextToken();
-        }
         return Deserializers.deserialize(parser, deserializer);
     }
 
@@ -285,9 +275,6 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     public <T> T deserialize(Reader reader, GenericType<T> type) {
         JsonDeserializer<T> deserializer = deserializer(type);
         JsonParser parser = JsonParser.create(reader);
-        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
-            parser.nextToken();
-        }
         return Deserializers.deserialize(parser, deserializer);
     }
 
