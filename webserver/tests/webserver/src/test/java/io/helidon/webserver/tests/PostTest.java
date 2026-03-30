@@ -128,7 +128,7 @@ class PostTest {
             headers = response.headers();
         }
         assertThat(headers, hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, noHeader(CONNECTION));
     }
 
     @Test

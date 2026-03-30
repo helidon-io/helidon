@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,6 +134,21 @@ class Http1ClientTest {
                 .mediaContext(new CustomizedMediaContext())
                 .build();
         validateSuccessfulResponse(client, new FakeHttp1ClientConnection());
+    }
+
+    @Test
+    void testResponseWithoutKeepAliveHeaderReusesConnection() {
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(false);
+
+        Http1ClientResponse response = client.put("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .submit("Sending Something");
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.headers(), noHeader(HeaderNames.CONNECTION));
+        assertThat(response.entity().as(String.class), is("Sending Something"));
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
     }
 
     @Test
@@ -622,11 +637,18 @@ class Http1ClientTest {
         private final DataWriter clientWriter;
         private final DataReader serverReader;
         private final DataWriter serverWriter;
+        private final boolean includeKeepAliveHeader;
         private Throwable serverException;
         private ExecutorService webServerEmulator;
         private String prologue;
+        private int releaseCount;
+        private int closeCount;
 
         FakeHttp1ClientConnection() {
+            this(true);
+        }
+
+        FakeHttp1ClientConnection(boolean includeKeepAliveHeader) {
             ArrayBlockingQueue<byte[]> serverToClient = new ArrayBlockingQueue<>(1024);
             ArrayBlockingQueue<byte[]> clientToServer = new ArrayBlockingQueue<>(1024);
 
@@ -634,6 +656,7 @@ class Http1ClientTest {
             this.clientWriter = writer(clientToServer);
             this.serverReader = reader(clientToServer);
             this.serverWriter = writer(serverToClient);
+            this.includeKeepAliveHeader = includeKeepAliveHeader;
         }
 
         @Override
@@ -653,11 +676,15 @@ class Http1ClientTest {
 
         @Override
         public void releaseResource() {
+            releaseCount++;
         }
 
         @Override
         public void closeResource() {
-            webServerEmulator.shutdownNow();
+            closeCount++;
+            if (webServerEmulator != null) {
+                webServerEmulator.shutdownNow();
+            }
         }
 
         @Override
@@ -673,6 +700,14 @@ class Http1ClientTest {
         // This will be used for testing the element of Prologue
         String getPrologue() {
             return prologue;
+        }
+
+        int releaseCount() {
+            return releaseCount;
+        }
+
+        int closeCount() {
+            return closeCount;
         }
 
         private DataWriter writer(ArrayBlockingQueue<byte[]> queue) {
@@ -797,7 +832,9 @@ class Http1ClientTest {
             }
 
             WritableHeaders<?> resHeaders = WritableHeaders.create();
-            resHeaders.add(HeaderValues.CONNECTION_KEEP_ALIVE);
+            if (includeKeepAliveHeader) {
+                resHeaders.add(HeaderValues.CONNECTION_KEEP_ALIVE);
+            }
 
             if (reqHeaders != null) {
                 // Send headers that can be validated if Expect-100-Continue, Content_Length, and Chunked request headers exist

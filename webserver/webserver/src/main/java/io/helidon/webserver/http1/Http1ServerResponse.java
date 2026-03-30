@@ -162,28 +162,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         buffer.write('\n');
     }
 
-    static int nonEntityBytesLength(io.helidon.http.Headers headers, Status status, boolean keepAlive) {
-        int length = statusLineLength(effectiveNonEntityStatus(headers, status));
-        if (!headers.contains(HeaderNames.DATE)) {
-            length += DATE.length + DateTime.http1Bytes().length;
-        }
-
-        for (Header header : headers) {
-            if (header.headerName().index() == HeaderNames.CONNECTION.index()) {
-                if (!keepAlive) {
-                    continue;
-                }
-            }
-            length += http1HeaderLength(header);
-        }
-
-        if (!keepAlive) {
-            length += http1HeaderLength(HeaderValues.CONNECTION_CLOSE);
-        }
-
-        return length + CRLF_LENGTH;
-    }
-
     @Override
     public Http1ServerResponse status(Status status) {
         // set internal state
