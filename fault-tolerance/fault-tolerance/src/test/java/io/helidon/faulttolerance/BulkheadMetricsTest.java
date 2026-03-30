@@ -104,7 +104,7 @@ class BulkheadMetricsTest extends BulkheadBaseTest {
         Gauge<Long> rejected = MetricsUtils.gauge(FT_BULKHEAD_EXECUTIONSREJECTED, nameTag);
         assertThat(rejected.value(), is(1L));
         Timer waitingDuration = MetricsUtils.timer(FT_BULKHEAD_WAITINGDURATION, nameTag);
-        assertThat(waitingDuration.count(), greaterThan(0L));
+        assertThat(waitingDuration.count(), is(0L));
 
         // Unblock inProgress task and get result to free bulkhead
         inProgress.unblock();
@@ -118,6 +118,8 @@ class BulkheadMetricsTest extends BulkheadBaseTest {
         // Check metrics
         assertThat(running.value(), is(1L));
         assertThat(waiting.value(), is(0L));
+        assertThat(waitingDuration.count(), is(1L));
+        assertThat(waitingDuration.totalTime(TimeUnit.MILLISECONDS), greaterThan(0D));
 
         // Unblock enqueued task and get result
         enqueued.unblock();
@@ -156,7 +158,9 @@ class BulkheadMetricsTest extends BulkheadBaseTest {
 
         Tag nameTag = Tag.create("name", bulkhead.name());
         Gauge<Long> waiting = MetricsUtils.gauge(FT_BULKHEAD_EXECUTIONSWAITING, nameTag);
+        Timer waitingDuration = MetricsUtils.timer(FT_BULKHEAD_WAITINGDURATION, nameTag);
         assertThat(waiting.value(), is(0L));
+        assertThat(waitingDuration.count(), is(0L));
 
         Task queued = new Task(1);
         CompletableFuture<Integer> queuedResult = Async.invokeStatic(
@@ -173,6 +177,7 @@ class BulkheadMetricsTest extends BulkheadBaseTest {
 
         assertThat(queued.isStarted(), is(false));
         assertThat(waiting.value(), is(1L));
+        assertThat(waitingDuration.count(), is(0L));
 
         inProgress.unblock();
         inProgressResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
@@ -181,6 +186,8 @@ class BulkheadMetricsTest extends BulkheadBaseTest {
             fail("Task queued not started");
         }
         assertThat(waiting.value(), is(0L));
+        assertThat(waitingDuration.count(), is(1L));
+        assertThat(waitingDuration.totalTime(TimeUnit.MILLISECONDS), greaterThan(0D));
 
         queued.unblock();
         queuedResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);

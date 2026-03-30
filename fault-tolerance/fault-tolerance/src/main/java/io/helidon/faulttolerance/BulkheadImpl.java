@@ -131,19 +131,14 @@ class BulkheadImpl implements Bulkhead {
         try {
             // block current thread until barrier is retracted
             Barrier barrier;
-            long start = 0L;
             boolean waitingCounted = false;
             try {
                 listeners.forEach(l -> l.enqueueing(supplier));
                 if (metricsEnabled) {
-                    start = System.nanoTime();
                     callsWaiting.incrementAndGet();
                     waitingCounted = true;
                 }
                 barrier = queue.enqueue(supplier);
-                if (waitingCounted) {
-                    waitingDurationMetric.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
-                }
             } finally {
                 inProgressLock.unlock(); // we have enqueued, now we can wait
             }
@@ -155,10 +150,15 @@ class BulkheadImpl implements Bulkhead {
                 callsRejected.incrementAndGet();
                 throw new BulkheadException("Bulkhead queue \"" + name + "\" is full");
             }
+            long waitStartedAt = 0L;
+            if (waitingCounted) {
+                waitStartedAt = System.nanoTime();
+            }
             try {
                 barrier.waitOn();
             } finally {
                 if (waitingCounted) {
+                    waitingDurationMetric.record(System.nanoTime() - waitStartedAt, TimeUnit.NANOSECONDS);
                     callsWaiting.decrementAndGet();
                 }
             }
