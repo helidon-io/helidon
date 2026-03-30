@@ -32,7 +32,9 @@ import javax.tools.StandardLocation;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 
 class ApiStabilityEnforcerProcessorTest {
@@ -55,9 +57,93 @@ class ApiStabilityEnforcerProcessorTest {
         assertThat(messages, empty());
     }
 
+    @Test
+    void testMissingTopLevelAnnotationFails() throws IOException {
+        var messages = compileWithApi(new ApiStabilityEnforcerProcessor(),
+                                      new JavaSourceFromString("TestApi.java", """
+                                              package io.helidon.common;
+
+                                              public class TestApi {
+                                              }
+                                              """));
+
+        assertThat(messages,
+                   hasItem(containsString("Public API io.helidon.common.TestApi is missing stability annotation")));
+    }
+
+    @Test
+    void testDuplicateTopLevelAnnotationsFail() throws IOException {
+        var messages = compileWithApi(new ApiStabilityEnforcerProcessor(),
+                                      new JavaSourceFromString("TestApi.java", """
+                                              package io.helidon.common;
+
+                                              @Api.Stable
+                                              @Api.Incubating
+                                              public class TestApi {
+                                              }
+                                              """));
+
+        assertThat(messages,
+                   hasItem(containsString("Public API io.helidon.common.TestApi has more than one stability annotation")));
+    }
+
+    @Test
+    void testTopLevelAnnotationAllowsMemberAndNestedTypes() throws IOException {
+        var messages = compileWithApi(new ApiStabilityEnforcerProcessor(),
+                                      new JavaSourceFromString("TestApi.java", """
+                                              package io.helidon.common;
+
+                                              @Api.Stable
+                                              public class TestApi {
+                                                  @Api.Incubating
+                                                  public TestApi(String value) {
+                                                  }
+
+                                                  @Api.Preview
+                                                  public void preview() {
+                                                  }
+
+                                                  public static class Nested {
+                                                      @Api.Internal
+                                                      public void internal() {
+                                                      }
+                                                  }
+                                              }
+                                              """));
+
+        assertThat(messages, empty());
+    }
+
     private static List<String> compileWithoutApi(Processor processor,
                                                   JavaFileObject... compilationUnits) throws IOException {
         return compile(processor, compilationUnits);
+    }
+
+    private static List<String> compileWithApi(Processor processor,
+                                               JavaFileObject... compilationUnits) throws IOException {
+        List<JavaFileObject> sources = new ArrayList<>();
+        sources.add(new JavaSourceFromString("Api.java", """
+                package io.helidon.common;
+
+                final class Api {
+                    public @interface Stable {
+                    }
+
+                    public @interface Preview {
+                    }
+
+                    public @interface Incubating {
+                    }
+
+                    public @interface Internal {
+                    }
+
+                    public @interface Deprecated {
+                    }
+                }
+                """));
+        sources.addAll(List.of(compilationUnits));
+        return compile(processor, sources.toArray(JavaFileObject[]::new));
     }
 
     private static List<String> compile(Processor processor,

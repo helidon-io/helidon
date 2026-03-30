@@ -4,19 +4,16 @@ API Stability
 API Stability allows Helidon maintainers to mark APIs with one of the stability annotations, to declare its expected use
 and state.
 
-Target state in Helidon:
-- all `public` types in Helidon production modules are annotated with one of the `Api` stability annotation
+Helidon:
+- all `public` top-level types in Helidon production modules are annotated with one `Api` stability annotation
+- methods, constructors, and nested types may also carry their own stability annotations
 - they may also be annotated with `@Api.Since("version")` to announce the version that the stability state changed
 - in Helidon, this is verified by an API Stability Enforcer annotation processor, that must be configured for `default-compile`
 
-Target state for users:
+Users:
 - API Stability annotation processor should be present in user's projects in compiler configuration
 - user's build will fail if they use `Internal` or `Incubating` APIs, unless they suppress warnings, or configure the annotation processor to ignore/warn
 - user's build will print warnings if they use `Preview` or `Deprecated` APIs (also can be suppressed)
-
-Intermediate state:
-- partial annotation of the most relevant APIs (mostly incubating and preview) in Helidon code base
-- user's build will never fail - all actions are set to warn only, as we do not want to break builds (this will change in the next major release of Helidon)
 
 # Stability states and transition
 
@@ -28,7 +25,8 @@ Intermediate state:
 - `Deprecated` - deprecated APIs, will be removed in a major release of Helidon
 - `Internal` - internal APIs, do not use
 
-Initial state: Any state mentioned above - all `public` APIs must be annotated with any of the above annotations
+Initial state: Any state mentioned above - all `public` top-level types must be annotated with one of the above annotations;
+methods, constructors, and nested types may also be annotated
 
 Final state: API is removed from project
 
@@ -57,7 +55,8 @@ Other public APIs cannot be removed;
 
 # Suppression in code
 
-Suppression in code:
+Suppressions can be applied on the using element or one of its containing elements, such as a method, field, top-level
+type, package, or module.
 
 `@SuppressWarnings("all")`
 `@SuppressWarnings("helidon:api")`
@@ -65,6 +64,7 @@ Suppression in code:
 `@SuppressWarnings("helidon:api:incubating")`
 `@SuppressWarnings("helidon:api:internal")`
 `@SuppressWarnings("helidon:api:deprecated")`
+`@SuppressWarnings("deprecation")`
 
 # Annotation processor options
 
@@ -81,12 +81,12 @@ For a specific stability level:
 `-Ahelidon.api.preview=warn` - default
 `-Ahelidon.api.preview=ignore`
 
-`-Ahelidon.api.incubating=fail`
-`-Ahelidon.api.incubating=warn` - default
+`-Ahelidon.api.incubating=fail` - default
+`-Ahelidon.api.incubating=warn`
 `-Ahelidon.api.incubating=ignore`
 
-`-Ahelidon.api.internal=fail`
-`-Ahelidon.api.internal=warn` - default
+`-Ahelidon.api.internal=fail` - default
+`-Ahelidon.api.internal=warn`
 `-Ahelidon.api.internal=ignore`
 
 `-Ahelidon.api.deprecated=fail`

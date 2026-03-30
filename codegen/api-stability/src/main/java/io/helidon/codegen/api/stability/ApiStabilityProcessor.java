@@ -17,8 +17,10 @@
 package io.helidon.codegen.api.stability;
 
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -28,6 +30,8 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
@@ -38,6 +42,7 @@ import io.helidon.codegen.api.stability.ApiStabilityScanner.Ref;
 import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.Trees;
 
 /**
@@ -46,6 +51,7 @@ import com.sun.source.util.Trees;
 @Api.Internal
 public class ApiStabilityProcessor extends AbstractProcessor {
     static final String SUPPRESS_DEPRECATION = "deprecation";
+    private static final String SUPPRESS_JAVA_ALL = "all";
 
     private static final GenericType<Action> ACTION_TYPE = GenericType.create(Action.class);
     private static final Function<String, Action> ACTION_LAMBDA = str -> Action.valueOf(str.toUpperCase(Locale.ROOT));
@@ -66,7 +72,7 @@ public class ApiStabilityProcessor extends AbstractProcessor {
                                                                         Api.SUPPRESS_PREVIEW);
     private static final Option<Action> INCUBATING_ACTION = Option.create("helidon.api.incubating",
                                                                           "Action to take for incubating violations",
-                                                                          Action.WARN,
+                                                                          Action.FAIL,
                                                                           ACTION_LAMBDA,
                                                                           ACTION_TYPE);
     private static final StabilityMeta INCUBATING_META = new StabilityMeta(Api.Incubating.class,
@@ -77,14 +83,13 @@ public class ApiStabilityProcessor extends AbstractProcessor {
                                                                            Api.SUPPRESS_INCUBATING);
     private static final Option<Action> INTERNAL_ACTION = Option.create("helidon.api.internal",
                                                                         "Action to take for internal violations",
-                                                                        Action.WARN,
+                                                                        Action.FAIL,
                                                                         ACTION_LAMBDA,
                                                                         ACTION_TYPE);
     private static final StabilityMeta INTERNAL_META = new StabilityMeta(Api.Internal.class,
                                                                          INTERNAL_ACTION,
                                                                          "internal",
-                                                                         "Do not use these APIs. This will fail the "
-                                                                                 + "build in the next major release of Helidon",
+                                                                         "Do not use these APIs.",
                                                                          Api.SUPPRESS_INTERNAL);
     private static final Option<Action> DEPRECATED_ACTION = Option.create("helidon.api.deprecated",
                                                                           "Action to take for deprecated violations",
@@ -144,6 +149,8 @@ public class ApiStabilityProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         try {
             var trees = Trees.instance(processingEnv);
+            Set<CompilationUnitTree> compilationUnits = new LinkedHashSet<>();
+            Set<ModuleElement> modules = new LinkedHashSet<>();
 
             Set<Ref> previewApis = new LinkedHashSet<>();
             Set<Ref> incubatingApis = new LinkedHashSet<>();
@@ -151,17 +158,24 @@ public class ApiStabilityProcessor extends AbstractProcessor {
             Set<Ref> deprecatedApis = new LinkedHashSet<>();
 
             for (var rootElement : roundEnv.getRootElements()) {
-                var path = trees.getPath(rootElement);
-                if (path != null) {
-                    var unit = path.getCompilationUnit();
-                    var scanner = new ApiStabilityScanner(trees, unit);
-                    scanner.scan(unit, null);
-                    previewApis.addAll(scanner.previewApis());
-                    incubatingApis.addAll(scanner.incubatingApis());
-                    privateApis.addAll(scanner.internalApis());
-                    deprecatedApis.addAll(scanner.deprecatedApis());
+                addCompilationUnit(trees, compilationUnits, rootElement);
+                var moduleElement = moduleElement(rootElement);
+                addCompilationUnit(trees, compilationUnits, moduleElement);
+                if (moduleElement instanceof ModuleElement module) {
+                    modules.add(module);
                 }
             }
+
+            for (var unit : compilationUnits) {
+                var scanner = new ApiStabilityScanner(trees, unit);
+                scanner.scan(unit, null);
+                previewApis.addAll(scanner.previewApis());
+                incubatingApis.addAll(scanner.incubatingApis());
+                privateApis.addAll(scanner.internalApis());
+                deprecatedApis.addAll(scanner.deprecatedApis());
+            }
+
+            scanModuleDirectives(modules, previewApis, incubatingApis, privateApis, deprecatedApis);
 
             if (!previewApis.isEmpty()) {
                 log(previewAction, PREVIEW_META, previewApis);
@@ -223,6 +237,130 @@ public class ApiStabilityProcessor extends AbstractProcessor {
                       DEPRECATED_ACTION.name());
     }
 
+    private static void addCompilationUnit(Trees trees,
+                                           Set<CompilationUnitTree> compilationUnits,
+                                           Element element) {
+        if (element == null) {
+            return;
+        }
+
+        var path = trees.getPath(element);
+        if (path != null) {
+            compilationUnits.add(path.getCompilationUnit());
+        }
+    }
+
+    private static Element moduleElement(Element element) {
+        Element current = element;
+        while (current != null) {
+            if (current.getKind() == ElementKind.MODULE) {
+                return current;
+            }
+            current = current.getEnclosingElement();
+        }
+        return null;
+    }
+
+    private void scanModuleDirectives(Set<ModuleElement> modules,
+                                      Set<Ref> previewApis,
+                                      Set<Ref> incubatingApis,
+                                      Set<Ref> privateApis,
+                                      Set<Ref> deprecatedApis) {
+        for (var module : modules) {
+            for (var directive : module.getDirectives()) {
+                switch (directive.getKind()) {
+                case USES -> {
+                    var usesDirective = (ModuleElement.UsesDirective) directive;
+                    addModuleDirectiveUsages(usesDirective.getService(),
+                                             module,
+                                             previewApis,
+                                             incubatingApis,
+                                             privateApis,
+                                             deprecatedApis);
+                }
+                case PROVIDES -> {
+                    var providesDirective = (ModuleElement.ProvidesDirective) directive;
+                    addModuleDirectiveUsages(providesDirective.getService(),
+                                             module,
+                                             previewApis,
+                                             incubatingApis,
+                                             privateApis,
+                                             deprecatedApis);
+
+                    for (var implementation : providesDirective.getImplementations()) {
+                        addModuleDirectiveUsages(implementation,
+                                                 module,
+                                                 previewApis,
+                                                 incubatingApis,
+                                                 privateApis,
+                                                 deprecatedApis);
+                    }
+                }
+                default -> {
+                    // no-op
+                }
+                }
+            }
+        }
+    }
+
+    private void addModuleDirectiveUsages(TypeElement usedElement,
+                                          ModuleElement module,
+                                          Set<Ref> previewApis,
+                                          Set<Ref> incubatingApis,
+                                          Set<Ref> privateApis,
+                                          Set<Ref> deprecatedApis) {
+        addModuleDirectiveUsage(usedElement, module, Api.Internal.class, privateApis, Api.SUPPRESS_INTERNAL);
+        addModuleDirectiveUsage(usedElement,
+                                module,
+                                Api.Incubating.class,
+                                incubatingApis,
+                                Api.SUPPRESS_INCUBATING);
+        addModuleDirectiveUsage(usedElement, module, Api.Preview.class, previewApis, Api.SUPPRESS_PREVIEW);
+        addModuleDirectiveUsage(usedElement,
+                                module,
+                                Api.Deprecated.class,
+                                deprecatedApis,
+                                Api.SUPPRESS_DEPRECATED,
+                                SUPPRESS_DEPRECATION);
+    }
+
+    private void addModuleDirectiveUsage(TypeElement usedElement,
+                                         ModuleElement module,
+                                         Class<? extends Annotation> annotation,
+                                         Set<Ref> apiRefs,
+                                         String... suppressStrings) {
+        if (usedElement.getAnnotation(annotation) == null) {
+            return;
+        }
+
+        for (String suppressString : suppressStrings) {
+            if (isSuppressed(module, suppressString)) {
+                return;
+            }
+        }
+
+        apiRefs.add(new Ref(usedElement.toString(), Optional.empty()));
+    }
+
+    private boolean isSuppressed(Element element, String suppressString) {
+        var current = element;
+        while (current != null) {
+            var suppressWarnings = current.getAnnotation(SuppressWarnings.class);
+            if (suppressWarnings != null) {
+                for (var value : suppressWarnings.value()) {
+                    if (SUPPRESS_JAVA_ALL.equals(value)
+                            || Api.SUPPRESS_ALL.equals(value)
+                            || suppressString.equals(value)) {
+                        return true;
+                    }
+                }
+            }
+            current = current.getEnclosingElement();
+        }
+        return false;
+    }
+
     private void log(Action previewAction, StabilityMeta meta, Set<Ref> usages) {
         if (previewAction == Action.IGNORE) {
             return;
@@ -241,30 +379,27 @@ public class ApiStabilityProcessor extends AbstractProcessor {
                 + Api.class.getSimpleName() + "." + meta.annotation.getSimpleName() + ". " + meta.warning());
 
         messager.printMessage(kind, "This " + kind
-                + " can be suppressed with @SuppressWarnings(\"" + meta.suppressValues[0] + "\") or "
+                + " can be suppressed with " + suppressionMessage(meta)
+                + " or "
                 + "compiler argument -A" + meta.compilerOption().name() + "=ignore");
 
         for (Ref ref : usages) {
             if (ref.sourceLocation().isPresent()) {
                 var source = ref.sourceLocation().get();
-                if (kind == Diagnostic.Kind.ERROR) {
-                    // also print code that uses it
-                    messager.printMessage(kind,
-                                          source.path() + ":[" + source.line()
-                                                  + "," + source.column() + "] " + ref.name() + " is " + meta.name() + " API\n"
-                                                  + source.code() + "\n"
-                                                  + " ".repeat(source.locationOfErrorInCode()) + "^");
-                } else {
-                    // only print that it is used
-                    messager.printMessage(kind,
-                                          source.path() + ":[" + source.line()
-                                                  + "," + source.column() + "] " + ref.name() + " is " + meta.name() + " API");
-                }
-
+                messager.printMessage(kind,
+                                      source.path() + ":[" + source.line()
+                                              + "," + source.column() + "] " + ref.name() + " is " + meta.name() + " API");
             } else {
                 messager.printMessage(kind, ref.name() + " is " + meta.name() + " API");
             }
         }
+    }
+
+    private static String suppressionMessage(StabilityMeta meta) {
+        return Arrays.stream(meta.suppressValues())
+                .map(value -> "@SuppressWarnings(\"" + value + "\")")
+                .reduce((left, right) -> left + " or " + right)
+                .orElseThrow();
     }
 
     private record StabilityMeta(Class<? extends Annotation> annotation,

@@ -46,5 +46,7 @@
     <modules>
         <module>test-codegen</module>
         <module>test-codegen-use</module>
+        <module>test-api-stability-dependency</module>
+        <module>test-api-stability-consumer</module>
     </modules>
 </project>

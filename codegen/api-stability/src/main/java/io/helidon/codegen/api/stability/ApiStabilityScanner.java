@@ -16,7 +16,6 @@
 
 package io.helidon.codegen.api.stability;
 
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,12 +26,15 @@ import java.util.function.Supplier;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic;
 
 import io.helidon.common.Api;
 
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MemberSelectTree;
+import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreeScanner;
@@ -72,6 +74,18 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
         return visit(path, () -> super.visitIdentifier(node, unused));
     }
 
+    @Override
+    public Void visitNewClass(NewClassTree node, Void unused) {
+        var path = trees.getPath(unit, node);
+        return visit(path, () -> super.visitNewClass(node, unused));
+    }
+
+    @Override
+    public Void visitMemberReference(MemberReferenceTree node, Void unused) {
+        var path = trees.getPath(unit, node);
+        return visit(path, () -> super.visitMemberReference(node, unused));
+    }
+
     Collection<Ref> previewApis() {
         return previewApis;
     }
@@ -105,7 +119,9 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
                 if (checkAnnotation(path, elt, Api.Deprecated.class, deprecatedApis, SUPPRESS_DEPRECATED, SUPPRESS_DEPRECATION)) {
                     return null;
                 }
-                return null;
+                // Keep scanning qualified usages so an annotated enclosing type is reported
+                // even when the selected member itself is stable.
+                return superCall.get();
             }
         }
         return superCall.get();
@@ -122,18 +138,13 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
             return false;
         }
         // this element is annotated with the API stability annotation
-        var enclosingElt = enclosingElement(path);
-        if (enclosingElt == null) {
-            // cannot identify enclosing element
-            return true;
-        }
-        var usingCode = usingCode(path, enclosingElt);
+        var usingCode = usingCode(path);
         if (usingCode.isEmpty()) {
             // we cannot identify who uses the element
             return true;
         } else {
             for (String suppressString : suppressStrings) {
-                if (isSuppressed(usingCode.get().enlosingElement(), suppressString)) {
+                if (isSuppressed(usingCode.get().enclosingElement(), suppressString)) {
                     // annotation exists, but usage is suppressed on one of the containing elements
                     return true;
                 }
@@ -145,18 +156,18 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
         return true;
     }
 
-    private Optional<SourceRef> usingCode(TreePath path, Element enclosingElement) {
+    private Optional<SourceRef> usingCode(TreePath path) {
         TreePath node = path.getParentPath();
         while (node != null) {
             switch (node.getLeaf().getKind()) {
-            case CLASS -> {
+            case CLASS, INTERFACE, ENUM, RECORD, ANNOTATION_TYPE, MODULE, PACKAGE -> {
                 var elt = trees.getElement(node);
-                if (elt != null && !enclosingElement.equals(elt)) {
+                if (elt != null) {
                     return sourceRef(node, elt);
                 }
             }
             case IMPORT -> {
-                return sourceRef(node, classElement(node.getCompilationUnit()));
+                return sourceRef(node, topLevelElement(node.getCompilationUnit()));
             }
             case METHOD, VARIABLE -> {
                 return sourceRef(node, enclosingElement(node));
@@ -170,16 +181,34 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
         return Optional.empty();
     }
 
-    private Element classElement(CompilationUnitTree compilationUnit) {
-        // imports belong to the compilation unit, and not the top level class
-        // we want to be able to suppress warnings on the first class of the compilation unit
-        for (Tree typeDecl : compilationUnit.getTypeDecls()) {
+    private Element topLevelElement(CompilationUnitTree compilationUnit) {
+        // imports belong to the compilation unit, so we anchor them to the first top-level declaration
+        // package-info.java uses the package, module-info.java uses the module, otherwise we use the first type
+        var module = compilationUnit.getModule();
+        if (module != null) {
+            return element(compilationUnit, module);
+        }
 
-            if (typeDecl.getKind() == Tree.Kind.CLASS) {
-                return trees.getElement(trees.getPath(compilationUnit, typeDecl));
+        for (Tree typeDecl : compilationUnit.getTypeDecls()) {
+            var element = element(compilationUnit, typeDecl);
+            if (element != null) {
+                return element;
             }
         }
+
+        var pkg = compilationUnit.getPackage();
+        if (pkg != null) {
+            return element(compilationUnit, pkg);
+        }
         return null;
+    }
+
+    private Element element(CompilationUnitTree compilationUnit, Tree tree) {
+        if (tree == null) {
+            return null;
+        }
+        var path = trees.getPath(compilationUnit, tree);
+        return path == null ? null : trees.getElement(path);
     }
 
     /**
@@ -193,31 +222,19 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
         CompilationUnitTree compilationUnit = node.getCompilationUnit();
         var sources = trees.getSourcePositions();
         var startPosition = sources.getStartPosition(compilationUnit, node.getLeaf());
-        var endPosition = sources.getEndPosition(compilationUnit, node.getLeaf());
+        if (startPosition == Diagnostic.NOPOS) {
+            return Optional.empty();
+        }
         var lineMap = compilationUnit.getLineMap();
         long lineNumber = lineMap.getLineNumber(startPosition);
         long column = lineMap.getColumnNumber(startPosition);
-        var lineStartPosition = lineMap.getStartPosition(lineNumber);
-        long diff = startPosition - lineStartPosition;
-
-        try {
-            var code = compilationUnit.getSourceFile()
-                    .getCharContent(true)
-                    .subSequence((int) lineStartPosition, (int) endPosition);
-            var filePath = compilationUnit.getSourceFile()
-                    .toUri()
-                    .getPath();
-            return Optional.of(new SourceRef((int) lineNumber,
-                                             (int) column,
-                                             (int) startPosition,
-                                             (int) endPosition,
-                                             (int) diff,
-                                             code.toString(),
-                                             filePath,
-                                             enclosingElement));
-        } catch (IOException e) {
-            return Optional.empty();
-        }
+        var filePath = compilationUnit.getSourceFile()
+                .toUri()
+                .getPath();
+        return Optional.of(new SourceRef((int) lineNumber,
+                                         (int) column,
+                                         filePath,
+                                         enclosingElement));
     }
 
     private boolean isSuppressed(Element enclosingElement, String suppressString) {
@@ -247,14 +264,11 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
         var n = node;
         while (n != null) {
             switch (n.getLeaf().getKind()) {
-            case VARIABLE -> {
+            case VARIABLE, METHOD, CLASS, INTERFACE, ENUM, RECORD, ANNOTATION_TYPE, MODULE, PACKAGE -> {
                 var elt = trees.getElement(n);
                 if (elt != null) {
                     return elt;
                 }
-            }
-            case METHOD, CLASS -> {
-                return trees.getElement(n);
             }
             default -> {
                 // no-op
@@ -267,12 +281,8 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
 
     record SourceRef(int line,
                      int column,
-                     int startPosition,
-                     int endPosition,
-                     int locationOfErrorInCode,
-                     String code,
                      String path,
-                     Element enlosingElement) {
+                     Element enclosingElement) {
     }
 
     record Ref(String name,
