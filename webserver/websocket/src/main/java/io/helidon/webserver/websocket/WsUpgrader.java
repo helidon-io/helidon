@@ -205,8 +205,7 @@ public class WsUpgrader implements Http1Upgrader {
      * @param headers request headers
      * @param origin origin header value
      */
-    private void validateOrigin(WritableHeaders<?> headers,
-                                String origin) {
+    private void validateOrigin(WritableHeaders<?> headers, String origin) {
         if (!anyOrigin()) {
             if (origins().contains(origin)) {
                 return;

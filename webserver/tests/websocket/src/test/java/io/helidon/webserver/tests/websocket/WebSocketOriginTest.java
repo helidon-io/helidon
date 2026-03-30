@@ -82,6 +82,9 @@ class WebSocketOriginTest {
                                   .endpoint("/single", WebSocketOriginTest::single));
     }
 
+    /**
+     * Verify that an allowlisted origin is accepted.
+     */
     @Test
     void testSingle() throws ExecutionException, InterruptedException, TimeoutException {
         int port = webServer.port();
@@ -109,6 +112,9 @@ class WebSocketOriginTest {
         assertThat(received, hasItem("LOWER"));
     }
 
+    /**
+     * Verify that a non-allowlisted origin is rejected.
+     */
     @Test
     void testRejectedOrigin() {
         int port = webServer.port();
@@ -125,6 +131,9 @@ class WebSocketOriginTest {
         assertThat(handshakeException.getResponse().statusCode(), is(403));
     }
 
+    /**
+     * Verify that same-host origins are still rejected when an explicit allowlist is configured.
+     */
     @Test
     void testSameHostNotAllowlistedRejected() {
         int port = webServer.port();
@@ -141,6 +150,9 @@ class WebSocketOriginTest {
         assertThat(handshakeException.getResponse().statusCode(), is(403));
     }
 
+    /**
+     * Verify that requests without an origin header are allowed.
+     */
     @Test
     void testMissingOriginAllowed() throws ExecutionException, InterruptedException, TimeoutException {
         int port = webServer.port();

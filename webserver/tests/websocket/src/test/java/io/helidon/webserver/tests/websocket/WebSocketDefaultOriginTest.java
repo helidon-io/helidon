@@ -64,6 +64,9 @@ class WebSocketDefaultOriginTest {
                                   .endpoint("/single", WebSocketDefaultOriginTest::single));
     }
 
+    /**
+     * Verify that a matching host authority is accepted when no explicit allowlist is configured.
+     */
     @Test
     void testMatchingHostAllowedByDefault() throws ExecutionException, InterruptedException, TimeoutException {
         int port = webServer.port();
@@ -91,6 +94,9 @@ class WebSocketDefaultOriginTest {
         assertThat(received, hasItem("LOWER"));
     }
 
+    /**
+     * Verify that a cross-host origin is rejected when no explicit allowlist is configured.
+     */
     @Test
     void testCrossOriginRejectedByDefault() {
         int port = webServer.port();

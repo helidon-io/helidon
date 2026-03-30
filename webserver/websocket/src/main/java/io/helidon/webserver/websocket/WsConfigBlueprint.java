@@ -32,8 +32,9 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 interface WsConfigBlueprint extends ProtocolConfig {
     /**
      * WebSocket origins.
-     * If this set is empty, requests with an {@code Origin} header must match the request {@code Host}
-     * header authority. If this set is non-empty, it acts as an explicit allowlist.
+     * If this set is empty, requests with an {@code Origin} header
+     * must match the request {@code Host} header authority.
+     * If this set is non-empty, it acts as an explicit allowlist.
      * Requests without an {@code Origin} header are allowed.
      *
      * @return origins
