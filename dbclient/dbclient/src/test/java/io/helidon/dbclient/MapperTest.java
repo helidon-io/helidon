@@ -16,12 +16,13 @@
 package io.helidon.dbclient;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoField;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -39,6 +40,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests {@link DbMapperProviderImpl}.
  */
 class MapperTest {
+    private static final LocalDate TEST_DATE = LocalDate.of(2026, 3, 29);
+    private static final LocalTime TEST_TIME = LocalTime.of(12, 34, 56);
+    private static final Instant TEST_INSTANT = Instant.parse("2026-03-29T10:34:56Z");
 
     private static Mappers mm;
 
@@ -47,100 +51,68 @@ class MapperTest {
         mm = Services.get(Mappers.class);
     }
 
-    /**
-     * Current date with time set to 00:00:00.
-     *
-     * @return current date with time set to 00:00:00
-     */
-    private static OffsetDateTime currentDate() {
-        return OffsetDateTime.now()
-                .with(ChronoField.HOUR_OF_DAY, 0)
-                .with(ChronoField.MINUTE_OF_HOUR, 0)
-                .with(ChronoField.SECOND_OF_MINUTE, 0)
-                .with(ChronoField.NANO_OF_SECOND, 0);
-    }
-
-    /**
-     * Current time with date set to 1. 1. 1970 (epoch).
-     *
-     * @return current time with date set to 1. 1. 1970 (epoch)
-     */
-    private static OffsetDateTime currentTime() {
-        // this returns time in current timezone, but moved to 1970 January, so daylight savings will cause mayhem
-        return OffsetDateTime.now()
-                .with(ChronoField.YEAR, 1970)
-                .with(ChronoField.MONTH_OF_YEAR, 1)
-                .with(ChronoField.DAY_OF_MONTH, 1);
-    }
-
     @Test
     void testSqlDateToLocalDate() {
-        OffsetDateTime dt = currentDate();
-        java.sql.Date source = new java.sql.Date(dt.toInstant().toEpochMilli());
+        java.sql.Date source = java.sql.Date.valueOf(TEST_DATE);
         LocalDate target = mm.map(source, java.sql.Date.class, LocalDate.class, "dbclient");
-        assertThat(target.toEpochSecond(LocalTime.MIN, dt.getOffset()), is(source.getTime()/1000));
+        assertThat(target, is(TEST_DATE));
     }
 
     @Test
     void testSqlDateToUtilDate() {
-        OffsetDateTime dt = OffsetDateTime.now();
-        java.sql.Date source = new java.sql.Date(dt.toInstant().toEpochMilli());
+        java.sql.Date source = java.sql.Date.valueOf(TEST_DATE);
         Date target = mm.map(source, java.sql.Date.class, Date.class, "dbclient");
         assertThat(target.getTime(), is(source.getTime()));
     }
 
     @Test
     void testSqlTimeToLocalTime() {
-        OffsetDateTime dt = currentTime();
-        java.sql.Time source = new java.sql.Time(dt.toInstant().toEpochMilli());
+        java.sql.Time source = java.sql.Time.valueOf(TEST_TIME);
         LocalTime target = mm.map(source, java.sql.Time.class, LocalTime.class, "dbclient");
 
-        assertThat(target, is(source.toLocalTime()));
+        assertThat(target, is(TEST_TIME));
     }
 
     @Test
     void testSqlTimeToUtilDate() {
-        OffsetDateTime dt = OffsetDateTime.now();
-        java.sql.Time source = new java.sql.Time(dt.toInstant().toEpochMilli());
+        java.sql.Time source = java.sql.Time.valueOf(TEST_TIME);
         Date target = mm.map(source, java.sql.Time.class, Date.class, "dbclient");
         assertThat(target.getTime(), is(source.getTime()));
     }
 
     @Test
     void testSqlTimestampToGregorianCalendar() {
-        Timestamp source = new Timestamp(System.currentTimeMillis());
+        Timestamp source = Timestamp.from(TEST_INSTANT);
         GregorianCalendar target = mm.map(source, Timestamp.class, GregorianCalendar.class, "dbclient");
         assertThat(target.getTimeInMillis(), is(source.getTime()));
     }
 
     @Test
     void testSqlTimestampToCalendar() {
-        Timestamp source = new Timestamp(System.currentTimeMillis());
+        Timestamp source = Timestamp.from(TEST_INSTANT);
         Calendar target = mm.map(source, Timestamp.class, Calendar.class, "dbclient");
         assertThat(target.getTimeInMillis(), is(source.getTime()));
     }
 
     @Test
     void testSqlTimestampToLocalDateTime() {
-        // Need to know time zone too.
-        OffsetDateTime dt = OffsetDateTime.now();
-        Timestamp source = new Timestamp(dt.toInstant().toEpochMilli());
+        Timestamp source = Timestamp.from(TEST_INSTANT);
         LocalDateTime target = mm.map(source, Timestamp.class, LocalDateTime.class, "dbclient");
-        assertThat(target.atOffset(dt.getOffset()).toInstant().toEpochMilli(), is(source.getTime()));
+        assertThat(target, is(LocalDateTime.ofInstant(TEST_INSTANT, ZoneId.systemDefault())));
     }
 
     @Test
     void testSqlTimestampToUtilDate() {
-        Timestamp source = new Timestamp(System.currentTimeMillis());
+        Timestamp source = Timestamp.from(TEST_INSTANT);
         Date target = mm.map(source, Timestamp.class, Date.class, "dbclient");
         assertThat(target.getTime(), is(source.getTime()));
     }
 
     @Test
     void testSqlTimestampToZonedDateTime() {
-        Timestamp source = new Timestamp(System.currentTimeMillis());
+        Timestamp source = Timestamp.from(TEST_INSTANT);
         ZonedDateTime target = mm.map(source, Timestamp.class, ZonedDateTime.class, "dbclient");
-        assertThat(target.toInstant().toEpochMilli(), is(source.getTime()));
+        assertThat(target, is(TEST_INSTANT.atZone(ZoneOffset.UTC)));
     }
 
 }
