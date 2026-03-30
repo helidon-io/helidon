@@ -301,6 +301,9 @@ public abstract class ReadableEntityBase implements ReadableEntity {
 
         @Override
         public int read(byte[] b, int off, int len) {
+            if (len == 0) {
+                return 0;
+            }
             if (finished) {
                 return -1;
             }
