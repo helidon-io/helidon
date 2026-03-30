@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+@SuppressWarnings("helidon:api:incubating")
 module io.helidon.declarative.tests.websocket {
     requires io.helidon.webserver.websocket;
     requires io.helidon.common.media.type;
