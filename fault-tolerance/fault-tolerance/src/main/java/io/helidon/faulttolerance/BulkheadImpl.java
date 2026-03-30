@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,28 +132,36 @@ class BulkheadImpl implements Bulkhead {
             // block current thread until barrier is retracted
             Barrier barrier;
             long start = 0L;
+            boolean waitingCounted = false;
             try {
                 listeners.forEach(l -> l.enqueueing(supplier));
                 if (metricsEnabled) {
                     start = System.nanoTime();
                     callsWaiting.incrementAndGet();
+                    waitingCounted = true;
                 }
                 barrier = queue.enqueue(supplier);
-            } finally {
-                try {
-                    if (metricsEnabled) {
-                        waitingDurationMetric.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
-                        callsWaiting.decrementAndGet();
-                    }
-                } finally {
-                    inProgressLock.unlock(); // we have enqueued, now we can wait
+                if (waitingCounted) {
+                    waitingDurationMetric.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
                 }
+            } finally {
+                inProgressLock.unlock(); // we have enqueued, now we can wait
             }
 
             if (barrier == null) {
+                if (waitingCounted) {
+                    callsWaiting.decrementAndGet();
+                }
+                callsRejected.incrementAndGet();
                 throw new BulkheadException("Bulkhead queue \"" + name + "\" is full");
             }
-            barrier.waitOn();
+            try {
+                barrier.waitOn();
+            } finally {
+                if (waitingCounted) {
+                    callsWaiting.decrementAndGet();
+                }
+            }
 
             // unblocked so we can proceed with execution
             listeners.forEach(l -> l.dequeued(supplier));
