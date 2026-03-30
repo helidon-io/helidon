@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2024, 2026 Oracle and/or its affiliates.
+    Copyright (c) 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,31 +20,21 @@
         xmlns="http://maven.apache.org/POM/4.0.0"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>io.helidon.codegen</groupId>
-        <artifactId>helidon-codegen-project</artifactId>
-        <version>27.0.0-SNAPSHOT</version>
+        <groupId>io.helidon.codegen.api.stability.it</groupId>
+        <artifactId>api-stability-warn</artifactId>
+        <version>@project.version@</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.helidon.codegen.tests</groupId>
-    <artifactId>helidon-codegen-tests-project</artifactId>
+    <artifactId>api-stability-dependency</artifactId>
+    <name>Helidon Codegen API Stability IT Dependency</name>
 
-    <name>Helidon Codegen Tests Project</name>
-    <packaging>pom</packaging>
-
-    <properties>
-        <maven.deploy.skip>true</maven.deploy.skip>
-        <maven.sources.skip>true</maven.sources.skip>
-        <maven.javadoc.skip>true</maven.javadoc.skip>
-        <spotbugs.skip>true</spotbugs.skip>
-        <dependency-check.skip>true</dependency-check.skip>
-        <checkstyle.skip>true</checkstyle.skip>
-        <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
-    </properties>
-
-    <modules>
-        <module>test-codegen</module>
-        <module>test-codegen-use</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 </project>

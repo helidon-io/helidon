@@ -33,6 +33,7 @@
 
     <properties>
         <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
+        <version.lib.apache-groovy>5.0.4</version.lib.apache-groovy>
     </properties>
 
     <dependencies>
@@ -55,6 +56,16 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-testkit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
@@ -74,6 +85,35 @@
                 <configuration>
                     <proc>none</proc>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*IT.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-invoker-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>install</goal>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.groovy</groupId>
+                        <artifactId>groovy</artifactId>
+                        <version>${version.lib.apache-groovy}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
