@@ -125,6 +125,48 @@ class WebSocketOriginTest {
         assertThat(handshakeException.getResponse().statusCode(), is(403));
     }
 
+    @Test
+    void testSameHostNotAllowlistedRejected() {
+        int port = webServer.port();
+        CompletableFuture<java.net.http.WebSocket> future = client.newWebSocketBuilder()
+                .header("Origin", "http://localhost:" + port)
+                .buildAsync(URI.create("ws://localhost:" + port + "/single"),
+                            new java.net.http.WebSocket.Listener() {
+                            });
+
+        ExecutionException exception = assertThrows(ExecutionException.class,
+                                                    () -> future.get(5, TimeUnit.SECONDS));
+        assertThat(exception.getCause(), instanceOf(WebSocketHandshakeException.class));
+        WebSocketHandshakeException handshakeException = (WebSocketHandshakeException) exception.getCause();
+        assertThat(handshakeException.getResponse().statusCode(), is(403));
+    }
+
+    @Test
+    void testMissingOriginAllowed() throws ExecutionException, InterruptedException, TimeoutException {
+        int port = webServer.port();
+        List<String> received = new LinkedList<>();
+        CompletableFuture<Boolean> wsCompleted = new CompletableFuture<>();
+
+        java.net.http.WebSocket webSocket = client.newWebSocketBuilder()
+                .buildAsync(URI.create("ws://localhost:" + port + "/single"),
+                            new java.net.http.WebSocket.Listener() {
+                                @Override
+                                public CompletionStage<?> onText(java.net.http.WebSocket webSocket,
+                                                                 CharSequence data,
+                                                                 boolean last) {
+                                    received.add(data.toString());
+                                    wsCompleted.complete(last);
+                                    return wsCompleted;
+                                }
+                            })
+                .get(5, TimeUnit.SECONDS);
+        webSocket.sendText("lower", true);
+        webSocket.sendClose(WsCloseCodes.NORMAL_CLOSE, "finished");
+        Boolean wasLast = wsCompleted.get(5, TimeUnit.SECONDS);
+        assertThat(wasLast, is(true));
+        assertThat(received, hasItem("LOWER"));
+    }
+
     private static WsListener single() {
         return new WsListener() {
             @Override

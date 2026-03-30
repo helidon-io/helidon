@@ -65,7 +65,7 @@ class WebSocketDefaultOriginTest {
     }
 
     @Test
-    void testSameOriginAllowedByDefault() throws ExecutionException, InterruptedException, TimeoutException {
+    void testMatchingHostAllowedByDefault() throws ExecutionException, InterruptedException, TimeoutException {
         int port = webServer.port();
         List<String> received = new LinkedList<>();
         CompletableFuture<Boolean> wsCompleted = new CompletableFuture<>();

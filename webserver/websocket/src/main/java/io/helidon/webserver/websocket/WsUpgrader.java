@@ -27,7 +27,6 @@ import java.util.Set;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.uri.UriInfo;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
@@ -37,8 +36,6 @@ import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.RequestException;
-import io.helidon.http.RequestedUriDiscoveryContext;
-import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
@@ -97,9 +94,6 @@ public class WsUpgrader implements Http1Upgrader {
     protected static final Header SUPPORTED_VERSION_HEADER = HeaderValues.create(WS_VERSION, SUPPORTED_VERSION);
     static final Headers EMPTY_HEADERS = WritableHeaders.create();
     private static final System.Logger LOGGER = System.getLogger(WsUpgrader.class.getName());
-    private static final RequestedUriDiscoveryContext DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT =
-            RequestedUriDiscoveryContext.builder()
-                    .build();
     private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(US_ASCII);
     private static final int KEY_SUFFIX_LENGTH = KEY_SUFFIX.length;
     private static final Base64.Decoder B64_DECODER = Base64.getDecoder();
@@ -163,7 +157,7 @@ public class WsUpgrader implements Http1Upgrader {
         }
 
         if (headers.contains(HeaderNames.ORIGIN)) {
-            validateOrigin(ctx, prologue, headers, headers.get(HeaderNames.ORIGIN).get());
+            validateOrigin(headers, headers.get(HeaderNames.ORIGIN).get());
         }
 
         // invoke user-provided HTTP upgrade handler
@@ -205,15 +199,19 @@ public class WsUpgrader implements Http1Upgrader {
         return origins;
     }
 
-    private void validateOrigin(ConnectionContext ctx,
-                                HttpPrologue prologue,
-                                WritableHeaders<?> headers,
+    /**
+     * Validate the request origin against either the configured allowlist or the request host authority.
+     *
+     * @param headers request headers
+     * @param origin origin header value
+     */
+    private void validateOrigin(WritableHeaders<?> headers,
                                 String origin) {
         if (!anyOrigin()) {
             if (origins().contains(origin)) {
                 return;
             }
-        } else if (sameOrigin(ctx, prologue, headers, origin)) {
+        } else if (matchesAuthority(headers, origin)) {
             return;
         }
 
@@ -223,10 +221,14 @@ public class WsUpgrader implements Http1Upgrader {
                 .build();
     }
 
-    private boolean sameOrigin(ConnectionContext ctx,
-                               HttpPrologue prologue,
-                               WritableHeaders<?> headers,
-                               String origin) {
+    /**
+     * Check whether the origin authority matches the request host authority.
+     *
+     * @param headers request headers
+     * @param origin origin header value
+     * @return {@code true} if the authorities match
+     */
+    private boolean matchesAuthority(WritableHeaders<?> headers, String origin) {
         URI originUri;
         try {
             originUri = new URI(origin);
@@ -238,32 +240,77 @@ public class WsUpgrader implements Http1Upgrader {
             return false;
         }
 
-        UriInfo requestedUri = ctx.listenerContext()
-                .config()
-                .requestedUriDiscoveryContext()
-                .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT)
-                .uriInfo(ctx.remotePeer().address(),
-                         ctx.localPeer().address(),
-                         prologue.uriPath().rawPath(),
-                         ServerRequestHeaders.create(headers),
-                         prologue.query(),
-                         ctx.isSecure());
+        if (!headers.contains(HeaderNames.HOST)) {
+            return false;
+        }
 
-        return normalizeOrigin(originUri).equals(normalizedRequestedUri(requestedUri));
+        String hostHeader = headers.get(HeaderNames.HOST).get();
+        return normalizeOrigin(originUri).equals(normalizeAuthority(hostHeader, originUri.getScheme()));
     }
 
-    private static String normalizedRequestedUri(UriInfo requestedUri) {
-        return requestedUri.scheme() + "://" + requestedUri.host() + ":" + requestedUri.port();
+    /**
+     * Normalize a host header authority into a lowercase {@code host:port} form.
+     *
+     * @param authority host header value
+     * @param scheme scheme to use for default-port resolution
+     * @return normalized authority
+     */
+    private static String normalizeAuthority(String authority, String scheme) {
+        String host;
+        int port = -1;
+
+        if (authority.startsWith("[")) {
+            int closingBracket = authority.indexOf(']');
+            if (closingBracket < 0) {
+                // malformed bracketed IPv6 authority, fail the later equality check
+                return authority.toLowerCase();
+            }
+            host = authority.substring(1, closingBracket);
+            if (closingBracket + 1 < authority.length()) {
+                port = Integer.parseInt(authority.substring(closingBracket + 2));
+            }
+        } else {
+            int firstColon = authority.indexOf(':');
+            int lastColon = authority.lastIndexOf(':');
+            if (firstColon > -1 && firstColon == lastColon) {
+                host = authority.substring(0, firstColon);
+                port = Integer.parseInt(authority.substring(firstColon + 1));
+            } else {
+                host = authority;
+            }
+        }
+
+        if (port == -1) {
+            port = defaultPort(scheme);
+        }
+
+        return host.toLowerCase() + ":" + port;
     }
 
+    /**
+     * Normalize an origin URI into a lowercase {@code host:port} form.
+     *
+     * @param originUri parsed origin URI
+     * @return normalized origin authority
+     */
     private static String normalizeOrigin(URI originUri) {
         String scheme = originUri.getScheme().toLowerCase();
         String host = originUri.getHost().toLowerCase();
         int port = originUri.getPort();
         if (port == -1) {
-            port = "https".equals(scheme) ? 443 : 80;
+            port = defaultPort(scheme);
         }
-        return scheme + "://" + host + ":" + port;
+        return host + ":" + port;
+    }
+
+    /**
+     * Resolve the default port for a scheme.
+     *
+     * @param scheme URI scheme
+     * @return default port for the scheme
+     */
+    private static int defaultPort(String scheme) {
+        return "https".equalsIgnoreCase(scheme) ? 443 : 80;
     }
 
     protected String hash(ConnectionContext ctx, String wsKey) {
@@ -297,5 +344,4 @@ public class WsUpgrader implements Http1Upgrader {
             throw new IllegalStateException("SHA-1 not provided", e);
         }
     }
-
 }

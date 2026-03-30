@@ -106,7 +106,7 @@ This code snippet registers `MessageBoardEndpoint` at `/websocket/board` and ass
 
 == Security
 When a WebSocket upgrade request includes an `Origin` header, Helidon validates it.
-By default, Helidon allows same-origin browser requests and rejects cross-origin ones.
+By default, Helidon requires the `Origin` authority to match the request `Host` header and rejects cross-host requests.
 If you configure `server.protocols.websocket.origins`, the configured values act as an explicit allowlist instead.
 Requests without an `Origin` header are allowed so non-browser clients continue to work.
 
