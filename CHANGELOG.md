@@ -9,6 +9,18 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
 
+## [2.6.15]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2. Helidon 2 requires a minimum of Java 11.
+
+### CHANGES
+
+- Dependencies: Upgrade Netty to 4.1.132.Final [11419](https://github.com/helidon-io/helidon/pull/11419)
+- Dependencies: Upgrade Jackson to 2.21.1 [11257](https://github.com/helidon-io/helidon/pull/11257)
+- Dependencies: Upgrade kafka client to 3.9.2 [11257](https://github.com/helidon-io/helidon/pull/11257)
+- Dependencies: Upgrade log4j to 2.25.3 [11257](https://github.com/helidon-io/helidon/pull/11257)
+- Tests: Fix for disabled cipher suites [11364](https://github.com/helidon-io/helidon/pull/11364)
+
 ## [2.6.14]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2. Helidon 2 requires a minimum of Java 11.
@@ -2325,6 +2337,7 @@ If there is no authorization provider configured, ABAC provider will be configur
     - `Application` subclasses MUST be annotated with `@ApplicationScoped`,
       otherwise they are ignored
 
+[2.6.15]: https://github.com/oracle/helidon/compare/2.6.14...2.6.15
 [2.6.14]: https://github.com/oracle/helidon/compare/2.6.13...2.6.14
 [2.6.13]: https://github.com/oracle/helidon/compare/2.6.12...2.6.13
 [2.6.12]: https://github.com/oracle/helidon/compare/2.6.11...2.6.12
