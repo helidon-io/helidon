@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.builder.test;
 import java.util.List;
 
 import io.helidon.builder.test.testsubjects.SomeProvider;
+import io.helidon.builder.test.testsubjects.WithInheritedProvider;
 import io.helidon.builder.test.testsubjects.WithProvider;
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
@@ -152,6 +153,17 @@ class ProviderTest {
                 .from(value)
                 .build();
         assertThat(copy.listDiscover(), is(List.of()));
+    }
+
+    @Test
+    void testDisabledDiscoveryOnInheritedBuilder() {
+        SomeProvider.SomeService someService = new DummyService();
+        WithInheritedProvider value = WithInheritedProvider.builder()
+                .listDiscoverDiscoverServices(false)
+                .oneNotDiscover(someService)
+                .build();
+
+        assertThat(value.listDiscover(), is(List.of()));
     }
 
     @Test
