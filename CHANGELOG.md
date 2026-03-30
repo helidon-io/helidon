@@ -9,6 +9,20 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.17]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+
+### CHANGES
+
+- Config: File ConfigSource fails generating MD5 digest [11422](https://github.com/helidon-io/helidon/pull/11422)
+- Dependencies: Upgrade netty to 4.1.132.Final [11418](https://github.com/helidon-io/helidon/pull/11418)
+- Dependencies: Upgrade Jackson to 2.21.1 [11256](https://github.com/helidon-io/helidon/pull/11256)
+- Dependencies: Upgrade Kafka to 3.9.2 [11210](https://github.com/helidon-io/helidon/pull/11210)
+- Dependencies: Update log4j to 2.25.3 [11033](https://github.com/helidon-io/helidon/pull/11033)
+- Dependencies: remove unecessary dependencies from  helidon-graal-native-image-extension [11412](https://github.com/helidon-io/helidon/pull/11412)
+- Tests: Fix for disabled cipher suites [11361](https://github.com/helidon-io/helidon/pull/11361)
+
 ## [3.2.16]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
@@ -1054,6 +1068,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.17]: https://github.com/helidon-io/helidon/compare/3.2.16...3.2.17
 [3.2.16]: https://github.com/helidon-io/helidon/compare/3.2.15...3.2.16
 [3.2.15]: https://github.com/helidon-io/helidon/compare/3.2.14...3.2.15
 [3.2.14]: https://github.com/helidon-io/helidon/compare/3.2.13...3.2.14
