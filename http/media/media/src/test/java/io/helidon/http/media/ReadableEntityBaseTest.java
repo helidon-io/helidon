@@ -18,7 +18,9 @@ package io.helidon.http.media;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
@@ -91,6 +93,34 @@ class ReadableEntityBaseTest {
         assertThat(e1.getMessage(), is("Maximum buffered entity length exceeded"));
         IllegalStateException e2 = assertThrows(IllegalStateException.class, entityBase::inputStream);
         assertThat(e2.getMessage(), is("Entity has already been requested. Entity cannot be requested multiple times"));
+    }
+
+    @Test
+    void testZeroLengthReadDoesNotRequestMoreData() throws IOException {
+        byte[] payload = "ping".getBytes(StandardCharsets.UTF_8);
+        AtomicInteger reads = new AtomicInteger();
+        ReadableEntityBase entityBase = new ReadableEntityImpl(estimate -> {
+            if (reads.getAndIncrement() == 0) {
+                return BufferData.create(payload);
+            }
+            return BufferData.empty();
+        }, 1024);
+
+        InputStream inputStream = entityBase.inputStream();
+        assertThat(Arrays.equals(inputStream.readNBytes(payload.length), payload), is(true));
+        assertThat(inputStream.read(new byte[0]), is(0));
+        assertThat(reads.get(), is(1));
+        inputStream.close();
+    }
+
+    @Test
+    void testZeroLengthReadStillValidatesArguments() throws IOException {
+        try (InputStream inputStream = new ReadableEntityImpl(new Readable(), 1024).inputStream()) {
+            assertThrows(NullPointerException.class, () -> inputStream.read(null, 0, 0));
+        }
+        try (InputStream inputStream = new ReadableEntityImpl(new Readable(), 1024).inputStream()) {
+            assertThrows(IndexOutOfBoundsException.class, () -> inputStream.read(new byte[1], 2, 0));
+        }
     }
 
     static class Readable implements Function<Integer, BufferData> {
