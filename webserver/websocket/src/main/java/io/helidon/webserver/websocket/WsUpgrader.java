@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package io.helidon.webserver.websocket;
 
 import java.lang.System.Logger.Level;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -154,16 +156,8 @@ public class WsUpgrader implements Http1Upgrader {
             return null;
         }
 
-        if (!anyOrigin()) {
-            if (headers.contains(HeaderNames.ORIGIN)) {
-                String origin = headers.get(HeaderNames.ORIGIN).get();
-                if (!origins().contains(origin)) {
-                    throw RequestException.builder()
-                            .message("Invalid Origin")
-                            .type(DirectHandler.EventType.FORBIDDEN)
-                            .build();
-                }
-            }
+        if (headers.contains(HeaderNames.ORIGIN)) {
+            validateOrigin(headers, headers.get(HeaderNames.ORIGIN).get());
         }
 
         // invoke user-provided HTTP upgrade handler
@@ -205,6 +199,119 @@ public class WsUpgrader implements Http1Upgrader {
         return origins;
     }
 
+    /**
+     * Validate the request origin against either the configured allowlist or the request host authority.
+     *
+     * @param headers request headers
+     * @param origin origin header value
+     */
+    private void validateOrigin(WritableHeaders<?> headers, String origin) {
+        if (!anyOrigin()) {
+            if (origins().contains(origin)) {
+                return;
+            }
+        } else if (matchesAuthority(headers, origin)) {
+            return;
+        }
+
+        throw RequestException.builder()
+                .message("Invalid Origin")
+                .type(DirectHandler.EventType.FORBIDDEN)
+                .build();
+    }
+
+    /**
+     * Check whether the origin authority matches the request host authority.
+     *
+     * @param headers request headers
+     * @param origin origin header value
+     * @return {@code true} if the authorities match
+     */
+    private boolean matchesAuthority(WritableHeaders<?> headers, String origin) {
+        URI originUri;
+        try {
+            originUri = new URI(origin);
+        } catch (URISyntaxException e) {
+            return false;
+        }
+
+        if (originUri.getScheme() == null || originUri.getHost() == null) {
+            return false;
+        }
+
+        if (!headers.contains(HeaderNames.HOST)) {
+            return false;
+        }
+
+        String hostHeader = headers.get(HeaderNames.HOST).get();
+        return normalizeOrigin(originUri).equals(normalizeAuthority(hostHeader, originUri.getScheme()));
+    }
+
+    /**
+     * Normalize a host header authority into a lowercase {@code host:port} form.
+     *
+     * @param authority host header value
+     * @param scheme scheme to use for default-port resolution
+     * @return normalized authority
+     */
+    private static String normalizeAuthority(String authority, String scheme) {
+        String host;
+        int port = -1;
+
+        if (authority.startsWith("[")) {
+            int closingBracket = authority.indexOf(']');
+            if (closingBracket < 0) {
+                // malformed bracketed IPv6 authority, fail the later equality check
+                return authority.toLowerCase();
+            }
+            host = authority.substring(1, closingBracket);
+            if (closingBracket + 1 < authority.length()) {
+                port = Integer.parseInt(authority.substring(closingBracket + 2));
+            }
+        } else {
+            int firstColon = authority.indexOf(':');
+            int lastColon = authority.lastIndexOf(':');
+            if (firstColon > -1 && firstColon == lastColon) {
+                host = authority.substring(0, firstColon);
+                port = Integer.parseInt(authority.substring(firstColon + 1));
+            } else {
+                host = authority;
+            }
+        }
+
+        if (port == -1) {
+            port = defaultPort(scheme);
+        }
+
+        return host.toLowerCase() + ":" + port;
+    }
+
+    /**
+     * Normalize an origin URI into a lowercase {@code host:port} form.
+     *
+     * @param originUri parsed origin URI
+     * @return normalized origin authority
+     */
+    private static String normalizeOrigin(URI originUri) {
+        String scheme = originUri.getScheme().toLowerCase();
+        String host = originUri.getHost().toLowerCase();
+        int port = originUri.getPort();
+        if (port == -1) {
+            port = defaultPort(scheme);
+        }
+        return host + ":" + port;
+    }
+
+    /**
+     * Resolve the default port for a scheme.
+     *
+     * @param scheme URI scheme
+     * @return default port for the scheme
+     */
+    private static int defaultPort(String scheme) {
+        return "https".equalsIgnoreCase(scheme) ? 443 : 80;
+    }
+
     protected String hash(ConnectionContext ctx, String wsKey) {
         byte[] decodedBytes = B64_DECODER.decode(wsKey);
         if (decodedBytes.length != 16) {
@@ -236,5 +343,4 @@ public class WsUpgrader implements Http1Upgrader {
             throw new IllegalStateException("SHA-1 not provided", e);
         }
     }
-
 }
