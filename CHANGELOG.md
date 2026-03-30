@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [1.4.18]
+## [1.4.18]
 
 This is a bug fix release of Helidon 1 that contains dependency upgrades.
 
@@ -13,7 +13,7 @@ This is a bug fix release of Helidon 1 that contains dependency upgrades.
 
 - Upgrade netty to 4.1.132.Final [11420](https://github.com/helidon-io/helidon/pull/11420)
 
-# [1.4.17]
+## [1.4.17]
 
 This is a bug fix release of Helidon 1 that contains dependency upgrades.
 
@@ -24,7 +24,7 @@ This is a bug fix release of Helidon 1 that contains dependency upgrades.
 - Upgrade netty to 4.1.130.Final [11337](https://github.com/helidon-io/helidon/pull/11337)
 - Tests: update cipher test to accomodate latest JDK 11 release [11365](https://github.com/helidon-io/helidon/pull/11365)
 
-# [1.4.16]
+## [1.4.16]
 
 This is a bug fix release of Helidon 1 that contains dependency upgrades.
 
