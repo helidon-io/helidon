@@ -39,6 +39,7 @@ import static io.helidon.faulttolerance.Bulkhead.FT_BULKHEAD_WAITINGDURATION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -191,6 +192,65 @@ class BulkheadMetricsTest extends BulkheadBaseTest {
 
         queued.unblock();
         queuedResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+    }
+
+    @Test
+    void testWaitingMetricsCleanupOnQueuedCancellation()
+            throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+        String name = "unit:testWaitingMetricsCleanupOnQueuedCancellation";
+        CountDownLatch queuedSubmitted = new CountDownLatch(1);
+        AtomicReference<Thread> queuedThread = new AtomicReference<>();
+        Bulkhead bulkhead = BulkheadConfig.builder()
+                .limit(1)
+                .queueLength(1)
+                .name(name)
+                .addQueueListener(new Bulkhead.QueueListener() {
+                    @Override
+                    public <T> void enqueueing(Supplier<? extends T> supplier) {
+                        queuedSubmitted.countDown();
+                    }
+                })
+                .build();
+
+        Task inProgress = new Task(0);
+        CompletableFuture<Integer> inProgressResult = Async.invokeStatic(
+                () -> bulkhead.invoke(inProgress::run));
+
+        if (!inProgress.waitUntilStarted(WAIT_TIMEOUT_MILLIS)) {
+            fail("Task inProgress not started");
+        }
+
+        Tag nameTag = Tag.create("name", bulkhead.name());
+        Gauge<Long> waiting = MetricsUtils.gauge(FT_BULKHEAD_EXECUTIONSWAITING, nameTag);
+        Timer waitingDuration = MetricsUtils.timer(FT_BULKHEAD_WAITINGDURATION, nameTag);
+
+        Task queued = new Task(1);
+        Supplier<Integer> queuedSupplier = queued::run;
+        CompletableFuture<Integer> queuedResult = Async.invokeStatic(
+                () -> {
+                    queuedThread.set(Thread.currentThread());
+                    return bulkhead.invoke(queuedSupplier);
+                });
+
+        if (!queuedSubmitted.await(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+            fail("Task queued never submitted");
+        }
+        assertEventually(() -> bulkhead.stats().waitingQueueSize() == 1
+                && waitingOnBarrier(queuedThread.get()), WAIT_TIMEOUT_MILLIS);
+
+        assertThat(waiting.value(), is(1L));
+        assertThat(waitingDuration.count(), is(0L));
+
+        assertThat(bulkhead.cancelSupplier(queuedSupplier), is(true));
+        assertThat(queuedResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS), is(nullValue()));
+        assertThat(queued.isStarted(), is(false));
+        assertThat(waiting.value(), is(0L));
+        assertThat(waitingDuration.count(), is(1L));
+        assertThat(waitingDuration.totalTime(TimeUnit.MILLISECONDS), greaterThan(0D));
+        assertThat(bulkhead.stats().waitingQueueSize(), is(0L));
+
+        inProgress.unblock();
+        inProgressResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     private static boolean waitingOnBarrier(Thread thread) {

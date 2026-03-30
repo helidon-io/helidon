@@ -32,6 +32,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -164,6 +165,45 @@ class BulkheadTest extends BulkheadBaseTest {
         for (Task task : tasks) {
             task.future().get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
         }
+    }
+
+    @Test
+    void testCancelQueuedSupplier() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+        CountDownLatch queuedSubmitted = new CountDownLatch(1);
+        Bulkhead bulkhead = Bulkhead.builder()
+                .limit(1)
+                .queueLength(1)
+                .addQueueListener(new Bulkhead.QueueListener() {
+                    @Override
+                    public <T> void enqueueing(Supplier<? extends T> supplier) {
+                        queuedSubmitted.countDown();
+                    }
+                })
+                .build();
+
+        Task inProgress = new Task(0);
+        CompletableFuture<Integer> inProgressResult = Async.invokeStatic(() -> bulkhead.invoke(inProgress::run));
+
+        if (!inProgress.waitUntilStarted(WAIT_TIMEOUT_MILLIS)) {
+            fail("Task inProgress not started");
+        }
+
+        Task queued = new Task(1);
+        Supplier<Integer> queuedSupplier = queued::run;
+        CompletableFuture<Integer> queuedResult = Async.invokeStatic(() -> bulkhead.invoke(queuedSupplier));
+
+        if (!queuedSubmitted.await(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+            fail("Task queued never submitted");
+        }
+        assertEventually(() -> bulkhead.stats().waitingQueueSize() == 1, WAIT_TIMEOUT_MILLIS);
+
+        assertThat(bulkhead.cancelSupplier(queuedSupplier), is(true));
+        assertThat(queuedResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS), is(nullValue()));
+        assertThat(queued.isStarted(), is(false));
+        assertThat(bulkhead.stats().waitingQueueSize(), is(0L));
+
+        inProgress.unblock();
+        inProgressResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     @RepeatedTest(100)

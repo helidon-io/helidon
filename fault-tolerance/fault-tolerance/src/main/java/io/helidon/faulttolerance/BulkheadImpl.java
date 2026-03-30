@@ -241,11 +241,13 @@ class BulkheadImpl implements Bulkhead {
 
     @Override
     public boolean cancelSupplier(Supplier<?> supplier) {
-        boolean cancelled = queue.remove(supplier);
-        if (cancelled) {
+        Barrier barrier = queue.remove(supplier);
+        if (barrier != null) {
             cancelledSuppliers.add(supplier);
+            barrier.retract();
+            return true;
         }
-        return cancelled;
+        return false;
     }
 
     /**
@@ -283,12 +285,12 @@ class BulkheadImpl implements Bulkhead {
         boolean dequeueAndRetract();
 
         /**
-         * Remove supplier from queue, if present.
+         * Remove supplier from queue, if present, and return its barrier for external completion.
          *
          * @param supplier the supplier
-         * @return {@code true} if supplier was removed or {@code false} otherwise
+         * @return barrier associated with the removed supplier, or {@code null} if the supplier was not removed
          */
-        boolean remove(Supplier<?> supplier);
+        Barrier remove(Supplier<?> supplier);
     }
 
     /**
@@ -318,8 +320,8 @@ class BulkheadImpl implements Bulkhead {
         }
 
         @Override
-        public boolean remove(Supplier<?> supplier) {
-            return false;
+        public Barrier remove(Supplier<?> supplier) {
+            return null;
         }
     }
 
@@ -386,10 +388,11 @@ class BulkheadImpl implements Bulkhead {
         }
 
         @Override
-        public boolean remove(Supplier<?> supplier) {
+        public Barrier remove(Supplier<?> supplier) {
             lock.lock();
             try {
-                return queue.remove(supplier);
+                boolean removed = queue.remove(supplier);
+                return removed ? map.remove(supplier) : null;
             } finally {
                 lock.unlock();
             }
