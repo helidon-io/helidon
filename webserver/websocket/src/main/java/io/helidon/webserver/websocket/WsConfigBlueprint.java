@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,10 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 interface WsConfigBlueprint extends ProtocolConfig {
     /**
      * WebSocket origins.
+     * If this set is empty, requests with an {@code Origin} header
+     * must match the request {@code Host} header authority.
+     * If this set is non-empty, it acts as an explicit allowlist.
+     * Requests without an {@code Origin} header are allowed.
      *
      * @return origins
      */
