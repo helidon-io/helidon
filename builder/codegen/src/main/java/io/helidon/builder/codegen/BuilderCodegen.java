@@ -378,36 +378,14 @@ class BuilderCodegen implements CodegenExtension {
         blueprintTypes.add(prototypeInfo);
 
         // now for each provider, add discoverServices builder option (this is required for our code to work)
-        List<OptionInfo> discoverServicesOptions = newOptions.stream()
-                .filter(it -> it.provider().isPresent() || it.registryService())
-                .map(it -> {
-                    boolean defaultValue = it.provider().map(OptionProvider::discoverServices).orElse(true);
-
-                    String name = it.name() + "DiscoverServices";
-                    String setterName = it.setterName() + "DiscoverServices";
-                    String getterName = it.getterName() + "DiscoverServices";
-                    return OptionInfo.builder()
-                            .accessModifier(it.accessModifier())
-                            .description("Service discovery flag for {@link #" + it.getterName()
-                                                 + "()}. If set to {@code true}, services will be discovered from Java service "
-                                                 + "loader, or Helidon ServiceRegistry.")
-                            .paramDescription("whether to enable automatic service discovery")
-                            .name(name)
-                            .setterName(setterName)
-                            .getterName(getterName)
-                            .builderOptionOnly(true)
-                            .declaredType(TypeNames.PRIMITIVE_BOOLEAN)
-                            .interfaceMethod(it.interfaceMethod())
-                            .defaultValue(defaultConsumer -> defaultConsumer.addContent(String.valueOf(defaultValue)))
-                            .update(optionBuilder -> copyConfiguredForDiscoverServices(it, optionBuilder))
-                            .update(optionBuilder -> it.deprecation().ifPresent(optionBuilder::deprecation))
-                            .build();
-                })
-                .toList();
+        List<OptionInfo> discoverServicesOptions = discoverServicesOptions(newOptions);
+        List<OptionInfo> existingDiscoverServicesOptions = discoverServicesOptions(existingOptions);
 
         // ensure mutability
         newOptions = new ArrayList<>(newOptions);
         newOptions.addAll(discoverServicesOptions);
+        existingOptions = new ArrayList<>(existingOptions);
+        existingOptions.addAll(existingDiscoverServicesOptions);
         configOption(prototypeInfo, newOptions, existingOptions);
         serviceRegistryOption(prototypeInfo, newOptions);
 
@@ -610,6 +588,35 @@ class BuilderCodegen implements CodegenExtension {
                 .merge(configured.merge())
                 .configKey(configured.configKey() + "-discover-services")
         );
+    }
+
+    private List<OptionInfo> discoverServicesOptions(List<OptionInfo> optionInfos) {
+        return optionInfos.stream()
+                .filter(it -> it.provider().isPresent() || it.registryService())
+                .map(it -> {
+                    boolean defaultValue = it.provider().map(OptionProvider::discoverServices).orElse(true);
+
+                    String name = it.name() + "DiscoverServices";
+                    String setterName = it.setterName() + "DiscoverServices";
+                    String getterName = it.getterName() + "DiscoverServices";
+                    return OptionInfo.builder()
+                            .accessModifier(it.accessModifier())
+                            .description("Service discovery flag for {@link #" + it.getterName()
+                                                 + "()}. If set to {@code true}, services will be discovered from Java service "
+                                                 + "loader, or Helidon ServiceRegistry.")
+                            .paramDescription("whether to enable automatic service discovery")
+                            .name(name)
+                            .setterName(setterName)
+                            .getterName(getterName)
+                            .builderOptionOnly(true)
+                            .declaredType(TypeNames.PRIMITIVE_BOOLEAN)
+                            .interfaceMethod(it.interfaceMethod())
+                            .defaultValue(defaultConsumer -> defaultConsumer.addContent(String.valueOf(defaultValue)))
+                            .update(optionBuilder -> copyConfiguredForDiscoverServices(it, optionBuilder))
+                            .update(optionBuilder -> it.deprecation().ifPresent(optionBuilder::deprecation))
+                            .build();
+                })
+                .toList();
     }
 
     private OptionInfo mergeOptions(List<OptionInfo> optionInfos) {
