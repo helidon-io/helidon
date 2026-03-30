@@ -1,28 +1,14 @@
-# Helidon Docs
+# Helidon Documentation
 
-This project hosts the Helidon documentation and builds the aggregated javadocs.
+Index of Helidon documentation topics.
 
-## Build
-
-Build the docs and javadocs:
-```bash
-mvn package -Pjavadoc
-```
-
-Build just the docs:
-```bash
-mvn package
-```
-
-Build just the javadocs:
-```bash
-mvn package -Pjavadoc -Dhelidon.sitegen.skip=true
-```
-
-## Serve
-
-```bash
-mvn sitegen:serve
-```
-
-Open http://localhost:8080 in a browser.
+| Topic | Description |
+| --- | --- |
+| [Get Started](about/prerequisites.md) | Get Started |
+| [About Helidon](about/README.md) | About Helidon |
+| [Helidon SE](se/README.md) | Helidon SE Documentation |
+| [Helidon MP](mp/README.md) | Helidon MP Documentation |
+| [Guides](guides/README.md) | Guides |
+| [Config Reference](config/config_reference) | Config Reference |
+| [Service Reference](service-registry/service_reference) | Service Registry Reference |
+| [Community](community.md) | Helidon community |

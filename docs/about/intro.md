@@ -1,0 +1,38 @@
+# Introducing Helidon 4
+
+## What’s New in This Release
+
+- Introduction of the new Helidon WebServer (Project Níma): a virtual threads-based web server implementation based on [JDK Project Loom](https://openjdk.org/jeps/444) virtual threads.
+- Removed Helidon’s Reactive WebServer and WebClient that were based on Netty. Our new implementations are based on virtual threads that have a blocking style API (Project Níma). Learn more: [Helidon 4 WebServer.](#helidon-4-webserver)
+- Converted other *reactive* API modules to *blocking* style APIs. The `io.helidon.common.reactive` APIs will stay as general purpose reactive utilities and operators. Learn more: [Helidon SE](#helidon-se)
+- Upgraded MicroProfile support to MicroProfile 6 and Jakarta 10 Core Profile running on the Helidon WebServer. Learn more: [Helidon MP](#helidon-mp)
+- Java 21 is required to use Helidon 4. Java 25 or newer is recommended.
+
+## Helidon 4 WebServer
+
+Before Helidon 4, the Helidon WebServer was built on Netty and had a reactive API. In Helidon 4 we have replaced this with a new server implementation (Project Níma) that is written from the ground up to take full advantage of Java 21’s virtual threads. With virtual threads, threads are no longer a scarce resource to be carefully pooled and managed. Instead they are an abundant resource that can be created as needed to handle nearly unlimited concurrent requests.
+
+Because each request runs in its own dedicated thread, it is free to perform blocking operations — like calling a database, or another service. And it can do so in a simple synchronous way with no fear of blocking a platform thread and starving other requests. You no longer need to resort to complicated asynchronous code to implement a low-overhead, highly concurrent service.
+
+## Helidon SE
+
+Helidon SE is Helidon’s foundational set of APIs. The big change in Helidon 4 is that the use of virtual threads have enabled these APIs to change from asynchronous to blocking. This results in much simpler code that is easier to write, maintain, debug and understand. Existing Helidon 3 SE code will require modification to run on these new APIs, but the effort is well worth the improved performance and simplicity of the resulting code.
+
+To give a very simple example of the differences between Helidon 3 SE and Helidon 4 SE, let’s take a look at extracting a JSON body from an HTTP request and doing something with it:
+
+*Helidon 3*
+
+``` java
+request.content().as(JsonObject.class)
+        .thenAccept(jo -> doSomething(jo, response));
+```
+
+*Helidon 4*
+
+``` java
+doSomething(request.content().as(JsonObject.class), response);
+```
+
+## Helidon MP
+
+Helidon MP is Helidon’s MicroProfile implementation and in Helidon 4 it supports MicroProfile 6 and the Jakarta EE 10 Core Profile. Your Helidon 3 MicroProfile application should migrate to Helidon 4 fairly easily (the most significant changes are in MicroProfile Metrics 5.0), and since Helidon’s MicroProfile server is based on the new Helidon WebServer (Project Níma), you get all the benefits of running on virtual threads.

@@ -1,0 +1,258 @@
+# About Helidon DB Client
+
+## Contents
+
+- [Overview](#overview)
+- [Maven Coordinates](#maven-coordinates)
+- [Usage](#usage)
+- [API](#api)
+- [Configuration](#configuration)
+- [Additional Information](#additional-information)
+
+## Overview
+
+The Helidon SE DB Client provides a unified API for working with databases.
+
+## Maven Coordinates
+
+To enable DB Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+
+``` xml
+<dependency>
+    <groupId>io.helidon.dbclient</groupId>
+    <artifactId>helidon-dbclient</artifactId>
+</dependency>
+```
+
+To use with a JDBC client also add the following dependency:
+
+``` xml
+<dependency>
+    <groupId>io.helidon.dbclient</groupId>
+    <artifactId>helidon-dbclient-jdbc</artifactId>
+</dependency>
+```
+
+Or to use with MongoDB client add the following dependency:
+
+``` xml
+<dependency>
+    <groupId>io.helidon.dbclient</groupId>
+    <artifactId>helidon-dbclient-mongodb</artifactId>
+</dependency>
+```
+
+## Usage
+
+The DB Client simplifies how you work with databases by abstracting the type of the database. The API can be used both for relational and non-relational databases.
+
+## API
+
+- Database configuration abstraction
+
+  Using Helidon configuration allows database implementation specific configuration options without the need to use database implementation specific APIs. This allows for seamless switching between databases based on configuration.
+
+- Statement configuration abstraction
+
+  Using Helidon configuration allows use of database specific statements. This allows usage of different databases on different environments without changing code.
+
+- Unified API for data access and query
+
+  Thanks to the statement configuration abstraction, we can invoke a statement against a relational or non-relations databases (such as MySQL and MongoDB) without modifying source code
+
+- Observability  
+
+  The API offers support for health checks, metrics and tracing.
+
+## Configuration
+
+Before you begin you must add the DB Client dependencies and configure the client.
+
+### Add the DB Client dependencies to the Maven `pom.xml` file.
+
+For the DB Client using JDBC implementation and H2 database, you must include the following dependencies in your project:
+
+``` xml
+<dependencies>
+     <dependency>
+         <groupId>io.helidon.dbclient</groupId> 
+         <artifactId>helidon-dbclient</artifactId>
+     </dependency>
+     <dependency>
+         <groupId>io.helidon.dbclient</groupId> 
+         <artifactId>helidon-dbclient-jdbc</artifactId>
+     </dependency>
+     <dependency>
+         <groupId>com.h2database</groupId> 
+         <artifactId>h2</artifactId>
+    </dependency>
+</dependencies>
+```
+
+- Add the Helidon DB Client
+- Specify JDBC or MongoDB
+- Add the database JDBC driver (only for JDBC)
+
+### Use Helidon Config to configure the client.
+
+The DB Client must be configured before you begin. In the example below we’ll use Helidon Config to set up JDBC-based client:
+
+``` yaml
+db:
+  source: "jdbc" 
+  connection:
+    url: "jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false" 
+    username: "user"
+    password: "password"
+  statements: 
+    ping: "DO 0" 
+    select-all-pokemons: "SELECT id, name FROM Pokemons"
+```
+
+- Source: `jdbc` or `mongoDb`
+- Connection: database connection parameters
+- Statements: named statements to be used in application
+- A ping statement used by health check
+
+## Using DB Client API Methods
+
+The Helidon DB Client API contains many methods to run various statements with parameters and to retrieve statement execution results. The following sections describe the options you can use to build and execute your statements.
+
+### Executor Selection
+
+`DBClient` class has two methods to select whether statements will be executed in transaction or not:
+
+- `execute()`
+- `transaction()`
+
+Both methods provide an executor: either `DbExecute` or `DbTransaction`.
+
+### Statement Building and Execution
+
+DbExecute class offers many methods for various statements builders:
+
+- DML statements: `createDmlStatement`, `createNamedDmlStatement`
+- insert statements: `createInsert`, `createNamedInsert`
+- update statements: `createUpdate`, `createNamedUpdate`
+- delete statements: `createDelete`, `createNamedDelete`
+- query statements: `createQuery`, `createNamedQuery`
+- get statements: `createGet`, `createNamedGet`
+
+Methods with "Named" in their name (`createNamedDmlStatement`) expect statement name from statements section of Config, or a named statement configured when the `DbClient` was created using a `Builder`.
+
+All statement builders offer methods to set statement parameters. Those parameters can be ordered parameters or named parameters. Ordered and named parameters can’t be mixed in a single statement.
+
+Note that `get` statements are query statements that allow zero to one results.
+
+### Ordered Parameters
+
+Ordered parameters are written down as `?` in the statement text:
+
+``` sql
+SELECT name FROM Pokemons WHERE id = ?
+```
+
+The ordered parameters are equivalent to JDBC `PreparedStatement` parameters.
+
+Methods to set ordered parameters are:
+
+- `params(List<?> parameters)` with all parameters as List
+- `params(Object… parameters)` with all parameters as array
+- `indexedParam(Object parameters)` POJO used with registered mapper
+- `addParam(Object parameter)` with single parameter, can be called repeatedly
+
+### Named Parameters
+
+Named parameters are written down as `:<name>` in the JDBC statements
+
+``` sql
+SELECT name FROM Pokemons WHERE id = :id
+```
+
+or as `$<name>` in the MongoDB statement:
+
+``` json
+{
+    "collection": "pokemons",
+    "operation": "update",
+    "value": {
+      "$set": {
+        "name": "$name"
+      }
+    },
+    "query": { "id": "$id" }
+}
+```
+
+Methods to set named parameters are:
+
+- `params(Map<String, ?> parameters)` with all parameters as Map
+- `namedParam(Object parameters)` POJO used with registered mapper
+- `addParam(String name, Object parameter)` with single parameter, can be called repeatedly
+
+### Statement Execution
+
+Statements are executed by calling execute() method after statement parameters are set. This method returns either a `Single` or `Multi` depending on statement type. The type returned also depends on statement type.
+
+JDBC query with ordered parameters and query that does not run in the transaction:
+
+``` java
+dbClient.execute()
+        .createQuery("SELECT name FROM Pokemons WHERE id = ?")
+        .params(1)
+        .execute();
+```
+
+JDBC query with named parameters and the query runs in transaction:
+
+``` java
+dbClient.transaction()
+        .createQuery("SELECT name FROM Pokemons WHERE id = :id")
+        .addParam("id", 1)
+        .execute();
+```
+
+Both examples will return `Multi<DbRow>` with rows returned by the query.
+
+This example shows a MongoDB update statement with named parameters and the query does not run in transaction:
+
+``` java
+dbClient.execute()
+        .createUpdate("""
+                      {
+                          "collection": "pokemons","
+                          "value":{$set:{"name":$name}},
+                          "query":{id:$id}
+                      }
+                      """)
+        .addParam("id", 1)
+        .addParam("name", "Pikachu")
+        .execute();
+```
+
+This update statement will return a `long` with the number of modified records in the database.
+
+#### DML Statement Result
+
+Execution of DML statements will always return a `long` with the number of modified records in the database.
+
+In following example, the number of modified records is printed to standard output:
+
+``` java
+long count = dbClient.execute()
+        .insert("INSERT INTO Pokemons (id, name) VALUES(?, ?)",
+                1, "Pikachu");
+System.out.printf("Inserted %d records\n", count);
+```
+
+#### Query Statement Result
+
+Execution of a query statement will always return `Stream<DbRow>>`.
+
+- The stream is populated lazily, result rows can be processed individually
+- Use `.map(…)` to map returned result
+- Use `.toList()` on the stream to collect all rows
+
+## Additional Information
+
+Now that you understand how to build and execute statements, try it for yourself. [DB Client Examples](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/dbclient).

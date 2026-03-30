@@ -1,0 +1,171 @@
+# Concurrency Limits
+
+## Introduction
+
+With the introduction of virtual threads, Helidon is able to create a new thread per request with the only limit being the available memory on the system. In some situations, this scenario is not ideal as it can increase concurrency beyond the capabilities of some other components in the system, such as a database, a network link, etc.
+
+In those cases, and when scaling of those components is not feasible or simply not desirable, it may be beneficial to limit the number of concurrent requests accepted by the Helidon webserver or the throughput in order to improve the overall experience. When doing so, it should also be possible to establish rules for those requests that cannot be serviced immediately, as well as how to grow or shrink the number of *permits* available in the system.
+
+## Setting Concurrency Limits
+
+Helidon now includes support for three independent concurrency limit strategies: fixed, AIMD (Arithmetic Increase Multiplicative Decrease), and throughput as well as an SPI to provide alternative `LimitProvider` implementations.
+
+Concurrency limits can be configured directly on the Webserver or as a *feature*. When set at the Webserver level, they will affect all traffic inbound to the server, effectively limiting the number of requests processed by the internal *listener* —or listeners if more than one socket is defined. When set as a feature, they will work as a filter applied after routing and only to HTTP traffic. In most cases, setting limits at the Webserver level will be simpler and most effective.
+
+The following example uses a fixed concurrency strategy established at the Webserver level —impacting only the *default* socket— that limits the number of concurrent requests to 1000, a queue of 200 requests to accommodate potential request bursts and a queue timeout of 1 second:
+
+``` yaml
+server:
+  concurrency-limit:
+    fixed:
+      permits: 1000
+      queue-length: 200
+      queue-timeout: PT1S
+```
+
+With this configuration, after all 1000 permits are consumed, subsequent requests will be queued, if space is available, and any request that sits in the queue for more than 1 second will be rejected.
+
+The same use case but defined as a feature will look as follows:
+
+``` yaml
+server:
+  features:
+    limits:
+      concurrency-limit:
+        fixed:
+          permits: 1000
+          queue-length: 200
+          queue-timeout: PT1S
+```
+
+As described above, when configured as a feature, the limits will only apply to HTTP traffic and will execute after HTTP routing.
+
+Instead of fixing the number of permits to a given value, the AIMD strategy allows the set of permits to grow arithmetically and shrink multiplicatively as needed, based on the actual time that it takes to process requests. AIMD can dynamically adjust the number of available permits to ensure a certain *quality of service*, possibly for a subset of all the requests received. It is generally preferred to serve a subset of clients efficiently than all clients inefficiently, and this type of trade-off can be defined using an AIMD strategy. For example,
+
+``` yaml
+server:
+  concurrency-limit:
+    aimd:
+      min-limit: 100
+      max-limit: 1000
+      initial-limit: 500
+      timeout: "PT0.5S"
+      backoff-ratio: 0.75
+```
+
+With this configuration, the initial number of permits starts at 500 and can vary between 100 and 1000. The timeout set at 500 milliseconds is used to determine how to limit concurrency: if a request completes under this limit, then the number of permits can increase by one up to the maximum; if a request fails or if it completes over this limit, then the number of permits shrinks using the backoff ratio (by 75% in our example) up to the minimum.
+
+AIMD also supports queueing and queueing timeouts, so if the maximum size is reached, it is still possible to accept (enqueue) a request as long as it is processed within the queueing timeout period. Here is a variation of the example above, but with a queue of size 300 and a queue timeout of 1 second:
+
+``` yaml
+server:
+  concurrency-limit:
+    aimd:
+      min-limit: 100
+      max-limit: 1000
+      initial-limit: 500
+      timeout: "PT0.5S"
+      backoff-ratio: 0.75
+      queue-length: 300
+      queue-timeout: PT1S
+```
+
+> [!NOTE]
+> Queues can be useful to accommodate short bursts of requests that would otherwise be rejected when the number of permits is exhausted. Queueing is disabled by default in both fixed and AIMD strategies, so `queue-length` must be set to a positive number to enable this feature.
+
+The following example uses a throughput concurrency strategy established at the Webserver level —impacting only the *default* socket— that limits the throughput to 1000 requests over a duration of 5 seconds, a queue of 200 requests to accommodate potential request bursts and a queue timeout of 1 second:
+
+``` yaml
+server:
+  concurrency-limit:
+    throughput:
+      amount: 1000
+      duration: PT5S
+      queue-length: 200
+      queue-timeout: PT1S
+```
+
+With this configuration, a total of 1000 requests can be processed over a duration of 5 seconds, with subsequent requests being queued, if space is available, and any request that sits in the queue for more than 1 second will be rejected. Unlike the fixed concurrency strategy that has a set number of permits, the throughput concurrency strategy gains (or "refills") permits as time passes based on the selected rate limiting algorithm. There are two rate limiting algorithms available: \* TOKEN_BUCKET: Permits start at the configured amount and refill up to that amount over the duration. This is the default algorithm. \* FIXED_RATE: There is only ever one permit and, if consumed, a new permit is generated at the necessary rate to achieve the configured throughput. This algorithm is also called "leaky bucket". It is very important to configure queuing as this algorithm almost always has a backlog.
+
+Here is the same example showing the configuration of the `FIXED_RATE` rate limiting algorithm:
+
+``` yaml
+server:
+  concurrency-limit:
+    throughput:
+      amount: 1000
+      duration: PT5S
+      rate-limiting-algorithm: FIXED_RATE
+      queue-length: 200
+      queue-timeout: PT1S
+```
+
+None of the strategies shown above enables queues by default.
+
+For more information about configuring these Concurrency Limit strategies see:
+
+- [FixedLimit](../../config/io_helidon_common_concurrency_limits_FixedLimit.md)
+- [ThroughputLimit](../../config/io_helidon_common_concurrency_limits_ThroughputLimit.md)
+- [AimdLimit](../../config/io_helidon_common_concurrency_limits_AimdLimit.md)
+
+## Metrics
+
+The Concurrency Limit module also has built-in support for metrics in order to monitor the chosen strategy. These metrics are disabled by default, but can be enabled as follows:
+
+``` yaml
+server:
+  concurrency-limit:
+    fixed:
+      permits: 1000
+      queue-length: 200
+      queue-timeout: PT1S
+      enable-metrics: true       # turn on metrics!
+```
+
+The following tables describe the metrics that are available for each of the strategies described above. A metric tag `socketName=<name-of-socket>` is used to group metrics that correspond to a particular socket; for simplicity this metric tag is *omitted* for the default socket. All metrics provided by the Concurrency Limit module are in **vendor** scope.
+
+| Name | Description |
+|----|----|
+| `fixed_queue_length` | Gauge that returns the number of requests waiting on the queue at a certain time |
+| `fixed_rejected_requests` | Gauge that returns the number of requests that have been rejected so far |
+| `fixed_rtt` | Distribution summary of round-trip times, excluding any time waiting in the queue |
+| `fixed_queue_wait_time` | Distribution summary of queue wait times |
+| `fixed_concurrent_requests` | Gauge that returns the number of requests being processed at a certain time |
+
+Fixed
+
+| Name | Description |
+|----|----|
+| `aimd_queue_length` | Gauge that returns the number of requests waiting on the queue at a certain time |
+| `aimd_rejected_requests` | Gauge that returns the number of requests that have been rejected so far |
+| `aimd_rtt` | Distribution summary of round-trip times, excluding any time waiting in the queue |
+| `aimd_queue_wait_time` | Distribution summary of queue wait times |
+| `aimd_concurrent_requests` | Gauge that returns the number of requests being processed at a certain time |
+| `aimd_limit` | Gauge that returns the actual limit at a certain time |
+
+AIMD
+
+For more information regarding metrics support in Helidon and the dependencies that are required for metrics to work, see [Helidon Metrics](../../se/metrics/metrics.md).
+
+## Tracing
+
+The Concurrency Limit component supports tracing for the webserver. If you enable tracing for waiting time, any time Helidon queues a request waiting for an available worker thread it creates a span representing the request’s waiting time. Concurrency limit tracing is disabled by default. Enable it using configuration:
+
+``` yaml
+server:
+  features:
+    observe:
+      observers:
+        tracing:
+          wait-tracing-enabled: true 
+
+  concurrency-limit:
+    fixed:
+      permits: 1000
+      queue-length: 200
+      queue-timeout: PT1S
+```
+
+- Turns on the addition of a span recording queued wait time.
+
+Be sure to add a dependency in your project for one of the Helidon tracing implementations. See the [Helidon tracing](../../se/tracing.md) documentation for more information.

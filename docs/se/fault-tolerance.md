@@ -1,0 +1,242 @@
+# Fault Tolerance in Helidon
+
+## Contents
+
+- [Overview](#overview)
+- [Maven Coordinates](#maven-coordinates)
+- [API](#api)
+- [Examples](#examples)
+- [Additional Information](#additional-information)
+
+## Overview
+
+Helidon Fault Tolerance support is inspired by [MicroProfile Fault Tolerance](https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/microprofile-fault-tolerance-spec-4.0.2.html). The API defines the notion of a *fault handler* that can be combined with other handlers to improve application robustness. Handlers are created to manage error conditions (faults) that may occur in real-world application environments. Examples include service restarts, network delays, temporal infrastructure instabilities, etc.
+
+The interaction of multiple microservices bring some new challenges from distributed systems that require careful planning. Faults in distributed systems should be compartmentalized to avoid unnecessary service interruptions. For example, if comparable information can be obtained from multiples sources, a user request *should not* be denied when a subset of these sources is unreachable or offline. Similarly, if a non-essential source has been flagged as unreachable, an application should avoid continuous access to that source as that would result in much higher response times.
+
+In order to tackle the most common types of application faults, the Helidon Fault Tolerance API provides support for circuit breakers, retries, timeouts, bulkheads and fallbacks. In addition, the API makes it very easy to create and monitor asynchronous tasks that do not require explicit creation and management of threads or executors.
+
+For more information, see [Fault Tolerance API Javadocs](/apidocs/io.helidon.faulttolerance/module-summary.html).
+
+## Maven Coordinates
+
+To enable Fault Tolerance, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+
+``` xml
+<dependency>
+    <groupId>io.helidon.fault-tolerance</groupId>
+    <artifactId>helidon-fault-tolerance</artifactId>
+</dependency>
+```
+
+## API
+
+The Fault Tolerance API is *blocking* and based on the JDK’s virtual thread model. As a result, methods return *direct* values instead of promises in the form of `Single<T>` or `Multi<T>`.
+
+In the sections that follow, we shall briefly explore each of the constructs provided by this API.
+
+### Retries
+
+Temporal networking problems can sometimes be mitigated by simply retrying a certain task. A `Retry` handler is created using a `RetryPolicy` that indicates the number of retries, delay between retries, etc.
+
+``` java
+Retry retry = Retry.builder()
+        .retryPolicy(Retry.JitterRetryPolicy.builder()
+                             .calls(3)
+                             .delay(Duration.ofMillis(100))
+                             .build())
+        .build();
+T result = retry.invoke(this::retryOnFailure);
+```
+
+The sample code above will retry calls to the supplier `this::retryOnFailure` for up to 3 times with a 100-millisecond delay between them.
+
+> [!NOTE]
+> The return type of method `retryOnFailure` in the example above must be some `T` and the parameter to the retry handler’s `invoke` method `Supplier<? extends T>`.
+
+If the call to the supplier provided completes exceptionally, it will be treated as a failure and retried until the maximum number of attempts is reached; finer control is possible by creating a retry policy and using methods such as `applyOn(Class<? extends Throwable>…​ classes)` and `skipOn(Class<? extends Throwable>…​ classes)` to control the exceptions that must be retried and those that must be ignored.
+
+### Timeouts
+
+A request to a service that is inaccessible or simply unavailable should be bounded to ensure a certain quality of service and response time. Timeouts can be configured to avoid excessive waiting times. In addition, a fallback action can be defined if a timeout expires as we shall cover in the next section.
+
+The following is an example of using `Timeout`:
+
+``` java
+T result = Timeout.create(Duration.ofMillis(10))
+        .invoke(this::mayTakeVeryLong);
+```
+
+> [!NOTE]
+> Using a handler’s `create` method is an alternative to using a builder that is more convenient when default settings are acceptable.
+
+The example above monitors the call to method `mayTakeVeryLong` and reports a `TimeoutException` if the execution takes more than 10 milliseconds to complete.
+
+### Fallbacks
+
+A fallback to a *known* result can sometimes be an alternative to reporting an error. For example, if we are unable to access a service we may fall back to the last result obtained from that service at an earlier time.
+
+A `Fallback` instance is created by providing a function that takes a `Throwable` and produces some `T` to be used when the intended method failed to return a value:
+
+``` java
+T result = Fallback.createFromMethod(throwable -> lastKnownValue)
+        .invoke(this::mayFail);
+```
+
+This example calls the method `mayFail` and if it produces a `Throwable`, it maps it to the last known value using the fallback handler.
+
+### Circuit Breakers
+
+Failing to execute a certain task or to call another service repeatedly can have a direct impact on application performance. It is often preferred to avoid calls to non-essential services by simply preventing that logic to execute altogether. A circuit breaker can be configured to monitor such calls and block attempts that are likely to fail, thus improving overall performance.
+
+Circuit breakers start in a *closed* state, letting calls to proceed normally; after detecting a certain number of errors during a pre-defined processing window, they can *open* to prevent additional failures. After a circuit has been opened, it can transition first to a *half-open* state before finally transitioning back to a closed state. The use of an intermediate state (half-open) makes transitions from open to close more progressive, and prevents a circuit breaker from eagerly transitioning to states without considering sufficient observations.
+
+> [!NOTE]
+> Any failure while a circuit breaker is in half-open state will immediately cause it to transition back to an open state.
+
+Consider the following example in which `this::mayFail` is monitored by a circuit breaker:
+
+``` java
+CircuitBreaker breaker = CircuitBreaker.builder()
+        .volume(10)
+        .errorRatio(30)
+        .delay(Duration.ofMillis(200))
+        .successThreshold(2)
+        .build();
+T result = breaker.invoke(this::mayFail);
+```
+
+The circuit breaker in this example defines a processing window of size 10, an error ratio of 30%, a duration to transition to half-open state of 200 milliseconds, and a success threshold to transition from half-open to closed state of 2 observations. It follows that,
+
+- After completing the processing window, if at least 3 errors are detected, the circuit breaker will transition to the open state, thus blocking the execution of any subsequent calls.
+- After 200 millis, the circuit breaker will transition back to half-open and allow calls to proceed again.
+- If the next two calls after transitioning to half-open are successful, the circuit breaker will transition to closed state; otherwise, it will transition back to open state, waiting for another 200 milliseconds before attempting to transition to half-open again.
+
+A circuit breaker will throw a `io.helidon.faulttolerance.CircuitBreakerOpenException` if an attempt to make an invocation takes place while it is in open state.
+
+### Bulkheads
+
+Concurrent access to certain components may need to be limited to avoid excessive use of resources. For example, if an invocation that opens a network connection is allowed to execute concurrently without any restriction, and if the service on the other end is slow responding, it is possible for the rate at which network connections are opened to exceed the maximum number of connections allowed. Faults of this type can be prevented by guarding these invocations using a bulkhead.
+
+> [!NOTE]
+> The origin of the name *bulkhead* comes from the partitions that comprise a ship’s hull. If some partition is somehow compromised (e.g., filled with water) it can be isolated in a manner not to affect the rest of the hull.
+
+A waiting queue can be associated with a bulkhead to handle tasks that are submitted when the bulkhead is already at full capacity.
+
+``` java
+Bulkhead bulkhead = Bulkhead.builder()
+        .limit(3)
+        .queueLength(5)
+        .build();
+T result = bulkhead.invoke(this::usesResources);
+```
+
+This example creates a bulkhead that limits concurrent execution to `this:usesResources` to at most 3, and with a queue of size 5. The bulkhead will report a `io.helidon.faulttolerance.BulkheadException` if unable to proceed with the call: either due to the limit being reached or the queue being at maximum capacity.
+
+### Asynchronous
+
+Asynchronous tasks can be created or forked by using an `Async` instance. A supplier of type `T` is provided as the argument when invoking this handler. For example:
+
+``` java
+CompletableFuture<Thread> cf = Async.create().invoke(Thread::currentThread);
+cf.thenAccept(t -> System.out.println("Async task executed in thread " + t));
+```
+
+The supplier `() → Thread.currentThread()` is executed in a new thread and the value it produces printed by the consumer and passed to `thenAccept`.
+
+By default, asynchronous tasks are executed using a *new virtual thread per task* based on the `ExecutorService` defined in `io.helidon.faulttolerance.FaultTolerance` and configurable by an application. Alternatively, an `ExecutorService` can be specified when building a non-standard `Async` instance.
+
+### Handler Composition
+
+Method invocations can be guarded by any combination of the handlers presented above. For example, an invocation that times out can be retried a few times before resorting to a fallback value —assuming it never succeeds.
+
+The easiest way to achieve handler composition is by using a builder in the `FaultTolerance` class as shown in the following example:
+
+``` java
+FaultTolerance.TypedBuilder<T> builder = FaultTolerance.typedBuilder();
+
+Timeout timeout = Timeout.create(Duration.ofMillis(10));
+builder.addTimeout(timeout);
+
+Retry retry = Retry.builder()
+        .retryPolicy(Retry.JitterRetryPolicy.builder()
+                             .calls(3)
+                             .delay(Duration.ofMillis(100))
+                             .build())
+        .build();
+builder.addRetry(retry);
+
+Fallback<T> fallback = Fallback.createFromMethod(throwable -> lastKnownValue);
+builder.addFallback(fallback);
+
+T result = builder.build().invoke(this::mayTakeVeryLong);
+```
+
+The exact order in which handlers are added to a builder depends on the use case, but generally the order starting from innermost to outermost should be: bulkhead, timeout, circuit breaker, retry and fallback. That is, fallback is the first handler in the chain (the last to executed once a value is returned) and bulkhead is the last one (the first to be executed once a value is returned).
+
+> [!NOTE]
+> This is the ordering used by the MicroProfile Fault Tolerance implementation in Helidon when a method is decorated with multiple annotations.
+
+## Metrics
+
+The Helidon Fault Tolerance module has support for some basic metrics to monitor certain application conditions. Metrics are disabled by default, but can be enabled programmatically as described in [Enabling Metrics Programmatically](#enabling-metrics-programmatically), and by including an actual metrics implementation in your classpath. For more information about metrics implementations see [Helidon Metrics](../se/metrics/metrics.md).
+
+The following tables list all the metrics created by the Fault Tolerance module. Note that these metrics are generated per command instance, and that each instance *must* be identified by a unique name —assigned either programmatically by the application developer or automatically by the API.
+
+|  |  |  |
+|----|----|----|
+| Name | Tags | Description |
+| ft.bulkhead.calls.total | name="\<bulkhead-name\>" | Counter for all calls entering a bulkhead |
+| ft.bulkhead.waitingDuration | name="\<bulkhead-name\>" | Distribution summary of waiting times to enter a bulkhead |
+| ft.bulkhead.executionsRunning | name="\<bulkhead-name\>" | Gauge whose value is the number of executions running in a bulkhead |
+| ft.bulkhead.executionsWaiting | name="\<bulkhead-name\>" | Gauge whose value is the number of executions waiting in a bulkhead |
+
+Bulkheads
+
+|  |  |  |
+|----|----|----|
+| Name | Tags | Description |
+| ft.circuitbreaker.calls.total | name="\<breaker-name\>" | Counter for all calls entering a circuit breaker |
+| ft.circuitbreaker.opened.total | name="\<breaker-name\>" | Counter for the number of times a circuit breaker has moved from closed to open state |
+
+Circuit Breakers
+
+|  |  |  |
+|----|----|----|
+| Name | Tags | Description |
+| ft.retry.calls.total | name="\<retry-name\>" | Counter for all calls entering a retry |
+| ft.retry.retries.total | name="\<retry-name\>" | Counter for all retried calls, excluding the initial call |
+
+Retries
+
+|  |  |  |
+|----|----|----|
+| Name | Tags | Description |
+| ft.timeout.calls.total | name="\<timeout-name\>" | Counter for all calls entering a timeout |
+| ft.timeout.executionDuration | name="\<timeout-name\>" | Distribution summary of all execution durations in a timeout |
+
+Timeouts
+
+### Enabling Metrics Programmatically
+
+Metrics can be enabled programmatically either globally or, if disabled globally, individually for each command instance. To enable metrics globally, call `FaultTolerance.config(Config)` passing a Config instance that sets `ft.metrics.default-enabled=true`. This must be done on application startup, before any command instances are created.
+
+If metrics are not enabled globally, they can be enabled programmatically on each command instance using the `enableMetrics(boolean)` method on its corresponding builder. For example, the following snippet shows how to create a `Retry` instance of name `my-retry` with metrics support enabled.
+
+``` java
+Retry retry = Retry.builder()
+        .name("my-retry")
+        .enableMetrics(true)
+        .build();
+```
+
+> [!NOTE]
+> The global config setting always takes precedence: that is, if metrics are enabled globally, they **cannot** be disabled individually by calling `enableMetrics(false)`.
+
+## Examples
+
+See [API](#api) section for examples.
+
+## Additional Information
+
+For additional information, see the [Fault Tolerance API Javadocs](/apidocs/io.helidon.faulttolerance/module-summary.html).
