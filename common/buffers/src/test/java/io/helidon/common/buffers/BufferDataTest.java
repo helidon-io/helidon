@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -235,6 +235,18 @@ class BufferDataTest {
         long number = bd.readUnsignedInt32();
         assertThat(number, Matchers.greaterThan(0L));
         assertThat(number, is(maxValue));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
+    void testWriteReadInt64(TestContext context) {
+        long expected = 0x0123456789ABCDEFL;
+        BufferData bd = context.bufferData();
+
+        bd.writeInt64(expected);
+
+        assertThat(bd.available(), is(Long.BYTES));
+        assertThat(bd.readLong(), is(expected));
     }
 
     @ParameterizedTest

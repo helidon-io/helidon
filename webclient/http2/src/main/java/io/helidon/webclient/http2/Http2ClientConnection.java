@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -69,6 +70,7 @@ import static java.lang.System.Logger.Level.WARNING;
 public class Http2ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http2ClientConnection.class.getName());
     private static final int FRAME_HEADER_LENGTH = 9;
+    private static final long NO_PING_ACK = Long.MIN_VALUE;
     private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
     private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
     private final LockingStreamIdSequence streamIdSeq = new LockingStreamIdSequence();
@@ -86,8 +88,10 @@ public class Http2ClientConnection {
     private final DataReader reader;
     private final DataWriter dataWriter;
     private final Semaphore pingPongSemaphore = new Semaphore(0);
+    private final AtomicLong pingIdSequence = new AtomicLong();
     private final Http2ClientConfig clientConfig;
     private volatile int lastStreamId;
+    private volatile long expectedPingAck = NO_PING_ACK;
 
     private Http2Settings serverSettings = Http2Settings.builder()
             .build();
@@ -213,22 +217,45 @@ public class Http2ClientConnection {
         return state.get().closed() || (protocolConfig.ping() && !ping());
     }
 
+    /**
+     * Sends a connection health-check PING and waits for the matching ACK.
+     * This method tracks a single in-flight health-check ping per connection.
+     */
     boolean ping() {
-        Http2Ping ping = Http2Ping.create();
+        long pingId = pingIdSequence.incrementAndGet();
+        Http2Ping ping = Http2Ping.create(pingData(pingId));
         Http2FrameData frameData = ping.toFrameData();
         sendListener.frameHeader(ctx, 0, frameData.header());
         sendListener.frame(ctx, 0, ping);
+        pingPongSemaphore.drainPermits();
+        expectedPingAck = pingId;
         try {
             this.writer().writeData(frameData, FlowControl.Outbound.NOOP);
-            return pingPongSemaphore.tryAcquire(protocolConfig.pingTimeout().toMillis(), TimeUnit.MILLISECONDS);
+            boolean pongReceived = pingPongSemaphore.tryAcquire(protocolConfig.pingTimeout().toMillis(), TimeUnit.MILLISECONDS);
+            if (!pongReceived) {
+                pingPongSemaphore.drainPermits();
+            }
+            return pongReceived;
         } catch (UncheckedIOException | InterruptedException e) {
             ctx.log(LOGGER, DEBUG, "Ping failed!", e);
             return false;
+        } finally {
+            if (expectedPingAck == pingId) {
+                expectedPingAck = NO_PING_ACK;
+            }
         }
     }
 
-    void pong() {
-        pingPongSemaphore.release();
+    /**
+     * Completes a connection health-check ping when the ACK echoes the same opaque 8-byte PING payload we sent.
+     * RFC 9113, Section 6.7: "Responses to PING frames MUST contain the identical payload..."
+     *
+     * @param pingId decoded value of the echoed PING payload
+     */
+    void pong(long pingId) {
+        if (expectedPingAck == pingId) {
+            pingPongSemaphore.release();
+        }
     }
 
     void updateLastStreamId(int lastStreamId) {
@@ -490,7 +517,7 @@ public class Http2ClientConnection {
                                                                   0);
                 writer.write(new Http2FrameData(header, frame));
             } else {
-                pong();
+                pong(data.readLong());
             }
             break;
 
@@ -537,6 +564,11 @@ public class Http2ClientConnection {
             Http2GoAway frame = new Http2GoAway(streamId, errorCode, msg);
             writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()));
         }
+    }
+
+    private static BufferData pingData(long pingId) {
+        return BufferData.create(Long.BYTES)
+                .writeInt64(pingId);
     }
 
     private enum State {

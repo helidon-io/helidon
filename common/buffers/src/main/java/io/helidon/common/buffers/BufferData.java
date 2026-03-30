@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -411,6 +411,24 @@ public interface BufferData {
      * @return this buffer
      */
     default BufferData writeUnsignedInt32(long number) {
+        write((byte) (number >>> 24));
+        write((byte) (number >>> 16));
+        write((byte) (number >>> 8));
+        write((byte) number);
+        return this;
+    }
+
+    /**
+     * Write 64-bit integer.
+     *
+     * @param number long to write as 8 bytes
+     * @return this buffer
+     */
+    default BufferData writeInt64(long number) {
+        write((byte) (number >>> 56));
+        write((byte) (number >>> 48));
+        write((byte) (number >>> 40));
+        write((byte) (number >>> 32));
         write((byte) (number >>> 24));
         write((byte) (number >>> 16));
         write((byte) (number >>> 8));
