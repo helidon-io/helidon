@@ -113,6 +113,16 @@ class ReadableEntityBaseTest {
         inputStream.close();
     }
 
+    @Test
+    void testZeroLengthReadStillValidatesArguments() throws IOException {
+        try (InputStream inputStream = new ReadableEntityImpl(new Readable(), 1024).inputStream()) {
+            assertThrows(NullPointerException.class, () -> inputStream.read(null, 0, 0));
+        }
+        try (InputStream inputStream = new ReadableEntityImpl(new Readable(), 1024).inputStream()) {
+            assertThrows(IndexOutOfBoundsException.class, () -> inputStream.read(new byte[1], 2, 0));
+        }
+    }
+
     static class Readable implements Function<Integer, BufferData> {
         private boolean done;
 
