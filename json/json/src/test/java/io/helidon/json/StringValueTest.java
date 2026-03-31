@@ -128,6 +128,46 @@ class StringValueTest {
 
     @ParameterizedTest
     @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashEscapedContentAcrossStreamBoundary(ParserMethod parserMethod) {
+        String expected = "He said \"hello\"";
+        JsonParser parser = parserMethod.createParser("\"He said \\\"hello\\\"\"", 6);
+
+        assertThat(parser.readStringAsHash(), is(JsonParserArray.fnv1aHashUtf8(expected)));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashUnicodeEscapeAcrossStreamBoundary(ParserMethod parserMethod) {
+        String expected = "město";
+        JsonParser parser = parserMethod.createParser("\"\\u006d\\u011bsto\"", 6);
+
+        assertThat(parser.readStringAsHash(), is(JsonParserArray.fnv1aHashUtf8(expected)));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashSurrogatePairAcrossStreamBoundary(ParserMethod parserMethod) {
+        String expected = "😀🚀";
+        JsonParser parser = parserMethod.createParser("\"\\uD83D\\uDE00\\uD83D\\uDE80\"", 6);
+
+        assertThat(parser.readStringAsHash(), is(JsonParserArray.fnv1aHashUtf8(expected)));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashUtf8CodePointAcrossStreamBoundary(ParserMethod parserMethod) {
+        String expected = "😀🚀";
+        JsonParser parser = parserMethod.createParser("\"" + expected + "\"", 6);
+
+        assertThat(parser.readStringAsHash(), is(JsonParserArray.fnv1aHashUtf8(expected)));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
     public void testReadStringAsHashHighSurrogateWithoutLowSurrogate(ParserMethod parserMethod) {
         JsonParser parser = parserMethod.createParser("\"\\uD83DA\"");
 

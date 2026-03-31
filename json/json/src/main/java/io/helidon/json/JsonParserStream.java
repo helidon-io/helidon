@@ -509,61 +509,197 @@ final class JsonParserStream extends JsonParserBase {
 
     @Override
     public int readStringAsHash() {
-        int b = buffer[currentIndex] & 0xFF;
-        if (b != '"') {
+        if (buffer[currentIndex] != '"') {
             throw createException("Hash calculation is intended only for String values");
-        } else if (!hasNext()) {
-            throw createException("Incomplete JSON");
         }
-
+        int index = currentIndex + 1;
         int fnv1aHash = FNV_OFFSET_BASIS;
-        int i = currentIndex + 1;
-        while (true) {
-            while (i + 4 <= bufferLength) {
-                byte next = buffer[i];
-                if (next == '"') {
-                    currentIndex = i;
-                    return fnv1aHash;
-                }
-                fnv1aHash ^= next & 0xFF;
-                fnv1aHash *= FNV_PRIME;
-
-                next = buffer[i + 1];
-                if (next == '"') {
-                    currentIndex = i + 1;
-                    return fnv1aHash;
-                }
-                fnv1aHash ^= next & 0xFF;
-                fnv1aHash *= FNV_PRIME;
-
-                next = buffer[i + 2];
-                if (next == '"') {
-                    currentIndex = i + 2;
-                    return fnv1aHash;
-                }
-                fnv1aHash ^= next & 0xFF;
-                fnv1aHash *= FNV_PRIME;
-
-                next = buffer[i + 3];
-                if (next == '"') {
-                    currentIndex = i + 3;
-                    return fnv1aHash;
-                }
-                fnv1aHash ^= next & 0xFF;
-                fnv1aHash *= FNV_PRIME;
-                i += 4;
+        // JSON object keys are typically short ASCII names, so handle the first 16 bytes without loop overhead.
+        if (index + 15 < bufferLength) {
+            byte b = buffer[index];
+            if (b == '"') {
+                currentIndex = index;
+                return fnv1aHash;
             }
-            while (i < bufferLength) {
-                b = buffer[i++];
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 1];
+            if (b == '"') {
+                currentIndex = index + 1;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 1, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 2];
+            if (b == '"') {
+                currentIndex = index + 2;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 2, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 3];
+            if (b == '"') {
+                currentIndex = index + 3;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 3, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 4];
+            if (b == '"') {
+                currentIndex = index + 4;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 4, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 5];
+            if (b == '"') {
+                currentIndex = index + 5;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 5, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 6];
+            if (b == '"') {
+                currentIndex = index + 6;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 6, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 7];
+            if (b == '"') {
+                currentIndex = index + 7;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 7, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 8];
+            if (b == '"') {
+                currentIndex = index + 8;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 8, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 9];
+            if (b == '"') {
+                currentIndex = index + 9;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 9, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 10];
+            if (b == '"') {
+                currentIndex = index + 10;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 10, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 11];
+            if (b == '"') {
+                currentIndex = index + 11;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 11, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 12];
+            if (b == '"') {
+                currentIndex = index + 12;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 12, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 13];
+            if (b == '"') {
+                currentIndex = index + 13;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 13, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 14];
+            if (b == '"') {
+                currentIndex = index + 14;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 14, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 15];
+            if (b == '"') {
+                currentIndex = index + 15;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 15, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+            index += 16;
+        }
+        return continueStringAsHash(index, fnv1aHash);
+    }
+
+    private int continueStringAsHash(int index, int fnv1aHash) {
+        while (true) {
+            while (index < bufferLength) {
+                byte b = buffer[index];
                 if (b == '"') {
-                    currentIndex = i - 1;
+                    currentIndex = index;
                     return fnv1aHash;
                 }
-//                else if (b == '\\' || b < 0) {
-//                    throw createException("FIX THIS");
-//                }
-                fnv1aHash ^= b & 0xFF;
-                fnv1aHash *= FNV_PRIME;
+                if (b == '\\') {
+                    currentIndex = index;
+                    return readEscapedStringAsHash(fnv1aHash);
+                }
+                if (b >= 0) {
+                    fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+                    index++;
+                } else {
+                    currentIndex = index;
+                    fnv1aHash = hashUtf8Bytes(fnv1aHash, b);
+                    index = currentIndex + 1;
+                }
             }
             if (finished) {
                 throw createException("Unexpected end of string value. Probably incomplete JSON");
@@ -572,8 +708,136 @@ final class JsonParserStream extends JsonParserBase {
             // to avoid re-reading and re-hashing the previously scanned string chunk.
             currentIndex = bufferLength - 1;
             fetchData();
-            i = currentIndex + 1;
+            index = currentIndex + 1;
         }
+    }
+
+    private int readEscapedStringAsHash(int fnv1aHash) {
+        char highSurrogate = 0;
+        while (true) {
+            for (; currentIndex < bufferLength; currentIndex++) {
+                byte b = buffer[currentIndex];
+                if (b == '\\') {
+                    char escaped = readEscapedCodeUnit();
+                    if (Character.isHighSurrogate(escaped)) {
+                        if (highSurrogate != 0) {
+                            throw createException("A high surrogate must always be followed by a low surrogate");
+                        }
+                        highSurrogate = escaped;
+                    } else if (Character.isLowSurrogate(escaped)) {
+                        if (highSurrogate == 0) {
+                            throw createException("A low surrogate must always follow a high surrogate");
+                        }
+                        fnv1aHash = hashUtf8CodePoint(fnv1aHash, Character.toCodePoint(highSurrogate, escaped));
+                        highSurrogate = 0;
+                    } else {
+                        if (highSurrogate != 0) {
+                            throw createException("Low surrogate was expected to follow the high surrogate, "
+                                                          + "but found " + Parsers.toPrintableForm(escaped));
+                        }
+                        fnv1aHash = hashUtf8CodePoint(fnv1aHash, escaped);
+                    }
+                } else if (highSurrogate != 0) {
+                    throw createException("Low surrogate must follow the high surrogate.", b);
+                } else if (b == '"') {
+                    return fnv1aHash;
+                } else if (b >= 0) {
+                    fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+                } else {
+                    fnv1aHash = hashUtf8Bytes(fnv1aHash, b);
+                }
+            }
+            if (finished) {
+                throw createException("End of the string expected. Incomplete JSON");
+            }
+            int previousIndex = currentIndex;
+            readMoreData();
+            if (currentIndex < previousIndex) {
+                currentIndex++;
+            }
+        }
+    }
+
+    private char readEscapedCodeUnit() {
+        if (!hasNext()) {
+            throw createException("Error while processing an escaped string sequence. Incomplete JSON");
+        }
+        byte b = buffer[++currentIndex];
+        return switch (b) {
+            case '\\', '"', '/' -> (char) b;
+            case 'b' -> '\b';
+            case 't' -> '\t';
+            case 'n' -> '\n';
+            case 'f' -> '\f';
+            case 'r' -> '\r';
+            case 'u' -> {
+                ensure(4);
+                yield (char) (
+                        (Parsers.translateHex(buffer[++currentIndex], this) << 12)
+                                + (Parsers.translateHex(buffer[++currentIndex], this) << 8)
+                                + (Parsers.translateHex(buffer[++currentIndex], this) << 4)
+                                + Parsers.translateHex(buffer[++currentIndex], this));
+            }
+            default -> throw createException("Invalid escaped value", b);
+        };
+    }
+
+    private int hashUtf8Bytes(int fnv1aHash, byte currentByte) {
+        fnv1aHash = updateFnv1aHash(fnv1aHash, currentByte & 0xFF);
+        if ((currentByte & 0xE0) == 0xC0) {
+            ensure(1);
+            fnv1aHash = updateFnv1aHash(fnv1aHash, readNextByte() & 0xFF);
+            return fnv1aHash;
+        }
+        if ((currentByte & 0xF0) == 0xE0) {
+            ensure(2);
+            fnv1aHash = updateFnv1aHash(fnv1aHash, buffer[++currentIndex] & 0xFF);
+            fnv1aHash = updateFnv1aHash(fnv1aHash, buffer[++currentIndex] & 0xFF);
+            return fnv1aHash;
+        }
+        if ((currentByte & 0xF8) == 0xF0) {
+            ensure(3);
+            byte b2 = buffer[++currentIndex];
+            byte b3 = buffer[++currentIndex];
+            byte b4 = buffer[++currentIndex];
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b2 & 0xFF);
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b3 & 0xFF);
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b4 & 0xFF);
+            int codePoint = ((currentByte & 0x07) << 18)
+                    | ((b2 & 0x3F) << 12)
+                    | ((b3 & 0x3F) << 6)
+                    | (b4 & 0x3F);
+            if (codePoint >= 0x110000) {
+                throw createException("Invalid UTF-8 code point: " + Integer.toHexString(codePoint));
+            }
+            return fnv1aHash;
+        }
+        throw createException("Invalid UTF-8 byte", currentByte);
+    }
+
+    private static int hashUtf8CodePoint(int fnv1aHash, int codePoint) {
+        if (codePoint <= 0x7F) {
+            return updateFnv1aHash(fnv1aHash, codePoint);
+        }
+        if (codePoint <= 0x7FF) {
+            fnv1aHash = updateFnv1aHash(fnv1aHash, 0xC0 | (codePoint >> 6));
+            return updateFnv1aHash(fnv1aHash, 0x80 | (codePoint & 0x3F));
+        }
+        if (codePoint <= 0xFFFF) {
+            fnv1aHash = updateFnv1aHash(fnv1aHash, 0xE0 | (codePoint >> 12));
+            fnv1aHash = updateFnv1aHash(fnv1aHash, 0x80 | ((codePoint >> 6) & 0x3F));
+            return updateFnv1aHash(fnv1aHash, 0x80 | (codePoint & 0x3F));
+        }
+        fnv1aHash = updateFnv1aHash(fnv1aHash, 0xF0 | (codePoint >> 18));
+        fnv1aHash = updateFnv1aHash(fnv1aHash, 0x80 | ((codePoint >> 12) & 0x3F));
+        fnv1aHash = updateFnv1aHash(fnv1aHash, 0x80 | ((codePoint >> 6) & 0x3F));
+        return updateFnv1aHash(fnv1aHash, 0x80 | (codePoint & 0x3F));
+    }
+
+    private static int updateFnv1aHash(int fnv1aHash, int unsignedByte) {
+        fnv1aHash ^= unsignedByte;
+        fnv1aHash *= FNV_PRIME;
+        return fnv1aHash;
     }
 
     @Override
