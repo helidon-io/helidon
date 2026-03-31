@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
+import static io.helidon.http.HeaderNames.CONNECTION;
 import static io.helidon.http.HeaderNames.CONTENT_LENGTH;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -90,7 +92,7 @@ class PostTest {
             headers = response.headers();
         }
         assertThat(headers, hasHeader(HeaderValues.create(CONTENT_LENGTH, "5")));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, noHeader(CONNECTION));
     }
 
     @Test
@@ -106,7 +108,7 @@ class PostTest {
             headers = response.headers();
         }
         assertThat(headers, hasHeader(HeaderValues.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, noHeader(CONNECTION));
     }
 
     @Test
@@ -126,7 +128,7 @@ class PostTest {
             headers = response.headers();
         }
         assertThat(headers, hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, noHeader(CONNECTION));
     }
 
     @Test
@@ -143,7 +145,7 @@ class PostTest {
             headers = response.headers();
         }
         assertThat(headers, hasHeader(HeaderValues.create(CONTENT_LENGTH, "5")));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, noHeader(CONNECTION));
         assertThat(headers, hasHeader(REQUEST_HEADER_VALUE));
         assertThat(headers, hasHeader(RESPONSE_HEADER_VALUE));
     }

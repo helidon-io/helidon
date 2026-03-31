@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -639,7 +639,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         try {
             request.content().consume();
         } catch (Exception e) {
-            boolean keepAlive = request.content().consumed() && response.headers().contains(HeaderValues.CONNECTION_KEEP_ALIVE);
+            boolean keepAlive = request.content().consumed() && response.keepConnectionOpen();
             // we must close connection, as we could not consume request
             if (!response.isSent()) {
                 throw new InternalServerException(e.getMessage(), e, keepAlive);
