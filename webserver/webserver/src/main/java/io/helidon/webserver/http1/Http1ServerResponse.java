@@ -77,6 +77,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private final ServerResponseHeaders headers;
     private final ServerResponseTrailers trailers;
     private final boolean keepAlive;
+    private final boolean sendKeepAliveHeader;
 
     private boolean streamingEntity;
     private boolean isSent;
@@ -93,6 +94,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                         DataWriter dataWriter,
                         Http1ServerRequest request,
                         boolean keepAlive,
+                        boolean sendKeepAliveHeader,
                         boolean validateHeaders) {
         super(ctx, request);
 
@@ -103,6 +105,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         this.headers = ServerResponseHeaders.create();
         this.trailers = ServerResponseTrailers.create();
         this.keepAlive = keepAlive;
+        this.sendKeepAliveHeader = sendKeepAliveHeader;
         this.validateHeaders = validateHeaders;
     }
 
@@ -110,6 +113,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                Status status,
                                BufferData buffer,
                                boolean keepAlive,
+                               boolean sendKeepAliveHeader,
                                boolean validateHeaders) {
 
         status = status == null ? Status.OK_200 : status;
@@ -144,12 +148,18 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         // either content-length or chunked encoding
         // if content length - make sure to compare it when writing actual entity (streaming and send(entity))
-        if (keepAlive) {
-            headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
-        } else {
+        if (!keepAlive) {
             // we must override even if user sets keep alive, as close was requested
             headers.set(HeaderValues.CONNECTION_CLOSE);
+        } else if (sendKeepAliveHeader) {
+            headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
         }
+        /*
+        RFC 9112, Section 9.3. HTTP/1.1 makes persistence the default: if the message is HTTP/1.1 and th
+        ere is no Connection: close, the connection remains persistent after the response. The same section says a se
+        rver that does not support persistent connections must send Connection: close in responses. It does not requi
+        re Connection: keep-alive for normal HTTP/1.1 responses. (rfc-editor.org(https://www.rfc-editor.org/rfc/rfc9112.html))
+         */
 
         // write headers followed by empty line
         writeHeaders(headers, buffer, validateHeaders);
@@ -411,7 +421,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
 
         boolean forcedChunkedEncoding = false;
-        headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
 
         if (headers.contains(HeaderNames.TRANSFER_ENCODING) && headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             headers.remove(HeaderNames.CONTENT_LENGTH);
@@ -428,7 +437,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         // give some space for code and headers + entity
         BufferData responseBuffer = BufferData.growing(256 + length);
 
-        nonEntityBytes(headers, usedStatus, responseBuffer, keepAlive, validateHeaders);
+        nonEntityBytes(headers, usedStatus, responseBuffer, keepAlive, sendKeepAliveHeader, validateHeaders);
         if (forcedChunkedEncoding) {
             byte[] hex = Integer.toHexString(length).getBytes(StandardCharsets.US_ASCII);
             responseBuffer.write(hex);
@@ -471,6 +480,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                                             sendListener,
                                                             request,
                                                             keepAlive,
+                                                            sendKeepAliveHeader,
                                                             validateHeaders,
                                                             isNoEntityStatus);
 
@@ -483,6 +493,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             bos.checkResponseHeaders();     // headers can be augmented by encoders
         }
         return outputStreamFilter == null ? encodedOutputStream : outputStreamFilter.apply(encodedOutputStream);
+    }
+
+    boolean keepConnectionOpen() {
+        return keepAlive && !headers.contains(HeaderValues.CONNECTION_CLOSE);
     }
 
     private static Status noEntityInternalError(Status status) {
@@ -509,6 +523,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private final Http1ConnectionListener sendListener;
         private final Http1ServerRequest request;
         private final boolean keepAlive;
+        private final boolean sendKeepAliveHeader;
         private final Supplier<String> streamResult;
         private boolean forcedChunked;
 
@@ -535,6 +550,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                      Http1ConnectionListener sendListener,
                                      Http1ServerRequest request,
                                      boolean keepAlive,
+                                     boolean sendKeepAliveHeader,
                                      boolean validateHeaders,
                                      boolean isNoEntityStatus) {
             this.headers = headers;
@@ -549,6 +565,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             this.contentLength = headers.contentLength().orElse(-1);
             this.request = request;
             this.keepAlive = keepAlive;
+            this.sendKeepAliveHeader = sendKeepAliveHeader;
             this.validateHeaders = validateHeaders;
             this.isNoEntityStatus = isNoEntityStatus;
         }
@@ -700,7 +717,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                     sendListener.headers(ctx, headers);
                     // write headers and payload part in one buffer to avoid TCP/ACK delay problems
                     BufferData growing = BufferData.growing(256 + buffer.available());
-                    nonEntityBytes(headers, usedStatus, growing, keepAlive, validateHeaders);
+                    nonEntityBytes(headers, usedStatus, growing, keepAlive, sendKeepAliveHeader, validateHeaders);
                     // check not exceeding content-length
                     bytesWritten += buffer.available();
                     checkContentLength(buffer);
@@ -762,7 +779,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             sendListener.status(ctx, usedStatus);
             sendListener.headers(ctx, headers);
             BufferData bufferData = BufferData.growing(contentLength + 256);
-            nonEntityBytes(headers, usedStatus, bufferData, keepAlive, validateHeaders);
+            nonEntityBytes(headers, usedStatus, bufferData, keepAlive, sendKeepAliveHeader, validateHeaders);
 
             if (firstBuffer != null) {
                 bufferData.write(firstBuffer);
@@ -795,7 +812,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             sendListener.status(ctx, usedStatus);
             sendListener.headers(ctx, headers);
             BufferData bufferData = BufferData.growing(256);
-            nonEntityBytes(headers, usedStatus, bufferData, keepAlive, validateHeaders);
+            nonEntityBytes(headers, usedStatus, bufferData, keepAlive, sendKeepAliveHeader, validateHeaders);
             sendListener.data(ctx, bufferData);
             responseBytesTotal += bufferData.available();
             dataWriter.write(bufferData);
