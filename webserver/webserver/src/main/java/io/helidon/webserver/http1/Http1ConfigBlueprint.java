@@ -121,6 +121,19 @@ interface Http1ConfigBlueprint extends ProtocolConfig {
     boolean validateResponseHeaders();
 
     /**
+     * Whether to send the default {@code Connection: keep-alive} response header for persistent HTTP/1.1 connections.
+     * <p>
+     * RFC 9112 does not require this header for persistent connections, but Helidon 4 defaults to {@code true} for
+     * backward compatibility. Set this to {@code false} to omit the header unless the application sets it explicitly.
+     * </p>
+     *
+     * @return whether to send the default keep-alive response header
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean sendKeepAliveHeader();
+
+    /**
      * If set to false, any query and fragment is accepted (even containing illegal characters).
      * Validation of path is controlled by {@link #validatePath()}.
      *
