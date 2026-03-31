@@ -621,6 +621,7 @@ class JsonParserArray extends JsonParserBase {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:MethodLength") // unrolled on purpose for the hot ASCII-key path
     public int readStringAsHash() {
         if (buffer[currentIndex] != '"') {
             throw createException("Hash calculation is intended only for String values");

@@ -18,7 +18,6 @@ package io.helidon.json;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Set;
 

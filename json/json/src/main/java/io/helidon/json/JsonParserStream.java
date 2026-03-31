@@ -508,6 +508,7 @@ final class JsonParserStream extends JsonParserBase {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:MethodLength") // unrolled on purpose for the hot ASCII-key path
     public int readStringAsHash() {
         if (buffer[currentIndex] != '"') {
             throw createException("Hash calculation is intended only for String values");
@@ -1033,7 +1034,10 @@ final class JsonParserStream extends JsonParserBase {
         if (delegateToJava) {
             skipNumber();
             bufferingJsonValue = false;
-            return Double.parseDouble(new String(buffer, jsonValueStart, currentIndex - jsonValueStart + 1, StandardCharsets.UTF_8));
+            return Double.parseDouble(new String(buffer,
+                                                jsonValueStart,
+                                                currentIndex - jsonValueStart + 1,
+                                                StandardCharsets.UTF_8));
         } else if (hasDecimal && !hasFractionDigits) {
             throw createException("Parsed Number is not having any fraction digits after the separator");
         }
