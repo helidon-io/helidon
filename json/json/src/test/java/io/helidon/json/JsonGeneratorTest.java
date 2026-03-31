@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class JsonGeneratorTest {
 
     private static final int LARGE_VALUE_LENGTH = 16_384;
+    private static final JsonKey ESCAPED_KEY = JsonKey.create("na\"me\\\n\u20AC\uD83D\uDE00");
 
     // Basic value tests
     @ParameterizedTest
@@ -231,6 +232,65 @@ class JsonGeneratorTest {
 
     @ParameterizedTest
     @EnumSource(GeneratorMethod.class)
+    public void testWriteObjectWithJsonKey(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.writeObjectStart()
+                    .writeKey(ESCAPED_KEY)
+                    .write("value")
+                    .writeObjectEnd();
+        }
+
+        assertThat(target.generatedJson(), is("{\"na\\\"me\\\\\\n€\\uD83D\\uDE00\":\"value\"}"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testWritePrecomputedKeyAlias(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.writeObjectStart()
+                    .writePrecomputedKey(ESCAPED_KEY)
+                    .write("value")
+                    .writeObjectEnd();
+        }
+
+        assertThat(target.generatedJson(), is("{\"na\\\"me\\\\\\n€\\uD83D\\uDE00\":\"value\"}"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testWriteObjectWithJsonKeyOverloads(GeneratorMethod generatorMethod) throws Exception {
+        byte[] payload = "hello".getBytes();
+
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.writeObjectStart()
+                    .write(JsonKey.create("name"), "John")
+                    .write(JsonKey.create("age"), 30)
+                    .write(JsonKey.create("count"), 1234567890123L)
+                    .write(JsonKey.create("ratio"), 3.5f)
+                    .write(JsonKey.create("score"), 7.25d)
+                    .write(JsonKey.create("active"), true)
+                    .write(JsonKey.create("initial"), 'J')
+                    .write(JsonKey.create("amount"), new BigDecimal("12.50"))
+                    .write(JsonKey.create("id"), new BigInteger("12345678901234567890"))
+                    .write(JsonKey.create("json"), JsonBoolean.TRUE)
+                    .write(JsonKey.create("nickname"), (String) null)
+                    .writeBinary(JsonKey.create("payload"), payload)
+                    .writeObjectEnd();
+        }
+
+        assertThat(target.generatedJson(), is("{\"name\":\"John\",\"age\":30,\"count\":1234567890123,"
+                                                       + "\"ratio\":3.5,\"score\":7.25,\"active\":true,"
+                                                       + "\"initial\":\"J\",\"amount\":12.50,"
+                                                       + "\"id\":12345678901234567890,\"json\":true,"
+                                                       + "\"nickname\":null,\"payload\":\""
+                                                       + Base64.getEncoder().encodeToString(payload) + "\"}"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
     public void testWriteObjectWithBoolean(GeneratorMethod generatorMethod) throws Exception {
         GeneratorMethod.Target target = generatorMethod.createTarget();
         try (JsonGenerator generator = target.createGenerator()) {
@@ -398,6 +458,88 @@ class JsonGeneratorTest {
 
     @ParameterizedTest
     @EnumSource(GeneratorMethod.class)
+    public void testWriteJsonKeyOutsideObject(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            assertThrows(JsonException.class, () -> generator.writeKey(JsonKey.create("key")));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testWritePrecomputedKeyOutsideObject(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            assertThrows(JsonException.class, () -> generator.writePrecomputedKey(JsonKey.create("key")));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testWriteNullStringKey(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.writeObjectStart();
+
+            assertThrows(JsonException.class, () -> generator.writeKey((String) null));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testWriteNullJsonKey(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.writeObjectStart();
+
+            assertThrows(JsonException.class, () -> generator.writeKey((JsonKey) null));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testWriteNullPrecomputedKey(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.writeObjectStart();
+
+            assertThrows(JsonException.class, () -> generator.writePrecomputedKey(null));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testWriteJsonKeyValueOutsideObject(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            assertThrows(JsonException.class, () -> generator.write(JsonKey.create("key"), "value"));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testWriteNullStringValueKey(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.writeObjectStart();
+
+            assertThrows(JsonException.class, () -> generator.write((String) null, "value"));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testWriteNullJsonKeyValueKey(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.writeObjectStart();
+
+            assertThrows(JsonException.class, () -> generator.write((JsonKey) null, "value"));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
     public void testWriteValueWithoutKeyInObject(GeneratorMethod generatorMethod) throws Exception {
         GeneratorMethod.Target target = generatorMethod.createTarget();
         try (JsonGenerator generator = target.createGenerator()) {
@@ -504,6 +646,30 @@ class JsonGeneratorTest {
                 .replace("\n", "\\n")
                 .replace("\t", "\\t")
                 + '"';
+
+        assertThat(target.generatedJson(), is(expected));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testWriteLargeJsonKey(GeneratorMethod generatorMethod) throws Exception {
+        String key = "prefix-" + "\\\"\n\t".repeat(4_096) + "-suffix";
+        JsonKey jsonKey = JsonKey.create(key);
+
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.writeObjectStart()
+                    .writeKey(jsonKey)
+                    .write(1)
+                    .writeObjectEnd();
+        }
+
+        String expected = "{\""
+                + key.replace("\\", "\\\\")
+                        .replace("\"", "\\\"")
+                        .replace("\n", "\\n")
+                        .replace("\t", "\\t")
+                + "\":1}";
 
         assertThat(target.generatedJson(), is(expected));
     }

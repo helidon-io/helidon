@@ -129,6 +129,15 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
     }
 
     @Override
+    protected void writeKeyName(JsonKey value) {
+        try {
+            writer.write(value.quotedChars());
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to write key value.", e);
+        }
+    }
+
+    @Override
     protected void writeChar(char value) {
         try {
             writer.write('\"');

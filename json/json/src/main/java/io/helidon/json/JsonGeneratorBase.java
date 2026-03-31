@@ -112,6 +112,15 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     /**
+     * Writes an object key name using a precomputed key.
+     *
+     * @param value key name to write
+     */
+    protected void writeKeyName(JsonKey value) {
+        writeString(value.value());
+    }
+
+    /**
      * Writes a string value.
      *
      * @param value string value to write
@@ -178,7 +187,30 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     @Override
+    public JsonGenerator writeKey(JsonKey key) {
+        checkAndWriteKey(key);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator writePrecomputedKey(JsonKey key) {
+        return writeKey(key);
+    }
+
+    @Override
     public JsonGenerator write(String key, String value) {
+        checkAndWriteKey(key);
+        if (value == null) {
+            writeNullValue();
+        } else {
+            writeString(value);
+        }
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(JsonKey key, String value) {
         checkAndWriteKey(key);
         if (value == null) {
             writeNullValue();
@@ -198,7 +230,23 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     @Override
+    public JsonGenerator write(JsonKey key, int value) {
+        checkAndWriteKey(key);
+        writeInt(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
     public JsonGenerator write(String key, long value) {
+        checkAndWriteKey(key);
+        writeLong(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(JsonKey key, long value) {
         checkAndWriteKey(key);
         writeLong(value);
         keyWritten = false;
@@ -214,7 +262,23 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     @Override
+    public JsonGenerator write(JsonKey key, float value) {
+        checkAndWriteKey(key);
+        writeFloat(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
     public JsonGenerator write(String key, double value) {
+        checkAndWriteKey(key);
+        writeDouble(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(JsonKey key, double value) {
         checkAndWriteKey(key);
         writeDouble(value);
         keyWritten = false;
@@ -230,7 +294,23 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     @Override
+    public JsonGenerator write(JsonKey key, boolean value) {
+        checkAndWriteKey(key);
+        writeBoolean(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
     public JsonGenerator write(String key, char value) {
+        checkAndWriteKey(key);
+        writeChar(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(JsonKey key, char value) {
         checkAndWriteKey(key);
         writeChar(value);
         keyWritten = false;
@@ -246,7 +326,23 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     @Override
+    public JsonGenerator write(JsonKey key, BigDecimal value) {
+        checkAndWriteKey(key);
+        writeBigDecimal(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
     public JsonGenerator write(String key, BigInteger value) {
+        checkAndWriteKey(key);
+        writeBigInteger(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(JsonKey key, BigInteger value) {
         checkAndWriteKey(key);
         writeBigInteger(value);
         keyWritten = false;
@@ -262,7 +358,23 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     @Override
+    public JsonGenerator write(JsonKey key, JsonValue value) {
+        checkAndWriteKey(key);
+        writeJsonValue(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
     public JsonGenerator writeBinary(String key, byte[] value) {
+        checkAndWriteKey(key);
+        writeBinaryArray(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
+    public JsonGenerator writeBinary(JsonKey key, byte[] value) {
         checkAndWriteKey(key);
         writeBinaryArray(value);
         keyWritten = false;
@@ -441,12 +553,28 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
         value.toJson(this);
     }
 
-    private void checkAndWriteKey(String key) {
+    private void validateKeyWrite() {
         if (!inObject()) {
             throw new JsonException("Key can be written only into the object");
         } else if (keyWritten) {
             throw new JsonException("Cannot write key twice");
-        } else if (key == null) {
+        }
+    }
+
+    private void checkAndWriteKey(String key) {
+        validateKeyWrite();
+        if (key == null) {
+            throw new JsonException("Key cannot be null");
+        }
+        beforeWrite();
+        writeKeyName(key);
+        writeControlByte(Bytes.COLON_BYTE);
+        keyWritten = true;
+    }
+
+    private void checkAndWriteKey(JsonKey key) {
+        validateKeyWrite();
+        if (key == null) {
             throw new JsonException("Key cannot be null");
         }
         beforeWrite();

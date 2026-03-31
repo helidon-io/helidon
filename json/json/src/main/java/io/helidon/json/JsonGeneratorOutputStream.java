@@ -30,7 +30,7 @@ import io.helidon.common.buffers.Bytes;
 class JsonGeneratorOutputStream extends JsonGeneratorBase {
 
     private static final int INITIAL_BUFFER_SIZE = 256;
-    private static final int MAX_BUFFER_SIZE = 256;
+    private static final int MAX_BUFFER_SIZE = 1024;
     private static final byte[] HEX_DIGITS = "0123456789ABCDEF".getBytes(StandardCharsets.US_ASCII);
     private static final String LONG_MIN_VALUE_TEXT = Long.toString(Long.MIN_VALUE);
 
@@ -81,6 +81,11 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
 
         ensureCapacity(1);
         buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
+    }
+
+    @Override
+    protected void writeKeyName(JsonKey value) {
+        writeBytes(value.quotedUtf8());
     }
 
     @Override
@@ -314,6 +319,13 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
 
     private void writeAscii(String value) {
         writeAscii(value, 0, value.length());
+    }
+
+    private void writeBytes(byte[] value) {
+        int length = value.length;
+        ensureCapacity(length);
+        System.arraycopy(value, 0, buffer, index, length);
+        index += length;
     }
 
     @SuppressWarnings("deprecation")
