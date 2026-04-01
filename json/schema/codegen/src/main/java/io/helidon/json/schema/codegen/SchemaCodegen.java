@@ -72,7 +72,7 @@ class SchemaCodegen implements CodegenExtension {
                 .addAnnotation(Annotation.create(SchemaTypes.SERVICE_SINGLETON))
                 .addAnnotation(Annotation.builder()
                                        .typeName(SchemaTypes.SERVICE_NAMED_BY_TYPE)
-                                       .putValue("value", annotatedTypeName)
+                                       .property("value", annotatedTypeName)
                                        .build())
                 .sortStaticFields(false)
                 .addField(fieldBuilder -> fieldBuilder.isStatic(true)

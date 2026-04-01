@@ -1246,7 +1246,7 @@ public class ServiceDescriptorCodegen {
                                 it.addContent(".addQualifier(qualifier -> qualifier.typeName(")
                                         .addContentCreate(qualifier.typeName().genericTypeName())
                                         .addContentLine(")");
-                                qualifier.values()
+                                qualifier.properties()
                                         .keySet()
                                         .forEach(propertyName -> {
                                             it.addContent(".property(\"")

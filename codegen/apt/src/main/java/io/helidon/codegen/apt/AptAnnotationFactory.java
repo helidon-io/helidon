@@ -84,11 +84,10 @@ final class AptAnnotationFactory {
                 .flatMap(Optional::stream)
                 .forEach(builder::addMetaAnnotation);
 
-        return Optional.of(builder
-                                   .typeName(val)
-                                   .originatingElement(am)
-                                   .values(extractAnnotationValues(am, elements))
-                                   .build());
+        builder.typeName(val)
+                .originatingElement(am);
+        extractAnnotationValues(am, elements).forEach(builder::property);
+        return Optional.of(builder.build());
     }
 
     /**

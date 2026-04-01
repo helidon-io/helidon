@@ -66,16 +66,16 @@ final class GeneratedAnnotationHandler {
                                  String comments) {
             return Annotation.builder()
                     .typeName(TypeNames.GENERATED)
-                    .putValue("value", generator.resolvedName())
-                    .putValue("trigger", trigger.resolvedName())
+                    .property("value", generator.resolvedName())
+                    .property("trigger", trigger.resolvedName())
                     .update(it -> {
                         if (!"1".equals(versionId)) {
-                            it.putValue("version", versionId);
+                            it.property("version", versionId);
                         }
                     })
                     .update(it -> {
                         if (!comments.isBlank()) {
-                            it.putValue("comments", comments);
+                            it.property("comments", comments);
                         }
                     })
                     .build();

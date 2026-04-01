@@ -67,19 +67,4 @@ class AnnotationTest {
                    containsString("value=" + AnnotationTest.class.getName() + ".CONSTANT_NAME"));
     }
 
-    @SuppressWarnings("removal")
-    @Test
-    void testDeprecatedConstantValue() {
-        Annotation annotation = Annotation.builder()
-                .type(Target.class)
-                .putValue("value", AnnotationProperty.create("name", TypeName.create(AnnotationTest.class), "CONSTANT_NAME"))
-                .build();
-
-        String toString = annotation.toString();
-        assertThat(toString,
-                   containsString("java.lang.annotation.Target"));
-        assertThat(toString,
-                   containsString("value=" + AnnotationTest.class.getName() + ".CONSTANT_NAME"));
-    }
-
 }

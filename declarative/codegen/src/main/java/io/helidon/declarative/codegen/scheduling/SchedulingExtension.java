@@ -100,7 +100,7 @@ class SchedulingExtension implements RegistryCodegenExtension {
         // @Injection.RunLevel(70D)
         Annotation runLevel = Annotation.builder()
                 .typeName(ServiceCodegenTypes.SERVICE_ANNOTATION_RUN_LEVEL)
-                .putValue("value", RunLevels.SCHEDULING)
+                .property("value", RunLevels.SCHEDULING)
                 .build();
 
         var classModel = ClassModel.builder()

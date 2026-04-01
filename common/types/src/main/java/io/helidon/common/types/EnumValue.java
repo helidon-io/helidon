@@ -22,7 +22,8 @@ import java.util.Objects;
  * When creating an {@link io.helidon.common.types.Annotation}, we may need to create an enum value
  * without access to the enumeration.
  * <p>
- * In such a case, you can use this type when calling {@link io.helidon.common.types.Annotation.Builder#putValue(String, Object)}
+ * In such a case, you can use this type when calling
+ * {@link io.helidon.common.types.Annotation.Builder#property(String, Object)}
  */
 public interface EnumValue extends AnnotationProperty.ConstantValue {
 

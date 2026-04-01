@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -333,7 +333,7 @@ public class CalendarFutureValidatorProviderTest {
     public void testCustomMessage() {
         var validator = validatorProvider.create(TypeName.create(Instant.class), Annotation.builder()
                 .typeName(TypeName.create(Validation.Calendar.Future.class))
-                .putValue("message", "Value must be in the future")
+                .property("message", "Value must be in the future")
                 .build());
 
         var pastInstant = fixedClock.instant().minus(1, ChronoUnit.DAYS);

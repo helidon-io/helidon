@@ -89,9 +89,9 @@ final class ScanAnnotationFactory {
                 .flatMap(Optional::stream)
                 .forEach(builder::addMetaAnnotation);
 
-        return Optional.of(builder.typeName(typeName)
-                                   .values(extractAnnotationValues(ctx, am))
-                                   .build());
+        builder.typeName(typeName);
+        extractAnnotationValues(ctx, am).forEach(builder::property);
+        return Optional.of(builder.build());
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class NumberDigitsValidatorProviderTest {
     public void testValidNumbersWithInteger() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Digits.class))
-                .putValue("integer", 3)
+                .property("integer", 3)
                 .build());
 
         // Valid cases - numbers with integer <= 3
@@ -62,7 +62,7 @@ public class NumberDigitsValidatorProviderTest {
     public void testInvalidNumbersWithInteger() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Digits.class))
-                .putValue("integer", 3)
+                .property("integer", 3)
                 .build());
 
         // Invalid cases - numbers with integer > 3
@@ -76,7 +76,7 @@ public class NumberDigitsValidatorProviderTest {
     public void testValidNumbersWithFraction() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Digits.class))
-                .putValue("fraction", 2)
+                .property("fraction", 2)
                 .build());
 
         // Valid cases - numbers with fraction <= 2
@@ -91,7 +91,7 @@ public class NumberDigitsValidatorProviderTest {
     public void testInvalidNumbersWithFraction() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Digits.class))
-                .putValue("fraction", 2)
+                .property("fraction", 2)
                 .build());
 
         // Invalid cases - numbers with fraction > 2
@@ -104,8 +104,8 @@ public class NumberDigitsValidatorProviderTest {
     public void testValidNumbersWithBothIntegerAndFraction() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Digits.class))
-                .putValue("integer", 5)
-                .putValue("fraction", 2)
+                .property("integer", 5)
+                .property("fraction", 2)
                 .build());
 
         // Valid cases - numbers with integer <= 5 and fraction <= 2
@@ -120,8 +120,8 @@ public class NumberDigitsValidatorProviderTest {
     public void testInvalidNumbersWithBothIntegerAndFraction() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Digits.class))
-                .putValue("integer", 5)
-                .putValue("fraction", 2)
+                .property("integer", 5)
+                .property("fraction", 2)
                 .build());
 
         // Invalid cases - integer > 5
@@ -137,8 +137,8 @@ public class NumberDigitsValidatorProviderTest {
     public void testStringNumbers() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Digits.class))
-                .putValue("integer", 3)
-                .putValue("fraction", 2)
+                .property("integer", 3)
+                .property("fraction", 2)
                 .build());
 
         // Valid string numbers
@@ -157,8 +157,8 @@ public class NumberDigitsValidatorProviderTest {
     public void testCustomMessage() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Digits.class))
-                .putValue("integer", 3)
-                .putValue("message", "Invalid integer")
+                .property("integer", 3)
+                .property("message", "Invalid integer")
                 .build());
 
         var response = validator.check(ctx, 1234.0);
@@ -171,7 +171,7 @@ public class NumberDigitsValidatorProviderTest {
     public void testNonNumberValues() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Digits.class))
-                .putValue("integer", 3)
+                .property("integer", 3)
                 .build());
 
         // Non-number values should fail validation
@@ -184,7 +184,7 @@ public class NumberDigitsValidatorProviderTest {
     public void testNullValue() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Digits.class))
-                .putValue("integer", 3)
+                .property("integer", 3)
                 .build());
 
         // Null values should be considered valid (not sent to validator)
@@ -195,7 +195,7 @@ public class NumberDigitsValidatorProviderTest {
     public void testDifferentNumberTypes() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Digits.class))
-                .putValue("integer", 2)
+                .property("integer", 2)
                 .build());
 
         // Test different number types
@@ -215,8 +215,8 @@ public class NumberDigitsValidatorProviderTest {
     public void testEdgeCases() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Digits.class))
-                .putValue("integer", 1)
-                .putValue("fraction", 0)
+                .property("integer", 1)
+                .property("fraction", 0)
                 .build());
 
         // Edge cases

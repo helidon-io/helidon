@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public class IntegerMinValidatorProviderTest {
     public void testValidIntegers() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_INT, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.Min.class))
-                .putValue("value", 10)
+                .property("value", 10)
                 .build());
 
         // Valid cases - integers >= min
@@ -58,7 +58,7 @@ public class IntegerMinValidatorProviderTest {
     public void testInvalidIntegers() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_INT, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.Min.class))
-                .putValue("value", 10)
+                .property("value", 10)
                 .build());
 
         // Invalid cases - integers < min
@@ -73,8 +73,8 @@ public class IntegerMinValidatorProviderTest {
     public void testCustomMessage() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_INT, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.Min.class))
-                .putValue("value", 10)
-                .putValue("message", "Integer must be at least 10")
+                .property("value", 10)
+                .property("message", "Integer must be at least 10")
                 .build());
 
         var response = validator.check(ctx, 5);
@@ -87,7 +87,7 @@ public class IntegerMinValidatorProviderTest {
     public void testNonIntegerValues() {
         assertThrows(ValidationException.class, () -> validatorProvider.create(TypeNames.STRING, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.Min.class))
-                .putValue("value", 100)
+                .property("value", 100)
                 .build()));
     }
 
@@ -95,7 +95,7 @@ public class IntegerMinValidatorProviderTest {
     public void testNullValue() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_INT, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.Min.class))
-                .putValue("value", 10)
+                .property("value", 10)
                 .build());
 
         // Null values should be considered valid (not sent to validator)
@@ -106,7 +106,7 @@ public class IntegerMinValidatorProviderTest {
     public void testByteType() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_BYTE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.Min.class))
-                .putValue("value", 17)
+                .property("value", 17)
                 .build());
 
         assertThat(validator.check(ctx, (byte) 17).valid(), is(true));
@@ -121,7 +121,7 @@ public class IntegerMinValidatorProviderTest {
     public void testShortType() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_SHORT, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.Min.class))
-                .putValue("value", 100)
+                .property("value", 100)
                 .build());
         assertThat(validator.check(ctx, (short) 100).valid(), is(true));
         assertThat(validator.check(ctx, (short) 110).valid(), is(true));
@@ -132,7 +132,7 @@ public class IntegerMinValidatorProviderTest {
     public void testLongType() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.Min.class))
-                .putValue("value", 100)
+                .property("value", 100)
                 .build());
 
         assertThat(validator.check(ctx, 100L).valid(), is(true));
@@ -144,7 +144,7 @@ public class IntegerMinValidatorProviderTest {
     public void testEdgeCases() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_INT, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.Min.class))
-                .putValue("value", 0)
+                .property("value", 0)
                 .build());
 
         // Edge cases
@@ -157,7 +157,7 @@ public class IntegerMinValidatorProviderTest {
     public void testCharacterValues() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_CHAR, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.Min.class))
-                .putValue("value", 65) // ASCII 'A'
+                .property("value", 65) // ASCII 'A'
                 .build());
 
         // Character values should be treated as their ASCII values

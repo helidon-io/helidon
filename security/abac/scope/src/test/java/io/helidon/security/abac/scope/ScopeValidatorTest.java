@@ -195,7 +195,7 @@ public class ScopeValidatorTest {
         }
         return Annotation.builder()
                 .typeName(ScopeValidator.Scopes.TYPE)
-                .putValue("value", scopeList)
+                .property("value", scopeList)
                 .build();
     }
 }

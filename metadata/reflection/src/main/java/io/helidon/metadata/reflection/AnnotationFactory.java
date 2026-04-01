@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,10 +133,9 @@ public final class AnnotationFactory {
                 .flatMap(Optional::stream)
                 .forEach(builder::addMetaAnnotation);
 
-        return Optional.of(builder
-                                   .typeName(type)
-                                   .values(extractAnnotationValues(annotation))
-                                   .build());
+        builder.typeName(type);
+        extractAnnotationValues(annotation).forEach(builder::property);
+        return Optional.of(builder.build());
     }
 
     private static List<Method> valueMethods(Class<? extends java.lang.annotation.Annotation> annotationType) {
