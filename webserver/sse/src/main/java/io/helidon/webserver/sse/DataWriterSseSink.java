@@ -75,8 +75,8 @@ class DataWriterSseSink implements SseSink {
         // validate and configure SSE headers on the response
         ServerResponseHeaders headers = response.headers();
         HttpMediaType ct = headers.contentType().orElse(null);
-        if (response.status().code() != Status.OK_200.code()
-                || ct != null && !CONTENT_TYPE_EVENT_STREAM.values().equals(ct.mediaType().text())) {
+        if ((response.status().code() != Status.OK_200.code())
+                || (ct != null && !CONTENT_TYPE_EVENT_STREAM.values().equals(ct.mediaType().text()))) {
             throw new IllegalStateException("ServerResponse instance cannot be used to create SseSink");
         }
         if (ct == null) {

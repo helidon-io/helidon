@@ -17,6 +17,7 @@
 package io.helidon.webserver.tests.sse;
 
 import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
 
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
@@ -63,6 +64,8 @@ class SseServerTest extends SseBaseTest {
 
     @Test
     void testSseHeadersAreSentBeforeFirstEvent() throws Exception {
+        CountDownLatch delayedLatch = new CountDownLatch(1);
+        SseBaseTest.delayedLatch(delayedLatch);
         try (SimpleSseClient sseClient = SimpleSseClient.create("localhost",
                                                                 webServer().port(),
                                                                 "/sseDelayed",
@@ -72,7 +75,10 @@ class SseServerTest extends SseBaseTest {
             long elapsedMillis = Duration.ofNanos(System.nanoTime() - start).toMillis();
 
             assertThat(elapsedMillis, lessThan(500L));
+            delayedLatch.countDown();
             assertThat(sseClient.nextEvent(), is("data:delayed"));
+        } finally {
+            SseBaseTest.delayedLatch(new CountDownLatch(0));
         }
     }
 
