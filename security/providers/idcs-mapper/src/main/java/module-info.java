@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 

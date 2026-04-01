@@ -26,10 +26,8 @@ requires static io.helidon.common.features.api;
 
 Module info example:
 ```java
-import io.helidon.common.features.api.Aot;
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Preview;
 
 /**
  * OpenID Connect authentication provider.
