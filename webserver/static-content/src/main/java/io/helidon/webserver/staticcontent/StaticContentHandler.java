@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import io.helidon.common.configurable.LruCache;
+import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.DateTime;
 import io.helidon.http.Header;
@@ -64,9 +64,9 @@ abstract class StaticContentHandler implements StaticContentService {
     StaticContentHandler(BaseHandlerConfig config) {
         this.welcomeFilename = config.welcome().orElse(null);
         this.resolvePathFunction = config.pathMapper();
-        this.handlerCache = LruCache.<String, CachedHandler>builder()
-                .update(it -> config.recordCacheCapacity().ifPresent(it::capacity))
-                .build();
+        this.handlerCache = config.recordCacheCapacity()
+                .map(LruCache::<String, CachedHandler>create)
+                .orElseGet(LruCache::create);
         this.memoryCache = config.memoryCache().orElseGet(MemoryCache::create);
     }
 

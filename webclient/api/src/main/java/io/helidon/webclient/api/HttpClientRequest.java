@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.configurable.LruCache;
+import io.helidon.common.LruCache;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.http.Method;
 import io.helidon.webclient.spi.HttpClientSpi;

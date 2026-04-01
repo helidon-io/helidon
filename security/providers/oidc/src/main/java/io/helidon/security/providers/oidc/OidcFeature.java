@@ -33,8 +33,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LruCache;
 import io.helidon.common.Weight;
-import io.helidon.common.configurable.LruCache;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.mapper.OptionalValue;
