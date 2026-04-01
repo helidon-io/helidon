@@ -145,6 +145,11 @@ class DataWriterSseSink implements SseSink {
 
     @Override
     public void close() {
+        try {
+            outputStream.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         closeRunnable.run();
     }
 
