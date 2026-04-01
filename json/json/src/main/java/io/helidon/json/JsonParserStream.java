@@ -444,63 +444,40 @@ final class JsonParserStream extends JsonParserBase {
      * @throws JsonException if the UTF-8 sequence is invalid, incomplete, or represents an out-of-range code point
      */
     int decodeUtf8(int position, byte currentByte) {
-        if ((currentByte & 0xE0) == 0xC0) {
-            // 2-byte UTF-8 sequence: 110xxxxx 10yyyyyy -> U+0080 to U+07FF
-            ensure(1);
-            int c2 = requireUtf8Continuation(readNextByte()); // Second byte must be 10yyyyyy
-            int codePoint = ((currentByte & 0x1F) << 6) | c2; // Assemble code point: xxxxx yyyyyy
-            if (codePoint < 0x80) {
-                throw createException("Overlong UTF-8 sequence", currentByte);
-            }
-            stringBuffer[position++] = (char) codePoint;
-        } else if ((currentByte & 0xF0) == 0xE0) {
-            // 3-byte UTF-8 sequence: 1110xxxx 10yyyyyy 10zzzzzz -> U+0800 to U+FFFF
-            ensure(2); // Ensure we have at least 2 more bytes
-            int c2 = requireUtf8Continuation(buffer[++currentIndex]); // Second byte: 10yyyyyy
-            int c3 = requireUtf8Continuation(buffer[++currentIndex]); // Third byte: 10zzzzzz
-            int codePoint = ((currentByte & 0x0F) << 12) | (c2 << 6) | c3; // Assemble: xxxx yyyyyy zzzzzz
-            if (codePoint < 0x800) {
-                throw createException("Overlong UTF-8 sequence", currentByte);
-            }
-            char c = (char) codePoint;
-            if (Character.isSurrogate(c)) {
-                throw createException("UTF-8 surrogate code points are not allowed", currentByte);
-            }
-            stringBuffer[position++] = c;
-        } else if ((currentByte & 0xF8) == 0xF0) {
-            // 4-byte UTF-8 sequence: 11110www 10xxxxxx 10yyyyyy 10zzzzzz -> U+10000 to U+10FFFF
-            ensure(3); // Ensure we have at least 3 more bytes
-            int c2 = requireUtf8Continuation(buffer[++currentIndex]); // Second byte: 10xxxxxx
-            int c3 = requireUtf8Continuation(buffer[++currentIndex]); // Third byte: 10yyyyyy
-            int c4 = requireUtf8Continuation(buffer[++currentIndex]); // Fourth byte: 10zzzzzz
-            int codePoint = ((currentByte & 0x07) << 18) | (c2 << 12) | (c3 << 6) | c4; // Assemble: www xxxxxx yyyyyy zzzzzz
-            if (codePoint < 0x10000) {
-                throw createException("Overlong UTF-8 sequence", currentByte);
-            } else if (codePoint >= 0x110000) {
-                // Beyond valid Unicode range
-                throw createException("Invalid UTF-8 code point: " + Integer.toHexString(codePoint));
-            }
-            // Code point requires UTF-16 surrogates
-            // Convert to UTF-16 surrogate pair
-            codePoint -= 0x10000; // Subtract U+10000 to get 20-bit value
-            stringBuffer[position++] = (char) ((codePoint >> 10) + 0xD800); // High surrogate: U+D800 + high 10 bits
+        int codePoint = readUtf8CodePoint(currentByte);
+        if (codePoint >= 0x10000) {
+            codePoint -= 0x10000;
+            stringBuffer[position++] = (char) ((codePoint >> 10) + 0xD800);
             if (position == stringBufferLength) {
-                increaseStringBuffer(); // Ensure space for low surrogate
+                increaseStringBuffer();
             }
-            stringBuffer[position++] = (char) ((codePoint & 0x3FF) + 0xDC00); // Low surrogate: U+DC00 + low 10 bits
+            stringBuffer[position++] = (char) ((codePoint & 0x3FF) + 0xDC00);
         } else {
-            // Invalid UTF-8 leading byte
-            throw createException("Invalid UTF-8 byte", currentByte);
+            stringBuffer[position++] = (char) codePoint;
         }
         return position;
     }
 
-    private int requireUtf8Continuation(byte b) {
-        int value = b & 0xFF;
-        if ((value & 0xC0) != 0x80) {
-            throw createException("Invalid UTF-8 continuation byte", b);
+    private int readUtf8CodePoint(byte currentByte) {
+        int value = currentByte & 0xFF;
+        if ((value & 0xE0) == 0xC0) {
+            ensure(1);
+            return Parsers.decodeUtf8TwoByte(currentByte, readNextByte(), this);
         }
-        return value & 0x3F;
+        if ((value & 0xF0) == 0xE0) {
+            ensure(2);
+            byte second = buffer[++currentIndex];
+            byte third = buffer[++currentIndex];
+            return Parsers.decodeUtf8ThreeByte(currentByte, second, third, this);
+        }
+        if ((value & 0xF8) == 0xF0) {
+            ensure(3);
+            byte second = buffer[++currentIndex];
+            byte third = buffer[++currentIndex];
+            byte fourth = buffer[++currentIndex];
+            return Parsers.decodeUtf8FourByte(currentByte, second, third, fourth, this);
+        }
+        throw createException("Invalid UTF-8 byte", currentByte);
     }
 
     void increaseStringBuffer() {
@@ -1398,40 +1375,11 @@ final class JsonParserStream extends JsonParserBase {
      * surrogates
      */
     private char decodeUtf8ToChar(byte currentByte) {
-        if ((currentByte & 0xE0) == 0xC0) {
-            // 2-byte UTF-8 sequence: 110xxxxx 10yyyyyy -> U+0080 to U+07FF
-            int c2 = readNextByte() & 0x3F; // Second byte must be 10yyyyyy
-            int codePoint = ((currentByte & 0x1F) << 6) | c2; // Assemble code point: xxxxx yyyyyy
-            return (char) codePoint;
-        } else if ((currentByte & 0xF0) == 0xE0) {
-            // 3-byte UTF-8 sequence: 1110xxxx 10yyyyyy 10zzzzzz -> U+0800 to U+FFFF
-            ensure(2); // Ensure we have at least 2 more bytes
-            int c2 = buffer[++currentIndex] & 0x3F; // Second byte: 10yyyyyy
-            int c3 = buffer[++currentIndex] & 0x3F; // Third byte: 10zzzzzz
-            int codePoint = ((currentByte & 0x0F) << 12) | (c2 << 6) | c3; // Assemble: xxxx yyyyyy zzzzzz
-            return (char) codePoint;
-        } else if ((currentByte & 0xF8) == 0xF0) {
-            // 4-byte UTF-8 sequence: 11110www 10xxxxxx 10yyyyyy 10zzzzzz -> U+10000 to U+10FFFF
-            ensure(3); // Ensure we have at least 3 more bytes
-            int c2 = buffer[++currentIndex] & 0x3F; // Second byte: 10xxxxxx
-            int c3 = buffer[++currentIndex] & 0x3F; // Third byte: 10yyyyyy
-            int c4 = buffer[++currentIndex] & 0x3F; // Fourth byte: 10zzzzzz
-            int codePoint = ((currentByte & 0x07) << 18) | (c2 << 12) | (c3 << 6) | c4; // Assemble: www xxxxxx yyyyyy zzzzzz
-            if (codePoint >= 0x10000) {
-                // Code point requires UTF-16 surrogates, which cannot fit in a single char
-                if (codePoint >= 0x110000) {
-                    // Beyond valid Unicode range
-                    throw createException("Invalid UTF-8 code point: " + Integer.toHexString(codePoint));
-                }
-                throw createException("UTF-16 high and low surrogates cannot be represented as a single char");
-            } else {
-                // Code point fits in a single char (U+0000 to U+FFFF)
-                return (char) codePoint;
-            }
-        } else {
-            // Invalid UTF-8 leading byte
-            throw createException("Invalid UTF-8 byte", currentByte);
+        int codePoint = readUtf8CodePoint(currentByte);
+        if (codePoint >= 0x10000) {
+            throw createException("UTF-16 high and low surrogates cannot be represented as a single char");
         }
+        return (char) codePoint;
     }
 
     private byte parseByte(boolean negative) {

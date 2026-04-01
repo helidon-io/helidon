@@ -16,6 +16,7 @@
 
 package io.helidon.json;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -29,6 +30,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Covers basic strings, escaped characters, Unicode, UTF-8 multibyte sequences, and edge cases.
  */
 class StringValueTest {
+
+    @Test
+    public void testJsonStringValueRejectsMalformedUtf8() {
+        JsonString value = JsonString.create(new byte[] {(byte) 0xC0, (byte) 0xAF});
+
+        assertThrows(JsonException.class, value::value);
+    }
 
     // Basic ASCII string tests
     @ParameterizedTest

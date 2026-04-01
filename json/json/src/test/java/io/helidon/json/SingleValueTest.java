@@ -16,11 +16,15 @@
 
 package io.helidon.json;
 
+import java.nio.charset.StandardCharsets;
+
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SingleValueTest {
 
@@ -180,6 +184,19 @@ class SingleValueTest {
 
         assertThat(parser.checkNull(), is(true));
         assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testParseSelectedByteArraySlice() {
+        JsonParser parser = JsonParser.create("x42y".getBytes(StandardCharsets.UTF_8), 1, 2);
+
+        assertThat(parser.readInt(), is(42));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testRejectsEmptyByteArraySlice() {
+        assertThrows(JsonException.class, () -> JsonParser.create(new byte[] {1}, 1, 0));
     }
 
 }

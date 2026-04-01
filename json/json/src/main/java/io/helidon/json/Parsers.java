@@ -16,6 +16,9 @@
 
 package io.helidon.json;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -156,7 +159,7 @@ public final class Parsers {
                 throw new JsonException("Unescaped control character in JSON string");
             }
         }
-        return new String(buffer, start, length, StandardCharsets.UTF_8);
+        return decodeUtf8Strict(buffer, start, length);
     }
 
     private static String decodeEscapedJsonString(byte[] buffer, int start, int end) {
@@ -171,7 +174,7 @@ public final class Parsers {
                     if (expectLowSurrogate) {
                         throw new JsonException("Low surrogate must follow the high surrogate.");
                     }
-                    builder.append(new String(buffer, segmentStart, i - segmentStart, StandardCharsets.UTF_8));
+                    builder.append(decodeUtf8Strict(buffer, segmentStart, i - segmentStart));
                 }
                 if (++i == end) {
                     throw new JsonException("Incomplete escaped JSON string");
@@ -226,12 +229,25 @@ public final class Parsers {
             if (expectLowSurrogate) {
                 throw new JsonException("Low surrogate must follow the high surrogate.");
             }
-            builder.append(new String(buffer, segmentStart, end - segmentStart, StandardCharsets.UTF_8));
+            builder.append(decodeUtf8Strict(buffer, segmentStart, end - segmentStart));
         } else if (expectLowSurrogate) {
             throw new JsonException("Low surrogate must follow the high surrogate.");
         }
 
         return builder.toString();
+    }
+
+    private static String decodeUtf8Strict(byte[] buffer, int start, int length) {
+        try {
+            return StandardCharsets.UTF_8
+                    .newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(buffer, start, length))
+                    .toString();
+        } catch (CharacterCodingException e) {
+            throw new JsonException("Invalid UTF-8 sequence in JSON string", e);
+        }
     }
 
 }

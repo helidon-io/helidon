@@ -213,6 +213,22 @@ class Rfc8259CharacterEncodingTest {
         );
     }
 
+    @ParameterizedTest
+    @EnumSource(Utf8InputMethod.class)
+    void testReadCharRejectsOverlongUtf8Sequence(Utf8InputMethod inputMethod) {
+        byte[] json = new byte[] {'"', (byte) 0xC0, (byte) 0xAF, '"'};
+
+        runByteTextScenario(inputMethod, json, STREAM_BUFFER_SIZE, parser -> parser.readChar(), true);
+    }
+
+    @ParameterizedTest
+    @EnumSource(Utf8InputMethod.class)
+    void testReadJsonStringValueRejectsOverlongUtf8Sequence(Utf8InputMethod inputMethod) {
+        byte[] json = new byte[] {'"', (byte) 0xC0, (byte) 0xAF, '"'};
+
+        runByteTextScenario(inputMethod, json, STREAM_BUFFER_SIZE, parser -> parser.readJsonString().value(), true);
+    }
+
     /**
      * RFC 8259 §8.1
      * Quote: "JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8"
