@@ -120,7 +120,7 @@ Helidon's Micrometer-based metrics implementation includes these ways of publish
 ==== Configuring Publishers
 
 NOTE: The configuration of metrics publishers as described below is a
-link:{javadoc-base-url}/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html[preview feature] which Helidon intends to keep, but its external interface or behavior might evolve between dot releases.
+link:{javadoc-base-url}/io.helidon.common.features.api/io/helidon/common/features/api/Features.Preview.html[`@Features.Preview`] feature which Helidon intends to keep, but its external interface or behavior might evolve between dot releases.
 
 You can configure publishers in the `publishers` configuration section under the top level `metrics` node or under `server.features.observe.observers.metrics`. If you do not set up publishers explicitly, Helidon uses an inferred Prometheus publisher for backward compatibility. See <<understanding_inferred,this later section>> for details.
 

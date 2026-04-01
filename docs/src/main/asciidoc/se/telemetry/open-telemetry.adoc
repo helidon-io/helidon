@@ -41,7 +41,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Additional Information, Additional Information>>
 
 == Overview
-NOTE: Helidon SE support for OpenTelemetry configuration and semantic conventions as described below is currently a link:{javadoc-base-url}/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html[preview feature]. We intend to support it going forward, but we might change its external API and behavior in backward-incompatible ways across dot releases.
+NOTE: Helidon SE support for OpenTelemetry configuration and semantic conventions as described below is currently a link:{javadoc-base-url}/io.helidon.common.features.api/io/helidon/common/features/api/Features.Preview.html[`@Features.Preview`] feature. We intend to support it going forward, but we might change its external API and behavior in backward-incompatible ways across dot releases.
 
 Helidon SE supports OpenTelemetry in several important ways:
 
