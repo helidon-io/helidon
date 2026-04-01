@@ -893,11 +893,6 @@ header.writeHttp1Header(entityBuffer);
         }
 
         @Override
-        public int read(BufferData buffer) {
-            return 0;
-        }
-
-        @Override
         public void write(BufferData buffer) {
 
         }

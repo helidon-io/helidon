@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -178,15 +178,6 @@ public final class TlsNioSocket extends NioSocket {
     }
 
     @Override
-    public int read(BufferData buffer) {
-        try {
-            return doRead(buffer);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
     public void write(BufferData buffer) {
         try {
             doWrite(buffer);
@@ -347,38 +338,6 @@ public final class TlsNioSocket extends NioSocket {
         }
     }
 
-    private int doRead(BufferData buf) throws IOException {
-        peerNetData.clear();
-        var bytesRead = read(peerNetData);
-        if (bytesRead > 0) {
-            peerNetData.flip();
-            while (peerNetData.hasRemaining()) {
-                peerAppData.clear();
-                var result = engine.unwrap(peerNetData, peerAppData);
-                switch (result.getStatus()) {
-                case OK:
-                    peerAppData.flip();
-                    break;
-                case BUFFER_OVERFLOW:
-                    peerAppData = bufferOverflow(peerAppData, engine.getSession().getApplicationBufferSize());
-                    break;
-                case BUFFER_UNDERFLOW:
-                    peerNetData = bufferUnderflow(peerNetData, engine.getSession().getApplicationBufferSize());
-                    break;
-                case CLOSED:
-                    close();
-                    return -1;
-                default:
-                    throw new IllegalStateException("Invalid status: " + result.getStatus());
-                }
-            }
-
-        } else if (bytesRead == -1) {
-            engine.closeInbound();
-        }
-        return buf.readFrom(peerAppData);
-    }
-
     private void doWrite(BufferData buffer) throws IOException {
         while (!buffer.consumed()) {
             myAppData.clear();
@@ -444,20 +403,6 @@ public final class TlsNioSocket extends NioSocket {
         }
         newBuffer.put(buffer);
         return newBuffer;
-    }
-
-    private ByteBuffer bufferOverflow(ByteBuffer buf, int proposedCapacity) {
-        if (proposedCapacity > buf.capacity()) {
-            return ByteBuffer.allocate(proposedCapacity);
-        }
-        return buf.compact();
-    }
-
-    private ByteBuffer bufferUnderflow(ByteBuffer buf, int proposedCapacity) {
-        if (proposedCapacity <= buf.capacity()) {
-            return buf;
-        }
-        return ByteBuffer.allocate(proposedCapacity).put(buf.flip());
     }
 
     /**
