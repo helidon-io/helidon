@@ -923,7 +923,6 @@ final class JsonParserStream extends JsonParserBase {
         b = buffer[currentIndex];
         if (b == 'N') {
             if (expectedNext('a') && expectedNext('N')) {
-                currentIndex += 2;
                 bufferingJsonValue = false;
                 return Double.NaN;
             }
@@ -936,7 +935,6 @@ final class JsonParserStream extends JsonParserBase {
                     && expectedNext('i')
                     && expectedNext('t')
                     && expectedNext('y')) {
-                currentIndex += 7;
                 bufferingJsonValue = false;
                 return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
             }
