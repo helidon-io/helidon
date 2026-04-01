@@ -122,21 +122,6 @@ public sealed class NioSocket implements HelidonSocket permits TlsNioSocket {
         return delegate.isOpen();
     }
 
-    @SuppressWarnings("removal")
-    @Override
-    public int read(BufferData buffer) {
-        try {
-            if (readBuffer.remaining() == 0) {
-                readBuffer.clear();
-                delegate.read(readBuffer);
-                readBuffer.flip();
-            }
-            return buffer.readFrom(readBuffer);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     @Override
     public void write(BufferData buffer) {
         try {
