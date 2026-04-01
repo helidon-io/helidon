@@ -219,24 +219,6 @@
                 ]
             },
             {
-                "annotatedType": "io.helidon.common.configurable.LruCacheConfig",
-                "type": "io.helidon.common.configurable.LruCache",
-                "producers": [
-                    "io.helidon.common.configurable.LruCacheConfig#create(io.helidon.config.Config)",
-                    "io.helidon.common.configurable.LruCacheConfig#builder()",
-                    "io.helidon.common.configurable.LruCache#create(io.helidon.common.configurable.LruCacheConfig)"
-                ],
-                "options": [
-                    {
-                        "defaultValue": "10000",
-                        "description": "Configure capacity of the cache. Defaults to LruCache.DEFAULT_CAPACITY.\n\n Maximal number of records in the cache before the oldest one is removed",
-                        "key": "capacity",
-                        "method": "io.helidon.common.configurable.LruCacheConfig.Builder#capacity(int)",
-                        "type": "java.lang.Integer"
-                    }
-                ]
-            },
-            {
                 "annotatedType": "io.helidon.common.configurable.ScheduledThreadPoolConfig",
                 "type": "io.helidon.common.configurable.ScheduledThreadPoolSupplier",
                 "producers": [

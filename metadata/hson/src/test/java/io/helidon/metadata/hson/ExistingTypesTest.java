@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,7 +115,7 @@ class ExistingTypesTest {
         Optional<List<Hson.Struct>> types = module.structArray("types");
         assertThat(types, optionalPresent());
         List<Hson.Struct> typesList = types.get();
-        assertThat(typesList, hasSize(5));
+        assertThat(typesList, hasSize(4));
 
         Hson.Struct first = typesList.getFirst();
         assertThat(first.stringValue("annotatedType"),
