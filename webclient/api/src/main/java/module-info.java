@@ -28,7 +28,7 @@ module io.helidon.webclient.api {
 
     requires io.helidon.builder.api; // @Builder - interfaces are a runtime dependency
 
-    requires static io.helidon.common.features.api; // @Feature
+    requires static io.helidon.common.features.api; // Features.* annotations
     requires static io.helidon.config.metadata; // @ConfiguredOption etc
 
     requires transitive io.helidon.common.configurable;
