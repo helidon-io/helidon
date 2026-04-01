@@ -91,6 +91,11 @@ class SimpleSseClient implements AutoCloseable {
         }
     }
 
+    public void awaitHeaders() {
+        ensureConnected();
+        ensureHeadersRead();
+    }
+
     @Override
     public void close() throws Exception {
         client.close();

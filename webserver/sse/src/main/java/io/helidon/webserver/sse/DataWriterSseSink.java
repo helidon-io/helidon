@@ -24,19 +24,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpMediaType;
-import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
-import io.helidon.http.encoding.ContentEncoder;
-import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.sse.SseEvent;
@@ -64,39 +59,36 @@ class DataWriterSseSink implements SseSink {
     private static final byte[] SSE_DATA = "data:".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_EVENT = "event:".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_COMMENT = ":".getBytes(StandardCharsets.UTF_8);
-    private static final byte[] OK_200 = "HTTP/1.1 200 OK\r\n".getBytes(StandardCharsets.UTF_8);
-    private static final byte[] DATE = "Date: ".getBytes(StandardCharsets.UTF_8);
     private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
     private final ServerResponse response;
     private final MediaContext mediaContext;
     private final Runnable closeRunnable;
-    private final ConnectionContext ctx;
     private final OutputStream outputStream;
 
     DataWriterSseSink(SinkProviderContext context) {
         this.response = context.serverResponse();
-        this.ctx = context.connectionContext();
+        ConnectionContext ctx = context.connectionContext();
         this.mediaContext = ctx.listenerContext().mediaContext();
         this.closeRunnable = context.closeRunnable();
 
-        // output stream to write headers
-        OutputStream headersOutputStream = new DataWriterOutputStream(ctx.dataWriter());
-
-        // check for content encoding
-        ContentEncoder encoder = null;
-        ServerRequestHeaders requestHeaders = context.serverRequest().headers();
-        ContentEncodingContext encodingContext = ctx.listenerContext().contentEncodingContext();
-        if (encodingContext.contentEncodingEnabled() && requestHeaders.contains(HeaderNames.ACCEPT_ENCODING)) {
-            encoder = encodingContext.encoder(requestHeaders);
-            encoder.headers(response.headers());        // adds Content-Encoding
+        // validate and configure SSE headers on the response
+        ServerResponseHeaders headers = response.headers();
+        HttpMediaType ct = headers.contentType().orElse(null);
+        if (response.status().code() != Status.OK_200.code()
+                || ct != null && !CONTENT_TYPE_EVENT_STREAM.values().equals(ct.mediaType().text())) {
+            throw new IllegalStateException("ServerResponse instance cannot be used to create SseSink");
         }
+        if (ct == null) {
+            headers.add(CONTENT_TYPE_EVENT_STREAM);
+        }
+        headers.set(CACHE_NO_CACHE_ONLY);
 
-        // write status and headers before encoding stream
-        writeStatusAndHeaders(headersOutputStream);
-
-        // set the final output stream
-        this.outputStream = (encoder != null) ? encoder.apply(headersOutputStream) : headersOutputStream;
+        // use the response's output stream — it handles protocol-specific
+        // header framing (HTTP/1.1 text vs HTTP/2 HPACK HEADERS frames)
+        // and content encoding
+        this.outputStream = response.outputStream();
+        context.flushHeaders();
     }
 
     @Override
@@ -154,55 +146,6 @@ class DataWriterSseSink implements SseSink {
     @Override
     public void close() {
         closeRunnable.run();
-        try {
-            outputStream.close();
-            ctx.serverSocket().close();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    void writeStatusAndHeaders(OutputStream headersOutputStream) {
-        try {
-            ServerResponseHeaders headers = response.headers();
-
-            // verify response has no status or content type
-            HttpMediaType ct = headers.contentType().orElse(null);
-            if (response.status().code() != Status.OK_200.code()
-                    || ct != null && !CONTENT_TYPE_EVENT_STREAM.values().equals(ct.mediaType().text())) {
-                throw new IllegalStateException("ServerResponse instance cannot be used to create SseSink");
-            }
-
-            // start writing status line
-            headersOutputStream.write(OK_200);
-
-            // serialize a date header if not included
-            if (!headers.contains(HeaderNames.DATE)) {
-                headersOutputStream.write(DATE);
-                byte[] dateBytes = DateTime.http1Bytes();
-                headersOutputStream.write(dateBytes);
-            }
-
-            // set up and write headers
-            if (ct == null) {
-                headers.add(CONTENT_TYPE_EVENT_STREAM);
-            }
-            headers.set(CACHE_NO_CACHE_ONLY);
-            BufferData buffer = BufferData.growing(512);
-            for (Header header : headers) {
-                header.writeHttp1Header(buffer);
-            }
-            headersOutputStream.write(buffer.readBytes());
-
-            // complete heading
-            headersOutputStream.write('\r');        // "\r\n" - empty line after headers
-            headersOutputStream.write('\n');
-
-            // write response heading to the output
-            headersOutputStream.flush();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     private byte[] serializeData(Object object, MediaType mediaType) {

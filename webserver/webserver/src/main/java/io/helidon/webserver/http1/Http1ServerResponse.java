@@ -314,13 +314,19 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
     }
 
+    void flushHeaders() {
+        if (outputStream != null) {
+            outputStream.flushHeaders();
+        }
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
         for (SinkProvider<?> p : SINK_PROVIDERS) {
             if (p.supports(sinkType, request)) {
                 try {
-                    return (X) p.create(new SinkProviderContext() {
+                    X sink = (X) p.create(new SinkProviderContext() {
                         @Override
                         public ServerResponse serverResponse() {
                             return Http1ServerResponse.this;
@@ -338,16 +344,21 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
                         @Override
                         public Runnable closeRunnable() {
-                            return () -> {
-                                Http1ServerResponse.this.isSent = true;
-                                afterSend();
-                                request.reset();
-                            };
+                            return Http1ServerResponse.this::commit;
+                        }
+
+                        @Override
+                        public void flushHeaders() {
+                            Http1ServerResponse.this.flushHeaders();
                         }
                     });
+                    this.isSent = true;
+                    return sink;
                 } catch (UnsupportedOperationException e) {
                     // deprecated - will be removed in 5.x
-                    return (X) p.create(this, this::handleSinkData, this::commit);
+                    X sink = (X) p.create(this, this::handleSinkData, this::commit);
+                    this.isSent = true;
+                    return sink;
                 }
             }
         }
@@ -673,6 +684,29 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
         }
 
+        /**
+         * Emits the HTTP/1.1 status line and headers while keeping the response stream open.
+         * <p>
+         * If the first body chunk was already buffered, this delegates to the normal first-write
+         * path so header emission and chunk framing stay identical to the regular streaming logic.
+         * Otherwise it sends only the headers and leaves payload writes for later.
+         */
+        void flushHeaders() {
+            if (closed || !firstByte) {
+                return;
+            }
+            if (firstBuffer != null) {
+                try {
+                    write(BufferData.empty());
+                } catch (IOException e) {
+                    throw new ServerConnectionException("Failed to flush server response headers.", e);
+                }
+                return;
+            }
+            sendHeadersAndPrepare();
+            firstByte = false;
+        }
+
         long totalBytesWritten() {
             return responseBytesTotal;
         }
@@ -911,6 +945,15 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 closingDelegate.commit();
             } catch (IOException | UncheckedIOException e) {
                 throw new ServerConnectionException("Failed to flush server output stream", e);
+            }
+        }
+
+        void flushHeaders() {
+            try {
+                flush();
+                closingDelegate.flushHeaders();
+            } catch (IOException | UncheckedIOException e) {
+                throw new ServerConnectionException("Failed to flush server response headers", e);
             }
         }
     }

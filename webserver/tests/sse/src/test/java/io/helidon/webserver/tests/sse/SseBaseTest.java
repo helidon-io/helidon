@@ -65,6 +65,13 @@ class SseBaseTest {
         sseSink.close();
     }
 
+    static void sseDelayed(ServerRequest req, ServerResponse res) throws InterruptedException {
+        try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            Thread.sleep(1000);
+            sseSink.emit(SseEvent.create("delayed"));
+        }
+    }
+
     static void sseJson1(ServerRequest req, ServerResponse res) {
         JsonObject json = Json.createObjectBuilder()
                 .add("hello", "world")
