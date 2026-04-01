@@ -50,7 +50,6 @@ final class Types {
     static final TypeName PROTOTYPE_PROVIDES = TypeName.create("io.helidon.builder.api.Prototype.Provides");
     static final TypeName PROTOTYPE_BUILDER = TypeName.create("io.helidon.builder.api.Prototype.Builder");
     static final TypeName PROTOTYPE_CUSTOM_METHODS = TypeName.create("io.helidon.builder.api.Prototype.CustomMethods");
-    static final TypeName PROTOTYPE_FACTORY_METHOD_DEPRECATED = TypeName.create("io.helidon.builder.api.Prototype.FactoryMethod");
     static final TypeName PROTOTYPE_FACTORY_METHOD_PROTOTYPE = TypeName.create(
             "io.helidon.builder.api.Prototype.PrototypeFactoryMethod");
     static final TypeName PROTOTYPE_FACTORY_METHOD_CONFIG = TypeName.create("io.helidon.builder.api.Prototype"

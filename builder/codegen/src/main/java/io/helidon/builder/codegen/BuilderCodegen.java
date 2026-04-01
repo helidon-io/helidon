@@ -373,7 +373,7 @@ class BuilderCodegen implements CodegenExtension {
         }
 
         // now we have final prototype info - processed by all extensions, next we start collecting options
-        PrototypeInfo prototypeInfo = fixFactoryMethods(tmpPrototypeInfo, newOptions);
+        PrototypeInfo prototypeInfo = tmpPrototypeInfo;
         // add for validation, but only once we have all the information
         blueprintTypes.add(prototypeInfo);
 
@@ -535,48 +535,6 @@ class BuilderCodegen implements CodegenExtension {
                                                it.interfaceMethod().map(TypedElementInfo::originatingElementValue)
                                                        .orElse(it.name()));
                 });
-    }
-
-    @SuppressWarnings({"removal", "deprecation"})
-    private PrototypeInfo fixFactoryMethods(PrototypeInfo tmpPrototypeInfo, List<OptionInfo> newOptions) {
-        // for backward compatibility, we support factory methods of both runtime type and prototype to be mixed
-        // here, as we know all option types, we can separate them
-
-        TypeName prototypeType = tmpPrototypeInfo.prototypeType();
-
-        var builder = PrototypeInfo.builder(tmpPrototypeInfo);
-        List<GeneratedMethod> prototypeFactories = new ArrayList<>(tmpPrototypeInfo.prototypeFactories());
-
-        for (DeprecatedFactoryMethod factoryMethod : tmpPrototypeInfo.deprecatedFactoryMethods()) {
-            // if the factory method is void or does not have one parameter, it is for sure a prototype factory
-            TypedElementInfo method = factoryMethod.method();
-            TypeName returnType = method.typeName();
-
-            if (returnType.unboxed().equals(TypeNames.PRIMITIVE_VOID)
-                    || method.parameterArguments().size() != 1
-                    || Utils.typesEqual(returnType, prototypeType)) {
-                prototypeFactories.add(GeneratedMethods.createFactoryMethod(factoryMethod.declaringType(),
-                                                                            factoryMethod.method(),
-                                                                            List.of()));
-                continue;
-            }
-
-            if (newOptions.stream()
-                    .filter(it -> Utils.typesEqual(returnType, Utils.realType(it.declaredType()))
-                            || Utils.resolvedTypesEqual(returnType, it.declaredType()))
-                    .findAny()
-                    .isEmpty()) {
-
-                // yep, this is a factory method to be generated
-                prototypeFactories.add(GeneratedMethods.createFactoryMethod(factoryMethod.declaringType(),
-                                                                            factoryMethod.method(),
-                                                                            List.of()));
-            }
-        }
-
-        return builder
-                .prototypeFactories(prototypeFactories)
-                .build();
     }
 
     private void copyConfiguredForDiscoverServices(OptionInfo providerOption, OptionInfo.Builder optionBuilder) {
