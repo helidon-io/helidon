@@ -36,13 +36,7 @@ public class SingleSubscriberHolder<T> {
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final AtomicBoolean onSubscribeCalled = new AtomicBoolean(false);
 
-    /**
-     * This constructor should not be exposed.
-     *
-     * @deprecated use {@link #create()} instead.
-     */
-    @Deprecated(forRemoval = true, since = "4.0.9")
-    public SingleSubscriberHolder() {
+    private SingleSubscriberHolder() {
     }
 
     /**
