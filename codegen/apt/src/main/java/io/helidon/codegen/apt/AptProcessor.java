@@ -39,6 +39,7 @@ import javax.tools.Diagnostic;
 import io.helidon.codegen.Codegen;
 import io.helidon.codegen.CodegenEvent;
 import io.helidon.codegen.CodegenException;
+import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.Option;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ModuleTypeInfo;
@@ -56,7 +57,6 @@ import static java.lang.System.Logger.Level.WARNING;
  * This code and its internal interfaces are subject to change or deletion without notice.</b>
  * </p>
  */
-@SuppressWarnings("removal")
 public final class AptProcessor extends AbstractProcessor {
     private static final TypeName GENERATOR = TypeName.create(AptProcessor.class);
 
@@ -238,7 +238,9 @@ public final class AptProcessor extends AbstractProcessor {
         types.values()
                 .stream()
                 .flatMap(element -> {
-                    Optional<TypeInfo> typeInfo = AptTypeInfoFactory.create(ctx, element);
+                    Optional<TypeInfo> typeInfo = AptTypeInfoFactory.create(ctx,
+                                                                            element,
+                                                                            ElementInfoPredicates.ALL_PREDICATE);
 
                     if (typeInfo.isEmpty()) {
                         ctx.logger().log(CodegenEvent.builder()

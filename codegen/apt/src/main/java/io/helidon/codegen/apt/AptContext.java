@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,8 @@ import io.helidon.common.types.TypeName;
 
 /**
  * Annotation processing code generation context.
- * @deprecated this API will be package local in the future, use through Helidon codegen only
  */
-@Deprecated(forRemoval = true, since = "4.1.0")
-public interface AptContext extends CodegenContext {
+interface AptContext extends CodegenContext {
     /**
      * Create context from the processing environment, and a set of additional supported options.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,7 +129,6 @@ class ToAnnotationValueVisitor implements AnnotationValueVisitor<Object, Object>
         return s;
     }
 
-    @SuppressWarnings("removal")
     @Override
     public Object visitType(TypeMirror t, Object o) {
         var maybeType = AptTypeFactory.createTypeName(t);
@@ -143,7 +142,6 @@ class ToAnnotationValueVisitor implements AnnotationValueVisitor<Object, Object>
         return type;
     }
 
-    @SuppressWarnings("removal")
     @Override
     public Object visitEnumConstant(VariableElement c, Object o) {
         var maybeType = AptTypeFactory.createTypeName(c.getEnclosingElement());
