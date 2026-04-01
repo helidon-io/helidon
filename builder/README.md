@@ -63,11 +63,10 @@ There are a few rules we required and enforce:
 3. Blueprint interface must have a name that ends with `Blueprint`; the name before `Blueprint` will be the name of the prototype
 4. In case we use the blueprint -> prototype -> runtime type use case (see below):
     1. The blueprint must extend `Prototype.Factory<RuntimeType>` where `RuntimeType` is the type of the runtime object
-    2. ~~The runtime type must be annotated with `@RuntimeType.PrototypedBy(PrototypeBlueprint.class)`~~
-    3. The runtime type must implement `RuntimeType.Api<Prototype>`
-    4. The runtime type must have a `public static Prototype.Builder builder()` method implemented by user
-    5. The runtime type must have a `public static RuntimeType create(Prototype)` method implemented by user
-    6. The runtime type must have a `public static RuntimeType create(Consumer<Prototype.Builder>)` method implemented by user
+    2. The runtime type must implement `RuntimeType.Api<Prototype>`
+    3. The runtime type must have a `public static Prototype.Builder builder()` method implemented by user
+    4. The runtime type must have a `public static RuntimeType create(Prototype)` method implemented by user
+    5. The runtime type must have a `public static RuntimeType create(Consumer<Prototype.Builder>)` method implemented by user
 
 ## Use Cases
 
@@ -230,7 +229,6 @@ Annotations:
 | `Prototype.Blueprint`                | `true`   | Annotation on the blueprint interface is required to trigger annotation processing                                                                                 |
 | `Prototype.Implement`                | `false`  | Add additional implemented types to the generated prototype                                                                                                        |
 | `Prototype.Annotated`                | `false`  | Allows adding an annotation (or annotations) to the generated class or methods                                                                                     |
-| ~~`Prototype.FactoryMethod`~~        | `false`  | Deprecated and marked for removal                                                                                                                                  |
 | `Prototype.PrototypeFactoryMethod`   | `false`  | Annotates a method in a `CustomMethods` type to be added as a static method to the prototype                                                                       |
 | `Prototype.ConfigFactoryMethod`      | `false`  | Annotates a method in a `CustomMethods` type that creates an option from `Config` on a configured type                                                             |
 | `Prototype.RuntimeTypeFactoryMethod` | `false`  | Annotates a method in a `CustomMethods` type that creates an option runtime type from its prototype (the parameter must be another prototype                       |
@@ -241,7 +239,6 @@ Annotations:
 | `Prototype.CustomMethods`            | `false`  | reference a class that will contain declarations (all static) of custom methods to be added to the generated code, can add prototype, builder, and factory methods |
 | `Prototype.BuilderMethod`            | `false`  | Annotation to be placed on factory methods that are to be added to builder, first parameter is the `BuilderBase<?, ?>` of the prototype                            |
 | `Prototype.PrototypeMethod`          | `false`  | Annotation to be placed on factory methods that are to be added to prototype, first parameter is the prototype instance                                            |
-| ~~`RuntimeType.PrototypedBy`~~       | `true`   | Deprecated and marked for removal                                                                                                                                  |
 
 Interfaces:
 

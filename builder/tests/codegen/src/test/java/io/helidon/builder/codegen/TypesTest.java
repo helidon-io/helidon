@@ -104,7 +104,6 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "PROTOTYPE_CONFIGURED", Prototype.Configured.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_PROVIDES", Prototype.Provides.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_BUILDER", Prototype.Builder.class);
-        checkField(toCheck, checked, fields, "PROTOTYPE_FACTORY_METHOD_DEPRECATED", Prototype.FactoryMethod.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_FACTORY_METHOD_PROTOTYPE", Prototype.PrototypeFactoryMethod.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_FACTORY_METHOD_CONFIG", Prototype.ConfigFactoryMethod.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_FACTORY_METHOD_RUNTIME_TYPE",

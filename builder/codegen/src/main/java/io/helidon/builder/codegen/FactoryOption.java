@@ -346,7 +346,6 @@ final class FactoryOption {
         return option.build();
     }
 
-    @SuppressWarnings({"removal", "deprecation"})
     private static void runtimeTypeFactory(RoundContext roundContext,
                                            PrototypeInfo prototypeInfo,
                                            OptionInfo.Builder option,
@@ -379,51 +378,6 @@ final class FactoryOption {
                 if (factory.optionName().orElse(optionName).equals(optionName)) {
                     option.runtimeType(runtimeFactory);
                     return;
-                }
-            }
-        }
-
-        TypeName prototype = prototypeInfo.prototypeType();
-
-        for (DeprecatedFactoryMethod someFactory : prototypeInfo.deprecatedFactoryMethods()) {
-            var referencedMethod = someFactory.method();
-            String methodName = referencedMethod.elementName();
-            TypeName returnType = referencedMethod.typeName();
-
-            if (referencedMethod.parameterArguments().size() != 1) {
-                // not a single parameter
-                continue;
-            }
-
-            if (Utils.typesEqual(returnType, prototype)) {
-                continue;
-            }
-
-            TypeName param = referencedMethod.parameterArguments().getFirst().typeName();
-            if (param.equals(CONFIG)) {
-                continue;
-            }
-
-            if (Utils.typesEqual(actualType, returnType)
-                    || resolvedTypesEqual(type, returnType)) {
-                String supportedOption = supportedOptionName(methodName, optionName);
-
-                if (optionName.equals(supportedOption)) {
-                    // matches type and matches option name (or for any option name of this type)
-                    option.runtimeType(rtf -> rtf
-                            .factoryMethod(fm -> fm
-                                    .declaringType(someFactory.declaringType())
-                                    .returnType(returnType)
-                                    .methodName(methodName)
-                                    .parameterType(referencedMethod.parameterArguments().getFirst().typeName())
-                                    .optionName(optionName)
-                            )
-                            .optionBuilder(OptionBuilder.builder()
-                                                   .builderMethodType(param)
-                                                   .builderType(Utils.prototypeBuilderType(param))
-                                                   .build()));
-                    return;
-
                 }
             }
         }
@@ -739,7 +693,6 @@ final class FactoryOption {
         }
     }
 
-    @SuppressWarnings({"removal", "deprecation"})
     private static void configFactoryMethod(RoundContext roundContext,
                                             PrototypeInfo prototypeInfo,
                                             OptionInfo.Builder option,
@@ -764,48 +717,6 @@ final class FactoryOption {
             }
         }
 
-        // check deprecated factories if any match
-        TypeName prototype = prototypeInfo.prototypeType();
-
-        for (DeprecatedFactoryMethod someFactory : prototypeInfo.deprecatedFactoryMethods()) {
-            var referencedMethod = someFactory.method();
-            String methodName = referencedMethod.elementName();
-            TypeName returnType = referencedMethod.typeName();
-
-            if (referencedMethod.parameterArguments().size() != 1) {
-                // not a single parameter
-                continue;
-            }
-            if (typesEqual(returnType, prototype)) {
-                // prototype factory method
-                continue;
-            }
-            TypeName firstParam = referencedMethod.parameterArguments().getFirst().typeName();
-            if (!firstParam.equals(CONFIG)) {
-                // not a config factory
-                continue;
-            }
-            String supportedOptionName = supportedOptionName(methodName, optionName);
-            if (!supportedOptionName.equals(optionName)) {
-                // for some other option
-                continue;
-            }
-            if (!(typesEqual(returnType, actualType) || resolvedTypesEqual(returnType, optionType))) {
-                // wrong return type
-                continue;
-            }
-            // this is a config factory method
-
-            // matches type and matches option name (or for any option name of this type)
-            configured.factoryMethod(fm -> fm
-                    .declaringType(someFactory.declaringType())
-                    .returnType(returnType)
-                    .methodName(methodName)
-                    .parameterType(firstParam)
-                    .optionName(optionName)
-            );
-            return;
-        }
         // first check if there is a factory method on the type itself (i.e. MyType create(Config))
         // and lastly - maybe there is a config factory method on the type
         var actualTypeInfo = roundContext.typeInfo(actualType);
@@ -859,7 +770,7 @@ final class FactoryOption {
         TypeName actualPrototype;
         if (actualType.packageName().isBlank()) {
             actualPrototype = TypeName.builder(actualType)
-                    .packageName(prototype.packageName())
+                    .packageName(prototypeInfo.prototypeType().packageName())
                     .build();
         } else {
             actualPrototype = actualType;

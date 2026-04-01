@@ -25,7 +25,6 @@ import io.helidon.validation.spi.ConstraintValidator;
  * Context of {@link io.helidon.validation.spi.TypeValidator#check(ValidationContext, Object)}, also used to validate
  * constraints using #check(ConstraintValidator, Object).
  */
-@RuntimeType.PrototypedBy(ValidationContextConfig.class)
 public interface ValidationContext extends RuntimeType.Api<ValidationContextConfig> {
     /**
      * Create a new fluent api builder for a {@link ValidationContext}.

@@ -27,8 +27,7 @@ import io.helidon.common.Errors;
 import io.helidon.common.types.TypeName;
 
 /**
- * Some static methods on custom methods (and deprecated option on the blueprint itself)
- * may be annotated with {@code Prototype.FactoryMethod}.
+ * Static factory method metadata used by builder code generation.
  * <p>
  * Such methods can be used to map from configuration to a type, or from a prototype to a
  * third party runtime-type.

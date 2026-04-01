@@ -52,7 +52,6 @@ import io.helidon.webclient.spi.WebClientService;
  * @see WebClientDiscoveryProvider
  * @see WebClientDiscoveryProvider#create(io.helidon.config.Config, String)
  */
-@RuntimeType.PrototypedBy(WebClientDiscoveryConfig.class)
 public interface WebClientDiscovery extends RuntimeType.Api<WebClientDiscoveryConfig>, WebClientService {
 
     /**
