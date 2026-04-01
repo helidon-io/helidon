@@ -19,14 +19,11 @@ package io.helidon.webserver.http2;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.util.List;
 import java.util.Objects;
-import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
@@ -34,7 +31,6 @@ import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.HttpException;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
@@ -45,12 +41,8 @@ import io.helidon.http.media.EntityWriter;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.ServerResponseBase;
 import io.helidon.webserver.http.spi.Sink;
-import io.helidon.webserver.http.spi.SinkProvider;
-import io.helidon.webserver.http.spi.SinkProviderContext;
 
 class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private static final System.Logger LOGGER = System.getLogger(Http2ServerResponse.class.getName());
@@ -64,11 +56,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private boolean isSent;
     private boolean streamingEntity;
     private long bytesWritten;
-    private static final List<SinkProvider> SINK_PROVIDERS =
-            HelidonServiceLoader
-                    .builder(ServiceLoader.load(SinkProvider.class))
-                    .build()
-                    .asList();
 
     private BlockingOutputStream outputStream;
     private UnaryOperator<OutputStream> outputStreamFilter;
@@ -97,48 +84,14 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
-        for (SinkProvider<?> p : SINK_PROVIDERS) {
-            if (p.supports(sinkType, request)) {
-                try {
-                    X sink = (X) p.create(new SinkProviderContext() {
-                        @Override
-                        public ServerResponse serverResponse() {
-                            return Http2ServerResponse.this;
-                        }
-
-                        @Override
-                        public ServerRequest serverRequest() {
-                            return Http2ServerResponse.this.request;
-                        }
-
-                        @Override
-                        public ConnectionContext connectionContext() {
-                            return Http2ServerResponse.this.ctx;
-                        }
-
-                        @Override
-                        public Runnable closeRunnable() {
-                            return Http2ServerResponse.this::commit;
-                        }
-
-                        @Override
-                        public void flushHeaders() {
-                            Http2ServerResponse.this.flushHeaders();
-                        }
-                    });
-                    this.isSent = true;
-                    return sink;
-                } catch (UnsupportedOperationException e) {
-                    // deprecated - will be removed in 5.x
-                    X sink = (X) p.create(this, this::handleSinkData, this::commit);
-                    this.isSent = true;
-                    return sink;
-                }
-            }
-        }
-        throw new HttpException("Unable to find sink provider for request", Status.NOT_ACCEPTABLE_406);
+        return createSink(sinkType,
+                          request,
+                          ctx,
+                          this::commit,
+                          this::flushHeaders,
+                          this::handleSinkData,
+                          () -> this.isSent = true);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,14 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ServiceLoader;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Header;
@@ -44,6 +48,9 @@ import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.UnsupportedTypeException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.http.spi.Sink;
+import io.helidon.webserver.http.spi.SinkProvider;
+import io.helidon.webserver.http.spi.SinkProviderContext;
 
 /**
  * Base class for common server response tasks that can be shared across HTTP versions.
@@ -67,6 +74,9 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      */
     protected static final Header STREAM_TRAILERS =
             HeaderValues.create(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
+    @SuppressWarnings("rawtypes")
+    private static final List<SinkProvider> SINK_PROVIDERS =
+            HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build().asList();
     private final ContentEncodingContext contentEncodingContext;
     private final MediaContext mediaContext;
     private final ServerRequestHeaders requestHeaders;
@@ -215,6 +225,70 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      */
     protected Consumer<ServerResponseTrailers> beforeTrailers() {
         return beforeTrailers;
+    }
+
+    /**
+     * Create a sink using the shared provider lookup and deprecated fallback handling.
+     *
+     * @param sinkType type of sink to create
+     * @param request current request
+     * @param connectionContext current connection context
+     * @param closeRunnable response close callback
+     * @param flushHeadersRunnable response header flush callback
+     * @param sinkDataHandler deprecated sink data handler
+     * @param sinkCreatedHandler invoked after successful sink creation
+     * @param <X> sink type
+     * @return created sink
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    protected final <X extends Sink<?>> X createSink(GenericType<X> sinkType,
+                                                     ServerRequest request,
+                                                     ConnectionContext connectionContext,
+                                                     Runnable closeRunnable,
+                                                     Runnable flushHeadersRunnable,
+                                                     BiConsumer<Object, MediaType> sinkDataHandler,
+                                                     Runnable sinkCreatedHandler) {
+        for (SinkProvider<?> provider : SINK_PROVIDERS) {
+            if (provider.supports(sinkType, request)) {
+                try {
+                    X sink = (X) provider.create(new SinkProviderContext() {
+                        @Override
+                        public ServerResponse serverResponse() {
+                            return (ServerResponse) ServerResponseBase.this;
+                        }
+
+                        @Override
+                        public ServerRequest serverRequest() {
+                            return request;
+                        }
+
+                        @Override
+                        public ConnectionContext connectionContext() {
+                            return connectionContext;
+                        }
+
+                        @Override
+                        public Runnable closeRunnable() {
+                            return closeRunnable;
+                        }
+
+                        @Override
+                        public void flushHeaders() {
+                            flushHeadersRunnable.run();
+                        }
+                    });
+                    sinkCreatedHandler.run();
+                    return sink;
+                } catch (UnsupportedOperationException e) {
+                    // deprecated - will be removed in 5.x
+                    X sink = (X) provider.create((ServerResponse) this, sinkDataHandler, closeRunnable);
+                    sinkCreatedHandler.run();
+                    return sink;
+                }
+            }
+        }
+
+        throw new HttpException("Unable to find sink provider for request", Status.NOT_ACCEPTABLE_406);
     }
 
     /**

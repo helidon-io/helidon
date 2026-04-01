@@ -21,15 +21,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Objects;
-import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.media.type.MediaType;
@@ -38,7 +35,6 @@ import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.HttpException;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
@@ -47,12 +43,8 @@ import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.ServerResponseBase;
 import io.helidon.webserver.http.spi.Sink;
-import io.helidon.webserver.http.spi.SinkProvider;
-import io.helidon.webserver.http.spi.SinkProviderContext;
 
 /**
  * An HTTP/1 server response.
@@ -65,9 +57,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private static final byte[] TERMINATING_CHUNK = "0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] TERMINATING_CHUNK_TRAILERS = "0\r\n".getBytes(StandardCharsets.UTF_8);
 
-    @SuppressWarnings("rawtypes")
-    private static final List<SinkProvider> SINK_PROVIDERS
-            = HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build().asList();
     private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
     private final ConnectionContext ctx;
@@ -321,49 +310,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
-        for (SinkProvider<?> p : SINK_PROVIDERS) {
-            if (p.supports(sinkType, request)) {
-                try {
-                    X sink = (X) p.create(new SinkProviderContext() {
-                        @Override
-                        public ServerResponse serverResponse() {
-                            return Http1ServerResponse.this;
-                        }
-
-                        @Override
-                        public ServerRequest serverRequest() {
-                            return Http1ServerResponse.this.request;
-                        }
-
-                        @Override
-                        public ConnectionContext connectionContext() {
-                            return Http1ServerResponse.this.ctx;
-                        }
-
-                        @Override
-                        public Runnable closeRunnable() {
-                            return Http1ServerResponse.this::commit;
-                        }
-
-                        @Override
-                        public void flushHeaders() {
-                            Http1ServerResponse.this.flushHeaders();
-                        }
-                    });
-                    this.isSent = true;
-                    return sink;
-                } catch (UnsupportedOperationException e) {
-                    // deprecated - will be removed in 5.x
-                    X sink = (X) p.create(this, this::handleSinkData, this::commit);
-                    this.isSent = true;
-                    return sink;
-                }
-            }
-        }
-        // Request not acceptable if provider not found
-        throw new HttpException("Unable to find sink provider for request", Status.NOT_ACCEPTABLE_406);
+        return createSink(sinkType,
+                          request,
+                          ctx,
+                          this::commit,
+                          this::flushHeaders,
+                          this::handleSinkData,
+                          () -> this.isSent = true);
     }
 
     @Override
