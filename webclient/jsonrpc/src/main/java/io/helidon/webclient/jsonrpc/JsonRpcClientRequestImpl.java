@@ -36,6 +36,9 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpMediaType;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.ClientUri;
@@ -43,13 +46,6 @@ import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
-
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonValue;
-
-import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
 
 /**
  * An implementation of JSON-RPC client request.
@@ -113,26 +109,18 @@ class JsonRpcClientRequestImpl implements JsonRpcClientRequest {
 
     @Override
     public JsonObject asJsonObject() {
-        JsonObjectBuilder builder = JSON_BUILDER_FACTORY.createObjectBuilder()
-                .add("jsonrpc", "2.0");
+        JsonObject.Builder builder = JsonObject.builder()
+                .set("jsonrpc", "2.0");
         if (rpcId != null) {
-            builder.add("id", rpcId);
+            builder.set("id", rpcId);
         }
-        builder.add("method", rpcMethod);
+        builder.set("method", rpcMethod);
         if (namedParams != null) {
-            JsonObjectBuilder namedBuilder = JSON_BUILDER_FACTORY.createObjectBuilder();
-            for (Map.Entry<String, JsonValue> entry : namedParams.entrySet()) {
-                namedBuilder.add(entry.getKey(), entry.getValue());
-            }
-            builder.add("params", namedBuilder.build());
+            builder.set("params", JsonObject.create(namedParams));
         } else if (arrayParams != null) {
-            JsonArrayBuilder arrayBuilder = JSON_BUILDER_FACTORY.createArrayBuilder();
-            for (JsonValue value : arrayParams) {
-                arrayBuilder.add(value);
-            }
-            builder.add("params", arrayBuilder.build());
+            builder.set("params", JsonArray.create(arrayParams));
         } else {
-            builder.add("params", JSON_BUILDER_FACTORY.createObjectBuilder().build());
+            builder.set("params", JsonObject.empty());
         }
         return builder.build();
     }

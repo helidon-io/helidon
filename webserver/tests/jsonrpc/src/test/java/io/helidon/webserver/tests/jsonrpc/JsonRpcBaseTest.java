@@ -15,12 +15,18 @@
  */
 package io.helidon.webserver.tests.jsonrpc;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Optional;
 
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.http.sse.SseEvent;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonNumber;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
+import io.helidon.json.binding.Json;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.jsonrpc.JsonRpcClient;
@@ -34,11 +40,6 @@ import io.helidon.webserver.jsonrpc.JsonRpcRules;
 import io.helidon.webserver.jsonrpc.JsonRpcService;
 import io.helidon.webserver.sse.SseSink;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonStructure;
 
 class JsonRpcBaseTest {
 
@@ -98,26 +99,36 @@ class JsonRpcBaseTest {
         int left, right;
 
         // collect params either as array or object
-        JsonStructure params = req.params().asJsonStructure();
+        JsonValue params = req.params().asJsonValue();
         if (params instanceof JsonArray array) {
-            left = array.getInt(0);
-            right = array.getInt(1);
+            left = array.get(0)
+                    .map(JsonValue::asNumber)
+                    .map(JsonNumber::intValue)
+                    .orElseThrow(() -> new IllegalArgumentException("Missing left param"));
+            right = array.get(1)
+                    .map(JsonValue::asNumber)
+                    .map(JsonNumber::intValue)
+                    .orElseThrow(() -> new IllegalArgumentException("Missing right param"));
         } else if (params instanceof JsonObject object) {
-            left = object.getInt("left");
-            right = object.getInt("right");
+            left = object.intValue("left")
+                    .orElseThrow(() -> new IllegalArgumentException("Missing left param"));
+            right = object.intValue("right")
+                    .orElseThrow(() -> new IllegalArgumentException("Missing right param"));
         } else {
             throw new IllegalArgumentException("Should have failed JSON-RPC validation");
         }
 
         // send response
-        res.result(Json.createValue(left + right)).send();
+        res.result(JsonNumber.create(left + right)).send();
     }
 
     // -- Machine -------------------------------------------------------------
 
+    @Json.Entity
     public record StartStopParams(String when, Duration duration) {
     }
 
+    @Json.Entity
     public record StartStopResult(String status) {
     }
 
@@ -174,12 +185,14 @@ class JsonRpcBaseTest {
 
         Optional<JsonRpcError> error(ServerRequest req, JsonObject object) {
             try {
-                String version = object.getString("jsonrpc");
+                String version = object.stringValue("jsonrpc")
+                        .orElseThrow(() -> new IllegalStateException("Missing JSON-RPC version"));
                 if (!"2.0".equals(version)) {
                     return Optional.of(JsonRpcError.create(JsonRpcError.INVALID_REQUEST,
                                                            "Version is not valid"));
                 }
-                String method = object.getString("method");
+                String method = object.stringValue("method")
+                        .orElseThrow(() -> new IllegalStateException("Missing JSON-RPC method"));
                 if (!"expected".equalsIgnoreCase(method)) {
                     return Optional.of(JsonRpcError.create(JsonRpcError.METHOD_NOT_FOUND,
                                                            "Method not found"));

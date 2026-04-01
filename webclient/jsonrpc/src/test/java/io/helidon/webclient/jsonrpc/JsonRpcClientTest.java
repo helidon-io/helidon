@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,8 @@
  */
 package io.helidon.webclient.jsonrpc;
 
+import io.helidon.json.JsonString;
 import io.helidon.webclient.api.WebClient;
-
-import jakarta.json.Json;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -48,7 +47,7 @@ class JsonRpcClientTest {
         JsonRpcClientRequest req = client.rpcMethod("start")
                 .path("/machine")
                 .rpcId(1)
-                .param("foo", Json.createValue("bar"));
+                .param("foo", JsonString.create("bar"));
         assertThat(req, notNullValue());
     }
 }

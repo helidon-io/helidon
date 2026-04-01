@@ -21,12 +21,16 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityWriterBase;
 import io.helidon.json.binding.JsonBinding;
+
+import static java.util.function.Predicate.not;
 
 class JsonBindingWriter<T> extends EntityWriterBase<T> {
 
@@ -43,11 +47,12 @@ class JsonBindingWriter<T> extends EntityWriterBase<T> {
                       OutputStream outputStream,
                       Headers requestHeaders,
                       WritableHeaders<?> responseHeaders) {
+        Optional<OutputStreamWriter> writer = serverResponseContentTypeAndCharset(requestHeaders, responseHeaders)
+                .filter(not(StandardCharsets.UTF_8::equals)) //We don't need writer to be applied for UTF-8
+                .map(it -> new OutputStreamWriter(outputStream, it));
 
-        var charset = serverResponseContentTypeAndCharset(requestHeaders, responseHeaders);
-
-        if (charset.isPresent()) {
-            write(type, object, new OutputStreamWriter(outputStream, charset.get()));
+        if (writer.isPresent()) {
+            write(type, object, writer.get());
         } else {
             write(type, object, outputStream);
         }
@@ -55,10 +60,12 @@ class JsonBindingWriter<T> extends EntityWriterBase<T> {
 
     @Override
     public void write(GenericType<T> type, T object, OutputStream outputStream, WritableHeaders<?> headers) {
-        var charset = clientRequestContentTypeAndCharset(headers);
+        Optional<OutputStreamWriter> writer = clientRequestContentTypeAndCharset(headers)
+                .filter(not(StandardCharsets.UTF_8::equals)) //We don't need writer to be applied for UTF-8
+                .map(it -> new OutputStreamWriter(outputStream, it));
 
-        if (charset.isPresent()) {
-            write(type, object, new OutputStreamWriter(outputStream, charset.get()));
+        if (writer.isPresent()) {
+            write(type, object, writer.get());
         } else {
             write(type, object, outputStream);
         }

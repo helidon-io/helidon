@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,9 @@ package io.helidon.jsonrpc.core;
 import java.util.Objects;
 import java.util.Optional;
 
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 
 /**
  * An implementation of a JSON-RPC response result.
@@ -36,12 +35,12 @@ class JsonRpcResultImpl implements JsonRpcResult {
 
     @Override
     public JsonObject asJsonObject() {
-        return result.asJsonObject();
+        return result.asObject();
     }
 
     @Override
     public JsonArray asJsonArray() {
-        return result.asJsonArray();
+        return result.asArray();
     }
 
     @Override
@@ -51,44 +50,38 @@ class JsonRpcResultImpl implements JsonRpcResult {
 
     @Override
     public JsonValue get(String name) {
-        JsonValue value = asJsonObject().get(name);
-        if (value == null) {
-            throw new IllegalArgumentException("Unable to find property " + name);
-        }
-        return value;
+        return find(name)
+                .orElseThrow(() -> new IllegalArgumentException("Unable to find property " + name));
     }
 
     @Override
     public String getString(String name) {
-        return ((JsonString) get(name)).getString();
+        return get(name).asString().value();
     }
 
     @Override
     public Optional<JsonValue> find(String name) {
-        return Optional.ofNullable(asJsonObject().get(name));
+        return asJsonObject().value(name);
     }
 
     @Override
     public JsonValue get(int index) {
-        return asJsonArray().get(index);
+        return asJsonArray().get(index)
+                .orElseThrow(() -> new IndexOutOfBoundsException("Unable to find result at index " + index));
     }
 
     @Override
     public String getString(int index) {
-        return ((JsonString) get(index)).getString();
+        return get(index).asString().value();
     }
 
     @Override
     public Optional<JsonValue> find(int index) {
-        JsonArray array = asJsonArray();
-        if (index >= 0 && index < array.size()) {
-            return Optional.of(array.get(index));
-        }
-        return Optional.empty();
+        return asJsonArray().get(index);
     }
 
     @Override
     public <T> T as(Class<T> type) {
-        return JsonUtil.jsonpToJsonb(asJsonObject(), type);
+        return JsonUtil.jsonToObject(result, type);
     }
 }

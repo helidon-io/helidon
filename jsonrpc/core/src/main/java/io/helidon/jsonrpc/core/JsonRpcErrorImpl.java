@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package io.helidon.jsonrpc.core;
 import java.util.Objects;
 import java.util.Optional;
 
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 
 /**
  * An implementation of a JSON-RPC error.
@@ -35,24 +35,24 @@ class JsonRpcErrorImpl implements JsonRpcError {
 
     @Override
     public int code() {
-        return error.getInt("code");
+        return error.intValue("code")
+                .orElseThrow(() -> new IllegalStateException("Missing JSON-RPC error code"));
     }
 
     @Override
     public String message() {
-        return error.getString("message");
+        return error.stringValue("message")
+                .orElseThrow(() -> new IllegalStateException("Missing JSON-RPC error message"));
     }
 
     @Override
     public Optional<JsonValue> data() {
-        return Optional.ofNullable(error.get("data"));
+        return error.value("data");
     }
 
     @Override
     public <T> Optional<T> dataAs(Class<T> type) {
-        JsonValue data = error.get("data");
-        return data == null ? Optional.empty()
-                : Optional.of(JsonUtil.jsonpToJsonb(data.asJsonObject(), type));
+        return data().map(it -> JsonUtil.jsonToObject(it, type));
     }
 
     @Override
