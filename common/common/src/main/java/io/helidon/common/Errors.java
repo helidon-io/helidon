@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -201,13 +201,7 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
         private boolean hasWarning;
         private boolean hasHint;
 
-        /**
-         * This constructor was accidentally left public, it should be private.
-         *
-         * @deprecated please use {@link io.helidon.common.Errors#collector()} instead
-         */
-        @Deprecated(forRemoval = true, since = "4.0.9")
-        public Collector() {
+        private Collector() {
             super();
         }
 
