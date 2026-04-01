@@ -98,6 +98,24 @@ public class Rfc8259BindingCharacterEncodingTest {
         );
     }
 
+    /**
+     * RFC 8259 §7 and §8.1
+     * Object member names are strings, and JSON text exchanged between systems MUST be encoded using UTF-8.
+     */
+    @Test
+    public void testRejectsMalformedUtf8InObjectMemberNameBytes() {
+        byte[] json = objectJsonWithMalformedMemberNameBytes((byte) 0xC0, (byte) 0xAF);
+
+        assertAll(
+                () -> assertThrows(JsonException.class,
+                                   () -> jsonBinding.deserialize(json, UnicodeTextBean.class)),
+                () -> assertThrows(JsonException.class,
+                                   () -> jsonBinding.deserialize(new ByteArrayInputStream(json),
+                                                                 STREAM_BUFFER_SIZE,
+                                                                 UnicodeTextBean.class))
+        );
+    }
+
     private static byte[] objectJsonBytes(byte... valueBytes) {
         byte[] prefix = "{\"value\":\"".getBytes(StandardCharsets.US_ASCII);
         byte[] suffix = "\"}".getBytes(StandardCharsets.US_ASCII);
@@ -106,6 +124,18 @@ public class Rfc8259BindingCharacterEncodingTest {
         System.arraycopy(prefix, 0, result, 0, prefix.length);
         System.arraycopy(valueBytes, 0, result, prefix.length, valueBytes.length);
         System.arraycopy(suffix, 0, result, prefix.length + valueBytes.length, suffix.length);
+
+        return result;
+    }
+
+    private static byte[] objectJsonWithMalformedMemberNameBytes(byte... memberNameBytes) {
+        byte[] prefix = "{\"".getBytes(StandardCharsets.US_ASCII);
+        byte[] middle = "\":\"x\",\"value\":\"ok\"}".getBytes(StandardCharsets.US_ASCII);
+        byte[] result = new byte[prefix.length + memberNameBytes.length + middle.length];
+
+        System.arraycopy(prefix, 0, result, 0, prefix.length);
+        System.arraycopy(memberNameBytes, 0, result, prefix.length, memberNameBytes.length);
+        System.arraycopy(middle, 0, result, prefix.length + memberNameBytes.length, middle.length);
 
         return result;
     }

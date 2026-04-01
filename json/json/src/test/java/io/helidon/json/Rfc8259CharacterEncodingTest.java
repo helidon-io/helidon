@@ -229,6 +229,45 @@ class Rfc8259CharacterEncodingTest {
         runByteTextScenario(inputMethod, json, STREAM_BUFFER_SIZE, parser -> parser.readJsonString().value(), true);
     }
 
+    @ParameterizedTest
+    @EnumSource(Utf8InputMethod.class)
+    void testReadStringAsHashRejectsInvalidUtf8ContinuationByte(Utf8InputMethod inputMethod) {
+        assertAll(
+                () -> runByteTextScenario(inputMethod,
+                                          new byte[] {'"', (byte) 0xC2, 0x20, '"'},
+                                          STREAM_BUFFER_SIZE,
+                                          JsonParser::readStringAsHash,
+                                          true),
+                () -> runByteTextScenario(inputMethod,
+                                          new byte[] {'"', (byte) 0xE2, 0x28, (byte) 0xA1, '"'},
+                                          STREAM_BUFFER_SIZE,
+                                          JsonParser::readStringAsHash,
+                                          true)
+        );
+    }
+
+    @ParameterizedTest
+    @EnumSource(Utf8InputMethod.class)
+    void testReadStringAsHashRejectsOverlongUtf8Sequence(Utf8InputMethod inputMethod) {
+        assertAll(
+                () -> runByteTextScenario(inputMethod,
+                                          new byte[] {'"', (byte) 0xC0, (byte) 0xAF, '"'},
+                                          STREAM_BUFFER_SIZE,
+                                          JsonParser::readStringAsHash,
+                                          true),
+                () -> runByteTextScenario(inputMethod,
+                                          new byte[] {'"', (byte) 0xE0, (byte) 0x9F, (byte) 0xBF, '"'},
+                                          STREAM_BUFFER_SIZE,
+                                          JsonParser::readStringAsHash,
+                                          true),
+                () -> runByteTextScenario(inputMethod,
+                                          new byte[] {'"', (byte) 0xF0, (byte) 0x8F, (byte) 0xBF, (byte) 0xBF, '"'},
+                                          STREAM_BUFFER_SIZE,
+                                          JsonParser::readStringAsHash,
+                                          true)
+        );
+    }
+
     /**
      * RFC 8259 §8.1
      * Quote: "JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8"

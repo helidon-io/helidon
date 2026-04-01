@@ -764,13 +764,18 @@ final class JsonParserStream extends JsonParserBase {
         fnv1aHash = updateFnv1aHash(fnv1aHash, currentByte & 0xFF);
         if ((currentByte & 0xE0) == 0xC0) {
             ensure(1);
-            fnv1aHash = updateFnv1aHash(fnv1aHash, readNextByte() & 0xFF);
+            byte second = readNextByte();
+            Parsers.decodeUtf8TwoByte(currentByte, second, this);
+            fnv1aHash = updateFnv1aHash(fnv1aHash, second & 0xFF);
             return fnv1aHash;
         }
         if ((currentByte & 0xF0) == 0xE0) {
             ensure(2);
-            fnv1aHash = updateFnv1aHash(fnv1aHash, buffer[++currentIndex] & 0xFF);
-            fnv1aHash = updateFnv1aHash(fnv1aHash, buffer[++currentIndex] & 0xFF);
+            byte second = buffer[++currentIndex];
+            byte third = buffer[++currentIndex];
+            Parsers.decodeUtf8ThreeByte(currentByte, second, third, this);
+            fnv1aHash = updateFnv1aHash(fnv1aHash, second & 0xFF);
+            fnv1aHash = updateFnv1aHash(fnv1aHash, third & 0xFF);
             return fnv1aHash;
         }
         if ((currentByte & 0xF8) == 0xF0) {
@@ -778,16 +783,10 @@ final class JsonParserStream extends JsonParserBase {
             byte b2 = buffer[++currentIndex];
             byte b3 = buffer[++currentIndex];
             byte b4 = buffer[++currentIndex];
+            Parsers.decodeUtf8FourByte(currentByte, b2, b3, b4, this);
             fnv1aHash = updateFnv1aHash(fnv1aHash, b2 & 0xFF);
             fnv1aHash = updateFnv1aHash(fnv1aHash, b3 & 0xFF);
             fnv1aHash = updateFnv1aHash(fnv1aHash, b4 & 0xFF);
-            int codePoint = ((currentByte & 0x07) << 18)
-                    | ((b2 & 0x3F) << 12)
-                    | ((b3 & 0x3F) << 6)
-                    | (b4 & 0x3F);
-            if (codePoint >= 0x110000) {
-                throw createException("Invalid UTF-8 code point: " + Integer.toHexString(codePoint));
-            }
             return fnv1aHash;
         }
         throw createException("Invalid UTF-8 byte", currentByte);
