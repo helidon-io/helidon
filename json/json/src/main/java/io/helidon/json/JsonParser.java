@@ -86,7 +86,9 @@ public interface JsonParser {
      */
     static JsonParser create(byte[] json, int start, int length) {
         Objects.requireNonNull(json);
-        if (start < 0 || length < 0 || start > json.length || start + length > json.length) {
+        if (json.length == 0) {
+            throw new JsonException("Empty byte array provided");
+        } else if (start < 0 || length < 0 || start > json.length || start + length > json.length) {
             throw new JsonException("Invalid start/length: start="
                                             + start + ", length=" + length + ", array length=" + json.length);
         }
