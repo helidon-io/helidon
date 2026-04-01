@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,14 +65,8 @@ import static java.util.function.Predicate.not;
 
 /**
  * Factory to analyze processed types and to provide {@link io.helidon.common.types.TypeInfo} for them.
- *
- * @deprecated this is an internal API, all usage should be done through {@code helidon-codegen} APIs,
- *         such as {@link io.helidon.codegen.CodegenContext#typeInfo(io.helidon.common.types.TypeName)};
- *         this type will be package local in the future
  */
-@SuppressWarnings("removal")
-@Deprecated(forRemoval = true)
-public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
+final class AptTypeInfoFactory extends TypeInfoFactoryBase {
 
     // we expect that annotations themselves are not code generated, and can be cached
     private static final Map<TypeName, List<Annotation>> META_ANNOTATION_CACHE = new ConcurrentHashMap<>();
@@ -116,30 +110,6 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
     }
 
     /**
-     * Create type information from a type element, reading all child elements.
-     *
-     * @param ctx         annotation processor processing context
-     * @param typeElement type element of the type we want to analyze
-     * @return type info for the type element
-     * @throws IllegalArgumentException when the element cannot be resolved into type info (such as if you ask for
-     *                                  a primitive type)
-     * @deprecated this is an internal API, all usage should be done through {@code helidon-codegen} APIs,
-     *         such as {@link io.helidon.codegen.CodegenContext#typeInfo(io.helidon.common.types.TypeName)}
-     */
-    @Deprecated(forRemoval = true)
-    public static Optional<TypeInfo> create(AptContext ctx,
-                                            TypeElement typeElement) {
-
-        TypeName typeName = AptTypeFactory.createTypeName(typeElement.asType()).orElse(null);
-
-        if (typeName == null) {
-            return Optional.empty();
-        }
-
-        return create(ctx, typeName);
-    }
-
-    /**
      * Create type information from a type element.
      *
      * @param ctx              annotation processor processing context
@@ -174,6 +144,7 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                                                                                Elements elements) {
         return createTypedElementInfoFromElement(ctx, processedType, v, elements, false);
     }
+
     /**
      * Creates an instance of a {@link io.helidon.common.types.TypedElementInfo} given its type and variable element from
      * annotation processing. If the passed in element is not a {@link io.helidon.common.types.ElementKind#FIELD},
@@ -332,112 +303,6 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
             AptTypeFactory.createTypeName(enclosingElement).ifPresent(builder::enclosingType);
         }
 
-        Optional.ofNullable(defaultValue).ifPresent(builder::defaultValue);
-
-        return mapElement(ctx, builder.build());
-    }
-
-    /**
-     * Creates an instance of a {@link io.helidon.common.types.TypedElementInfo} given its type and variable element from
-     * annotation processing. If the passed in element is not a {@link io.helidon.common.types.ElementKind#FIELD},
-     * {@link io.helidon.common.types.ElementKind#METHOD},
-     * {@link io.helidon.common.types.ElementKind#CONSTRUCTOR}, or {@link io.helidon.common.types.ElementKind#PARAMETER}
-     * then this method may return empty.
-     * <p>
-     * This method does not include inherited annotations.
-     *
-     * @param ctx      annotation processing context
-     * @param v        the element (from annotation processing)
-     * @param elements the elements
-     * @return the created instance
-     * @deprecated use
-     *         {@link #createTypedElementInfoFromElement(AptContext, io.helidon.common.types.TypeName,
-     *         javax.lang.model.element.Element, javax.lang.model.util.Elements)}
-     *         instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public static Optional<TypedElementInfo> createTypedElementInfoFromElement(AptContext ctx,
-                                                                               Element v,
-                                                                               Elements elements) {
-        TypeName type = AptTypeFactory.createTypeName(v).orElse(null);
-        TypeMirror typeMirror = null;
-        String defaultValue = null;
-        List<TypedElementInfo> params = List.of();
-        List<TypeName> componentTypeNames = List.of();
-        List<Annotation> elementTypeAnnotations = List.of();
-        Set<String> modifierNames = v.getModifiers()
-                .stream()
-                .map(Modifier::toString)
-                .collect(Collectors.toSet());
-        Set<TypeName> thrownChecked = Set.of();
-
-        if (v instanceof ExecutableElement ee) {
-            typeMirror = Objects.requireNonNull(ee.getReturnType());
-            params = ee.getParameters().stream()
-                    .map(it -> createTypedElementInfoFromElement(ctx, it, elements).orElseThrow(() -> {
-                        return new CodegenException("Failed to create element info for parameter: " + it + ", either it uses "
-                                                            + "invalid type, or it was removed by an element mapper. This would"
-                                                            + " result in an invalid TypeInfo model.",
-                                                    it);
-                    }))
-                    .toList();
-            AnnotationValue annotationValue = ee.getDefaultValue();
-            defaultValue = (annotationValue == null) ? null
-                    : String.valueOf(annotationValue.accept(new ToAnnotationValueVisitor(elements)
-                                                                    .mapBooleanToNull(true)
-                                                                    .mapVoidToNull(true)
-                                                                    .mapBlankArrayToNull(true)
-                                                                    .mapEmptyStringToNull(true)
-                                                                    .mapToSourceDeclaration(true), null));
-
-            thrownChecked = ee.getThrownTypes()
-                    .stream()
-                    .filter(it -> isCheckedException(ctx, it))
-                    .flatMap(it -> AptTypeFactory.createTypeName(it).stream())
-                    .collect(Collectors.toSet());
-        } else if (v instanceof VariableElement ve) {
-            typeMirror = Objects.requireNonNull(ve.asType());
-        }
-
-        if (typeMirror != null) {
-            if (type == null) {
-                Element element = ctx.aptEnv().getTypeUtils().asElement(typeMirror);
-                if (element instanceof TypeElement typeElement) {
-                    type = AptTypeFactory.createTypeName(typeElement, typeMirror)
-                            .orElse(createFromGenericDeclaration(typeMirror.toString()));
-                } else {
-                    type = AptTypeFactory.createTypeName(typeMirror)
-                            .orElse(createFromGenericDeclaration(typeMirror.toString()));
-                }
-            }
-            if (typeMirror instanceof DeclaredType) {
-                List<? extends TypeMirror> args = ((DeclaredType) typeMirror).getTypeArguments();
-                componentTypeNames = args.stream()
-                        .map(AptTypeFactory::createTypeName)
-                        .filter(Optional::isPresent)
-                        .map(Optional::orElseThrow)
-                        .collect(Collectors.toList());
-                elementTypeAnnotations =
-                        createAnnotations(ctx, ((DeclaredType) typeMirror).asElement(), elements);
-            }
-        }
-        String javadoc = ctx.aptEnv().getElementUtils().getDocComment(v);
-        javadoc = javadoc == null || javadoc.isBlank() ? "" : javadoc;
-
-        TypedElementInfo.Builder builder = TypedElementInfo.builder()
-                .description(javadoc)
-                .typeName(type)
-                .componentTypes(componentTypeNames)
-                .elementName(v.getSimpleName().toString())
-                .kind(kind(v.getKind()))
-                .annotations(createAnnotations(ctx, v, elements))
-                .elementTypeAnnotations(elementTypeAnnotations)
-                .elementModifiers(modifiers(ctx, modifierNames))
-                .accessModifier(accessModifier(modifierNames))
-                .throwsChecked(thrownChecked)
-                .parameterArguments(params)
-                .originatingElement(v);
-        AptTypeFactory.createTypeName(v.getEnclosingElement()).ifPresent(builder::enclosingType);
         Optional.ofNullable(defaultValue).ifPresent(builder::defaultValue);
 
         return mapElement(ctx, builder.build());

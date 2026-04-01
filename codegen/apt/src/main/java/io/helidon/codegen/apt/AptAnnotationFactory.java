@@ -34,7 +34,6 @@ import io.helidon.common.types.TypeNames;
 /**
  * Factory for annotations.
  */
-@SuppressWarnings("removal")
 final class AptAnnotationFactory {
     private AptAnnotationFactory() {
     }
