@@ -46,4 +46,33 @@ class Rfc8259GeneratorInteroperabilityPolicyTest {
 
         assertThat(target.generatedJson(), is("{\"a\":1,\"a\":2,\"a\":3}"));
     }
+
+    /**
+     * RFC 8259 §6
+     * Quote: "Numeric values that cannot be represented in the grammar below (such as Infinity and NaN) are not permitted."
+     * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-6
+     */
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    void testNonFiniteNumbersAreWrittenAsJsonStrings(GeneratorMethod generatorMethod) {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.writeObjectStart()
+                    .write("floatNaN", Float.NaN)
+                    .write("floatPositiveInfinity", Float.POSITIVE_INFINITY)
+                    .write("floatNegativeInfinity", Float.NEGATIVE_INFINITY)
+                    .write("doubleNaN", Double.NaN)
+                    .write("doublePositiveInfinity", Double.POSITIVE_INFINITY)
+                    .write("doubleNegativeInfinity", Double.NEGATIVE_INFINITY)
+                    .writeObjectEnd();
+        }
+
+        assertThat(target.generatedJson(),
+                   is("{\"floatNaN\":\"NaN\","
+                              + "\"floatPositiveInfinity\":\"Infinity\","
+                              + "\"floatNegativeInfinity\":\"-Infinity\","
+                              + "\"doubleNaN\":\"NaN\","
+                              + "\"doublePositiveInfinity\":\"Infinity\","
+                              + "\"doubleNegativeInfinity\":\"-Infinity\"}"));
+    }
 }

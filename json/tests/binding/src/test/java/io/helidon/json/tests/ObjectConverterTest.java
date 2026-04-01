@@ -116,6 +116,22 @@ public class ObjectConverterTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    public void testDeserializeExactIntegerAtInteroperabilityBoundaryToObject(BindingMethod bindingMethod) {
+        Object result = bindingMethod.deserialize(jsonBinding, "9007199254740991", Object.class);
+        assertThat(result, instanceOf(Double.class));
+        assertThat(result, is(9_007_199_254_740_991d));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testDeserializeIntegerBeyondInteroperabilityBoundaryUsesDoubleSemantics(BindingMethod bindingMethod) {
+        Object result = bindingMethod.deserialize(jsonBinding, "9007199254740993", Object.class);
+        assertThat(result, instanceOf(Double.class));
+        assertThat(result, is(9_007_199_254_740_992d));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     public void testDeserializeNull(BindingMethod bindingMethod) {
         Object value = bindingMethod.deserialize(jsonBinding, "null", Object.class);
         assertThat(value, nullValue());

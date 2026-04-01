@@ -57,23 +57,23 @@ public class Rfc8259BindingStringComparisonTest {
         );
     }
 
-//    /**
-//     * RFC 8259 §8.3
-//     * Quote: "Software implementations are typically required to test names of object members for equality."
-//     * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-8.3
-//     */
-//    @ParameterizedTest
-//    @EnumSource(BindingMethod.class)
-//    public void testBeanPropertyNamesMatchEscapedObjectMemberNames(BindingMethod bindingMethod) {
-//        PropertyNameBean bean = bindingMethod.deserialize(jsonBinding,
-//                                                          "{\"val\\u0075e\":\"alpha\",\"na\\u006De\":\"beta\"}",
-//                                                          PropertyNameBean.class);
-//
-//        assertAll(
-//                () -> assertThat(bean.value(), is("alpha")),
-//                () -> assertThat(bean.name(), is("beta"))
-//        );
-//    }
+    /**
+     * RFC 8259 §8.3
+     * Quote: "Software implementations are typically required to test names of object members for equality."
+     * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-8.3
+     */
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBeanPropertyNamesMatchEscapedObjectMemberNames(BindingMethod bindingMethod) {
+        PropertyNameBean bean = bindingMethod.deserialize(jsonBinding,
+                                                          "{\"val\\u0075e\":\"alpha\",\"na\\u006De\":\"beta\"}",
+                                                          PropertyNameBean.class);
+
+        assertAll(
+                () -> assertThat(bean.value(), is("alpha")),
+                () -> assertThat(bean.name(), is("beta"))
+        );
+    }
 
     /**
      * RFC 8259 §8.3

@@ -106,9 +106,12 @@ class Rfc8259StringGrammarTest {
         assertAll(
                 () -> runWholeTextScenario(parserMethod, "\"" + '\u0000' + "\"", JsonParser::readString, true),
                 () -> runWholeTextScenario(parserMethod, "\"" + '\u0001' + "\"", JsonParser::readString, true),
+                () -> runWholeTextScenario(parserMethod, "\"" + '\b' + "\"", JsonParser::readString, true),
+                () -> runWholeTextScenario(parserMethod, "\"" + '\f' + "\"", JsonParser::readString, true),
                 () -> runWholeTextScenario(parserMethod, "\"" + '\t' + "\"", JsonParser::readString, true),
                 () -> runWholeTextScenario(parserMethod, "\"" + '\n' + "\"", JsonParser::readString, true),
-                () -> runWholeTextScenario(parserMethod, "\"" + '\r' + "\"", JsonParser::readString, true)
+                () -> runWholeTextScenario(parserMethod, "\"" + '\r' + "\"", JsonParser::readString, true),
+                () -> runWholeTextScenario(parserMethod, "\"" + '\u001F' + "\"", JsonParser::readString, true)
         );
     }
 

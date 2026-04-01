@@ -84,6 +84,20 @@ class Rfc8259TextAndStructureTest {
 
     /**
      * RFC 8259 §2
+     * Quote: "JSON-text = ws value ws"
+     * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-2
+     */
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void testRejectsEmptyAndWhitespaceOnlyJsonText(ParserMethod parserMethod) {
+        assertAll(
+                () -> runWholeTextScenario(parserMethod, "", JsonParser::readJsonValue, true),
+                () -> runWholeTextScenario(parserMethod, " \t\r\n ", JsonParser::readJsonValue, true)
+        );
+    }
+
+    /**
+     * RFC 8259 §2
      * Quote: "ws = *( %x20 / %x09 / %x0A / %x0D )"
      * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-2
      */
@@ -111,6 +125,22 @@ class Rfc8259TextAndStructureTest {
                 () -> runWholeTextScenario(parserMethod, "TRUE", JsonParser::readJsonValue, true),
                 () -> runWholeTextScenario(parserMethod, "FALSE", JsonParser::readJsonValue, true),
                 () -> runWholeTextScenario(parserMethod, "NULL", JsonParser::readJsonValue, true)
+        );
+    }
+
+    /**
+     * RFC 8259 §3
+     * Quote: "The literal names MUST be lowercase.  No other literal names are allowed."
+     * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-3
+     */
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void testRejectsPartialAndMixedCaseNullLiteralNames(ParserMethod parserMethod) {
+        assertAll(
+                () -> runWholeTextScenario(parserMethod, "Null", JsonParser::readJsonValue, true),
+                () -> runWholeTextScenario(parserMethod, "nul", JsonParser::readJsonValue, true),
+                () -> runWholeTextScenario(parserMethod, "nu", JsonParser::readJsonValue, true),
+                () -> runWholeTextScenario(parserMethod, "n", JsonParser::readJsonValue, true)
         );
     }
 
@@ -187,6 +217,20 @@ class Rfc8259TextAndStructureTest {
     }
 
     /**
+     * RFC 8259 §4
+     * Quote: "object = begin-object [ member *( value-separator member ) ] end-object"
+     * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-4
+     */
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void testRejectsObjectsWithLeadingCommaOrMissingMember(ParserMethod parserMethod) {
+        assertAll(
+                () -> runWholeTextScenario(parserMethod, "{,\"a\":1}", JsonParser::readJsonValue, true),
+                () -> runWholeTextScenario(parserMethod, "{\"a\":1,,\"b\":2}", JsonParser::readJsonValue, true)
+        );
+    }
+
+    /**
      * RFC 8259 §5
      * Quote: "Elements are separated by commas."
      * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-5
@@ -211,6 +255,20 @@ class Rfc8259TextAndStructureTest {
         assertAll(
                 () -> runWholeTextScenario(parserMethod, "[1,]", JsonParser::readJsonValue, true),
                 () -> runWholeTextScenario(parserMethod, "[1,2,]", JsonParser::readJsonValue, true)
+        );
+    }
+
+    /**
+     * RFC 8259 §5
+     * Quote: "array = begin-array [ value *( value-separator value ) ] end-array"
+     * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-5
+     */
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void testRejectsArraysWithLeadingCommaOrMissingElement(ParserMethod parserMethod) {
+        assertAll(
+                () -> runWholeTextScenario(parserMethod, "[,1]", JsonParser::readJsonValue, true),
+                () -> runWholeTextScenario(parserMethod, "[1,,2]", JsonParser::readJsonValue, true)
         );
     }
 

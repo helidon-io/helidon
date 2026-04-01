@@ -99,6 +99,35 @@ public class Rfc8259BindingCharacterEncodingTest {
     }
 
     /**
+     * RFC 8259 §8.1
+     * Quote: "implementations that parse JSON texts MAY ignore the presence of a byte order mark rather than treating it as an error."
+     * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-8.1
+     */
+    @Test
+    public void testRejectsLeadingUtf8BomInByteArrayAndInputStream() {
+        byte[] json = prependUtf8Bom(objectJsonBytes((byte) 'o', (byte) 'k'));
+
+        assertRejectsByteArrayAndInputStream(json);
+    }
+
+    /**
+     * RFC 8259 §8.1
+     * Quote: "JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8"
+     * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-8.1
+     */
+    @Test
+    public void testRejectsUtf16AndUtf32EncodedByteArrayAndInputStream() {
+        String jsonText = "{\"value\":\"ok\"}";
+
+        assertAll(
+                () -> assertRejectsByteArrayAndInputStream(jsonText.getBytes(StandardCharsets.UTF_16BE)),
+                () -> assertRejectsByteArrayAndInputStream(jsonText.getBytes(StandardCharsets.UTF_16LE)),
+                () -> assertRejectsByteArrayAndInputStream(utf32BeAsciiBytes(jsonText)),
+                () -> assertRejectsByteArrayAndInputStream(utf32LeAsciiBytes(jsonText))
+        );
+    }
+
+    /**
      * RFC 8259 §7 and §8.1
      * Object member names are strings, and JSON text exchanged between systems MUST be encoded using UTF-8.
      */
@@ -106,6 +135,17 @@ public class Rfc8259BindingCharacterEncodingTest {
     public void testRejectsMalformedUtf8InObjectMemberNameBytes() {
         byte[] json = objectJsonWithMalformedMemberNameBytes((byte) 0xC0, (byte) 0xAF);
 
+        assertAll(
+                () -> assertThrows(JsonException.class,
+                                   () -> jsonBinding.deserialize(json, UnicodeTextBean.class)),
+                () -> assertThrows(JsonException.class,
+                                   () -> jsonBinding.deserialize(new ByteArrayInputStream(json),
+                                                                 STREAM_BUFFER_SIZE,
+                                                                 UnicodeTextBean.class))
+        );
+    }
+
+    private void assertRejectsByteArrayAndInputStream(byte[] json) {
         assertAll(
                 () -> assertThrows(JsonException.class,
                                    () -> jsonBinding.deserialize(json, UnicodeTextBean.class)),
@@ -124,6 +164,37 @@ public class Rfc8259BindingCharacterEncodingTest {
         System.arraycopy(prefix, 0, result, 0, prefix.length);
         System.arraycopy(valueBytes, 0, result, prefix.length, valueBytes.length);
         System.arraycopy(suffix, 0, result, prefix.length + valueBytes.length, suffix.length);
+
+        return result;
+    }
+
+    private static byte[] prependUtf8Bom(byte[] json) {
+        byte[] result = new byte[json.length + 3];
+        result[0] = (byte) 0xEF;
+        result[1] = (byte) 0xBB;
+        result[2] = (byte) 0xBF;
+        System.arraycopy(json, 0, result, 3, json.length);
+        return result;
+    }
+
+    private static byte[] utf32BeAsciiBytes(String json) {
+        byte[] ascii = json.getBytes(StandardCharsets.US_ASCII);
+        byte[] result = new byte[ascii.length * 4];
+
+        for (int i = 0; i < ascii.length; i++) {
+            result[i * 4 + 3] = ascii[i];
+        }
+
+        return result;
+    }
+
+    private static byte[] utf32LeAsciiBytes(String json) {
+        byte[] ascii = json.getBytes(StandardCharsets.US_ASCII);
+        byte[] result = new byte[ascii.length * 4];
+
+        for (int i = 0; i < ascii.length; i++) {
+            result[i * 4] = ascii[i];
+        }
 
         return result;
     }
