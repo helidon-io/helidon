@@ -18,6 +18,9 @@ package io.helidon.json.smile;
 
 import io.helidon.json.JsonParser;
 
+/**
+ * Byte-array-backed execution of the spec-mapped parser cases documented in {@link SmileParserTestBase}.
+ */
 class SmileParserArrayTest extends SmileParserTestBase {
     @Override
     JsonParser createParser(byte[] smileData) {

@@ -29,6 +29,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Tests for Smile format literal values (null, true, false, empty string).
  * Tests Smile binary format serialization/deserialization using JsonBinding.
+ *
+ * <p>Spec-trace comments quote exact Smile spec section titles and then paraphrase the exercised rule.</p>
  */
 @Testing.Test
 public class SmileLiteralTest {
@@ -39,9 +41,12 @@ public class SmileLiteralTest {
         this.jsonBinding = jsonBinding;
     }
 
+    /*
+     * Spec: "Token class: Simple literals, numbers".
+     * Rule: empty String, null, false, and true are dedicated value-mode literal tokens and must round-trip unchanged.
+     */
     @Test
     public void testNullValue() {
-        // Test serialization and deserialization of null
         byte[] smileData = SmileBindingSupport.serializeSmile(jsonBinding, null);
         Object result = SmileBindingSupport.deserializeSmile(jsonBinding, smileData, Object.class);
 

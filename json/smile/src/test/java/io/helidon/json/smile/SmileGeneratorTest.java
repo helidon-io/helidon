@@ -26,6 +26,7 @@ import java.util.function.Consumer;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonBoolean;
 import io.helidon.json.JsonGenerator;
+import io.helidon.json.JsonKey;
 import io.helidon.json.JsonNull;
 import io.helidon.json.JsonNumber;
 import io.helidon.json.JsonObject;
@@ -41,9 +42,12 @@ import static org.hamcrest.Matchers.is;
 /**
  * Verification of Smile generator output against the Smile specification (smile-specification.md).
  *
- * <p>The tests instantiate the Smile generator via {@link io.helidon.json.smile.SmileGenerator#create(java.io.OutputStream)}
- * and assert exact byte-for-byte output including the 4-byte header and the optional end-of-content marker (0xFF).
+ * <p>The tests instantiate the Smile generator via
+ * {@link io.helidon.json.smile.SmileGenerator#create(java.io.OutputStream)} and assert exact byte-for-byte output
+ * including the 4-byte header and the optional end-of-content marker (0xFF).
  * Each case targets a specific rule from the Smile spec to ensure no "ish" validations sneak in.</p>
+ *
+ * <p>Spec-trace comments quote exact Smile spec section titles and then paraphrase the exercised rule.</p>
  */
 class SmileGeneratorTest {
 
@@ -52,6 +56,11 @@ class SmileGeneratorTest {
     private static final byte HEADER_2 = 0x0A;
     private static final byte HEADER_FEATURES = 0x01;
 
+    /*
+     * Spec: "High-level format".
+     * Rule: Smile output starts with the 4-byte header, and top-level output may end with the
+     * "optional end marker, 0xFF".
+     */
     @Test
     void writesHeaderAndEndMarkerOnly() {
         byte[] actual = generateBytes(gen -> {
@@ -61,6 +70,10 @@ class SmileGeneratorTest {
         assertArrayEquals(expected, actual, "Header + end-of-content marker must be present");
     }
 
+    /*
+     * Spec: "Token class: Small integers".
+     * Rule: values from -16 to +15 are encoded inline in a single token byte after zigzag transformation.
+     */
     @Test
     void encodesSmallIntegerInline() {
         // value 1 → zigzag 2 → token 0xC0 | 0x02 = 0xC2
@@ -83,6 +96,11 @@ class SmileGeneratorTest {
         assertArrayEquals(expectedMax, actualMax);
     }
 
+    /*
+     * Spec: "Token class: Simple literals, numbers".
+     * Rule: larger integers use explicit int tokens plus signed VInt payloads; `BigInteger` and `BigDecimal` switch to
+     * length-prefixed 7-bit-safe binary forms.
+     */
     @Test
     void encodesInt32WithVInt() {
         // value 300 → zigzag 600 (0x258)
@@ -127,10 +145,15 @@ class SmileGeneratorTest {
 
         byte[] expected = concat(bytes(HEADER_0, HEADER_1, HEADER_2, HEADER_FEATURES, (byte) 0x2A),
                                  concat(encodeVInt(zigzagInt(value.scale()) & 0xFFFFFFFFL),
-                                        concat(encodeVInt(magnitude.length), encode7Bit(magnitude))));
+                                 concat(encodeVInt(magnitude.length), encode7Bit(magnitude))));
         assertArrayEquals(expected, actual);
     }
 
+    /*
+     * Spec: "Shared value Strings" and "Avoiding references 0x??FE and 0x??FF".
+     * Rule: shared-value references use a 1024-entry window, must not encode forbidden low bytes, and reset cleanly
+     * when the window fills.
+     */
     @Test
     void encodesLongSharedValueReferenceSkippingForbiddenLowBytes() {
         byte[] actual = generateSharedValueBytes(gen -> {
@@ -184,11 +207,16 @@ class SmileGeneratorTest {
             gen.writeArrayEnd();
         });
 
-        assertThat("after the 1024-entry reset, the repeated value should be encoded as a fresh plain string like a first write",
+        assertThat("after the 1024-entry reset, the repeated value should be encoded as a fresh plain string like a "
+                           + "first write",
                    indexOf(second, slice(first, 4, first.length)) >= 0,
                    is(true));
     }
 
+    /*
+     * Spec: "Shared key name Strings" and "Avoiding references 0x??FE and 0x??FF".
+     * Rule: object-key references follow the same 1024-entry window and forbidden-low-byte rules as shared values.
+     */
     @Test
     void encodesLongSharedKeyReferenceSkippingForbiddenLowBytes() {
         byte[] actual = generateBytes(gen -> {
@@ -236,11 +264,17 @@ class SmileGeneratorTest {
         });
 
         byte[] first = generateBytes(gen -> gen.writeObjectStart().write("k0", 999).writeObjectEnd());
-        assertThat("after the 1024-entry reset, the repeated key should be encoded as a fresh plain key/value pair like a first write",
+        assertThat("after the 1024-entry reset, the repeated key should be encoded as a fresh plain key/value pair "
+                           + "like a first write",
                    indexOf(actual, slice(first, 4, first.length - 4)) >= 0,
                    is(true));
     }
 
+    /*
+     * Spec: "Low-level Format" and "Token class: Simple literals, numbers".
+     * Rule: `float` and `double` payload bits are emitted in the fixed big-endian 7-bit chunk layout described by the
+     * spec examples.
+     */
     @Test
     void encodesFloatExactlyAsSpecifiedExample() {
         // Spec example: 29.9510f => raw bits 0x41ef9ba6 => encoded 0x04 0x0F 0x3E 0x37 0x26
@@ -279,6 +313,12 @@ class SmileGeneratorTest {
         assertArrayEquals(expectedNaN, actualNaN);
     }
 
+    /*
+     * Spec: "Token classes: Tiny ASCII, Short ASCII", "Token classes: Tiny Unicode, Short Unicode",
+     * and "Token class: Misc; binary / text / structure markers".
+     * Rule: short strings are classified by UTF-8 byte length, while long strings switch to the long-text token family
+     * terminated by `0xFC`.
+     */
     @Test
     void encodesTinyAsciiString() {
         // "Hello" length=5 → Tiny ASCII token 0x40 | (5-1) = 0x44
@@ -369,6 +409,10 @@ class SmileGeneratorTest {
         assertArrayEquals(expected, actual);
     }
 
+    /*
+     * Spec: "Tokens: key mode".
+     * Rule: object field names use the dedicated key-mode token families, not the value-mode string token families.
+     */
     @Test
     void encodesObjectWithAsciiKeyAndValue() {
         // Object { "name": "x" }
@@ -389,6 +433,27 @@ class SmileGeneratorTest {
     }
 
     @Test
+    void encodesPrecomputedJsonKeyInKeyMode() {
+        JsonKey key = JsonKey.create("value");
+
+        byte[] actual = generateBytes(gen -> gen.writeObjectStart()
+                .write(key, true)
+                .writeObjectEnd());
+
+        byte[] expected = concat(bytes(HEADER_0, HEADER_1, HEADER_2, HEADER_FEATURES,
+                                       (byte) 0xFA,
+                                       (byte) 0x84),
+                                 concat("value".getBytes(StandardCharsets.UTF_8),
+                                        bytes((byte) 0x23, (byte) 0xFB)));
+        assertArrayEquals(expected, actual);
+    }
+
+    /*
+     * Spec: "Shared value Strings".
+     * Rule: value-string sharing is feature-flagged, limited to the shareable token classes, and excludes 65-byte
+     * Unicode values from being referenced.
+     */
+    @Test
     void encodesSharedValueStringReference() {
         byte[] actual = generateSharedValueBytes(
                 gen -> gen.writeArrayStart()
@@ -402,6 +467,26 @@ class SmileGeneratorTest {
                                 (byte) 'r', (byte) 'e', (byte) 'p', (byte) 'e', (byte) 'a', (byte) 't',
                                 (byte) 0x01,
                                 (byte) 0xF9);
+        assertArrayEquals(expected, actual);
+    }
+
+    @Test
+    void doesNotShare65ByteUnicodeValueStrings() {
+        String value = "é".repeat(32) + "a";
+        byte[] utf8 = value.getBytes(StandardCharsets.UTF_8);
+
+        byte[] actual = generateSharedValueBytes(
+                gen -> gen.writeArrayStart()
+                        .write(value)
+                        .write(value)
+                        .writeArrayEnd());
+
+        byte[] expected = concat(bytes(HEADER_0, HEADER_1, HEADER_2, (byte) 0x03,
+                                       (byte) 0xF8,
+                                       (byte) (0xA0 | (utf8.length - 34))),
+                                 concat(utf8,
+                                        concat(bytes((byte) (0xA0 | (utf8.length - 34))),
+                                               concat(utf8, bytes((byte) 0xF9)))));
         assertArrayEquals(expected, actual);
     }
 
@@ -426,6 +511,10 @@ class SmileGeneratorTest {
         assertArrayEquals(expected, actual);
     }
 
+    /*
+     * Spec: "Shared key name Strings".
+     * Rule: key-name sharing is independently feature-flagged and applies only to key-mode tokens.
+     */
     @Test
     void encodesSharedKeyReference() {
         byte[] actual = generateBytes(gen -> gen.writeObjectStart()
@@ -490,6 +579,11 @@ class SmileGeneratorTest {
         assertArrayEquals(expected, actual);
     }
 
+    /*
+     * Spec: "High-level format".
+     * Rule: start/end object and array markers compose recursively, so mixed nested structures have deterministic
+     * framing.
+     */
     @Test
     void encodesArrayWithMixedValues() {
         // [ true, null, -1 ]
@@ -538,6 +632,10 @@ class SmileGeneratorTest {
     // JsonValue coverage (write(JsonValue) path)
     // ---------------------------------------------------------------------
 
+    /*
+     * Spec: "High-level format" together with the scalar token sections above.
+     * Rule: generic `JsonValue` dispatch must land on the same on-wire Smile tokens as the typed generator methods.
+     */
     @Test
     void encodesJsonValueString() {
         JsonValue value = JsonString.create("hi");
@@ -586,7 +684,8 @@ class SmileGeneratorTest {
     @Test
     void encodesJsonValueArray() {
         // JsonArray [1, "a"]
-        JsonArray array = JsonArray.create(java.util.List.of(JsonNumber.create(BigDecimal.valueOf(1)), JsonString.create("a")));
+        JsonArray array = JsonArray.create(java.util.List.of(JsonNumber.create(BigDecimal.valueOf(1)),
+                                                             JsonString.create("a")));
         byte[] actual = generateBytes(gen -> gen.write(array));
 
         byte[] expected = bytes(HEADER_0, HEADER_1, HEADER_2, HEADER_FEATURES,
@@ -613,6 +712,11 @@ class SmileGeneratorTest {
         assertArrayEquals(expected, actual);
     }
 
+    /*
+     * Spec: "High-level format" and "Token class: Misc; binary / text / structure markers".
+     * Rule: binary defaults to 7-bit-safe encoding, and header bit `0x04` gates whether `"raw binary"` token `0xFD`
+     * may be emitted instead.
+     */
     @Test
     void encodesBinaryAs7BitWhenRawBinaryDisabled() {
         byte[] payload = new byte[] {1, 2, 3, 4, 5};

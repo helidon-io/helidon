@@ -34,6 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
  * Tests Smile binary format serialization/deserialization using JsonBinding.
  * Note: Binary data support requires special handling and may not be available
  * through standard JsonBinding serialization methods.
+ *
+ * <p>Spec-trace comments quote exact Smile spec section titles and then paraphrase the exercised rule.</p>
  */
 @Testing.Test
 public class SmileBinaryTest {
@@ -44,7 +46,11 @@ public class SmileBinaryTest {
         this.jsonBinding = jsonBinding;
     }
 
-    // Test various byte patterns for potential binary data handling
+    /*
+     * Spec: "Token class: Misc; binary / text / structure markers".
+     * Rule: default Smile binary uses the non-raw 7-bit-safe binary form, so arbitrary byte patterns must still
+     * round-trip.
+     */
     @Test
     public void testByteArrayHandling() {
         byte[] data = {1, 2, 3, 4, 5};
@@ -115,6 +121,10 @@ public class SmileBinaryTest {
         assertRoundTrip(ff);
     }
 
+    /*
+     * Spec: "High-level format" and "Token class: Misc; binary / text / structure markers".
+     * Rule: header bit `0x04` gates whether `"raw binary"` may appear, and raw payloads use token `0xFD`.
+     */
     @Test
     public void testSmileHeaderRawBinaryFlagDisabledByDefault() {
         byte[] smileData = SmileBindingSupport.serializeSmile(jsonBinding, new BinaryModel(new byte[] {1, 2, 3}));
@@ -128,7 +138,8 @@ public class SmileBinaryTest {
         SmileConfig config = SmileConfig.builder()
                 .rawBinaryEnabled(true)
                 .build();
-        byte[] smileData = SmileBindingSupport.serializeSmile(jsonBinding, new BinaryModel(new byte[] {1, 2, 3}), config);
+        byte[] smileData =
+                SmileBindingSupport.serializeSmile(jsonBinding, new BinaryModel(new byte[] {1, 2, 3}), config);
 
         assertThat((smileData[3] & 0x04), is(0x04));
         assertThat(findBinaryToken(smileData), is((byte) 0xFD));

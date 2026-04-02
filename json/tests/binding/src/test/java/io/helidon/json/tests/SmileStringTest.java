@@ -28,6 +28,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Tests for Smile format string values (ASCII, Unicode, shared strings).
  * Tests Smile binary format serialization/deserialization using JsonBinding.
+ *
+ * <p>Spec-trace comments quote exact Smile spec section titles and then paraphrase the exercised rule.</p>
  */
 @Testing.Test
 public class SmileStringTest {
@@ -38,7 +40,11 @@ public class SmileStringTest {
         this.jsonBinding = jsonBinding;
     }
 
-    // Empty string (already tested in literals, but included here for completeness)
+    /*
+     * Spec: "Token class: Simple literals, numbers".
+     * Rule: the empty String has its own literal token instead of using the ASCII/Unicode length-prefixed token
+     * families.
+     */
     @Test
     public void testEmptyString() {
         StringModel model = new StringModel("");
@@ -47,7 +53,10 @@ public class SmileStringTest {
         assertThat(result.value(), is(""));
     }
 
-    // Tiny ASCII strings (1-32 bytes/chars)
+    /*
+     * Spec: "Token classes: Tiny ASCII, Short ASCII".
+     * Rule: ASCII strings use `0x40..0x5F` for 1-32 bytes and `0x60..0x7F` for 33-64 bytes.
+     */
     @Test
     public void testTinyAsciiSingleChar() {
         StringModel model = new StringModel("A");
@@ -73,7 +82,6 @@ public class SmileStringTest {
         assertThat(result.value(), is(value));
     }
 
-    // Short ASCII strings (33-64 bytes/chars)
     @Test
     public void testShortAsciiMinLength() {
         String value = "123456789012345678901234567890123"; // 33 chars
@@ -92,7 +100,11 @@ public class SmileStringTest {
         assertThat(result.value(), is(value));
     }
 
-    // Tiny Unicode strings (2-33 bytes, may contain multi-byte chars)
+    /*
+     * Spec: "Token classes: Tiny Unicode, Short Unicode".
+     * Rule: non-ASCII UTF-8 payloads use byte-length-based Unicode token families, not character-count-based ASCII
+     * families.
+     */
     @Test
     public void testTinyUnicodeWithAccents() {
         StringModel model = new StringModel("café");
@@ -110,7 +122,6 @@ public class SmileStringTest {
         assertThat(result.value(), is(value));
     }
 
-    // Short Unicode strings (34-64 bytes)
     @Test
     public void testShortUnicodeEmoji() {
         StringModel model = new StringModel("Hello 😀 World 🌍 Test 🚀");
@@ -119,7 +130,11 @@ public class SmileStringTest {
         assertThat(result.value(), is("Hello 😀 World 🌍 Test 🚀"));
     }
 
-    // Long ASCII strings (65+ bytes, variable length with end marker)
+    /*
+     * Spec: "Token class: Misc; binary / text / structure markers".
+     * Rule: long text moves to the variable-length long-string tokens and is terminated by the `0xFC`
+     * end-of-String marker.
+     */
     @Test
     public void testLongAsciiBasic() {
         String value = "This is a long ASCII string that should exceed the 64 byte limit for short strings.";
@@ -129,17 +144,21 @@ public class SmileStringTest {
         assertThat(result.value(), is(value));
     }
 
-    // Long Unicode strings (65+ bytes, variable length with end marker)
     @Test
     public void testLongUnicodeBasic() {
-        String value = "This is a long Unicode string with emojis 😀🌍🚀 and accented chars café naïve résumé that exceeds 64 bytes.";
+        String value = "This is a long Unicode string with emojis 😀🌍🚀 and accented chars "
+                + "café naïve résumé that exceeds 64 bytes.";
         StringModel model = new StringModel(value);
         byte[] smileData = SmileBindingSupport.serializeSmile(jsonBinding, model);
         StringModel result = SmileBindingSupport.deserializeSmile(jsonBinding, smileData, StringModel.class);
         assertThat(result.value(), is(value));
     }
 
-    // Strings with escape sequences (should be handled as Unicode)
+    /*
+     * Spec: "Low-level Format".
+     * Rule: Smile String payloads are raw UTF-8 bytes, so control characters survive round-trip as data rather than
+     * JSON text escapes.
+     */
     @Test
     public void testStringWithEscapes() {
         String value = "Line 1\nLine 2\tTabbed\r\nWindows line";

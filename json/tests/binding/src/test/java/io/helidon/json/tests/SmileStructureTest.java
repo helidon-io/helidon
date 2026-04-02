@@ -31,6 +31,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Tests for Smile format structure values (objects, arrays).
  * Tests Smile binary format serialization/deserialization using JsonBinding.
+ *
+ * <p>Spec-trace comments quote exact Smile spec section titles and then paraphrase the exercised rule.</p>
  */
 @Testing.Test
 public class SmileStructureTest {
@@ -41,7 +43,11 @@ public class SmileStructureTest {
         this.jsonBinding = jsonBinding;
     }
 
-    // Empty structures
+    /*
+     * Spec: "High-level format".
+     * Rule: Smile content is a properly nested token sequence, so empty arrays and objects still emit matching
+     * start/end markers.
+     */
     @Test
     public void testEmptyObject() {
         EmptyModel model = new EmptyModel();
@@ -58,19 +64,22 @@ public class SmileStructureTest {
         assertThat(result.items().isEmpty(), is(true));
     }
 
-    // Simple objects
+    /*
+     * Spec: "Tokens: key mode".
+     * Rule: object content alternates between key-mode name tokens and value-mode payload tokens until `END_OBJECT`.
+     */
     @Test
     public void testSimpleObjectWithPrimitives() {
         SimpleObjectModel model = new SimpleObjectModel("hello", 42, true, null);
         byte[] smileData = SmileBindingSupport.serializeSmile(jsonBinding, model);
-        SimpleObjectModel result = SmileBindingSupport.deserializeSmile(jsonBinding, smileData, SimpleObjectModel.class);
+        SimpleObjectModel result =
+                SmileBindingSupport.deserializeSmile(jsonBinding, smileData, SimpleObjectModel.class);
         assertThat(result.string(), is("hello"));
         assertThat(result.number(), is(42));
         assertThat(result.bool(), is(true));
         assertThat(result.nil(), is(nullValue()));
     }
 
-    // Nested objects
     @Test
     public void testNestedObject() {
         NestedModel nested = new NestedModel("value", 5);
@@ -82,19 +91,23 @@ public class SmileStructureTest {
         assertThat(result.nested().count(), is(5));
     }
 
-    // Simple arrays
+    /*
+     * Spec: "High-level format".
+     * Rule: arrays are likewise properly nested token sequences and can contain heterogeneous scalar values or nested
+     * arrays.
+     */
     @Test
     public void testSimpleArrayWithPrimitives() {
         PrimitiveArrayModel model = new PrimitiveArrayModel(List.of("hello", 42, true));
         byte[] smileData = SmileBindingSupport.serializeSmile(jsonBinding, model);
-        PrimitiveArrayModel result = SmileBindingSupport.deserializeSmile(jsonBinding, smileData, PrimitiveArrayModel.class);
+        PrimitiveArrayModel result =
+                SmileBindingSupport.deserializeSmile(jsonBinding, smileData, PrimitiveArrayModel.class);
         assertThat(result.values().size(), is(3));
         assertThat(result.values().get(0), is("hello"));
         assertThat(result.values().get(1), is(42.0));
         assertThat(result.values().get(2), is(true));
     }
 
-    // Nested arrays
     @Test
     public void testNestedArrays() {
         NestedArrayModel model = new NestedArrayModel(List.of(List.of(1, 2, 3), List.of(4, 5, 6)));
@@ -106,7 +119,10 @@ public class SmileStructureTest {
         assertThat(result.matrix().get(1).get(2), is(6));
     }
 
-    // Large structures
+    /*
+     * Spec: "High-level format".
+     * Rule: the nesting and token framing rules apply uniformly regardless of collection size.
+     */
     @Test
     public void testLargeArray() {
         List<Integer> largeList = new java.util.ArrayList<>();

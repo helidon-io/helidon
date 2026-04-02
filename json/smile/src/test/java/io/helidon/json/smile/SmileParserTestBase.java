@@ -19,6 +19,7 @@ package io.helidon.json.smile;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +30,7 @@ import io.helidon.json.JsonNull;
 import io.helidon.json.JsonNumber;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
+import io.helidon.json.JsonString;
 import io.helidon.json.JsonValue;
 import io.helidon.json.JsonValueType;
 
@@ -39,6 +41,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * Shared parser conformance cases executed by both byte-array and stream-backed Smile parsers.
+ *
+ * <p>Spec-trace comments quote exact Smile spec section titles and then paraphrase the exercised rule.</p>
+ */
 abstract class SmileParserTestBase {
 
     @FunctionalInterface
@@ -56,6 +63,18 @@ abstract class SmileParserTestBase {
         return baos.toByteArray();
     }
 
+    protected byte[] generateSmileBytes(SmileConfig config, JsonGeneratorWriter writer) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (JsonGenerator generator = SmileGenerator.create(baos, config)) {
+            writer.write(generator);
+        }
+        return baos.toByteArray();
+    }
+
+    /*
+     * Spec: "Token class: Simple literals, numbers".
+     * Rule: null, false, true, and the empty String are dedicated scalar tokens that parsers must decode directly.
+     */
     @Test
     public void testParseBooleanTrue() throws Exception {
         byte[] smileData = generateSmileBytes(gen -> gen.write(true));
@@ -118,6 +137,11 @@ abstract class SmileParserTestBase {
         assertThat(parser.hasNext(), is(false));
     }
 
+    /*
+     * Spec: "Token class: Small integers" and "Token class: Simple literals, numbers".
+     * Rule: parsers must handle inline small integers, VInt-backed ints/longs, IEEE-754 floats/doubles, and big
+     * numbers.
+     */
     @Test
     public void testParseIntegerZero() throws Exception {
         byte[] smileData = generateSmileBytes(gen -> gen.write(0));
@@ -250,6 +274,11 @@ abstract class SmileParserTestBase {
         assertThat(parser.hasNext(), is(false));
     }
 
+    /*
+     * Spec: "High-level format".
+     * Rule: the header is optional, and headerless decoding falls back to the default feature set
+     * (shared keys on, shared values off, raw binary off).
+     */
     @Test
     public void testParseHeaderlessSmileWithDefaultSharedKeyHandling() {
         byte[] smileData = new byte[] {
@@ -275,6 +304,25 @@ abstract class SmileParserTestBase {
         assertThat(parser.hasNext(), is(false));
     }
 
+    @Test
+    public void testUnsupportedHeaderVersionFails() {
+        byte[] smileData = new byte[] {0x3A, 0x29, 0x0A, 0x11};
+        assertThrows(JsonException.class, () -> createParser(smileData));
+    }
+
+    @Test
+    public void testSharedKeyReferenceDisabledByHeaderFails() {
+        byte[] smileData = new byte[] {0x3A, 0x29, 0x0A, 0x00, (byte) 0xFA, 0x40, (byte) 0xC2, (byte) 0xFB};
+
+        JsonParser parser = createParser(smileData);
+        assertThrows(JsonException.class, parser::readJsonObject);
+    }
+
+    /*
+     * Spec: "High-level format" and "Tokens: key mode".
+     * Rule: structural tokens nest deterministically, and object contents alternate between key-mode names
+     * and value-mode payloads until `END_OBJECT`.
+     */
     @Test
     public void testParseSimpleObject() throws Exception {
         byte[] smileData = generateSmileBytes(gen -> {
@@ -437,6 +485,10 @@ abstract class SmileParserTestBase {
         assertThat(parser.hasNext(), is(false));
     }
 
+    /*
+     * Spec: "High-level format".
+     * Rule: higher-level read APIs must preserve the same token meaning as the typed scalar/object/array reads.
+     */
     @Test
     public void testParseJsonValueString() throws Exception {
         byte[] smileData = generateSmileBytes(gen -> gen.write("test string"));
@@ -512,6 +564,10 @@ abstract class SmileParserTestBase {
         assertThat(parser.hasNext(), is(false));
     }
 
+    /*
+     * Spec: "Low-level Format".
+     * Rule: Smile text payloads are decoded as raw UTF-8 bytes before higher-level coercions such as `readChar()`.
+     */
     @Test
     public void testReadChar() throws Exception {
         byte[] smileData = generateSmileBytes(gen -> gen.write("A"));
@@ -550,6 +606,10 @@ abstract class SmileParserTestBase {
         assertThrows(JsonException.class, parser::readChar);
     }
 
+    /*
+     * Spec: "High-level format" and "Low-level Format".
+     * Rule: malformed framing or truncated payloads are not valid Smile documents and must fail decoding.
+     */
     @Test
     public void testParseInvalidData() {
         byte[] invalidData = new byte[] {1, 2, 3, 4, 5};
@@ -737,6 +797,11 @@ abstract class SmileParserTestBase {
         assertThrows(JsonException.class, parser::readBinary);
     }
 
+    /*
+     * Spec: "Shared value Strings".
+     * Rule: shared-value references must resolve correctly for short refs, long refs, high-bit variants, and reset
+     * after the 1024-entry window fills.
+     */
     @Test
     public void testParseSharedValueShortReference() {
         byte[] smileData = new byte[] {
@@ -754,6 +819,10 @@ abstract class SmileParserTestBase {
         assertThat(result.get(1, JsonNull.instance()).asString().value(), is("shared"));
     }
 
+    /*
+     * Spec: "Token class: Misc; binary / text / structure markers" and "High-level format".
+     * Rule: parsers must decode 7-bit-safe binary by default and honor the header-gated `"raw binary"` token `0xFD`.
+     */
     @Test
     public void testParseBinary7Bit() throws Exception {
         byte[] expected = new byte[] {1, 2, 3, 4, 5, 6, 7};
@@ -795,6 +864,11 @@ abstract class SmileParserTestBase {
         assertThrows(JsonException.class, parser::readBinary);
     }
 
+    /*
+     * Spec: "Shared key name Strings".
+     * Rule: shared-key references must resolve correctly for short refs, long refs, high-bit variants, and reset
+     * after the 1024-entry window fills.
+     */
     @Test
     public void testParseSharedKeyShortReference() {
         byte[] smileData = new byte[] {
@@ -988,6 +1062,199 @@ abstract class SmileParserTestBase {
         assertThat(result.intValue("k1023").orElseThrow(), is(1023));
     }
 
+    /*
+     * Spec: "Low-level Format", "Token classes: Tiny ASCII, Short ASCII", and
+     * "Token classes: Tiny Unicode, Short Unicode".
+     * Rule: Smile strings are raw UTF-8 payloads, so control characters are preserved and malformed ASCII/UTF-8 byte
+     * sequences are rejected.
+     */
+    @Test
+    public void testReadJsonStringPreservesRawUtf8AndControlCharacters() throws Exception {
+        String value = "line1\nline2\\n";
+        byte[] smileData = generateSmileBytes(gen -> gen.write(value));
+
+        JsonParser parser = createParser(smileData);
+        JsonString result = parser.readJsonString();
+
+        assertThat(result.value(), is(value));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testAsciiTokenRejectsNonAsciiByte() {
+        byte[] smileData = new byte[] {0x3A, 0x29, 0x0A, 0x01, 0x40, (byte) 0xC3};
+
+        JsonParser parser = createParser(smileData);
+        assertThrows(JsonException.class, parser::readString);
+    }
+
+    @Test
+    public void testUnicodeTokenRejectsMalformedUtf8() {
+        byte[] smileData = new byte[] {0x3A, 0x29, 0x0A, 0x01, (byte) 0x80, (byte) 0xC3, 0x28};
+
+        JsonParser parser = createParser(smileData);
+        assertThrows(JsonException.class, parser::readString);
+    }
+
+    @Test
+    public void testReadStringAsHashRejectsMalformedUtf8WhenSharedKeysDisabled() {
+        byte[] smileData = new byte[] {0x3A, 0x29, 0x0A, 0x00, (byte) 0xFA, (byte) 0xC0, (byte) 0xC3, 0x28,
+                (byte) 0xC2, (byte) 0xFB};
+
+        JsonParser parser = createParser(smileData);
+        assertThat(parser.currentByte(), is((byte) '{'));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThrows(JsonException.class, parser::readStringAsHash);
+    }
+
+    @Test
+    public void testReadStringAsHashEmptyString() throws Exception {
+        byte[] smileData = generateSmileBytes(gen -> gen.write(""));
+
+        JsonParser parser = createParser(smileData);
+        int hash = parser.readStringAsHash();
+
+        assertThat(hash, is(0x811c9dc5));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testReadStringAsHashRegistersSharedRawUtf8Value() throws Exception {
+        SmileConfig config = SmileConfig.builder()
+                .sharedValueStrings(true)
+                .build();
+        String value = "line1\nline2\\n";
+        byte[] smileData = generateSmileBytes(config, gen -> {
+            gen.writeArrayStart();
+            gen.write(value);
+            gen.write(value);
+            gen.writeArrayEnd();
+        });
+
+        JsonParser parser = createParser(smileData);
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readStringAsHash(), is(fnv1aHashUtf8(value)));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is(value));
+        assertThat(parser.nextToken(), is((byte) ']'));
+    }
+
+    @Test
+    public void testSkipEmptyArrayAndContinue() throws Exception {
+        byte[] smileData = generateSmileBytes(gen -> {
+            gen.writeArrayStart();
+            gen.writeArrayStart();
+            gen.writeArrayEnd();
+            gen.write(1);
+            gen.writeArrayEnd();
+        });
+
+        JsonParser parser = createParser(smileData);
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is((byte) '['));
+        parser.skip();
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '1'));
+        assertThat(parser.readInt(), is(1));
+        assertThat(parser.nextToken(), is((byte) ']'));
+    }
+
+    @Test
+    public void testSkipStringRejectsMalformedUtf8() {
+        byte[] smileData = new byte[] {0x3A, 0x29, 0x0A, 0x01, (byte) 0xF8, (byte) 0x80, (byte) 0xC3, 0x28,
+                (byte) 0xF9};
+
+        JsonParser parser = createParser(smileData);
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThrows(JsonException.class, parser::skip);
+    }
+
+    /*
+     * Spec: "High-level format".
+     * Rule: the optional top-level end marker is consumable framing, not another logical value or separator.
+     */
+    @Test
+    public void testTopLevelArrayEndMarkerDoesNotExposeExtraComma() throws Exception {
+        byte[] smileData = generateSmileBytes(gen -> {
+            gen.writeArrayStart();
+            gen.write(1);
+            gen.writeArrayEnd();
+        });
+        byte[] framed = new byte[smileData.length + 1];
+        System.arraycopy(smileData, 0, framed, 0, smileData.length);
+        framed[framed.length - 1] = SmileConstants.END_OF_CONTENT;
+
+        JsonParser parser = createParser(framed);
+        JsonArray result = parser.readJsonArray();
+
+        assertThat(result.values().size(), is(1));
+        assertThat(parser.hasNext(), is(false));
+        assertThrows(JsonException.class, parser::nextToken);
+    }
+
+    /*
+     * Spec: "Tokens: key mode", "Token class: Simple literals, numbers", and
+     * "Token class: Misc; binary / text / structure markers".
+     * Rule: reserved tokens in the wrong mode, invalid VInt terminators, stray close markers, and truncated raw-binary
+     * payloads must be rejected.
+     */
+    @Test
+    public void testReservedKeyLongSharedTokenInValueModeFails() {
+        byte[] smileData = new byte[] {0x3A, 0x29, 0x0A, 0x01, 0x30};
+        assertThrows(JsonException.class, () -> createParser(smileData));
+    }
+
+    @Test
+    public void testStrayEndArrayFails() {
+        byte[] smileData = new byte[] {0x3A, 0x29, 0x0A, 0x01, (byte) 0xF9};
+        assertThrows(JsonException.class, () -> createParser(smileData));
+    }
+
+    @Test
+    public void testInvalidVIntFinalByteFails() {
+        byte[] smileData = new byte[] {0x3A, 0x29, 0x0A, 0x01, 0x24, (byte) 0xC0};
+
+        JsonParser parser = createParser(smileData);
+        assertThrows(JsonException.class, parser::readInt);
+    }
+
+    @Test
+    public void testRawBinaryTruncatedPayloadFails() {
+        byte[] smileData = new byte[] {0x3A, 0x29, 0x0A, 0x05, (byte) 0xFD, (byte) 0x81};
+
+        JsonParser parser = createParser(smileData);
+        assertThrows(JsonException.class, parser::readBinary);
+    }
+
+    /*
+     * Spec: "Shared value Strings", "Shared key name Strings", and "Avoiding references 0x??FE and 0x??FF".
+     * Rule: 65-byte Unicode values are not shareable, and long shared references with forbidden low bytes are invalid.
+     */
+    @Test
+    public void testShortUnicode65ByteValueIsNotShareable() {
+        String value = "é".repeat(32) + "a";
+        byte[] utf8 = value.getBytes(StandardCharsets.UTF_8);
+        assertThat(utf8.length, is(65));
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.write(0x3A);
+        baos.write(0x29);
+        baos.write(0x0A);
+        baos.write(0x03);
+        baos.write(SmileConstants.TOKEN_START_ARRAY);
+        baos.write(SmileConstants.VALUE_SHORT_UNICODE_PREFIX
+                           | (utf8.length - SmileConstants.VALUE_SHORT_UNICODE_LENGTH_ADD));
+        baos.writeBytes(utf8);
+        baos.write(SmileConstants.VALUE_SHARED_SHORT_MIN);
+        baos.write(SmileConstants.TOKEN_END_ARRAY);
+
+        JsonParser parser = createParser(baos.toByteArray());
+        assertThrows(JsonException.class, parser::readJsonArray);
+    }
+
     @Test
     public void testInvalidLongSharedValueReferenceLowByte() {
         byte[] smileData = new byte[] {0x3A, 0x29, 0x0A, 0x03, (byte) 0xEC, (byte) 0xFE};
@@ -1000,5 +1267,14 @@ abstract class SmileParserTestBase {
         byte[] smileData = new byte[] {0x3A, 0x29, 0x0A, 0x03, (byte) 0xFA, 0x30, (byte) 0xFE};
         JsonParser parser = createParser(smileData);
         assertThrows(JsonException.class, parser::readJsonObject);
+    }
+
+    private static int fnv1aHashUtf8(String value) {
+        int hash = 0x811c9dc5;
+        for (byte current : value.getBytes(StandardCharsets.UTF_8)) {
+            hash ^= current & 0xFF;
+            hash *= 0x01000193;
+        }
+        return hash;
     }
 }

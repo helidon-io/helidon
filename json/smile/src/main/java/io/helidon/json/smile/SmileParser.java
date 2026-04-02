@@ -19,7 +19,11 @@ package io.helidon.json.smile;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Objects;
 
 import io.helidon.common.buffers.Bytes;
@@ -108,9 +112,6 @@ public final class SmileParser extends JsonParserBase {
             tmp[i] = Bytes.DOUBLE_QUOTE_BYTE;
         }
         for (int i = SmileConstants.VALUE_SHARED_LONG_MIN; i <= SmileConstants.VALUE_SHARED_LONG_MAX; i++) {
-            tmp[i] = Bytes.DOUBLE_QUOTE_BYTE;
-        }
-        for (int i = SmileConstants.KEY_SHARED_LONG_MIN; i <= SmileConstants.KEY_SHARED_LONG_MAX; i++) {
             tmp[i] = Bytes.DOUBLE_QUOTE_BYTE;
         }
         for (int i = SmileConstants.KEY_SHARED_SHORT_MIN; i <= SmileConstants.KEY_SHARED_SHORT_MAX; i++) {
@@ -289,15 +290,20 @@ public final class SmileParser extends JsonParserBase {
                 structureStack[++stackDepth] = true;
                 inObject = true;
             } else if (currentToken == Bytes.SQUARE_BRACKET_OPEN_BYTE) {
-                stackDepth++;
+                structureStack[++stackDepth] = false;
                 inObject = false;
             } else if (currentToken == Bytes.SQUARE_BRACKET_CLOSE_BYTE
                     || currentToken == Bytes.BRACE_CLOSE_BYTE) {
+                validateStructureClose(currentToken);
                 inObject = structureStack[--stackDepth];
                 if (hasNext()) {
-                    byte next = buffer[currentIndex + 1];
-                    if (next != SmileConstants.TOKEN_END_OBJECT && next != SmileConstants.TOKEN_END_ARRAY) {
+                    int next = buffer[currentIndex + 1] & 0xFF;
+                    if (next != (SmileConstants.TOKEN_END_OBJECT & 0xFF)
+                            && next != (SmileConstants.TOKEN_END_ARRAY & 0xFF)
+                            && next != (SmileConstants.END_OF_CONTENT & 0xFF)) {
                         forcedEvent = Bytes.COMMA_BYTE;
+                    } else {
+                        forcedEvent = -1;
                     }
                 }
             }
@@ -377,13 +383,11 @@ public final class SmileParser extends JsonParserBase {
         }
         int len = analyzeStringAndObtainLength();
         int currentIndex = this.currentIndex;
-        if (currentIndex + len > bufferLength) {
+        if (currentIndex + len + stringOffset >= bufferLength) {
             throw createException("Unexpected end of the JSON. Needed " + len
                                           + " bytes but only " + (bufferLength - currentIndex + 1) + " remain");
         }
-        byte[] bytes = new byte[len];
-        System.arraycopy(buffer, currentIndex + 1, bytes, 0, len);
-        JsonString jsonString = JsonString.create(bytes);
+        JsonString jsonString = JsonString.create(decodeSmileString(buffer, currentIndex + 1, len, stringAscii));
         this.currentIndex += len + stringOffset;
         if (keyExpected) {
             keyExpected = false;
@@ -457,11 +461,11 @@ public final class SmileParser extends JsonParserBase {
         }
         int len = analyzeStringAndObtainLength();
         int currentIndex = this.currentIndex;
-        if (currentIndex + len > bufferLength) {
+        if (currentIndex + len + stringOffset >= bufferLength) {
             throw createException("Unexpected end of the JSON. Needed " + len
                                           + " bytes but only " + (bufferLength - currentIndex + 1) + " remain");
         }
-        String result = new String(buffer, currentIndex + 1, len, StandardCharsets.UTF_8);
+        String result = decodeSmileString(buffer, currentIndex + 1, len, stringAscii);
         this.currentIndex += len + stringOffset;
         if (keyExpected) {
             keyExpected = false;
@@ -493,10 +497,19 @@ public final class SmileParser extends JsonParserBase {
             }
             return shared;
         }
+        if (currentByte == SmileConstants.TOKEN_EMPTY_STRING) {
+            if (keyExpected) {
+                keyExpected = false;
+                forcedEvent = Bytes.COLON_BYTE;
+            } else {
+                checkNextAfterValue();
+            }
+            return FNV_OFFSET_BASIS;
+        }
         int start = this.currentIndex;
         int currentIndex = start;
         int len = analyzeStringAndObtainLength();
-        if (currentIndex + len > bufferLength) {
+        if (currentIndex + len + stringOffset >= bufferLength) {
             throw createException("Unexpected end of the JSON. Needed " + len
                                           + " bytes but only " + (bufferLength - currentIndex + 1) + " remain");
         }
@@ -509,17 +522,18 @@ public final class SmileParser extends JsonParserBase {
             fnv1aHash ^= b;
             fnv1aHash *= FNV_PRIME;
         }
+        validateSmileString(buffer, start + 1, len, stringAscii);
 
         this.currentIndex = currentIndex + this.stringOffset;
         if (keyExpected) {
             keyExpected = false;
             forcedEvent = Bytes.COLON_BYTE;
             if (sharedKeysEnabled && shareable) {
-                registerKey(new LazyHash(fnv1aHash), buffer, start + 1, len);
+                registerKey(new LazyHash(fnv1aHash), JsonString.create(decodeSmileString(buffer, start + 1, len, stringAscii)));
             }
         } else {
             if (sharedValuesEnabled && shareable) {
-                registerValue(new LazyHash(fnv1aHash), buffer, start + 1, len);
+                registerValue(new LazyHash(fnv1aHash), JsonString.create(decodeSmileString(buffer, start + 1, len, stringAscii)));
             }
             checkNextAfterValue();
         }
@@ -909,7 +923,7 @@ public final class SmileParser extends JsonParserBase {
                 throw createException("Raw binary not enabled in header");
             }
             int rawLen = (int) readUnsignedVInt();
-            if (currentIndex + rawLen > bufferLength) {
+            if (currentIndex + rawLen >= bufferLength) {
                 throw createException("Unexpected end of the JSON");
             }
             byte[] bytes = new byte[rawLen];
@@ -1014,20 +1028,32 @@ public final class SmileParser extends JsonParserBase {
         int len = analyzeStringAndObtainLength();
         int start = this.currentIndex;
         int currentIndex = this.currentIndex + len + stringOffset;
-        if (currentIndex > bufferLength) {
+        if (currentIndex >= bufferLength) {
             throw createException("Unexpected end of the JSON. Needed " + len
                                           + " bytes but only " + (bufferLength - this.currentIndex + 1) + " remain");
+        }
+        String decoded = null;
+        if (keyExpected) {
+            if (sharedKeysEnabled && shareable) {
+                decoded = decodeSmileString(buffer, start + 1, len, stringAscii);
+            } else {
+                validateSmileString(buffer, start + 1, len, stringAscii);
+            }
+        } else if (sharedValuesEnabled && shareable) {
+            decoded = decodeSmileString(buffer, start + 1, len, stringAscii);
+        } else {
+            validateSmileString(buffer, start + 1, len, stringAscii);
         }
         this.currentIndex = currentIndex;
         if (keyExpected) {
             keyExpected = false;
             forcedEvent = Bytes.COLON_BYTE;
             if (sharedKeysEnabled && shareable) {
-                registerKey(buffer, start + 1, len);
+                registerKey(new LazyHash(buffer, start + 1, len), JsonString.create(decoded));
             }
         } else {
             if (sharedValuesEnabled && shareable) {
-                registerValue(buffer, start + 1, len);
+                registerValue(new LazyHash(buffer, start + 1, len), JsonString.create(decoded));
             }
             checkNextAfterValue();
         }
@@ -1078,8 +1104,11 @@ public final class SmileParser extends JsonParserBase {
     private long readUnsignedVInt() {
         long value = 0;
         for (int i = currentIndex + 1; i < bufferLength; i++) {
-            byte b = buffer[i];
+            int b = buffer[i] & 0xFF;
             if ((b & 0x80) != 0) {
+                if ((b & 0x40) != 0) {
+                    throw createException("Invalid Smile VInt final byte: 0x" + Integer.toHexString(b));
+                }
                 // Final byte: MSB=1, bit 6=0 (spec), 6 data bits in LSBs.
                 currentIndex = i;
                 return (value << 6) | (b & 0x3F);
@@ -1163,11 +1192,13 @@ public final class SmileParser extends JsonParserBase {
     private void checkNextAfterValue() {
         if (hasNext()) {
             keyExpected = inObject;
-            int b = buffer[currentIndex + 1];
-            if (b == SmileConstants.TOKEN_END_OBJECT
-                    || b == SmileConstants.TOKEN_END_ARRAY) {
+            int b = buffer[currentIndex + 1] & 0xFF;
+            if (b == (SmileConstants.TOKEN_END_OBJECT & 0xFF)
+                    || b == (SmileConstants.TOKEN_END_ARRAY & 0xFF)) {
+                forcedEvent = -1;
                 return;
-            } else if (b == SmileConstants.END_OF_CONTENT) {
+            } else if (b == (SmileConstants.END_OF_CONTENT & 0xFF)) {
+                forcedEvent = -1;
                 endOfContent = true;
                 return;
             }
@@ -1274,22 +1305,24 @@ public final class SmileParser extends JsonParserBase {
             stringOffset = 1;
             return findLongStringLength();
         }
-        shareable = true;
+        int length;
         if (currentByte >= SmileConstants.VALUE_TINY_ASCII_MIN && currentByte <= SmileConstants.VALUE_TINY_ASCII_MAX) {
             stringAscii = true;
-            return (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK) + SmileConstants.VALUE_TINY_ASCII_LENGTH_ADD;
+            length = (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK) + SmileConstants.VALUE_TINY_ASCII_LENGTH_ADD;
         } else if (currentByte >= SmileConstants.VALUE_SHORT_ASCII_MIN && currentByte <= SmileConstants.VALUE_SHORT_ASCII_MAX) {
             stringAscii = true;
-            return (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK) + SmileConstants.VALUE_SHORT_ASCII_LENGTH_ADD;
+            length = (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK) + SmileConstants.VALUE_SHORT_ASCII_LENGTH_ADD;
         } else if (currentByte >= SmileConstants.VALUE_TINY_UNICODE_MIN
                 && currentByte <= SmileConstants.VALUE_TINY_UNICODE_MAX) {
-            return (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK) + SmileConstants.VALUE_TINY_UNICODE_LENGTH_ADD;
+            length = (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK) + SmileConstants.VALUE_TINY_UNICODE_LENGTH_ADD;
         } else if (currentByte >= SmileConstants.VALUE_SHORT_UNICODE_MIN
                 && currentByte <= SmileConstants.VALUE_SHORT_UNICODE_MAX) {
-            return (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK) + SmileConstants.VALUE_SHORT_UNICODE_LENGTH_ADD;
+            length = (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK) + SmileConstants.VALUE_SHORT_UNICODE_LENGTH_ADD;
         } else {
             throw createException("Unsupported string token: 0x" + Integer.toHexString(currentByte));
         }
+        shareable = length <= SmileConstants.SHARED_STRING_VALUES_MAX_BYTES;
+        return length;
     }
 
     private int findLongStringLength() {
@@ -1481,30 +1514,24 @@ public final class SmileParser extends JsonParserBase {
         return table[ref].value();
     }
 
-    private void registerKey(byte[] buffer, int start, int length) {
-        registerKey(new LazyHash(buffer, start, length), jsonString(buffer, start, length));
-    }
-
     private void registerKey(JsonString value, byte[] buffer, int start, int length) {
         registerKey(new LazyHash(buffer, start, length), value);
     }
 
-    private void registerKey(LazyHash value, byte[] buffer, int start, int length) {
-        registerKey(value, jsonString(buffer, start, length));
-    }
-
     private void registerKey(LazyHash hash, JsonString jsonString) {
+        if (nextSharedKeyIndex == SHARED_TABLE_SIZE_MAX) {
+            Arrays.fill(sharedKeyStrings, null);
+            Arrays.fill(sharedKeyHashes, null);
+            nextSharedKeyIndex = 0;
+        }
         if (nextSharedKeyIndex == sharedKeyStrings.length) {
-            if (nextSharedKeyIndex < SHARED_TABLE_SIZE_MAX) {
-                JsonString[] newSharedValueStrings = new JsonString[sharedKeyStrings.length * 2];
-                System.arraycopy(sharedKeyStrings, 0, newSharedValueStrings, 0, sharedKeyStrings.length);
-                sharedKeyStrings = newSharedValueStrings;
-                LazyHash[] newSharedValueHash = new LazyHash[sharedKeyHashes.length * 2];
-                System.arraycopy(sharedKeyHashes, 0, newSharedValueHash, 0, sharedKeyHashes.length);
-                sharedKeyHashes = newSharedValueHash;
-            } else {
-                nextSharedKeyIndex = 0;
-            }
+            int newSize = Math.min(sharedKeyStrings.length * 2, SHARED_TABLE_SIZE_MAX);
+            JsonString[] newSharedValueStrings = new JsonString[newSize];
+            System.arraycopy(sharedKeyStrings, 0, newSharedValueStrings, 0, sharedKeyStrings.length);
+            sharedKeyStrings = newSharedValueStrings;
+            LazyHash[] newSharedValueHash = new LazyHash[newSize];
+            System.arraycopy(sharedKeyHashes, 0, newSharedValueHash, 0, sharedKeyHashes.length);
+            sharedKeyHashes = newSharedValueHash;
         }
         if (isAllowedSharedIndex(nextSharedKeyIndex)) {
             sharedKeyStrings[nextSharedKeyIndex] = jsonString;
@@ -1513,30 +1540,24 @@ public final class SmileParser extends JsonParserBase {
         nextSharedKeyIndex++;
     }
 
-    private void registerValue(byte[] buffer, int start, int length) {
-        registerValue(new LazyHash(buffer, start, length), jsonString(buffer, start, length));
-    }
-
     private void registerValue(JsonString value, byte[] buffer, int start, int length) {
         registerValue(new LazyHash(buffer, start, length), value);
     }
 
-    private void registerValue(LazyHash value, byte[] buffer, int start, int length) {
-        registerValue(value, jsonString(buffer, start, length));
-    }
-
     private void registerValue(LazyHash hash, JsonString jsonString) {
+        if (nextSharedValueIndex == SHARED_TABLE_SIZE_MAX) {
+            Arrays.fill(sharedValueStrings, null);
+            Arrays.fill(sharedValueHashes, null);
+            nextSharedValueIndex = 0;
+        }
         if (nextSharedValueIndex == sharedValueStrings.length) {
-            if (nextSharedValueIndex < SHARED_TABLE_SIZE_MAX) {
-                JsonString[] newSharedValueStrings = new JsonString[sharedValueStrings.length * 2];
-                System.arraycopy(sharedValueStrings, 0, newSharedValueStrings, 0, sharedValueStrings.length);
-                sharedValueStrings = newSharedValueStrings;
-                LazyHash[] newSharedValueHash = new LazyHash[sharedValueHashes.length * 2];
-                System.arraycopy(sharedValueHashes, 0, newSharedValueHash, 0, sharedValueHashes.length);
-                sharedValueHashes = newSharedValueHash;
-            } else {
-                nextSharedValueIndex = 0;
-            }
+            int newSize = Math.min(sharedValueStrings.length * 2, SHARED_TABLE_SIZE_MAX);
+            JsonString[] newSharedValueStrings = new JsonString[newSize];
+            System.arraycopy(sharedValueStrings, 0, newSharedValueStrings, 0, sharedValueStrings.length);
+            sharedValueStrings = newSharedValueStrings;
+            LazyHash[] newSharedValueHash = new LazyHash[newSize];
+            System.arraycopy(sharedValueHashes, 0, newSharedValueHash, 0, sharedValueHashes.length);
+            sharedValueHashes = newSharedValueHash;
         }
         if (isAllowedSharedIndex(nextSharedValueIndex)) {
             sharedValueStrings[nextSharedValueIndex] = jsonString;
@@ -1548,12 +1569,6 @@ public final class SmileParser extends JsonParserBase {
     private static boolean isAllowedSharedIndex(int index) {
         int low = index & 0xFF;
         return low != SmileConstants.SHARED_INDEX_FORBIDDEN_LOW_BYTE_1 && low != SmileConstants.SHARED_INDEX_FORBIDDEN_LOW_BYTE_2;
-    }
-
-    private static JsonString jsonString(byte[] buffer, int start, int length) {
-        byte[] copy = new byte[length];
-        System.arraycopy(buffer, start, copy, 0, length);
-        return JsonString.create(copy);
     }
 
     private static int fnv1aHashUtf8(String value) {
@@ -1649,7 +1664,11 @@ public final class SmileParser extends JsonParserBase {
         if (b == SmileConstants.TOKEN_INT32
                 || b == SmileConstants.TOKEN_INT64) {
             for (int i = currentIndex + 1; i < bufferLength; i++) {
-                if ((buffer[i] & 0x80) != 0) {
+                int tokenByte = buffer[i] & 0xFF;
+                if ((tokenByte & 0x80) != 0) {
+                    if ((tokenByte & 0x40) != 0) {
+                        throw createException("Invalid Smile VInt final byte: 0x" + Integer.toHexString(tokenByte));
+                    }
                     // Final byte: MSB=1, bit 6=0 (spec), 6 data bits in LSBs.
                     currentIndex = i;
                     checkNextAfterValue();
@@ -1677,7 +1696,7 @@ public final class SmileParser extends JsonParserBase {
 
     private void skipArray() {
         byte b = nextToken();
-        if (b == Bytes.BRACE_CLOSE_BYTE) {
+        if (b == Bytes.SQUARE_BRACKET_CLOSE_BYTE) {
             checkNextAfterValue();
             return;
         }
@@ -1689,7 +1708,7 @@ public final class SmileParser extends JsonParserBase {
             b = nextToken();
         }
 
-        if (b == Bytes.BRACE_CLOSE_BYTE) {
+        if (b == Bytes.SQUARE_BRACKET_CLOSE_BYTE) {
             checkNextAfterValue();
             return;
         }
@@ -1735,6 +1754,47 @@ public final class SmileParser extends JsonParserBase {
             return out;
         }
         throw createException("Unexpected end of the JSON");
+    }
+
+    private void validateStructureClose(byte token) {
+        if (stackDepth == 0) {
+            throw createException("Unexpected structure close token: " + (char) token);
+        }
+        if (token == Bytes.BRACE_CLOSE_BYTE && !inObject) {
+            throw createException("Unexpected end-object token while not in an object");
+        }
+        if (token == Bytes.SQUARE_BRACKET_CLOSE_BYTE && inObject) {
+            throw createException("Unexpected end-array token while in an object");
+        }
+    }
+
+    private void validateSmileString(byte[] source, int start, int length, boolean asciiToken) {
+        if (asciiToken) {
+            for (int i = 0; i < length; i++) {
+                int b = source[start + i] & 0xFF;
+                if ((b & 0x80) != 0) {
+                    throw createException("Invalid non-ASCII byte in Smile ASCII string: 0x" + Integer.toHexString(b));
+                }
+            }
+            return;
+        }
+        decodeSmileString(source, start, length, false);
+    }
+
+    private String decodeSmileString(byte[] source, int start, int length, boolean asciiToken) {
+        if (asciiToken) {
+            validateSmileString(source, start, length, true);
+            return new String(source, start, length, StandardCharsets.US_ASCII);
+        }
+        try {
+            return StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(source, start, length))
+                    .toString();
+        } catch (CharacterCodingException e) {
+            throw createException("Invalid UTF-8 sequence in Smile string", e);
+        }
     }
 
     static final class LazyHash {

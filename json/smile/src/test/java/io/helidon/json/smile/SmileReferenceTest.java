@@ -42,15 +42,22 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Reference tests comparing Helidon Smile implementation with Jackson Smile.
  * These tests ensure Helidon's Smile format output is compatible and correct
  * by comparing against the reference Jackson implementation.
+ *
+ * <p>These are interoperability checks, not the primary byte-level spec assertions. Where grouped below,
+ * the comment quotes the Smile spec section title that the compatibility slice corresponds to.</p>
  */
 class SmileReferenceTest {
 
     private static final SmileFactory JACKSON_SMILE_FACTORY = SmileFactory.builder().build();
 
-    // Test basic literals
+    /*
+     * Spec area: "Token class: Simple literals, numbers" and "Token classes: Tiny ASCII, Short ASCII".
+     * Cross-check: Helidon should emit the same on-wire representation as Jackson for the scalar token families.
+     */
     @Test
     public void testNullReference() {
-        byte[] jacksonBytes = generateJacksonSmileBytes(com.fasterxml.jackson.dataformat.smile.SmileGenerator::writeNull);
+        byte[] jacksonBytes =
+                generateJacksonSmileBytes(com.fasterxml.jackson.dataformat.smile.SmileGenerator::writeNull);
         byte[] helidonBytes = generateHelidonSmileBytes(JsonGenerator::writeNull);
 
         // Compare the encoded bytes
@@ -69,7 +76,9 @@ class SmileReferenceTest {
         byte[] jacksonBytesFalse = generateJacksonSmileBytes(gen -> gen.writeBoolean(false));
         byte[] helidonBytesFalse = generateHelidonSmileBytes(gen -> gen.write(false));
 
-        assertThat("Boolean false encoding should match Jackson", Arrays.equals(jacksonBytesFalse, helidonBytesFalse), is(true));
+        assertThat("Boolean false encoding should match Jackson",
+                   Arrays.equals(jacksonBytesFalse, helidonBytesFalse),
+                   is(true));
     }
 
     @Test
@@ -98,7 +107,10 @@ class SmileReferenceTest {
         assertThat("Unicode string encoding should match Jackson", Arrays.equals(jacksonBytes, helidonBytes), is(true));
     }
 
-    // Test numbers
+    /*
+     * Spec area: "Token class: Simple literals, numbers".
+     * Cross-check: integral, floating-point, and big-number encodings stay compatible with Jackson's Smile codec.
+     */
     @Test
     public void testIntegerReference() {
         int testValue = 12345;
@@ -144,7 +156,10 @@ class SmileReferenceTest {
         assertThat("BigDecimal encoding should match Jackson", Arrays.equals(jacksonBytes, helidonBytes), is(true));
     }
 
-    // Test arrays
+    /*
+     * Spec area: "High-level format".
+     * Cross-check: structural start/end markers and nesting should match the reference implementation.
+     */
     @Test
     public void testSimpleArrayReference() {
         byte[] jacksonBytes = generateJacksonSmileBytes(gen -> {
@@ -166,7 +181,10 @@ class SmileReferenceTest {
         assertThat("Simple array encoding should match Jackson", Arrays.equals(jacksonBytes, helidonBytes), is(true));
     }
 
-    // Test objects
+    /*
+     * Spec area: "Tokens: key mode".
+     * Cross-check: object key/value alternation and key-token selection should match Jackson.
+     */
     @Test
     public void testSimpleObjectReference() {
         byte[] jacksonBytes = generateJacksonSmileBytes(gen -> {
@@ -217,7 +235,10 @@ class SmileReferenceTest {
         assertThat("Nested structure encoding should match Jackson", helidonBytes, is(jacksonBytes));
     }
 
-    // Test header validation
+    /*
+     * Spec area: "High-level format".
+     * Cross-check: the first three header bytes are the fixed Smile signature bytes.
+     */
     @Test
     public void testHeaderValidation() {
         byte[] helidonBytes = generateHelidonSmileBytes(gen -> gen.write("test"));
@@ -229,7 +250,10 @@ class SmileReferenceTest {
         // Fourth byte contains version/flags
     }
 
-    // Test round-trip compatibility (Helidon -> Jackson -> Helidon)
+    /*
+     * Spec area: "High-level format" and "Low-level Format".
+     * Cross-check: both codecs can parse each other's Smile payloads without losing token semantics.
+     */
     @Test
     public void testRoundTripCompatibility() {
         // Generate with Helidon
@@ -464,7 +488,8 @@ class SmileReferenceTest {
     // Helper method to generate Jackson Smile bytes
     private byte[] generateJacksonSmileBytes(JacksonConsumer writer) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (com.fasterxml.jackson.dataformat.smile.SmileGenerator generator = JACKSON_SMILE_FACTORY.createGenerator(baos)) {
+        try (com.fasterxml.jackson.dataformat.smile.SmileGenerator generator =
+                     JACKSON_SMILE_FACTORY.createGenerator(baos)) {
             writer.accept(generator);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -499,7 +524,9 @@ class SmileReferenceTest {
         return baos.toByteArray();
     }
 
-    private static void assertObject(SmileParser parser, String expectedSharedKeyValue, int expectedIdx) throws IOException {
+    private static void assertObject(SmileParser parser,
+                                     String expectedSharedKeyValue,
+                                     int expectedIdx) throws IOException {
         assertThat(parser.nextToken(), is(JsonToken.START_OBJECT));
         assertThat(parser.nextToken(), is(JsonToken.FIELD_NAME));
         assertThat(parser.currentName(), is("shared-key"));

@@ -31,6 +31,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Tests for Smile format number values (integers, floats, BigInteger, BigDecimal).
  * Tests Smile binary format serialization/deserialization using JsonBinding.
+ *
+ * <p>Spec-trace comments quote exact Smile spec section titles and then paraphrase the exercised rule.</p>
  */
 @Testing.Test
 public class SmileNumberTest {
@@ -41,7 +43,10 @@ public class SmileNumberTest {
         this.jsonBinding = jsonBinding;
     }
 
-    // Small integers (-16 to +15, zigzag encoded)
+    /*
+     * Spec: "Token class: Small integers".
+     * Rule: values from -16 to +15 are single-byte tokens whose 5 LSB carry the zigzag-decoded payload.
+     */
     @Test
     public void testSmallIntegerZero() {
         NumberModel model = new NumberModel(0);
@@ -66,7 +71,10 @@ public class SmileNumberTest {
         assertThat(result.value(), is(-16));
     }
 
-    // 32-bit integers (zigzag encoded, 1-5 data bytes)
+    /*
+     * Spec: "Token class: Simple literals, numbers".
+     * Rule: 32-bit integers use token `0x24` and a signed VInt payload ("zigzag encoded, 1 - 5 data bytes").
+     */
     @Test
     public void testInt32Min() {
         IntModel model = new IntModel(Integer.MIN_VALUE);
@@ -99,7 +107,10 @@ public class SmileNumberTest {
         assertThat(result.value(), is(-123456789));
     }
 
-    // 64-bit integers (zigzag encoded, 5-10 data bytes)
+    /*
+     * Spec: "Token class: Simple literals, numbers".
+     * Rule: 64-bit integers use token `0x25` and a signed VInt payload ("zigzag encoded, 5 - 10 data bytes").
+     */
     @Test
     public void testInt64Min() {
         LongModel model = new LongModel(Long.MIN_VALUE);
@@ -132,7 +143,10 @@ public class SmileNumberTest {
         assertThat(result.value(), is(-1234567890123456789L));
     }
 
-    // BigInteger values
+    /*
+     * Spec: "Token class: Simple literals, numbers".
+     * Rule: `BigInteger` uses token `0x26` followed by 7-bit escaped binary with an unsigned VInt length.
+     */
     @Test
     public void testBigIntegerZero() {
         BigIntegerModel model = new BigIntegerModel(BigInteger.ZERO);
@@ -168,7 +182,10 @@ public class SmileNumberTest {
         assertThat(result.value(), is(value));
     }
 
-    // 32-bit floats (IEEE 754, big-endian, 7-bit encoded)
+    /*
+     * Spec: "Low-level Format" and "Token class: Simple literals, numbers".
+     * Rule: `float` values are IEEE-754 payloads encoded in fixed-length big-endian 7-bit chunks behind token `0x28`.
+     */
     @Test
     public void testFloatZero() {
         FloatModel model = new FloatModel(0.0f);
@@ -233,7 +250,10 @@ public class SmileNumberTest {
         assertThat(result.value(), is(Float.NEGATIVE_INFINITY));
     }
 
-    // 64-bit doubles (IEEE 754, big-endian, 7-bit encoded)
+    /*
+     * Spec: "Low-level Format" and "Token class: Simple literals, numbers".
+     * Rule: `double` values are IEEE-754 payloads encoded in fixed-length big-endian 7-bit chunks behind token `0x29`.
+     */
     @Test
     public void testDoubleZero() {
         DoubleModel model = new DoubleModel(0.0);
@@ -306,7 +326,11 @@ public class SmileNumberTest {
         assertThat(result.value(), is(1.23e10));
     }
 
-    // BigDecimal values
+    /*
+     * Spec: "Token class: Simple literals, numbers".
+     * Rule: `BigDecimal` uses token `0x2A`, then zigzag-encoded scale, then 7-bit escaped magnitude with unsigned
+     * VInt length.
+     */
     @Test
     public void testBigDecimalZero() {
         BigDecimalModel model = new BigDecimalModel(BigDecimal.ZERO);

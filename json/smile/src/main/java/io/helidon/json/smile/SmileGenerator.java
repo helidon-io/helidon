@@ -28,6 +28,7 @@ import io.helidon.common.buffers.Bytes;
 import io.helidon.json.JsonException;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonGeneratorBase;
+import io.helidon.json.JsonKey;
 
 /**
  * Smile binary JSON generator implementation.
@@ -337,6 +338,11 @@ public final class SmileGenerator extends JsonGeneratorBase {
         if (sharedKeyStrings) {
             registerSharedKey(key);
         }
+    }
+
+    @Override
+    protected void writeKeyName(JsonKey key) {
+        writeKeyName(key.value());
     }
 
     /**

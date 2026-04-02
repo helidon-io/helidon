@@ -18,6 +18,7 @@ package io.helidon.json.tests;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -39,6 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Tests for miscellaneous Smile format features and edge cases.
  * Tests Smile binary format serialization/deserialization using JsonBinding.
+ *
+ * <p>Spec-trace comments quote exact Smile spec section titles and then paraphrase the exercised rule.</p>
  */
 @Testing.Test
 public class SmileMiscTest {
@@ -49,6 +52,10 @@ public class SmileMiscTest {
         this.jsonBinding = jsonBinding;
     }
 
+    /*
+     * Spec: "High-level format" together with the scalar token sections.
+     * Rule: heterogeneous structures must preserve each nested Smile token family across binding round-trip.
+     */
     @Test
     public void testMixedTypesInComplexStructure() {
         List<Object> list = new ArrayList<>();
@@ -87,6 +94,11 @@ public class SmileMiscTest {
         assertThat(result.nestedObj().get("count"), is(99.0));
     }
 
+    /*
+     * Spec: "Low-level Format" and "Token classes: Tiny Unicode, Short Unicode".
+     * Rule: Smile strings carry raw UTF-8 payloads, so combining marks, surrogate pairs, zero-width code points,
+     * and control characters must round-trip as data.
+     */
     @Test
     public void testUnicodeEdgeCases() {
         UnicodeModel model = new UnicodeModel(
@@ -105,6 +117,10 @@ public class SmileMiscTest {
         assertThat(result.control(), is("line1\nline2\t\r\n\u0000null"));
     }
 
+    /*
+     * Spec: "Token class: Small integers" and "Token class: Simple literals, numbers".
+     * Rule: numeric edge values still map to the same Smile number token families and must survive round-trip intact.
+     */
     @Test
     public void testNumberEdgeCases() {
         NumbersModel model = new NumbersModel(
@@ -145,6 +161,10 @@ public class SmileMiscTest {
         assertThat(result.minValFloat(), is(Float.MIN_VALUE));
     }
 
+    /*
+     * Spec: "High-level format".
+     * Rule: each Smile document is self-contained, so a fresh serialization must not depend on previous encoder state.
+     */
     @Test
     public void testRepeatedSerialization() {
         SimpleModel model = new SimpleModel("test", 123, List.of(1, 2, 3));
@@ -164,6 +184,10 @@ public class SmileMiscTest {
         assertThat(result1, is(result3));
     }
 
+    /*
+     * Spec: "Tokens: key mode".
+     * Rule: object keys have dedicated key-mode encodings, including the empty-key case used by binding models.
+     */
     @Test
     public void testEmptyKeyNames() {
         EmptyKeyModel model = new EmptyKeyModel("empty_value", "normal_value");
@@ -174,6 +198,11 @@ public class SmileMiscTest {
         assertThat(result.normalKey(), is("normal_value"));
     }
 
+    /*
+     * Spec: "High-level format".
+     * Rule: the header is optional, the top-level `0xFF` end marker is accepted framing, and unsupported/incomplete
+     * headers are invalid.
+     */
     @Test
     public void testOptionalEndOfContentMarkerIsAccepted() {
         SimpleModel model = new SimpleModel("test", 123, List.of(1, 2, 3));
@@ -186,37 +215,79 @@ public class SmileMiscTest {
     }
 
     @Test
-    public void testIncompleteHeaderFails() {
-        byte[] truncatedHeader = new byte[] {0x3A, 0x29, 0x0A};
-        assertThrows(JsonException.class, () -> SmileBindingSupport.deserializeSmile(jsonBinding, truncatedHeader, Object.class));
+    public void testHeaderlessSmileObjectIsAccepted() {
+        byte[] headerless = new byte[] {
+                (byte) 0xFA,
+                (byte) 0x83, 'n', 'a', 'm', 'e',
+                (byte) 0x40, 'x',
+                (byte) 0xFB
+        };
+
+        Map<?, ?> result = SmileBindingSupport.deserializeSmile(jsonBinding, headerless, Map.class);
+        assertThat(result.get("name"), is("x"));
     }
 
+    @Test
+    public void testUnsupportedHeaderVersionFails() {
+        byte[] invalidHeader = new byte[] {0x3A, 0x29, 0x0A, 0x11};
+        assertThrows(JsonException.class,
+                     () -> SmileBindingSupport.deserializeSmile(jsonBinding, invalidHeader, Object.class));
+    }
+
+    @Test
+    public void testIncompleteHeaderFails() {
+        byte[] truncatedHeader = new byte[] {0x3A, 0x29, 0x0A};
+        assertThrows(JsonException.class,
+                     () -> SmileBindingSupport.deserializeSmile(jsonBinding, truncatedHeader, Object.class));
+    }
+
+    /*
+     * Spec: "Token class: Simple literals, numbers" and "Token class: Misc; binary / text / structure markers".
+     * Rule: incomplete VInts, invalid final VInt bytes, incomplete float payloads, and unterminated long strings
+     * are malformed Smile payloads and must be rejected.
+     */
     @Test
     public void testIncompleteVIntNumberFails() {
         // Header + TOKEN_INT32 (0x24) without any VInt payload bytes.
         byte[] truncatedNumber = new byte[] {0x3A, 0x29, 0x0A, 0x01, 0x24};
-        assertThrows(JsonException.class, () -> SmileBindingSupport.deserializeSmile(jsonBinding, truncatedNumber, Integer.class));
+        assertThrows(JsonException.class,
+                     () -> SmileBindingSupport.deserializeSmile(jsonBinding, truncatedNumber, Integer.class));
+    }
+
+    @Test
+    public void testInvalidVIntFinalByteFails() {
+        byte[] invalidNumber = new byte[] {0x3A, 0x29, 0x0A, 0x01, 0x24, (byte) 0xC0};
+        assertThrows(JsonException.class,
+                     () -> SmileBindingSupport.deserializeSmile(jsonBinding, invalidNumber, Integer.class));
     }
 
     @Test
     public void testIncompleteFloatPayloadFails() {
         // Header + TOKEN_FLOAT32 (0x28) with only 2 out of 5 required data bytes.
         byte[] truncatedFloat = new byte[] {0x3A, 0x29, 0x0A, 0x01, 0x28, 0x00, 0x00};
-        assertThrows(JsonException.class, () -> SmileBindingSupport.deserializeSmile(jsonBinding, truncatedFloat, Float.class));
+        assertThrows(JsonException.class,
+                     () -> SmileBindingSupport.deserializeSmile(jsonBinding, truncatedFloat, Float.class));
     }
 
     @Test
     public void testMissingLongStringTerminatorFails() {
         // Header + long-unicode string token (0xE4) + bytes without terminating 0xFC marker.
         byte[] unterminatedLongString = new byte[] {0x3A, 0x29, 0x0A, 0x01, (byte) 0xE4, 'h', 'i'};
-        assertThrows(JsonException.class, () -> SmileBindingSupport.deserializeSmile(jsonBinding, unterminatedLongString, String.class));
+        assertThrows(JsonException.class,
+                     () -> SmileBindingSupport.deserializeSmile(jsonBinding, unterminatedLongString, String.class));
     }
 
+    /*
+     * Spec: "Shared value Strings", "Shared key name Strings", and "Avoiding references 0x??FE and 0x??FF".
+     * Rule: shared refs obey feature bits, key/value mode separation, forbidden-low-byte rules, and strict 1024-entry
+     * window behavior.
+     */
     @Test
     public void testLongSharedValueReferenceLowByteFeFails() {
         // Header enables shared values (bit 0x02), then long shared-value ref token 0xEC + forbidden low byte 0xFE.
         byte[] invalid = new byte[] {0x3A, 0x29, 0x0A, 0x03, (byte) 0xEC, (byte) 0xFE};
-        assertThrows(JsonException.class, () -> SmileBindingSupport.deserializeSmile(jsonBinding, invalid, String.class));
+        assertThrows(JsonException.class,
+                     () -> SmileBindingSupport.deserializeSmile(jsonBinding, invalid, String.class));
     }
 
     @Test
@@ -227,19 +298,61 @@ public class SmileMiscTest {
     }
 
     @Test
-    public void testSharedValueReferenceDisabledByHeaderFails() {
-        // Header has only shared-keys enabled (0x01), but payload uses short shared-value reference token 0x01.
-        byte[] invalid = new byte[] {0x3A, 0x29, 0x0A, 0x01, 0x01};
-        assertThrows(JsonException.class, () -> SmileBindingSupport.deserializeSmile(jsonBinding, invalid, String.class));
+    public void testReservedKeyLongSharedTokenInValueModeFails() {
+        byte[] invalid = new byte[] {0x3A, 0x29, 0x0A, 0x01, 0x30};
+        assertThrows(JsonException.class,
+                     () -> SmileBindingSupport.deserializeSmile(jsonBinding, invalid, String.class));
     }
 
     @Test
     public void testSharedKeyReferenceDisabledByHeaderFails() {
+        byte[] invalid = new byte[] {0x3A, 0x29, 0x0A, 0x00, (byte) 0xFA, 0x40, (byte) 0xC2, (byte) 0xFB};
+        assertThrows(JsonException.class, () -> SmileBindingSupport.deserializeSmile(jsonBinding, invalid, Map.class));
+    }
+
+    @Test
+    public void testSharedValueReferenceDisabledByHeaderFails() {
+        // Header has only shared-keys enabled (0x01), but payload uses short shared-value reference token 0x01.
+        byte[] invalid = new byte[] {0x3A, 0x29, 0x0A, 0x01, 0x01};
+        assertThrows(JsonException.class,
+                     () -> SmileBindingSupport.deserializeSmile(jsonBinding, invalid, String.class));
+    }
+
+    /*
+     * Spec: "Low-level Format", "Token classes: Tiny ASCII, Short ASCII", and
+     * "Token classes: Tiny Unicode, Short Unicode".
+     * Rule: malformed UTF-8 in keys or skipped values is still malformed Smile and must fail even when binding
+     * ignores the logical field.
+     */
+    @Test
+    public void testMalformedUtf8KeyRejectedWhenSharedKeysDisabled() {
+        byte[] invalid = new byte[] {0x3A, 0x29, 0x0A, 0x00, (byte) 0xFA, (byte) 0xC0, (byte) 0xC3, 0x28,
+                (byte) 0xC2, (byte) 0xFB};
+        assertThrows(JsonException.class,
+                     () -> SmileBindingSupport.deserializeSmile(jsonBinding, invalid, KnownIntModel.class));
+    }
+
+    @Test
+    public void testMalformedUtf8SkippedUnknownStringValueFails() {
+        byte[] invalid = new byte[] {0x3A, 0x29, 0x0A, 0x01, (byte) 0xFA,
+                (byte) 0x84, 'k', 'n', 'o', 'w', 'n', (byte) 0xC2,
+                (byte) 0x83, 's', 'k', 'i', 'p', (byte) 0x80, (byte) 0xC3, 0x28,
+                (byte) 0xFB};
+        assertThrows(JsonException.class,
+                     () -> SmileBindingSupport.deserializeSmile(jsonBinding, invalid, KnownIntModel.class));
+    }
+
+    @Test
+    public void testSharedKeyReferenceDisabledBySharedValueOnlyHeaderFails() {
         // Header has only shared-values enabled (0x02), but payload uses short shared-key reference token 0x40.
         byte[] invalid = new byte[] {0x3A, 0x29, 0x0A, 0x02, (byte) 0xFA, 0x40};
         assertThrows(JsonException.class, () -> SmileBindingSupport.deserializeSmile(jsonBinding, invalid, Map.class));
     }
 
+    /*
+     * Spec: "Shared value Strings" and "Shared key name Strings".
+     * Rule: both shared-reference tables reset after 1024 entries, and 65-byte Unicode values are not shareable.
+     */
     @Test
     public void testSharedValueWindowResetsAfter1024Entries() {
         SmileConfig config = SmileConfig.builder()
@@ -251,10 +364,11 @@ public class SmileMiscTest {
             values.add("v" + i);
         }
         values.add("v0");
+        StringListModel model = new StringListModel(values);
 
         StringListModel result = SmileBindingSupport.deserializeSmile(jsonBinding,
                                                                       SmileBindingSupport.serializeSmile(jsonBinding,
-                                                                                                        new StringListModel(values),
+                                                                                                        model,
                                                                                                         config),
                                                                       StringListModel.class);
 
@@ -264,16 +378,37 @@ public class SmileMiscTest {
     }
 
     @Test
+    public void test65ByteUnicodeValueCannotBeSharedByReference() {
+        String value = "é".repeat(32) + "a";
+        byte[] utf8 = value.getBytes(StandardCharsets.UTF_8);
+        byte[] invalid = new byte[4 + 1 + 1 + utf8.length + 1 + 1];
+        int index = 0;
+        invalid[index++] = 0x3A;
+        invalid[index++] = 0x29;
+        invalid[index++] = 0x0A;
+        invalid[index++] = 0x03;
+        invalid[index++] = (byte) 0xF8;
+        invalid[index++] = (byte) (0xA0 | (utf8.length - 34));
+        System.arraycopy(utf8, 0, invalid, index, utf8.length);
+        index += utf8.length;
+        invalid[index++] = 0x01;
+        invalid[index] = (byte) 0xF9;
+
+        assertThrows(JsonException.class, () -> SmileBindingSupport.deserializeSmile(jsonBinding, invalid, List.class));
+    }
+
+    @Test
     public void testSharedKeyWindowResetsAfter1024Entries() {
         Map<String, Integer> values = new java.util.LinkedHashMap<>();
         for (int i = 0; i < 1024; i++) {
             values.put("k" + i, i);
         }
         values.put("k0", 999);
+        KeyMapModel model = new KeyMapModel(values);
 
         KeyMapModel result = SmileBindingSupport.deserializeSmile(jsonBinding,
                                                                   SmileBindingSupport.serializeSmile(jsonBinding,
-                                                                                                    new KeyMapModel(values)),
+                                                                                                    model),
                                                                   KeyMapModel.class);
 
         assertThat(result.values().get("k0"), is(999));
@@ -315,5 +450,9 @@ public class SmileMiscTest {
 
     @Json.Entity
     record KeyMapModel(Map<String, Integer> values) {
+    }
+
+    @Json.Entity
+    record KnownIntModel(int known) {
     }
 }

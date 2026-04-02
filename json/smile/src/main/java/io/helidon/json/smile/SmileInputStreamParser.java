@@ -21,7 +21,11 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import io.helidon.common.buffers.Bytes;
 import io.helidon.json.JsonArray;
@@ -130,9 +134,6 @@ final class SmileInputStreamParser extends JsonParserBase {
             tmp[i] = Bytes.DOUBLE_QUOTE_BYTE;
         }
         for (int i = SmileConstants.VALUE_SHARED_LONG_MIN; i <= SmileConstants.VALUE_SHARED_LONG_MAX; i++) {
-            tmp[i] = Bytes.DOUBLE_QUOTE_BYTE;
-        }
-        for (int i = SmileConstants.KEY_SHARED_LONG_MIN; i <= SmileConstants.KEY_SHARED_LONG_MAX; i++) {
             tmp[i] = Bytes.DOUBLE_QUOTE_BYTE;
         }
         for (int i = SmileConstants.KEY_SHARED_SHORT_MIN; i <= SmileConstants.KEY_SHARED_SHORT_MAX; i++) {
@@ -469,18 +470,22 @@ final class SmileInputStreamParser extends JsonParserBase {
                 structureStack[++stackDepth] = true;
                 inObject = true;
             } else if (translatedToken == Bytes.SQUARE_BRACKET_OPEN_BYTE) {
-                stackDepth++;
+                structureStack[++stackDepth] = false;
                 inObject = false;
             } else if (translatedToken == Bytes.SQUARE_BRACKET_CLOSE_BYTE
                     || translatedToken == Bytes.BRACE_CLOSE_BYTE) {
+                validateStructureClose(translatedToken);
                 inObject = structureStack[--stackDepth];
                 // If there is more content after the closing bracket, signal a comma so
                 // that the base-class object/array readers see the expected separator.
                 if (hasNext()) {
                     int next = buffer[currentIndex + 1] & 0xFF;
                     if (next != (SmileConstants.TOKEN_END_OBJECT & 0xFF)
-                            && next != (SmileConstants.TOKEN_END_ARRAY & 0xFF)) {
+                            && next != (SmileConstants.TOKEN_END_ARRAY & 0xFF)
+                            && next != (SmileConstants.END_OF_CONTENT & 0xFF)) {
                         forcedEvent = Bytes.COMMA_BYTE;
+                    } else {
+                        forcedEvent = -1;
                     }
                 }
             }
@@ -570,7 +575,7 @@ final class SmileInputStreamParser extends JsonParserBase {
 
         byte[] bytes = new byte[len];
         System.arraycopy(buffer, startIndex + 1, bytes, 0, len);
-        JsonString jsonString = JsonString.create(bytes);
+        JsonString jsonString = JsonString.create(decodeSmileString(bytes, 0, bytes.length, stringAscii));
         this.currentIndex += len + stringOffset;
 
         if (keyExpected) {
@@ -623,7 +628,7 @@ final class SmileInputStreamParser extends JsonParserBase {
         }
         int startIndex = this.currentIndex;
 
-        String result = new String(buffer, startIndex + 1, len, StandardCharsets.UTF_8);
+        String result = decodeSmileString(buffer, startIndex + 1, len, stringAscii);
         this.currentIndex += len + stringOffset;
 
         if (keyExpected) {
@@ -692,6 +697,7 @@ final class SmileInputStreamParser extends JsonParserBase {
             fnv1aHash ^= buffer[startIndex + i] & 0xFF;
             fnv1aHash *= FNV_PRIME;
         }
+        validateSmileString(buffer, startIndex + 1, len, stringAscii);
 
         this.currentIndex += len + stringOffset;
 
@@ -701,13 +707,13 @@ final class SmileInputStreamParser extends JsonParserBase {
             if (sharedKeysEnabled && shareable) {
                 byte[] bytes = new byte[len];
                 System.arraycopy(buffer, startIndex + 1, bytes, 0, len);
-                registerKey(new LazyHash(fnv1aHash), JsonString.create(bytes));
+                registerKey(new LazyHash(fnv1aHash), JsonString.create(decodeSmileString(bytes, 0, bytes.length, stringAscii)));
             }
         } else {
             if (sharedValuesEnabled && shareable) {
                 byte[] bytes = new byte[len];
                 System.arraycopy(buffer, startIndex + 1, bytes, 0, len);
-                registerValue(new LazyHash(fnv1aHash), JsonString.create(bytes));
+                registerValue(new LazyHash(fnv1aHash), JsonString.create(decodeSmileString(bytes, 0, bytes.length, stringAscii)));
             }
             checkNextAfterValue();
         }
@@ -1251,6 +1257,18 @@ final class SmileInputStreamParser extends JsonParserBase {
             ensureBytes(len);
         }
         int startIndex = this.currentIndex;
+        String decoded = null;
+        if (keyExpected) {
+            if (sharedKeysEnabled && shareable) {
+                decoded = decodeSmileString(buffer, startIndex + 1, len, stringAscii);
+            } else {
+                validateSmileString(buffer, startIndex + 1, len, stringAscii);
+            }
+        } else if (sharedValuesEnabled && shareable) {
+            decoded = decodeSmileString(buffer, startIndex + 1, len, stringAscii);
+        } else {
+            validateSmileString(buffer, startIndex + 1, len, stringAscii);
+        }
         this.currentIndex += len + stringOffset;
 
         if (keyExpected) {
@@ -1262,9 +1280,7 @@ final class SmileInputStreamParser extends JsonParserBase {
                     fnv1aHash ^= buffer[startIndex + i] & 0xFF;
                     fnv1aHash *= FNV_PRIME;
                 }
-                byte[] bytes = new byte[len];
-                System.arraycopy(buffer, startIndex + 1, bytes, 0, len);
-                registerKey(new LazyHash(fnv1aHash), JsonString.create(bytes));
+                registerKey(new LazyHash(fnv1aHash), JsonString.create(decoded));
             }
         } else {
             if (sharedValuesEnabled && shareable) {
@@ -1273,9 +1289,7 @@ final class SmileInputStreamParser extends JsonParserBase {
                     fnv1aHash ^= buffer[startIndex + i] & 0xFF;
                     fnv1aHash *= FNV_PRIME;
                 }
-                byte[] bytes = new byte[len];
-                System.arraycopy(buffer, startIndex + 1, bytes, 0, len);
-                registerValue(new LazyHash(fnv1aHash), JsonString.create(bytes));
+                registerValue(new LazyHash(fnv1aHash), JsonString.create(decoded));
             }
             checkNextAfterValue();
         }
@@ -1290,10 +1304,13 @@ final class SmileInputStreamParser extends JsonParserBase {
         int b = currentByte;
         if (b == (SmileConstants.TOKEN_INT32 & 0xFF) || b == (SmileConstants.TOKEN_INT64 & 0xFF)) {
             // VInt: consume bytes until the terminal byte (MSB == 1) is found.
-            byte next;
+            int next;
             do {
-                next = readNextByte();
+                next = readNextByte() & 0xFF;
             } while ((next & 0x80) == 0);
+            if ((next & 0x40) != 0) {
+                throw createException("Invalid Smile VInt final byte: 0x" + Integer.toHexString(next));
+            }
         } else if (b == (SmileConstants.TOKEN_FLOAT32 & 0xFF)) {
             // 5 seven-bit bytes.
             for (int i = 0; i < 5; i++) {
@@ -1396,9 +1413,11 @@ final class SmileInputStreamParser extends JsonParserBase {
             int next = buffer[currentIndex + 1] & 0xFF;
             if (next == (SmileConstants.TOKEN_END_OBJECT & 0xFF)
                     || next == (SmileConstants.TOKEN_END_ARRAY & 0xFF)) {
+                forcedEvent = -1;
                 return;
             }
             if (next == (SmileConstants.END_OF_CONTENT & 0xFF)) {
+                forcedEvent = -1;
                 endOfContent = true;
                 return;
             }
@@ -1528,28 +1547,30 @@ final class SmileInputStreamParser extends JsonParserBase {
             return findLongStringLength();
         }
 
-        shareable = true;
+        int length;
         if (currentByte >= (SmileConstants.VALUE_TINY_ASCII_MIN & 0xFF)
                 && currentByte <= (SmileConstants.VALUE_TINY_ASCII_MAX & 0xFF)) {
             stringAscii = true;
-            return (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK)
+            length = (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK)
                     + SmileConstants.VALUE_TINY_ASCII_LENGTH_ADD;
         } else if (currentByte >= (SmileConstants.VALUE_SHORT_ASCII_MIN & 0xFF)
                 && currentByte <= (SmileConstants.VALUE_SHORT_ASCII_MAX & 0xFF)) {
             stringAscii = true;
-            return (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK)
+            length = (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK)
                     + SmileConstants.VALUE_SHORT_ASCII_LENGTH_ADD;
         } else if (currentByte >= (SmileConstants.VALUE_TINY_UNICODE_MIN & 0xFF)
                 && currentByte <= (SmileConstants.VALUE_TINY_UNICODE_MAX & 0xFF)) {
-            return (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK)
+            length = (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK)
                     + SmileConstants.VALUE_TINY_UNICODE_LENGTH_ADD;
         } else if (currentByte >= (SmileConstants.VALUE_SHORT_UNICODE_MIN & 0xFF)
                 && currentByte <= (SmileConstants.VALUE_SHORT_UNICODE_MAX & 0xFF)) {
-            return (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK)
+            length = (currentByte & SmileConstants.VALUE_STRING_LENGTH_MASK)
                     + SmileConstants.VALUE_SHORT_UNICODE_LENGTH_ADD;
         } else {
             throw createException("Unsupported string token: 0x" + Integer.toHexString(currentByte));
         }
+        shareable = length <= SmileConstants.SHARED_STRING_VALUES_MAX_BYTES;
+        return length;
     }
 
     /**
@@ -1874,17 +1895,19 @@ final class SmileInputStreamParser extends JsonParserBase {
     // -----------------------------------------------------------------------
 
     private void registerKey(LazyHash hash, JsonString jsonString) {
+        if (nextSharedKeyIndex == SHARED_TABLE_SIZE_MAX) {
+            Arrays.fill(sharedKeyStrings, null);
+            Arrays.fill(sharedKeyHashes, null);
+            nextSharedKeyIndex = 0;
+        }
         if (nextSharedKeyIndex == sharedKeyStrings.length) {
-            if (nextSharedKeyIndex < SHARED_TABLE_SIZE_MAX) {
-                JsonString[] ns = new JsonString[sharedKeyStrings.length * 2];
-                System.arraycopy(sharedKeyStrings, 0, ns, 0, sharedKeyStrings.length);
-                sharedKeyStrings = ns;
-                LazyHash[] nh = new LazyHash[sharedKeyHashes.length * 2];
-                System.arraycopy(sharedKeyHashes, 0, nh, 0, sharedKeyHashes.length);
-                sharedKeyHashes = nh;
-            } else {
-                nextSharedKeyIndex = 0;
-            }
+            int newSize = Math.min(sharedKeyStrings.length * 2, SHARED_TABLE_SIZE_MAX);
+            JsonString[] ns = new JsonString[newSize];
+            System.arraycopy(sharedKeyStrings, 0, ns, 0, sharedKeyStrings.length);
+            sharedKeyStrings = ns;
+            LazyHash[] nh = new LazyHash[newSize];
+            System.arraycopy(sharedKeyHashes, 0, nh, 0, sharedKeyHashes.length);
+            sharedKeyHashes = nh;
         }
         if (isAllowedSharedIndex(nextSharedKeyIndex)) {
             sharedKeyStrings[nextSharedKeyIndex] = jsonString;
@@ -1894,17 +1917,19 @@ final class SmileInputStreamParser extends JsonParserBase {
     }
 
     private void registerValue(LazyHash hash, JsonString jsonString) {
+        if (nextSharedValueIndex == SHARED_TABLE_SIZE_MAX) {
+            Arrays.fill(sharedValueStrings, null);
+            Arrays.fill(sharedValueHashes, null);
+            nextSharedValueIndex = 0;
+        }
         if (nextSharedValueIndex == sharedValueStrings.length) {
-            if (nextSharedValueIndex < SHARED_TABLE_SIZE_MAX) {
-                JsonString[] ns = new JsonString[sharedValueStrings.length * 2];
-                System.arraycopy(sharedValueStrings, 0, ns, 0, sharedValueStrings.length);
-                sharedValueStrings = ns;
-                LazyHash[] nh = new LazyHash[sharedValueHashes.length * 2];
-                System.arraycopy(sharedValueHashes, 0, nh, 0, sharedValueHashes.length);
-                sharedValueHashes = nh;
-            } else {
-                nextSharedValueIndex = 0;
-            }
+            int newSize = Math.min(sharedValueStrings.length * 2, SHARED_TABLE_SIZE_MAX);
+            JsonString[] ns = new JsonString[newSize];
+            System.arraycopy(sharedValueStrings, 0, ns, 0, sharedValueStrings.length);
+            sharedValueStrings = ns;
+            LazyHash[] nh = new LazyHash[newSize];
+            System.arraycopy(sharedValueHashes, 0, nh, 0, sharedValueHashes.length);
+            sharedValueHashes = nh;
         }
         if (isAllowedSharedIndex(nextSharedValueIndex)) {
             sharedValueStrings[nextSharedValueIndex] = jsonString;
@@ -1935,8 +1960,11 @@ final class SmileInputStreamParser extends JsonParserBase {
     private long readUnsignedVInt() {
         long value = 0;
         while (true) {
-            byte b = readNextByte();
+            int b = readNextByte() & 0xFF;
             if ((b & 0x80) != 0) {
+                if ((b & 0x40) != 0) {
+                    throw createException("Invalid Smile VInt final byte: 0x" + Integer.toHexString(b));
+                }
                 // Terminal byte: MSB=1, 6 data bits.
                 return (value << 6) | (b & 0x3F);
             }
@@ -2061,6 +2089,47 @@ final class SmileInputStreamParser extends JsonParserBase {
             return out;
         }
         throw createException("Unexpected end of 7-bit-encoded binary data");
+    }
+
+    private void validateStructureClose(byte token) {
+        if (stackDepth == 0) {
+            throw createException("Unexpected structure close token: " + (char) token);
+        }
+        if (token == Bytes.BRACE_CLOSE_BYTE && !inObject) {
+            throw createException("Unexpected end-object token while not in an object");
+        }
+        if (token == Bytes.SQUARE_BRACKET_CLOSE_BYTE && inObject) {
+            throw createException("Unexpected end-array token while in an object");
+        }
+    }
+
+    private void validateSmileString(byte[] source, int start, int length, boolean asciiToken) {
+        if (asciiToken) {
+            for (int i = 0; i < length; i++) {
+                int b = source[start + i] & 0xFF;
+                if ((b & 0x80) != 0) {
+                    throw createException("Invalid non-ASCII byte in Smile ASCII string: 0x" + Integer.toHexString(b));
+                }
+            }
+            return;
+        }
+        decodeSmileString(source, start, length, false);
+    }
+
+    private String decodeSmileString(byte[] source, int start, int length, boolean asciiToken) {
+        if (asciiToken) {
+            validateSmileString(source, start, length, true);
+            return new String(source, start, length, StandardCharsets.US_ASCII);
+        }
+        try {
+            return StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(source, start, length))
+                    .toString();
+        } catch (CharacterCodingException e) {
+            throw createException("Invalid UTF-8 sequence in Smile string", e);
+        }
     }
 
     // -----------------------------------------------------------------------

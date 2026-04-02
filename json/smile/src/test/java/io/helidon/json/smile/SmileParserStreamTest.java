@@ -20,6 +20,9 @@ import java.io.ByteArrayInputStream;
 
 import io.helidon.json.JsonParser;
 
+/**
+ * Stream-backed execution of the spec-mapped parser cases documented in {@link SmileParserTestBase}.
+ */
 class SmileParserStreamTest extends SmileParserTestBase {
     @Override
     JsonParser createParser(byte[] smileData) {
