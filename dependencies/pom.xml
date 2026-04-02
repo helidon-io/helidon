@@ -90,7 +90,6 @@
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
         <version.lib.narayana>7.1.0.Final</version.lib.narayana>
-        <version.lib.netty>4.1.130.Final</version.lib.netty>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <version.lib.ojdbc>${version.lib.ojdbc.family}.26.1.0.0</version.lib.ojdbc>
         <!-- Force upgrade of okio for dependency convergence -->
@@ -652,14 +651,6 @@
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-bom</artifactId>
                 <version>${version.lib.google-protobuf}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <!-- For dependency convergence of transitive deps on netty -->
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-bom</artifactId>
-                <version>${version.lib.netty}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
