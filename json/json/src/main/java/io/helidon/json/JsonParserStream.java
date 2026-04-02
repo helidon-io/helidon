@@ -283,16 +283,25 @@ final class JsonParserStream extends JsonParserBase {
 
     @Override
     public JsonException createException(String message) {
+        return new JsonException(exceptionMessage(message));
+    }
+
+    @Override
+    public JsonException createException(String message, Exception e) {
+        return new JsonException(exceptionMessage(message), e);
+    }
+
+    private String exceptionMessage(String message) {
         int start = Math.max(currentIndex - 10, 0);
         int length = Math.min(currentIndex + 10, bufferLength - start);
         int dataIndex = currentIndex - start;
         BufferData bufferData = BufferData.create(buffer, start, length);
 
-        return new JsonException(message + "\n"
-                                         + "Error at JSON index: " + currentIndex + "\n"
-                                         + "Data index: " + dataIndex + "\n"
-                                         + "Data: \n"
-                                         + bufferData.debugDataHex(false));
+        return message + "\n"
+                + "Error at JSON index: " + currentIndex + "\n"
+                + "Data index: " + dataIndex + "\n"
+                + "Data: \n"
+                + bufferData.debugDataHex(false);
     }
 
     @Override
@@ -1095,7 +1104,7 @@ final class JsonParserStream extends JsonParserBase {
                                                      currentIndex - jsonValueStart + 1,
                                                      StandardCharsets.UTF_8));
             } catch (NumberFormatException ex) {
-                throw new JsonException("Invalid number", ex);
+                throw createException("Invalid number", ex);
             }
         }
 
@@ -1181,7 +1190,7 @@ final class JsonParserStream extends JsonParserBase {
             }
             return bigInteger;
         } catch (NumberFormatException ex) {
-            throw new JsonException("Invalid number", ex);
+            throw createException("Invalid number", ex);
         }
     }
 
@@ -1218,7 +1227,7 @@ final class JsonParserStream extends JsonParserBase {
             }
             return bigDecimal;
         } catch (NumberFormatException ex) {
-            throw new JsonException("Invalid number", ex);
+            throw createException("Invalid number", ex);
         }
     }
 

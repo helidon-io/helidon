@@ -282,6 +282,11 @@ class JsonValueParser implements JsonParser {
     }
 
     @Override
+    public JsonException createException(String message, Exception e) {
+        return new JsonException(message, e);
+    }
+
+    @Override
     public void mark() {
         if (replayMarked) {
             throw new IllegalStateException("Parser has already been marked for replaying. "

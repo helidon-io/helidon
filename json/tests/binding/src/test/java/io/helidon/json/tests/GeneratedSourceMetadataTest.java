@@ -19,7 +19,15 @@ package io.helidon.json.tests;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Year;
+import java.util.List;
+
+import io.helidon.codegen.apt.AptProcessor;
+import io.helidon.codegen.testing.TestCompiler;
+import io.helidon.common.Generated;
+import io.helidon.common.buffers.Bytes;
+import io.helidon.json.JsonGenerator;
+import io.helidon.json.binding.Json;
+import io.helidon.service.registry.Service;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,30 +38,86 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 
 class GeneratedSourceMetadataTest {
-    private static final Path GENERATED_SOURCES = Path.of("target",
-                                                          "generated-test-sources",
-                                                          "test-annotations",
-                                                          "io",
-                                                          "helidon",
-                                                          "json",
-                                                          "tests");
+    private static final String PACKAGE_NAME = "io.helidon.json.tests.generated";
+    private static final String PACKAGE_PATH = PACKAGE_NAME.replace('.', '/') + "/";
+    private static final String GENERATOR = "io.helidon.json.codegen.JsonCodegen";
+    private static final List<Class<?>> CLASSPATH = List.of(
+            Generated.class,
+            Bytes.class,
+            JsonGenerator.class,
+            Json.class,
+            Service.class);
 
     @Test
     void testGeneratedConverterMetadata() throws IOException {
-        assertGeneratedSourceMetadata(generatedSource("BasicTest_StringWrapper__GeneratedConverter"),
-                                      "io.helidon.json.codegen.JsonCodegen",
-                                      "io.helidon.json.tests.BasicTest.StringWrapper");
+        var result = compile("StringWrapper.java", """
+                package io.helidon.json.tests.generated;
+                
+                import io.helidon.json.binding.Json;
+                
+                @Json.Entity
+                public class StringWrapper {
+                    private String value;
+                
+                    public String getValue() {
+                        return value;
+                    }
+                
+                    public void setValue(String value) {
+                        this.value = value;
+                    }
+                }
+                """);
+
+        assertCompilationSuccess(result);
+        assertGeneratedSourceMetadata(generatedSource(result, "StringWrapper__GeneratedConverter.java"),
+                                      GENERATOR,
+                                      PACKAGE_NAME + ".StringWrapper");
     }
 
     @Test
     void testGeneratedBindingFactoryMetadata() throws IOException {
-        assertGeneratedSourceMetadata(generatedSource("GenericClassesTest_Container_BindingFactory"),
-                                      "io.helidon.json.codegen.JsonCodegen",
-                                      "io.helidon.json.tests.GenericClassesTest.Container<T>");
+        var result = compile("Container.java", """
+                package io.helidon.json.tests.generated;
+                
+                import io.helidon.json.binding.Json;
+                
+                @Json.Entity
+                public class Container<T> {
+                    private T value;
+                
+                    public T getValue() {
+                        return value;
+                    }
+                
+                    public void setValue(T value) {
+                        this.value = value;
+                    }
+                }
+                """);
+
+        assertCompilationSuccess(result);
+        assertGeneratedSourceMetadata(generatedSource(result, "Container_BindingFactory.java"),
+                                      GENERATOR,
+                                      PACKAGE_NAME + ".Container<T>");
     }
 
-    private static Path generatedSource(String typeName) {
-        return GENERATED_SOURCES.resolve(typeName + ".java");
+    private static TestCompiler.Result compile(String sourceName, String source) {
+        return TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource(sourceName, source)
+                .build()
+                .compile();
+    }
+
+    private static void assertCompilationSuccess(TestCompiler.Result result) {
+        assertThat(String.join(System.lineSeparator(), result.diagnostics()), result.success(), is(true));
+    }
+
+    private static Path generatedSource(TestCompiler.Result result, String fileName) {
+        return result.sourceOutput().resolve(PACKAGE_PATH + fileName);
     }
 
     private static void assertGeneratedSourceMetadata(Path generatedSource,

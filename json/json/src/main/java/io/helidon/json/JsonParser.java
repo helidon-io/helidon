@@ -445,6 +445,15 @@ public interface JsonParser {
     JsonException createException(String message);
 
     /**
+     * Create a JsonException with the given message and cause.
+     *
+     * @param message the exception message
+     * @param e the cause
+     * @return a JsonException
+     */
+    JsonException createException(String message, Exception e);
+
+    /**
      * Create a JsonException with the given message and found byte information.
      *
      * @param message the exception message

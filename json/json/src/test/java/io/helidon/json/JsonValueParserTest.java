@@ -73,6 +73,17 @@ class JsonValueParserTest {
     }
 
     @Test
+    public void testJsonValueParserCreateExceptionWithCause() {
+        JsonParser parser = JsonParser.create(JsonString.create("test"));
+        Exception cause = new Exception("boom");
+
+        JsonException exception = parser.createException("message", cause);
+
+        assertThat(exception.getCause(), is(cause));
+        assertThat(exception.getMessage(), is("message"));
+    }
+
+    @Test
     public void testJsonValueParserWithBoolean() {
         JsonValue original = JsonBoolean.TRUE;
         JsonParser parser = JsonParser.create(original);
