@@ -27,6 +27,8 @@ import io.helidon.common.buffers.Bytes;
 
 class JsonParserArray extends JsonParserBase {
 
+    private static final int FAST_ASCII_STRING_LIMIT = 64;
+
     static final int FNV_OFFSET_BASIS = 0x811c9dc5;
     static final int FNV_PRIME = 0x01000193;
 
@@ -78,14 +80,12 @@ class JsonParserArray extends JsonParserBase {
         // ASCII whitespace
         WHITESPACE_CHARS[0x09] = true; // TAB
         WHITESPACE_CHARS[0x0A] = true; // LF
-        WHITESPACE_CHARS[0x0B] = true; // VT
-        WHITESPACE_CHARS[0x0C] = true; // FF
         WHITESPACE_CHARS[0x0D] = true; // CR
         WHITESPACE_CHARS[0x20] = true; // SPACE
     }
 
     private int stringBufferLength = 64;
-    private char[] stringBuffer = new char[stringBufferLength];
+    private char[] stringBuffer;
     private boolean expectLowSurrogate = false;
 
     private final byte[] buffer;
@@ -170,6 +170,8 @@ class JsonParserArray extends JsonParserBase {
         } else if (currentByte() != '"') {
             throw createException("Expected start of string", currentByte());
         }
+        ensureStringBuffer();
+        expectLowSurrogate = false;
         int index = ++currentIndex;
         int readableBytes = bufferLength - currentIndex;
         int firstRun = Math.min(stringBufferLength, readableBytes);
@@ -184,6 +186,9 @@ class JsonParserArray extends JsonParserBase {
                 //Either escaped sequence or multibyte detected
                 currentIndex = --index;
                 break;
+            } else if (b < 0x20) {
+                currentIndex = index;
+                throw createException("Unescaped control character not allowed in string", b);
             }
             stringBuffer[stringBuffIndex] = (char) b;
         }
@@ -203,7 +208,11 @@ class JsonParserArray extends JsonParserBase {
                 throw createException("Low surrogate must follow the high surrogate.", b);
             } else if (b == '"') {
                 return new String(stringBuffer, 0, stringBuffIndex);
-            } else if ((b & 0x80) == 0) {
+            } else if (b >= 0) {
+                if (b < 0x20) {
+                    currentIndex = index;
+                    throw createException("Unescaped control character not allowed in string", b);
+                }
                 stringBuffer[stringBuffIndex++] = (char) b;
             } else {
                 // Decode UTF-8 multibyte sequence starting with this byte
@@ -226,10 +235,16 @@ class JsonParserArray extends JsonParserBase {
         char c;
         if (b == '\\') {
             c = processEscapedSequence();
-        } else if ((b & 0x80) == 0) {
+        } else if (b >= 0) {
+            if (b < 0x20) {
+                throw createException("Unescaped control character not allowed in string", b);
+            }
             c = (char) b;
         } else {
             c = decodeUtf8ToChar(b);
+        }
+        if (expectLowSurrogate) {
+            throw createException("Low surrogate must follow the high surrogate.");
         }
         if (nextToken() != '\"') {
             throw createException("End of a string expected", currentByte());
@@ -309,6 +324,10 @@ class JsonParserArray extends JsonParserBase {
     @Override
     @SuppressWarnings("checkstyle:MethodLength")
     public double readDouble() {
+        if (currentByte() == '"') {
+            return readQuotedSpecialDouble();
+        }
+
         int start = currentIndex;
         int i = start;
 
@@ -317,8 +336,6 @@ class JsonParserArray extends JsonParserBase {
         byte b = buffer[i];
         if (b == '-') {
             negative = true;
-            i++;
-        } else if (b == '+') {
             i++;
         }
         // Check for special values (NaN, Infinity)
@@ -354,6 +371,7 @@ class JsonParserArray extends JsonParserBase {
         boolean hasDecimal = false;
         boolean foundNonZero = false;
         boolean delegateToJava = false;
+        boolean hasFractionDigits = false;
 
         // Parse all digits
         while (i < bufferLength) {
@@ -361,6 +379,7 @@ class JsonParserArray extends JsonParserBase {
             int digit = WHOLE_NUMBER_PARTS[b & 0xFF];
             if (digit > -1) {
                 if (hasDecimal) {
+                    hasFractionDigits = true;
                     // After decimal point
                     if (!foundNonZero && digit == 0) {
                         leadingZerosAfterDecimal++;
@@ -405,6 +424,9 @@ class JsonParserArray extends JsonParserBase {
             currentIndex = i;
             skipNumber();
             return Double.parseDouble(new String(buffer, start, currentIndex - start + 1, StandardCharsets.UTF_8));
+        } else if (hasDecimal && !hasFractionDigits) {
+            currentIndex = i;
+            throw createException("Parsed Number is not having any fraction digits after the separator");
         }
 
         // Calculate the base decimal exponent
@@ -436,14 +458,19 @@ class JsonParserArray extends JsonParserBase {
             }
 
             int digit = -1;
+            boolean foundExponentValue = false;
             while (i < bufferLength && (digit = WHOLE_NUMBER_PARTS[buffer[i] & 0xFF]) > -1) {
                 explicitExp = explicitExp * 10 + digit;
                 if (explicitExp > 1000) {
                     break;
                 }
                 i++;
+                foundExponentValue = true;
             }
             currentIndex = i - 1;
+            if (!foundExponentValue) {
+                throw createException("Exponent did not have a value specified");
+            }
             if (digit == -1) {
                 b = buffer[i];
                 if (b == 'e' || b == 'E' || b == '.') {
@@ -464,7 +491,11 @@ class JsonParserArray extends JsonParserBase {
         if (decimalExponent >= POW10_DOUBLE_CACHE_SIZE || decimalExponent <= -POW10_DOUBLE_CACHE_SIZE) {
             skipNumber();
             // Delegate to Java for exact result
-            return Double.parseDouble(new String(buffer, start, currentIndex - start + 1, StandardCharsets.UTF_8));
+            try {
+                return Double.parseDouble(new String(buffer, start, currentIndex - start + 1, StandardCharsets.UTF_8));
+            } catch (NumberFormatException ex) {
+                throw createException("Invalid number", ex);
+            }
         }
 
         // FAST PATH: Handle common cases ourselves
@@ -480,6 +511,47 @@ class JsonParserArray extends JsonParserBase {
         return negative ? -result : result;
     }
 
+    private double readQuotedSpecialDouble() {
+        ensure(4);
+        int valueIndex = currentIndex + 1;
+        byte b = buffer[valueIndex];
+        if (b == 'N') {
+            if (buffer[valueIndex + 1] == 'a'
+                    && buffer[valueIndex + 2] == 'N'
+                    && buffer[valueIndex + 3] == '"') {
+                currentIndex = valueIndex + 3;
+                return Double.NaN;
+            }
+            throw createException("Invalid double number");
+        }
+        if (b == '-') {
+            ensure(10);
+            if (matchesInfinity(valueIndex + 1) && buffer[valueIndex + 9] == '"') {
+                currentIndex = valueIndex + 9;
+                return Double.NEGATIVE_INFINITY;
+            }
+            throw createException("Invalid double number");
+        }
+        ensure(9);
+        if (matchesInfinity(valueIndex) && buffer[valueIndex + 8] == '"') {
+            currentIndex = valueIndex + 8;
+            return Double.POSITIVE_INFINITY;
+        }
+        throw createException("Invalid double number");
+    }
+
+    private boolean matchesInfinity(int index) {
+        byte b = buffer[index];
+        return (b == 'I' || b == 'i')
+                && buffer[index + 1] == 'n'
+                && buffer[index + 2] == 'f'
+                && buffer[index + 3] == 'i'
+                && buffer[index + 4] == 'n'
+                && buffer[index + 5] == 'i'
+                && buffer[index + 6] == 't'
+                && buffer[index + 7] == 'y';
+    }
+
     @Override
     public BigInteger readBigInteger() {
         boolean inString = false;
@@ -491,14 +563,18 @@ class JsonParserArray extends JsonParserBase {
         }
         skipNumber();
         int length = currentIndex - start + 1;
-        BigInteger bigInteger = new BigInteger(new String(buffer, start, length, StandardCharsets.US_ASCII));
-        if (inString) {
-            ensure(1);
-            if (buffer[++currentIndex] != '"') {
-                throw createException("Expected the end of the string", buffer[currentIndex]);
+        try {
+            BigInteger bigInteger = new BigInteger(new String(buffer, start, length, StandardCharsets.US_ASCII));
+            if (inString) {
+                ensure(1);
+                if (buffer[++currentIndex] != '"') {
+                    throw createException("Expected the end of the string", buffer[currentIndex]);
+                }
             }
+            return bigInteger;
+        } catch (NumberFormatException ex) {
+            throw createException("Invalid number", ex);
         }
-        return bigInteger;
     }
 
     @Override
@@ -509,14 +585,33 @@ class JsonParserArray extends JsonParserBase {
             currentIndex++;
             inString = true;
         }
-        BigDecimal bigDecimal = new BigDecimal(readNumberAsCharArray());
-        if (inString) {
-            ensure(1);
-            if (buffer[++currentIndex] != '"') {
-                throw createException("Expected the end of the string", buffer[currentIndex]);
+        char[] chars = readNumberAsCharArray();
+        char first = chars[0];
+        char last = chars[chars.length - 1];
+        if (first == '.') {
+            throw createException("Invalid number: leading decimal point");
+        } else if (last == '.') {
+            throw createException("Invalid number: trailing decimal point");
+        } else if (first == '+') {
+            throw createException("Invalid number: leading plus sign");
+        } else if (first == '-' && chars.length > 1) {
+            char second = chars[1];
+            if (second == '.') {
+                throw createException("Invalid number: leading minus sign followed by decimal point");
             }
         }
-        return bigDecimal;
+        try {
+            BigDecimal bigDecimal = new BigDecimal(chars);
+            if (inString) {
+                ensure(1);
+                if (buffer[++currentIndex] != '"') {
+                    throw createException("Expected the end of the string", buffer[currentIndex]);
+                }
+            }
+            return bigDecimal;
+        } catch (NumberFormatException ex) {
+            throw createException("Invalid number", ex);
+        }
     }
 
     @Override
@@ -553,40 +648,351 @@ class JsonParserArray extends JsonParserBase {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:MethodLength") // unrolled on purpose for the hot ASCII-key path
     public int readStringAsHash() {
-        int b = buffer[currentIndex] & 0xFF;
-        if (b != '"') {
+        if (buffer[currentIndex] != '"') {
             throw createException("Hash calculation is intended only for String values");
         }
-        // Compute FNV-1a hash of the string content (excluding quotes) using recommended offset basis and prime values.
-        // This optimized loop scans the buffer directly without calling readNextByte() for each character.
+        int index = currentIndex + 1;
         int fnv1aHash = FNV_OFFSET_BASIS;
-        currentIndex++;
-        for (int i = currentIndex; i < bufferLength; i++) {
-            b = buffer[i] & 0xFF;
+        // JSON object keys are typically short ASCII names, so handle the first 16 bytes without loop overhead.
+        if (index + 15 < bufferLength) {
+            byte b = buffer[index];
             if (b == '"') {
-                currentIndex = i;
+                currentIndex = index;
                 return fnv1aHash;
             }
-            fnv1aHash ^= b;
-            fnv1aHash *= FNV_PRIME;
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 1];
+            if (b == '"') {
+                currentIndex = index + 1;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 1, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 2];
+            if (b == '"') {
+                currentIndex = index + 2;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 2, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 3];
+            if (b == '"') {
+                currentIndex = index + 3;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 3, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 4];
+            if (b == '"') {
+                currentIndex = index + 4;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 4, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 5];
+            if (b == '"') {
+                currentIndex = index + 5;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 5, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 6];
+            if (b == '"') {
+                currentIndex = index + 6;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 6, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 7];
+            if (b == '"') {
+                currentIndex = index + 7;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 7, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 8];
+            if (b == '"') {
+                currentIndex = index + 8;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 8, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 9];
+            if (b == '"') {
+                currentIndex = index + 9;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 9, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 10];
+            if (b == '"') {
+                currentIndex = index + 10;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 10, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 11];
+            if (b == '"') {
+                currentIndex = index + 11;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 11, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 12];
+            if (b == '"') {
+                currentIndex = index + 12;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 12, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 13];
+            if (b == '"') {
+                currentIndex = index + 13;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 13, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 14];
+            if (b == '"') {
+                currentIndex = index + 14;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 14, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+
+            b = buffer[index + 15];
+            if (b == '"') {
+                currentIndex = index + 15;
+                return fnv1aHash;
+            }
+            if (b == '\\' || b < 0) {
+                return continueStringAsHash(index + 15, fnv1aHash);
+            }
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+            index += 16;
+        }
+        return continueStringAsHash(index, fnv1aHash);
+    }
+
+    private int continueStringAsHash(int index, int fnv1aHash) {
+        while (index < bufferLength) {
+            byte b = buffer[index];
+            if (b == '"') {
+                currentIndex = index;
+                return fnv1aHash;
+            }
+            if (b == '\\') {
+                currentIndex = index;
+                return readEscapedStringAsHash(fnv1aHash);
+            }
+            if (b >= 0) {
+                fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+                index++;
+            } else {
+                currentIndex = index;
+                fnv1aHash = hashUtf8Bytes(fnv1aHash, b);
+                index = currentIndex + 1;
+            }
         }
         throw createException("Unexpected end of string value. Probably incomplete JSON");
+    }
+
+    private int readEscapedStringAsHash(int fnv1aHash) {
+        char highSurrogate = 0;
+        for (; currentIndex < bufferLength; currentIndex++) {
+            byte b = buffer[currentIndex];
+            if (b == '\\') {
+                char escaped = readEscapedCodeUnit();
+                if (Character.isHighSurrogate(escaped)) {
+                    if (highSurrogate != 0) {
+                        throw createException("A high surrogate must always be followed by a low surrogate");
+                    }
+                    highSurrogate = escaped;
+                } else if (Character.isLowSurrogate(escaped)) {
+                    if (highSurrogate == 0) {
+                        throw createException("A low surrogate must always follow a high surrogate");
+                    }
+                    fnv1aHash = hashUtf8CodePoint(fnv1aHash, Character.toCodePoint(highSurrogate, escaped));
+                    highSurrogate = 0;
+                } else {
+                    if (highSurrogate != 0) {
+                        throw createException("Low surrogate was expected to follow the high surrogate, "
+                                                      + "but found " + Parsers.toPrintableForm(escaped));
+                    }
+                    fnv1aHash = hashUtf8CodePoint(fnv1aHash, escaped);
+                }
+            } else if (highSurrogate != 0) {
+                throw createException("Low surrogate must follow the high surrogate.", b);
+            } else if (b == '"') {
+                return fnv1aHash;
+            } else if (b >= 0) {
+                fnv1aHash = updateFnv1aHash(fnv1aHash, b & 0xFF);
+            } else {
+                fnv1aHash = hashUtf8Bytes(fnv1aHash, b);
+            }
+        }
+        throw createException("End of the string expected. Incomplete JSON");
+    }
+
+    private char readEscapedCodeUnit() {
+        if (!hasNext()) {
+            throw createException("Error while processing an escaped string sequence. Incomplete JSON");
+        }
+        byte b = buffer[++currentIndex];
+        return switch (b) {
+            case '\\', '"', '/' -> (char) b;
+            case 'b' -> '\b';
+            case 't' -> '\t';
+            case 'n' -> '\n';
+            case 'f' -> '\f';
+            case 'r' -> '\r';
+            case 'u' -> {
+                ensure(4);
+                yield (char) (
+                        (Parsers.translateHex(buffer[++currentIndex], this) << 12)
+                                + (Parsers.translateHex(buffer[++currentIndex], this) << 8)
+                                + (Parsers.translateHex(buffer[++currentIndex], this) << 4)
+                                + Parsers.translateHex(buffer[++currentIndex], this));
+            }
+            default -> throw createException("Invalid escaped value", b);
+        };
+    }
+
+    private int hashUtf8Bytes(int fnv1aHash, byte currentByte) {
+        fnv1aHash = updateFnv1aHash(fnv1aHash, currentByte & 0xFF);
+        if ((currentByte & 0xE0) == 0xC0) {
+            ensure(1);
+            byte second = readNextByte();
+            Parsers.decodeUtf8TwoByte(currentByte, second, this);
+            fnv1aHash = updateFnv1aHash(fnv1aHash, second & 0xFF);
+            return fnv1aHash;
+        }
+        if ((currentByte & 0xF0) == 0xE0) {
+            ensure(2);
+            byte second = buffer[++currentIndex];
+            byte third = buffer[++currentIndex];
+            Parsers.decodeUtf8ThreeByte(currentByte, second, third, this);
+            fnv1aHash = updateFnv1aHash(fnv1aHash, second & 0xFF);
+            fnv1aHash = updateFnv1aHash(fnv1aHash, third & 0xFF);
+            return fnv1aHash;
+        }
+        if ((currentByte & 0xF8) == 0xF0) {
+            ensure(3);
+            byte b2 = buffer[++currentIndex];
+            byte b3 = buffer[++currentIndex];
+            byte b4 = buffer[++currentIndex];
+            Parsers.decodeUtf8FourByte(currentByte, b2, b3, b4, this);
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b2 & 0xFF);
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b3 & 0xFF);
+            fnv1aHash = updateFnv1aHash(fnv1aHash, b4 & 0xFF);
+            return fnv1aHash;
+        }
+        throw createException("Invalid UTF-8 byte", currentByte);
+    }
+
+    private static int hashUtf8CodePoint(int fnv1aHash, int codePoint) {
+        if (codePoint <= 0x7F) {
+            return updateFnv1aHash(fnv1aHash, codePoint);
+        }
+        if (codePoint <= 0x7FF) {
+            fnv1aHash = updateFnv1aHash(fnv1aHash, 0xC0 | (codePoint >> 6));
+            return updateFnv1aHash(fnv1aHash, 0x80 | (codePoint & 0x3F));
+        }
+        if (codePoint <= 0xFFFF) {
+            fnv1aHash = updateFnv1aHash(fnv1aHash, 0xE0 | (codePoint >> 12));
+            fnv1aHash = updateFnv1aHash(fnv1aHash, 0x80 | ((codePoint >> 6) & 0x3F));
+            return updateFnv1aHash(fnv1aHash, 0x80 | (codePoint & 0x3F));
+        }
+        fnv1aHash = updateFnv1aHash(fnv1aHash, 0xF0 | (codePoint >> 18));
+        fnv1aHash = updateFnv1aHash(fnv1aHash, 0x80 | ((codePoint >> 12) & 0x3F));
+        fnv1aHash = updateFnv1aHash(fnv1aHash, 0x80 | ((codePoint >> 6) & 0x3F));
+        return updateFnv1aHash(fnv1aHash, 0x80 | (codePoint & 0x3F));
+    }
+
+    private static int updateFnv1aHash(int fnv1aHash, int unsignedByte) {
+        fnv1aHash ^= unsignedByte;
+        fnv1aHash *= FNV_PRIME;
+        return fnv1aHash;
+    }
+
+    static int fnv1aHashUtf8(String value) {
+        int fnvHash = FNV_OFFSET_BASIS;
+        for (byte b : value.getBytes(StandardCharsets.UTF_8)) {
+            fnvHash = updateFnv1aHash(fnvHash, b & 0xFF);
+        }
+        return fnvHash;
     }
 
     @Override
     public JsonException createException(String message) {
         clearMark();
+        return new JsonException(exceptionMessage(message));
+    }
+
+    @Override
+    public JsonException createException(String message, Exception e) {
+        clearMark();
+        return new JsonException(exceptionMessage(message), e);
+    }
+
+    private String exceptionMessage(String message) {
         int start = Math.max(currentIndex - 10, 0);
         int length = Math.min(currentIndex + 10, bufferLength - start);
         int dataIndex = currentIndex - start;
         BufferData bufferData = BufferData.create(buffer, start, length);
 
-        return new JsonException(message + "\n"
-                                         + "Error at JSON index: " + currentIndex + "\n"
-                                         + "Data index: " + dataIndex + "\n"
-                                         + "Data: \n"
-                                         + bufferData.debugDataHex(false));
+        return message + "\n"
+                + "Error at JSON index: " + currentIndex + "\n"
+                + "Data index: " + dataIndex + "\n"
+                + "Data: \n"
+                + bufferData.debugDataHex(false);
     }
 
     @Override
@@ -769,47 +1175,40 @@ class JsonParserArray extends JsonParserBase {
      * @throws JsonException if the UTF-8 sequence is invalid, incomplete, or represents an out-of-range code point
      */
     int decodeUtf8(int position, byte currentByte) {
-        if ((currentByte & 0xE0) == 0xC0) {
-            // 2-byte UTF-8 sequence: 110xxxxx 10yyyyyy -> U+0080 to U+07FF
-            int c2 = readNextByte() & 0x3F; // Second byte must be 10yyyyyy
-            int codePoint = ((currentByte & 0x1F) << 6) | c2; // Assemble code point: xxxxx yyyyyy
-            stringBuffer[position++] = (char) codePoint;
-        } else if ((currentByte & 0xF0) == 0xE0) {
-            // 3-byte UTF-8 sequence: 1110xxxx 10yyyyyy 10zzzzzz -> U+0800 to U+FFFF
-            ensure(2); // Ensure we have at least 2 more bytes
-            int c2 = buffer[++currentIndex] & 0x3F; // Second byte: 10yyyyyy
-            int c3 = buffer[++currentIndex] & 0x3F; // Third byte: 10zzzzzz
-            int codePoint = ((currentByte & 0x0F) << 12) | (c2 << 6) | c3; // Assemble: xxxx yyyyyy zzzzzz
-            stringBuffer[position++] = (char) codePoint;
-        } else if ((currentByte & 0xF8) == 0xF0) {
-            // 4-byte UTF-8 sequence: 11110www 10xxxxxx 10yyyyyy 10zzzzzz -> U+10000 to U+10FFFF
-            ensure(3); // Ensure we have at least 3 more bytes
-            int c2 = buffer[++currentIndex] & 0x3F; // Second byte: 10xxxxxx
-            int c3 = buffer[++currentIndex] & 0x3F; // Third byte: 10yyyyyy
-            int c4 = buffer[++currentIndex] & 0x3F; // Fourth byte: 10zzzzzz
-            int codePoint = ((currentByte & 0x07) << 18) | (c2 << 12) | (c3 << 6) | c4; // Assemble: www xxxxxx yyyyyy zzzzzz
-            if (codePoint >= 0x10000) {
-                // Code point requires UTF-16 surrogates
-                if (codePoint >= 0x110000) {
-                    // Beyond valid Unicode range
-                    throw createException("Invalid UTF-8 code point: " + Integer.toHexString(codePoint));
-                }
-                // Convert to UTF-16 surrogate pair
-                codePoint -= 0x10000; // Subtract U+10000 to get 20-bit value
-                stringBuffer[position++] = (char) ((codePoint >> 10) + 0xD800); // High surrogate: U+D800 + high 10 bits
-                if (position == stringBufferLength) {
-                    increaseStringBuffer(); // Ensure space for low surrogate
-                }
-                stringBuffer[position++] = (char) ((codePoint & 0x3FF) + 0xDC00); // Low surrogate: U+DC00 + low 10 bits
-            } else {
-                // Code point fits in a single char (U+0000 to U+FFFF)
-                stringBuffer[position++] = (char) codePoint;
+        int codePoint = readUtf8CodePoint(currentByte);
+        if (codePoint >= 0x10000) {
+            codePoint -= 0x10000;
+            stringBuffer[position++] = (char) ((codePoint >> 10) + 0xD800);
+            if (position == stringBufferLength) {
+                increaseStringBuffer();
             }
+            stringBuffer[position++] = (char) ((codePoint & 0x3FF) + 0xDC00);
         } else {
-            // Invalid UTF-8 leading byte
-            throw createException("Invalid UTF-8 byte", currentByte);
+            stringBuffer[position++] = (char) codePoint;
         }
         return position;
+    }
+
+    private int readUtf8CodePoint(byte currentByte) {
+        int value = currentByte & 0xFF;
+        if ((value & 0xE0) == 0xC0) {
+            ensure(1);
+            return Parsers.decodeUtf8TwoByte(currentByte, readNextByte(), this);
+        }
+        if ((value & 0xF0) == 0xE0) {
+            ensure(2);
+            byte second = buffer[++currentIndex];
+            byte third = buffer[++currentIndex];
+            return Parsers.decodeUtf8ThreeByte(currentByte, second, third, this);
+        }
+        if ((value & 0xF8) == 0xF0) {
+            ensure(3);
+            byte second = buffer[++currentIndex];
+            byte third = buffer[++currentIndex];
+            byte fourth = buffer[++currentIndex];
+            return Parsers.decodeUtf8FourByte(currentByte, second, third, fourth, this);
+        }
+        throw createException("Invalid UTF-8 byte", currentByte);
     }
 
     void increaseStringBuffer() {
@@ -817,6 +1216,7 @@ class JsonParserArray extends JsonParserBase {
     }
 
     private char[] readNumberAsCharArray() {
+        ensureStringBuffer();
         int readableBytes = bufferLength - currentIndex;
         int firstRun = Math.min(stringBufferLength, readableBytes);
         stringBuffer[0] = (char) currentByte();
@@ -857,8 +1257,16 @@ class JsonParserArray extends JsonParserBase {
     private void increaseStringBuffer(int size) {
         stringBufferLength = size;
         char[] newBuf = new char[stringBufferLength];
-        System.arraycopy(stringBuffer, 0, newBuf, 0, stringBuffer.length);
+        if (stringBuffer != null) {
+            System.arraycopy(stringBuffer, 0, newBuf, 0, stringBuffer.length);
+        }
         stringBuffer = newBuf;
+    }
+
+    private void ensureStringBuffer() {
+        if (stringBuffer == null) {
+            stringBuffer = new char[stringBufferLength];
+        }
     }
 
     /**
@@ -877,40 +1285,11 @@ class JsonParserArray extends JsonParserBase {
      * surrogates
      */
     private char decodeUtf8ToChar(byte currentByte) {
-        if ((currentByte & 0xE0) == 0xC0) {
-            // 2-byte UTF-8 sequence: 110xxxxx 10yyyyyy -> U+0080 to U+07FF
-            int c2 = readNextByte() & 0x3F; // Second byte must be 10yyyyyy
-            int codePoint = ((currentByte & 0x1F) << 6) | c2; // Assemble code point: xxxxx yyyyyy
-            return (char) codePoint;
-        } else if ((currentByte & 0xF0) == 0xE0) {
-            // 3-byte UTF-8 sequence: 1110xxxx 10yyyyyy 10zzzzzz -> U+0800 to U+FFFF
-            ensure(2); // Ensure we have at least 2 more bytes
-            int c2 = buffer[++currentIndex] & 0x3F; // Second byte: 10yyyyyy
-            int c3 = buffer[++currentIndex] & 0x3F; // Third byte: 10zzzzzz
-            int codePoint = ((currentByte & 0x0F) << 12) | (c2 << 6) | c3; // Assemble: xxxx yyyyyy zzzzzz
-            return (char) codePoint;
-        } else if ((currentByte & 0xF8) == 0xF0) {
-            // 4-byte UTF-8 sequence: 11110www 10xxxxxx 10yyyyyy 10zzzzzz -> U+10000 to U+10FFFF
-            ensure(3); // Ensure we have at least 3 more bytes
-            int c2 = buffer[++currentIndex] & 0x3F; // Second byte: 10xxxxxx
-            int c3 = buffer[++currentIndex] & 0x3F; // Third byte: 10yyyyyy
-            int c4 = buffer[++currentIndex] & 0x3F; // Fourth byte: 10zzzzzz
-            int codePoint = ((currentByte & 0x07) << 18) | (c2 << 12) | (c3 << 6) | c4; // Assemble: www xxxxxx yyyyyy zzzzzz
-            if (codePoint >= 0x10000) {
-                // Code point requires UTF-16 surrogates, which cannot fit in a single char
-                if (codePoint >= 0x110000) {
-                    // Beyond valid Unicode range
-                    throw createException("Invalid UTF-8 code point: " + Integer.toHexString(codePoint));
-                }
-                throw createException("UTF-16 high and low surrogates cannot be represented as a single char");
-            } else {
-                // Code point fits in a single char (U+0000 to U+FFFF)
-                return (char) codePoint;
-            }
-        } else {
-            // Invalid UTF-8 leading byte
-            throw createException("Invalid UTF-8 byte", currentByte);
+        int codePoint = readUtf8CodePoint(currentByte);
+        if (codePoint >= 0x10000) {
+            throw createException("UTF-16 high and low surrogates cannot be represented as a single char");
         }
+        return (char) codePoint;
     }
 
     private byte parseByte(boolean negative) {

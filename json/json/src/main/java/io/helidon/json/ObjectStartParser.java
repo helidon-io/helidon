@@ -178,6 +178,11 @@ public final class ObjectStartParser implements JsonParser {
     }
 
     @Override
+    public JsonException createException(String message, Exception e) {
+        return parser.createException(message, e);
+    }
+
+    @Override
     public JsonException createException(String message, byte c) {
         return parser.createException(message, c);
     }
@@ -333,6 +338,11 @@ public final class ObjectStartParser implements JsonParser {
 
         @Override
         public JsonException createException(String message) {
+            throw new UnsupportedOperationException("This parser allows only currentByte");
+        }
+
+        @Override
+        public JsonException createException(String message, Exception e) {
             throw new UnsupportedOperationException("This parser allows only currentByte");
         }
 

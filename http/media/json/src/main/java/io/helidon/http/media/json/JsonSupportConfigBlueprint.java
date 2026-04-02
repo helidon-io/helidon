@@ -54,9 +54,9 @@ interface JsonSupportConfigBlueprint extends MediaSupportConfig, Prototype.Facto
     /**
      * Content type to use if not configured (in response headers for server, and in request headers for client).
      *
-     * @return content type to use, defaults to {@link io.helidon.http.HttpMediaTypes#JSON_UTF_8}
+     * @return content type to use, defaults to {@link io.helidon.http.HttpMediaTypes#JSON}
      */
-    @Option.DefaultCode("@io.helidon.http.HttpMediaTypes@.JSON_UTF_8")
+    @Option.DefaultCode("@io.helidon.http.HttpMediaTypes@.JSON")
     @Override
     HttpMediaType contentType();
 }
