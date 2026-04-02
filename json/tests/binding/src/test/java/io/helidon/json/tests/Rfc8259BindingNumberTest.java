@@ -19,6 +19,7 @@ package io.helidon.json.tests;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+import io.helidon.json.JsonException;
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
@@ -29,6 +30,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Testing.Test
 public class Rfc8259BindingNumberTest {
@@ -90,6 +92,79 @@ public class Rfc8259BindingNumberTest {
         String json = bindingMethod.serialize(jsonBinding, Long.MIN_VALUE);
         assertThat(json, is("-9223372036854775808"));
         assertThat(bindingMethod.deserialize(jsonBinding, json, Long.class), is(Long.MIN_VALUE));
+    }
+
+    /**
+     * RFC 8259 §6
+     * Quote: "A number is represented in base 10 using decimal digits."
+     * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-6
+     */
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRejectsNumbersWithLeadingPlusAtRoot(BindingMethod bindingMethod) {
+        assertAll(
+                () -> assertRootNumberRejected(bindingMethod, "+1"),
+                () -> assertRootNumberRejected(bindingMethod, "+0.5"),
+                () -> assertRootNumberRejected(bindingMethod, "+1e2")
+        );
+    }
+
+    /**
+     * RFC 8259 §6
+     * Quote: "int = zero / ( digit1-9 *DIGIT )"
+     * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-6
+     */
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRejectsNumbersWithoutIntegerComponentAtRoot(BindingMethod bindingMethod) {
+        assertAll(
+                () -> assertRootNumberRejected(bindingMethod, ".1"),
+                () -> assertRootNumberRejected(bindingMethod, "-.1")
+        );
+    }
+
+    /**
+     * RFC 8259 §6
+     * Quote: "A fraction part is a decimal point followed by one or more digits."
+     * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-6
+     */
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRejectsNumbersWithoutFractionDigitsAtRoot(BindingMethod bindingMethod) {
+        assertAll(
+                () -> assertRootNumberRejected(bindingMethod, "1."),
+                () -> assertRootNumberRejected(bindingMethod, "0."),
+                () -> assertRootNumberRejected(bindingMethod, "-0.")
+        );
+    }
+
+    /**
+     * RFC 8259 §6
+     * Quote: "The E and optional sign are followed by one or more digits."
+     * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-6
+     */
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRejectsNumbersWithoutExponentDigitsAtRoot(BindingMethod bindingMethod) {
+        assertAll(
+                () -> assertRootNumberRejected(bindingMethod, "1e"),
+                () -> assertRootNumberRejected(bindingMethod, "1e+"),
+                () -> assertRootNumberRejected(bindingMethod, "1e-")
+        );
+    }
+
+    /**
+     * RFC 8259 §6
+     * Quote: "A fraction part is a decimal point followed by one or more digits."
+     * Spec: https://www.rfc-editor.org/rfc/rfc8259#section-6
+     */
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRejectsMalformedNumberBodiesAtRoot(BindingMethod bindingMethod) {
+        assertAll(
+                () -> assertRootNumberRejected(bindingMethod, "1.2.3"),
+                () -> assertRootNumberRejected(bindingMethod, "1e2e3")
+        );
     }
 
     /**
@@ -206,6 +281,15 @@ public class Rfc8259BindingNumberTest {
             return;
         }
         assertThat(actual, is(expected));
+    }
+
+    private void assertRootNumberRejected(BindingMethod bindingMethod, String json) {
+        assertAll(
+                () -> assertThrows(JsonException.class,
+                                   () -> bindingMethod.deserialize(jsonBinding, json, BigDecimal.class)),
+                () -> assertThrows(JsonException.class,
+                                   () -> bindingMethod.deserialize(jsonBinding, json, Double.class))
+        );
     }
 
     @Json.Entity

@@ -246,13 +246,13 @@ class Rfc8259NumberGrammarTest {
                     return;
                 }
                 fail("Unexpected trailing token: " + Parsers.toPrintableForm(token));
-            } catch (JsonException | NumberFormatException expectedTrailingWhitespaceOnly) {
+            } catch (JsonException expectedTrailingWhitespaceOnly) {
                 if (!expectRejection) {
                     return;
                 }
                 fail("Expected invalid JSON number text to be rejected: " + json);
             }
-        } catch (JsonException | NumberFormatException expected) {
+        } catch (JsonException expected) {
             if (!expectRejection) {
                 throw expected;
             }

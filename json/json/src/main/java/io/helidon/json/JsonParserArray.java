@@ -491,7 +491,11 @@ class JsonParserArray extends JsonParserBase {
         if (decimalExponent >= POW10_DOUBLE_CACHE_SIZE || decimalExponent <= -POW10_DOUBLE_CACHE_SIZE) {
             skipNumber();
             // Delegate to Java for exact result
-            return Double.parseDouble(new String(buffer, start, currentIndex - start + 1, StandardCharsets.UTF_8));
+            try {
+                return Double.parseDouble(new String(buffer, start, currentIndex - start + 1, StandardCharsets.UTF_8));
+            } catch (NumberFormatException ex) {
+                throw new JsonException("Invalid number", ex);
+            }
         }
 
         // FAST PATH: Handle common cases ourselves
@@ -559,14 +563,18 @@ class JsonParserArray extends JsonParserBase {
         }
         skipNumber();
         int length = currentIndex - start + 1;
-        BigInteger bigInteger = new BigInteger(new String(buffer, start, length, StandardCharsets.US_ASCII));
-        if (inString) {
-            ensure(1);
-            if (buffer[++currentIndex] != '"') {
-                throw createException("Expected the end of the string", buffer[currentIndex]);
+        try {
+            BigInteger bigInteger = new BigInteger(new String(buffer, start, length, StandardCharsets.US_ASCII));
+            if (inString) {
+                ensure(1);
+                if (buffer[++currentIndex] != '"') {
+                    throw createException("Expected the end of the string", buffer[currentIndex]);
+                }
             }
+            return bigInteger;
+        } catch (NumberFormatException ex) {
+            throw new JsonException("Invalid number", ex);
         }
-        return bigInteger;
     }
 
     @Override
@@ -592,14 +600,18 @@ class JsonParserArray extends JsonParserBase {
                 throw createException("Invalid number: leading minus sign followed by decimal point");
             }
         }
-        BigDecimal bigDecimal = new BigDecimal(chars);
-        if (inString) {
-            ensure(1);
-            if (buffer[++currentIndex] != '"') {
-                throw createException("Expected the end of the string", buffer[currentIndex]);
+        try {
+            BigDecimal bigDecimal = new BigDecimal(chars);
+            if (inString) {
+                ensure(1);
+                if (buffer[++currentIndex] != '"') {
+                    throw createException("Expected the end of the string", buffer[currentIndex]);
+                }
             }
+            return bigDecimal;
+        } catch (NumberFormatException ex) {
+            throw new JsonException("Invalid number", ex);
         }
-        return bigDecimal;
     }
 
     @Override

@@ -1089,10 +1089,14 @@ final class JsonParserStream extends JsonParserBase {
             skipNumber();
             bufferingJsonValue = false;
             // Delegate to Java for exact result
-            return Double.parseDouble(new String(buffer,
-                                                 jsonValueStart,
-                                                 currentIndex - jsonValueStart + 1,
-                                                 StandardCharsets.UTF_8));
+            try {
+                return Double.parseDouble(new String(buffer,
+                                                     jsonValueStart,
+                                                     currentIndex - jsonValueStart + 1,
+                                                     StandardCharsets.UTF_8));
+            } catch (NumberFormatException ex) {
+                throw new JsonException("Invalid number", ex);
+            }
         }
 
         // FAST PATH: Handle common cases ourselves
@@ -1166,15 +1170,19 @@ final class JsonParserStream extends JsonParserBase {
         if (currentIndex < bufferLength) {
             length++;
         }
-        BigInteger bigInteger = new BigInteger(new String(buffer, jsonValueStart, length, StandardCharsets.US_ASCII));
-        bufferingJsonValue = false;
-        if (inString) {
-            ensure(1);
-            if (buffer[++currentIndex] != '"') {
-                throw createException("Expected the end of the string", buffer[currentIndex]);
+        try {
+            BigInteger bigInteger = new BigInteger(new String(buffer, jsonValueStart, length, StandardCharsets.US_ASCII));
+            bufferingJsonValue = false;
+            if (inString) {
+                ensure(1);
+                if (buffer[++currentIndex] != '"') {
+                    throw createException("Expected the end of the string", buffer[currentIndex]);
+                }
             }
+            return bigInteger;
+        } catch (NumberFormatException ex) {
+            throw new JsonException("Invalid number", ex);
         }
-        return bigInteger;
     }
 
     @Override
@@ -1185,14 +1193,33 @@ final class JsonParserStream extends JsonParserBase {
             currentIndex++;
             inString = true;
         }
-        BigDecimal bigDecimal = new BigDecimal(readNumberAsCharArray());
-        if (inString) {
-            ensure(1);
-            if (buffer[++currentIndex] != '"') {
-                throw createException("Expected the end of the string", buffer[currentIndex]);
+        char[] chars = readNumberAsCharArray();
+        char first = chars[0];
+        char last = chars[chars.length - 1];
+        if (first == '.') {
+            throw createException("Invalid number: leading decimal point");
+        } else if (last == '.') {
+            throw createException("Invalid number: trailing decimal point");
+        } else if (first == '+') {
+            throw createException("Invalid number: leading plus sign");
+        } else if (first == '-' && chars.length > 1) {
+            char second = chars[1];
+            if (second == '.') {
+                throw createException("Invalid number: leading minus sign followed by decimal point");
             }
         }
-        return bigDecimal;
+        try {
+            BigDecimal bigDecimal = new BigDecimal(chars);
+            if (inString) {
+                ensure(1);
+                if (buffer[++currentIndex] != '"') {
+                    throw createException("Expected the end of the string", buffer[currentIndex]);
+                }
+            }
+            return bigDecimal;
+        } catch (NumberFormatException ex) {
+            throw new JsonException("Invalid number", ex);
+        }
     }
 
     @Override
