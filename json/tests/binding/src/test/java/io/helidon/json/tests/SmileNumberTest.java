@@ -375,6 +375,16 @@ public class SmileNumberTest {
         assertThat(result.value(), is(value));
     }
 
+    @Test
+    public void testBigDecimalNegativeScale() {
+        BigDecimal value = new BigDecimal("1E+3");
+        BigDecimalModel model = new BigDecimalModel(value);
+        byte[] smileData = SmileBindingSupport.serializeSmile(jsonBinding, model);
+        BigDecimalModel result = SmileBindingSupport.deserializeSmile(jsonBinding, smileData, BigDecimalModel.class);
+        assertThat(result.value(), is(value));
+        assertThat(result.value().scale(), is(value.scale()));
+    }
+
     @Json.Entity
     record NumberModel(int value) {
     }

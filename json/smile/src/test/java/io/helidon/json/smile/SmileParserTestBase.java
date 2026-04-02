@@ -219,6 +219,19 @@ abstract class SmileParserTestBase {
     }
 
     @Test
+    public void testParseNegativeScaleBigDecimal() throws Exception {
+        BigDecimal testValue = new BigDecimal("1E+3");
+        byte[] smileData = generateSmileBytes(gen -> gen.write(testValue));
+        JsonParser parser = createParser(smileData);
+
+        BigDecimal result = parser.readBigDecimal();
+
+        assertThat(result, is(testValue));
+        assertThat(result.scale(), is(testValue.scale()));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
     public void testReadJsonNumberPreservesBigInteger() throws Exception {
         BigInteger testValue = new BigInteger("123456789012345678901234567890");
         byte[] smileData = generateSmileBytes(gen -> gen.write(testValue));
@@ -790,6 +803,109 @@ abstract class SmileParserTestBase {
     }
 
     @Test
+    public void testMarkResetRestoresSharedValueStrings() throws Exception {
+        SmileConfig config = SmileConfig.builder()
+                .sharedValueStrings(true)
+                .build();
+        byte[] smileData = generateSmileBytes(config, gen -> {
+            gen.writeArrayStart();
+            gen.write("a");
+            gen.write("b");
+            gen.write("c");
+            gen.write("d");
+            gen.write("e");
+            gen.write("e");
+            gen.writeArrayEnd();
+        });
+
+        JsonParser parser = createParser(smileData);
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("a"));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("b"));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        parser.mark();
+        assertThat(parser.readString(), is("c"));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("d"));
+
+        parser.resetToMark();
+
+        assertThat(parser.readString(), is("c"));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("d"));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("e"));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("e"));
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testMarkResetRestoresSharedKeyStrings() throws Exception {
+        byte[] smileData = generateSmileBytes(gen -> {
+            gen.writeArrayStart();
+            gen.writeObjectStart();
+            gen.write("a", 1);
+            gen.writeObjectEnd();
+            gen.writeObjectStart();
+            gen.write("b", 2);
+            gen.writeObjectEnd();
+            gen.writeObjectStart();
+            gen.write("c", 3);
+            gen.writeObjectEnd();
+            gen.writeObjectStart();
+            gen.write("d", 4);
+            gen.writeObjectEnd();
+            gen.writeObjectStart();
+            gen.write("e", 5);
+            gen.writeObjectEnd();
+            gen.writeObjectStart();
+            gen.write("e", 6);
+            gen.writeObjectEnd();
+            gen.writeArrayEnd();
+        });
+
+        JsonParser parser = createParser(smileData);
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is((byte) '{'));
+        assertObjectValue(parser.readJsonObject(), "a", 1);
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '{'));
+        assertObjectValue(parser.readJsonObject(), "b", 2);
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '{'));
+        parser.mark();
+        assertObjectValue(parser.readJsonObject(), "c", 3);
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '{'));
+        assertObjectValue(parser.readJsonObject(), "d", 4);
+
+        parser.resetToMark();
+
+        assertObjectValue(parser.readJsonObject(), "c", 3);
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '{'));
+        assertObjectValue(parser.readJsonObject(), "d", 4);
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '{'));
+        assertObjectValue(parser.readJsonObject(), "e", 5);
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '{'));
+        assertObjectValue(parser.readJsonObject(), "e", 6);
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
     public void testReadBinaryOnNonBinaryTokenFails() throws Exception {
         byte[] smileData = generateSmileBytes(gen -> gen.write("not-binary"));
         JsonParser parser = createParser(smileData);
@@ -1276,5 +1392,10 @@ abstract class SmileParserTestBase {
             hash *= 0x01000193;
         }
         return hash;
+    }
+
+    private static void assertObjectValue(JsonObject object, String key, int value) {
+        assertThat(object.keys().size(), is(1));
+        assertThat(object.intValue(key).orElseThrow(), is(value));
     }
 }

@@ -192,6 +192,14 @@ final class SmileInputStreamParser extends JsonParserBase {
     private int markDepth = -1;
     private boolean markInObject = false;
     private boolean markKeyExpected = false;
+    private byte markForcedEvent = -1;
+    private boolean markEndOfContent = false;
+    private JsonString[] markSharedKeyStrings = EMPTY;
+    private JsonString[] markSharedValueStrings = EMPTY;
+    private LazyHash[] markSharedKeyHashes = EMPTY_HASH;
+    private LazyHash[] markSharedValueHashes = EMPTY_HASH;
+    private int markNextSharedValueIndex;
+    private int markNextSharedKeyIndex;
 
     // -----------------------------------------------------------------------
     // Shared-string tables  (mirrors SmileParser; bytes are always copied on
@@ -1357,6 +1365,14 @@ final class SmileInputStreamParser extends JsonParserBase {
         markKeyExpected = keyExpected;
         markInObject = inObject;
         markDepth = stackDepth;
+        markForcedEvent = forcedEvent;
+        markEndOfContent = endOfContent;
+        markSharedKeyStrings = Arrays.copyOf(sharedKeyStrings, sharedKeyStrings.length);
+        markSharedValueStrings = Arrays.copyOf(sharedValueStrings, sharedValueStrings.length);
+        markSharedKeyHashes = Arrays.copyOf(sharedKeyHashes, sharedKeyHashes.length);
+        markSharedValueHashes = Arrays.copyOf(sharedValueHashes, sharedValueHashes.length);
+        markNextSharedKeyIndex = nextSharedKeyIndex;
+        markNextSharedValueIndex = nextSharedValueIndex;
     }
 
     @Override
@@ -1368,6 +1384,14 @@ final class SmileInputStreamParser extends JsonParserBase {
         markKeyExpected = false;
         markInObject = false;
         markDepth = -1;
+        markForcedEvent = -1;
+        markEndOfContent = false;
+        markSharedKeyStrings = EMPTY;
+        markSharedValueStrings = EMPTY;
+        markSharedKeyHashes = EMPTY_HASH;
+        markSharedValueHashes = EMPTY_HASH;
+        markNextSharedKeyIndex = 0;
+        markNextSharedValueIndex = 0;
     }
 
     @Override
@@ -1384,6 +1408,14 @@ final class SmileInputStreamParser extends JsonParserBase {
         keyExpected = markKeyExpected;
         inObject = markInObject;
         stackDepth = markDepth;
+        forcedEvent = markForcedEvent;
+        endOfContent = markEndOfContent;
+        sharedKeyStrings = Arrays.copyOf(markSharedKeyStrings, markSharedKeyStrings.length);
+        sharedValueStrings = Arrays.copyOf(markSharedValueStrings, markSharedValueStrings.length);
+        sharedKeyHashes = Arrays.copyOf(markSharedKeyHashes, markSharedKeyHashes.length);
+        sharedValueHashes = Arrays.copyOf(markSharedValueHashes, markSharedValueHashes.length);
+        nextSharedKeyIndex = markNextSharedKeyIndex;
+        nextSharedValueIndex = markNextSharedValueIndex;
     }
 
     // -----------------------------------------------------------------------

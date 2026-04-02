@@ -149,6 +149,19 @@ class SmileGeneratorTest {
         assertArrayEquals(expected, actual);
     }
 
+    @Test
+    void encodesNegativeScaleBigDecimalUsingDecimalToken() {
+        BigDecimal value = new BigDecimal("1E+3");
+        byte[] magnitude = value.unscaledValue().toByteArray();
+
+        byte[] actual = generateBytes(gen -> gen.write(value));
+
+        byte[] expected = concat(bytes(HEADER_0, HEADER_1, HEADER_2, HEADER_FEATURES, (byte) 0x2A),
+                                 concat(encodeVInt(zigzagInt(value.scale()) & 0xFFFFFFFFL),
+                                 concat(encodeVInt(magnitude.length), encode7Bit(magnitude))));
+        assertArrayEquals(expected, actual);
+    }
+
     /*
      * Spec: "Shared value Strings" and "Avoiding references 0x??FE and 0x??FF".
      * Rule: shared-value references use a 1024-entry window, must not encode forbidden low bytes, and reset cleanly
