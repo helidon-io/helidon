@@ -42,7 +42,6 @@ import com.sun.source.util.Trees;
 
 import static io.helidon.codegen.api.stability.ApiStabilityProcessor.SUPPRESS_DEPRECATION;
 import static io.helidon.common.Api.SUPPRESS_ALL;
-import static io.helidon.common.Api.SUPPRESS_DEPRECATED;
 import static io.helidon.common.Api.SUPPRESS_INCUBATING;
 import static io.helidon.common.Api.SUPPRESS_INTERNAL;
 import static io.helidon.common.Api.SUPPRESS_PREVIEW;
@@ -116,7 +115,7 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
                 if (checkAnnotation(path, elt, Api.Preview.class, previewApis, SUPPRESS_PREVIEW)) {
                     return null;
                 }
-                if (checkAnnotation(path, elt, Api.Deprecated.class, deprecatedApis, SUPPRESS_DEPRECATED, SUPPRESS_DEPRECATION)) {
+                if (checkAnnotation(path, elt, Deprecated.class, deprecatedApis, SUPPRESS_DEPRECATION)) {
                     return null;
                 }
                 // Keep scanning qualified usages so an annotated enclosing type is reported

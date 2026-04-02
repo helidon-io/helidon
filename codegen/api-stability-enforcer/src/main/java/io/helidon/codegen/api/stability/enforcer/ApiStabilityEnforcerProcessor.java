@@ -35,6 +35,7 @@ import javax.lang.model.element.TypeElement;
 public class ApiStabilityEnforcerProcessor extends AbstractProcessor {
     private Messager messager;
     private Set<TypeElement> stabilityAnnotations;
+    private TypeElement stableAnnotation;
 
     /**
      * Required by {@link java.util.ServiceLoader}.
@@ -61,24 +62,23 @@ public class ApiStabilityEnforcerProcessor extends AbstractProcessor {
         var previewAnnotation = elements.getTypeElement("io.helidon.common.Api.Preview");
         var incubatingAnnotation = elements.getTypeElement("io.helidon.common.Api.Incubating");
         var internalAnnotation = elements.getTypeElement("io.helidon.common.Api.Internal");
-        var deprecatedAnnotation = elements.getTypeElement("io.helidon.common.Api.Deprecated");
         var stableAnnotation = elements.getTypeElement("io.helidon.common.Api.Stable");
 
         if (previewAnnotation == null
                 || incubatingAnnotation == null
                 || internalAnnotation == null
-                || deprecatedAnnotation == null
                 || stableAnnotation == null) {
             this.stabilityAnnotations = Set.of();
+            this.stableAnnotation = null;
             this.messager = processingEnv.getMessager();
             return;
         }
 
+        this.stableAnnotation = stableAnnotation;
         this.stabilityAnnotations = Set.of(internalAnnotation,
                                            incubatingAnnotation,
                                            previewAnnotation,
-                                           stableAnnotation,
-                                           deprecatedAnnotation);
+                                           stableAnnotation);
 
         this.messager = processingEnv.getMessager();
     }
@@ -121,5 +121,30 @@ public class ApiStabilityEnforcerProcessor extends AbstractProcessor {
             messager.printError("Public API " + type + " has more than one stability annotation (@Api.*)", type);
             return;
         }
+
+        if (!discovered.contains(stableAnnotation)) {
+            validateNestedElements(type, type);
+        }
+    }
+
+    private void validateNestedElements(TypeElement topLevelType, Element enclosingElement) {
+        for (Element enclosed : enclosingElement.getEnclosedElements()) {
+            if (hasStableAnnotation(enclosed)) {
+                messager.printError("Element " + enclosed
+                                            + " must not declare @Api.Stable because top-level API "
+                                            + topLevelType + " is not @Api.Stable",
+                                    enclosed);
+            }
+            validateNestedElements(topLevelType, enclosed);
+        }
+    }
+
+    private boolean hasStableAnnotation(Element element) {
+        for (var am : element.getAnnotationMirrors()) {
+            if (stableAnnotation.equals(am.getAnnotationType().asElement())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

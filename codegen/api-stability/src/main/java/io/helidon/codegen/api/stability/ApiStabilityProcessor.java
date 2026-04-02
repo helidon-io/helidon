@@ -66,6 +66,7 @@ public class ApiStabilityProcessor extends AbstractProcessor {
                                                                        ACTION_LAMBDA,
                                                                        ACTION_TYPE);
     private static final StabilityMeta PREVIEW_META = new StabilityMeta(Api.Preview.class,
+                                                                        "@Api.Preview",
                                                                         PREVIEW_ACTION,
                                                                         "preview",
                                                                         "APIs may change between minor versions.",
@@ -76,6 +77,7 @@ public class ApiStabilityProcessor extends AbstractProcessor {
                                                                           ACTION_LAMBDA,
                                                                           ACTION_TYPE);
     private static final StabilityMeta INCUBATING_META = new StabilityMeta(Api.Incubating.class,
+                                                                           "@Api.Incubating",
                                                                            INCUBATING_ACTION,
                                                                            "incubating",
                                                                            "APIs may change between minor versions, including "
@@ -87,6 +89,7 @@ public class ApiStabilityProcessor extends AbstractProcessor {
                                                                         ACTION_LAMBDA,
                                                                         ACTION_TYPE);
     private static final StabilityMeta INTERNAL_META = new StabilityMeta(Api.Internal.class,
+                                                                         "@Api.Internal",
                                                                          INTERNAL_ACTION,
                                                                          "internal",
                                                                          "Do not use these APIs.",
@@ -96,12 +99,12 @@ public class ApiStabilityProcessor extends AbstractProcessor {
                                                                           Action.WARN,
                                                                           ACTION_LAMBDA,
                                                                           ACTION_TYPE);
-    private static final StabilityMeta DEPRECATED_META = new StabilityMeta(Api.Deprecated.class,
+    private static final StabilityMeta DEPRECATED_META = new StabilityMeta(Deprecated.class,
+                                                                           "@Deprecated",
                                                                            DEPRECATED_ACTION,
                                                                            "deprecated",
-                                                                           "APIs will be removed in next major version of "
-                                                                                   + "Helidon",
-                                                                           Api.SUPPRESS_DEPRECATED,
+                                                                           "Deprecated APIs may be removed in a future "
+                                                                                   + "major version of Helidon.",
                                                                            SUPPRESS_DEPRECATION);
 
     private Messager messager;
@@ -319,9 +322,8 @@ public class ApiStabilityProcessor extends AbstractProcessor {
         addModuleDirectiveUsage(usedElement, module, Api.Preview.class, previewApis, Api.SUPPRESS_PREVIEW);
         addModuleDirectiveUsage(usedElement,
                                 module,
-                                Api.Deprecated.class,
+                                Deprecated.class,
                                 deprecatedApis,
-                                Api.SUPPRESS_DEPRECATED,
                                 SUPPRESS_DEPRECATION);
     }
 
@@ -375,8 +377,8 @@ public class ApiStabilityProcessor extends AbstractProcessor {
 
         Diagnostic.Kind kind = action == Action.WARN ? Diagnostic.Kind.WARNING : Diagnostic.Kind.ERROR;
 
-        messager.printMessage(kind, "Usage of Helidon APIs annotated with @"
-                + Api.class.getSimpleName() + "." + meta.annotation.getSimpleName() + ". " + meta.warning());
+        messager.printMessage(kind, "Usage of Helidon APIs annotated with "
+                + meta.displayName() + ". " + meta.warning());
 
         messager.printMessage(kind, "This " + kind
                 + " can be suppressed with " + suppressionMessage(meta)
@@ -397,12 +399,13 @@ public class ApiStabilityProcessor extends AbstractProcessor {
 
     private static String suppressionMessage(StabilityMeta meta) {
         return Arrays.stream(meta.suppressValues())
-                .map(value -> "@SuppressWarnings(\"" + value + "\")")
+                .map(it -> "@SuppressWarnings(\"" + it + "\")")
                 .reduce((left, right) -> left + " or " + right)
                 .orElseThrow();
     }
 
     private record StabilityMeta(Class<? extends Annotation> annotation,
+                                 String displayName,
                                  Option<Action> compilerOption,
                                  String name,
                                  String warning,

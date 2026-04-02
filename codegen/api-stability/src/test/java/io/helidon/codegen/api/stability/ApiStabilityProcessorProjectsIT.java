@@ -54,7 +54,7 @@ public class ApiStabilityProcessorProjectsIT {
         assertThat(buildLog, containsString("Usage of Helidon APIs annotated with @Api.Internal"));
         assertThat(buildLog, containsString("Usage of Helidon APIs annotated with @Api.Incubating"));
         assertThat(buildLog, containsString("Usage of Helidon APIs annotated with @Api.Preview"));
-        assertThat(buildLog, containsString("Usage of Helidon APIs annotated with @Api.Deprecated"));
+        assertThat(buildLog, containsString("Usage of Helidon APIs annotated with @Deprecated"));
         assertThat(buildLog, not(containsString("no more tokens - could not parse error message")));
     }
 

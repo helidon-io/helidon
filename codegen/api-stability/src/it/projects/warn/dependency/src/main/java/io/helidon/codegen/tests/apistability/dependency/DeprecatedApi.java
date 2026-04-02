@@ -18,6 +18,7 @@ package io.helidon.codegen.tests.apistability.dependency;
 
 import io.helidon.common.Api;
 
-@Api.Deprecated
+@Api.Stable
+@Deprecated
 public class DeprecatedApi {
 }

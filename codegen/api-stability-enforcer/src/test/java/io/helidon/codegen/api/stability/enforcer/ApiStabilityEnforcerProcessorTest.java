@@ -114,6 +114,74 @@ class ApiStabilityEnforcerProcessorTest {
         assertThat(messages, empty());
     }
 
+    @Test
+    void testDeprecatedDoesNotSatisfyTopLevelStabilityRequirement() throws IOException {
+        var messages = compileWithApi(new ApiStabilityEnforcerProcessor(),
+                                      new JavaSourceFromString("TestApi.java", """
+                                              package io.helidon.common;
+
+                                              @Deprecated
+                                              public class TestApi {
+                                              }
+                                              """));
+
+        assertThat(messages,
+                   hasItem(containsString("Public API io.helidon.common.TestApi is missing stability annotation")));
+    }
+
+    @Test
+    void testStableAndDeprecatedTopLevelAnnotationIsAllowed() throws IOException {
+        var messages = compileWithApi(new ApiStabilityEnforcerProcessor(),
+                                      new JavaSourceFromString("TestApi.java", """
+                                              package io.helidon.common;
+
+                                              @Api.Stable
+                                              @Deprecated
+                                              public class TestApi {
+                                              }
+                                              """));
+
+        assertThat(messages, empty());
+    }
+
+    @Test
+    void testNonStableTopLevelCannotHaveStableMethod() throws IOException {
+        var messages = compileWithApi(new ApiStabilityEnforcerProcessor(),
+                                      new JavaSourceFromString("TestApi.java", """
+                                              package io.helidon.common;
+
+                                              @Api.Preview
+                                              public class TestApi {
+                                                  @Api.Stable
+                                                  public void stableMethod() {
+                                                  }
+                                              }
+                                              """));
+
+        assertThat(messages,
+                   hasItem(containsString("must not declare @Api.Stable because top-level API "
+                                                  + "io.helidon.common.TestApi is not @Api.Stable")));
+    }
+
+    @Test
+    void testNonStableTopLevelCannotHaveStableNestedType() throws IOException {
+        var messages = compileWithApi(new ApiStabilityEnforcerProcessor(),
+                                      new JavaSourceFromString("TestApi.java", """
+                                              package io.helidon.common;
+
+                                              @Api.Internal
+                                              public class TestApi {
+                                                  @Api.Stable
+                                                  public static class Nested {
+                                                  }
+                                              }
+                                              """));
+
+        assertThat(messages,
+                   hasItem(containsString("must not declare @Api.Stable because top-level API "
+                                                  + "io.helidon.common.TestApi is not @Api.Stable")));
+    }
+
     private static List<String> compileWithoutApi(Processor processor,
                                                   JavaFileObject... compilationUnits) throws IOException {
         return compile(processor, compilationUnits);
@@ -136,9 +204,6 @@ class ApiStabilityEnforcerProcessorTest {
                     }
 
                     public @interface Internal {
-                    }
-
-                    public @interface Deprecated {
                     }
                 }
                 """));

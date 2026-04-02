@@ -98,7 +98,7 @@ public class ApiStabilityProcessorTest {
                 new CompilerOptionCase("helidon.api.preview", "@Api.Preview", "PreviewApi"),
                 new CompilerOptionCase("helidon.api.incubating", "@Api.Incubating", "IncubatingApi"),
                 new CompilerOptionCase("helidon.api.internal", "@Api.Internal", "InternalApi"),
-                new CompilerOptionCase("helidon.api.deprecated", "@Api.Deprecated", "DeprecatedApi")
+                new CompilerOptionCase("helidon.api.deprecated", "@Api.Stable\n@Deprecated", "DeprecatedApi")
         )) {
             var messages = compile(new ApiStabilityProcessor(),
                                    paths(Api.class),
@@ -125,7 +125,7 @@ public class ApiStabilityProcessorTest {
                                new JavaSourceFromString("IncubatingApi.java", apiSource("@Api.Incubating",
                                                                                          "IncubatingApi")),
                                new JavaSourceFromString("InternalApi.java", apiSource("@Api.Internal", "InternalApi")),
-                               new JavaSourceFromString("DeprecatedApi.java", apiSource("@Api.Deprecated",
+                               new JavaSourceFromString("DeprecatedApi.java", apiSource("@Api.Stable\n@Deprecated",
                                                                                          "DeprecatedApi")),
                                new JavaSourceFromString("UsesAllApis.java", """
                                        package com.example;
@@ -269,8 +269,7 @@ public class ApiStabilityProcessorTest {
                 new SuppressionCase(Api.SUPPRESS_PREVIEW, "@Api.Preview", "PreviewApi"),
                 new SuppressionCase(Api.SUPPRESS_INCUBATING, "@Api.Incubating", "IncubatingApi"),
                 new SuppressionCase(Api.SUPPRESS_INTERNAL, "@Api.Internal", "InternalApi"),
-                new SuppressionCase(Api.SUPPRESS_DEPRECATED, "@Api.Deprecated", "DeprecatedApi"),
-                new SuppressionCase(ApiStabilityProcessor.SUPPRESS_DEPRECATION, "@Api.Deprecated", "DeprecatedApi")
+                new SuppressionCase(ApiStabilityProcessor.SUPPRESS_DEPRECATION, "@Api.Stable\n@Deprecated", "DeprecatedApi")
         )) {
             var messages = compile(new ApiStabilityProcessor(),
                                    paths(Api.class),
@@ -609,7 +608,8 @@ public class ApiStabilityProcessorTest {
 
                                        import io.helidon.common.Api;
 
-                                       @Api.Deprecated
+                                       @Api.Stable
+                                       @Deprecated
                                        public class DeprecatedApi {
                                        }
                                        """),
@@ -623,7 +623,7 @@ public class ApiStabilityProcessorTest {
                                        """));
 
         assertThat(messages, hasItem(containsString("warning: Usage of Helidon APIs annotated with @Api.Preview")));
-        assertThat(messages, hasItem(containsString("warning: Usage of Helidon APIs annotated with @Api.Deprecated")));
+        assertThat(messages, hasItem(containsString("warning: Usage of Helidon APIs annotated with @Deprecated")));
         assertThat(countContaining(messages, "/UsesApis.java:["), is(2));
     }
 
@@ -767,7 +767,9 @@ public class ApiStabilityProcessorTest {
         task.call();
         var messages = new ArrayList<String>();
         for (var diagnostic : diagnostics.getDiagnostics()) {
-            messages.add(diagnostic.toString());
+            if (diagnostic.getKind() != javax.tools.Diagnostic.Kind.NOTE) {
+                messages.add(diagnostic.toString());
+            }
         }
         return messages;
     }
