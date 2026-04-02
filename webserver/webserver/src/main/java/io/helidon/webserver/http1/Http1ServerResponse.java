@@ -408,10 +408,19 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             @Override
             public Runnable closeRunnable() {
                 return () -> {
-                    Http1ServerResponse.this.isSent = true;
-                    afterSend();
-                    request.reset();
+                    if (outputStream == null) {
+                        Http1ServerResponse.this.isSent = true;
+                        afterSend();
+                        request.reset();
+                    } else {
+                        commit();
+                    }
                 };
+            }
+
+            @Override
+            public void flushHeaders() {
+                Http1ServerResponse.this.flushHeaders();
             }
         });
     }
@@ -419,7 +428,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     protected Optional<OutputStream> sinkEntityOutputStream(Runnable responsePreparation) {
         Objects.requireNonNull(responsePreparation);
         beforeSend();
-        return Optional.empty();
+        responsePreparation.run();
+        return Optional.of(outputStream(false));
+    }
+
+    private void flushHeaders() {
+        if (outputStream != null) {
+            outputStream.flushHeaders();
+        }
     }
 
     private void handleSinkData(Object data, MediaType mediaType) {
@@ -795,6 +811,35 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             }
         }
 
+        /**
+         * Emits the HTTP/1.1 status line and headers while keeping the response stream open.
+         * <p>
+         * If the first body chunk was already buffered, this delegates to the normal first-write
+         * path so header emission and chunk framing stay identical to the regular streaming logic.
+         * Otherwise it sends only the headers and leaves payload writes for later.
+         */
+        void flushHeaders() {
+            if (closed) {
+                return;
+            }
+            if (!firstByte) {
+                responseSentRunnable.run();
+                return;
+            }
+            if (firstBuffer != null) {
+                try {
+                    write(BufferData.empty());
+                } catch (IOException e) {
+                    throw new ServerConnectionException("Failed to flush server response headers.", e);
+                }
+                responseSentRunnable.run();
+                return;
+            }
+            sendHeadersAndPrepare();
+            firstByte = false;
+            responseSentRunnable.run();
+        }
+
         long totalBytesWritten() {
             return responseBytesTotal;
         }
@@ -1104,6 +1149,15 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                 closingDelegate.commit();
             } catch (IOException | UncheckedIOException | SocketWriterException e) {
                 throw new ServerConnectionException("Failed to flush server output stream", e);
+            }
+        }
+
+        void flushHeaders() {
+            try {
+                flush();
+                closingDelegate.flushHeaders();
+            } catch (IOException | UncheckedIOException e) {
+                throw new ServerConnectionException("Failed to flush server response headers", e);
             }
         }
     }

@@ -19,13 +19,20 @@ package io.helidon.webserver.http2;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.function.Consumer;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpException;
 import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
@@ -36,12 +43,20 @@ import io.helidon.http.http2.Http2Headers;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.ServerResponseBase;
+import io.helidon.webserver.http.spi.Sink;
+import io.helidon.webserver.http.spi.SinkProvider;
+import io.helidon.webserver.http.spi.SinkProviderContext;
 
 class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private static final System.Logger LOGGER = System.getLogger(Http2ServerResponse.class.getName());
     private static final Header VARY_ACCEPT_ENCODING =
             HeaderValues.createCached(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME);
+    @SuppressWarnings("rawtypes")
+    private static final List<SinkProvider> SINK_PROVIDERS =
+            HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build().asList();
 
     private final ConnectionContext ctx;
     private final ServerResponseHeaders headers;
@@ -87,6 +102,48 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
         headers.set(header);
         return this;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
+        for (SinkProvider<?> provider : SINK_PROVIDERS) {
+            if (provider.supports(sinkType, request)) {
+                return (X) provider.create(new SinkProviderContext() {
+                    @Override
+                    public ServerResponse serverResponse() {
+                        return Http2ServerResponse.this;
+                    }
+
+                    @Override
+                    public ServerRequest serverRequest() {
+                        return request;
+                    }
+
+                    @Override
+                    public ConnectionContext connectionContext() {
+                        return ctx;
+                    }
+
+                    @Override
+                    public Optional<OutputStream> entityOutputStream(Runnable responsePreparation) {
+                        return Optional.of(Http2ServerResponse.this.outputStream(responsePreparation));
+                    }
+
+                    @Override
+                    public void flushHeaders() {
+                        Http2ServerResponse.this.flushHeaders();
+                    }
+
+                    @Override
+                    public Runnable closeRunnable() {
+                        return Http2ServerResponse.this::commit;
+                    }
+                });
+            }
+        }
+
+        throw new HttpException("Unable to find sink provider for request", Status.NOT_ACCEPTABLE_406);
     }
 
     @Override
@@ -207,6 +264,11 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     @Override
     public OutputStream outputStream() {
+        return outputStream(() -> { });
+    }
+
+    private OutputStream outputStream(Runnable responsePreparation) {
+        Objects.requireNonNull(responsePreparation);
         if (preparingResponse) {
             throw new IllegalStateException("Response preparation already in progress");
         }
@@ -221,7 +283,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             headers.add(STREAM_TRAILERS);
         }
 
-        boolean noEntityResponse = prepareResponse();
+        boolean noEntityResponse = prepareResponse(responsePreparation);
         streamingEntity = true;
 
         outputStream = new BlockingOutputStream(request, this, () -> this.isSent = true, () -> {
@@ -239,9 +301,14 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     }
 
     private boolean prepareResponse() {
+        return prepareResponse(() -> { });
+    }
+
+    private boolean prepareResponse(Runnable responsePreparation) {
         preparingResponse = true;
         try {
             beforeSend();
+            responsePreparation.run();
         } finally {
             preparingResponse = false;
         }
@@ -327,6 +394,12 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     private static boolean sendTrailers(ServerResponseHeaders headers) {
         return headers.contains(HeaderNames.TRAILER);
+    }
+
+    private void flushHeaders() {
+        if (outputStream != null) {
+            outputStream.flushHeaders();
+        }
     }
 
     private void validateResponse(Http2Headers http2Headers) {
@@ -480,6 +553,28 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
+        }
+
+        void flushHeaders() {
+            if (closed) {
+                return;
+            }
+            if (!firstByte) {
+                responseSentRunnable.run();
+                return;
+            }
+            if (firstBuffer != null) {
+                try {
+                    write(BufferData.empty());
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+                responseSentRunnable.run();
+                return;
+            }
+            sendHeadersAndPrepare();
+            firstByte = false;
+            responseSentRunnable.run();
         }
 
         private void write(BufferData buffer) throws IOException {
