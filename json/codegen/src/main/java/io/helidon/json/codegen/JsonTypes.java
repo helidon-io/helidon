@@ -47,6 +47,7 @@ final class JsonTypes {
     static final TypeName JSON_BINDING_EXCEPTION = TypeName.create("io.helidon.json.binding.JsonBindingException");
 
     static final TypeName JSON_GENERATOR = TypeName.create("io.helidon.json.JsonGenerator");
+    static final TypeName JSON_KEY = TypeName.create("io.helidon.json.JsonKey");
     static final TypeName BYTES = TypeName.create("io.helidon.common.buffers.Bytes");
     static final TypeName JSON_PARSER = TypeName.create("io.helidon.json.JsonParser");
     static final TypeName OBJECT_START_PARSER = TypeName.create("io.helidon.json.ObjectStartParser");

@@ -52,6 +52,32 @@ public enum BindingMethod {
             return jsonBinding.deserialize(json, type);
         }
     },
+    BYTE_ARRAY {
+        @Override
+        String serialize(JsonBinding jsonBinding, Object instance) {
+            return new String(jsonBinding.serializeToBytes(instance), StandardCharsets.UTF_8);
+        }
+
+        @Override
+        <T> T deserialize(JsonBinding jsonBinding, String json, Class<T> type) {
+            return jsonBinding.deserialize(json.getBytes(StandardCharsets.UTF_8), type);
+        }
+
+        @Override
+        <T> String serialize(JsonBinding jsonBinding, T instance, Class<? super T> type) {
+            return new String(jsonBinding.serializeToBytes(instance, type), StandardCharsets.UTF_8);
+        }
+
+        @Override
+        <T> String serialize(JsonBinding jsonBinding, T instance, GenericType<? super T> type) {
+            return new String(jsonBinding.serializeToBytes(instance, type), StandardCharsets.UTF_8);
+        }
+
+        @Override
+        <T> T deserialize(JsonBinding jsonBinding, String json, GenericType<T> type) {
+            return jsonBinding.deserialize(json.getBytes(StandardCharsets.UTF_8), type);
+        }
+    },
     READER_WRITER {
         @Override
         String serialize(JsonBinding jsonBinding, Object instance) {

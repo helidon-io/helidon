@@ -25,6 +25,7 @@ import java.util.Base64;
 
 class JsonGeneratorWriter extends JsonGeneratorBase {
 
+    private static final char[] HEX_DIGITS = "0123456789ABCDEF".toCharArray();
     private static final char[] TRUE = "true".toCharArray();
     private static final char[] FALSE = "false".toCharArray();
     private static final char[] NULL = "null".toCharArray();
@@ -60,6 +61,16 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
 
     @Override
     protected void writeFloat(float value) {
+        if (Float.isNaN(value)) {
+            writeString("NaN");
+            return;
+        } else if (Float.NEGATIVE_INFINITY == value) {
+            writeString("-Infinity");
+            return;
+        } else if (Float.POSITIVE_INFINITY == value) {
+            writeString("Infinity");
+            return;
+        }
         try {
             writer.write(Float.toString(value));
         } catch (IOException e) {
@@ -69,6 +80,16 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
 
     @Override
     protected void writeDouble(double value) {
+        if (Double.isNaN(value)) {
+            writeString("NaN");
+            return;
+        } else if (Double.NEGATIVE_INFINITY == value) {
+            writeString("-Infinity");
+            return;
+        } else if (Double.POSITIVE_INFINITY == value) {
+            writeString("Infinity");
+            return;
+        }
         try {
             writer.write(Double.toString(value));
         } catch (IOException e) {
@@ -78,12 +99,20 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
 
     @Override
     protected void writeBigDecimal(BigDecimal value) {
-        writeString(value.toString());
+        try {
+            writer.write(value.toString());
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to write BigDecimal value.", e);
+        }
     }
 
     @Override
     protected void writeBigInteger(BigInteger value) {
-        writeString(value.toString());
+        try {
+            writer.write(value.toString());
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to write BigInteger value.", e);
+        }
     }
 
     @Override
@@ -91,32 +120,7 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
         try {
             writer.write('\"');
             for (int i = 0; i < value.length(); i++) {
-                char c = value.charAt(i);
-                switch (c) {
-                case '\n':
-                    writer.write("\\n");
-                    break;
-                case '\r':
-                    writer.write("\\r");
-                    break;
-                case '\t':
-                    writer.write("\\t");
-                    break;
-                case '\\':
-                    writer.write("\\\\");
-                    break;
-                case '\"':
-                    writer.write("\\\"");
-                    break;
-                default:
-                    // Check if the character is printable.
-                    // If not, print its unicode value (e.g., \u0000)
-                    if (c < 32 || c > 126) {
-                        writer.write(String.format("\\u%04x", (int) c));
-                    } else {
-                        writer.write(c);
-                    }
-                }
+                writeJsonChar(value.charAt(i));
             }
             writer.write('\"');
         } catch (IOException e) {
@@ -125,10 +129,19 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
     }
 
     @Override
+    protected void writeKeyName(JsonKey value) {
+        try {
+            writer.write(value.quotedChars());
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to write key value.", e);
+        }
+    }
+
+    @Override
     protected void writeChar(char value) {
         try {
             writer.write('\"');
-            writer.write(value);
+            writeJsonChar(value);
             writer.write('\"');
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write char value.", e);
@@ -170,5 +183,46 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
 
     @Override
     public void close() {
+    }
+
+    private void writeJsonChar(char c) throws IOException {
+        switch (c) {
+        case '\b':
+            writer.write("\\b");
+            return;
+        case '\f':
+            writer.write("\\f");
+            return;
+        case '\n':
+            writer.write("\\n");
+            return;
+        case '\r':
+            writer.write("\\r");
+            return;
+        case '\t':
+            writer.write("\\t");
+            return;
+        case '\\':
+            writer.write("\\\\");
+            return;
+        case '\"':
+            writer.write("\\\"");
+            return;
+        default:
+            if (c < 0x20 || Character.isSurrogate(c)) {
+                writeUnicodeEscape(c);
+            } else {
+                writer.write(c);
+            }
+        }
+    }
+
+    private void writeUnicodeEscape(char c) throws IOException {
+        writer.write('\\');
+        writer.write('u');
+        writer.write(HEX_DIGITS[(c >> 12) & 0xF]);
+        writer.write(HEX_DIGITS[(c >> 8) & 0xF]);
+        writer.write(HEX_DIGITS[(c >> 4) & 0xF]);
+        writer.write(HEX_DIGITS[c & 0xF]);
     }
 }

@@ -26,10 +26,9 @@ import io.helidon.common.buffers.Bytes;
  */
 public abstract class JsonGeneratorBase implements JsonGenerator {
 
-    static final int STACK_SIZE = 64;
+    static final int MAX_DEPTH = 64;
 
-    // stack structure tracking: true = object, false = array
-    private final boolean[] structureType = new boolean[STACK_SIZE];
+    private long structureTypes;
 
     // first: true if this is the first item in the current object/array
     private boolean first = true;
@@ -113,6 +112,15 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     /**
+     * Writes an object key name using a precomputed key.
+     *
+     * @param value key name to write
+     */
+    protected void writeKeyName(JsonKey value) {
+        writeString(value.value());
+    }
+
+    /**
      * Writes a string value.
      *
      * @param value string value to write
@@ -179,7 +187,30 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     @Override
+    public JsonGenerator writeKey(JsonKey key) {
+        checkAndWriteKey(key);
+        return this;
+    }
+
+    @Override
+    public JsonGenerator writePrecomputedKey(JsonKey key) {
+        return writeKey(key);
+    }
+
+    @Override
     public JsonGenerator write(String key, String value) {
+        checkAndWriteKey(key);
+        if (value == null) {
+            writeNullValue();
+        } else {
+            writeString(value);
+        }
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(JsonKey key, String value) {
         checkAndWriteKey(key);
         if (value == null) {
             writeNullValue();
@@ -199,7 +230,23 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     @Override
+    public JsonGenerator write(JsonKey key, int value) {
+        checkAndWriteKey(key);
+        writeInt(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
     public JsonGenerator write(String key, long value) {
+        checkAndWriteKey(key);
+        writeLong(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(JsonKey key, long value) {
         checkAndWriteKey(key);
         writeLong(value);
         keyWritten = false;
@@ -215,7 +262,23 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     @Override
+    public JsonGenerator write(JsonKey key, float value) {
+        checkAndWriteKey(key);
+        writeFloat(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
     public JsonGenerator write(String key, double value) {
+        checkAndWriteKey(key);
+        writeDouble(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(JsonKey key, double value) {
         checkAndWriteKey(key);
         writeDouble(value);
         keyWritten = false;
@@ -231,7 +294,23 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     @Override
+    public JsonGenerator write(JsonKey key, boolean value) {
+        checkAndWriteKey(key);
+        writeBoolean(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
     public JsonGenerator write(String key, char value) {
+        checkAndWriteKey(key);
+        writeChar(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(JsonKey key, char value) {
         checkAndWriteKey(key);
         writeChar(value);
         keyWritten = false;
@@ -247,7 +326,23 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     @Override
+    public JsonGenerator write(JsonKey key, BigDecimal value) {
+        checkAndWriteKey(key);
+        writeBigDecimal(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
     public JsonGenerator write(String key, BigInteger value) {
+        checkAndWriteKey(key);
+        writeBigInteger(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
+    public JsonGenerator write(JsonKey key, BigInteger value) {
         checkAndWriteKey(key);
         writeBigInteger(value);
         keyWritten = false;
@@ -263,6 +358,14 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     @Override
+    public JsonGenerator write(JsonKey key, JsonValue value) {
+        checkAndWriteKey(key);
+        writeJsonValue(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
     public JsonGenerator writeBinary(String key, byte[] value) {
         checkAndWriteKey(key);
         writeBinaryArray(value);
@@ -271,10 +374,16 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     @Override
+    public JsonGenerator writeBinary(JsonKey key, byte[] value) {
+        checkAndWriteKey(key);
+        writeBinaryArray(value);
+        keyWritten = false;
+        return this;
+    }
+
+    @Override
     public JsonGenerator write(String value) {
-        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
-            throw new JsonException("Value without key is supported only as a root or in the array");
-        }
+        validateValueWrite();
         beforeWrite();
         if (value == null) {
             writeNullValue();
@@ -287,9 +396,7 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     @Override
     public JsonGenerator write(byte value) {
-        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
-            throw new JsonException("Value without key is supported only as a root or in the array");
-        }
+        validateValueWrite();
         beforeWrite();
         writeLong(value);
         keyWritten = false;
@@ -298,9 +405,7 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     @Override
     public JsonGenerator write(short value) {
-        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
-            throw new JsonException("Value without key is supported only as a root or in the array");
-        }
+        validateValueWrite();
         beforeWrite();
         writeLong(value);
         keyWritten = false;
@@ -309,9 +414,7 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     @Override
     public JsonGenerator write(int value) {
-        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
-            throw new JsonException("Value without key is supported only as a root or in the array");
-        }
+        validateValueWrite();
         beforeWrite();
         writeInt(value);
         keyWritten = false;
@@ -320,9 +423,7 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     @Override
     public JsonGenerator write(long value) {
-        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
-            throw new JsonException("Value without key is supported only as a root or in the array");
-        }
+        validateValueWrite();
         beforeWrite();
         writeLong(value);
         keyWritten = false;
@@ -331,9 +432,7 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     @Override
     public JsonGenerator write(float value) {
-        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
-            throw new JsonException("Value without key is supported only as a root or in the array");
-        }
+        validateValueWrite();
         beforeWrite();
         writeFloat(value);
         keyWritten = false;
@@ -342,9 +441,7 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     @Override
     public JsonGenerator write(double value) {
-        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
-            throw new JsonException("Value without key is supported only as a root or in the array");
-        }
+        validateValueWrite();
         beforeWrite();
         writeDouble(value);
         keyWritten = false;
@@ -353,9 +450,7 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     @Override
     public JsonGenerator write(boolean value) {
-        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
-            throw new JsonException("Value without key is supported only as a root or in the array");
-        }
+        validateValueWrite();
         beforeWrite();
         writeBoolean(value);
         keyWritten = false;
@@ -364,9 +459,7 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     @Override
     public JsonGenerator write(char value) {
-        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
-            throw new JsonException("Value without key is supported only as a root or in the array");
-        }
+        validateValueWrite();
         beforeWrite();
         writeChar(value);
         keyWritten = false;
@@ -375,9 +468,7 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     @Override
     public JsonGenerator write(BigDecimal value) {
-        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
-            throw new JsonException("Value without key is supported only as a root or in the array");
-        }
+        validateValueWrite();
         beforeWrite();
         writeBigDecimal(value);
         keyWritten = false;
@@ -386,9 +477,7 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     @Override
     public JsonGenerator write(BigInteger value) {
-        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
-            throw new JsonException("Value without key is supported only as a root or in the array");
-        }
+        validateValueWrite();
         beforeWrite();
         writeBigInteger(value);
         keyWritten = false;
@@ -397,9 +486,7 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     @Override
     public JsonGenerator write(JsonValue value) {
-        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
-            throw new JsonException("Value without key is supported only as a root or in the array");
-        }
+        validateValueWrite();
         writeJsonValue(value);
         keyWritten = false;
         return this;
@@ -407,9 +494,7 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     @Override
     public JsonGenerator writeBinary(byte[] value) {
-        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
-            throw new JsonException("Value without key is supported only as a root or in the array");
-        }
+        validateValueWrite();
         writeBinaryArray(value);
         keyWritten = false;
         return this;
@@ -417,9 +502,7 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     @Override
     public JsonGenerator writeNull() {
-        if (depth > 0 && structureType[depth - 1] && !keyWritten) {
-            throw new JsonException("Value without key is supported only as a root or in the array");
-        }
+        validateValueWrite();
         beforeWrite();
         writeNullValue();
         keyWritten = false;
@@ -470,12 +553,28 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
         value.toJson(this);
     }
 
-    private void checkAndWriteKey(String key) {
-        if (depth == 0 || !structureType[depth - 1]) {
+    private void validateKeyWrite() {
+        if (!inObject()) {
             throw new JsonException("Key can be written only into the object");
         } else if (keyWritten) {
             throw new JsonException("Cannot write key twice");
-        } else if (key == null) {
+        }
+    }
+
+    private void checkAndWriteKey(String key) {
+        validateKeyWrite();
+        if (key == null) {
+            throw new JsonException("Key cannot be null");
+        }
+        beforeWrite();
+        writeKeyName(key);
+        writeControlByte(Bytes.COLON_BYTE);
+        keyWritten = true;
+    }
+
+    private void checkAndWriteKey(JsonKey key) {
+        validateKeyWrite();
+        if (key == null) {
             throw new JsonException("Key cannot be null");
         }
         beforeWrite();
@@ -485,10 +584,14 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     }
 
     private void pushStructureType(boolean isObject) {
-        if (depth >= STACK_SIZE) {
+        if (depth >= MAX_DEPTH) {
             throw new IllegalStateException("Nesting too deep");
         }
-        structureType[depth] = isObject;
+        if (isObject) {
+            structureTypes |= 1L << depth;
+        } else {
+            structureTypes &= ~(1L << depth);
+        }
         first = true;
         depth++;
     }
@@ -497,6 +600,17 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
         depth--;
         if (depth < 0) {
             throw new IllegalStateException("Invalid JSON structure");
+        }
+        structureTypes &= ~(1L << depth);
+    }
+
+    private boolean inObject() {
+        return depth > 0 && (structureTypes & (1L << (depth - 1))) != 0;
+    }
+
+    private void validateValueWrite() {
+        if (inObject() && !keyWritten) {
+            throw new JsonException("Value without key is supported only as a root or in the array");
         }
     }
 }

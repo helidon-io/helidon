@@ -22,17 +22,21 @@ import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 
 import io.helidon.common.buffers.Bytes;
 
 class JsonGeneratorOutputStream extends JsonGeneratorBase {
 
+    private static final int INITIAL_BUFFER_SIZE = 256;
+    private static final int MAX_BUFFER_SIZE = 1024;
     private static final byte[] HEX_DIGITS = "0123456789ABCDEF".getBytes(StandardCharsets.US_ASCII);
+    private static final String LONG_MIN_VALUE_TEXT = Long.toString(Long.MIN_VALUE);
 
     private final OutputStream outputStream;
-    private final byte[] buffer = new byte[256];
-    private final byte[] digits = new byte[20];
+    private byte[] buffer = new byte[INITIAL_BUFFER_SIZE];
+    private byte[] digits;
     private int index = 0;
     private boolean closed;
 
@@ -42,8 +46,18 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
 
     @Override
     protected void ensureCapacity(int extra) {
-        if (index + extra >= buffer.length) {
-            writeBuffer();
+        if (index + extra < buffer.length) {
+            return;
+        }
+        if (extra <= MAX_BUFFER_SIZE && buffer.length < MAX_BUFFER_SIZE) {
+            growBuffer(Math.min(MAX_BUFFER_SIZE, index + extra));
+            if (index + extra <= buffer.length) {
+                return;
+            }
+        }
+        writeBuffer();
+        if (extra > buffer.length) {
+            growBuffer(extra);
         }
     }
 
@@ -51,12 +65,27 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
     protected void writeString(String value) {
         ensureCapacity(1);
         buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
-        for (int i = 0; i < value.length(); i++) {
+
+        int asciiStart = 0;
+        int length = value.length();
+        for (int i = 0; i < length; i++) {
             char c = value.charAt(i);
+            if (isAsciiPlain(c)) {
+                continue;
+            }
+            writeAscii(value, asciiStart, i);
             encodeChar(c);
+            asciiStart = i + 1;
         }
+        writeAscii(value, asciiStart, length);
+
         ensureCapacity(1);
         buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
+    }
+
+    @Override
+    protected void writeKeyName(JsonKey value) {
+        writeBytes(value.quotedUtf8());
     }
 
     @Override
@@ -85,6 +114,11 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
             writeByteExact(Bytes.ZERO_DIGIT_BYTE);
             return;
         }
+        if (value == Long.MIN_VALUE) {
+            writeAscii(LONG_MIN_VALUE_TEXT);
+            return;
+        }
+        byte[] digitsBuffer = digitsBuffer();
         long toProcess = value;
         int digits = 0;
         boolean negative = value < 0;
@@ -94,12 +128,12 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
             toProcess = -toProcess;
         }
         while (toProcess > 0) {
-            this.digits[digits++] = (byte) ('0' + toProcess % 10);
+            digitsBuffer[digits++] = (byte) ('0' + toProcess % 10);
             toProcess /= 10;
         }
         ensureCapacity(digits);
         for (int i = --digits; i >= 0; i--) {
-            buffer[index++] = this.digits[i];
+            buffer[index++] = digitsBuffer[i];
         }
     }
 
@@ -107,13 +141,16 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
     protected void writeFloat(float value) {
         //Performance improvement needed
         if (Float.isNaN(value)) {
-            ensureCapacity(3);
+            ensureCapacity(5);
+            buffer[index++] = (byte) '"';
             buffer[index++] = (byte) 'N';
             buffer[index++] = (byte) 'a';
             buffer[index++] = (byte) 'N';
+            buffer[index++] = (byte) '"';
             return;
         } else if (Float.NEGATIVE_INFINITY == value) {
-            ensureCapacity(9);
+            ensureCapacity(11);
+            buffer[index++] = (byte) '"';
             buffer[index++] = (byte) '-';
             buffer[index++] = (byte) 'I';
             buffer[index++] = (byte) 'n';
@@ -123,9 +160,11 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
             buffer[index++] = (byte) 'i';
             buffer[index++] = (byte) 't';
             buffer[index++] = (byte) 'y';
+            buffer[index++] = (byte) '"';
             return;
         } else if (Float.POSITIVE_INFINITY == value) {
-            ensureCapacity(8);
+            ensureCapacity(10);
+            buffer[index++] = (byte) '"';
             buffer[index++] = (byte) 'I';
             buffer[index++] = (byte) 'n';
             buffer[index++] = (byte) 'f';
@@ -134,6 +173,7 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
             buffer[index++] = (byte) 'i';
             buffer[index++] = (byte) 't';
             buffer[index++] = (byte) 'y';
+            buffer[index++] = (byte) '"';
             return;
         } else if (value == 0.0) {
             ensureCapacity(3);
@@ -142,29 +182,23 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
             buffer[index++] = (byte) '0';
             return;
         }
-
-        // Convert to string (optimized native routine)
-        String str = Float.toString(value);
-        int len = str.length();
-
-        ensureCapacity(len);
-        for (int i = 0; i < len; i++) {
-            buffer[index + i] = (byte) str.charAt(i); // ASCII digits + '.', 'E', '-', etc.
-        }
-        index += len;
+        writeAscii(Float.toString(value));
     }
 
     @Override
     protected void writeDouble(double value) {
         //Performance improvement needed
         if (Double.isNaN(value)) {
-            ensureCapacity(3);
+            ensureCapacity(5);
+            buffer[index++] = (byte) '"';
             buffer[index++] = (byte) 'N';
             buffer[index++] = (byte) 'a';
             buffer[index++] = (byte) 'N';
+            buffer[index++] = (byte) '"';
             return;
         } else if (Double.NEGATIVE_INFINITY == value) {
-            ensureCapacity(9);
+            ensureCapacity(11);
+            buffer[index++] = (byte) '"';
             buffer[index++] = (byte) '-';
             buffer[index++] = (byte) 'I';
             buffer[index++] = (byte) 'n';
@@ -174,9 +208,11 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
             buffer[index++] = (byte) 'i';
             buffer[index++] = (byte) 't';
             buffer[index++] = (byte) 'y';
+            buffer[index++] = (byte) '"';
             return;
         } else if (Double.POSITIVE_INFINITY == value) {
-            ensureCapacity(8);
+            ensureCapacity(10);
+            buffer[index++] = (byte) '"';
             buffer[index++] = (byte) 'I';
             buffer[index++] = (byte) 'n';
             buffer[index++] = (byte) 'f';
@@ -185,6 +221,7 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
             buffer[index++] = (byte) 'i';
             buffer[index++] = (byte) 't';
             buffer[index++] = (byte) 'y';
+            buffer[index++] = (byte) '"';
             return;
         } else if (value == 0.0) {
             ensureCapacity(3);
@@ -193,46 +230,17 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
             buffer[index++] = (byte) '0';
             return;
         }
-
-        // Convert to string (optimized native routine)
-        String str = Double.toString(value);
-        int len = str.length();
-
-        ensureCapacity(len);
-        for (int i = 0; i < len; i++) {
-            buffer[index + i] = (byte) str.charAt(i); // ASCII digits + '.', 'E', '-', etc.
-        }
-        index += len;
+        writeAscii(Double.toString(value));
     }
 
     @Override
     protected void writeBigDecimal(BigDecimal value) {
-        String stringValue = value.toString();
-        int len = stringValue.length();
-        ensureCapacity(1);
-        buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
-        ensureCapacity(len);
-        for (int i = 0; i < len; i++) {
-            buffer[index + i] = (byte) stringValue.charAt(i);
-        }
-        index += len;
-        ensureCapacity(1);
-        buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
+        writeAscii(value.toString());
     }
 
     @Override
     protected void writeBigInteger(BigInteger value) {
-        String stringValue = value.toString();
-        int len = stringValue.length();
-        ensureCapacity(1);
-        buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
-        ensureCapacity(len);
-        for (int i = 0; i < len; i++) {
-            buffer[index + i] = (byte) stringValue.charAt(i);
-        }
-        index += len;
-        ensureCapacity(1);
-        buffer[index++] = Bytes.DOUBLE_QUOTE_BYTE;
+        writeAscii(value.toString());
     }
 
     @Override
@@ -299,6 +307,53 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
         } catch (IOException e) {
             throw new JsonException("Stream write failed", e);
         }
+    }
+
+    private void growBuffer(int requiredCapacity) {
+        int newLength = buffer.length;
+        while (newLength < requiredCapacity) {
+            newLength <<= 1;
+        }
+        buffer = Arrays.copyOf(buffer, newLength);
+    }
+
+    private void writeAscii(String value) {
+        writeAscii(value, 0, value.length());
+    }
+
+    private void writeBytes(byte[] value) {
+        int length = value.length;
+        ensureCapacity(length);
+        System.arraycopy(value, 0, buffer, index, length);
+        index += length;
+    }
+
+    @SuppressWarnings("deprecation")
+    private void writeAscii(String value, int start, int end) {
+        int remaining = end - start;
+        while (remaining > 0) {
+            if (index == buffer.length) {
+                writeBuffer();
+            }
+            int chunkLength = Math.min(remaining, buffer.length - index);
+            value.getBytes(start, start + chunkLength, buffer, index);
+            index += chunkLength;
+            start += chunkLength;
+            remaining -= chunkLength;
+        }
+    }
+
+    private byte[] digitsBuffer() {
+        byte[] result = digits;
+        if (result == null) {
+            result = new byte[20];
+            digits = result;
+        }
+        return result;
+    }
+
+    private static boolean isAsciiPlain(char c) {
+        return c >= 0x20 && c < 0x80 && c != '"' && c != '\\';
     }
 
     /**
