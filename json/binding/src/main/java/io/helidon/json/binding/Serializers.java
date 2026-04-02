@@ -22,6 +22,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 import io.helidon.json.JsonGenerator;
+import io.helidon.json.JsonKey;
 
 /**
  * Utility class for serialization operations.
@@ -61,6 +62,32 @@ public final class Serializers {
     }
 
     /**
+     * Serializes a value with a precomputed key using the provided serializer.
+     *
+     * @param generator the JSON generator
+     * @param serializer the serializer to use
+     * @param instance the instance to serialize
+     * @param key the precomputed key to write
+     * @param writeNulls whether to write null values
+     * @param <T> the type of the instance
+     */
+    public static <T> void serialize(JsonGenerator generator,
+                                     JsonSerializer<T> serializer,
+                                     T instance,
+                                     JsonKey key,
+                                     boolean writeNulls) {
+        if (instance == null) {
+            if (writeNulls) {
+                generator.writeKey(key);
+                serializer.serializeNull(generator);
+            }
+        } else {
+            generator.writeKey(key);
+            serializer.serialize(generator, instance, writeNulls);
+        }
+    }
+
+    /**
      * Serializes an {@link java.util.Optional} value with a key using the provided serializer.
      *
      * @param generator the JSON generator
@@ -74,6 +101,32 @@ public final class Serializers {
                                                          JsonSerializer<T> serializer,
                                                          T instance,
                                                          String key,
+                                                         boolean writeNulls) {
+        if (instance == null || instance.isEmpty()) {
+            if (writeNulls) {
+                generator.writeKey(key);
+                serializer.serializeNull(generator);
+            }
+        } else {
+            generator.writeKey(key);
+            serializer.serialize(generator, instance, writeNulls);
+        }
+    }
+
+    /**
+     * Serializes an {@link java.util.Optional} value with a precomputed key using the provided serializer.
+     *
+     * @param generator the JSON generator
+     * @param serializer the serializer to use
+     * @param instance the instance to serialize
+     * @param key the precomputed key to write
+     * @param writeNulls whether to write null values
+     * @param <T> the type of the instance
+     */
+    public static <T extends Optional<?>> void serialize(JsonGenerator generator,
+                                                         JsonSerializer<T> serializer,
+                                                         T instance,
+                                                         JsonKey key,
                                                          boolean writeNulls) {
         if (instance == null || instance.isEmpty()) {
             if (writeNulls) {
@@ -113,6 +166,32 @@ public final class Serializers {
     }
 
     /**
+     * Serializes an {@link java.util.OptionalInt} value with a precomputed key using the provided serializer.
+     *
+     * @param generator the JSON generator
+     * @param serializer the serializer to use
+     * @param instance the instance to serialize
+     * @param key the precomputed key to write
+     * @param writeNulls whether to write null values
+     */
+    @SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "OptionalAssignedToNull"})
+    public static void serialize(JsonGenerator generator,
+                                 JsonSerializer<OptionalInt> serializer,
+                                 OptionalInt instance,
+                                 JsonKey key,
+                                 boolean writeNulls) {
+        if (instance == null || instance.isEmpty()) {
+            if (writeNulls) {
+                generator.writeKey(key);
+                serializer.serializeNull(generator);
+            }
+        } else {
+            generator.writeKey(key);
+            serializer.serialize(generator, instance, writeNulls);
+        }
+    }
+
+    /**
      * Serializes an {@link java.util.OptionalLong} value with a key using the provided serializer.
      *
      * @param generator the JSON generator
@@ -139,6 +218,32 @@ public final class Serializers {
     }
 
     /**
+     * Serializes an {@link java.util.OptionalLong} value with a precomputed key using the provided serializer.
+     *
+     * @param generator the JSON generator
+     * @param serializer the serializer to use
+     * @param instance the instance to serialize
+     * @param key the precomputed key to write
+     * @param writeNulls whether to write null values
+     */
+    @SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "OptionalAssignedToNull"})
+    public static void serialize(JsonGenerator generator,
+                                 JsonSerializer<OptionalLong> serializer,
+                                 OptionalLong instance,
+                                 JsonKey key,
+                                 boolean writeNulls) {
+        if (instance == null || instance.isEmpty()) {
+            if (writeNulls) {
+                generator.writeKey(key);
+                serializer.serializeNull(generator);
+            }
+        } else {
+            generator.writeKey(key);
+            serializer.serialize(generator, instance, writeNulls);
+        }
+    }
+
+    /**
      * Serializes an {@link java.util.OptionalDouble} value with a key using the provided serializer.
      *
      * @param generator the JSON generator
@@ -152,6 +257,32 @@ public final class Serializers {
                                  JsonSerializer<OptionalDouble> serializer,
                                  OptionalDouble instance,
                                  String key,
+                                 boolean writeNulls) {
+        if (instance == null || instance.isEmpty()) {
+            if (writeNulls) {
+                generator.writeKey(key);
+                serializer.serializeNull(generator);
+            }
+        } else {
+            generator.writeKey(key);
+            serializer.serialize(generator, instance, writeNulls);
+        }
+    }
+
+    /**
+     * Serializes an {@link java.util.OptionalDouble} value with a precomputed key using the provided serializer.
+     *
+     * @param generator the JSON generator
+     * @param serializer the serializer to use
+     * @param instance the instance to serialize
+     * @param key the precomputed key to write
+     * @param writeNulls whether to write null values
+     */
+    @SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "OptionalAssignedToNull"})
+    public static void serialize(JsonGenerator generator,
+                                 JsonSerializer<OptionalDouble> serializer,
+                                 OptionalDouble instance,
+                                 JsonKey key,
                                  boolean writeNulls) {
         if (instance == null || instance.isEmpty()) {
             if (writeNulls) {

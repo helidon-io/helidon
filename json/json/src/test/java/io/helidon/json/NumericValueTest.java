@@ -434,6 +434,31 @@ class NumericValueTest {
 
     @ParameterizedTest
     @EnumSource(ParserMethod.class)
+    public void testCreateExceptionWithCausePreservesParserContext(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("123");
+        NumberFormatException cause = new NumberFormatException("boom");
+
+        JsonException exception = parser.createException("Invalid number", cause);
+
+        assertThat(exception.getCause(), is(cause));
+        assertThat(exception.getMessage().contains("Invalid number"), is(true));
+        assertThat(exception.getMessage().contains("Error at JSON index"), is(true));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadBigIntegerPreservesNumberFormatCause(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("1.0");
+
+        JsonException exception = assertThrows(JsonException.class, parser::readBigInteger);
+
+        assertThat(exception.getCause() instanceof NumberFormatException, is(true));
+        assertThat(exception.getMessage().contains("Invalid number"), is(true));
+        assertThat(exception.getMessage().contains("Error at JSON index"), is(true));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
     public void testParseFloatExponentWithPlus(ParserMethod parserMethod) {
         String json = "1.23e+10";
         JsonParser parser = parserMethod.createParser(json);

@@ -631,9 +631,20 @@ class JsonConverterGenerator {
 
         Set<String> createdSerializers = new HashSet<>();
         for (JsonProperty jsonProperty : jsonProperties) {
+            String key = jsonProperty.serializationName().orElseThrow();
+            String keyFieldName = constantName(key) + "_KEY";
+            classBuilder.addField(field -> field.name(keyFieldName)
+                    .type(JsonTypes.JSON_KEY)
+                    .isStatic(true)
+                    .isFinal(true)
+                    .addContent(JsonTypes.JSON_KEY)
+                    .addContent(".create(")
+                    .addContentLiteral(key)
+                    .addContent(")"));
+
             String fieldName = jsonProperty.serializer()
                     .map(serializer -> {
-                        String constantName = constantName(jsonProperty.serializationName().orElseThrow()) + "_SERIALIZER";
+                        String constantName = constantName(key) + "_SERIALIZER";
                         classBuilder.addField(field -> field.name(constantName)
                                 .type(serializer)
                                 .isStatic(true)
@@ -676,11 +687,10 @@ class JsonConverterGenerator {
                     .or(jsonProperty::fieldName)
                     .orElseThrow();
 
-            String key = jsonProperty.serializationName().orElseThrow();
             method.addContent(JsonTypes.JSON_SERIALIZERS)
                     .addContentLine(".serialize(generator, " + fieldName + ", "
                                             + "instance." + accessor + ", "
-                                            + "\"" + key + "\", "
+                                            + keyFieldName + ", "
                                             + jsonProperty.nullable() + ");");
         }
         method.addContentLine("generator.writeObjectEnd();");

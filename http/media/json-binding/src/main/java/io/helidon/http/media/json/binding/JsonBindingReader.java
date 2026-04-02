@@ -21,12 +21,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
 import io.helidon.http.media.EntityReaderBase;
 import io.helidon.json.binding.JsonBinding;
+
+import static java.util.function.Predicate.not;
 
 class JsonBindingReader<T> extends EntityReaderBase<T> {
     private final JsonBinding jsonBinding;
@@ -38,6 +41,7 @@ class JsonBindingReader<T> extends EntityReaderBase<T> {
     @Override
     public T read(GenericType<T> type, InputStream stream, Headers headers) {
         Optional<InputStreamReader> reader = findContentTypeCharset(headers)
+                .filter(not(StandardCharsets.UTF_8::equals)) //We don't need reader to be applied for UTF-8
                 .map(charset -> new InputStreamReader(stream, charset));
         if (reader.isPresent()) {
             return read(type, reader.get());
@@ -48,6 +52,7 @@ class JsonBindingReader<T> extends EntityReaderBase<T> {
     @Override
     public T read(GenericType<T> type, InputStream stream, Headers requestHeaders, Headers responseHeaders) {
         Optional<InputStreamReader> reader = findContentTypeCharset(responseHeaders)
+                .filter(not(StandardCharsets.UTF_8::equals)) //We don't need reader to be applied for UTF-8
                 .map(charset -> new InputStreamReader(stream, charset));
         if (reader.isPresent()) {
             return read(type, reader.get());

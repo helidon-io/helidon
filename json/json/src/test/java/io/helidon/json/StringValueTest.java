@@ -16,6 +16,7 @@
 
 package io.helidon.json;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -29,6 +30,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Covers basic strings, escaped characters, Unicode, UTF-8 multibyte sequences, and edge cases.
  */
 class StringValueTest {
+
+    @Test
+    public void testJsonStringValueRejectsMalformedUtf8() {
+        JsonString value = JsonString.create(new byte[] {(byte) 0xC0, (byte) 0xAF});
+
+        assertThrows(JsonException.class, value::value);
+    }
 
     // Basic ASCII string tests
     @ParameterizedTest
@@ -73,6 +81,113 @@ class StringValueTest {
 
         assertThat(result, is("  hello   world  "));
         assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashEscapedContent(ParserMethod parserMethod) {
+        String expected = "He said \"hello\"";
+        JsonParser parser = parserMethod.createParser("\"He said \\\"hello\\\"\"");
+
+        assertThat(parser.readStringAsHash(), is(JsonParserArray.fnv1aHashUtf8(expected)));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashAcrossBufferBoundary(ParserMethod parserMethod) {
+        String expected = "město";
+        JsonParser parser = parserMethod.createParser("\"" + expected + "\"", 6);
+
+        assertThat(parser.readStringAsHash(), is(JsonParserArray.fnv1aHashUtf8(expected)));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashShortAsciiKeyWithTrailingData(ParserMethod parserMethod) {
+        String expected = "abcdefghijklmno";
+        JsonParser parser = parserMethod.createParser("\"" + expected + "\":0}");
+
+        assertThat(parser.readStringAsHash(), is(JsonParserArray.fnv1aHashUtf8(expected)));
+        assertThat(parser.hasNext(), is(true));
+        assertThat(parser.nextToken(), is((byte) ':'));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashUnicodeEscape(ParserMethod parserMethod) {
+        String expected = "město";
+        JsonParser parser = parserMethod.createParser("\"\\u006d\\u011bsto\"");
+
+        assertThat(parser.readStringAsHash(), is(JsonParserArray.fnv1aHashUtf8(expected)));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashUnicodeEscapeSurrogatePair(ParserMethod parserMethod) {
+        String expected = "😀🚀";
+        JsonParser parser = parserMethod.createParser("\"\\uD83D\\uDE00\\uD83D\\uDE80\"");
+
+        assertThat(parser.readStringAsHash(), is(JsonParserArray.fnv1aHashUtf8(expected)));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashEscapedContentAcrossStreamBoundary(ParserMethod parserMethod) {
+        String expected = "He said \"hello\"";
+        JsonParser parser = parserMethod.createParser("\"He said \\\"hello\\\"\"", 6);
+
+        assertThat(parser.readStringAsHash(), is(JsonParserArray.fnv1aHashUtf8(expected)));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashUnicodeEscapeAcrossStreamBoundary(ParserMethod parserMethod) {
+        String expected = "město";
+        JsonParser parser = parserMethod.createParser("\"\\u006d\\u011bsto\"", 6);
+
+        assertThat(parser.readStringAsHash(), is(JsonParserArray.fnv1aHashUtf8(expected)));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashSurrogatePairAcrossStreamBoundary(ParserMethod parserMethod) {
+        String expected = "😀🚀";
+        JsonParser parser = parserMethod.createParser("\"\\uD83D\\uDE00\\uD83D\\uDE80\"", 6);
+
+        assertThat(parser.readStringAsHash(), is(JsonParserArray.fnv1aHashUtf8(expected)));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashUtf8CodePointAcrossStreamBoundary(ParserMethod parserMethod) {
+        String expected = "😀🚀";
+        JsonParser parser = parserMethod.createParser("\"" + expected + "\"", 6);
+
+        assertThat(parser.readStringAsHash(), is(JsonParserArray.fnv1aHashUtf8(expected)));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashHighSurrogateWithoutLowSurrogate(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"\\uD83DA\"");
+
+        assertThrows(JsonException.class, parser::readStringAsHash);
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashLowSurrogateWithoutHighSurrogate(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"\\uDE00\"");
+
+        assertThrows(JsonException.class, parser::readStringAsHash);
     }
 
     // Escaped character tests
@@ -325,12 +440,30 @@ class StringValueTest {
 
     @ParameterizedTest
     @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashInvalidUtf8Sequence(ParserMethod parserMethod) {
+        byte[] invalidUtf8 = new byte[] {'"', (byte) 0x80, '"'};
+        JsonParserArray parser = new JsonParserArray(invalidUtf8);
+
+        assertThrows(JsonException.class, parser::readStringAsHash);
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
     public void testIncompleteUtf8Sequence(ParserMethod parserMethod) {
         // Incomplete 3-byte sequence: E2 82 (missing AC) - create directly with bytes
         byte[] incompleteUtf8 = new byte[] {'"', (byte) 0xE2, (byte) 0x82, '"'};
         JsonParserArray parser = new JsonParserArray(incompleteUtf8);
 
         assertThrows(JsonException.class, parser::readString);
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testReadStringAsHashIncompleteUtf8Sequence(ParserMethod parserMethod) {
+        byte[] incompleteUtf8 = new byte[] {'"', (byte) 0xE2, (byte) 0x82, '"'};
+        JsonParserArray parser = new JsonParserArray(incompleteUtf8);
+
+        assertThrows(JsonException.class, parser::readStringAsHash);
     }
 
     @ParameterizedTest

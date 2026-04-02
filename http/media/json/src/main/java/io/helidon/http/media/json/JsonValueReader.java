@@ -22,12 +22,15 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
 import io.helidon.http.media.EntityReaderBase;
 import io.helidon.json.JsonParser;
 import io.helidon.json.JsonValue;
+
+import static java.util.function.Predicate.not;
 
 class JsonValueReader<T extends JsonValue> extends EntityReaderBase<T> {
     JsonValueReader() {
@@ -36,14 +39,16 @@ class JsonValueReader<T extends JsonValue> extends EntityReaderBase<T> {
     @Override
     public T read(GenericType<T> type, InputStream stream, Headers headers) {
         var charset = findContentTypeCharset(headers);
-        return charset.map(it -> read(type, stream, it))
+        return charset.filter(not(StandardCharsets.UTF_8::equals)) //We don't need reader to be applied for UTF-8
+                .map(it -> read(type, stream, it))
                 .orElseGet(() -> read(type, stream));
     }
 
     @Override
     public T read(GenericType<T> type, InputStream stream, Headers requestHeaders, Headers responseHeaders) {
         var charset = findContentTypeCharset(responseHeaders);
-        return charset.map(it -> read(type, stream, it))
+        return charset.filter(not(StandardCharsets.UTF_8::equals)) //We don't need reader to be applied for UTF-8
+                .map(it -> read(type, stream, it))
                 .orElseGet(() -> read(type, stream));
     }
 

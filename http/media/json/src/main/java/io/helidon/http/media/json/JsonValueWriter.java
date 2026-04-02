@@ -21,6 +21,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
@@ -28,6 +30,8 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityWriterBase;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonValue;
+
+import static java.util.function.Predicate.not;
 
 class JsonValueWriter<T extends JsonValue> extends EntityWriterBase<T> {
 
@@ -42,10 +46,12 @@ class JsonValueWriter<T extends JsonValue> extends EntityWriterBase<T> {
                       Headers requestHeaders,
                       WritableHeaders<?> responseHeaders) {
 
-        var charset = serverResponseContentTypeAndCharset(requestHeaders, responseHeaders);
+        Optional<OutputStreamWriter> writer = serverResponseContentTypeAndCharset(requestHeaders, responseHeaders)
+                .filter(not(StandardCharsets.UTF_8::equals)) //We don't need writer to be applied for UTF-8
+                .map(it -> new OutputStreamWriter(outputStream, it));
 
-        if (charset.isPresent()) {
-            write(object, new OutputStreamWriter(outputStream, charset.get()));
+        if (writer.isPresent()) {
+            write(object, writer.get());
         } else {
             write(object, outputStream);
         }
@@ -53,10 +59,12 @@ class JsonValueWriter<T extends JsonValue> extends EntityWriterBase<T> {
 
     @Override
     public void write(GenericType<T> type, T object, OutputStream outputStream, WritableHeaders<?> headers) {
-        var charset = clientRequestContentTypeAndCharset(headers);
+        Optional<OutputStreamWriter> writer = clientRequestContentTypeAndCharset(headers)
+                .filter(not(StandardCharsets.UTF_8::equals)) //We don't need writer to be applied for UTF-8
+                .map(it -> new OutputStreamWriter(outputStream, it));
 
-        if (charset.isPresent()) {
-            write(object, new OutputStreamWriter(outputStream, charset.get()));
+        if (writer.isPresent()) {
+            write(object, writer.get());
         } else {
             write(object, outputStream);
         }

@@ -36,7 +36,7 @@ public abstract class JsonParserBase implements JsonParser {
             case '{' -> readJsonObject();
             case '[' -> readJsonArray();
             case '"' -> readJsonString();
-            case '-', '.', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> readJsonNumber();
+            case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> readJsonNumber();
             case 't', 'f' -> JsonBoolean.create(readBoolean());
             case 'n' -> {
                 checkNull();
@@ -79,8 +79,6 @@ public abstract class JsonParserBase implements JsonParser {
                 pairs.add(new JsonObject.Pair(key, readJsonArray()));
                 break;
             case '-':
-            case '.':
-            case '+':
             case '0':
             case '1':
             case '2':
@@ -137,8 +135,6 @@ public abstract class JsonParserBase implements JsonParser {
                 values.add(readJsonArray());
                 break;
             case '-':
-            case '.':
-            case '+':
             case '0':
             case '1':
             case '2':
