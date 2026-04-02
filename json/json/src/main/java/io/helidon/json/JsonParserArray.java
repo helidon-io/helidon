@@ -577,7 +577,22 @@ class JsonParserArray extends JsonParserBase {
             currentIndex++;
             inString = true;
         }
-        BigDecimal bigDecimal = new BigDecimal(readNumberAsCharArray());
+        char[] chars = readNumberAsCharArray();
+        char first = chars[0];
+        char last = chars[chars.length - 1];
+        if (first == '.') {
+            throw createException("Invalid number: leading decimal point");
+        } else if (last == '.') {
+            throw createException("Invalid number: trailing decimal point");
+        } else if (first == '+') {
+            throw createException("Invalid number: leading plus sign");
+        } else if (first == '-' && chars.length > 1) {
+            char second = chars[1];
+            if (second == '.') {
+                throw createException("Invalid number: leading minus sign followed by decimal point");
+            }
+        }
+        BigDecimal bigDecimal = new BigDecimal(chars);
         if (inString) {
             ensure(1);
             if (buffer[++currentIndex] != '"') {
