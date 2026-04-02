@@ -45,7 +45,7 @@
         <version.lib.dropwizard.metrics>4.1.36</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>4.0.7</version.lib.eclipselink>
         <version.lib.google-error-prone-annotations>2.30.0</version.lib.google-error-prone-annotations>
-        <version.lib.google-gson>2.11.0</version.lib.google-gson>
+        <version.lib.google-gson>2.13.2</version.lib.google-gson>
         <version.lib.google-protobuf>4.31.1</version.lib.google-protobuf>
         <version.lib.google-j2objc-annotations>3.0.0</version.lib.google-j2objc-annotations>
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
