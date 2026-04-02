@@ -51,18 +51,18 @@ class SmileWriter<T> extends EntityWriterBase<T> {
                       Headers requestHeaders,
                       WritableHeaders<?> responseHeaders) {
         responseHeaders.setIfAbsent(contentType);
-        write(object, outputStream);
+        write(object, outputStream, type);
     }
 
     @Override
     public void write(GenericType<T> type, T object, OutputStream outputStream, WritableHeaders<?> headers) {
         headers.setIfAbsent(contentType);
-        write(object, outputStream);
+        write(object, outputStream, type);
     }
 
-    private void write(T object, OutputStream out) {
+    private void write(T object, OutputStream out, GenericType<T> type) {
         try (JsonGenerator generator = SmileGenerator.create(out, smileConfig)) {
-            jsonBinding.serialize(generator, object);
+            jsonBinding.serialize(generator, object, type);
         }
     }
 }
