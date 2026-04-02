@@ -26,7 +26,6 @@ import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.LazyConfigSource;
 import io.helidon.dbclient.DbClient;
-import io.helidon.service.registry.Services;
 
 /**
  * Tuple for local tests.
@@ -51,7 +50,6 @@ public record LocalTextContext<T>(DbClient db, Config config, Supplier<T> delega
                 new LazyMapConfigSourceImpl(overrides),
                 ConfigSources.classpath("db.yaml"),
                 ConfigSources.classpath("db-common.yaml"));
-        Services.set(Config.class, config);
         DbClient db = DbClient.create(config.get("db"));
         T delegate = factory.apply(db, config);
         if (createSchema) {
