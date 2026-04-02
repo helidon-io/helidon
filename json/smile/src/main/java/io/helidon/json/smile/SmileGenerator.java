@@ -205,6 +205,24 @@ public final class SmileGenerator extends JsonGeneratorBase {
     }
 
     @Override
+    public JsonGenerator write(BigDecimal value) {
+        if (value != null && value.scale() <= 0) {
+            return write(value.toBigIntegerExact());
+        }
+        return super.write(value);
+    }
+
+    @Override
+    public JsonGenerator write(BigInteger value) {
+        if (value != null && value.bitLength() <= 31) {
+            return super.write(value.intValue());
+        } else if (value != null && value.bitLength() <= 63) {
+            return super.write(value.longValue());
+        }
+        return super.write(value);
+    }
+
+    @Override
     protected void writeString(String value) {
         if (value == null) {
             writeNullValue();

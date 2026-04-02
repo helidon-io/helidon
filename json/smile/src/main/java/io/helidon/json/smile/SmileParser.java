@@ -175,7 +175,7 @@ public final class SmileParser extends JsonParserBase {
      */
     public static JsonParser create(byte[] json) {
         Objects.requireNonNull(json);
-        return new SmileParser(json, 0, json.length).validateHeader();
+        return new SmileParser(json, 0, json.length).initializeFromHeaderOrDefaults();
     }
 
     /**
@@ -187,7 +187,7 @@ public final class SmileParser extends JsonParserBase {
     public static JsonParser create(InputStream inputStream) {
         Objects.requireNonNull(inputStream);
         SmileInputStreamParser parser = new SmileInputStreamParser(inputStream, SmileInputStreamParser.DEFAULT_BUFFER_SIZE);
-        parser.validateHeader();
+        parser.initializeFromHeaderOrDefaults();
         return parser;
     }
 
@@ -201,12 +201,13 @@ public final class SmileParser extends JsonParserBase {
     public static JsonParser create(InputStream inputStream, int bufferSize) {
         Objects.requireNonNull(inputStream);
         SmileInputStreamParser parser = new SmileInputStreamParser(inputStream, bufferSize);
-        parser.validateHeader();
+        parser.initializeFromHeaderOrDefaults();
         return parser;
     }
 
     /**
-     * Reads and validates the 4-byte Smile header, extracting feature flags.
+     * Initializes parser feature flags from the Smile header when present, or from
+     * the headerless-format defaults otherwise.
      *
      * <pre>
      *   Byte 0: 0x3A (':')
@@ -220,40 +221,39 @@ public final class SmileParser extends JsonParserBase {
      *             bit  0   : shared key names
      * </pre>
      */
-    SmileParser validateHeader() {
-        int b0 = buffer[currentIndex] & 0xFF;
-        int b1 = readNextByte() & 0xFF;
-        int b2 = readNextByte() & 0xFF;
-        int b3 = readNextByte() & 0xFF;
+    SmileParser initializeFromHeaderOrDefaults() {
+        if (currentIndex >= bufferLength) {
+            throw createException("Unexpected end of the binary JSON found");
+        }
 
-        if (b0 != SmileConstants.HEADER_0
-                || b1 != SmileConstants.HEADER_1
-                || b2 != SmileConstants.HEADER_2) {
+        int b0 = buffer[currentIndex] & 0xFF;
+        if (b0 != (SmileConstants.HEADER_0 & 0xFF)) {
+            initializeHeaderlessDefaults();
+            currentIndex--;
+            nextToken();
+            return this;
+        }
+
+        if (currentIndex + 2 >= bufferLength) {
+            throw createException("Unexpected end of Smile header");
+        }
+
+        int b1 = buffer[currentIndex + 1] & 0xFF;
+        int b2 = buffer[currentIndex + 2] & 0xFF;
+        if (b1 != (SmileConstants.HEADER_1 & 0xFF)
+                || b2 != (SmileConstants.HEADER_2 & 0xFF)) {
             throw createException("Invalid Smile header: expected 0x3A 0x29 0x0A, got"
                                           + " 0x" + Integer.toHexString(b0)
                                           + " 0x" + Integer.toHexString(b1)
                                           + " 0x" + Integer.toHexString(b2));
         }
 
-        int version = (b3 & 0xF0) >> 4;
-        if (version != 0) {
-            throw createException("Unsupported Smile format version: " + version);
+        if (currentIndex + 3 >= bufferLength) {
+            throw createException("Unexpected end of Smile header");
         }
 
-        // Spec: if header exists, these bits define enabled sharing features.
-        sharedKeysEnabled = (b3 & SmileConstants.HEADER_FEATURE_SHARED_KEYS) != 0;
-        sharedValuesEnabled = (b3 & SmileConstants.HEADER_FEATURE_SHARED_VALUES) != 0;
-        rawBinaryEnabled = (b3 & SmileConstants.HEADER_FEATURE_RAW_BINARY) != 0;
-
-        if (sharedKeysEnabled) {
-            sharedKeyStrings = new JsonString[SHARED_TABLE_SIZE_INIT];
-            sharedKeyHashes = new LazyHash[SHARED_TABLE_SIZE_INIT];
-        }
-        if (sharedValuesEnabled) {
-            sharedValueStrings = new JsonString[SHARED_TABLE_SIZE_INIT];
-            sharedValueHashes = new LazyHash[SHARED_TABLE_SIZE_INIT];
-        }
-
+        currentIndex += 3;
+        applyHeaderFeatures(buffer[currentIndex] & 0xFF);
         nextToken();
         return this;
     }
@@ -277,8 +277,14 @@ public final class SmileParser extends JsonParserBase {
         }
         byte b = readNextByte();
         int currentByte = b & 0xFF;
-        byte currentToken = TOKEN_LOOKUP[currentByte];
-        if (b <= SmileConstants.TOKEN_END_OBJECT && b >= SmileConstants.TOKEN_START_ARRAY) {
+        validateFeatureToken(currentByte);
+        byte currentToken = translateToken(currentByte);
+        if (currentToken == 0) {
+            throw createException("Invalid Smile token 0x" + Integer.toHexString(currentByte)
+                                          + (keyExpected ? " in key position" : ""));
+        }
+        if (currentByte >= (SmileConstants.TOKEN_START_ARRAY & 0xFF)
+                && currentByte <= (SmileConstants.TOKEN_END_OBJECT & 0xFF)) {
             if (currentToken == Bytes.BRACE_OPEN_BYTE) {
                 structureStack[++stackDepth] = true;
                 inObject = true;
@@ -522,11 +528,11 @@ public final class SmileParser extends JsonParserBase {
 
     @Override
     public char readChar() {
-        char[] charArray = readStringCharArray();
-        if (charArray.length != 1) {
-            throw createException("Expected only a single character, but got value " + new String(charArray));
+        String value = readString();
+        if (value == null || value.length() != 1) {
+            throw createException("Expected only a single character, but got value " + value);
         }
-        return charArray[0];
+        return value.charAt(0);
     }
 
     @Override
@@ -917,7 +923,11 @@ public final class SmileParser extends JsonParserBase {
 
     @Override
     public boolean checkNull() {
-        return currentByte == SmileConstants.TOKEN_NULL;
+        if (currentByte == SmileConstants.TOKEN_NULL) {
+            checkNextAfterValue();
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -938,7 +948,7 @@ public final class SmileParser extends JsonParserBase {
         case 't':
         case 'n':
         case 'f':
-            currentIndex++;
+            checkNextAfterValue();
             break;
         case ',':
         case ':':
@@ -1026,6 +1036,10 @@ public final class SmileParser extends JsonParserBase {
     @Override
     public JsonException createException(String message) {
         return new JsonException(message);
+    }
+
+    public JsonException createException(String message, java.lang.Exception e) {
+        return new JsonException(message, e);
     }
 
     @Override
@@ -1148,6 +1162,7 @@ public final class SmileParser extends JsonParserBase {
 
     private void checkNextAfterValue() {
         if (hasNext()) {
+            keyExpected = inObject;
             int b = buffer[currentIndex + 1];
             if (b == SmileConstants.TOKEN_END_OBJECT
                     || b == SmileConstants.TOKEN_END_ARRAY) {
@@ -1157,7 +1172,76 @@ public final class SmileParser extends JsonParserBase {
                 return;
             }
             forcedEvent = Bytes.COMMA_BYTE;
-            keyExpected = inObject;
+        }
+    }
+
+    private void initializeHeaderlessDefaults() {
+        sharedKeysEnabled = true;
+        sharedValuesEnabled = false;
+        rawBinaryEnabled = false;
+        sharedKeyStrings = new JsonString[SHARED_TABLE_SIZE_INIT];
+        sharedKeyHashes = new LazyHash[SHARED_TABLE_SIZE_INIT];
+    }
+
+    private void applyHeaderFeatures(int headerFlags) {
+        int version = (headerFlags & 0xF0) >> 4;
+        if (version != 0) {
+            throw createException("Unsupported Smile format version: " + version);
+        }
+
+        sharedKeysEnabled = (headerFlags & SmileConstants.HEADER_FEATURE_SHARED_KEYS) != 0;
+        sharedValuesEnabled = (headerFlags & SmileConstants.HEADER_FEATURE_SHARED_VALUES) != 0;
+        rawBinaryEnabled = (headerFlags & SmileConstants.HEADER_FEATURE_RAW_BINARY) != 0;
+
+        if (sharedKeysEnabled) {
+            sharedKeyStrings = new JsonString[SHARED_TABLE_SIZE_INIT];
+            sharedKeyHashes = new LazyHash[SHARED_TABLE_SIZE_INIT];
+        }
+        if (sharedValuesEnabled) {
+            sharedValueStrings = new JsonString[SHARED_TABLE_SIZE_INIT];
+            sharedValueHashes = new LazyHash[SHARED_TABLE_SIZE_INIT];
+        }
+    }
+
+    private byte translateToken(int rawToken) {
+        if (keyExpected) {
+            if (rawToken == (SmileConstants.TOKEN_END_OBJECT & 0xFF)) {
+                return Bytes.BRACE_CLOSE_BYTE;
+            }
+            if (rawToken == (SmileConstants.TOKEN_EMPTY_STRING & 0xFF)
+                    || rawToken == (SmileConstants.KEY_LONG_UNICODE & 0xFF)
+                    || (rawToken >= SmileConstants.KEY_SHARED_LONG_MIN
+                    && rawToken <= SmileConstants.KEY_SHARED_LONG_MAX)
+                    || (rawToken >= SmileConstants.KEY_SHARED_SHORT_MIN
+                    && rawToken <= SmileConstants.KEY_SHARED_SHORT_MAX)
+                    || (rawToken >= SmileConstants.KEY_SHORT_ASCII_MIN
+                    && rawToken <= SmileConstants.KEY_SHORT_ASCII_MAX)
+                    || (rawToken >= SmileConstants.KEY_SHORT_UNICODE_MIN
+                    && rawToken <= SmileConstants.KEY_SHORT_UNICODE_MAX)) {
+                return Bytes.DOUBLE_QUOTE_BYTE;
+            }
+            return 0;
+        }
+        if (rawToken == (SmileConstants.TOKEN_END_OBJECT & 0xFF)) {
+            return 0;
+        }
+        return TOKEN_LOOKUP[rawToken];
+    }
+
+    private void validateFeatureToken(int rawToken) {
+        if (keyExpected) {
+            if (!sharedKeysEnabled
+                    && ((rawToken >= SmileConstants.KEY_SHARED_SHORT_MIN && rawToken <= SmileConstants.KEY_SHARED_SHORT_MAX)
+                    || (rawToken >= SmileConstants.KEY_SHARED_LONG_MIN && rawToken <= SmileConstants.KEY_SHARED_LONG_MAX))) {
+                throw createException("Shared key references are disabled by Smile header");
+            }
+            return;
+        }
+
+        if (!sharedValuesEnabled
+                && ((rawToken >= SmileConstants.VALUE_SHARED_SHORT_MIN && rawToken <= SmileConstants.VALUE_SHARED_SHORT_MAX)
+                || (rawToken >= SmileConstants.VALUE_SHARED_LONG_MIN && rawToken <= SmileConstants.VALUE_SHARED_LONG_MAX))) {
+            throw createException("Shared value references are disabled by Smile header");
         }
     }
 
@@ -1398,7 +1482,7 @@ public final class SmileParser extends JsonParserBase {
     }
 
     private void registerKey(byte[] buffer, int start, int length) {
-        registerKey(new LazyHash(buffer, start, length), JsonString.create(buffer, start, length));
+        registerKey(new LazyHash(buffer, start, length), jsonString(buffer, start, length));
     }
 
     private void registerKey(JsonString value, byte[] buffer, int start, int length) {
@@ -1406,7 +1490,7 @@ public final class SmileParser extends JsonParserBase {
     }
 
     private void registerKey(LazyHash value, byte[] buffer, int start, int length) {
-        registerKey(value, JsonString.create(buffer, start, length));
+        registerKey(value, jsonString(buffer, start, length));
     }
 
     private void registerKey(LazyHash hash, JsonString jsonString) {
@@ -1430,7 +1514,7 @@ public final class SmileParser extends JsonParserBase {
     }
 
     private void registerValue(byte[] buffer, int start, int length) {
-        registerValue(new LazyHash(buffer, start, length), JsonString.create(buffer, start, length));
+        registerValue(new LazyHash(buffer, start, length), jsonString(buffer, start, length));
     }
 
     private void registerValue(JsonString value, byte[] buffer, int start, int length) {
@@ -1438,7 +1522,7 @@ public final class SmileParser extends JsonParserBase {
     }
 
     private void registerValue(LazyHash value, byte[] buffer, int start, int length) {
-        registerValue(value, JsonString.create(buffer, start, length));
+        registerValue(value, jsonString(buffer, start, length));
     }
 
     private void registerValue(LazyHash hash, JsonString jsonString) {
@@ -1464,6 +1548,12 @@ public final class SmileParser extends JsonParserBase {
     private static boolean isAllowedSharedIndex(int index) {
         int low = index & 0xFF;
         return low != SmileConstants.SHARED_INDEX_FORBIDDEN_LOW_BYTE_1 && low != SmileConstants.SHARED_INDEX_FORBIDDEN_LOW_BYTE_2;
+    }
+
+    private static JsonString jsonString(byte[] buffer, int start, int length) {
+        byte[] copy = new byte[length];
+        System.arraycopy(buffer, start, copy, 0, length);
+        return JsonString.create(copy);
     }
 
     private static int fnv1aHashUtf8(String value) {

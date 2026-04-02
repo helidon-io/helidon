@@ -251,6 +251,31 @@ abstract class SmileParserTestBase {
     }
 
     @Test
+    public void testParseHeaderlessSmileWithDefaultSharedKeyHandling() {
+        byte[] smileData = new byte[] {
+                SmileConstants.TOKEN_START_ARRAY,
+                SmileConstants.TOKEN_START_OBJECT,
+                (byte) (SmileConstants.KEY_SHORT_ASCII_PREFIX),
+                (byte) 'k',
+                (byte) 0xC2,
+                SmileConstants.TOKEN_END_OBJECT,
+                SmileConstants.TOKEN_START_OBJECT,
+                (byte) SmileConstants.KEY_SHARED_SHORT_MIN,
+                (byte) 0xC4,
+                SmileConstants.TOKEN_END_OBJECT,
+                SmileConstants.TOKEN_END_ARRAY
+        };
+
+        JsonParser parser = createParser(smileData);
+        JsonArray result = parser.readJsonArray();
+
+        assertThat(result.values().size(), is(2));
+        assertThat(result.get(0, JsonNull.instance()).asObject().intValue("k").orElseThrow(), is(1));
+        assertThat(result.get(1, JsonNull.instance()).asObject().intValue("k").orElseThrow(), is(2));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
     public void testParseSimpleObject() throws Exception {
         byte[] smileData = generateSmileBytes(gen -> {
             gen.writeObjectStart();
@@ -261,6 +286,37 @@ abstract class SmileParserTestBase {
         JsonObject result = parser.readJsonObject();
 
         assertThat(result.stringValue("key").orElseThrow(), is("value"));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testParseObjectWithUnicodeKey() throws Exception {
+        byte[] smileData = generateSmileBytes(gen -> {
+            gen.writeObjectStart();
+            gen.write("ключ", "value");
+            gen.writeObjectEnd();
+        });
+
+        JsonParser parser = createParser(smileData);
+        JsonObject result = parser.readJsonObject();
+
+        assertThat(result.stringValue("ключ").orElseThrow(), is("value"));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testParseObjectWithLongKey() throws Exception {
+        String longKey = "k".repeat(65);
+        byte[] smileData = generateSmileBytes(gen -> {
+            gen.writeObjectStart();
+            gen.write(longKey, "value");
+            gen.writeObjectEnd();
+        });
+
+        JsonParser parser = createParser(smileData);
+        JsonObject result = parser.readJsonObject();
+
+        assertThat(result.stringValue(longKey).orElseThrow(), is("value"));
         assertThat(parser.hasNext(), is(false));
     }
 
@@ -467,6 +523,26 @@ abstract class SmileParserTestBase {
     }
 
     @Test
+    public void testReadCharBackslash() throws Exception {
+        byte[] smileData = generateSmileBytes(gen -> gen.write("\\"));
+        JsonParser parser = createParser(smileData);
+        char result = parser.readChar();
+
+        assertThat(result, is('\\'));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testReadCharUnicodeSingleCharacter() throws Exception {
+        byte[] smileData = generateSmileBytes(gen -> gen.write("é"));
+        JsonParser parser = createParser(smileData);
+        char result = parser.readChar();
+
+        assertThat(result, is('é'));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
     public void testReadCharRejectsMultiChar() throws Exception {
         byte[] smileData = generateSmileBytes(gen -> gen.write("AB"));
         JsonParser parser = createParser(smileData);
@@ -604,6 +680,29 @@ abstract class SmileParserTestBase {
         assertThat(parser.nextToken(), is((byte) '"'));
         assertThat(parser.readString(), is("ok"));
         assertThat(parser.nextToken(), is((byte) '}'));
+    }
+
+    @Test
+    public void testSkipBooleanAndNullValuesAndContinue() throws Exception {
+        byte[] smileData = generateSmileBytes(gen -> {
+            gen.writeArrayStart();
+            gen.write(true);
+            gen.writeNull();
+            gen.write("ok");
+            gen.writeArrayEnd();
+        });
+
+        JsonParser parser = createParser(smileData);
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is((byte) 't'));
+        parser.skip();
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) 'n'));
+        parser.skip();
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("ok"));
+        assertThat(parser.nextToken(), is((byte) ']'));
     }
 
     @Test

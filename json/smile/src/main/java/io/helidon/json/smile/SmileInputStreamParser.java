@@ -227,7 +227,7 @@ final class SmileInputStreamParser extends JsonParserBase {
     }
 
     // -----------------------------------------------------------------------
-    // Header validation  (identical logic to SmileParser.validateHeader)
+    // Header initialization (identical logic to SmileParser.initializeFromHeaderOrDefaults)
     // -----------------------------------------------------------------------
 
     /**
@@ -247,39 +247,41 @@ final class SmileInputStreamParser extends JsonParserBase {
      *             bit  0   : shared key names
      * </pre>
      */
-    void validateHeader() {
-        int b0 = buffer[currentIndex] & 0xFF;
-        int b1 = readNextByte() & 0xFF;
-        int b2 = readNextByte() & 0xFF;
-        int b3 = readNextByte() & 0xFF;
+    void initializeFromHeaderOrDefaults() {
+        if (bufferLength == 0) {
+            throw createException("Unexpected end of the binary JSON found");
+        }
 
-        if (b0 != SmileConstants.HEADER_0
-                || b1 != SmileConstants.HEADER_1
-                || b2 != SmileConstants.HEADER_2) {
+        int b0 = buffer[currentIndex] & 0xFF;
+        if (b0 != (SmileConstants.HEADER_0 & 0xFF)) {
+            initializeHeaderlessDefaults();
+            currentIndex = -1;
+            nextToken();
+            return;
+        }
+
+        ensureHeaderBytes(3);
+        if (bufferLength < 3) {
+            throw createException("Unexpected end of Smile header");
+        }
+
+        int b1 = buffer[1] & 0xFF;
+        int b2 = buffer[2] & 0xFF;
+        if (b1 != (SmileConstants.HEADER_1 & 0xFF)
+                || b2 != (SmileConstants.HEADER_2 & 0xFF)) {
             throw createException("Invalid Smile header: expected 0x3A 0x29 0x0A, got"
                                           + " 0x" + Integer.toHexString(b0)
                                           + " 0x" + Integer.toHexString(b1)
                                           + " 0x" + Integer.toHexString(b2));
         }
 
-        int version = (b3 & 0xF0) >> 4;
-        if (version != 0) {
-            throw createException("Unsupported Smile format version: " + version);
+        ensureHeaderBytes(4);
+        if (bufferLength < 4) {
+            throw createException("Unexpected end of Smile header");
         }
 
-        sharedKeysEnabled = (b3 & SmileConstants.HEADER_FEATURE_SHARED_KEYS) != 0;
-        sharedValuesEnabled = (b3 & SmileConstants.HEADER_FEATURE_SHARED_VALUES) != 0;
-        rawBinaryEnabled = (b3 & SmileConstants.HEADER_FEATURE_RAW_BINARY) != 0;
-
-        if (sharedKeysEnabled) {
-            sharedKeyStrings = new JsonString[SHARED_TABLE_SIZE_INIT];
-            sharedKeyHashes = new LazyHash[SHARED_TABLE_SIZE_INIT];
-        }
-        if (sharedValuesEnabled) {
-            sharedValueStrings = new JsonString[SHARED_TABLE_SIZE_INIT];
-            sharedValueHashes = new LazyHash[SHARED_TABLE_SIZE_INIT];
-        }
-
+        currentIndex = 3;
+        applyHeaderFeatures(buffer[currentIndex] & 0xFF);
         nextToken();
     }
 
@@ -453,10 +455,16 @@ final class SmileInputStreamParser extends JsonParserBase {
 
         byte b = readNextByte();
         int rawByte = b & 0xFF;
-        byte translatedToken = TOKEN_LOOKUP[rawByte];
+        validateFeatureToken(rawByte);
+        byte translatedToken = translateToken(rawByte);
+        if (translatedToken == 0) {
+            throw createException("Invalid Smile token 0x" + Integer.toHexString(rawByte)
+                                          + (keyExpected ? " in key position" : ""));
+        }
 
         // Maintain structure stack and key/value alternation just as SmileParser does.
-        if (b <= SmileConstants.TOKEN_END_OBJECT && b >= SmileConstants.TOKEN_START_ARRAY) {
+        if (rawByte >= (SmileConstants.TOKEN_START_ARRAY & 0xFF)
+                && rawByte <= (SmileConstants.TOKEN_END_OBJECT & 0xFF)) {
             if (translatedToken == Bytes.BRACE_OPEN_BYTE) {
                 structureStack[++stackDepth] = true;
                 inObject = true;
@@ -708,11 +716,11 @@ final class SmileInputStreamParser extends JsonParserBase {
 
     @Override
     public char readChar() {
-        char[] charArray = readStringCharArray();
-        if (charArray.length != 1) {
-            throw createException("Expected only a single character, but got value " + new String(charArray));
+        String value = readString();
+        if (value == null || value.length() != 1) {
+            throw createException("Expected only a single character, but got value " + value);
         }
-        return charArray[0];
+        return value.charAt(0);
     }
 
     // -----------------------------------------------------------------------
@@ -1110,7 +1118,11 @@ final class SmileInputStreamParser extends JsonParserBase {
 
     @Override
     public boolean checkNull() {
-        return this.currentByte == (SmileConstants.TOKEN_NULL & 0xFF);
+        if (this.currentByte == (SmileConstants.TOKEN_NULL & 0xFF)) {
+            checkNextAfterValue();
+            return true;
+        }
+        return false;
     }
 
     // -----------------------------------------------------------------------
@@ -1135,8 +1147,7 @@ final class SmileInputStreamParser extends JsonParserBase {
         case 't':
         case 'n':
         case 'f':
-            // Single-byte tokens; advance past them (mirrors SmileParser.skip behaviour).
-            currentIndex++;
+            checkNextAfterValue();
             break;
         case ',':
         case ':':
@@ -1367,6 +1378,10 @@ final class SmileInputStreamParser extends JsonParserBase {
         return new JsonException(message + " (stream position ~" + currentIndex + ")");
     }
 
+    public JsonException createException(String message, java.lang.Exception e) {
+        return new JsonException(message + " (stream position ~" + currentIndex + ")", e);
+    }
+
     // -----------------------------------------------------------------------
     // Internal helpers — post-value bookkeeping
     // -----------------------------------------------------------------------
@@ -1377,6 +1392,7 @@ final class SmileInputStreamParser extends JsonParserBase {
      */
     private void checkNextAfterValue() {
         if (hasNext()) {
+            keyExpected = inObject;
             int next = buffer[currentIndex + 1] & 0xFF;
             if (next == (SmileConstants.TOKEN_END_OBJECT & 0xFF)
                     || next == (SmileConstants.TOKEN_END_ARRAY & 0xFF)) {
@@ -1387,7 +1403,82 @@ final class SmileInputStreamParser extends JsonParserBase {
                 return;
             }
             forcedEvent = Bytes.COMMA_BYTE;
-            keyExpected = inObject;
+        }
+    }
+
+    private void ensureHeaderBytes(int totalBytes) {
+        while (bufferLength < totalBytes && !finished) {
+            readMoreData();
+        }
+    }
+
+    private void initializeHeaderlessDefaults() {
+        sharedKeysEnabled = true;
+        sharedValuesEnabled = false;
+        rawBinaryEnabled = false;
+        sharedKeyStrings = new JsonString[SHARED_TABLE_SIZE_INIT];
+        sharedKeyHashes = new LazyHash[SHARED_TABLE_SIZE_INIT];
+    }
+
+    private void applyHeaderFeatures(int headerFlags) {
+        int version = (headerFlags & 0xF0) >> 4;
+        if (version != 0) {
+            throw createException("Unsupported Smile format version: " + version);
+        }
+
+        sharedKeysEnabled = (headerFlags & SmileConstants.HEADER_FEATURE_SHARED_KEYS) != 0;
+        sharedValuesEnabled = (headerFlags & SmileConstants.HEADER_FEATURE_SHARED_VALUES) != 0;
+        rawBinaryEnabled = (headerFlags & SmileConstants.HEADER_FEATURE_RAW_BINARY) != 0;
+
+        if (sharedKeysEnabled) {
+            sharedKeyStrings = new JsonString[SHARED_TABLE_SIZE_INIT];
+            sharedKeyHashes = new LazyHash[SHARED_TABLE_SIZE_INIT];
+        }
+        if (sharedValuesEnabled) {
+            sharedValueStrings = new JsonString[SHARED_TABLE_SIZE_INIT];
+            sharedValueHashes = new LazyHash[SHARED_TABLE_SIZE_INIT];
+        }
+    }
+
+    private byte translateToken(int rawToken) {
+        if (keyExpected) {
+            if (rawToken == (SmileConstants.TOKEN_END_OBJECT & 0xFF)) {
+                return Bytes.BRACE_CLOSE_BYTE;
+            }
+            if (rawToken == (SmileConstants.TOKEN_EMPTY_STRING & 0xFF)
+                    || rawToken == (SmileConstants.KEY_LONG_UNICODE & 0xFF)
+                    || (rawToken >= SmileConstants.KEY_SHARED_LONG_MIN
+                    && rawToken <= SmileConstants.KEY_SHARED_LONG_MAX)
+                    || (rawToken >= SmileConstants.KEY_SHARED_SHORT_MIN
+                    && rawToken <= SmileConstants.KEY_SHARED_SHORT_MAX)
+                    || (rawToken >= SmileConstants.KEY_SHORT_ASCII_MIN
+                    && rawToken <= SmileConstants.KEY_SHORT_ASCII_MAX)
+                    || (rawToken >= SmileConstants.KEY_SHORT_UNICODE_MIN
+                    && rawToken <= SmileConstants.KEY_SHORT_UNICODE_MAX)) {
+                return Bytes.DOUBLE_QUOTE_BYTE;
+            }
+            return 0;
+        }
+        if (rawToken == (SmileConstants.TOKEN_END_OBJECT & 0xFF)) {
+            return 0;
+        }
+        return TOKEN_LOOKUP[rawToken];
+    }
+
+    private void validateFeatureToken(int rawToken) {
+        if (keyExpected) {
+            if (!sharedKeysEnabled
+                    && ((rawToken >= SmileConstants.KEY_SHARED_SHORT_MIN && rawToken <= SmileConstants.KEY_SHARED_SHORT_MAX)
+                    || (rawToken >= SmileConstants.KEY_SHARED_LONG_MIN && rawToken <= SmileConstants.KEY_SHARED_LONG_MAX))) {
+                throw createException("Shared key references are disabled by Smile header");
+            }
+            return;
+        }
+
+        if (!sharedValuesEnabled
+                && ((rawToken >= SmileConstants.VALUE_SHARED_SHORT_MIN && rawToken <= SmileConstants.VALUE_SHARED_SHORT_MAX)
+                || (rawToken >= SmileConstants.VALUE_SHARED_LONG_MIN && rawToken <= SmileConstants.VALUE_SHARED_LONG_MAX))) {
+            throw createException("Shared value references are disabled by Smile header");
         }
     }
 
