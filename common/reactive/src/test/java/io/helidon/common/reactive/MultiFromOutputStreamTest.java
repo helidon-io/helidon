@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,14 +30,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * {@link MultiFromOutputStream} test.
+ * {@link OutputStreamMulti} test.
  */
 public class MultiFromOutputStreamTest {
 
     @Test
     void testMulti() {
         StringBuilder result = new StringBuilder();
-        MultiFromOutputStream osMulti = IoMulti.createOutputStream();
+        OutputStreamMulti osMulti = IoMulti.outputStreamMulti();
 
         Single<Void> multiFuture = osMulti.map(ByteBuffer::array)
                 .map(String::new)
@@ -55,7 +55,7 @@ public class MultiFromOutputStreamTest {
 
     @Test
     void testMultiTimeout() {
-        MultiFromOutputStream osMulti = IoMulti.builderOutputStream()
+        OutputStreamMulti osMulti = IoMulti.outputStreamMultiBuilder()
                 .timeout(ofMillis(200))
                 .build();
 
@@ -67,7 +67,7 @@ public class MultiFromOutputStreamTest {
 
     @Test
     void testRequestCallback() throws IOException {
-        MultiFromOutputStream osMulti = IoMulti.builderOutputStream()
+        OutputStreamMulti osMulti = IoMulti.outputStreamMultiBuilder()
                 .build();
 
         TestSubscriber<String> testSubscriber = new TestSubscriber<>();
@@ -104,7 +104,7 @@ public class MultiFromOutputStreamTest {
 
     @Test
     public void testBasic() {
-        MultiFromOutputStream publisher = IoMulti.createOutputStream();
+        OutputStreamMulti publisher = IoMulti.outputStreamMulti();
         TestSubscriber<ByteBuffer> subscriber = new TestSubscriber<>();
         publisher.subscribe(subscriber);
         subscriber.requestMax();
@@ -122,7 +122,7 @@ public class MultiFromOutputStreamTest {
 
     @Test
     void testCloseOnNoDataWritten() throws IOException {
-        MultiFromOutputStream publisher = IoMulti.createOutputStream();
+        OutputStreamMulti publisher = IoMulti.outputStreamMulti();
         TestSubscriber<ByteBuffer> sub = new TestSubscriber<>();
 
         publisher.subscribe(sub);
@@ -136,7 +136,7 @@ public class MultiFromOutputStreamTest {
 
     @Test
     void testCancel() throws IOException {
-        MultiFromOutputStream publisher = IoMulti.createOutputStream();
+        OutputStreamMulti publisher = IoMulti.outputStreamMulti();
         TestSubscriber<ByteBuffer> sub = new TestSubscriber<>();
 
         publisher.subscribe(sub);
@@ -151,7 +151,7 @@ public class MultiFromOutputStreamTest {
 
     @Test
     void testError() throws IOException {
-        MultiFromOutputStream publisher = IoMulti.createOutputStream();
+        OutputStreamMulti publisher = IoMulti.outputStreamMulti();
         TestSubscriber<ByteBuffer> sub = new TestSubscriber<>() {
             @Override
             public void onNext(ByteBuffer item) {
@@ -169,7 +169,7 @@ public class MultiFromOutputStreamTest {
 
     @Test
     void testByteAtTimeBuffer() throws IOException {
-        MultiFromOutputStream publisher = IoMulti.createOutputStream();
+        OutputStreamMulti publisher = IoMulti.outputStreamMulti();
         TestSubscriber<ByteBuffer> subscriber = new TestSubscriber<>();
         publisher.subscribe(subscriber);
         subscriber.requestMax();
@@ -183,7 +183,7 @@ public class MultiFromOutputStreamTest {
 
     @Test
     void testByteAtTimeBufferArray() throws IOException {
-        MultiFromOutputStream publisher = IoMulti.createOutputStream();
+        OutputStreamMulti publisher = IoMulti.outputStreamMulti();
         TestSubscriber<ByteBuffer> subscriber = new TestSubscriber<>();
         publisher.subscribe(subscriber);
         subscriber.requestMax();
