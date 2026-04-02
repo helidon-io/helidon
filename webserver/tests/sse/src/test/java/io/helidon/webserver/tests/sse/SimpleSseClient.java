@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
@@ -39,6 +40,7 @@ class SimpleSseClient implements AutoCloseable {
     private final String path;
     private final SocketHttpClient client;
     private String contentEncoding;
+    private boolean chunked;
     private InputStream inputStream;
     private Iterable<String> headers;
 
@@ -91,6 +93,11 @@ class SimpleSseClient implements AutoCloseable {
         }
     }
 
+    public void awaitHeaders() {
+        ensureConnected();
+        ensureHeadersRead();
+    }
+
     @Override
     public void close() throws Exception {
         client.close();
@@ -122,6 +129,9 @@ class SimpleSseClient implements AutoCloseable {
                 while ((line = readLine(inputStream)) != null) {
                     if (line.isEmpty()) {
                         state = State.HEADERS_READ;
+                        if (chunked) {
+                            inputStream = new ChunkedInputStream(inputStream);
+                        }
                         if (contentEncoding != null) {
                             if ("gzip".equals(contentEncoding)) {
                                 inputStream = new GZIPInputStream(inputStream);
@@ -133,11 +143,13 @@ class SimpleSseClient implements AutoCloseable {
                         }
                         return;
                     }
-                    line = line.toLowerCase();
+                    line = line.toLowerCase(Locale.ROOT);
                     if (line.contains("http/1.1") && !line.contains("200")) {
                         throw new RuntimeException("Invalid status code in response");
                     } else if (line.contains("content-type") && !line.contains("text/event-stream")) {
                         throw new RuntimeException("Invalid content-type in response");
+                    } else if (line.contains("transfer-encoding") && line.contains("chunked")) {
+                        chunked = true;
                     } else if (line.contains("content-encoding")) {
                         contentEncoding = line.substring("content-encoding:".length()).trim();
                     }
@@ -166,5 +178,76 @@ class SimpleSseClient implements AutoCloseable {
             return null;
         }
         return buffer.toString("UTF-8");
+    }
+
+    private static final class ChunkedInputStream extends InputStream {
+        private static final int NO_CHUNK = -1;
+
+        private final InputStream delegate;
+        private int chunkRemaining = NO_CHUNK;
+        private boolean complete;
+
+        private ChunkedInputStream(InputStream delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (!ensureChunk()) {
+                return -1;
+            }
+
+            int b = delegate.read();
+            if (b == -1) {
+                throw new IOException("Unexpected end of chunked stream");
+            }
+
+            chunkRemaining--;
+            if (chunkRemaining == 0) {
+                expectCrlf();
+                chunkRemaining = NO_CHUNK;
+            }
+
+            return b;
+        }
+
+        private boolean ensureChunk() throws IOException {
+            if (complete) {
+                return false;
+            }
+            if (chunkRemaining > 0) {
+                return true;
+            }
+
+            String chunkHeader = readLine(delegate);
+            if (chunkHeader == null) {
+                throw new IOException("Unexpected end of chunked stream");
+            }
+
+            int extension = chunkHeader.indexOf(';');
+            String chunkSize = extension >= 0 ? chunkHeader.substring(0, extension) : chunkHeader;
+            chunkRemaining = Integer.parseInt(chunkSize.trim(), 16);
+
+            if (chunkRemaining == 0) {
+                while (true) {
+                    String trailer = readLine(delegate);
+                    if (trailer == null || trailer.isEmpty()) {
+                        break;
+                    }
+                }
+                complete = true;
+                return false;
+            }
+
+            return true;
+        }
+
+        private void expectCrlf() throws IOException {
+            int cr = delegate.read();
+            int lf = delegate.read();
+            if (cr != '\r' || lf != '\n') {
+                throw new IOException("Invalid chunked stream terminator");
+            }
+        }
     }
 }

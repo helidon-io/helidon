@@ -54,4 +54,10 @@ public interface SinkProviderContext {
      * @return the close runnable
      */
     Runnable closeRunnable();
+
+    /**
+     * Flush response headers while keeping the stream open.
+     */
+    default void flushHeaders() {
+    }
 }

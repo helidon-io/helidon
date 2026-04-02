@@ -18,6 +18,8 @@ package io.helidon.webserver.tests.sse;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.sse.SseEvent;
@@ -34,6 +36,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class SseBaseTest {
+    private static volatile CountDownLatch delayedLatch = new CountDownLatch(0);
 
     private final WebServer webServer;
 
@@ -47,6 +50,10 @@ class SseBaseTest {
 
     protected WebServer webServer() {
         return webServer;
+    }
+
+    static void delayedLatch(CountDownLatch latch) {
+        delayedLatch = latch;
     }
 
     static void sseString1(ServerRequest req, ServerResponse res) {
@@ -63,6 +70,13 @@ class SseBaseTest {
             Thread.sleep(50);      // simulates messages over time
         }
         sseSink.close();
+    }
+
+    static void sseDelayed(ServerRequest req, ServerResponse res) throws InterruptedException {
+        try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            delayedLatch.await(10, TimeUnit.SECONDS);
+            sseSink.emit(SseEvent.create("delayed"));
+        }
     }
 
     static void sseJson1(ServerRequest req, ServerResponse res) {

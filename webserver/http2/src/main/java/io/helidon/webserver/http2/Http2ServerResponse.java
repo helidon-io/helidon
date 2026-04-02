@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,10 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
@@ -31,12 +34,15 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Headers;
+import io.helidon.http.media.EntityWriter;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.ServerResponseBase;
+import io.helidon.webserver.http.spi.Sink;
 
 class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private static final System.Logger LOGGER = System.getLogger(Http2ServerResponse.class.getName());
@@ -50,6 +56,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private boolean isSent;
     private boolean streamingEntity;
     private long bytesWritten;
+
     private BlockingOutputStream outputStream;
     private UnaryOperator<OutputStream> outputStreamFilter;
     private String streamResult = null;
@@ -74,6 +81,17 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
         headers.set(header);
         return this;
+    }
+
+    @Override
+    public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
+        return createSink(sinkType,
+                          request,
+                          ctx,
+                          this::commit,
+                          this::flushHeaders,
+                          this::handleSinkData,
+                          () -> this.isSent = true);
     }
 
     @Override
@@ -237,10 +255,44 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         return true;
     }
 
+    private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
+
+    private void handleSinkData(Object data, MediaType mediaType) {
+        if (outputStream == null) {
+            outputStream();
+        }
+        try {
+            io.helidon.http.media.MediaContext mediaContext = mediaContext();
+
+            if (data instanceof byte[] bytes) {
+                outputStream.write(bytes);
+            } else {
+                if (data instanceof String str && mediaType.equals(MediaTypes.TEXT_PLAIN)) {
+                    EntityWriter<String> writer = mediaContext.writer(GenericType.STRING, EMPTY_HEADERS, EMPTY_HEADERS);
+                    writer.write(GenericType.STRING, str, outputStream, EMPTY_HEADERS, EMPTY_HEADERS);
+                } else {
+                    GenericType<Object> type = GenericType.create(data);
+                    WritableHeaders<?> resHeaders = WritableHeaders.create();
+                    resHeaders.set(HeaderNames.CONTENT_TYPE, mediaType.text());
+                    EntityWriter<Object> writer = mediaContext.writer(type, EMPTY_HEADERS, resHeaders);
+                    writer.write(type, data, outputStream, EMPTY_HEADERS, resHeaders);
+                }
+            }
+        } catch (IOException e) {
+            throw new ServerConnectionException("Failed to write sink data", e);
+        }
+    }
+
     @Override
     public void commit() {
         if (outputStream != null) {
             outputStream.commit();
+        }
+    }
+
+    void flushHeaders() {
+        if (outputStream != null) {
+            outputStream.flushHeaders();
         }
     }
 
@@ -350,6 +402,22 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
+        }
+
+        void flushHeaders() {
+            if (closed || !firstByte) {
+                return;
+            }
+            if (firstBuffer != null) {
+                try {
+                    write(BufferData.empty());
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+                return;
+            }
+            sendHeadersAndPrepare();
+            firstByte = false;
         }
 
         private void write(BufferData buffer) throws IOException {

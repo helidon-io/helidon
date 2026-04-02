@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package io.helidon.webserver.tests.sse;
 
+import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
+
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -28,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.http.HeaderValues.ACCEPT_JSON;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
@@ -41,6 +45,7 @@ class SseServerTest extends SseBaseTest {
     static void routing(HttpRules rules) {
         rules.get("/sseString1", SseServerTest::sseString1);
         rules.get("/sseString2", SseServerTest::sseString2);
+        rules.get("/sseDelayed", SseServerTest::sseDelayed);
         rules.get("/sseJson1", SseServerTest::sseJson1);
         rules.get("/sseJson2", SseServerTest::sseJson2);
         rules.get("/sseMixed", SseServerTest::sseMixed);
@@ -55,6 +60,26 @@ class SseServerTest extends SseBaseTest {
     @Test
     void testSseString2() throws Exception {
         testSse("/sseString2", "data:1", "data:2", "data:3");
+    }
+
+    @Test
+    void testSseHeadersAreSentBeforeFirstEvent() throws Exception {
+        CountDownLatch delayedLatch = new CountDownLatch(1);
+        SseBaseTest.delayedLatch(delayedLatch);
+        try (SimpleSseClient sseClient = SimpleSseClient.create("localhost",
+                                                                webServer().port(),
+                                                                "/sseDelayed",
+                                                                Duration.ofSeconds(10))) {
+            long start = System.nanoTime();
+            sseClient.awaitHeaders();
+            long elapsedMillis = Duration.ofNanos(System.nanoTime() - start).toMillis();
+
+            assertThat(elapsedMillis, lessThan(500L));
+            delayedLatch.countDown();
+            assertThat(sseClient.nextEvent(), is("data:delayed"));
+        } finally {
+            SseBaseTest.delayedLatch(new CountDownLatch(0));
+        }
     }
 
     @Test
