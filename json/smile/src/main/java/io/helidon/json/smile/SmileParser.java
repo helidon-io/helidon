@@ -1064,7 +1064,8 @@ public final class SmileParser extends JsonParserBase {
         return new JsonException(message);
     }
 
-    public JsonException createException(String message, java.lang.Exception e) {
+    @Override
+    public JsonException createException(String message, Exception e) {
         return new JsonException(message, e);
     }
 
