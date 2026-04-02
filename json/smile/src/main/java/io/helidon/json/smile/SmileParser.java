@@ -1079,6 +1079,11 @@ public final class SmileParser extends JsonParserBase {
 
     @Override
     public void mark() {
+        if (mark > -1) {
+            throw new IllegalStateException(
+                    "Parser is already marked for replaying. "
+                            + "Call clearMark() or resetToMark() before marking again.");
+        }
         mark = currentIndex;
         markToken = currentToken;
         markByte = currentByte;
@@ -1115,8 +1120,9 @@ public final class SmileParser extends JsonParserBase {
 
     @Override
     public void resetToMark() {
-        if (mark == -1) {
-            throw createException("No mark was set. Set it via mark() method first.");
+        if (mark < 0) {
+            throw new IllegalStateException(
+                    "No mark has been set. Call mark() before resetToMark().");
         }
         currentIndex = mark;
         currentToken = markToken;
@@ -1132,6 +1138,7 @@ public final class SmileParser extends JsonParserBase {
         sharedValueHashes = Arrays.copyOf(markSharedValueHashes, markSharedValueHashes.length);
         nextSharedKeyIndex = markNextSharedKeyIndex;
         nextSharedValueIndex = markNextSharedValueIndex;
+        clearMark();
     }
 
     private long readUnsignedVInt() {

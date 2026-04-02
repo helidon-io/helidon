@@ -793,13 +793,29 @@ abstract class SmileParserTestBase {
         assertThat(firstRead.values().size(), is(2));
 
         parser.resetToMark();
+        assertThrows(IllegalStateException.class, parser::resetToMark);
+        parser.mark();
         JsonArray secondRead = parser.readJsonArray();
         assertThat(secondRead.values().size(), is(2));
         assertThat(secondRead.get(0, JsonNull.instance()).asNumber().intValue(), is(10));
         assertThat(secondRead.get(1, JsonNull.instance()).asNumber().intValue(), is(20));
 
         parser.clearMark();
-        assertThrows(RuntimeException.class, parser::resetToMark);
+        assertThrows(IllegalStateException.class, parser::resetToMark);
+    }
+
+    @Test
+    public void testMarkCannotBeSetTwiceWithoutConsuming() throws Exception {
+        byte[] smileData = generateSmileBytes(gen -> {
+            gen.writeArrayStart();
+            gen.write(1);
+            gen.writeArrayEnd();
+        });
+
+        JsonParser parser = createParser(smileData);
+        parser.mark();
+
+        assertThrows(IllegalStateException.class, parser::mark);
     }
 
     @Test

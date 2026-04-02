@@ -1400,7 +1400,6 @@ final class SmileInputStreamParser extends JsonParserBase {
             throw new IllegalStateException(
                     "No mark has been set. Call mark() before resetToMark().");
         }
-        replayMarked = false;
         finished = false;           // allow continued reading after reset
         currentIndex = mark;
         currentToken = markToken;
@@ -1416,6 +1415,7 @@ final class SmileInputStreamParser extends JsonParserBase {
         sharedValueHashes = Arrays.copyOf(markSharedValueHashes, markSharedValueHashes.length);
         nextSharedKeyIndex = markNextSharedKeyIndex;
         nextSharedValueIndex = markNextSharedValueIndex;
+        clearMark();
     }
 
     // -----------------------------------------------------------------------
