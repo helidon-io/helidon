@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -119,7 +119,7 @@ include::{sourcedir}/se/config/IntroductionSnippets.java[tag=snippet_2, indent=0
 
 If your application builds a custom configuration (from custom config sources for example) and you would like this
 configuration to be discovered and used by Helidon components then you should set this custom configuration instance as the global configuration.
-You do this by setting the configuration instance directly into the service registry (the old way of doing this via `Config.global(config)` is deprecated).
+You do this by setting the configuration instance directly into the service registry.
 
 [source,java]
 ----

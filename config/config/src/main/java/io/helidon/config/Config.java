@@ -421,32 +421,12 @@ public interface Config {
     }
 
     /**
-     * Either return the registered global config, or create one and remember it for future access.
+     * Return the global config from the current {@link io.helidon.service.registry.ServiceRegistry}.
      *
-     * @return global config instance, or {@link io.helidon.service.registry.ServiceRegistry} instance if not registered
+     * @return global config instance from the current service registry
      */
     static Config global() {
-        try {
-            return Services.get(Config.class);
-        } catch (Exception _) {
-            return BuilderImpl.GlobalConfigHolder.get();
-        }
-    }
-
-    /**
-     * Configure the provided configuration as the global configuration.
-     * @param config to configure as global
-     * @deprecated use {@link io.helidon.service.registry.Services#set(Class, Object[])} to register a static instance for the
-     *      global service registry; when using a custom service registry instance, set is on the registry configuration builder
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    static void global(Config config) {
-        BuilderImpl.GlobalConfigHolder.set(config);
-        try {
-            Services.set(Config.class, config);
-        } catch (Exception _) {
-            // Service registry might already be initialized with a different config.
-        }
+        return Services.get(Config.class);
     }
 
     /**

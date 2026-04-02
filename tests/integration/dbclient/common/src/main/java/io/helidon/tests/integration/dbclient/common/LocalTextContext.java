@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.LazyConfigSource;
 import io.helidon.dbclient.DbClient;
+import io.helidon.service.registry.Services;
 
 /**
  * Tuple for local tests.
@@ -50,7 +51,7 @@ public record LocalTextContext<T>(DbClient db, Config config, Supplier<T> delega
                 new LazyMapConfigSourceImpl(overrides),
                 ConfigSources.classpath("db.yaml"),
                 ConfigSources.classpath("db-common.yaml"));
-        Config.global(config);
+        Services.set(Config.class, config);
         DbClient db = DbClient.create(config.get("db"));
         T delegate = factory.apply(db, config);
         if (createSchema) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.logging.common.LogConfig;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.observe.ObserveFeature;
@@ -47,7 +48,7 @@ public class DbClientITMain {
         Config config = Config.create(
                 classpath("db.yaml"),
                 classpath("db-common.yaml"));
-        Config.global(config);
+        Services.set(Config.class, config);
 
         DbClient db = DbClient.create(config.get("db"));
         if (config.get("db.create-schema").asBoolean().orElse(false)) {
