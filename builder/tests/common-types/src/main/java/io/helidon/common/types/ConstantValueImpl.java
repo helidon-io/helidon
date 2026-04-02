@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,27 @@ package io.helidon.common.types;
 
 import java.util.Objects;
 
-class AnnotationPropertyImpl implements AnnotationProperty {
+import io.helidon.common.types.AnnotationProperty.ConstantValue;
+
+final class ConstantValueImpl implements ConstantValue {
+    private final TypeName type;
+    private final String name;
     private final Object value;
 
-    AnnotationPropertyImpl(Object value) {
+    ConstantValueImpl(TypeName type, String name, Object value) {
+        this.type = type;
+        this.name = name;
         this.value = value;
+    }
+
+    @Override
+    public TypeName type() {
+        return type;
+    }
+
+    @Override
+    public String name() {
+        return name;
     }
 
     @Override
@@ -31,23 +47,20 @@ class AnnotationPropertyImpl implements AnnotationProperty {
     }
 
     @Override
-    public String toString() {
-        return String.valueOf(value);
+    public boolean equals(Object o) {
+        if (!(o instanceof ConstantValueImpl that)) {
+            return false;
+        }
+        return Objects.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(value);
+        return Objects.hashCode(value);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        }
-        if (obj instanceof AnnotationPropertyImpl api) {
-            return Objects.equals(value, api.value);
-        }
-        return Objects.equals(obj, value);
+    public String toString() {
+        return type.fqName() + "." + name;
     }
 }

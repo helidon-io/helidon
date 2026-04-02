@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ class RoleValidatorTest {
         when(classSecurityLevel.filterAnnotations(AbacProvider.ROLES_ALLOWED_JAKARTA_TYPE, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(List.of(Annotation.builder()
                                             .typeName(AbacProvider.ROLES_ALLOWED_JAKARTA_TYPE)
-                                            .putValue("value", List.of("admin"))
+                                            .property("value", List.of("admin"))
                                             .build()));
 
         RoleValidator.RoleConfig rConfig = validator.fromAnnotations(ep);
@@ -103,7 +103,7 @@ class RoleValidatorTest {
         when(classSecurityLevel.filterAnnotations(AbacProvider.ROLES_ALLOWED_JAKARTA_TYPE, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(List.of(Annotation.builder()
                                             .typeName(AbacProvider.ROLES_ALLOWED_JAKARTA_TYPE)
-                                            .putValue("value", List.of("admin"))
+                                            .property("value", List.of("admin"))
                                             .build()));
 
         RoleValidator.RoleConfig rConfig = validator.fromAnnotations(ep);
@@ -137,8 +137,8 @@ class RoleValidatorTest {
         when(classSecurityLevel.filterAnnotations(RoleValidator.Roles.TYPE, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(List.of(Annotation.builder()
                                             .typeName(RoleValidator.Roles.TYPE)
-                                            .putValue("value", List.of("admin"))
-                                            .putValue("subjectType", SubjectType.USER)
+                                            .property("value", List.of("admin"))
+                                            .property("subjectType", SubjectType.USER)
                                             .build()));
 
         RoleValidator.RoleConfig rConfig = validator.fromAnnotations(ep);
@@ -170,8 +170,8 @@ class RoleValidatorTest {
         when(classSecurityLevel.filterAnnotations(RoleValidator.Roles.TYPE, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(List.of(Annotation.builder()
                                             .typeName(RoleValidator.Roles.TYPE)
-                                            .putValue("value", List.of("admin"))
-                                            .putValue("subjectType", SubjectType.USER)
+                                            .property("value", List.of("admin"))
+                                            .property("subjectType", SubjectType.USER)
                                             .build()));
 
         RoleValidator.RoleConfig rConfig = validator.fromAnnotations(ep);
@@ -205,8 +205,8 @@ class RoleValidatorTest {
         when(classSecurityLevel.filterAnnotations(RoleValidator.Roles.TYPE, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(List.of(Annotation.builder()
                                             .typeName(RoleValidator.Roles.TYPE)
-                                            .putValue("value", List.of("admin"))
-                                            .putValue("subjectType", SubjectType.SERVICE)
+                                            .property("value", List.of("admin"))
+                                            .property("subjectType", SubjectType.SERVICE)
                                             .build()));
 
         RoleValidator.RoleConfig rConfig = validator.fromAnnotations(ep);
@@ -241,8 +241,8 @@ class RoleValidatorTest {
         when(classSecurityLevel.filterAnnotations(RoleValidator.Roles.TYPE, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(List.of(Annotation.builder()
                                             .typeName(RoleValidator.Roles.TYPE)
-                                            .putValue("value", List.of("admin"))
-                                            .putValue("subjectType", SubjectType.SERVICE)
+                                            .property("value", List.of("admin"))
+                                            .property("subjectType", SubjectType.SERVICE)
                                             .build()));
 
         RoleValidator.RoleConfig rConfig = validator.fromAnnotations(ep);
@@ -378,7 +378,7 @@ class RoleValidatorTest {
         when(classSecurityLevel.filterAnnotations(AbacProvider.ROLES_ALLOWED_JAKARTA_TYPE, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(List.of(Annotation.builder()
                                             .typeName(AbacProvider.ROLES_ALLOWED_JAKARTA_TYPE)
-                                            .putValue("value", List.of("admin"))
+                                            .property("value", List.of("admin"))
                                             .build()));
 
         RoleValidator.RoleConfig rConfig = validator.fromAnnotations(ep);
@@ -414,7 +414,7 @@ class RoleValidatorTest {
         when(classSecurityLevel.filterAnnotations(AbacProvider.ROLES_ALLOWED_JAKARTA_TYPE, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(List.of(Annotation.builder()
                                             .typeName(AbacProvider.ROLES_ALLOWED_JAKARTA_TYPE)
-                                            .putValue("value", List.of("admin"))
+                                            .property("value", List.of("admin"))
                                             .build()));
 
         RoleValidator.RoleConfig rConfig = validator.fromAnnotations(ep);
@@ -452,7 +452,7 @@ class RoleValidatorTest {
         when(classSecurityLevel.filterAnnotations(AbacProvider.ROLES_ALLOWED_JAKARTA_TYPE, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(List.of(Annotation.builder()
                                             .typeName(AbacProvider.ROLES_ALLOWED_JAKARTA_TYPE)
-                                            .putValue("value", List.of("admin"))
+                                            .property("value", List.of("admin"))
                                             .build()));
 
         RoleValidator.RoleConfig rConfig = validator.fromAnnotations(ep);

@@ -69,11 +69,11 @@ class JacksonBuilderExtension implements BuilderCodegenExtension {
 
         classModel.addAnnotation(Annotation.builder()
                                          .typeName(JSON_DESERIALIZE)
-                                         .putValue("builder", builderType)
+                                         .property("builder", builderType)
                                          .build());
         classModel.addAnnotation(Annotation.builder()
                                          .typeName(JSON_POJO_BUILDER)
-                                         .putValue("withPrefix", prototypeInfo.recordStyle() ? "" : "set")
+                                         .property("withPrefix", prototypeInfo.recordStyle() ? "" : "set")
                                          .build());
     }
 

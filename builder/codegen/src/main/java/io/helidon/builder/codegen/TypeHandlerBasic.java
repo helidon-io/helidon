@@ -824,9 +824,9 @@ class TypeHandlerBasic implements TypeHandler {
          */
         var builder = Annotation.builder()
                 .typeName(TypeName.create(Deprecated.class));
-        since.ifPresent(it -> builder.putValue("since", it));
+        since.ifPresent(it -> builder.property("since", it));
         if (forRemoval) {
-            builder.putValue("forRemoval", true);
+            builder.property("forRemoval", true);
         }
 
         method.addAnnotation(builder.build());

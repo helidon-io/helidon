@@ -19,7 +19,6 @@ package io.helidon.common.types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * A property of an annotation.
@@ -35,7 +34,7 @@ public interface AnnotationProperty {
      * @param value value of the property, must be one of the supported types, see
      *              {@link Annotation}; must not be an instance of this class
      * @return a new annotation property
-     * @see io.helidon.common.types.Annotation.BuilderBase#putValue(String, Object)
+     * @see io.helidon.common.types.Annotation.BuilderBase#property(String, Object)
      */
     static AnnotationProperty create(Object value) {
         Objects.requireNonNull(value);
@@ -50,7 +49,7 @@ public interface AnnotationProperty {
      * @param constantType type of the class that holds the referenced constant
      * @param constantName name of the constant (i.e. an accessible static final field)
      * @return a new annotation property
-     * @see io.helidon.common.types.Annotation.BuilderBase#putValue(String, Object)
+     * @see io.helidon.common.types.Annotation.BuilderBase#property(String, Object)
      */
     static AnnotationProperty create(Object value, TypeName constantType, String constantName) {
         Objects.requireNonNull(value);
@@ -92,22 +91,6 @@ public interface AnnotationProperty {
      * @return value of the property
      */
     Object value();
-
-    /**
-     * Constant value (i.e. a class and an accessible constant on it) that should be used if this annotation is generated
-     * into source code. In case this is an enum type, the constant value will return the appropriate
-     * {@link EnumValue}.
-     *
-     * @return constant value if defined
-     * @deprecated use {{@link #value()}} and downcast to {@link ConstantValue} or {@link EnumValue}
-     */
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    default Optional<ConstantValue> constantValue() {
-        if (value() instanceof ConstantValue cv) {
-            return Optional.of(cv);
-        }
-        return Optional.empty();
-    }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static Object value(Object value) {
@@ -152,4 +135,3 @@ public interface AnnotationProperty {
         Object value();
     }
 }
-

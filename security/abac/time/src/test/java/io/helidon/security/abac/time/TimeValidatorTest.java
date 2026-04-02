@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,15 +52,15 @@ public class TimeValidatorTest {
 
         Annotation tod = Annotation.builder()
                 .typeName(TimeValidator.TimeOfDay.TYPE)
-                .putValue("from", "08:15:00")
-                .putValue("to", "12:00")
+                .property("from", "08:15:00")
+                .property("to", "12:00")
                 .build();
         annotations.add(tod);
 
         Annotation tod2 = Annotation.builder()
                 .typeName(TimeValidator.TimeOfDay.TYPE)
-                .putValue("from", "12:30:00")
-                .putValue("to", "17:30")
+                .property("from", "12:30:00")
+                .property("to", "17:30")
                 .build();
         annotations.add(tod2);
 
@@ -76,7 +76,7 @@ public class TimeValidatorTest {
 
         Annotation dow = Annotation.builder()
                 .typeName(TimeValidator.DaysOfWeek.TYPE)
-                .putValue("value", List.of(
+                .property("value", List.of(
                         DayOfWeek.MONDAY,
                         DayOfWeek.TUESDAY,
                         DayOfWeek.WEDNESDAY,

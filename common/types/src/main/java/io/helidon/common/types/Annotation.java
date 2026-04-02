@@ -780,16 +780,6 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
     TypeName typeName();
 
     /**
-     * Key-value map of all the annotation properties.
-     *
-     * @return key-value pairs of all the properties present
-     * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface
-     */
-    @Deprecated(since = "4.3.0", forRemoval = true)
-    @Override
-    Map<String, Object> values();
-
-    /**
      * Properties defined on this annotation.
      *
      * @return properties
@@ -825,9 +815,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         private final List<Annotation> metaAnnotations = new ArrayList<>();
         private boolean isMetaAnnotationsMutated;
         private boolean isPropertiesMutated;
-        private boolean isValuesMutated;
         private Map<String, AnnotationProperty> properties = new LinkedHashMap<>();
-        private Map<String, Object> values = new LinkedHashMap<>();
         private Object originatingElement;
         private TypeName typeName;
 
@@ -845,10 +833,6 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          */
         public BUILDER from(Annotation prototype) {
             typeName(prototype.typeName());
-            if (!this.isValuesMutated) {
-                this.values.clear();
-            }
-            addValues(prototype.values());
             if (!this.isPropertiesMutated) {
                 this.properties.clear();
             }
@@ -869,13 +853,6 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          */
         public BUILDER from(Annotation.BuilderBase<?, ?> builder) {
             builder.typeName().ifPresent(this::typeName);
-            if (this.isValuesMutated) {
-                if (builder.isValuesMutated) {
-                    addValues(builder.values());
-                }
-            } else {
-                values(builder.values());
-            }
             if (this.isPropertiesMutated) {
                 if (builder.isPropertiesMutated) {
                     addProperties(builder.properties());
@@ -966,60 +943,6 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         public BUILDER typeName(Supplier<? extends TypeName> supplier) {
             Objects.requireNonNull(supplier);
             this.typeName(supplier.get());
-            return self();
-        }
-
-        /**
-         * Key-value map of all the annotation properties.
-         * This method replaces all values with the new ones.
-         *
-         * @param values key-value pairs of all the properties present
-         * @return updated builder instance
-         * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface
-         * @see #values()
-         */
-        @Deprecated(since = "4.3.0", forRemoval = true)
-        public BUILDER values(Map<String, ?> values) {
-            Objects.requireNonNull(values);
-            this.values.clear();
-            this.values.putAll(values);
-            this.isValuesMutated = true;
-            return self();
-        }
-
-        /**
-         * Key-value map of all the annotation properties.
-         * This method keeps existing values, then puts all new values into the map.
-         *
-         * @param values key-value pairs of all the properties present
-         * @return updated builder instance
-         * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface
-         * @see #values()
-         */
-        @Deprecated(since = "4.3.0", forRemoval = true)
-        public BUILDER addValues(Map<String, ?> values) {
-            Objects.requireNonNull(values);
-            this.values.putAll(values);
-            this.isValuesMutated = true;
-            return self();
-        }
-
-        /**
-         * Key-value map of all the annotation properties.
-         * This method adds a new value to the map, or replaces it if the key already exists.
-         *
-         * @param key key to add or replace
-         * @param value new value for the key
-         * @return updated builder instance
-         * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface
-         * @see #values()
-         */
-        @Deprecated(since = "4.3.0", forRemoval = true)
-        public BUILDER putValue(String key, Object value) {
-            Objects.requireNonNull(key);
-            Objects.requireNonNull(value);
-            this.values.put(key, value);
-            this.isValuesMutated = true;
             return self();
         }
 
@@ -1176,17 +1099,6 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         }
 
         /**
-         * Key-value map of all the annotation properties.
-         *
-         * @return key-value pairs of all the properties present
-         * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface
-         */
-        @Deprecated(since = "4.3.0", forRemoval = true)
-        public Map<String, Object> values() {
-            return values;
-        }
-
-        /**
          * Properties defined on this annotation.
          *
          * @return properties
@@ -1226,7 +1138,6 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          * Handles providers and decorators.
          */
         protected void preBuildPrototype() {
-            new AnnotationSupport.AnnotationDecorator().decorate(this);
         }
 
         /**
@@ -1262,7 +1173,6 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
 
             private final List<Annotation> metaAnnotations;
             private final Map<String, AnnotationProperty> properties;
-            private final Map<String, Object> values;
             private final Optional<Object> originatingElement;
             private final TypeName typeName;
 
@@ -1273,7 +1183,6 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
              */
             protected AnnotationImpl(Annotation.BuilderBase<?, ?> builder) {
                 this.typeName = builder.typeName().get();
-                this.values = Collections.unmodifiableMap(new LinkedHashMap<>(builder.values()));
                 this.properties = Collections.unmodifiableMap(new LinkedHashMap<>(builder.properties()));
                 this.metaAnnotations = List.copyOf(builder.metaAnnotations());
                 this.originatingElement = builder.originatingElement().map(Function.identity());
@@ -1282,12 +1191,6 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             @Override
             public TypeName typeName() {
                 return typeName;
-            }
-
-            @Override
-            @Deprecated(since = "4.3.0", forRemoval = true)
-            public Map<String, Object> values() {
-                return values;
             }
 
             @Override

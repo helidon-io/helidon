@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ class FallbackHandler extends FtHandler {
         classModel.superType(fallbackType(enclosingTypeName))
                 .addAnnotation(Annotation.builder()
                                        .typeName(WEIGHT)
-                                       .putValue("value", InterceptorWeights.WEIGHT_FALLBACK)
+                                       .property("value", InterceptorWeights.WEIGHT_FALLBACK)
                                        .build());
 
         // generate the class body

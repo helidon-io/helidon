@@ -51,7 +51,9 @@ final class AnnotationSupport {
     @Prototype.PrototypeFactoryMethod
     public static Annotation create(TypeName annoTypeName,
                                     Map<String, ?> values) {
-        return Annotation.builder().typeName(annoTypeName).values(values).build();
+        Annotation.Builder builder = Annotation.builder().typeName(annoTypeName);
+        values.forEach(builder::property);
+        return builder.build();
     }
 
     /**
@@ -708,27 +710,4 @@ final class AnnotationSupport {
                                                    + type.getName());
     }
 
-    static class AnnotationDecorator implements Prototype.BuilderDecorator<Annotation.BuilderBase<?, ?>> {
-        @SuppressWarnings("removal")
-        @Override
-        public void decorate(Annotation.BuilderBase<?, ?> target) {
-            // reconcile values and properties
-            Map<String, Object> values = target.values();
-            Map<String, AnnotationProperty> properties = target.properties();
-
-            for (Map.Entry<String, Object> entry : values.entrySet()) {
-                Object value = entry.getValue();
-                if (value instanceof AnnotationProperty ap) {
-                    properties.putIfAbsent(entry.getKey(), ap);
-                } else {
-                    properties.putIfAbsent(entry.getKey(), AnnotationProperty.create(value));
-                }
-            }
-
-            // AnnotationProperty always wins over value, because that is the new API
-            for (Map.Entry<String, AnnotationProperty> entry : properties.entrySet()) {
-                values.put(entry.getKey(), entry.getValue().value());
-            }
-        }
-    }
 }

@@ -16,13 +16,13 @@
 
 package io.helidon.common.types;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.types.AnnotationProperty.ConstantValue;
 
 /**
  * An annotation with defined values.
@@ -54,7 +54,7 @@ import io.helidon.common.types.AnnotationProperty.ConstantValue;
  *     <li>arrays - available as a {@link java.util.List} of values</li>
  * </ul>
  */
-@Prototype.Blueprint(decorator = AnnotationSupport.AnnotationDecorator.class)
+@Prototype.Blueprint(createEmptyPublic = false)
 @Prototype.CustomMethods(AnnotationSupport.class)
 @Prototype.Implement("java.lang.Comparable<Annotation>")
 interface AnnotationBlueprint {
@@ -71,17 +71,6 @@ interface AnnotationBlueprint {
      */
     @Option.Required
     TypeName typeName();
-
-    /**
-     * Key-value map of all the annotation properties.
-     *
-     * @return key-value pairs of all the properties present
-     * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface
-     */
-    @Option.Singular
-    @Deprecated(since = "4.3.0", forRemoval = true)
-    @Option.Redundant
-    Map<String, Object> values();
 
     /**
      * Properties defined on this annotation.
@@ -167,8 +156,13 @@ interface AnnotationBlueprint {
      * @return object value
      */
     default Optional<Object> objectValue(String property) {
-        var value = properties().get(property).value();
-        if (value instanceof ConstantValue cv) {
+        AnnotationProperty annotationProperty = properties().get(property);
+        if (annotationProperty == null) {
+            return Optional.empty();
+        }
+
+        Object value = annotationProperty.value();
+        if (value instanceof AnnotationProperty.ConstantValue cv) {
             return Optional.of(cv.value());
         }
         return Optional.ofNullable(value);
@@ -737,5 +731,18 @@ interface AnnotationBlueprint {
             }
         }
         return false;
+    }
+
+    private Map<String, Object> values() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        for (Map.Entry<String, AnnotationProperty> entry : properties().entrySet()) {
+            Object value = entry.getValue().value();
+            if (value instanceof AnnotationProperty.ConstantValue cv) {
+                result.put(entry.getKey(), cv.value());
+            } else {
+                result.put(entry.getKey(), value);
+            }
+        }
+        return result;
     }
 }

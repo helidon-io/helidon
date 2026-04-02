@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.common.types;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -63,7 +62,7 @@ final class TypedElementInfoSupport {
 
         @Override
         public void decorate(TypedElementInfo.BuilderBase<?, ?> target) {
-            backwardCompatibility(target);
+            defaultAccessModifier(target);
             constructorName(target);
             signature(target);
         }
@@ -119,48 +118,10 @@ final class TypedElementInfoSupport {
             }
         }
 
-        @SuppressWarnings("removal")
-        private void backwardCompatibility(TypedElementInfo.BuilderBase<?, ?> target) {
-            /*
-            Backward compatibility for deprecated methods.
-             */
-            if (target.kind().isEmpty() && target.elementTypeKind().isPresent()) {
-                target.kind(ElementKind.valueOf(target.elementTypeKind().get().toUpperCase(Locale.ROOT)));
-            }
-            target.elementTypeKind(target.kind().get().toString());
-
+        private void defaultAccessModifier(TypedElementInfo.BuilderBase<?, ?> target) {
             if (target.accessModifier().isEmpty()) {
-                AccessModifier accessModifier = null;
-                for (String modifier : target.modifiers()) {
-                    if (TypeValues.MODIFIER_PUBLIC.equals(modifier)) {
-                        accessModifier = AccessModifier.PUBLIC;
-                        break;
-                    }
-                    if (TypeValues.MODIFIER_PROTECTED.equals(modifier)) {
-                        accessModifier = AccessModifier.PROTECTED;
-                        break;
-                    }
-                    if (TypeValues.MODIFIER_PRIVATE.equals(modifier)) {
-                        accessModifier = AccessModifier.PRIVATE;
-                        break;
-                    }
-                }
-                if (accessModifier == null) {
-                    accessModifier = AccessModifier.PACKAGE_PRIVATE;
-                }
-                target.accessModifier(accessModifier);
+                target.accessModifier(AccessModifier.PACKAGE_PRIVATE);
             }
-            for (String modifier : target.modifiers()) {
-                try {
-                    target.addElementModifier(Modifier.valueOf(modifier.toUpperCase(Locale.ROOT)));
-                } catch (IllegalArgumentException ignored) {
-                    // best effort - we need to skip access modifiers and unknown modifiers
-                }
-            }
-            for (Modifier typeModifier : target.elementModifiers()) {
-                target.addModifier(typeModifier.modifierName());
-            }
-            target.addModifier(target.accessModifier().get().modifierName());
         }
     }
 }

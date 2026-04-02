@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class LongMaxValidatorProviderTest {
     public void testValidLongs() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.Max.class))
-                .putValue("value", 100L)
+                .property("value", 100L)
                 .build());
 
         // Valid cases - longs <= max
@@ -58,7 +58,7 @@ public class LongMaxValidatorProviderTest {
     public void testInvalidLongs() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.Max.class))
-                .putValue("value", 100L)
+                .property("value", 100L)
                 .build());
 
         // Invalid cases - longs > max
@@ -72,8 +72,8 @@ public class LongMaxValidatorProviderTest {
     public void testCustomMessage() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.Max.class))
-                .putValue("value", 100L)
-                .putValue("message", "Long must be at most 100")
+                .property("value", 100L)
+                .property("message", "Long must be at most 100")
                 .build());
 
         var response = validator.check(ctx, 150L);
@@ -86,7 +86,7 @@ public class LongMaxValidatorProviderTest {
     public void testNonLongValues() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.Max.class))
-                .putValue("value", 100L)
+                .property("value", 100L)
                 .build());
 
         // Non-long values should fail validation
@@ -100,7 +100,7 @@ public class LongMaxValidatorProviderTest {
     public void testNullValue() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.Max.class))
-                .putValue("value", 100L)
+                .property("value", 100L)
                 .build());
 
         // Null values should be considered valid (not sent to validator)
@@ -111,7 +111,7 @@ public class LongMaxValidatorProviderTest {
     public void testEdgeCases() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.Max.class))
-                .putValue("value", 0L)
+                .property("value", 0L)
                 .build());
 
         // Edge cases
@@ -124,7 +124,7 @@ public class LongMaxValidatorProviderTest {
     public void testLargeValues() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.Max.class))
-                .putValue("value", 2000000000L)
+                .property("value", 2000000000L)
                 .build());
 
         // Test with large values

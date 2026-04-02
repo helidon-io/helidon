@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,11 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.common.types.TypeName.create;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 
 class TypedElementInfoTest {
+    private static final TypeName SOME_TYPE = TypeName.create("io.helidon.SomeType");
+
     @Test
     void declarations() {
         assertThat(TypedElementInfo.builder()
@@ -101,80 +104,41 @@ class TypedElementInfoTest {
     }
 
     @Test
-    void declarationsToBeRemoved() {
-        assertThat(TypedElementInfo.builder()
-                           .elementName("arg")
-                           .elementTypeKind(TypeValues.KIND_PARAMETER)
-                           .typeName(create(boolean.class))
-                           .build()
-                           .toString(),
-                   is("boolean arg"));
-        assertThat(TypedElementInfo.builder()
-                           .elementName("arg")
-                           .elementTypeKind(TypeValues.KIND_PARAMETER)
-                           .typeName(create(byte.class))
-                           .build().toString(),
-                   is("byte arg"));
-        assertThat(TypedElementInfo.builder()
-                           .elementName("arg")
-                           .elementTypeKind(TypeValues.KIND_PARAMETER)
-                           .typeName(create(short.class))
-                           .build().toString(),
-                   is("short arg"));
-        assertThat(TypedElementInfo.builder()
-                           .elementName("arg")
-                           .elementTypeKind(TypeValues.KIND_PARAMETER)
-                           .typeName(create(int.class))
-                           .build().toString(),
-                   is("int arg"));
-        assertThat(TypedElementInfo.builder()
-                           .elementName("arg")
-                           .elementTypeKind(TypeValues.KIND_PARAMETER)
-                           .typeName(create(long.class))
-                           .build().toString(),
-                   is("long arg"));
-        assertThat(TypedElementInfo.builder()
-                           .elementName("arg")
-                           .elementTypeKind(TypeValues.KIND_PARAMETER)
-                           .typeName(create(char.class))
-                           .build().toString(),
-                   is("char arg"));
-        assertThat(TypedElementInfo.builder()
-                           .elementName("arg")
-                           .elementTypeKind(TypeValues.KIND_PARAMETER)
-                           .typeName(create(float.class))
-                           .build().toString(),
-                   is("float arg"));
-        assertThat(TypedElementInfo.builder()
-                           .elementName("arg")
-                           .elementTypeKind(TypeValues.KIND_PARAMETER)
-                           .typeName(create(double.class))
-                           .build().toString(),
-                   is("double arg"));
-        assertThat(TypedElementInfo.builder()
-                           .elementName("arg")
-                           .elementTypeKind(TypeValues.KIND_PARAMETER)
-                           .typeName(create(void.class))
-                           .build().toString(),
-                   is("void arg"));
+    void defaultsAccessModifier() {
+        TypedElementInfo build = TypedElementInfo.builder()
+                .typeName(SOME_TYPE)
+                .kind(ElementKind.METHOD)
+                .elementName("method")
+                .build();
 
-        assertThat(TypedElementInfo.builder()
-                           .enclosingType(create("MyClass"))
-                           .elementName("hello")
-                           .typeName(create(void.class))
-                           .elementTypeKind(TypeValues.KIND_METHOD)
-                           .addParameterArgument(TypedElementInfo.builder()
-                                                         .elementName("arg1")
-                                                         .typeName(create(String.class))
-                                                         .elementTypeKind(TypeValues.KIND_PARAMETER)
-                                                         .build())
-                           .addParameterArgument(TypedElementInfo.builder()
-                                                         .elementName("arg2")
-                                                         .typeName(create(int.class))
-                                                         .elementTypeKind(TypeValues.KIND_PARAMETER)
-                                                         .build())
-                           .build().toString(),
-                   is("MyClass::void hello(java.lang.String arg1, int arg2)"));
+        assertThat(build.kind(), is(ElementKind.METHOD));
+        assertThat(build.accessModifier(), is(AccessModifier.PACKAGE_PRIVATE));
+    }
+
+    @Test
+    void supportsElementModifiers() {
+        TypedElementInfo build = TypedElementInfo.builder()
+                .addElementModifier(Modifier.ABSTRACT)
+                .addElementModifier(Modifier.STATIC)
+                .accessModifier(AccessModifier.PUBLIC)
+                .typeName(SOME_TYPE)
+                .kind(ElementKind.METHOD)
+                .elementName("method")
+                .build();
+
+        assertThat(build.accessModifier(), is(AccessModifier.PUBLIC));
+        assertThat(build.elementModifiers(), contains(Modifier.ABSTRACT, Modifier.STATIC));
+    }
+
+    @Test
+    void derivesConstructorNameFromKind() {
+        TypedElementInfo build = TypedElementInfo.builder()
+                .typeName(SOME_TYPE)
+                .kind(ElementKind.CONSTRUCTOR)
+                .build();
+
+        assertThat(build.elementName(), is("<init>"));
+        assertThat(build.kind(), is(ElementKind.CONSTRUCTOR));
     }
 
 }

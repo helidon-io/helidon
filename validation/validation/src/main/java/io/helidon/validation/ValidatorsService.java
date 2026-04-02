@@ -178,8 +178,8 @@ class ValidatorsService {
     void validateStringLength(ValidationContext ctx, CharSequence value, int minLength, int maxLength) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.String.Length.class))
-                .putValue("min", minLength)
-                .putValue("value", maxLength)
+                .property("min", minLength)
+                .property("value", maxLength)
                 .build();
         ConstraintValidator validator = stringLengthProvider.create(CHAR_SEQUENCE_TYPE, annotation);
         ctx.check(validator, value);
@@ -231,8 +231,8 @@ class ValidatorsService {
     void validateNumberDigits(ValidationContext ctx, Number value, int integerDigits, int fractionDigits) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Digits.class))
-                .putValue("integer", integerDigits)
-                .putValue("fraction", fractionDigits)
+                .property("integer", integerDigits)
+                .property("fraction", fractionDigits)
                 .build();
         ConstraintValidator validator = numberDigitsProvider.create(NUMBER_TYPE, annotation);
         ctx.check(validator, value);
@@ -241,7 +241,7 @@ class ValidatorsService {
     void validateIntegerMin(ValidationContext ctx, Integer value, int minValue) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.Min.class))
-                .putValue("value", minValue)
+                .property("value", minValue)
                 .build();
         ConstraintValidator validator = integerMinProvider.create(TypeNames.BOXED_INT, annotation);
         ctx.check(validator, value);
@@ -250,7 +250,7 @@ class ValidatorsService {
     void validateIntegerMax(ValidationContext ctx, Object value, int maxValue) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.Max.class))
-                .putValue("value", maxValue)
+                .property("value", maxValue)
                 .build();
         ConstraintValidator validator = integerMaxProvider.create(TypeNames.BOXED_INT, annotation);
         ctx.check(validator, value);
@@ -259,7 +259,7 @@ class ValidatorsService {
     void validateLongMin(ValidationContext ctx, Long value, long minValue) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.Min.class))
-                .putValue("value", minValue)
+                .property("value", minValue)
                 .build();
         ConstraintValidator validator = longMinProvider.create(TypeNames.BOXED_LONG, annotation);
         ctx.check(validator, value);
@@ -268,7 +268,7 @@ class ValidatorsService {
     void validateLongMax(ValidationContext ctx, Long value, long maxValue) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.Max.class))
-                .putValue("value", maxValue)
+                .property("value", maxValue)
                 .build();
         ConstraintValidator validator = longMaxProvider.create(TypeNames.BOXED_LONG, annotation);
         ctx.check(validator, value);
@@ -313,8 +313,8 @@ class ValidatorsService {
     void validateCollectionSize(ValidationContext ctx, Object value, int minSize, int maxSize) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Collection.Size.class))
-                .putValue("min", minSize)
-                .putValue("value", maxSize)
+                .property("min", minSize)
+                .property("value", maxSize)
                 .build();
         TypeName typeName;
         if (value.getClass().isArray()) {

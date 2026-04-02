@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -178,24 +178,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
     Optional<String> description();
 
     /**
-     * The type element kind.
-     * <p>
-     * Such as
-     * <ul>
-     *     <li>{@value io.helidon.common.types.TypeValues#KIND_INTERFACE}</li>
-     *     <li>{@value io.helidon.common.types.TypeValues#KIND_ANNOTATION_TYPE}</li>
-     *     <li>and other constants on {@link io.helidon.common.types.TypeValues}</li>
-     * </ul>
-     *
-     * @return the type element kind.
-     * @see io.helidon.common.types.TypeValues#KIND_CLASS and other constants on this class prefixed with {@code TYPE}
-     * @deprecated This option is deprecated, use {@link #kind} instead
-     */
-    @Deprecated(since = "4.1.0", forRemoval = true)
-    @Override
-    String typeKind();
-
-    /**
      * The kind of this type.
      * <p>
      * Such as:
@@ -262,17 +244,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
     List<TypeInfo> interfaceTypeInfo();
 
     /**
-     * Element modifiers.
-     *
-     * @return element modifiers
-     * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
-     * @deprecated This option is deprecated, use {@link #elementModifiers} instead
-     */
-    @Deprecated(since = "4.1.0", forRemoval = true)
-    @Override
-    Set<String> modifiers();
-
-    /**
      * Type modifiers.
      *
      * @return set of modifiers that are present on the type (and that we understand)
@@ -323,14 +294,12 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         private final List<TypedElementInfo> elementInfo = new ArrayList<>();
         private final List<TypedElementInfo> otherElementInfo = new ArrayList<>();
         private final Set<Modifier> elementModifiers = new LinkedHashSet<>();
-        private final Set<String> modifiers = new LinkedHashSet<>();
         private AccessModifier accessModifier;
         private boolean isAnnotationsMutated;
         private boolean isElementInfoMutated;
         private boolean isElementModifiersMutated;
         private boolean isInheritedAnnotationsMutated;
         private boolean isInterfaceTypeInfoMutated;
-        private boolean isModifiersMutated;
         private boolean isOtherElementInfoMutated;
         private boolean isReferencedModuleNamesMutated;
         private boolean isReferencedTypeNamesToAnnotationsMutated;
@@ -340,7 +309,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         private Object originatingElement;
         private String description;
         private String module;
-        private String typeKind;
         private TypeInfo superTypeInfo;
         private TypeName declaredType;
         private TypeName rawType;
@@ -363,7 +331,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             rawType(prototype.rawType());
             declaredType(prototype.declaredType());
             description(prototype.description());
-            typeKind(prototype.typeKind());
             kind(prototype.kind());
             if (!this.isElementInfoMutated) {
                 this.elementInfo.clear();
@@ -386,10 +353,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                 this.interfaceTypeInfo.clear();
             }
             addInterfaceTypeInfo(prototype.interfaceTypeInfo());
-            if (!this.isModifiersMutated) {
-                this.modifiers.clear();
-            }
-            addModifiers(prototype.modifiers());
             if (!this.isElementModifiersMutated) {
                 this.elementModifiers.clear();
             }
@@ -419,7 +382,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             builder.rawType().ifPresent(this::rawType);
             builder.declaredType().ifPresent(this::declaredType);
             builder.description().ifPresent(this::description);
-            builder.typeKind().ifPresent(this::typeKind);
             builder.kind().ifPresent(this::kind);
             if (this.isElementInfoMutated) {
                 if (builder.isElementInfoMutated) {
@@ -456,13 +418,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                 }
             } else {
                 interfaceTypeInfo(builder.interfaceTypeInfo());
-            }
-            if (this.isModifiersMutated) {
-                if (builder.isModifiersMutated) {
-                    addModifiers(builder.modifiers());
-                }
-            } else {
-                modifiers(builder.modifiers());
             }
             if (this.isElementModifiersMutated) {
                 if (builder.isElementModifiersMutated) {
@@ -659,29 +614,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         public BUILDER description(String description) {
             Objects.requireNonNull(description);
             this.description = description;
-            return self();
-        }
-
-        /**
-         * The type element kind.
-         * <p>
-         * Such as
-         * <ul>
-         *     <li>{@value io.helidon.common.types.TypeValues#KIND_INTERFACE}</li>
-         *     <li>{@value io.helidon.common.types.TypeValues#KIND_ANNOTATION_TYPE}</li>
-         *     <li>and other constants on {@link io.helidon.common.types.TypeValues}</li>
-         * </ul>
-         *
-         * @param typeKind the type element kind.
-         * @return updated builder instance
-         * @see io.helidon.common.types.TypeValues#KIND_CLASS and other constants on this class prefixed with {@code TYPE}
-         * @see #typeKind()
-         * @deprecated This option is deprecated, use {@link #kind} instead
-         */
-        @Deprecated(since = "4.1.0", forRemoval = true)
-        public BUILDER typeKind(String typeKind) {
-            Objects.requireNonNull(typeKind);
-            this.typeKind = typeKind;
             return self();
         }
 
@@ -1129,73 +1061,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * Clear all modifiers.
-         *
-         * @return updated builder instance
-         * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
-         * @see #modifiers()
-         * @deprecated This option is deprecated, use {@link #elementModifiers} instead
-         */
-        @Deprecated(since = "4.1.0", forRemoval = true)
-        public BUILDER clearModifiers() {
-            this.isModifiersMutated = true;
-            this.modifiers.clear();
-            return self();
-        }
-
-        /**
-         * Element modifiers.
-         *
-         * @param modifiers element modifiers
-         * @return updated builder instance
-         * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
-         * @see #modifiers()
-         * @deprecated This option is deprecated, use {@link #elementModifiers} instead
-         */
-        @Deprecated(since = "4.1.0", forRemoval = true)
-        public BUILDER modifiers(Set<String> modifiers) {
-            Objects.requireNonNull(modifiers);
-            this.isModifiersMutated = true;
-            this.modifiers.clear();
-            this.modifiers.addAll(modifiers);
-            return self();
-        }
-
-        /**
-         * Element modifiers.
-         *
-         * @param modifiers element modifiers
-         * @return updated builder instance
-         * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
-         * @see #modifiers()
-         * @deprecated This option is deprecated, use {@link #elementModifiers} instead
-         */
-        @Deprecated(since = "4.1.0", forRemoval = true)
-        public BUILDER addModifiers(Set<String> modifiers) {
-            Objects.requireNonNull(modifiers);
-            this.isModifiersMutated = true;
-            this.modifiers.addAll(modifiers);
-            return self();
-        }
-
-        /**
-         * Element modifiers.
-         *
-         * @param modifier add single element modifiers
-         * @return updated builder instance
-         * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
-         * @see #modifiers()
-         * @deprecated This option is deprecated, use {@link #elementModifiers} instead
-         */
-        @Deprecated(since = "4.1.0", forRemoval = true)
-        public BUILDER addModifier(String modifier) {
-            Objects.requireNonNull(modifier);
-            this.modifiers.add(modifier);
-            this.isModifiersMutated = true;
-            return self();
-        }
-
-        /**
          * Clear all elementModifiers.
          *
          * @return updated builder instance
@@ -1539,25 +1404,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * The type element kind.
-         * <p>
-         * Such as
-         * <ul>
-         *     <li>{@value io.helidon.common.types.TypeValues#KIND_INTERFACE}</li>
-         *     <li>{@value io.helidon.common.types.TypeValues#KIND_ANNOTATION_TYPE}</li>
-         *     <li>and other constants on {@link io.helidon.common.types.TypeValues}</li>
-         * </ul>
-         *
-         * @return the type element kind.
-         * @see io.helidon.common.types.TypeValues#KIND_CLASS and other constants on this class prefixed with {@code TYPE}
-         * @deprecated This option is deprecated, use {@link #kind} instead
-         */
-        @Deprecated(since = "4.1.0", forRemoval = true)
-        public Optional<String> typeKind() {
-            return Optional.ofNullable(typeKind);
-        }
-
-        /**
          * The kind of this type.
          * <p>
          * Such as:
@@ -1629,18 +1475,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public List<TypeInfo> interfaceTypeInfo() {
             return interfaceTypeInfo;
-        }
-
-        /**
-         * Element modifiers.
-         *
-         * @return element modifiers
-         * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
-         * @deprecated This option is deprecated, use {@link #elementModifiers} instead
-         */
-        @Deprecated(since = "4.1.0", forRemoval = true)
-        public Set<String> modifiers() {
-            return modifiers;
         }
 
         /**
@@ -1746,9 +1580,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             if (declaredType == null) {
                 collector.fatal(getClass(), "Property \"declaredType\" must not be null, but not set");
             }
-            if (typeKind == null) {
-                collector.fatal(getClass(), "Property \"typeKind\" must not be null, but not set");
-            }
             if (kind == null) {
                 collector.fatal(getClass(), "Property \"kind\" must not be null, but not set");
             }
@@ -1834,8 +1665,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             private final Optional<String> description;
             private final Optional<String> module;
             private final Set<Modifier> elementModifiers;
-            private final Set<String> modifiers;
-            private final String typeKind;
             private final TypeName declaredType;
             private final TypeName rawType;
             private final TypeName typeName;
@@ -1850,7 +1679,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                 this.rawType = builder.rawType().get();
                 this.declaredType = builder.declaredType().get();
                 this.description = builder.description().map(Function.identity());
-                this.typeKind = builder.typeKind().get();
                 this.kind = builder.kind().get();
                 this.elementInfo = List.copyOf(builder.elementInfo());
                 this.otherElementInfo = List.copyOf(builder.otherElementInfo());
@@ -1859,7 +1687,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                 this.referencedModuleNames = Collections.unmodifiableMap(new LinkedHashMap<>(builder.referencedModuleNames()));
                 this.superTypeInfo = builder.superTypeInfo().map(Function.identity());
                 this.interfaceTypeInfo = List.copyOf(builder.interfaceTypeInfo());
-                this.modifiers = Collections.unmodifiableSet(new LinkedHashSet<>(builder.modifiers()));
                 this.elementModifiers = Collections.unmodifiableSet(new LinkedHashSet<>(builder.elementModifiers()));
                 this.accessModifier = builder.accessModifier().get();
                 this.module = builder.module().map(Function.identity());
@@ -1888,13 +1715,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                 return description;
             }
 
-            @Override
-            @Deprecated(since = "4.1.0", forRemoval = true)
-            public String typeKind() {
-                return typeKind;
-            }
-
-            @Override
             public ElementKind kind() {
                 return kind;
             }
@@ -1929,13 +1749,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                 return interfaceTypeInfo;
             }
 
-            @Override
-            @Deprecated(since = "4.1.0", forRemoval = true)
-            public Set<String> modifiers() {
-                return modifiers;
-            }
-
-            @Override
             public Set<Modifier> elementModifiers() {
                 return elementModifiers;
             }
