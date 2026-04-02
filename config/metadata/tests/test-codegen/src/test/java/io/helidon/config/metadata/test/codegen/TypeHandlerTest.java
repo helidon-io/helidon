@@ -52,6 +52,7 @@ class TypeHandlerTest {
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
+                        import io.helidon.config.metadata.ConfiguredOption;
                         
                         /**
                          * ACME listener configuration.
@@ -145,6 +146,7 @@ class TypeHandlerTest {
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
+                        import io.helidon.config.metadata.ConfiguredOption;
                         
                         /**
                          * ACME listener configuration.
@@ -230,6 +232,7 @@ class TypeHandlerTest {
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
+                        import io.helidon.config.metadata.ConfiguredOption;
                         
                         /**
                          * ACME listener configuration.
@@ -619,7 +622,6 @@ class TypeHandlerTest {
                         package com.acme;
                         
                         import io.helidon.config.metadata.Configured;
-                        import io.helidon.config.metadata.ConfiguredOption;
                         
                         /**
                          * ACME listener configuration.
@@ -629,8 +631,6 @@ class TypeHandlerTest {
                             @Configured
                             interface Builder extends io.helidon.common.Builder<Builder, AcmeListenerConfig> {
                         
-                                @SuppressWarnings("removal")
-                                @ConfiguredOption(configured = false)
                                 Builder host(String host);
                             }
                         }

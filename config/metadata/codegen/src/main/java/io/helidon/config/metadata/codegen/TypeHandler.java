@@ -157,9 +157,7 @@ class TypeHandler {
         var options = new TreeSet<CmOption>();
         var optionLiterals = annot.annotationValues("options").orElseGet(List::of);
         for (var a : optionLiterals) {
-            if (a.booleanValue("configured").orElse(true)) {
-                options.add(option(a, typeInfo, typeInfo));
-            }
+            options.add(option(a, typeInfo, typeInfo));
         }
         var typeName = typeInfo.typeName().genericTypeName();
         for (var e : typeInfo.elementInfo()) {
@@ -171,15 +169,10 @@ class TypeHandler {
                     if (e.hasAnnotation(ConfigMetadataTypes.OPTIONS)) {
                         var annots = e.annotation(ConfigMetadataTypes.OPTIONS).annotationValues().orElseGet(List::of);
                         for (var a : annots) {
-                            if (a.booleanValue("configured").orElse(true)) {
-                                options.add(option(a, typeInfo, e));
-                            }
+                            options.add(option(a, typeInfo, e));
                         }
                     } else if (e.hasAnnotation(ConfigMetadataTypes.OPTION)) {
-                        var a = e.annotation(ConfigMetadataTypes.OPTION);
-                        if (a.booleanValue("configured").orElse(true)) {
-                            options.add(option(e.annotation(ConfigMetadataTypes.OPTION), typeInfo, e));
-                        }
+                        options.add(option(e.annotation(ConfigMetadataTypes.OPTION), typeInfo, e));
                     }
                 }
             }
