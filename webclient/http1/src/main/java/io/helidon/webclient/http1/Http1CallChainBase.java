@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -289,7 +289,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         if (responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             long length = responseHeaders.contentLength().getAsLong();
             inputStream = new ContentLengthInputStream(helidonSocket, reader, whenComplete, response, length);
-        } else if (responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        } else if (responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             inputStream = new ChunkedInputStream(helidonSocket, reader, whenComplete, response);
         } else {
             // we assume the rest of the connection is entity (valid for HTTP/1.0, HTTP CONNECT method etc.
@@ -308,7 +308,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         }
         if ((
                 responseHeaders.contains(HeaderNames.UPGRADE)
-                        && !responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED))) {
+                        && !responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED))) {
             // this is an upgrade response and there is no entity
             return false;
         }

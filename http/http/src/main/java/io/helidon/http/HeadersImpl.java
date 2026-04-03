@@ -136,7 +136,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
             if (headerValue instanceof HeaderWriteable hvw) {
                 writable = hvw;
             } else {
-                writable = HeaderWriteable.create(header);
+                writable = HeaderWriteable.create(headerValue);
             }
             for (String value : header.allValues()) {
                 writable.addValue(value);
