@@ -20,6 +20,7 @@ import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -35,6 +36,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.DirectHandler;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
@@ -140,12 +142,7 @@ public class TyrusUpgrader extends WsUpgrader {
             return null;
         }
         if (upgradeInfo.getStatus() != WebSocketEngine.UpgradeStatus.SUCCESS) {
-            TyrusUpgradeResponse upgradeResponse = handshake.upgradeResponse();
-            throw RequestException.builder()
-                    .type(DirectHandler.EventType.OTHER)
-                    .status(Status.create(upgradeResponse.getStatus(), upgradeResponse.getReasonPhrase()))
-                    .message("WebSocket handshake rejected")
-                    .build();
+            throw rejectedHandshakeException(handshake.upgradeResponse(), handshake.responseHeaders());
         }
 
         // todo support subprotocols (must be provided by route)
@@ -188,16 +185,28 @@ public class TyrusUpgrader extends WsUpgrader {
         final TyrusUpgradeResponse upgradeResponse = new TyrusUpgradeResponse();
         final WebSocketEngine.UpgradeInfo upgradeInfo = engine.get(routing).upgrade(requestContext, upgradeResponse);
 
-        // Map Tyrus response headers back to Helidon
+        Set<Header> responseHeaders = new LinkedHashSet<>();
         upgradeResponse.getHeaders()
-                .forEach((key, value) -> headers.add(
+                .forEach((key, value) -> responseHeaders.add(
                         HeaderValues.create(
                                 HeaderNames.create(key, key.toLowerCase(Locale.ROOT)),
                                 value)));
-        return new TyrusHandshake(upgradeInfo, upgradeResponse);
+        return new TyrusHandshake(upgradeInfo, upgradeResponse, Set.copyOf(responseHeaders));
     }
 
-    private record TyrusHandshake(WebSocketEngine.UpgradeInfo upgradeInfo, TyrusUpgradeResponse upgradeResponse) {
+    private record TyrusHandshake(WebSocketEngine.UpgradeInfo upgradeInfo,
+                                  TyrusUpgradeResponse upgradeResponse,
+                                  Set<Header> responseHeaders) {
+    }
+
+    static RequestException rejectedHandshakeException(TyrusUpgradeResponse upgradeResponse,
+                                                       Set<Header> responseHeaders) {
+        RequestException.Builder builder = RequestException.builder()
+                .type(DirectHandler.EventType.OTHER)
+                .status(Status.create(upgradeResponse.getStatus(), upgradeResponse.getReasonPhrase()))
+                .message("WebSocket handshake rejected");
+        responseHeaders.forEach(builder::header);
+        return builder.build();
     }
 
     // to initialize Tyrus only once
