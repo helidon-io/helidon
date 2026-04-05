@@ -129,7 +129,7 @@ public class OutputStreamMulti extends OutputStream implements Multi<ByteBuffer>
     }
 
     private void publish(byte[] b, int off, int len) throws IOException {
-        ByteBuffer emitBuffer = ByteBuffer.allocate(len - off);
+        ByteBuffer emitBuffer = ByteBuffer.allocate(len);
         emitBuffer.put(b, off, len);
         emitBuffer.flip();
         doPublish(emitBuffer);
