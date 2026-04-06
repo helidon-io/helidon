@@ -49,7 +49,7 @@ class EnvVarsTest {
 
         ObjectNode javaNode = objectNode("java");
 
-        assertThat(ConfigHelper.flattenNodes(javaNode), is(Map.of("home", javaHome)));
+        assertThat(javaNode.get("home"), valueNode(javaHome));
     }
 
     @Test
