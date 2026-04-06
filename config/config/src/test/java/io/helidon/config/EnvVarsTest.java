@@ -23,6 +23,7 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -49,7 +50,7 @@ class EnvVarsTest {
 
         ObjectNode javaNode = objectNode("java");
 
-        assertThat(javaNode.get("home"), valueNode(javaHome));
+        assertThat(javaNode.get("home").value(), optionalValue(is(javaHome)));
     }
 
     @Test
