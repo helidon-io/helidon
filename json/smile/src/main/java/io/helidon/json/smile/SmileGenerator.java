@@ -32,6 +32,8 @@ import io.helidon.json.JsonKey;
 
 /**
  * Smile binary JSON generator implementation.
+ *
+ * <p>This class is not thread safe.
  */
 public final class SmileGenerator extends JsonGeneratorBase {
 
@@ -80,6 +82,40 @@ public final class SmileGenerator extends JsonGeneratorBase {
         SmileGenerator smileGenerator = new SmileGenerator(outputStream, config);
         smileGenerator.writeHeader();
         return smileGenerator;
+    }
+
+    @Override
+    public JsonGenerator write(BigDecimal value) {
+        if (value != null && value.scale() == 0) {
+            return write(value.toBigIntegerExact());
+        }
+        return super.write(value);
+    }
+
+    @Override
+    public JsonGenerator write(BigInteger value) {
+        if (value != null && value.bitLength() <= 31) {
+            return super.write(value.intValue());
+        } else if (value != null && value.bitLength() <= 63) {
+            return super.write(value.longValue());
+        }
+        return super.write(value);
+    }
+
+    @Override
+    public void close() {
+        if (!closed) {
+            closed = true;
+            try {
+                outputStream.write(buffer, 0, index);
+                if (emitEndMark) {
+                    outputStream.write(SmileConstants.END_OF_CONTENT);
+                }
+                outputStream.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     /** Writes the 4-byte Smile format header. */
@@ -203,24 +239,6 @@ public final class SmileGenerator extends JsonGeneratorBase {
         byte[] magnitude = value.toByteArray();
         writeVInt(magnitude.length);
         write7Bit(magnitude);
-    }
-
-    @Override
-    public JsonGenerator write(BigDecimal value) {
-        if (value != null && value.scale() == 0) {
-            return write(value.toBigIntegerExact());
-        }
-        return super.write(value);
-    }
-
-    @Override
-    public JsonGenerator write(BigInteger value) {
-        if (value != null && value.bitLength() <= 31) {
-            return super.write(value.intValue());
-        } else if (value != null && value.bitLength() <= 63) {
-            return super.write(value.longValue());
-        }
-        return super.write(value);
     }
 
     @Override
@@ -422,22 +440,6 @@ public final class SmileGenerator extends JsonGeneratorBase {
             outputStream.write(array, 0, length);
         } catch (IOException e) {
             throw new JsonException("Stream write failed", e);
-        }
-    }
-
-    @Override
-    public void close() {
-        if (!closed) {
-            closed = true;
-            try {
-                outputStream.write(buffer, 0, index);
-                if (emitEndMark) {
-                    outputStream.write(SmileConstants.END_OF_CONTENT);
-                }
-                outputStream.flush();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 

@@ -122,14 +122,6 @@ public class SmileSupport extends MediaSupportBase<SmileSupportConfig> implement
         return config();
     }
 
-    <T> EntityReader<T> reader() {
-        return reader;
-    }
-
-    <T> EntityWriter<T> writer() {
-        return writer;
-    }
-
     @Override
     public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
         if (matchesServerRequest(type, requestHeaders)) {
@@ -179,4 +171,11 @@ public class SmileSupport extends MediaSupportBase<SmileSupportConfig> implement
         return true;
     }
 
+    <T> EntityReader<T> reader() {
+        return reader;
+    }
+
+    <T> EntityWriter<T> writer() {
+        return writer;
+    }
 }

@@ -19,16 +19,38 @@ package io.helidon.json.smile;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
+/**
+ * Configuration of Smile encoding and decoding.
+ */
 @Prototype.Blueprint
 interface SmileConfigBlueprint {
 
+    /**
+     * Whether to enable shared key string references.
+     *
+     * @return {@code true} to enable shared key string references, defaults to {@code true}
+     */
     @Option.DefaultBoolean(true)
     boolean sharedKeyStrings();
 
+    /**
+     * Whether to enable shared value string references.
+     *
+     * @return {@code true} to enable shared value string references
+     */
     boolean sharedValueStrings();
 
+    /**
+     * Whether to allow raw binary values in Smile content.
+     *
+     * @return {@code true} to allow raw binary values
+     */
     boolean rawBinaryEnabled();
 
+    /**
+     * Whether to emit the optional Smile end marker when closing a generator.
+     *
+     * @return {@code true} to emit the end marker
+     */
     boolean emitEndMark();
-
 }

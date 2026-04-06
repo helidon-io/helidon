@@ -15,6 +15,7 @@
  */
 
 /**
- * Helidon Smile spec implementation.
+ * Helidon implementation of the
+ * <a href="https://github.com/FasterXML/smile-format-specification">Jackson Smile binary JSON specification</a>.
  */
 package io.helidon.json.smile;

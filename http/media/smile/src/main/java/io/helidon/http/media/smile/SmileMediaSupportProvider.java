@@ -30,7 +30,6 @@ public class SmileMediaSupportProvider implements MediaSupportProvider, Weighted
      */
     @Deprecated
     public SmileMediaSupportProvider() {
-        super();
     }
 
     @Override

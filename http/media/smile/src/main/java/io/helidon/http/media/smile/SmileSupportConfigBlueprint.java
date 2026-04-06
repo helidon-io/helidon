@@ -32,7 +32,7 @@ import io.helidon.json.smile.SmileConfig;
  */
 @Prototype.Configured(value = SmileSupport.ID, root = false)
 @Prototype.Provides(MediaSupportProvider.class)
-@Prototype.Blueprint(decorator = SmileConfigSupport.Decorator.class)
+@Prototype.Blueprint
 interface SmileSupportConfigBlueprint extends MediaSupportConfig, Prototype.Factory<SmileSupport> {
 
     @Override
@@ -44,6 +44,7 @@ interface SmileSupportConfigBlueprint extends MediaSupportConfig, Prototype.Fact
      *
      * @return JSON binding instance
      */
+    @Option.DefaultMethod("create")
     JsonBinding jsonBinding();
 
     /**
@@ -51,6 +52,7 @@ interface SmileSupportConfigBlueprint extends MediaSupportConfig, Prototype.Fact
      *
      * @return smile generator configuration
      */
+    @Option.DefaultMethod("create")
     SmileConfig smileConfig();
 
     /**

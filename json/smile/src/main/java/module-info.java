@@ -18,10 +18,11 @@ import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
- * Smile binary JSON support for Helidon JSON.
+ * Helidon implementation of the
+ * <a href="https://github.com/FasterXML/smile-format-specification">Jackson Smile binary JSON specification</a>.
  */
 @Features.Name("JSON Smile")
-@Features.Description("JSON Smile implementation")
+@Features.Description("Jackson Smile binary JSON implementation")
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"JSON", "Smile"})
 @Features.Incubating

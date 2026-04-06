@@ -43,6 +43,8 @@ import static io.helidon.json.Parsers.translateHex;
 
 /**
  * Smile binary JSON parser implementation.
+ *
+ * <p>This class is not thread safe.
  */
 public final class SmileParser extends JsonParserBase {
 
@@ -214,59 +216,6 @@ public final class SmileParser extends JsonParserBase {
         return parser;
     }
 
-    /**
-     * Initializes parser feature flags from the Smile header when present, or from
-     * the headerless-format defaults otherwise.
-     *
-     * <pre>
-     *   Byte 0: 0x3A (':')
-     *   Byte 1: 0x29 (')')
-     *   Byte 2: 0x0A (LF)
-     *   Byte 3: feature flags
-     *             bits 7-4 : version  (must be 0x0)
-     *             bit  3   : reserved
-     *             bit  2   : raw binary present (ignored here)
-     *             bit  1   : shared value strings
-     *             bit  0   : shared key names
-     * </pre>
-     */
-    SmileParser initializeFromHeaderOrDefaults() {
-        if (currentIndex >= bufferLength) {
-            throw createException("Unexpected end of the binary JSON found");
-        }
-
-        int b0 = buffer[currentIndex] & 0xFF;
-        if (b0 != (SmileConstants.HEADER_0 & 0xFF)) {
-            initializeHeaderlessDefaults();
-            currentIndex--;
-            nextToken();
-            return this;
-        }
-
-        if (currentIndex + 2 >= bufferLength) {
-            throw createException("Unexpected end of Smile header");
-        }
-
-        int b1 = buffer[currentIndex + 1] & 0xFF;
-        int b2 = buffer[currentIndex + 2] & 0xFF;
-        if (b1 != (SmileConstants.HEADER_1 & 0xFF)
-                || b2 != (SmileConstants.HEADER_2 & 0xFF)) {
-            throw createException("Invalid Smile header: expected 0x3A 0x29 0x0A, got"
-                                          + " 0x" + Integer.toHexString(b0)
-                                          + " 0x" + Integer.toHexString(b1)
-                                          + " 0x" + Integer.toHexString(b2));
-        }
-
-        if (currentIndex + 3 >= bufferLength) {
-            throw createException("Unexpected end of Smile header");
-        }
-
-        currentIndex += 3;
-        applyHeaderFeatures(buffer[currentIndex] & 0xFF);
-        nextToken();
-        return this;
-    }
-
     @Override
     public boolean hasNext() {
         return !endOfContent && currentIndex + 1 < bufferLength;
@@ -320,13 +269,6 @@ public final class SmileParser extends JsonParserBase {
         this.currentToken = currentToken;
         this.currentByte = currentByte;
         return currentToken;
-    }
-
-    private byte readNextByte() {
-        if (++currentIndex == bufferLength) {
-            throw createException("Unexpected end of the binary JSON found");
-        }
-        return buffer[currentIndex];
     }
 
     @Override
@@ -841,29 +783,6 @@ public final class SmileParser extends JsonParserBase {
         return toReturn;
     }
 
-    private BigInteger decodeBigInteger() {
-        int rawLength = (int) readUnsignedVInt();
-        int encodedLen = encodedLength7Bit(rawLength);
-        byte[] decodedBytes = decode7Bit(rawLength, encodedLen);
-        return new BigInteger(decodedBytes);
-    }
-
-    private BigDecimal decodeBigDecimal() {
-        int scale = zigzagDecodeInt((int) readUnsignedVInt());
-        int rawLength = (int) readUnsignedVInt();
-        int encodedLen = encodedLength7Bit(rawLength);
-        byte[] decodedBytes = decode7Bit(rawLength, encodedLen);
-        return new BigDecimal(new BigInteger(decodedBytes), scale);
-    }
-
-    private int decodeInt() {
-        return zigzagDecodeInt((int) readUnsignedVInt());
-    }
-
-    private long decodeLong() {
-        return zigzagDecodeLong(readUnsignedVInt());
-    }
-
     @Override
     public BigInteger readBigInteger() {
         if (currentToken != '1') {
@@ -981,6 +900,163 @@ public final class SmileParser extends JsonParserBase {
         }
     }
 
+    @Override
+    public JsonException createException(String message) {
+        return new JsonException(message);
+    }
+
+    @Override
+    public JsonException createException(String message, Exception e) {
+        return new JsonException(message, e);
+    }
+
+    @Override
+    public void mark() {
+        if (mark > -1) {
+            throw new IllegalStateException(
+                    "Parser is already marked for replaying. "
+                            + "Call clearMark() or resetToMark() before marking again.");
+        }
+        mark = currentIndex;
+        markToken = currentToken;
+        markByte = currentByte;
+        markKeyExpected = keyExpected;
+        markInObject = inObject;
+        markDepth = stackDepth;
+        markForcedEvent = forcedEvent;
+        markEndOfContent = endOfContent;
+        markSharedKeyStrings = Arrays.copyOf(sharedKeyStrings, sharedKeyStrings.length);
+        markSharedValueStrings = Arrays.copyOf(sharedValueStrings, sharedValueStrings.length);
+        markSharedKeyHashes = Arrays.copyOf(sharedKeyHashes, sharedKeyHashes.length);
+        markSharedValueHashes = Arrays.copyOf(sharedValueHashes, sharedValueHashes.length);
+        markNextSharedKeyIndex = nextSharedKeyIndex;
+        markNextSharedValueIndex = nextSharedValueIndex;
+    }
+
+    @Override
+    public void clearMark() {
+        mark = -1;
+        markToken = -1;
+        markByte = -1;
+        markKeyExpected = false;
+        markInObject = false;
+        markDepth = -1;
+        markForcedEvent = -1;
+        markEndOfContent = false;
+        markSharedKeyStrings = EMPTY;
+        markSharedValueStrings = EMPTY;
+        markSharedKeyHashes = EMPTY_HASH;
+        markSharedValueHashes = EMPTY_HASH;
+        markNextSharedKeyIndex = 0;
+        markNextSharedValueIndex = 0;
+    }
+
+    @Override
+    public void resetToMark() {
+        if (mark < 0) {
+            throw new IllegalStateException(
+                    "No mark has been set. Call mark() before resetToMark().");
+        }
+        currentIndex = mark;
+        currentToken = markToken;
+        currentByte = markByte;
+        keyExpected = markKeyExpected;
+        inObject = markInObject;
+        stackDepth = markDepth;
+        forcedEvent = markForcedEvent;
+        endOfContent = markEndOfContent;
+        sharedKeyStrings = Arrays.copyOf(markSharedKeyStrings, markSharedKeyStrings.length);
+        sharedValueStrings = Arrays.copyOf(markSharedValueStrings, markSharedValueStrings.length);
+        sharedKeyHashes = Arrays.copyOf(markSharedKeyHashes, markSharedKeyHashes.length);
+        sharedValueHashes = Arrays.copyOf(markSharedValueHashes, markSharedValueHashes.length);
+        nextSharedKeyIndex = markNextSharedKeyIndex;
+        nextSharedValueIndex = markNextSharedValueIndex;
+        clearMark();
+    }
+
+    /**
+     * Initializes parser feature flags from the Smile header when present, or from
+     * the headerless-format defaults otherwise.
+     *
+     * <pre>
+     *   Byte 0: 0x3A (':')
+     *   Byte 1: 0x29 (')')
+     *   Byte 2: 0x0A (LF)
+     *   Byte 3: feature flags
+     *             bits 7-4 : version  (must be 0x0)
+     *             bit  3   : reserved
+     *             bit  2   : raw binary present (ignored here)
+     *             bit  1   : shared value strings
+     *             bit  0   : shared key names
+     * </pre>
+     */
+    SmileParser initializeFromHeaderOrDefaults() {
+        if (currentIndex >= bufferLength) {
+            throw createException("Unexpected end of the binary JSON found");
+        }
+
+        int b0 = buffer[currentIndex] & 0xFF;
+        if (b0 != (SmileConstants.HEADER_0 & 0xFF)) {
+            initializeHeaderlessDefaults();
+            currentIndex--;
+            nextToken();
+            return this;
+        }
+
+        if (currentIndex + 2 >= bufferLength) {
+            throw createException("Unexpected end of Smile header");
+        }
+
+        int b1 = buffer[currentIndex + 1] & 0xFF;
+        int b2 = buffer[currentIndex + 2] & 0xFF;
+        if (b1 != (SmileConstants.HEADER_1 & 0xFF)
+                || b2 != (SmileConstants.HEADER_2 & 0xFF)) {
+            throw createException("Invalid Smile header: expected 0x3A 0x29 0x0A, got"
+                                          + " 0x" + Integer.toHexString(b0)
+                                          + " 0x" + Integer.toHexString(b1)
+                                          + " 0x" + Integer.toHexString(b2));
+        }
+
+        if (currentIndex + 3 >= bufferLength) {
+            throw createException("Unexpected end of Smile header");
+        }
+
+        currentIndex += 3;
+        applyHeaderFeatures(buffer[currentIndex] & 0xFF);
+        nextToken();
+        return this;
+    }
+
+    private byte readNextByte() {
+        if (++currentIndex == bufferLength) {
+            throw createException("Unexpected end of the binary JSON found");
+        }
+        return buffer[currentIndex];
+    }
+
+    private BigInteger decodeBigInteger() {
+        int rawLength = (int) readUnsignedVInt();
+        int encodedLen = encodedLength7Bit(rawLength);
+        byte[] decodedBytes = decode7Bit(rawLength, encodedLen);
+        return new BigInteger(decodedBytes);
+    }
+
+    private BigDecimal decodeBigDecimal() {
+        int scale = zigzagDecodeInt((int) readUnsignedVInt());
+        int rawLength = (int) readUnsignedVInt();
+        int encodedLen = encodedLength7Bit(rawLength);
+        byte[] decodedBytes = decode7Bit(rawLength, encodedLen);
+        return new BigDecimal(new BigInteger(decodedBytes), scale);
+    }
+
+    private int decodeInt() {
+        return zigzagDecodeInt((int) readUnsignedVInt());
+    }
+
+    private long decodeLong() {
+        return zigzagDecodeLong(readUnsignedVInt());
+    }
+
     private void skipObject() {
         byte b = nextToken();
         if (b == '}') {
@@ -1065,80 +1141,6 @@ public final class SmileParser extends JsonParserBase {
             }
             checkNextAfterValue();
         }
-    }
-
-    @Override
-    public JsonException createException(String message) {
-        return new JsonException(message);
-    }
-
-    @Override
-    public JsonException createException(String message, Exception e) {
-        return new JsonException(message, e);
-    }
-
-    @Override
-    public void mark() {
-        if (mark > -1) {
-            throw new IllegalStateException(
-                    "Parser is already marked for replaying. "
-                            + "Call clearMark() or resetToMark() before marking again.");
-        }
-        mark = currentIndex;
-        markToken = currentToken;
-        markByte = currentByte;
-        markKeyExpected = keyExpected;
-        markInObject = inObject;
-        markDepth = stackDepth;
-        markForcedEvent = forcedEvent;
-        markEndOfContent = endOfContent;
-        markSharedKeyStrings = Arrays.copyOf(sharedKeyStrings, sharedKeyStrings.length);
-        markSharedValueStrings = Arrays.copyOf(sharedValueStrings, sharedValueStrings.length);
-        markSharedKeyHashes = Arrays.copyOf(sharedKeyHashes, sharedKeyHashes.length);
-        markSharedValueHashes = Arrays.copyOf(sharedValueHashes, sharedValueHashes.length);
-        markNextSharedKeyIndex = nextSharedKeyIndex;
-        markNextSharedValueIndex = nextSharedValueIndex;
-    }
-
-    @Override
-    public void clearMark() {
-        mark = -1;
-        markToken = -1;
-        markByte = -1;
-        markKeyExpected = false;
-        markInObject = false;
-        markDepth = -1;
-        markForcedEvent = -1;
-        markEndOfContent = false;
-        markSharedKeyStrings = EMPTY;
-        markSharedValueStrings = EMPTY;
-        markSharedKeyHashes = EMPTY_HASH;
-        markSharedValueHashes = EMPTY_HASH;
-        markNextSharedKeyIndex = 0;
-        markNextSharedValueIndex = 0;
-    }
-
-    @Override
-    public void resetToMark() {
-        if (mark < 0) {
-            throw new IllegalStateException(
-                    "No mark has been set. Call mark() before resetToMark().");
-        }
-        currentIndex = mark;
-        currentToken = markToken;
-        currentByte = markByte;
-        keyExpected = markKeyExpected;
-        inObject = markInObject;
-        stackDepth = markDepth;
-        forcedEvent = markForcedEvent;
-        endOfContent = markEndOfContent;
-        sharedKeyStrings = Arrays.copyOf(markSharedKeyStrings, markSharedKeyStrings.length);
-        sharedValueStrings = Arrays.copyOf(markSharedValueStrings, markSharedValueStrings.length);
-        sharedKeyHashes = Arrays.copyOf(markSharedKeyHashes, markSharedKeyHashes.length);
-        sharedValueHashes = Arrays.copyOf(markSharedValueHashes, markSharedValueHashes.length);
-        nextSharedKeyIndex = markNextSharedKeyIndex;
-        nextSharedValueIndex = markNextSharedValueIndex;
-        clearMark();
     }
 
     private long readUnsignedVInt() {
