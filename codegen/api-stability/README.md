@@ -7,7 +7,8 @@ Helidon production modules:
 - all `public` top-level types are annotated with exactly one stability annotation: `@Api.Internal`,
   `@Api.Incubating`, `@Api.Preview`, or `@Api.Stable`
 - methods, constructors, and nested types may also carry their own stability annotations
-  - the nested element must not declare `Stable` for top level types that are not `Stable`
+  - nested declarations may keep the enclosing type stability or declare a lower one, in the order
+    `Stable > Preview > Incubating > Internal`
 - `@Api.Since("version")` can document when the current contract became effective
 - deprecation is separate from stability; use standard `@Deprecated` together with the relevant stability annotation
 - in Helidon, this is verified by the API Stability Enforcer annotation processor, configured for `default-compile`

@@ -34,7 +34,9 @@ import javax.lang.model.element.TypeElement;
  */
 public class ApiStabilityEnforcerProcessor extends AbstractProcessor {
     private Messager messager;
-    private Set<TypeElement> stabilityAnnotations;
+    private TypeElement previewAnnotation;
+    private TypeElement incubatingAnnotation;
+    private TypeElement internalAnnotation;
     private TypeElement stableAnnotation;
 
     /**
@@ -68,24 +70,25 @@ public class ApiStabilityEnforcerProcessor extends AbstractProcessor {
                 || incubatingAnnotation == null
                 || internalAnnotation == null
                 || stableAnnotation == null) {
-            this.stabilityAnnotations = Set.of();
+            this.previewAnnotation = null;
+            this.incubatingAnnotation = null;
+            this.internalAnnotation = null;
             this.stableAnnotation = null;
             this.messager = processingEnv.getMessager();
             return;
         }
 
+        this.previewAnnotation = previewAnnotation;
+        this.incubatingAnnotation = incubatingAnnotation;
+        this.internalAnnotation = internalAnnotation;
         this.stableAnnotation = stableAnnotation;
-        this.stabilityAnnotations = Set.of(internalAnnotation,
-                                           incubatingAnnotation,
-                                           previewAnnotation,
-                                           stableAnnotation);
 
         this.messager = processingEnv.getMessager();
     }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        if (stabilityAnnotations.isEmpty()) {
+        if (stableAnnotation == null) {
             return false;
         }
 
@@ -101,16 +104,7 @@ public class ApiStabilityEnforcerProcessor extends AbstractProcessor {
     }
 
     private void process(TypeElement type) {
-        List<Element> discovered = new ArrayList<>();
-
-        for (var am : type.getAnnotationMirrors()) {
-            var annotation = am.getAnnotationType()
-                    .asElement();
-
-            if (this.stabilityAnnotations.contains(annotation)) {
-                discovered.add(annotation);
-            }
-        }
+        List<Stability> discovered = declaredStabilities(type);
 
         if (discovered.isEmpty()) {
             messager.printError("Public API " + type + " is missing stability annotation (@Api.*)", type);
@@ -122,29 +116,90 @@ public class ApiStabilityEnforcerProcessor extends AbstractProcessor {
             return;
         }
 
-        if (!discovered.contains(stableAnnotation)) {
-            validateNestedElements(type, type);
-        }
+        validateNestedElements(type, discovered.getFirst(), type);
     }
 
-    private void validateNestedElements(TypeElement topLevelType, Element enclosingElement) {
+    private void validateNestedElements(Element enclosingApi, Stability enclosingStability, Element enclosingElement) {
         for (Element enclosed : enclosingElement.getEnclosedElements()) {
-            if (hasStableAnnotation(enclosed)) {
-                messager.printError("Element " + enclosed
-                                            + " must not declare @Api.Stable because top-level API "
-                                            + topLevelType + " is not @Api.Stable",
-                                    enclosed);
+            List<Stability> declaredStabilities = declaredStabilities(enclosed);
+            Stability highestDeclared = highest(declaredStabilities);
+            Element effectiveEnclosingApi = enclosingApi;
+            Stability effectiveEnclosingStability = enclosingStability;
+
+            if (highestDeclared != null) {
+                if (highestDeclared.higherThan(enclosingStability)) {
+                    messager.printError("Element " + enclosed
+                                                + " must not declare " + highestDeclared.annotationName()
+                                                + " because enclosing API " + enclosingApi
+                                                + " is " + enclosingStability.annotationName(),
+                                        enclosed);
+                } else {
+                    effectiveEnclosingApi = enclosed;
+                    effectiveEnclosingStability = highestDeclared;
+                }
             }
-            validateNestedElements(topLevelType, enclosed);
+
+            validateNestedElements(effectiveEnclosingApi, effectiveEnclosingStability, enclosed);
         }
     }
 
-    private boolean hasStableAnnotation(Element element) {
+    private List<Stability> declaredStabilities(Element element) {
+        List<Stability> discovered = new ArrayList<>();
         for (var am : element.getAnnotationMirrors()) {
-            if (stableAnnotation.equals(am.getAnnotationType().asElement())) {
-                return true;
+            Stability stability = stability(am.getAnnotationType().asElement());
+            if (stability != null) {
+                discovered.add(stability);
             }
         }
-        return false;
+        return discovered;
+    }
+
+    private Stability stability(Element annotation) {
+        if (stableAnnotation.equals(annotation)) {
+            return Stability.STABLE;
+        }
+        if (previewAnnotation.equals(annotation)) {
+            return Stability.PREVIEW;
+        }
+        if (incubatingAnnotation.equals(annotation)) {
+            return Stability.INCUBATING;
+        }
+        if (internalAnnotation.equals(annotation)) {
+            return Stability.INTERNAL;
+        }
+        return null;
+    }
+
+    private Stability highest(List<Stability> stabilities) {
+        Stability highest = null;
+        for (var stability : stabilities) {
+            if (highest == null || stability.higherThan(highest)) {
+                highest = stability;
+            }
+        }
+        return highest;
+    }
+
+    private enum Stability {
+        INTERNAL(0, "@Api.Internal"),
+        INCUBATING(1, "@Api.Incubating"),
+        PREVIEW(2, "@Api.Preview"),
+        STABLE(3, "@Api.Stable");
+
+        private final int rank;
+        private final String annotationName;
+
+        Stability(int rank, String annotationName) {
+            this.rank = rank;
+            this.annotationName = annotationName;
+        }
+
+        private boolean higherThan(Stability other) {
+            return rank > other.rank;
+        }
+
+        private String annotationName() {
+            return annotationName;
+        }
     }
 }

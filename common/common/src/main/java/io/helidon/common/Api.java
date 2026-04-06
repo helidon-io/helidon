@@ -33,9 +33,10 @@ import java.lang.annotation.Target;
  *     <li>{@link io.helidon.common.Api.Stable} - supported API that is backward compatible within the current major
  *     version</li>
  * </ul>
- * Methods, constructors, and nested types may also declare their own stability annotations. Nested elements must not
- * declare {@link io.helidon.common.Api.Stable} when the containing top-level API is not
- * {@link io.helidon.common.Api.Stable}.
+ * Methods, constructors, and nested types may also declare their own stability annotations. Nested declarations may
+ * keep the enclosing type stability or declare a lower one, using the order
+ * {@link io.helidon.common.Api.Stable} &gt; {@link io.helidon.common.Api.Preview}
+ * &gt; {@link io.helidon.common.Api.Incubating} &gt; {@link io.helidon.common.Api.Internal}.
  * <p>
  * Deprecation is separate from stability. Use {@link java.lang.Deprecated} together with the relevant stability
  * annotation to indicate planned removal.
