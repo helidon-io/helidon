@@ -261,8 +261,8 @@ class ApiStabilityEnforcerProcessorTest {
                                     String sourceLine,
                                     int column) {
         return "/" + fileName + ":" + line + ": error: " + message
-                + System.lineSeparator() + sourceLine
-                + System.lineSeparator() + " ".repeat(column - 1) + "^";
+                + "\n" + sourceLine
+                + "\n" + " ".repeat(column - 1) + "^";
     }
 
     private static class JavaSourceFromString extends SimpleJavaFileObject {
