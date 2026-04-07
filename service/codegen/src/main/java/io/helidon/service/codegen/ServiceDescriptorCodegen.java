@@ -2676,7 +2676,9 @@ public class ServiceDescriptorCodegen {
 
     private String genericTypeConstant(FieldHandler fieldHandler, TypeName typeName) {
         return fieldHandler.constant("GTYPE",
-                                     TypeNames.GENERIC_TYPE,
+                                     TypeName.builder(TypeNames.GENERIC_TYPE)
+                                             .addTypeArgument(typeName.boxed())
+                                             .build(),
                                      ResolvedType.create(typeName),
                                      it -> {
                                          if (typeName.primitive()) {
