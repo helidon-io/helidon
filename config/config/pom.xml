@@ -173,6 +173,13 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <environmentVariables>
+                        <JAVA_HOME>${java.home}</JAVA_HOME>
+                        <HELIDON_ENV_TREE_BRANCH_LEAF>tree-leaf</HELIDON_ENV_TREE_BRANCH_LEAF>
+                        <HELIDON_ENV_TREE_BRANCH_CHILD_GRANDCHILD>tree-grandchild</HELIDON_ENV_TREE_BRANCH_CHILD_GRANDCHILD>
+                        <HELIDON_ENV_TREE_BRANCH_UNDERSCORE_LEAF>underscore-leaf</HELIDON_ENV_TREE_BRANCH_UNDERSCORE_LEAF>
+                        <HELIDON_ENV_TREE_BRANCHES_OTHER>boundary-other</HELIDON_ENV_TREE_BRANCHES_OTHER>
+                        <HELIDON_ENV_TREE_SERVICE_dash_FOO_MAX_dash_POOL_dash_SIZE>42</HELIDON_ENV_TREE_SERVICE_dash_FOO_MAX_dash_POOL_dash_SIZE>
+                        <HELIDON_ENV_TREE_SERVICE_dash_FOO_CORE_dash_POOL_dash_SIZE>21</HELIDON_ENV_TREE_SERVICE_dash_FOO_CORE_dash_POOL_dash_SIZE>
                         <simple>unmapped-env-value</simple>
                         <FOO_BAR>mapped-env-value</FOO_BAR>
                         <_underscore>mapped-env-value</_underscore>

@@ -44,6 +44,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.Mockito.mock;
 
@@ -202,6 +203,28 @@ public class ConfigSourcesTest {
     }
 
     @Test
+    public void testEnvironmentVariableParentNode() {
+        String javaHome = System.getenv("JAVA_HOME");
+        assertThat(javaHome, notNullValue());
+
+        Config config = envOnlyConfig();
+
+        assertValue("java.home", javaHome, config);
+        assertThat(config.get("java").exists(), is(true));
+        assertThat(config.get("java").get("home").asString().get(), is(javaHome));
+    }
+
+    @Test
+    public void testEnvironmentVariableDashParentNode() {
+        Config config = envOnlyConfig();
+
+        assertValue("server.executor-service.max-pool-size", "mapped-env-value", config);
+        assertThat(config.get("server.executor-service").exists(), is(true));
+        assertThat(config.get("server.executor-service").get("max-pool-size").asString().get(),
+                   is("mapped-env-value"));
+    }
+
+    @Test
     public void testPrecedence() {
 
         // NOTE: This code should be kept in sync with MpcSourceEnvironmentVariablesTest.testPrecedence(), as we want
@@ -328,5 +351,12 @@ public class ConfigSourcesTest {
 
     static void assertNoValue(final String key, final Config config) {
         assertThat(config.get(key).exists(), is(false));
+    }
+
+    private static Config envOnlyConfig() {
+        return Config.builder()
+                .sources(List.of(ConfigSources::environmentVariables))
+                .disableSystemPropertiesSource()
+                .build();
     }
 }
