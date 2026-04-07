@@ -118,30 +118,6 @@ public final class SmileGenerator extends JsonGeneratorBase {
         }
     }
 
-    /** Writes the 4-byte Smile format header. */
-    private void writeHeader() {
-        ensureCapacity(4);
-        buffer[index++] = SmileConstants.HEADER_0;
-        buffer[index++] = SmileConstants.HEADER_1;
-        buffer[index++] = SmileConstants.HEADER_2;
-        byte features = 0;
-        // Spec quote:
-        // "Bit 0 (mask `0x01`): Whether \"'shared property name\" checking was enabled during encoding"
-        if (sharedKeyStrings) {
-            features |= SmileConstants.HEADER_FEATURE_SHARED_KEYS;
-        }
-        // Spec quote:
-        // "Bit 1 (mask `0x02`): Whether \"shared String value\" checking was enabled during encoding"
-        if (sharedValueStrings) {
-            features |= SmileConstants.HEADER_FEATURE_SHARED_VALUES;
-        }
-        // Bit 2 (mask `0x04`) Whether "raw binary" (unescaped 8-bit) values may be present in content
-        if (rawBinaryEnabled) {
-            features |= SmileConstants.HEADER_FEATURE_RAW_BINARY;
-        }
-        buffer[index++] = features;
-    }
-
     @Override
     protected void writeControlByte(byte value) {
         if (value == Bytes.COLON_BYTE || value == Bytes.COMMA_BYTE) {
@@ -363,29 +339,6 @@ public final class SmileGenerator extends JsonGeneratorBase {
         writeKeyName(key.value());
     }
 
-    /**
-     * Returns {@code true} if every byte in {@code utf8} has its MSB clear (pure ASCII).
-     */
-    private static boolean isPureAscii(byte[] utf8) {
-        for (byte b : utf8) {
-            if ((b & 0x80) != 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private void writeBytes(byte[] bytes) {
-        if (bytes.length > buffer.length) {
-            writeBuffer();
-            writeArray(bytes, bytes.length);
-        } else {
-            ensureCapacity(bytes.length);
-            System.arraycopy(bytes, 0, buffer, index, bytes.length);
-            index += bytes.length;
-        }
-    }
-
     @Override
     protected void writeChar(char value) {
         writeString(String.valueOf(value));
@@ -424,6 +377,53 @@ public final class SmileGenerator extends JsonGeneratorBase {
     protected void ensureCapacity(int extra) {
         if (index + extra >= buffer.length) {
             writeBuffer();
+        }
+    }
+
+    /** Writes the 4-byte Smile format header. */
+    private void writeHeader() {
+        ensureCapacity(4);
+        buffer[index++] = SmileConstants.HEADER_0;
+        buffer[index++] = SmileConstants.HEADER_1;
+        buffer[index++] = SmileConstants.HEADER_2;
+        byte features = 0;
+        // Spec quote:
+        // "Bit 0 (mask `0x01`): Whether \"'shared property name\" checking was enabled during encoding"
+        if (sharedKeyStrings) {
+            features |= SmileConstants.HEADER_FEATURE_SHARED_KEYS;
+        }
+        // Spec quote:
+        // "Bit 1 (mask `0x02`): Whether \"shared String value\" checking was enabled during encoding"
+        if (sharedValueStrings) {
+            features |= SmileConstants.HEADER_FEATURE_SHARED_VALUES;
+        }
+        // Bit 2 (mask `0x04`) Whether "raw binary" (unescaped 8-bit) values may be present in content
+        if (rawBinaryEnabled) {
+            features |= SmileConstants.HEADER_FEATURE_RAW_BINARY;
+        }
+        buffer[index++] = features;
+    }
+
+    /**
+     * Returns {@code true} if every byte in {@code utf8} has its MSB clear (pure ASCII).
+     */
+    private static boolean isPureAscii(byte[] utf8) {
+        for (byte b : utf8) {
+            if ((b & 0x80) != 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void writeBytes(byte[] bytes) {
+        if (bytes.length > buffer.length) {
+            writeBuffer();
+            writeArray(bytes, bytes.length);
+        } else {
+            ensureCapacity(bytes.length);
+            System.arraycopy(bytes, 0, buffer, index, bytes.length);
+            index += bytes.length;
         }
     }
 
