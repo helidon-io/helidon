@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,16 +35,32 @@ public interface OptionalValue<T> extends Value<T> {
      * Create an empty value.
      * Empty value is not backed by data and all of its methods consider it is empty.
      *
+     * @param name       name of the value
+     * @param <T>        type of the value
+     * @param qualifiers qualifiers of the mapper
+     * @return an empty value
+     */
+    static <T> OptionalValue<T> createEmpty(String name, String... qualifiers) {
+        Objects.requireNonNull(name, "Name of the Value must not be null");
+        return new ValueEmpty<>(name, qualifiers);
+    }
+
+    /**
+     * Create an empty value.
+     * Empty value is not backed by data and all of its methods consider it is empty.
+     *
      * @param mapperManager mapper manager to use for mapping types
      * @param name          name of the value
      * @param type          type of the value, to correctly handle mapping exceptions
      * @param <T>           type of the value
      * @param qualifiers    qualifiers of the mapper
      * @return an empty value
+     * @deprecated use {@link #createEmpty(String, String...)}, as mappers are not needed for empty values
      */
+    @Deprecated(forRemoval = true, since = "4.4.1")
     static <T> OptionalValue<T> create(Mappers mapperManager, String name, Class<T> type, String... qualifiers) {
         Objects.requireNonNull(name, "Name of the Value must not be null");
-        return create(mapperManager, name, GenericType.create(type), qualifiers);
+        return createEmpty(name, qualifiers);
     }
 
     /**
@@ -57,10 +73,12 @@ public interface OptionalValue<T> extends Value<T> {
      * @param qualifiers    qualifiers of the mapper
      * @param <T>           type of the value
      * @return an empty value
+     * @deprecated use {@link #createEmpty(String, String...)}, as mappers are not needed for empty values
      */
+    @Deprecated(forRemoval = true, since = "4.4.1")
     static <T> OptionalValue<T> create(Mappers mapperManager, String name, GenericType<T> type, String... qualifiers) {
         Objects.requireNonNull(name, "Name of the Value must not be null");
-        return new ValueEmpty<>(mapperManager, type, name, qualifiers);
+        return createEmpty(name, qualifiers);
     }
 
     /**
@@ -75,7 +93,9 @@ public interface OptionalValue<T> extends Value<T> {
      */
     static <T> OptionalValue<T> create(Mappers mapperManager, String name, T value, String... qualifiers) {
         Objects.requireNonNull(name, "Name of the Value must not be null");
-        Objects.requireNonNull(value, "Value content for Value " + name + " must not be null, use empty(String) instead");
+        Objects.requireNonNull(value,
+                               "Value content for Value " + name
+                                       + " must not be null, use createEmpty(String) instead");
         return new ValueBacked<>(mapperManager, name, value, qualifiers);
     }
 
@@ -96,7 +116,9 @@ public interface OptionalValue<T> extends Value<T> {
                                        GenericType<T> type,
                                        String... qualifiers) {
         Objects.requireNonNull(name, "Name of the Value must not be null");
-        Objects.requireNonNull(value, "Value content for Value " + name + " must not be null, use empty(String) instead");
+        Objects.requireNonNull(value,
+                               "Value content for Value " + name
+                                       + " must not be null, use createEmpty(String) instead");
         return new ValueBacked<>(mapperManager, name, value, type, qualifiers);
     }
 

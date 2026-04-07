@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -209,9 +209,6 @@ class MapperManagerTestDeprecated {
 
     @Test
     void testEmptyValue() {
-        // int -> double
-        // not double to int
-
         MapperManager mapperManager = MapperManager.builder()
                 .useBuiltIn(true)
                 .addMapperProvider((t1, t2, qualifier) -> {
@@ -242,7 +239,10 @@ class MapperManagerTestDeprecated {
         assertThat(doubleValue.isPresent(), is(false));
         assertThat(doubleValue.isEmpty(), is(true));
 
-        assertThrows(MapperException.class, () -> doubleValue.as(Integer.class));
+        integerValue = doubleValue.as(Integer.class);
+        assertThrows(NoSuchElementException.class, integerValue::get);
+        assertThat(integerValue.isPresent(), is(false));
+        assertThat(integerValue.isEmpty(), is(true));
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -222,20 +222,7 @@ class MappersTest {
 
     @Test
     void testEmptyValue() {
-        // int -> double
-        // not double to int
-
-        Mappers mapperManager = Mappers.builder()
-                .useBuiltInMappers(true)
-                .addMapperProvider((t1, t2, qualifier) -> {
-                    if (t1.equals(Integer.class) && t2.equals(Double.class)) {
-                        return new ProviderResponse(MapperProvider.Support.SUPPORTED, anInt -> ((Integer) anInt).doubleValue());
-                    }
-                    return ProviderResponse.unsupported();
-                })
-                .build();
-
-        OptionalValue<String> value = OptionalValue.create(mapperManager, "name", String.class);
+        OptionalValue<String> value = OptionalValue.createEmpty("name");
         assertThrows(NoSuchElementException.class, value::get);
         assertThat(value.isPresent(), is(false));
         assertThat(value.isEmpty(), is(true));
@@ -255,7 +242,24 @@ class MappersTest {
         assertThat(doubleValue.isPresent(), is(false));
         assertThat(doubleValue.isEmpty(), is(true));
 
-        assertThrows(MapperException.class, () -> doubleValue.as(Integer.class));
+        integerValue = doubleValue.as(Integer.class);
+        assertThrows(NoSuchElementException.class, integerValue::get);
+        assertThat(integerValue.isPresent(), is(false));
+        assertThat(integerValue.isEmpty(), is(true));
+    }
+
+    @SuppressWarnings("removal")
+    @Test
+    void testDeprecatedEmptyFactoryMethods() {
+        Mappers mapperManager = Mappers.create();
+
+        OptionalValue<String> classValue = OptionalValue.create(mapperManager, "className", String.class);
+        assertThat(classValue.isEmpty(), is(true));
+        assertThat(classValue.as(Integer.class).isEmpty(), is(true));
+
+        OptionalValue<String> genericValue = OptionalValue.create(mapperManager, "genericName", GenericType.STRING);
+        assertThat(genericValue.isEmpty(), is(true));
+        assertThat(genericValue.as(GenericType.create(Long.class)).isEmpty(), is(true));
     }
 
     @Test
