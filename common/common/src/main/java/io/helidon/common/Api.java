@@ -33,8 +33,8 @@ import java.lang.annotation.Target;
  *     <li>{@link io.helidon.common.Api.Stable} - supported API that is backward compatible within the current major
  *     version</li>
  * </ul>
- * Methods, constructors, and nested types may also declare their own stability annotations. Nested declarations may
- * keep the enclosing type stability or declare a lower one, using the order
+ * Methods, constructors, and nested types may also declare their own stability annotations.
+ * The element's stability annotation must be lower than the one of the declaring type (or the same), using the order
  * {@link io.helidon.common.Api.Stable} &gt; {@link io.helidon.common.Api.Preview}
  * &gt; {@link io.helidon.common.Api.Incubating} &gt; {@link io.helidon.common.Api.Internal}.
  * <p>
