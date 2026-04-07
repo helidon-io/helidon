@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package io.helidon.dbclient;
 
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.HelidonServiceLoader;
@@ -33,10 +32,12 @@ public interface DbMapperManager {
     GenericType<DbRow> TYPE_DB_ROW = GenericType.create(DbRow.class);
 
     /** Generic type for the {@link java.util.Map} of String to value pairs for named parameters. */
-    GenericType<Map<String, ?>> TYPE_NAMED_PARAMS = new GenericType<>() {};
+    GenericType<Map<String, ?>> TYPE_NAMED_PARAMS = new GenericType<>() {
+    };
 
     /** Generic type for the {@link java.util.List} of indexed parameters. */
-    GenericType<List<?>> TYPE_INDEXED_PARAMS = new GenericType<>() {};
+    GenericType<List<?>> TYPE_INDEXED_PARAMS = new GenericType<>() {
+    };
 
     /**
      * Create a fluent API builder to configure the mapper manager.
@@ -118,11 +119,7 @@ public interface DbMapperManager {
      * Fluent API builder for {@link DbMapperManager}.
      */
     final class Builder implements io.helidon.common.Builder<Builder, DbMapperManager> {
-
-        private final HelidonServiceLoader.Builder<DbMapperProvider> providers = HelidonServiceLoader
-                .builder(ServiceLoader.load(DbMapperProvider.class));
-
-        private HelidonServiceLoader<DbMapperProvider> providerLoader;
+        private final DbMapperManagerBuilderState.Builder delegate = DbMapperManagerBuilderState.builder();
 
         private Builder() {
         }
@@ -139,7 +136,7 @@ public interface DbMapperManager {
          * @return updated builder instance
          */
         public Builder addMapperProvider(DbMapperProvider provider) {
-            this.providers.addService(provider);
+            this.delegate.addMapperProvider(provider);
             return this;
         }
 
@@ -153,21 +150,20 @@ public interface DbMapperManager {
          * @see io.helidon.common.Weight
          */
         public Builder addMapperProvider(DbMapperProvider provider, int weight) {
-            this.providers.addService(provider, weight);
+            this.delegate.addMapperProvider(provider, weight);
             return this;
         }
 
         // to be used by implementation
         List<DbMapperProvider> mapperProviders() {
-            if (null == providerLoader) {
-                return providers.build().asList();
-            } else {
-                return providerLoader.asList();
+            if (this.delegate.providerLoader().isPresent()) {
+                return this.delegate.providerLoader().get().asList();
             }
+            return this.delegate.providersBuilder().build().asList();
         }
 
         private Builder serviceLoader(HelidonServiceLoader<DbMapperProvider> serviceLoader) {
-            this.providerLoader = serviceLoader;
+            this.delegate.providerLoader(serviceLoader);
             return this;
         }
     }

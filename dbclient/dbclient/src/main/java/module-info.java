@@ -37,6 +37,7 @@ module io.helidon.dbclient {
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.common.mapper;
     requires transitive io.helidon.common;
+    requires io.helidon.builder.api;
 
     exports io.helidon.dbclient;
     exports io.helidon.dbclient.spi;

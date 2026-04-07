@@ -17,7 +17,6 @@ package io.helidon.dbclient;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import io.helidon.config.Config;
 
@@ -61,9 +60,11 @@ public interface DbStatements {
      * Fluent API builder for {@link DbStatements}.
      */
     class Builder implements io.helidon.common.Builder<Builder, DbStatements> {
-        private final Map<String, String> configuredStatements = new HashMap<>();
+        private final DbStatementsBuilderState.Builder delegate;
 
         private Builder() {
+            super();
+            this.delegate = DbStatementsBuilderState.builder();
         }
 
         /**
@@ -74,9 +75,7 @@ public interface DbStatements {
          * @return database provider builder
          */
         public Builder addStatement(String name, String statement) {
-            Objects.requireNonNull(name, "Statement name must be provided");
-            Objects.requireNonNull(statement, "Statement body must be provided");
-            configuredStatements.put(name, statement);
+            this.delegate.addStatement(name, statement);
             return this;
         }
 
@@ -89,14 +88,14 @@ public interface DbStatements {
          */
         public Builder config(Config config) {
             config.detach().asMap()
-                    .ifPresent(configuredStatements::putAll);
+                    .ifPresent(this.delegate::addConfiguredStatements);
             return this;
         }
 
         @Override
         public DbStatements build() {
             return new DbStatements() {
-                private final Map<String, String> statements = new HashMap<>(configuredStatements);
+                private final Map<String, String> statements = new HashMap<>(delegate.configuredStatements());
 
                 @Override
                 public String statement(String name) {

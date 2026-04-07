@@ -15,13 +15,10 @@
  */
 package io.helidon.dbclient;
 
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.Mappers;
-import io.helidon.common.mapper.MappersConfig;
 import io.helidon.config.Config;
 import io.helidon.dbclient.spi.DbClientBuilder;
 import io.helidon.dbclient.spi.DbMapperProvider;
@@ -34,33 +31,27 @@ import io.helidon.dbclient.spi.DbMapperProvider;
 public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
         implements DbClientBuilder<T> {
 
-    private final DbMapperManager.Builder dbMapperBuilder = DbMapperManager.builder();
-    private final MappersConfig.Builder mapperBuilder = Mappers.builder()
-            .useBuiltInMappers(false);
-
-    private String url;
-    private String username;
-    private String password;
-    private boolean missingMapParametersAsNull;
-    private DbStatements statements;
-    private Mappers mapperManager;
-    private DbMapperManager dbMapperManager;
-    private final List<DbClientService> clientServices;
+    private final DbClientBuilderState.Builder delegate;
 
     /**
      * Creates an instance of {@link DbClientBuilderBase}.
      */
     protected DbClientBuilderBase() {
-        this.clientServices = new LinkedList<>();
+        super();
+        this.delegate = DbClientBuilderState.builder();
     }
 
     @Override
     public DbClient build() {
-        if (dbMapperManager == null) {
-            dbMapperManager = dbMapperBuilder.build();
+        if (this.delegate.dbMapperManager().isEmpty()) {
+            DbMapperManager.Builder mapperManagerBuilder = DbMapperManager.builder();
+            this.delegate.mapperProviders().forEach(mapperManagerBuilder::addMapperProvider);
+            this.delegate.dbMapperManager(mapperManagerBuilder.build());
         }
-        if (mapperManager == null) {
-            mapperManager = mapperBuilder.build();
+        if (this.delegate.mapperManager().isEmpty()) {
+            this.delegate.mapperManager(Mappers.builder()
+                                        .useBuiltInMappers(false)
+                                        .build());
         }
         return doBuild();
     }
@@ -81,90 +72,67 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
 
     @Override
     public T url(String url) {
-        this.url = url;
+        this.delegate.url(url);
         return identity();
     }
 
     @Override
     public T username(String username) {
-        this.username = username;
+        this.delegate.username(username);
         return identity();
     }
 
     @Override
     public T password(String password) {
-        this.password = password;
+        this.delegate.password(password);
         return identity();
     }
 
     @Override
     public T missingMapParametersAsNull(boolean missingMapParametersAsNull) {
-        this.missingMapParametersAsNull = missingMapParametersAsNull;
+        this.delegate.missingMapParametersAsNull(missingMapParametersAsNull);
         return identity();
     }
 
     @Override
     public T statements(DbStatements statements) {
-        this.statements = statements;
+        this.delegate.statements(statements);
         return identity();
     }
 
     @Override
     public <TYPE> T addMapper(DbMapper<TYPE> dbMapper, Class<TYPE> mappedClass) {
-        this.dbMapperBuilder.addMapperProvider(new DbMapperProvider() {
-            @SuppressWarnings("unchecked")
-            @Override
-            public <U> Optional<DbMapper<U>> mapper(Class<U> type) {
-                if (type.equals(mappedClass)) {
-                    return Optional.of((DbMapper<U>) dbMapper);
-                }
-                return Optional.empty();
-            }
-        });
+        this.delegate.addMapper(dbMapper, mappedClass);
         return identity();
     }
 
     @Override
     public <TYPE> T addMapper(DbMapper<TYPE> dbMapper, GenericType<TYPE> mappedType) {
-        this.dbMapperBuilder.addMapperProvider(new DbMapperProvider() {
-            @Override
-            public <U> Optional<DbMapper<U>> mapper(Class<U> type) {
-                return Optional.empty();
-            }
-
-            @SuppressWarnings("unchecked")
-            @Override
-            public <U> Optional<DbMapper<U>> mapper(GenericType<U> type) {
-                if (type.equals(mappedType)) {
-                    return Optional.of((DbMapper<U>) dbMapper);
-                }
-                return Optional.empty();
-            }
-        });
+        this.delegate.addMapper(dbMapper, mappedType);
         return identity();
     }
 
     @Override
     public T mapperManager(Mappers manager) {
-        this.mapperManager = manager;
+        this.delegate.mapperManager(manager);
         return identity();
     }
 
     @Override
     public T dbMapperManager(DbMapperManager manager) {
-        this.dbMapperManager = manager;
+        this.delegate.dbMapperManager(manager);
         return identity();
     }
 
     @Override
     public T addMapperProvider(DbMapperProvider provider) {
-        this.dbMapperBuilder.addMapperProvider(provider);
+        this.delegate.addMapperProvider(provider);
         return identity();
     }
 
     @Override
     public T addService(DbClientService clientService) {
-        clientServices.add(clientService);
+        this.delegate.addService(clientService);
         return identity();
     }
 
@@ -174,7 +142,7 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
      * @return database URL
      */
     public String url() {
-        return url;
+        return this.delegate.url().orElse(null);
     }
 
     /**
@@ -183,7 +151,7 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
      * @return database user name
      */
     public String username() {
-        return username;
+        return this.delegate.username().orElse(null);
     }
 
     /**
@@ -192,7 +160,7 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
      * @return database user password.
      */
     public String password() {
-        return password;
+        return this.delegate.password().orElse(null);
     }
 
     /**
@@ -203,7 +171,7 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
      *         will cause an exception.
      */
     public boolean missingMapParametersAsNull() {
-        return missingMapParametersAsNull;
+        return this.delegate.missingMapParametersAsNull();
     }
 
     /**
@@ -212,7 +180,7 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
      * @return statements to be used by database provider
      */
     public DbStatements statements() {
-        return statements;
+        return this.delegate.statements().orElse(null);
     }
 
     /**
@@ -222,7 +190,7 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
      * @return client services
      */
     public List<DbClientService> clientServices() {
-        return List.copyOf(clientServices);
+        return List.copyOf(this.delegate.clientServices());
     }
 
     /**
@@ -231,7 +199,7 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
      * @return {@code Mapper} manager.
      */
     public Mappers mapperManager() {
-        return mapperManager;
+        return this.delegate.mapperManager().orElse(null);
     }
 
     /**
@@ -240,7 +208,7 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
      * @return manager of all configured {@link DbMapper mappers}
      */
     public DbMapperManager dbMapperManager() {
-        return dbMapperManager;
+        return this.delegate.dbMapperManager().orElse(null);
     }
 
 }

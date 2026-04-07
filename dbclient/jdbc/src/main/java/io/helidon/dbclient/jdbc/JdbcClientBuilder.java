@@ -28,12 +28,11 @@ public final class JdbcClientBuilder
         extends DbClientBuilderBase<JdbcClientBuilder>
         implements DbClientBuilder<JdbcClientBuilder> {
 
-    private JdbcConnectionPool connectionPool;
-    private JdbcParametersConfigBlueprint parametersConfig;
+    private final JdbcClientBuilderState.Builder delegate;
 
     JdbcClientBuilder() {
         super();
-        this.parametersConfig = JdbcParametersConfig.create();
+        this.delegate = JdbcClientBuilderState.builder();
     }
 
     /**
@@ -56,7 +55,7 @@ public final class JdbcClientBuilder
         config.get("connection").detach().as(JdbcConnectionPool::create).ifPresent(this::connectionPool);
         Config parameters = config.get("parameters");
         if (parameters.exists()) {
-            this.parametersConfig = JdbcParametersConfig.create(parameters);
+            this.delegate.parametersConfig(JdbcParametersConfig.create(parameters));
         }
         return this;
     }
@@ -68,7 +67,7 @@ public final class JdbcClientBuilder
      * @return updated builder instance
      */
     public JdbcClientBuilder parametersSetter(JdbcParametersConfig parametersConfig) {
-        this.parametersConfig = parametersConfig;
+        this.delegate.parametersConfig(parametersConfig);
         return this;
     }
 
@@ -79,7 +78,7 @@ public final class JdbcClientBuilder
      * @return updated builder instance
      */
     public JdbcClientBuilder connectionPool(JdbcConnectionPool connectionPool) {
-        this.connectionPool = connectionPool;
+        this.delegate.connectionPool(connectionPool);
         return this;
     }
 
@@ -89,7 +88,7 @@ public final class JdbcClientBuilder
      * @return connection pool
      */
     JdbcConnectionPool connectionPool() {
-        return connectionPool;
+        return this.delegate.connectionPool().orElse(null);
     }
 
     /**
@@ -98,7 +97,6 @@ public final class JdbcClientBuilder
      * @return parameters setter configuration
      */
     JdbcParametersConfigBlueprint parametersConfig() {
-        return parametersConfig;
+        return this.delegate.parametersConfig();
     }
-
 }

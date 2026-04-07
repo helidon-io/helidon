@@ -28,13 +28,14 @@ public final class MongoDbClientBuilder
         extends DbClientBuilderBase<MongoDbClientBuilder>
         implements DbClientBuilder<MongoDbClientBuilder> {
 
-    private String credDb;
-    private MongoDbClientConfig dbConfig;
+    private final MongoDbClientBuilderState.Builder delegate;
 
     /**
      * Create a new instance.
      */
     MongoDbClientBuilder() {
+        super();
+        this.delegate = MongoDbClientBuilderState.builder();
     }
 
     /**
@@ -48,8 +49,8 @@ public final class MongoDbClientBuilder
 
     @Override
     public DbClient doBuild() {
-        if (null == dbConfig) {
-            dbConfig = new MongoDbClientConfig(url(), username(), password(), credDb);
+        if (this.delegate.dbConfig().isEmpty()) {
+            this.delegate.dbConfig(new MongoDbClientConfig(url(), username(), password(), this.delegate.credDb().orElse(null)));
         }
         return new MongoDbClient(this);
     }
@@ -76,12 +77,12 @@ public final class MongoDbClientBuilder
      * @return updated builder instance
      */
     public MongoDbClientBuilder credDb(String db) {
-        this.credDb = db;
+        this.delegate.credDb(db);
         return this;
     }
 
     MongoDbClientConfig dbConfig() {
-        return dbConfig;
+        return this.delegate.dbConfig().orElse(null);
     }
 
 }
