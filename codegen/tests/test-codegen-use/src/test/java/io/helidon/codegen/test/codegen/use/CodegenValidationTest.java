@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,17 @@ public class CodegenValidationTest {
 
         assertThat(modifiers, containsString("transient"));
         assertThat(modifiers, containsString("volatile"));
+    }
+
+    @Test
+    void testTypeUseAnnotationsOnMethodReturnTypes() throws ReflectiveOperationException {
+        boolean primitivePresent = (boolean) clazz.getMethod("primitiveMethodTypeUseAnnotationPresent").invoke(instance);
+        boolean declaredPresent = (boolean) clazz.getMethod("declaredMethodTypeUseAnnotationPresent").invoke(instance);
+        boolean arrayPresent = (boolean) clazz.getMethod("arrayMethodTypeUseAnnotationPresent").invoke(instance);
+
+        assertThat("Primitive return type should retain top-level TYPE_USE annotations", primitivePresent, is(true));
+        assertThat("Declared return type should retain top-level TYPE_USE annotations", declaredPresent, is(true));
+        assertThat("Array return type should retain top-level TYPE_USE annotations", arrayPresent, is(true));
     }
 
     @Test
