@@ -48,7 +48,7 @@ class ApiStabilityEnforcerProcessorTest {
         var messages = compileWithoutApi(new ApiStabilityEnforcerProcessor(),
                                          new JavaSourceFromString("TestApi.java", """
                                                  package io.helidon.common;
-
+                                                 
                                                  public class TestApi {
                                                  }
                                                  """));
@@ -61,17 +61,17 @@ class ApiStabilityEnforcerProcessorTest {
         var messages = compileWithApi(new ApiStabilityEnforcerProcessor(),
                                       new JavaSourceFromString("TestApi.java", """
                                               package io.helidon.common;
-
+                                              
                                               public class TestApi {
                                               }
                                               """));
 
         assertThat(messages,
-                   hasItem(fullError("TestApi.java",
-                                     3,
-                                     "Public API io.helidon.common.TestApi is missing stability annotation (@Api.*)",
-                                     "public class TestApi {",
-                                     8)));
+                   hasItem("""
+                                   /TestApi.java:3: error: Public API io.helidon.common.TestApi is missing stability annotation (@Api.*)
+                                   public class TestApi {
+                                          ^\
+                                   """));
     }
 
     @Test
@@ -79,7 +79,7 @@ class ApiStabilityEnforcerProcessorTest {
         var messages = compileWithApi(new ApiStabilityEnforcerProcessor(),
                                       new JavaSourceFromString("TestApi.java", """
                                               package io.helidon.common;
-
+                                              
                                               @Api.Stable
                                               @Api.Incubating
                                               public class TestApi {
@@ -87,12 +87,11 @@ class ApiStabilityEnforcerProcessorTest {
                                               """));
 
         assertThat(messages,
-                   hasItem(fullError("TestApi.java",
-                                     5,
-                                     "Public API io.helidon.common.TestApi has more than one stability annotation "
-                                             + "(@Api.*)",
-                                     "public class TestApi {",
-                                     8)));
+                   hasItem("""
+                                   /TestApi.java:5: error: Public API io.helidon.common.TestApi has more than one stability annotation (@Api.*)
+                                   public class TestApi {
+                                          ^\
+                                   """));
     }
 
     @Test
@@ -100,17 +99,17 @@ class ApiStabilityEnforcerProcessorTest {
         var messages = compileWithApi(new ApiStabilityEnforcerProcessor(),
                                       new JavaSourceFromString("TestApi.java", """
                                               package io.helidon.common;
-
+                                              
                                               @Api.Stable
                                               public class TestApi {
                                                   @Api.Incubating
                                                   public TestApi(String value) {
                                                   }
-
+                                              
                                                   @Api.Preview
                                                   public void preview() {
                                                   }
-
+                                              
                                                   public static class Nested {
                                                       @Api.Internal
                                                       public void internal() {
@@ -127,18 +126,18 @@ class ApiStabilityEnforcerProcessorTest {
         var messages = compileWithApi(new ApiStabilityEnforcerProcessor(),
                                       new JavaSourceFromString("TestApi.java", """
                                               package io.helidon.common;
-
+                                              
                                               @Deprecated
                                               public class TestApi {
                                               }
                                               """));
 
         assertThat(messages,
-                   hasItem(fullError("TestApi.java",
-                                     4,
-                                     "Public API io.helidon.common.TestApi is missing stability annotation (@Api.*)",
-                                     "public class TestApi {",
-                                     8)));
+                   hasItem("""
+                                   /TestApi.java:4: error: Public API io.helidon.common.TestApi is missing stability annotation (@Api.*)
+                                   public class TestApi {
+                                          ^\
+                                   """));
     }
 
     @Test
@@ -146,7 +145,7 @@ class ApiStabilityEnforcerProcessorTest {
         var messages = compileWithApi(new ApiStabilityEnforcerProcessor(),
                                       new JavaSourceFromString("TestApi.java", """
                                               package io.helidon.common;
-
+                                              
                                               @Api.Stable
                                               @Deprecated
                                               public class TestApi {
@@ -161,7 +160,7 @@ class ApiStabilityEnforcerProcessorTest {
         var messages = compileWithApi(new ApiStabilityEnforcerProcessor(),
                                       new JavaSourceFromString("TestApi.java", """
                                               package io.helidon.common;
-
+                                              
                                               @Api.Incubating
                                               public class TestApi {
                                                   @Api.Preview
@@ -171,12 +170,11 @@ class ApiStabilityEnforcerProcessorTest {
                                               """));
 
         assertThat(messages,
-                   hasItem(fullError("TestApi.java",
-                                     6,
-                                     "Element previewMethod() must not declare @Api.Preview because enclosing API "
-                                             + "io.helidon.common.TestApi is @Api.Incubating",
-                                     "    public void previewMethod() {",
-                                     17)));
+                   hasItem("""
+                                   /TestApi.java:6: error: Element previewMethod() must not declare @Api.Preview because enclosing API io.helidon.common.TestApi is @Api.Incubating
+                                       public void previewMethod() {
+                                                   ^\
+                                   """));
     }
 
     @Test
@@ -184,7 +182,7 @@ class ApiStabilityEnforcerProcessorTest {
         var messages = compileWithApi(new ApiStabilityEnforcerProcessor(),
                                       new JavaSourceFromString("TestApi.java", """
                                               package io.helidon.common;
-
+                                              
                                               @Api.Internal
                                               public class TestApi {
                                                   @Api.Preview
@@ -194,12 +192,11 @@ class ApiStabilityEnforcerProcessorTest {
                                               """));
 
         assertThat(messages,
-                   hasItem(fullError("TestApi.java",
-                                     6,
-                                     "Element io.helidon.common.TestApi.Nested must not declare @Api.Preview because "
-                                             + "enclosing API io.helidon.common.TestApi is @Api.Internal",
-                                     "    public static class Nested {",
-                                     19)));
+                   hasItem("""
+                                   /TestApi.java:6: error: Element io.helidon.common.TestApi.Nested must not declare @Api.Preview because enclosing API io.helidon.common.TestApi is @Api.Internal
+                                       public static class Nested {
+                                                     ^\
+                                   """));
     }
 
     private static List<String> compileWithoutApi(Processor processor,
@@ -212,17 +209,17 @@ class ApiStabilityEnforcerProcessorTest {
         List<JavaFileObject> sources = new ArrayList<>();
         sources.add(new JavaSourceFromString("Api.java", """
                 package io.helidon.common;
-
+                
                 final class Api {
                     public @interface Stable {
                     }
-
+                
                     public @interface Preview {
                     }
-
+                
                     public @interface Incubating {
                     }
-
+                
                     public @interface Internal {
                     }
                 }
@@ -253,16 +250,6 @@ class ApiStabilityEnforcerProcessorTest {
             messages.add(diagnostic.toString());
         }
         return messages;
-    }
-
-    private static String fullError(String fileName,
-                                    int line,
-                                    String message,
-                                    String sourceLine,
-                                    int column) {
-        return "/" + fileName + ":" + line + ": error: " + message
-                + "\n" + sourceLine
-                + "\n" + " ".repeat(column - 1) + "^";
     }
 
     private static class JavaSourceFromString extends SimpleJavaFileObject {
