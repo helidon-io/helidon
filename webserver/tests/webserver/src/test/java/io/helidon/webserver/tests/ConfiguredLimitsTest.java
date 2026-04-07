@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,7 +150,7 @@ class ConfiguredLimitsTest {
     private static void handleRequest(ServerRequest request, ServerResponse response) {
         ServerRequestHeaders headers = request.headers();
         if (headers.contains(CUSTOM_HEADER)) {
-            response.send(headers.get(CUSTOM_HEADER).value());
+            response.send(headers.get(CUSTOM_HEADER).get());
             return;
         }
 

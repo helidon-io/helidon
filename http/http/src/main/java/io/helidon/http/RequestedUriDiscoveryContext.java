@@ -72,31 +72,6 @@ public interface RequestedUriDiscoveryContext {
      * @param query         query information from the request
      * @param isSecure      whether the request is secure
      * @return {@code UriInfo} which reconstructs, as well as possible, the requested URI from the originating client
-     * @deprecated Use
-     *         {@link RequestedUriDiscoveryContext#uriInfo(java.net.SocketAddress, java.net.SocketAddress, String,
-     *         ServerRequestHeaders, io.helidon.common.uri.UriQuery, boolean)}
-     */
-    @Deprecated(forRemoval = true, since = "4.2.1")
-    default UriInfo uriInfo(String remoteAddress,
-                            String localAddress,
-                            String requestPath,
-                            ServerRequestHeaders headers,
-                            UriQuery query,
-                            boolean isSecure) {
-        return UriInfoCompatibilityHelper.uriInfo(this, remoteAddress, localAddress, requestPath, headers, query, isSecure);
-    }
-
-    /**
-     * Creates a {@link io.helidon.common.uri.UriInfo} object for a request based on the discovery settings in the
-     * {@link RequestedUriDiscoveryContext} and the specified request-related information.
-     *
-     * @param remoteAddress remote address from the request
-     * @param localAddress  local address from the request
-     * @param requestPath   path from the request
-     * @param headers       request headers
-     * @param query         query information from the request
-     * @param isSecure      whether the request is secure
-     * @return {@code UriInfo} which reconstructs, as well as possible, the requested URI from the originating client
      */
     UriInfo uriInfo(SocketAddress remoteAddress,
                     SocketAddress localAddress,
@@ -146,7 +121,7 @@ public interface RequestedUriDiscoveryContext {
             // in case existing apps happen to use it. Remove as soon as practical.
             requestedUriDiscoveryConfig.get("discoveryTypes")
                     .asList(RequestedUriDiscoveryType.class)
-                    .ifPresent(this::discoveryTypes);
+                    .ifPresent(this::types);
             requestedUriDiscoveryConfig.get("types")
                     .asList(RequestedUriDiscoveryType.class)
                     .ifPresent(this::types);
@@ -191,18 +166,6 @@ public interface RequestedUriDiscoveryContext {
             this.discoveryTypes.clear();
             this.discoveryTypes.addAll(discoveryTypes);
             return this;
-        }
-
-        /**
-         * Sets the discovery types for requested URI discovery for requests arriving on the socket.
-         *
-         * @param discoveryTypes discovery types to use
-         * @return updated builder
-         * @deprecated Use {@link #types(java.util.List)} instead
-         */
-        @Deprecated(since = "4.0.6", forRemoval = true)
-        public Builder discoveryTypes(List<RequestedUriDiscoveryType> discoveryTypes) {
-            return types(discoveryTypes);
         }
 
         /**
