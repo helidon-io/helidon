@@ -27,6 +27,6 @@ final class DbStatementsBuilderStateSupport {
     static void addStatement(DbStatementsBuilderState.BuilderBase<?, ?> builder, String name, String statement) {
         Objects.requireNonNull(name, "Statement name must be provided");
         Objects.requireNonNull(statement, "Statement body must be provided");
-        builder.putConfiguredStatement(name, statement);
+        builder.addStatement(name, statement);
     }
 }

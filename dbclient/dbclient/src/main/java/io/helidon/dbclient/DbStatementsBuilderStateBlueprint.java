@@ -24,6 +24,8 @@ import io.helidon.builder.api.Prototype;
 @Prototype.CustomMethods(DbStatementsBuilderStateSupport.class)
 interface DbStatementsBuilderStateBlueprint {
 
-    @Option.Singular("configuredStatement")
-    Map<String, String> configuredStatements();
+    @Option.Singular(value = "addStatement", withPrefix = false)
+    @Option.Configured
+    Map<String, String> statements();
+
 }

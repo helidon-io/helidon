@@ -88,14 +88,14 @@ public interface DbStatements {
          */
         public Builder config(Config config) {
             config.detach().asMap()
-                    .ifPresent(this.delegate::addConfiguredStatements);
+                    .ifPresent(this.delegate::addStatements);
             return this;
         }
 
         @Override
         public DbStatements build() {
             return new DbStatements() {
-                private final Map<String, String> statements = new HashMap<>(delegate.configuredStatements());
+                private final Map<String, String> statements = new HashMap<>(delegate.statements());
 
                 @Override
                 public String statement(String name) {
