@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,6 +97,8 @@ public interface Bulkhead extends FtHandler, RuntimeType.Api<BulkheadConfig> {
 
     /**
      * Can be used to cancel a supplier while queued.
+     * The same supplier instance passed to {@link #invoke(Supplier)} must be used.
+     * If the same instance is queued multiple times, each call cancels at most one queued invocation.
      *
      * @param supplier the supplier
      * @return outcome of cancellation
