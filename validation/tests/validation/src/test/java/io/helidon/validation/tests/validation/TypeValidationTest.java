@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.validation.tests.validation;
+
+import java.math.BigDecimal;
 
 import io.helidon.testing.junit5.Testing;
 import io.helidon.validation.TypeValidation;
@@ -35,12 +37,12 @@ public class TypeValidationTest {
 
     @Test
     public void validateType() {
-        ValidatedType validatedType = new ValidatedType("test_value", 42);
+        ValidatedType validatedType = new ValidatedType("test_value", 42, new BigDecimal("1.10"));
 
         ValidationResponse response = validator.validate(ValidatedType.class, validatedType);
         assertThat(response.valid(), is(true));
 
-        validatedType = new ValidatedType("test_value", 41);
+        validatedType = new ValidatedType("test_value", 41, new BigDecimal("1.10"));
         response = validator.validate(ValidatedType.class, validatedType);
         assertThat(response.valid(), is(false));
         assertThat(response.message(), is("41 is less than 42"));
@@ -48,10 +50,14 @@ public class TypeValidationTest {
 
     @Test
     public void validateTypeProperty() {
-        var response = validator.validate(ValidatedType.class, new ValidatedType("test_value", 43), "first");
+        var response = validator.validate(ValidatedType.class,
+                                          new ValidatedType("test_value", 43, new BigDecimal("1.10")),
+                                          "first");
         assertThat(response.valid(), is(true));
 
-        response = validator.validate(ValidatedType.class, new ValidatedType("bad_value", 43), "first");
+        response = validator.validate(ValidatedType.class,
+                                      new ValidatedType("bad_value", 43, new BigDecimal("1.10")),
+                                      "first");
         assertThat(response.valid(), is(false));
         assertThat(response.message(), is("does not match pattern \".*test.*\" with flags 0"));
     }
