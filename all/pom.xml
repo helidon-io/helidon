@@ -596,6 +596,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-hsts</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-context</artifactId>
         </dependency>
         <dependency>

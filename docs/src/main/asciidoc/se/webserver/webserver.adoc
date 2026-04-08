@@ -40,6 +40,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Server Features, Server Features>>
 ** <<Access Log, Access Log>>
 ** <<Context, Context>>
+** <<HSTS, HSTS>>
 - <<Supported Technologies, Supported Technologies>>
 ** <<HTTP/2 Support, HTTP/2 Support>>
 ** <<Static Content Support, Static Content Support>>
@@ -579,6 +580,9 @@ first.
 |<<Access Log, Access Log>>
 |1000
 
+|<<HSTS, HSTS>>
+|875
+
 |xref:{rootdir}/se/tracing.adoc[Tracing]
 |900
 
@@ -668,6 +672,55 @@ server:
 All options shown below are also available programmatically when using builder.
 
 include::{rootdir}/config/io_helidon_webserver_accesslog_AccessLogFeature.adoc[leveloffset=+1]
+
+=== HSTS
+
+HTTP Strict Transport Security (HSTS) in Helidon is provided by a dedicated WebServer feature module.
+The feature adds the `Strict-Transport-Security` header to responses whose resolved request URI scheme is `https`.
+
+This behavior is intentionally based on the resolved request scheme rather than an HTTP version check.
+As a result, the feature works for HTTP/1.1 and HTTP/2 today, and it naturally extends to future secure transports.
+When TLS is terminated by a trusted proxy, the feature relies on xref:_requested_uri_discovery[requested URI discovery]
+being configured so Helidon resolves the external request scheme correctly.
+
+To enable HSTS add the following dependency to project's `pom.xml`:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-hsts</artifactId>
+</dependency>
+----
+
+==== Configuring HSTS in Your Code
+
+`HstsFeature` is discovered automatically by default and configured through `server.features.hsts`.
+You can also configure this feature in code by registering it with WebServer.
+
+[source,java]
+----
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_38, indent=0]
+----
+
+==== Configuring HSTS in a Configuration File
+
+HSTS can be configured as follows:
+
+[source,yaml]
+.HSTS configuration file
+----
+server:
+  features:
+    hsts:
+      max-age: 365d
+      include-sub-domains: true
+----
+
+The optional `preload` token is a browser preload-list convention and is not part of RFC 6797 itself.
+All options shown below are also available programmatically when using builder.
+
+include::{rootdir}/config/io_helidon_webserver_hsts_HstsFeature.adoc[leveloffset=+1]
 
 == Supported Technologies
 

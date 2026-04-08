@@ -17,6 +17,7 @@ package io.helidon.docs.se;
 
 import java.net.SocketAddress;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -40,6 +41,7 @@ import io.helidon.webserver.ProxyProtocolV2Data;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.accesslog.AccessLogFeature;
+import io.helidon.webserver.hsts.HstsFeature;
 import io.helidon.webserver.http.HttpRoute;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
@@ -448,5 +450,15 @@ class WebServerSnippets {
             }
         });
         // end::snippet_37[]
+    }
+
+    void snippet_38() {
+        // tag::snippet_38[]
+        WebServer.builder()
+                .addFeature(HstsFeature.builder()
+                                    .maxAge(Duration.ofDays(365))
+                                    .includeSubDomains(true)
+                                    .build());
+        // end::snippet_38[]
     }
 }
