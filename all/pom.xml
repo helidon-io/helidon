@@ -1081,7 +1081,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.http.media</groupId>
-            <artifactId>helidon-http-media-smile</artifactId>
+            <artifactId>helidon-http-media-json-smile</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.http.media</groupId>

@@ -24,8 +24,8 @@
         <version>4.4.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-http-media-smile</artifactId>
-    <name>Helidon HTTP Media Smile</name>
+    <artifactId>helidon-http-media-json-smile</artifactId>
+    <name>Helidon HTTP Media JSON Smile</name>
 
     <dependencies>
         <dependency>

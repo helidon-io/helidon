@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.media.smile;
+package io.helidon.http.media.json.smile;
 
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;

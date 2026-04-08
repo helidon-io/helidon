@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.media.smile;
+package io.helidon.http.media.json.smile;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
