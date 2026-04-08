@@ -236,4 +236,16 @@ class DeclarativeHttpTest {
         Optional<JsonObject> notFound = typedClient.optionalMessageNotFound();
         assertThat(notFound.isEmpty(), is(true));
     }
+
+    @Test
+    void testTypedClientOptionalResponseCustomErrorHandler() {
+        GreetServiceClient typedClient = registry.get(Lookup.builder()
+                                                              .addContract(GreetServiceClient.class)
+                                                              .addQualifier(Qualifier.create(RestClient.Client.class))
+                                                              .build());
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                       typedClient::optionalMessageNotFoundHandled);
+        assertThat(exception.getMessage(), is("optional 404 handled"));
+    }
 }

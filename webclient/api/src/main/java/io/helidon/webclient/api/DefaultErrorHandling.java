@@ -50,9 +50,6 @@ class DefaultErrorHandling implements RestClient.ErrorHandling {
 
     @Override
     public void handle(String uri, ClientRequestHeaders requestHeaders, ClientResponseTyped<?> response, GenericType<?> type) {
-        if (Optional.class.equals(type.rawType()) && response.status() == Status.NOT_FOUND_404) {
-            return;
-        }
         for (RestClient.ErrorHandler errorHandler : errorHandlers) {
             if (errorHandler.handles(uri, requestHeaders, response.status(), response.headers())) {
                 var maybeException = errorHandler.handleError(uri, requestHeaders, response, type);
@@ -83,6 +80,9 @@ class DefaultErrorHandling implements RestClient.ErrorHandling {
                                                                 ClientRequestHeaders requestHeaders,
                                                                 ClientResponseTyped<?> response,
                                                                 GenericType<?> type) {
+            if (Optional.class.equals(type.rawType()) && response.status() == Status.NOT_FOUND_404) {
+                return Optional.empty();
+            }
             return Optional.of(new HttpException("Failed when invoking a client call to " + requestUri
                                                          + ", status: " + response.status(),
                                                  response.status()));

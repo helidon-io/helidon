@@ -189,6 +189,13 @@ class GreetServiceEndpoint implements GreetService {
         return Optional.empty();
     }
 
+    @Http.GET
+    @Http.Path("/optional/not-found/handled")
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    Optional<JsonObject> optionalMessageNotFoundHandled() {
+        return Optional.empty();
+    }
+
     /**
      * Set the greeting to use in future messages.
      *
