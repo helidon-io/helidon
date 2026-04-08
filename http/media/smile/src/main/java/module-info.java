@@ -16,7 +16,6 @@
 
 import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.http.media.json.smile.SmileMediaSupportProvider;
 
 /**
  * JSON Smile Media Support.
@@ -43,5 +42,5 @@ module io.helidon.http.media.json.smile {
     exports io.helidon.http.media.json.smile;
 
     provides io.helidon.http.media.spi.MediaSupportProvider
-            with SmileMediaSupportProvider;
+            with io.helidon.http.media.json.smile.SmileMediaSupportProvider;
 }
