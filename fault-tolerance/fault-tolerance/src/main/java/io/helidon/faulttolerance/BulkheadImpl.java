@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,16 @@
 package io.helidon.faulttolerance;
 
 import java.lang.System.Logger.Level;
-import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
@@ -51,7 +49,6 @@ class BulkheadImpl implements Bulkhead {
     private final AtomicLong callsRejected = new AtomicLong(0L);
     private final AtomicLong callsWaiting = new AtomicLong(0L);
     private final List<QueueListener> listeners;
-    private final Set<Supplier<?>> cancelledSuppliers = new CopyOnWriteArraySet<>();
     private final BulkheadConfig config;
     private final boolean metricsEnabled;
 
@@ -128,40 +125,48 @@ class BulkheadImpl implements Bulkhead {
             throw new BulkheadException("Bulkhead queue \"" + name + "\" is full");
         }
 
+        QueuedInvocation queuedInvocation = null;
         try {
             // block current thread until barrier is retracted
-            Barrier barrier;
-            long start = 0L;
+            boolean waitingCounted = false;
             try {
                 listeners.forEach(l -> l.enqueueing(supplier));
                 if (metricsEnabled) {
-                    start = System.nanoTime();
                     callsWaiting.incrementAndGet();
+                    waitingCounted = true;
                 }
-                barrier = queue.enqueue(supplier);
+                queuedInvocation = queue.enqueue(supplier);
             } finally {
-                try {
-                    if (metricsEnabled) {
-                        waitingDurationMetric.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
-                        callsWaiting.decrementAndGet();
-                    }
-                } finally {
-                    inProgressLock.unlock(); // we have enqueued, now we can wait
+                inProgressLock.unlock(); // we have enqueued, now we can wait
+            }
+
+            if (queuedInvocation == null) {
+                if (waitingCounted) {
+                    callsWaiting.decrementAndGet();
+                }
+                callsRejected.incrementAndGet();
+                throw new BulkheadException("Bulkhead queue \"" + name + "\" is full");
+            }
+            long waitStartedAt = 0L;
+            if (waitingCounted) {
+                waitStartedAt = System.nanoTime();
+            }
+            try {
+                queuedInvocation.waitOn();
+            } finally {
+                if (waitingCounted) {
+                    waitingDurationMetric.record(System.nanoTime() - waitStartedAt, TimeUnit.NANOSECONDS);
+                    callsWaiting.decrementAndGet();
                 }
             }
 
-            if (barrier == null) {
-                throw new BulkheadException("Bulkhead queue \"" + name + "\" is full");
+            // do not run if cancelled while queued
+            if (queuedInvocation.cancelled()) {
+                return null;
             }
-            barrier.waitOn();
 
             // unblocked so we can proceed with execution
             listeners.forEach(l -> l.dequeued(supplier));
-
-            // do not run if cancelled while queued
-            if (cancelledSuppliers.remove(supplier)) {
-                return null;
-            }
 
             // invoke supplier now
             if (LOGGER.isLoggable(Level.DEBUG)) {
@@ -169,7 +174,15 @@ class BulkheadImpl implements Bulkhead {
             }
             return execute(supplier);
         } catch (InterruptedException e) {
+            if (queuedInvocation != null) {
+                if (queue.remove(queuedInvocation)) {
+                    queuedInvocation.interrupt();
+                } else if (queuedInvocation.started()) {
+                    handOffOrReleasePermit();
+                }
+            }
             callsRejected.incrementAndGet();
+            Thread.currentThread().interrupt();
             throw new BulkheadException("Bulkhead \"" + name + "\" interrupted while acquiring");
         } catch (ExecutionException e) {
             throw new BulkheadException(e.getMessage());
@@ -219,25 +232,30 @@ class BulkheadImpl implements Bulkhead {
             throw SupplierHelper.toRuntimeException(throwable);
         } finally {
             concurrentExecutions.decrementAndGet();
-            inProgressLock.lock();
-            try {
-                boolean dequeued = queue.dequeueAndRetract();
-                if (!dequeued) {
-                    inProgress.release();       // nothing dequeued, one more permit
-                }
-            } finally {
-                inProgressLock.unlock();
+            handOffOrReleasePermit();
+        }
+    }
+
+    private void handOffOrReleasePermit() {
+        inProgressLock.lock();
+        try {
+            boolean dequeued = queue.dequeueAndRetract();
+            if (!dequeued) {
+                inProgress.release();       // nothing dequeued, one more permit
             }
+        } finally {
+            inProgressLock.unlock();
         }
     }
 
     @Override
     public boolean cancelSupplier(Supplier<?> supplier) {
-        boolean cancelled = queue.remove(supplier);
-        if (cancelled) {
-            cancelledSuppliers.add(supplier);
+        QueuedInvocation queuedInvocation = queue.remove(supplier);
+        if (queuedInvocation != null) {
+            queuedInvocation.cancel();
+            return true;
         }
-        return cancelled;
+        return false;
     }
 
     /**
@@ -263,24 +281,32 @@ class BulkheadImpl implements Bulkhead {
          * Enqueue supplier and block thread on barrier.
          *
          * @param supplier the supplier
-         * @return barrier if supplier was enqueued or null otherwise
+         * @return queued invocation if supplier was enqueued or null otherwise
          */
-        Barrier enqueue(Supplier<?> supplier);
+        QueuedInvocation enqueue(Supplier<?> supplier);
 
         /**
-         * Dequeue supplier and retract its barrier.
+         * Dequeue supplier and release its queued invocation.
          *
          * @return {@code true} if a supplier was dequeued or {@code false} otherwise
          */
         boolean dequeueAndRetract();
 
         /**
-         * Remove supplier from queue, if present.
+         * Remove supplier from queue by identity, if present, and return its queued invocation for external completion.
          *
          * @param supplier the supplier
-         * @return {@code true} if supplier was removed or {@code false} otherwise
+         * @return queued invocation associated with the removed supplier, or {@code null} if the supplier was not removed
          */
-        boolean remove(Supplier<?> supplier);
+        QueuedInvocation remove(Supplier<?> supplier);
+
+        /**
+         * Remove a specific queued invocation if it is still in the queue.
+         *
+         * @param queuedInvocation queued invocation to remove
+         * @return {@code true} if the invocation was removed or {@code false} otherwise
+         */
+        boolean remove(QueuedInvocation queuedInvocation);
     }
 
     /**
@@ -299,7 +325,7 @@ class BulkheadImpl implements Bulkhead {
         }
 
         @Override
-        public Barrier enqueue(Supplier<?> supplier) {
+        public QueuedInvocation enqueue(Supplier<?> supplier) {
             // never enqueue, should always fail execution if permits are not available
             return null;
         }
@@ -310,7 +336,12 @@ class BulkheadImpl implements Bulkhead {
         }
 
         @Override
-        public boolean remove(Supplier<?> supplier) {
+        public QueuedInvocation remove(Supplier<?> supplier) {
+            return null;
+        }
+
+        @Override
+        public boolean remove(QueuedInvocation queuedInvocation) {
             return false;
         }
     }
@@ -324,8 +355,7 @@ class BulkheadImpl implements Bulkhead {
 
         private final int capacity;
         private final ReentrantLock lock;
-        private final Queue<Supplier<?>> queue;
-        private final Map<Supplier<?>, Barrier> map;
+        private final Queue<QueuedInvocation> queue;
 
         BlockingQueue(int capacity) {
             if (capacity <= 0) {
@@ -333,7 +363,6 @@ class BulkheadImpl implements Bulkhead {
             }
             this.capacity = capacity;
             this.queue = new LinkedBlockingQueue<>(capacity);
-            this.map = new IdentityHashMap<>();     // just use references
             this.lock = new ReentrantLock();
         }
 
@@ -353,7 +382,7 @@ class BulkheadImpl implements Bulkhead {
         }
 
         @Override
-        public Barrier enqueue(Supplier<?> supplier) {
+        public QueuedInvocation enqueue(Supplier<?> supplier) {
             lock.lock();
             try {
                 return doEnqueue(supplier);
@@ -366,9 +395,9 @@ class BulkheadImpl implements Bulkhead {
         public boolean dequeueAndRetract() {
             lock.lock();
             try {
-                Barrier barrier = dequeue();
-                if (barrier != null) {
-                    barrier.retract();
+                QueuedInvocation queuedInvocation = dequeue();
+                if (queuedInvocation != null) {
+                    queuedInvocation.start();
                     return true;
                 }
                 return false;
@@ -378,23 +407,97 @@ class BulkheadImpl implements Bulkhead {
         }
 
         @Override
-        public boolean remove(Supplier<?> supplier) {
+        public QueuedInvocation remove(Supplier<?> supplier) {
             lock.lock();
             try {
-                return queue.remove(supplier);
+                for (Iterator<QueuedInvocation> iterator = queue.iterator(); iterator.hasNext();) {
+                    QueuedInvocation queuedInvocation = iterator.next();
+                    if (queuedInvocation.supplier() == supplier) {
+                        iterator.remove();
+                        return queuedInvocation;
+                    }
+                }
+                return null;
             } finally {
                 lock.unlock();
             }
         }
 
-        private Barrier dequeue() {
-            Supplier<?> supplier = queue.poll();
-            return supplier == null ? null : map.remove(supplier);
+        @Override
+        public boolean remove(QueuedInvocation queuedInvocation) {
+            lock.lock();
+            try {
+                for (Iterator<QueuedInvocation> iterator = queue.iterator(); iterator.hasNext();) {
+                    if (iterator.next() == queuedInvocation) {
+                        iterator.remove();
+                        return true;
+                    }
+                }
+                return false;
+            } finally {
+                lock.unlock();
+            }
         }
 
-        private Barrier doEnqueue(Supplier<?> supplier) {
-            boolean added = queue.offer(supplier);
-            return added ? map.computeIfAbsent(supplier, s -> new Barrier()) : null;
+        private QueuedInvocation dequeue() {
+            return queue.poll();
+        }
+
+        private QueuedInvocation doEnqueue(Supplier<?> supplier) {
+            QueuedInvocation queuedInvocation = new QueuedInvocation(supplier);
+            boolean added = queue.offer(queuedInvocation);
+            return added ? queuedInvocation : null;
+        }
+    }
+
+    private static class QueuedInvocation {
+        private final AtomicReference<State> state = new AtomicReference<>(State.QUEUED);
+        private final Supplier<?> supplier;
+        private final Barrier barrier = new Barrier();
+
+        private QueuedInvocation(Supplier<?> supplier) {
+            this.supplier = supplier;
+        }
+
+        private Supplier<?> supplier() {
+            return supplier;
+        }
+
+        private void waitOn() throws ExecutionException, InterruptedException {
+            barrier.waitOn();
+        }
+
+        private boolean start() {
+            boolean started = state.compareAndSet(State.QUEUED, State.STARTED);
+            if (started) {
+                barrier.retract();
+            }
+            return started;
+        }
+
+        private boolean started() {
+            return state.get() == State.STARTED;
+        }
+
+        private boolean cancelled() {
+            return state.get() == State.CANCELLED;
+        }
+
+        private void cancel() {
+            if (state.compareAndSet(State.QUEUED, State.CANCELLED)) {
+                barrier.retract();
+            }
+        }
+
+        private void interrupt() {
+            state.compareAndSet(State.QUEUED, State.INTERRUPTED);
+        }
+
+        private enum State {
+            QUEUED,
+            STARTED,
+            CANCELLED,
+            INTERRUPTED
         }
     }
 
