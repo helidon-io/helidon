@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 
 /**
@@ -30,6 +31,7 @@ import io.helidon.common.GenericType;
  *
  * @param <T> type of the value
  */
+@Api.Stable
 public interface OptionalValue<T> extends Value<T> {
     /**
      * Create an empty value.

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+@SuppressWarnings("helidon:api:incubating")
 module io.helidon.declarative.tests.cors {
     requires io.helidon.logging.common;
     requires io.helidon.webserver.cors;

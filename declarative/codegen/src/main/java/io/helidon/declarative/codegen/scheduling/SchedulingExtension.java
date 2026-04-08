@@ -108,6 +108,7 @@ class SchedulingExtension implements RegistryCodegenExtension {
                 .copyright(CodegenUtil.copyright(GENERATOR, GENERATOR, generatedType))
                 .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR, GENERATOR, generatedType, "0", ""))
                 .addAnnotation(DeclarativeTypes.SINGLETON_ANNOTATION)
+                .addAnnotation(DeclarativeTypes.SUPPRESS_API)
                 .addAnnotation(runLevel)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
 

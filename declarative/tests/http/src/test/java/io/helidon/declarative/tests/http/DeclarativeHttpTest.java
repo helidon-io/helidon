@@ -41,7 +41,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation", "helidon:api:incubating"})
 @ServerTest
 class DeclarativeHttpTest {
     private final Http1Client client;

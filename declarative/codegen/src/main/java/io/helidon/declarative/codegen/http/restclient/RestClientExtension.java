@@ -44,6 +44,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.DeclarativeTypes;
 import io.helidon.declarative.codegen.DeclarativeUtils;
 import io.helidon.declarative.codegen.DelcarativeConfigSupport;
 import io.helidon.declarative.codegen.http.HttpFields;
@@ -268,6 +269,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
                 .type(generatedType)
                 .addInterface(type.typeName())
                 .addAnnotation(SINGLETON_ANNOTATION)
+                .addAnnotation(DeclarativeTypes.SUPPRESS_API)
                 .addAnnotation(REST_CLIENT_QUALIFIER_INSTANCE);
 
         var constructor = constructor(classModel, endpoint);

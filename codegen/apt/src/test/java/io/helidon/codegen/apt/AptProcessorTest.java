@@ -31,6 +31,7 @@ import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.CodegenScope;
 import io.helidon.codegen.ElementInfoPredicates;
+import io.helidon.codegen.api.stability.ApiStabilityProcessor;
 import io.helidon.codegen.spi.TypeMapper;
 import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.types.Annotation;
@@ -43,10 +44,34 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 class AptProcessorTest {
+    @Test
+    void testApiStabilityOptionsDoNotFailInitialization() {
+        var result = TestCompiler.builder()
+                .addProcessor(new AptProcessor())
+                .addProcessor(new ApiStabilityProcessor())
+                .currentRelease()
+                .addOption("-Xlint:none")
+                .addOption("-Ahelidon.api.incubating=ignore")
+                .addSource("MyClass.java", """
+                        package com.example;
+
+                        class MyClass {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertTrue(result.success(), "Compilation should succeed when the API stability option is configured");
+        assertFalse(result.diagnostics()
+                            .stream()
+                            .anyMatch(it -> it.contains("Unrecognized/unsupported Helidon option configured")),
+                    "APT processor should ignore API stability options handled by a different Helidon processor");
+    }
+
     private static final TypeName MAPPED = TypeName.create("com.example.Mapped");
 
     @Test
