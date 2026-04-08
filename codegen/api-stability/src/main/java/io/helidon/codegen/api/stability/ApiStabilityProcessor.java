@@ -108,6 +108,8 @@ public class ApiStabilityProcessor extends AbstractProcessor {
                                                                            SUPPRESS_DEPRECATION);
 
     private Messager messager;
+    private final Set<CompilationUnitTree> compilationUnits = new LinkedHashSet<>();
+    private final Set<ModuleElement> modules = new LinkedHashSet<>();
 
     private Action previewAction;
     private Action incubatingAction;
@@ -152,13 +154,6 @@ public class ApiStabilityProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         try {
             var trees = Trees.instance(processingEnv);
-            Set<CompilationUnitTree> compilationUnits = new LinkedHashSet<>();
-            Set<ModuleElement> modules = new LinkedHashSet<>();
-
-            Set<Ref> previewApis = new LinkedHashSet<>();
-            Set<Ref> incubatingApis = new LinkedHashSet<>();
-            Set<Ref> privateApis = new LinkedHashSet<>();
-            Set<Ref> deprecatedApis = new LinkedHashSet<>();
 
             for (var rootElement : roundEnv.getRootElements()) {
                 addCompilationUnit(trees, compilationUnits, rootElement);
@@ -168,6 +163,16 @@ public class ApiStabilityProcessor extends AbstractProcessor {
                     modules.add(module);
                 }
             }
+
+            if (!roundEnv.processingOver()) {
+                return false;
+            }
+
+            // deferring validation as a single pass when processing is over (as we generate nothing)
+            Set<Ref> previewApis = new LinkedHashSet<>();
+            Set<Ref> incubatingApis = new LinkedHashSet<>();
+            Set<Ref> privateApis = new LinkedHashSet<>();
+            Set<Ref> deprecatedApis = new LinkedHashSet<>();
 
             for (var unit : compilationUnits) {
                 var scanner = new ApiStabilityScanner(trees, unit);
