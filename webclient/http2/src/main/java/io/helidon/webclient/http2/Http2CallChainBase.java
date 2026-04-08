@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,6 +107,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         ClientUri uri = serviceRequest.uri();
         requestHeaders = serviceRequest.headers();
 
+        clientRequest.sanitizeRedirectHeaders(uri, requestHeaders);
         requestHeaders.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
         requestHeaders.remove(HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
         requestHeaders.setIfAbsent(USER_AGENT_HEADER);

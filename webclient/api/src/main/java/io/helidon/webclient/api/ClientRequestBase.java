@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
@@ -75,10 +76,13 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private final String protocolId;
     private final Method method;
     private final ClientUri clientUri;
+    private final ClientUri redirectSourceUri;
     private final Map<String, String> properties;
+    private final Set<HeaderName> redirectSensitiveHeaders;
     private final ClientRequestHeaders headers;
     private final String requestId;
     private final MediaContext mediaContext;
+    private final boolean filterRedirectHeaders;
 
     private SocketAddress socketAddress;
     private String uriTemplate;
@@ -109,13 +113,27 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                                 ClientUri clientUri,
                                 Boolean sendExpectContinue,
                                 Map<String, String> properties) {
+        this(clientConfig, cookieManager, protocolId, method, clientUri, sendExpectContinue, properties, null);
+    }
+
+    protected ClientRequestBase(HttpClientConfig clientConfig,
+                                WebClientCookieManager cookieManager,
+                                String protocolId,
+                                Method method,
+                                ClientUri clientUri,
+                                Boolean sendExpectContinue,
+                                Map<String, String> properties,
+                                ClientUri redirectSourceUri) {
         this.clientConfig = clientConfig;
         this.cookieManager = cookieManager;
         this.protocolId = protocolId;
         this.method = method;
         this.clientUri = clientUri;
+        this.redirectSourceUri = redirectSourceUri == null ? null : ClientUri.create(redirectSourceUri);
         this.sendExpectContinue = sendExpectContinue;
         this.properties = new HashMap<>(properties);
+        this.filterRedirectHeaders = clientConfig.filterRedirectHeaders();
+        this.redirectSensitiveHeaders = clientConfig.redirectSensitiveHeaders();
 
         this.headers = clientConfig.defaultRequestHeaders();
         this.readTimeout = clientConfig.socketOptions().readTimeout();
@@ -471,6 +489,18 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     /**
+     * Remove headers that must not cross redirect trust boundaries.
+     *
+     * @param requestUri URI that will be used for the request
+     * @param requestHeaders headers to sanitize
+     */
+    protected final void sanitizeRedirectSensitiveHeaders(ClientUri requestUri, ClientRequestHeaders requestHeaders) {
+        if (filterRedirectHeaders && redirectSourceUri != null && !sameOrigin(redirectSourceUri, requestUri)) {
+            redirectSensitiveHeaders.forEach(requestHeaders::remove);
+        }
+    }
+
+    /**
      * Media context configured for this request.
      *
      * @return media context
@@ -501,6 +531,12 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private static String nextRequestId(String protocolId) {
         AtomicLong counter = COUNTERS.computeIfAbsent(protocolId, it -> new AtomicLong());
         return "client-" + protocolId + "-" + Long.toHexString(counter.getAndIncrement());
+    }
+
+    private static boolean sameOrigin(ClientUri sourceUri, ClientUri targetUri) {
+        return sourceUri.scheme().equalsIgnoreCase(targetUri.scheme())
+                && sourceUri.host().equalsIgnoreCase(targetUri.host())
+                && sourceUri.port() == targetUri.port();
     }
 
     private R validateAndSubmit(Object entity) {
