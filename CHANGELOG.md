@@ -11,6 +11,54 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.4.1]
+
+This release of Helidon contains important bug and performance fixes and is strongly recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
+
+### CHANGES
+
+- Config: Fix for ProvidedUtil ordering [11334](https://github.com/helidon-io/helidon/pull/11334)
+- Config: Restore env-backed nested config nodes [11545](https://github.com/helidon-io/helidon/pull/11545)
+- DBClient: Apply DbMapper to MongoDB DML statements [11405](https://github.com/helidon-io/helidon/pull/11405)
+- Declarative: Fix problems enabling request scope in the Webserver [11368](https://github.com/helidon-io/helidon/pull/11368)
+- Declarative: Fix raw types in declarative code generator [11559](https://github.com/helidon-io/helidon/pull/11559)
+- Discovery: Discover services not working in inherited blueprints [11438](https://github.com/helidon-io/helidon/pull/11438)
+- HTTP: 11435: Prevent extra data requests on zero-length reads [11436](https://github.com/helidon-io/helidon/pull/11436)
+- HTTP: Avoid expansion of bit set [11390](https://github.com/helidon-io/helidon/pull/11390)
+- HTTP: Handle tokenized HTTP header values and fix HTTP/1 redirect probe framing
+- HTTP: Make keep-alive response header configurable [11448](https://github.com/helidon-io/helidon/pull/11448)
+- HTTP/2: Add support for SSE over HTTP/2 [11506](https://github.com/helidon-io/helidon/pull/11506)
+- HTTP/2: Fix HTTP/2 client ping handling [11442](https://github.com/helidon-io/helidon/pull/11442)
+- HTTP/2: Fix HTTP/2 Set-Cookie header folding [11544](https://github.com/helidon-io/helidon/pull/11544)
+- JSON: Double and BigDecimal parsing fixed for streams [11329](https://github.com/helidon-io/helidon/pull/11329)
+- JSON: HTTP Media Support JSON Smile rename [11566](https://github.com/helidon-io/helidon/pull/11566)
+- JSON: Json improvements and fixes [11451](https://github.com/helidon-io/helidon/pull/11451)
+- JSON: Smile format implementation [11318](https://github.com/helidon-io/helidon/pull/11318)
+- LC4J: Add TLS support to LangChain4j MCP client config [11363](https://github.com/helidon-io/helidon/pull/11363)
+- Media: Fix MapperManager service caching [11402](https://github.com/helidon-io/helidon/pull/11402)
+- Metrics: backport options metrics feature fix [11314](https://github.com/helidon-io/helidon/pull/11314)
+- Tests: Add request delay filter for optional metrics async TCK endpoint [11297](https://github.com/helidon-io/helidon/pull/11297)
+- Tests: Add test to make sure validation fails when constraint is declared on private element [11374](https://github.com/helidon-io/helidon/pull/11374)
+- Tests: Intermittent DbClient MapperTest failure [11437](https://github.com/helidon-io/helidon/pull/11437)
+- Tests: Replace usage of io.helidon.build.common.test.utils.JUnitLauncher with EngineKit [11351](https://github.com/helidon-io/helidon/pull/11351)
+- Tests: Stabilize HTTP/2 ContentLengthTest [11411](https://github.com/helidon-io/helidon/pull/11411)
+- Tests: Stabilize JMS AckMpTest redelivery test [11327](https://github.com/helidon-io/helidon/pull/11327)
+- Tracing: Change 'requires' to 'requires static' for features API [11392](https://github.com/helidon-io/helidon/pull/11392)
+- WebClient: Header propagation fix
+- WebServer: Fix access log year format. [11375](https://github.com/helidon-io/helidon/pull/11375)
+- WebServer: Issuer validation fix
+- WebServer: NioSocket partial read [11384](https://github.com/helidon-io/helidon/pull/11384)
+- WebSocket: Correctly handle default origin logic in Websockets [11421](https://github.com/helidon-io/helidon/pull/11421)
+- WebSocket: Preserve Tyrus handshake rejection headers in websocket upgrade failu… [11530](https://github.com/helidon-io/helidon/pull/11530)
+- WebSocket: Proper handling of server-rejected WS upgrades [11385](https://github.com/helidon-io/helidon/pull/11385)
+- Cleanup: Replace internal usage of Config.map and Config.mapList [11304](https://github.com/helidon-io/helidon/pull/11304)
+- Dependencies: Upgrade Netty to 4.1.132.Final [11416](https://github.com/helidon-io/helidon/pull/11416)
+- Docs: Add documentation for declarative Health. [11371](https://github.com/helidon-io/helidon/pull/11371)
+- Docs: Lc4j provider docs [11332](https://github.com/helidon-io/helidon/pull/11332)
+
+
 ## [4.4.0]
 
 This minor release of Helidon contains important bugfixes and enhancements and is recommended for all users of Helidon 4.
@@ -2497,7 +2545,8 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
-[4.4.0]: https://github.com/oracle/helidon/compare/4.4.0...4.3.4
+[4.4.1]: https://github.com/oracle/helidon/compare/4.4.0...4.4.1
+[4.4.0]: https://github.com/oracle/helidon/compare/4.3.4...4.4.0
 [4.3.4]: https://github.com/oracle/helidon/compare/4.3.3...4.3.4
 [4.3.3]: https://github.com/oracle/helidon/compare/4.3.2...4.3.3
 [4.3.2]: https://github.com/oracle/helidon/compare/4.3.1...4.3.2
