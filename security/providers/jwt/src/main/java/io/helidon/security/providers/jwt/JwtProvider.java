@@ -77,6 +77,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
     private final TokenHandler defaultTokenHandler;
     private final JwkKeys verifyKeys;
     private final String expectedAudience;
+    private final String expectedIssuer;
     private final JwkKeys signKeys;
     private final OutboundConfig outboundConfig;
     private final String issuer;
@@ -96,6 +97,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         this.signKeys = builder.signKeys;
         this.issuer = builder.issuer;
         this.expectedAudience = builder.expectedAudience;
+        this.expectedIssuer = builder.expectedIssuer;
         this.verifySignature = builder.verifySignature;
         this.useJwtGroups = builder.useJwtGroups;
 
@@ -115,7 +117,8 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         }
 
         if (!verifySignature) {
-            LOGGER.log(Level.INFO, "JWT Signature validation is disabled. Any JWT will be accepted.");
+            LOGGER.log(Level.INFO,
+                       "JWT signature validation is disabled. JWT claims will still be validated.");
         }
     }
 
@@ -178,29 +181,32 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         }
         if (verifySignature) {
             Errors errors = signedJwt.verifySignature(verifyKeys, defaultJwk);
-            if (errors.isValid()) {
-                Jwt jwt = signedJwt.getJwt();
-                // perform all validations, including expected audience verification
-                JwtValidator.Builder jwtValidatorBuilder = JwtValidator.builder()
-                        .addDefaultTimeValidators()
-                        .addCriticalValidator()
-                        .addUserPrincipalValidator();
-                if (expectedAudience != null) {
-                    jwtValidatorBuilder.addAudienceValidator(expectedAudience);
-                }
-                JwtValidator jwtValidator =  jwtValidatorBuilder.build();
-                Errors validate = jwtValidator.validate(jwt);
-                if (validate.isValid()) {
-                    return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
-                } else {
-                    return failOrAbstain(validate.toString());
-                }
-            } else {
+            if (!errors.isValid()) {
                 return failOrAbstain(errors.toString());
             }
-        } else {
-            return AuthenticationResponse.success(buildSubject(signedJwt.getJwt(), signedJwt));
         }
+
+        Jwt jwt = signedJwt.getJwt();
+        Errors validate = validateJwt(jwt);
+        if (!validate.isValid()) {
+            return failOrAbstain(validate.toString());
+        }
+        return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
+    }
+
+    private Errors validateJwt(Jwt jwt) {
+        JwtValidator.Builder jwtValidatorBuilder = JwtValidator.builder()
+                .addDefaultTimeValidators()
+                .addCriticalValidator()
+                .addUserPrincipalValidator();
+        if (expectedAudience != null) {
+            jwtValidatorBuilder.addAudienceValidator(expectedAudience);
+        }
+        if (expectedIssuer != null) {
+            jwtValidatorBuilder.addIssuerValidator(expectedIssuer);
+        }
+        JwtValidator jwtValidator = jwtValidatorBuilder.build();
+        return jwtValidator.validate(jwt);
     }
 
     private AuthenticationResponse failOrAbstain(String message) {
@@ -663,6 +669,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         private JwkKeys signKeys;
         private String issuer;
         private String expectedAudience;
+        private String expectedIssuer;
         private boolean useJwtGroups = true;
 
         private Builder() {
@@ -739,7 +746,8 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
          * <p>
          * <b>Make sure your service is properly secured on network level and only
          * accessible from a secure endpoint that provides the JWTs when signature verification
-         * is disabled. If signature verification is disabled, this service will accept <i>ANY</i> JWT</b>
+         * is disabled. If signature verification is disabled, configured claim validation still applies,
+         * but signatures are not checked.</b>
          *
          * @param shouldValidate set to false to disable validation of JWT signatures
          * @return updated builder instance
@@ -876,6 +884,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             if (atnToken.exists()) {
                 verifyKeys(atnToken);
                 atnToken.get("jwt-audience").asString().ifPresent(this::expectedAudience);
+                atnToken.get("jwt-issuer").asString().ifPresent(this::expectedIssuer);
                 atnToken.get("verify-signature").asBoolean().ifPresent(this::verifySignature);
             }
             Config signToken = config.get("sign-token");
@@ -897,6 +906,17 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         @ConfiguredOption(key = "atn-token.jwt-audience")
         public void expectedAudience(String audience) {
             this.expectedAudience = audience;
+        }
+
+        /**
+         * Issuer expected in inbound JWTs.
+         *
+         * @param issuer issuer string
+         */
+        @ConfiguredOption(key = "atn-token.jwt-issuer")
+        public Builder expectedIssuer(String issuer) {
+            this.expectedIssuer = issuer;
+            return this;
         }
 
         /**
