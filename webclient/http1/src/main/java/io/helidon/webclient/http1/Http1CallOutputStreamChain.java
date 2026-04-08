@@ -489,10 +489,10 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 }
                 lastUri = redirectUri;
                 connection.releaseResource();
-                Http1ClientRequestImpl clientRequest = new Http1ClientRequestImpl(originalRequest,
+                Http1ClientRequestImpl clientRequest = new Http1ClientRequestImpl(lastRequest,
                                                                                   method,
                                                                                   redirectUri,
-                                                                                  request.properties());
+                                                                                  lastRequest.properties());
                 Http1ClientResponseImpl response;
                 if (sendEntity) {
                     response = (Http1ClientResponseImpl) clientRequest

@@ -106,6 +106,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         ClientUri uri = serviceRequest.uri();
         requestHeaders = serviceRequest.headers();
 
+        clientRequest.sanitizeRedirectHeaders(uri, requestHeaders);
         requestHeaders.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
         requestHeaders.remove(HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
         requestHeaders.setIfAbsent(USER_AGENT_HEADER);
