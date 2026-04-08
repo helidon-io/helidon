@@ -97,7 +97,8 @@ class MainGenerator {
                     .addContentLine(".builder().runLevels(RUN_LEVELS).build();");
         }
 
-        method.addContent("var manager = ")
+        method.addContent(SERVICE_REGISTRY_MANAGER)
+                .addContent(" manager = ")
                 .addContent(SERVICE_REGISTRY_MANAGER)
                 .addContent(".start(");
 

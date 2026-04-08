@@ -49,6 +49,18 @@
             <artifactId>helidon-codegen-class-model</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-api-stability</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-testing</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
@@ -59,5 +71,17 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <proc>none</proc>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
