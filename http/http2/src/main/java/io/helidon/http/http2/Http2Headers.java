@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -445,12 +445,21 @@ public class Http2Headers {
         }
 
         for (Header header : headers) {
-            // send all values of the header
-            String value = header.values();
+            HeaderName headerName = header.headerName();
             boolean shouldIndex = !header.changing();
             boolean neverIndex = header.sensitive();
 
-            writeHeader(huffman, table, growingBuffer, header.headerName(), value, shouldIndex, neverIndex);
+            // check count to call header.get() instead of header.allValues()
+            if (header.valueCount() == 1) {
+                writeHeader(huffman, table, growingBuffer, headerName, header.get(), shouldIndex, neverIndex);
+            } else if (headerName == HeaderNames.SET_COOKIE) {      // cannot combine, commas allowed
+                for (String value : header.allValues()) {
+                    writeHeader(huffman, table, growingBuffer, headerName, value, shouldIndex, neverIndex);
+                }
+            } else {
+                String value = header.values();         // send all combined values in single header
+                writeHeader(huffman, table, growingBuffer, headerName, value, shouldIndex, neverIndex);
+            }
         }
     }
 
