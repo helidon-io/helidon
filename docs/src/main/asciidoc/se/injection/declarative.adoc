@@ -295,6 +295,7 @@ Constraints for types that extend `java.lang.Number`. These constraints accept a
 - link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Number.Min.html[`io.helidon.validation.Validation.Number.Min`] - the value must be at least the specified minimal value (`>= min`), value is defined as a `String`
 - link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Number.Max.html[`io.helidon.validation.Validation.Number.Max`] - the value must be at most the specified maximal value (`&lt;= max`), value is defined as a `String`
 - link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Number.Digits.html[`io.helidon.validation.Validation.Number.Digits`] - the number must have at most the specified number of integer and fractional digits
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Number.MultipleOf.html[`io.helidon.validation.Validation.Number.MultipleOf`] - the value must be evenly divisible by the specified positive factor, which is defined as a `String`
 
 Constraints for `Integer` data types. These constraints accept `int, long, byte, char, short` and their boxed counterparts.
 `byte` is always converted as an unsigned number, i.e. its values are from `0` to `255` inclusive.
@@ -302,11 +303,13 @@ These are convenience annotation that use `int` data type:
 
 - link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Integer.Min.html[`io.helidon.validation.Validation.Integer.Min`] - the value must be at least the specified minimal value (`>= min`)
 - link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Integer.Max.html[`io.helidon.validation.Validation.Integer.Max`] - the value must be at most the specified maximal value (`&lt;= max`)
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Integer.MultipleOf.html[`io.helidon.validation.Validation.Integer.MultipleOf`] - the value must be evenly divisible by the specified positive integer factor
 
 Constraints for `Long` and `long` data types. No other type is supported:
 
 - link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Long.Min.html[`io.helidon.validation.Validation.Long.Min`] - the value must be at least the specified minimal value (`>= min`)
 - link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Long.Max.html[`io.helidon.validation.Validation.Long.Max`] - the value must be at most the specified maximal value (`&lt;= max`)
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Long.MultipleOf.html[`io.helidon.validation.Validation.Long.MultipleOf`] - the value must be evenly divisible by the specified positive long factor
 
 Constraints for `Boolean` and `boolean` data type. No other type is supported:
 
@@ -605,4 +608,3 @@ include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_18, indent=0]
 
 To add a declarative health check, create a service that implements io.helidon.health.HealthCheck or produces an instance of it.
 The WebServer health observer discovers all such services and uses them to contribute to the health response. Because the lookup is performed only once, you must not use the @Service.PerRequest scope. The recommended scope is @Service.Singleton.
-

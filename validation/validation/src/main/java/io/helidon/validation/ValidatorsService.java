@@ -67,10 +67,13 @@ class ValidatorsService {
     private final ConstraintValidatorProvider numberMinProvider;
     private final ConstraintValidatorProvider numberMaxProvider;
     private final ConstraintValidatorProvider numberDigitsProvider;
+    private final ConstraintValidatorProvider numberMultipleOfProvider;
     private final ConstraintValidatorProvider integerMinProvider;
     private final ConstraintValidatorProvider integerMaxProvider;
+    private final ConstraintValidatorProvider integerMultipleOfProvider;
     private final ConstraintValidatorProvider longMinProvider;
     private final ConstraintValidatorProvider longMaxProvider;
+    private final ConstraintValidatorProvider longMultipleOfProvider;
     private final ConstraintValidatorProvider collectionSizeProvider;
     private final ConstraintValidatorProvider calendarFutureProvider;
     private final ConstraintValidatorProvider calendarFutureOrPresentProvider;
@@ -92,10 +95,13 @@ class ValidatorsService {
             @NamedByType(Validation.Number.Min.class) ConstraintValidatorProvider numberMinProvider,
             @NamedByType(Validation.Number.Max.class) ConstraintValidatorProvider numberMaxProvider,
             @NamedByType(Validation.Number.Digits.class) ConstraintValidatorProvider numberDigitsProvider,
+            @NamedByType(Validation.Number.MultipleOf.class) ConstraintValidatorProvider numberMultipleOfProvider,
             @NamedByType(Validation.Integer.Min.class) ConstraintValidatorProvider integerMinProvider,
             @NamedByType(Validation.Integer.Max.class) ConstraintValidatorProvider integerMaxProvider,
+            @NamedByType(Validation.Integer.MultipleOf.class) ConstraintValidatorProvider integerMultipleOfProvider,
             @NamedByType(Validation.Long.Min.class) ConstraintValidatorProvider longMinProvider,
             @NamedByType(Validation.Long.Max.class) ConstraintValidatorProvider longMaxProvider,
+            @NamedByType(Validation.Long.MultipleOf.class) ConstraintValidatorProvider longMultipleOfProvider,
             @NamedByType(Validation.Boolean.True.class) ConstraintValidatorProvider booleanTrueProvider,
             @NamedByType(Validation.Boolean.False.class) ConstraintValidatorProvider booleanFalseProvider,
             @NamedByType(Validation.Calendar.Future.class) ConstraintValidatorProvider calendarFutureProvider,
@@ -144,10 +150,13 @@ class ValidatorsService {
         this.numberMinProvider = numberMinProvider;
         this.numberMaxProvider = numberMaxProvider;
         this.numberDigitsProvider = numberDigitsProvider;
+        this.numberMultipleOfProvider = numberMultipleOfProvider;
         this.integerMinProvider = integerMinProvider;
         this.integerMaxProvider = integerMaxProvider;
+        this.integerMultipleOfProvider = integerMultipleOfProvider;
         this.longMinProvider = longMinProvider;
         this.longMaxProvider = longMaxProvider;
+        this.longMultipleOfProvider = longMultipleOfProvider;
         this.calendarFutureProvider = calendarFutureProvider;
         this.calendarFutureOrPresentProvider = calendarFutureOrPresentProvider;
         this.calendarPastProvider = calendarPastProvider;
@@ -238,6 +247,15 @@ class ValidatorsService {
         ctx.check(validator, value);
     }
 
+    void validateNumberMultipleOf(ValidationContext ctx, Number value, String factor) {
+        Annotation annotation = Annotation.builder()
+                .typeName(TypeName.create(Validation.Number.MultipleOf.class))
+                .value(factor)
+                .build();
+        ConstraintValidator validator = numberMultipleOfProvider.create(NUMBER_TYPE, annotation);
+        ctx.check(validator, value);
+    }
+
     void validateIntegerMin(ValidationContext ctx, Integer value, int minValue) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.Min.class))
@@ -256,6 +274,15 @@ class ValidatorsService {
         ctx.check(validator, value);
     }
 
+    void validateIntegerMultipleOf(ValidationContext ctx, Integer value, int factor) {
+        Annotation annotation = Annotation.builder()
+                .typeName(TypeName.create(Validation.Integer.MultipleOf.class))
+                .property("value", factor)
+                .build();
+        ConstraintValidator validator = integerMultipleOfProvider.create(TypeNames.BOXED_INT, annotation);
+        ctx.check(validator, value);
+    }
+
     void validateLongMin(ValidationContext ctx, Long value, long minValue) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.Min.class))
@@ -271,6 +298,15 @@ class ValidatorsService {
                 .property("value", maxValue)
                 .build();
         ConstraintValidator validator = longMaxProvider.create(TypeNames.BOXED_LONG, annotation);
+        ctx.check(validator, value);
+    }
+
+    void validateLongMultipleOf(ValidationContext ctx, Long value, long factor) {
+        Annotation annotation = Annotation.builder()
+                .typeName(TypeName.create(Validation.Long.MultipleOf.class))
+                .property("value", factor)
+                .build();
+        ConstraintValidator validator = longMultipleOfProvider.create(TypeNames.BOXED_LONG, annotation);
         ctx.check(validator, value);
     }
 
