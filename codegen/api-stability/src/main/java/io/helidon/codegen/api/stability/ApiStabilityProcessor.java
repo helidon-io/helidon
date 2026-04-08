@@ -375,12 +375,13 @@ public class ApiStabilityProcessor extends AbstractProcessor {
             action = previewAction;
         }
 
-        Diagnostic.Kind kind = action == Action.WARN ? Diagnostic.Kind.WARNING : Diagnostic.Kind.ERROR;
+        Diagnostic.Kind kind = action == Action.WARN ? Diagnostic.Kind.MANDATORY_WARNING : Diagnostic.Kind.ERROR;
+        String severity = action == Action.WARN ? "WARNING" : "ERROR";
 
         messager.printMessage(kind, "Usage of Helidon APIs annotated with "
                 + meta.displayName() + ". " + meta.warning());
 
-        messager.printMessage(kind, "This " + kind
+        messager.printMessage(kind, "This " + severity
                 + " can be suppressed with " + suppressionMessage(meta)
                 + " or "
                 + "compiler argument -A" + meta.compilerOption().name() + "=ignore");

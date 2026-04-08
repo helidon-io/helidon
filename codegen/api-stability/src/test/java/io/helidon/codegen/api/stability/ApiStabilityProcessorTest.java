@@ -44,6 +44,7 @@ import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
@@ -203,8 +204,8 @@ public class ApiStabilityProcessorTest {
         assertThat(result.success(), is(true));
         var messages = result.diagnostics();
 
-        assertThat(messages, hasItem(containsString("warning: Usage of Helidon APIs annotated with @Api.Internal")));
-        assertThat(messages, hasItem(containsString("warning: Usage of Helidon APIs annotated with @Api.Incubating")));
+        assertWarnDiagnostic(messages, "@Api.Internal");
+        assertWarnDiagnostic(messages, "@Api.Incubating");
         assertThat(messages, not(hasItem(containsString("error: Usage of Helidon APIs annotated with @Api.Internal"))));
         assertThat(messages, not(hasItem(containsString("error: Usage of Helidon APIs annotated with @Api.Incubating"))));
     }
@@ -418,7 +419,7 @@ public class ApiStabilityProcessorTest {
         assertThat(result.success(), is(true));
         assertThat("Messages: " + messages,
                    messages,
-                   hasItem(containsString("warning: Usage of Helidon APIs annotated with @Api.Internal")));
+                   hasItem(warnDiagnostic("@Api.Internal")));
         assertThat(countContaining(messages, "/UsesInternalApi.java:["), is(1));
     }
 
@@ -456,7 +457,7 @@ public class ApiStabilityProcessorTest {
         var messages = result.diagnostics();
 
         assertThat(result.success(), is(true));
-        assertThat(messages, hasItem(containsString("warning: Usage of Helidon APIs annotated with @Api.Incubating")));
+        assertThat(messages, hasItem(warnDiagnostic("@Api.Incubating")));
         assertThat(messages, hasItem(containsString("incubatingMethod() is incubating API")));
         assertThat(countContaining(messages, "/UsesStableApi.java:["), is(1));
     }
@@ -720,8 +721,8 @@ public class ApiStabilityProcessorTest {
                 .compile();
         var messages = result.diagnostics();
 
-        assertThat(messages, hasItem(containsString("warning: Usage of Helidon APIs annotated with @Api.Preview")));
-        assertThat(messages, hasItem(containsString("warning: Usage of Helidon APIs annotated with @Deprecated")));
+        assertThat(messages, hasItem(warnDiagnostic("@Api.Preview")));
+        assertThat(messages, hasItem(warnDiagnostic("@Deprecated")));
         assertThat(countContaining(messages, "/UsesApis.java:["), is(2));
     }
 
@@ -887,6 +888,18 @@ public class ApiStabilityProcessorTest {
             }
         }
         return count;
+    }
+
+    private static void assertWarnDiagnostic(List<String> messages, String annotation) {
+        assertThat(messages, hasItem(warnDiagnostic(annotation)));
+    }
+
+    private static org.hamcrest.Matcher<String> warnDiagnostic(String annotation) {
+        return allOf(
+                containsString("Usage of Helidon APIs annotated with " + annotation),
+                containsString("warning"),
+                not(containsString("error:"))
+        );
     }
 
     private static List<Path> paths(Class<?>... classes) {
