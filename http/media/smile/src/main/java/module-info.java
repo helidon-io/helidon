@@ -16,9 +16,10 @@
 
 import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.http.media.json.smile.SmileMediaSupportProvider;
 
 /**
- * Smile Media Support.
+ * JSON Smile Media Support.
  * Provides Smile media type support for HTTP requests and responses,
  * enabling automatic serialization and deserialization of Smile data.
  */
@@ -26,7 +27,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Smile media support")
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"Media", "Smile"})
-module io.helidon.http.media.smile {
+module io.helidon.http.media.json.smile {
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
@@ -39,8 +40,8 @@ module io.helidon.http.media.smile {
 
     requires transitive io.helidon.config;
 
-    exports io.helidon.http.media.smile;
+    exports io.helidon.http.media.json.smile;
 
     provides io.helidon.http.media.spi.MediaSupportProvider
-            with io.helidon.http.media.smile.SmileMediaSupportProvider;
+            with SmileMediaSupportProvider;
 }

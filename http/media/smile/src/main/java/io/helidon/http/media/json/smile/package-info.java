@@ -15,8 +15,8 @@
  */
 
 /**
- * Smile media support.
+ * JSON Smile media support.
  *
- * @see io.helidon.http.media.smile.SmileSupport
+ * @see io.helidon.http.media.json.smile.SmileSupport
  */
-package io.helidon.http.media.smile;
+package io.helidon.http.media.json.smile;
