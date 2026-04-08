@@ -122,7 +122,8 @@ final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                                             Predicate<TypedElementInfo> elementPredicate) throws IllegalArgumentException {
 
         return AptTypeFactory.createTypeName(typeElement.asType())
-                .flatMap(it -> create(ctx, typeElement, elementPredicate, it));
+                .flatMap(it -> create(ctx, typeElement, elementPredicate, it))
+                .flatMap(it -> mapType(ctx, it));
     }
 
     /**
