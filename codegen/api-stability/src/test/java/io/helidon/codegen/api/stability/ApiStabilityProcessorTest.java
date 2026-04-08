@@ -16,6 +16,11 @@
 
 package io.helidon.codegen.api.stability;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.io.Writer;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -29,8 +34,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
+import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 
@@ -803,6 +811,49 @@ public class ApiStabilityProcessorTest {
         assertThat(messages, empty());
     }
 
+    @Test
+    void testGeneratedTypeUsedFromVarInitializer() {
+        var result = TestCompiler.builder()
+                .addProcessor(new GenerateBindingProcessor())
+                .addProcessor(new ApiStabilityProcessor())
+                .addClasspath(ApiStabilityProcessorTest.class)
+                .currentRelease()
+                .addOption("-Xlint:none")
+                .addSource("Binding.java", """
+                        package com.example;
+
+                        interface Binding {
+                        }
+                        """)
+                .addSource("Manager.java", """
+                        package com.example;
+
+                        final class Manager {
+                            static Manager start(Binding binding) {
+                                return new Manager();
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.codegen.api.stability.ApiStabilityProcessorTest.GenerateBinding;
+
+                        @GenerateBinding
+                        final class Main {
+                            void run() {
+                                var manager = Manager.start(ApplicationBinding.create());
+                                manager.toString();
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.success(), is(true));
+        assertThat(result.diagnostics(), empty());
+    }
+
     private static List<String> compileModule(Processor processor,
                                               List<Path> modulePath,
                                               List<String> compilerArguments,
@@ -981,6 +1032,52 @@ public class ApiStabilityProcessorTest {
 
     private static String currentRelease() {
         return String.valueOf(Runtime.version().feature());
+    }
+
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface GenerateBinding {
+    }
+
+    static final class GenerateBindingProcessor extends AbstractProcessor {
+        private boolean generated;
+
+        @Override
+        public Set<String> getSupportedAnnotationTypes() {
+            return Set.of(GenerateBinding.class.getCanonicalName());
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latestSupported();
+        }
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            if (generated || roundEnv.processingOver() || annotations.isEmpty()) {
+                return false;
+            }
+
+            try {
+                JavaFileObject sourceFile = processingEnv.getFiler().createSourceFile("com.example.ApplicationBinding");
+                try (Writer writer = sourceFile.openWriter()) {
+                    writer.write("""
+                            package com.example;
+
+                            final class ApplicationBinding implements Binding {
+                                static ApplicationBinding create() {
+                                    return new ApplicationBinding();
+                                }
+                            }
+                            """);
+                }
+                generated = true;
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to generate ApplicationBinding", e);
+            }
+
+            return false;
+        }
     }
 
     private static class JavaSourceFromString extends SimpleJavaFileObject {
