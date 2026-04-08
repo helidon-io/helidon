@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.function.Supplier;
  *
  * @param <T> type of the provided object
  */
+@Api.Stable
 public interface LazyValue<T> extends Supplier<T> {
     /**
      * Create a lazy value from a supplier.

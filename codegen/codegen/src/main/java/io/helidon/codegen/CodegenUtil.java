@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public final class CodegenUtil {
      * @return name with the first character as capital letter
      */
     public static String capitalize(String name) {
-        if (name.isBlank() || name.isEmpty()) {
+        if (name.isBlank()) {
             return name;
         }
         char first = name.charAt(0);

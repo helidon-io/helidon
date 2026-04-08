@@ -23,6 +23,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 
 /**
@@ -31,6 +32,7 @@ import io.helidon.common.GenericType;
  *
  * @param <T> type of the value
  */
+@Api.Stable
 public interface Value<T> {
     /**
      * Create a value backed by data. The type of the value is "guessed" from the instance provided.

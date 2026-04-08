@@ -282,6 +282,14 @@
             <artifactId>helidon-codegen-helidon-copyright</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-api-stability</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-api-stability-enforcer</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.testing</groupId>
             <artifactId>helidon-testing</artifactId>
         </dependency>

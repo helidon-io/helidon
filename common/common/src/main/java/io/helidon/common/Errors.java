@@ -54,6 +54,7 @@ import java.util.stream.Collectors;
  * }</pre>
  */
 @SuppressWarnings("WeakerAccess")
+@Api.Stable
 public final class Errors extends LinkedList<Errors.ErrorMessage> {
     private static final Set<StackWalker.Option> WALKER_OPTIONS =
             Set.of(StackWalker.Option.RETAIN_CLASS_REFERENCE);
@@ -195,6 +196,7 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
     /**
      * A collector of {@link ErrorMessage}s. Use method {@link #collect()} to obtain {@link Errors} instance.
      */
+    @Api.Stable
     public static class Collector {
         private final List<ErrorMessage> errors = new LinkedList<>();
         private boolean hasFatal;
@@ -350,6 +352,7 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
      * Exception used by {@link Errors#checkValid()} thrown in case there are fatal messages.
      * This exception provides access to all the messages of {@link Errors} that created it.
      */
+    @Api.Stable
     public static final class ErrorMessagesException extends RuntimeException {
         /**
          * List of error messages that triggered this exception.
@@ -376,6 +379,7 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
      * Error message with a severity and a source.
      * Used from {@link Errors}.
      */
+    @Api.Stable
     public static class ErrorMessage {
 
         private final Object source;
