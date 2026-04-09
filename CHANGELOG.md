@@ -49,13 +49,8 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 - Messaging: KafkaMessage.of missing producer nack support [11609](https://github.com/helidon-io/helidon/pull/11609)
 - Metrics: backport options metrics feature fix [11314](https://github.com/helidon-io/helidon/pull/11314)
 - Telemetry: Avoid multiple assignments of global OpenTelemetry instance [11572](https://github.com/helidon-io/helidon/pull/11572)
-- Tests: Add request delay filter for optional metrics async TCK endpoint [11297](https://github.com/helidon-io/helidon/pull/11297)
-- Tests: Add test to make sure validation fails when constraint is declared on private element [11374](https://github.com/helidon-io/helidon/pull/11374)
-- Tests: Intermittent DbClient MapperTest failure [11437](https://github.com/helidon-io/helidon/pull/11437)
-- Tests: Replace usage of io.helidon.build.common.test.utils.JUnitLauncher with EngineKit [11351](https://github.com/helidon-io/helidon/pull/11351)
-- Tests: Stabilize HTTP/2 ContentLengthTest [11411](https://github.com/helidon-io/helidon/pull/11411)
-- Tests: Stabilize JMS AckMpTest redelivery test [11327](https://github.com/helidon-io/helidon/pull/11327)
 - Tracing: Change 'requires' to 'requires static' for features API [11392](https://github.com/helidon-io/helidon/pull/11392)
+- Validation: Add validation support for MultipleOf constraints [11615](https://github.com/helidon-io/helidon/pull/11615)
 - WebClient: Header propagation fix
 - WebServer: Fix access log year format. [11375](https://github.com/helidon-io/helidon/pull/11375)
 - WebServer: NioSocket partial read [11384](https://github.com/helidon-io/helidon/pull/11384)
@@ -66,6 +61,12 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 - Dependencies: Upgrade Netty to 4.1.132.Final [11416](https://github.com/helidon-io/helidon/pull/11416)
 - Docs: Add documentation for declarative Health. [11371](https://github.com/helidon-io/helidon/pull/11371)
 - Docs: Lc4j provider docs [11332](https://github.com/helidon-io/helidon/pull/11332)
+- Tests: Add request delay filter for optional metrics async TCK endpoint [11297](https://github.com/helidon-io/helidon/pull/11297)
+- Tests: Add test to make sure validation fails when constraint is declared on private element [11374](https://github.com/helidon-io/helidon/pull/11374)
+- Tests: Intermittent DbClient MapperTest failure [11437](https://github.com/helidon-io/helidon/pull/11437)
+- Tests: Replace usage of io.helidon.build.common.test.utils.JUnitLauncher with EngineKit [11351](https://github.com/helidon-io/helidon/pull/11351)
+- Tests: Stabilize HTTP/2 ContentLengthTest [11411](https://github.com/helidon-io/helidon/pull/11411)
+- Tests: Stabilize JMS AckMpTest redelivery test [11327](https://github.com/helidon-io/helidon/pull/11327)
 
 
 ## [4.4.0]
