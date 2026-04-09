@@ -912,6 +912,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
          * Issuer expected in inbound JWTs.
          *
          * @param issuer issuer string
+         * @return updated builder instance
          */
         @ConfiguredOption(key = "atn-token.jwt-issuer")
         public Builder expectedIssuer(String issuer) {
