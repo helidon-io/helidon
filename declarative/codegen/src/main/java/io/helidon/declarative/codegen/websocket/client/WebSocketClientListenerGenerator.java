@@ -124,17 +124,22 @@ class WebSocketClientListenerGenerator extends AbstractParametersProvider {
                 .addContentLine("this.endpoint = endpoint;");
 
         for (var pathParam : pathParams.entrySet()) {
+            String userFieldName = userVariableName(pathParam.getKey());
             classModel.addField(field -> field
-                    .name("user__" + pathParam.getKey())
+                    .name(userFieldName)
                     .type(pathParam.getValue())
                     .isFinal(true)
                     .accessModifier(AccessModifier.PRIVATE)
             );
             ctr.addParameter(param -> param
-                            .name("user__" + pathParam.getKey())
+                            .name(userFieldName)
                             .type(pathParam.getValue())
                     )
-                    .addContentLine("this.user__" + pathParam.getKey() + " = user__" + pathParam.getKey() + ";");
+                    .addContent("this.")
+                    .addContent(userFieldName)
+                    .addContent(" = ")
+                    .addContent(userFieldName)
+                    .addContentLine(";");
         }
 
         // let's go through all the relevant methods, we just need to process `onHttpUpgrade` last, as there we will
@@ -360,10 +365,14 @@ class WebSocketClientListenerGenerator extends AbstractParametersProvider {
     }
 
     private String pathParamField(Annotation pathParamAnnotation) {
-        return "user__" + pathParamAnnotation
+        return userVariableName(pathParamAnnotation
                 .stringValue()
                 // the option is mandatory
-                .orElseThrow();
+                .orElseThrow());
+    }
+
+    private String userVariableName(String pathParamName) {
+        return "u_" + pathParamName;
     }
 
     private void binaryWithLast(Method.Builder onMessage,
