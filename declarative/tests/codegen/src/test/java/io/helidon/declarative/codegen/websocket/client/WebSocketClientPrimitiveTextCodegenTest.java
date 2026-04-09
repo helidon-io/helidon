@@ -62,7 +62,7 @@ class WebSocketClientPrimitiveTextCodegenTest {
     );
 
     @Test
-    void generatedPrimitiveTextListenerCompiles() throws IOException {
+    void generatedPrimitiveTextListenerCompilesWithoutPathParams() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
@@ -79,12 +79,8 @@ class WebSocketClientPrimitiveTextCodegenTest {
                         @SuppressWarnings("deprecation")
                         @WebSocketClient.Endpoint("ws://localhost:8080")
                         @Service.Singleton
-                        @Http.Path("/primitive/{id}")
+                        @Http.Path("/primitive")
                         class PrimitiveClientEndpoint {
-                            @WebSocket.OnOpen
-                            void onOpen(@Http.PathParam("id") String id) {
-                            }
-
                             @WebSocket.OnMessage
                             void onMessage(int message) {
                             }
@@ -108,6 +104,6 @@ class WebSocketClientPrimitiveTextCodegenTest {
 
         var factoryContent = Files.readString(generatedFactory, StandardCharsets.UTF_8);
         assertThat(factoryContent,
-                   containsString("new PrimitiveClientEndpoint__WsListener(mappers, endpointSupplier.get(), id)"));
+                   containsString("new PrimitiveClientEndpoint__WsListener(mappers, endpointSupplier.get())"));
     }
 }

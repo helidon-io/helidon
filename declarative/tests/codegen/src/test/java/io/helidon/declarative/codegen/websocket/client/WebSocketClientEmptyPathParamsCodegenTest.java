@@ -105,6 +105,6 @@ class WebSocketClientEmptyPathParamsCodegenTest {
         assertThat(factoryContent, containsString("connect(client);"));
         assertThat(factoryContent,
                    containsString("doConnect(client, Map.of(), () -> new FixedPathClientEndpoint__WsListener("
-                                          + "endpointSupplier.get()));"));
+                                          + "mappers, endpointSupplier.get()));"));
     }
 }
