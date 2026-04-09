@@ -35,6 +35,7 @@ import static io.helidon.validation.validators.IntegerMaxValidatorProvider.charT
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 30)
 class IntegerMultipleOfValidatorProvider implements ConstraintValidatorProvider {
+
     @Override
     public ConstraintValidator create(TypeName type, Annotation constraintAnnotation) {
         int factor = constraintAnnotation.intValue().orElse(0);
@@ -77,6 +78,7 @@ class IntegerMultipleOfValidatorProvider implements ConstraintValidatorProvider 
     }
 
     private static class CharValidator extends BaseValidator {
+
         private CharValidator(Annotation constraintAnnotation, int factor) {
             super(constraintAnnotation,
                   "'%1$c' (%1$d) is not a multiple of " + charToString(factor),

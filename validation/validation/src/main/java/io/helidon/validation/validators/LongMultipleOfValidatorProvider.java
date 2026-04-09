@@ -29,6 +29,7 @@ import io.helidon.validation.spi.ConstraintValidatorProvider;
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 30)
 class LongMultipleOfValidatorProvider implements ConstraintValidatorProvider {
+
     @Override
     public ConstraintValidator create(TypeName type, Annotation constraintAnnotation) {
         long factor = constraintAnnotation.longValue().orElse(0L);

@@ -32,6 +32,7 @@ import io.helidon.validation.spi.ConstraintValidatorProvider;
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 30)
 class NumberMultipleOfValidatorProvider implements ConstraintValidatorProvider {
+
     @Override
     public ConstraintValidator create(TypeName type, Annotation constraintAnnotation) {
         String multipleOf = constraintAnnotation.value().orElseThrow();
@@ -49,6 +50,7 @@ class NumberMultipleOfValidatorProvider implements ConstraintValidatorProvider {
     }
 
     private static final class ValidatorFromString extends BaseValidator {
+
         private ValidatorFromString(Annotation annotation, BigDecimal factor) {
             super(annotation,
                   "%s is not a multiple of " + factor,
@@ -70,6 +72,7 @@ class NumberMultipleOfValidatorProvider implements ConstraintValidatorProvider {
     }
 
     private static final class ValidatorFromNumber extends BaseValidator {
+
         private ValidatorFromNumber(Annotation annotation, BigDecimal factor) {
             super(annotation,
                   "%s is not a multiple of " + factor,
