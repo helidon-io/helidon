@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.validation.tests.validation;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,14 +47,17 @@ public class ValidationTest {
 
     @Test
     public void testValid() {
-        var response = service.process(new ValidatedType("good_test_value", 42));
+        var response = service.process(new ValidatedType("good_test_value", 42, new BigDecimal("1.10")));
 
         assertThat(response, is("Good"));
     }
 
     @Test
     public void testInvalidResponse() {
-        var result = assertThrows(ValidationException.class, () -> service.process(new ValidatedType("good_test_value", 43)));
+        var result = assertThrows(ValidationException.class,
+                                  () -> service.process(new ValidatedType("good_test_value",
+                                                                          43,
+                                                                          new BigDecimal("1.10"))));
 
         var violations = result.violations();
 
@@ -75,7 +79,10 @@ public class ValidationTest {
 
     @Test
     public void testInvalidParameterMinValue() {
-        var result = assertThrows(ValidationException.class, () -> service.process(new ValidatedType("good_test_value", 40)));
+        var result = assertThrows(ValidationException.class,
+                                  () -> service.process(new ValidatedType("good_test_value",
+                                                                          40,
+                                                                          new BigDecimal("1.10"))));
 
         var violations = result.violations();
 
@@ -97,7 +104,10 @@ public class ValidationTest {
 
     @Test
     public void testInvalidParameterPattern() {
-        var result = assertThrows(ValidationException.class, () -> service.process(new ValidatedType("invalid_text", 42)));
+        var result = assertThrows(ValidationException.class,
+                                  () -> service.process(new ValidatedType("invalid_text",
+                                                                          42,
+                                                                          new BigDecimal("1.10"))));
 
         var violations = result.violations();
 
@@ -119,7 +129,10 @@ public class ValidationTest {
 
     @Test
     public void testMoreViolations() {
-        var result = assertThrows(ValidationException.class, () -> service.process(new ValidatedType("invalid_text", 40)));
+        var result = assertThrows(ValidationException.class,
+                                  () -> service.process(new ValidatedType("invalid_text",
+                                                                          40,
+                                                                          new BigDecimal("1.10"))));
 
         var violations = result.violations();
 
@@ -155,7 +168,9 @@ public class ValidationTest {
     @Test
     public void testInvalidParameterList() {
         var result = assertThrows(ValidationException.class,
-                                  () -> service.process(List.of(new ValidatedType("invalid_text", 42))));
+                                  () -> service.process(List.of(new ValidatedType("invalid_text",
+                                                                                  42,
+                                                                                  new BigDecimal("1.10")))));
 
         var violations = result.violations();
 
@@ -174,6 +189,77 @@ public class ValidationTest {
         assertThat(violation.rootObject(), is(Optional.of(service)));
         assertThat(violation.rootType(), sameInstance(ValidatedService.class));
         assertThat(violation.annotation().typeName(), is(TypeName.create(Validation.String.Pattern.class)));
+    }
+
+    @Test
+    public void testNumberMultipleOf() {
+        var result = assertThrows(ValidationException.class,
+                                  () -> service.process(new ValidatedType("good_test_value",
+                                                                          42,
+                                                                          new BigDecimal("1.11"))));
+
+        var violations = result.violations();
+
+        assertThat(violations, hasSize(1));
+
+        var violation = violations.getFirst();
+        List<PathElement> location = violation.location();
+        assertThat(location, contains(PathElement.create(Location.TYPE, ValidatedService.class.getName()),
+                                      PathElement.create(Location.METHOD,
+                                                         "process(io.helidon.validation.tests.validation.ValidatedType)"),
+                                      PathElement.create(Location.PARAMETER, "type"),
+                                      PathElement.create(Location.TYPE, ValidatedType.class.getName()),
+                                      PathElement.create(Location.RECORD_COMPONENT, "third")));
+        assertThat(violation.message(), containsString("is not a multiple of 0.05"));
+        assertThat(violation.rootObject(), is(Optional.of(service)));
+        assertThat(violation.rootType(), sameInstance(ValidatedService.class));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Validation.Number.MultipleOf.class)));
+    }
+
+    @Test
+    public void testIntMultipleOf() {
+        var result = assertThrows(ValidationException.class,
+                                  () -> service.process(new ValidatedMultiplesType(11, 20L)));
+
+        var violations = result.violations();
+
+        assertThat(violations, hasSize(1));
+
+        var violation = violations.getFirst();
+        List<PathElement> location = violation.location();
+        assertThat(location, contains(PathElement.create(Location.TYPE, ValidatedService.class.getName()),
+                                      PathElement.create(Location.METHOD,
+                                                         "process(io.helidon.validation.tests.validation.ValidatedMultiplesType)"),
+                                      PathElement.create(Location.PARAMETER, "type"),
+                                      PathElement.create(Location.TYPE, ValidatedMultiplesType.class.getName()),
+                                      PathElement.create(Location.RECORD_COMPONENT, "integerValue")));
+        assertThat(violation.message(), containsString("is not a multiple of 5"));
+        assertThat(violation.rootObject(), is(Optional.of(service)));
+        assertThat(violation.rootType(), sameInstance(ValidatedService.class));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Validation.Integer.MultipleOf.class)));
+    }
+
+    @Test
+    public void testLongMultipleOf() {
+        var result = assertThrows(ValidationException.class,
+                                  () -> service.process(new ValidatedMultiplesType(10, 21L)));
+
+        var violations = result.violations();
+
+        assertThat(violations, hasSize(1));
+
+        var violation = violations.getFirst();
+        List<PathElement> location = violation.location();
+        assertThat(location, contains(PathElement.create(Location.TYPE, ValidatedService.class.getName()),
+                                      PathElement.create(Location.METHOD,
+                                                         "process(io.helidon.validation.tests.validation.ValidatedMultiplesType)"),
+                                      PathElement.create(Location.PARAMETER, "type"),
+                                      PathElement.create(Location.TYPE, ValidatedMultiplesType.class.getName()),
+                                      PathElement.create(Location.RECORD_COMPONENT, "longValue")));
+        assertThat(violation.message(), containsString("is not a multiple of 10"));
+        assertThat(violation.rootObject(), is(Optional.of(service)));
+        assertThat(violation.rootType(), sameInstance(ValidatedService.class));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Validation.Long.MultipleOf.class)));
     }
 
     @Test
