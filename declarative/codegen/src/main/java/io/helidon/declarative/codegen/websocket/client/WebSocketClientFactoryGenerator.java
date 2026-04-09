@@ -173,13 +173,13 @@ class WebSocketClientFactoryGenerator {
                     pathParams.forEach((name, type) -> {
                         it.addParameter(param -> param
                                 .type(type)
-                                .name(name)
+                                .name(userVariableName(name))
                                 .description(name + " path parameter"));
                     });
                 })
                 .update(it -> addConnectInvocation(it,
                                                    "this.client",
-                                                   pathParamArguments(pathParams, false)))
+                                                   pathParamArguments(pathParams)))
         );
 
         connectWithClientMethod(generatedListener, classModel, pathParams);
@@ -212,13 +212,10 @@ class WebSocketClientFactoryGenerator {
                                       .addTypeArgument(TypeNames.STRING)
                                       .build(), "pathParameters");
 
-        // parameters
-        boolean prefixParams = pathParams.containsKey("client");
-
         for (var pathParam : pathParams.entrySet()) {
+            String userParamName = userVariableName(pathParam.getKey());
             doConnect.addContent("var ")
-                    .addContent(prefixParams ? "user_" : "")
-                    .addContent(pathParam.getKey())
+                    .addContent(userParamName)
                     .addContent(" = ");
 
             if (pathParam.getValue().equals(TypeNames.STRING)) {
@@ -239,7 +236,7 @@ class WebSocketClientFactoryGenerator {
         }
         addConnectInvocation(doConnect,
                              "client",
-                             pathParamArguments(pathParams, prefixParams));
+                             pathParamArguments(pathParams));
         classModel.addMethod(doConnect);
 
     }
@@ -254,14 +251,11 @@ class WebSocketClientFactoryGenerator {
                 .accessModifier(AccessModifier.PUBLIC)
                 .addParameter(WS_CLIENT, "client");
 
-        // parameters
-        boolean prefixParams = pathParams.containsKey("client");
-
         // add path param parameters
         pathParams.forEach((name, type) -> {
             connectWithClient.addParameter(param -> param
                     .type(type)
-                    .name(prefixParams ? "user_" + name : name)
+                    .name(userVariableName(name))
                     .description(name + " path parameter"));
         });
 
@@ -270,7 +264,7 @@ class WebSocketClientFactoryGenerator {
                     .addContent(Map.class)
                     .addContent(".of(), () -> new ")
                     .addContent(generatedListener)
-                    .addContentLine("(endpointSupplier.get()));");
+                    .addContentLine("(mappers, endpointSupplier.get()));");
         } else {
             // now for each parameter that is not a string, convert to String
             connectWithClient.addContent(Map.class)
@@ -279,7 +273,7 @@ class WebSocketClientFactoryGenerator {
                     .addContentLine("<>();");
 
             for (var pathParam : pathParams.entrySet()) {
-                String paramName = (prefixParams ? "user_" : "") + pathParam.getKey();
+                String paramName = userVariableName(pathParam.getKey());
 
                 connectWithClient.addContent("pathParams.put(")
                         .addContentLiteral(pathParam.getKey())
@@ -306,10 +300,10 @@ class WebSocketClientFactoryGenerator {
                     .addContentLine("pathParams,")
                     .addContent("() -> new ")
                     .addContent(generatedListener)
-                    .addContent("(endpointSupplier.get(), ")
+                    .addContent("(mappers, endpointSupplier.get(), ")
                     .addContent(pathParams.keySet()
                                         .stream()
-                                        .map(name -> prefixParams ? "user_" + name : name)
+                                        .map(WebSocketClientFactoryGenerator::userVariableName)
                                         .collect(Collectors.joining(", ")))
                     .addContentLine("));")
                     .decreaseContentPadding()
@@ -333,12 +327,15 @@ class WebSocketClientFactoryGenerator {
         method.addContentLine(");");
     }
 
-    private static String pathParamArguments(Map<String, TypeName> pathParams,
-                                             boolean prefixParams) {
+    private static String pathParamArguments(Map<String, TypeName> pathParams) {
         return pathParams.keySet()
                 .stream()
-                .map(name -> prefixParams ? "user_" + name : name)
+                .map(WebSocketClientFactoryGenerator::userVariableName)
                 .collect(Collectors.joining(", "));
+    }
+
+    private static String userVariableName(String pathParamName) {
+        return "u_" + pathParamName;
     }
 
     private static void handleWsClient(TypeInfo serverEndpoint, Constructor.Builder constructor) {

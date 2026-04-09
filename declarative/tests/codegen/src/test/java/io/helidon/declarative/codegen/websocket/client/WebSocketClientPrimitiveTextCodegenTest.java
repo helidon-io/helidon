@@ -44,7 +44,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-class WebSocketClientEmptyPathParamsCodegenTest {
+class WebSocketClientPrimitiveTextCodegenTest {
     @SuppressWarnings("removal")
     private static final List<Class<?>> CLASSPATH = List.of(
             Annotation.class,
@@ -64,32 +64,27 @@ class WebSocketClientEmptyPathParamsCodegenTest {
     );
 
     @Test
-    void generatedFixedPathClientFactoryCompiles() throws IOException {
+    void generatedPrimitiveTextListenerCompilesWithoutPathParams() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
                 .addProcessor(AptProcessor::new)
-                .workDir(Path.of("target/test-compiler/websocket-client-empty-path-params"))
-                .addSource("FixedPathClientEndpoint.java", """
+                .workDir(Path.of("target/test-compiler/websocket-client-primitive-text"))
+                .addSource("PrimitiveClientEndpoint.java", """
                         package com.example;
 
                         import io.helidon.http.Http;
                         import io.helidon.service.registry.Service;
                         import io.helidon.webclient.websocket.WebSocketClient;
                         import io.helidon.websocket.WebSocket;
-                        import io.helidon.websocket.WsSession;
 
                         @SuppressWarnings("deprecation")
                         @WebSocketClient.Endpoint("ws://localhost:8080")
                         @Service.Singleton
-                        @Http.Path("/fixed")
-                        class FixedPathClientEndpoint {
-                            @WebSocket.OnOpen
-                            void onOpen(WsSession session) {
-                            }
-
+                        @Http.Path("/primitive")
+                        class PrimitiveClientEndpoint {
                             @WebSocket.OnMessage
-                            void onMessage(WsSession session, String message) {
+                            void onMessage(int message) {
                             }
                         }
                         """)
@@ -99,14 +94,18 @@ class WebSocketClientEmptyPathParamsCodegenTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(true));
 
-        var generatedFactory = result.sourceOutput().resolve("com/example/FixedPathClientEndpointFactory.java");
+        var generatedListener = result.sourceOutput().resolve("com/example/PrimitiveClientEndpoint__WsListener.java");
+        assertThat(diagnostics, Files.exists(generatedListener), is(true));
+
+        var listenerContent = Files.readString(generatedListener, StandardCharsets.UTF_8);
+        assertThat(listenerContent, containsString("private final Mappers mappers;"));
+        assertThat(listenerContent, containsString("this.mappers = mappers;"));
+
+        var generatedFactory = result.sourceOutput().resolve("com/example/PrimitiveClientEndpointFactory.java");
         assertThat(diagnostics, Files.exists(generatedFactory), is(true));
 
         var factoryContent = Files.readString(generatedFactory, StandardCharsets.UTF_8);
-        assertThat(factoryContent, containsString("connect(this.client);"));
-        assertThat(factoryContent, containsString("connect(client);"));
         assertThat(factoryContent,
-                   containsString("doConnect(client, Map.of(), () -> new FixedPathClientEndpoint__WsListener("
-                                          + "mappers, endpointSupplier.get()));"));
+                   containsString("new PrimitiveClientEndpoint__WsListener(mappers, endpointSupplier.get())"));
     }
 }
