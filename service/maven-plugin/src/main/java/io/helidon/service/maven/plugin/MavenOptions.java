@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.Option;
 
 class MavenOptions implements CodegenOptions {
+    private static final String API_OPTION = "helidon.api";
+
     private final Map<String, String> options;
 
     private MavenOptions(Map<String, String> options) {
@@ -65,6 +67,7 @@ class MavenOptions implements CodegenOptions {
         helidonOptions.remove(INDENT_TYPE.name());
         helidonOptions.remove(INDENT_COUNT.name());
         helidonOptions.remove(CREATE_META_INF_SERVICES.name());
+        helidonOptions.removeIf(MavenOptions::supportedByOtherHelidonProcessor);
 
         if (!helidonOptions.isEmpty()) {
             throw new CodegenException("Unrecognized/unsupported Helidon option configured: " + helidonOptions);
@@ -82,5 +85,9 @@ class MavenOptions implements CodegenOptions {
             return;
         }
         options.put(toProcess.substring(0, eq), toProcess.substring(eq + 1));
+    }
+
+    private static boolean supportedByOtherHelidonProcessor(String option) {
+        return API_OPTION.equals(option) || option.startsWith(API_OPTION + ".");
     }
 }

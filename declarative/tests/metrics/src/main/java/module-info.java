@@ -17,6 +17,7 @@
 /**
  * Tests for declarative metrics.
  */
+@SuppressWarnings("helidon:api:incubating")
 module io.helidon.declarative.tests.metrics {
     requires io.helidon.http;
     requires io.helidon.logging.common;

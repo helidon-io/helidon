@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+@SuppressWarnings("helidon:api:incubating")
 module io.helidon.declarative.tests.http {
     requires io.helidon.http;
     requires io.helidon.common.media.type;

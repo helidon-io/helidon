@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.common.mapper;
 import java.util.Set;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 
 /**
@@ -28,6 +29,7 @@ import io.helidon.common.GenericType;
  * @param <TARGET> type of the supported target
  */
 @FunctionalInterface
+@Api.Stable
 public interface Mapper<SOURCE, TARGET> extends Function<SOURCE, TARGET> {
     /**
      * Map an instance of source type to an instance of target type.

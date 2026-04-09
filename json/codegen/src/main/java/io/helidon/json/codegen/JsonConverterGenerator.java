@@ -38,6 +38,7 @@ import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
+import static io.helidon.codegen.CodegenUtil.capitalize;
 import static io.helidon.json.codegen.ConvertedTypeInfo.needsResolving;
 import static io.helidon.json.codegen.JsonTypes.BYTES;
 import static java.util.function.Predicate.not;
@@ -657,7 +658,7 @@ class JsonConverterGenerator {
                         TypeName resolved = type.boxed();
                         String fn;
                         if (!resolved.typeArguments().isEmpty()) {
-                            fn = "serializer" + ensureUpperStart(jsonProperty.serializationName().orElseThrow());
+                            fn = "serializer" + capitalize(jsonProperty.serializationName().orElseThrow());
                         } else {
                             fn = "serializer" + ensureUpperStart(type);
                         }
@@ -1175,7 +1176,7 @@ class JsonConverterGenerator {
             valueWritingMethod(jsonProperty, method, hasCreator, hasBuilder, converterFieldName);
         } else {
             //Type contains generics
-            String fieldName = "deserializer" + ensureUpperStart(jsonProperty.deserializationName().orElseThrow());
+            String fieldName = "deserializer" + capitalize(jsonProperty.deserializationName().orElseThrow());
             TypeName fieldType = TypeName.builder(JsonTypes.JSON_DESERIALIZER_TYPE).addTypeArgument(resolvedType).build();
             classBuilder.addField(builder -> builder.name(fieldName)
                     .isVolatile(true)
@@ -1241,17 +1242,7 @@ class JsonConverterGenerator {
         if (index > -1) {
             className = className.substring(index + 1);
         }
-        return ensureUpperStart(className.replaceAll("\\[]", "Array"));
-    }
-
-    private static String ensureUpperStart(String str) {
-        if (Character.isUpperCase(str.charAt(0))) {
-            return str;
-        } else if (str.length() == 1) {
-            return str.toUpperCase();
-        } else {
-            return Character.toUpperCase(str.charAt(0)) + str.substring(1);
-        }
+        return capitalize(className.replaceAll("\\[]", "Array"));
     }
 
     private static int calculateNameHash(String name) {
