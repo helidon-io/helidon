@@ -45,9 +45,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class WebSocketClientPrimitiveTextCodegenTest {
+    @SuppressWarnings("removal")
     private static final List<Class<?>> CLASSPATH = List.of(
             Annotation.class,
             Config.class,
+            io.helidon.common.config.Config.class,
             Dependency.class,
             Generated.class,
             GenericType.class,
