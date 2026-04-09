@@ -159,6 +159,15 @@ class DeclarativeHttpTest {
     }
 
     @Test
+    void testQueryParamDefaultValue() {
+        var response = client.get("/greet/query-default")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("13"));
+    }
+
+    @Test
     void testTypedClient() {
         GreetServiceClient typedClient = registry.get(Lookup.builder()
                                                               .addContract(GreetServiceClient.class)
