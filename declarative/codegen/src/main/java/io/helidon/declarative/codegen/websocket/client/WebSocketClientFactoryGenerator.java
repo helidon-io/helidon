@@ -179,11 +179,9 @@ class WebSocketClientFactoryGenerator {
                                 .description(name + " path parameter"));
                     });
                 })
-                .addContent("connect(this.client, ")
-                .addContent(pathParams.keySet()
-                                    .stream()
-                                    .collect(Collectors.joining(", ")))
-                .addContentLine(");")
+                .update(it -> addConnectInvocation(it,
+                                                   "this.client",
+                                                   pathParamArguments(pathParams, false)))
         );
 
         connectWithClientMethod(generatedListener, classModel, pathParams);
@@ -241,12 +239,9 @@ class WebSocketClientFactoryGenerator {
                         .addContentLine(");");
             }
         }
-        doConnect.addContent("connect(client, ")
-                .addContent(pathParams.keySet()
-                                    .stream()
-                                    .map(name -> prefixParams ? "user_" + name : name)
-                                    .collect(Collectors.joining(", ")))
-                .addContentLine(");");
+        addConnectInvocation(doConnect,
+                             "client",
+                             pathParamArguments(pathParams, prefixParams));
         classModel.addMethod(doConnect);
 
     }
@@ -273,7 +268,9 @@ class WebSocketClientFactoryGenerator {
         });
 
         if (pathParams.isEmpty()) {
-            connectWithClient.addContent("doConnect(client, pathParams, () -> new ")
+            connectWithClient.addContent("doConnect(client, ")
+                    .addContent(Map.class)
+                    .addContent(".of(), () -> new ")
                     .addContent(generatedListener)
                     .addContentLine("(endpointSupplier.get()));");
         } else {
@@ -322,6 +319,28 @@ class WebSocketClientFactoryGenerator {
         }
 
         classModel.addMethod(connectWithClient);
+    }
+
+    private static void addConnectInvocation(Method.Builder method,
+                                             String clientReference,
+                                             String pathArguments) {
+        method.addContent("connect(")
+                .addContent(clientReference);
+
+        if (!pathArguments.isEmpty()) {
+            method.addContent(", ")
+                    .addContent(pathArguments);
+        }
+
+        method.addContentLine(");");
+    }
+
+    private static String pathParamArguments(Map<String, TypeName> pathParams,
+                                             boolean prefixParams) {
+        return pathParams.keySet()
+                .stream()
+                .map(name -> prefixParams ? "user_" + name : name)
+                .collect(Collectors.joining(", "));
     }
 
     private static void handleWsClient(TypeInfo serverEndpoint, Constructor.Builder constructor) {
