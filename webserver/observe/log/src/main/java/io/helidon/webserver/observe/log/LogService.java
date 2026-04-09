@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -43,7 +44,9 @@ import io.helidon.http.HttpMediaType;
 import io.helidon.http.Status;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
-import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.http.media.json.JsonSupport;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.SecureHandler;
@@ -51,16 +54,9 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http1.Http1LoggingConnectionListener;
 
-import jakarta.json.Json;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-
 class LogService implements HttpService {
-    private static final EntityWriter<JsonObject> WRITER = JsonpSupport.serverResponseWriter();
-    private static final EntityReader<JsonObject> READER = JsonpSupport.serverRequestReader();
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
+    private static final EntityWriter<JsonObject> WRITER = JsonSupport.serverResponseWriter();
+    private static final EntityReader<JsonObject> READER = JsonSupport.serverRequestReader();
     private static final String DEFAULT_IDLE_STRING = "%\n";
 
     private final LogManager logManager;
@@ -165,11 +161,11 @@ class LogService implements HttpService {
 
     private void setLevelHandler(ServerRequest req, ServerResponse res) {
         String logger = req.path().pathParameters().first("logger").orElse("");
-        JsonObject requestJson = READER.read(JsonpSupport.JSON_OBJECT_TYPE,
+        JsonObject requestJson = READER.read(JsonSupport.JSON_OBJECT_TYPE,
                                              req.content().inputStream(),
                                              req.headers());
 
-        Level desiredLevel = Level.parse(requestJson.getString("level"));
+        Level desiredLevel = Level.parse(requestJson.stringValue("level").orElse(null));
         Logger.getLogger(logger)
                 .setLevel(desiredLevel);
 
@@ -178,14 +174,14 @@ class LogService implements HttpService {
 
     private void loggerHandler(ServerRequest req, ServerResponse res) {
         String logger = req.path().pathParameters().first("logger").orElse("");
-        JsonObjectBuilder rootObject = JSON.createObjectBuilder();
+        JsonObject.Builder rootObject = JsonObject.builder();
         logger(rootObject, logger);
 
         write(req, res, rootObject.build());
     }
 
     private void allLoggersHandler(ServerRequest req, ServerResponse res) {
-        JsonObjectBuilder rootObject = JSON.createObjectBuilder();
+        JsonObject.Builder rootObject = JsonObject.builder();
 
         levels(rootObject);
         loggers(rootObject);
@@ -193,42 +189,41 @@ class LogService implements HttpService {
         write(req, res, rootObject.build());
     }
 
-    private void loggers(JsonObjectBuilder rootObject) {
-        JsonObjectBuilder loggersJson = JSON.createObjectBuilder();
+    private void loggers(JsonObject.Builder rootObject) {
+        JsonObject.Builder loggersJson = JsonObject.builder();
 
         Enumeration<String> loggerNames = logManager.getLoggerNames();
         while (loggerNames.hasMoreElements()) {
             logger(loggersJson, loggerNames.nextElement());
         }
 
-        rootObject.add("loggers", loggersJson);
+        rootObject.set("loggers", loggersJson.build());
     }
 
-    private void logger(JsonObjectBuilder parentJson, String loggerName) {
+    private void logger(JsonObject.Builder parentJson, String loggerName) {
         Logger logger = Logger.getLogger(loggerName);
 
         Level configuredLevel = logger.getLevel();
         Level effectiveLevel = effectiveLevel(logger);
 
-        JsonObjectBuilder loggerJson = JSON.createObjectBuilder();
+        JsonObject.Builder loggerJson = JsonObject.builder();
         if (configuredLevel != null) {
-            loggerJson.add("configuredLevel", configuredLevel.getName());
+            loggerJson.set("configuredLevel", configuredLevel.getName());
         }
-        loggerJson.add("level", effectiveLevel.getName());
+        loggerJson.set("level", effectiveLevel.getName());
 
-        parentJson.add("".equals(loggerName) ? "ROOT" : loggerName, loggerJson);
+        parentJson.set("".equals(loggerName) ? "ROOT" : loggerName, loggerJson.build());
     }
 
-    private void levels(JsonObjectBuilder rootObject) {
-        JsonArrayBuilder levels = JSON.createArrayBuilder();
-        levels.add(Level.OFF.getName())
-                .add(Level.SEVERE.getName())
-                .add(Level.WARNING.getName())
-                .add(Level.INFO.getName())
-                .add(Level.FINE.getName())
-                .add(Level.FINER.getName())
-                .add(Level.FINEST.getName());
-        rootObject.add("levels", levels);
+    private void levels(JsonObject.Builder rootObject) {
+        rootObject.set("levels",
+                       JsonArray.createStrings(List.of(Level.OFF.getName(),
+                                                       Level.SEVERE.getName(),
+                                                       Level.WARNING.getName(),
+                                                       Level.INFO.getName(),
+                                                       Level.FINE.getName(),
+                                                       Level.FINER.getName(),
+                                                       Level.FINEST.getName())));
     }
 
     private Level effectiveLevel(Logger logger) {
@@ -250,7 +245,7 @@ class LogService implements HttpService {
     }
 
     private void write(ServerRequest req, ServerResponse res, JsonObject json) {
-        WRITER.write(JsonpSupport.JSON_OBJECT_TYPE,
+        WRITER.write(JsonSupport.JSON_OBJECT_TYPE,
                      json,
                      res.outputStream(),
                      req.headers(),
