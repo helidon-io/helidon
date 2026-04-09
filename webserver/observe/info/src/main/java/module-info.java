@@ -30,7 +30,8 @@ module io.helidon.webserver.observe.info {
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
-    requires io.helidon.http.media.jsonp;
+    requires io.helidon.http.media.json;
+    requires io.helidon.json;
     requires io.helidon.webserver;
 
     requires transitive io.helidon.config;
