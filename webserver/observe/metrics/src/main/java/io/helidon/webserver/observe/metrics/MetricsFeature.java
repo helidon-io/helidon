@@ -109,10 +109,6 @@ class MetricsFeature {
 
     void register(HttpRouting.Builder routing, String endpoint) {
         configureVendorMetrics(routing);
-        Services.all(AutoHttpMetricsProvider.class)
-                .stream()
-                .map(conv -> conv.filter(metricsObserverConfig))
-                .forEach(filter -> filter.ifPresent(routing::addFilter));
         routing.register(endpoint, new MetricsService());
     }
 
