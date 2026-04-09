@@ -20,7 +20,6 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.Config;
 import io.helidon.http.Method;
 import io.helidon.webserver.WebServer;
 
@@ -31,18 +30,6 @@ import io.helidon.webserver.WebServer;
 @Prototype.Configured
 @Prototype.CustomMethods(SecurityConfigSupport.PathConfigCustomMethods.class)
 interface PathsConfigBlueprint {
-    /**
-     * This method is internal only and was used from the builder and will be removed without replacement.
-     * You can easily map method from config using {@code config.asString().map(Method::create)}.
-     *
-     * @param config config instance
-     * @return method mapped
-     */
-    @Deprecated(forRemoval = true, since = "4.3.0")
-    static Method createMethods(Config config) {
-        return config.asString().map(Method::create).orElseThrow();
-    }
-
     /**
      * HTTP methods to match when applying this configured path.
      *
