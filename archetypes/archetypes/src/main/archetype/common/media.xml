@@ -132,7 +132,8 @@
                                 <value>io.helidon.http.Status</value>
                                 <value>io.helidon.http.HeaderNames</value>
                                 <value>io.helidon.http.HeaderValues</value>
-                                <value>io.helidon.webserver.staticcontent.StaticContentService</value>
+                                <value>io.helidon.webserver.staticcontent.ClasspathHandlerConfig</value>
+                                <value>io.helidon.webserver.staticcontent.StaticContentFeature</value>
                             </list>
                             <list key="Main-routing-builder" if="${flavor} == 'se'">
                                 <value order="1"><![CDATA[.any("/", (req, res) -> {
@@ -140,9 +141,11 @@
                     res.header(HeaderValues.createCached(HeaderNames.LOCATION, "/ui"));
                     res.send();
                 })
-                .register("/ui", StaticContentService.builder("WEB")
-                        .welcomeFileName("index.html")
-                        .build())
+                .register("/ui", StaticContentFeature.createService(
+                        ClasspathHandlerConfig.builder()
+                                .location("WEB")
+                                .welcome("index.html")
+                                .build()))
                 .register("/api", new FileService())]]></value>
                             </list>
                             <list key="Abstract-tests">

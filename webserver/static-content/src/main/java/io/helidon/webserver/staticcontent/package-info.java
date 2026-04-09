@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,6 @@
 
 /**
  * Helidon WebServer Static Content Support.
- * @see io.helidon.webserver.staticcontent.StaticContentService
+ * @see io.helidon.webserver.staticcontent.StaticContentFeature
  */
 package io.helidon.webserver.staticcontent;
