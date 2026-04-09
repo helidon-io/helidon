@@ -37,12 +37,12 @@ public interface KafkaMessage<K, V> extends Message<V> {
 
     @Override
     default KafkaMessage<K, V> withAck(Supplier<CompletionStage<Void>> ack) {
-        return preserveKafkaData(this, getPayload(), ack, getNack());
+        return new KafkaWrappedMessage<>(this, getPayload(), ack, getNack());
     }
 
     @Override
     default KafkaMessage<K, V> withNack(Function<Throwable, CompletionStage<Void>> nack) {
-        return preserveKafkaData(this, getPayload(), getAck(), nack);
+        return new KafkaWrappedMessage<>(this, getPayload(), getAck(), nack);
     }
 
     /**
@@ -184,63 +184,4 @@ public interface KafkaMessage<K, V> extends Message<V> {
         return new KafkaProducerMessage<>(null, payload, () -> CompletableFuture.completedFuture(null));
     }
 
-    private static <K, V> KafkaMessage<K, V> preserveKafkaData(KafkaMessage<K, V> original,
-                                                               V payload,
-                                                               Supplier<CompletionStage<Void>> ack,
-                                                               Function<Throwable, CompletionStage<Void>> nack) {
-        return new KafkaMessage<>() {
-            @Override
-            public Optional<String> getTopic() {
-                return original.getTopic();
-            }
-
-            @Override
-            public Optional<Integer> getPartition() {
-                return original.getPartition();
-            }
-
-            @Override
-            public Optional<Long> getOffset() {
-                return original.getOffset();
-            }
-
-            @Override
-            public Optional<ConsumerRecord<K, V>> getConsumerRecord() {
-                return original.getConsumerRecord();
-            }
-
-            @Override
-            public Optional<K> getKey() {
-                return original.getKey();
-            }
-
-            @Override
-            public Headers getHeaders() {
-                return original.getHeaders();
-            }
-
-            @Override
-            public V getPayload() {
-                return payload;
-            }
-
-            @Override
-            public Supplier<CompletionStage<Void>> getAck() {
-                return ack;
-            }
-
-            @Override
-            public Function<Throwable, CompletionStage<Void>> getNack() {
-                return nack;
-            }
-
-            @Override
-            public <C> C unwrap(Class<C> unwrapType) {
-                if (unwrapType.isInstance(this)) {
-                    return unwrapType.cast(this);
-                }
-                return original.unwrap(unwrapType);
-            }
-        };
-    }
 }
