@@ -3,19 +3,17 @@
 This directory contains the legacy OCI SDK integration modules for Helidon 4.x.
 
 > [!WARNING]
-> The remaining `helidon-integrations-oci-sdk-*` modules are deprecated in favor of the
-> [helidon-integrations-oci module](../oci) and will be removed in a future release.
+> The remaining `helidon-integrations-oci-sdk-*` modules are deprecated and will be removed in a
+> future release.
+> Use the OCI Java SDK directly for new OCI SDK integrations.
+> Use the [helidon-integrations-oci module](../oci) only for OCI authentication, region, and
+> configuration support.
 
 ## Helidon MP / CDI
 
-The [cdi](./cdi) module is deprecated. For new applications and migrations, use
-[helidon-integrations-oci module](../oci) instead.
+The [cdi](./cdi) module is deprecated. For new applications and migrations, use the OCI Java SDK directly.
 
-In Helidon MP applications, the replacement path is:
-
-1. Add `helidon-integrations-oci` to provide OCI services via Helidon Service Registry.
-2. Use the Helidon MP service-registry CDI bridge from
-   `io.helidon.microprofile.cdi.ServiceRegistryExtension` so those services are available for CDI injection.
+Use the [helidon-integrations-oci module](../oci) only for OCI authentication, region, and configuration support.
 
 Refer to the [cdi](./cdi) module only for legacy behavior in existing applications that still depend on
 `helidon-integrations-oci-sdk-cdi`.
@@ -23,8 +21,10 @@ Refer to the [cdi](./cdi) module only for legacy behavior in existing applicatio
 ## Helidon SE / Service Registry
 
 ### Helidon Service Registry and OCI SDK Integration
-This section describes the legacy **Helidon SE** support. It is also deprecated in favor of
-[helidon-integrations-oci module](../oci). Please familiarize yourself with the basics of the
+This section describes the legacy **Helidon SE** support. It is also deprecated. For new
+applications, use the OCI Java SDK directly and use the [helidon-integrations-oci module](../oci)
+only for OCI authentication, region, and configuration support. Please familiarize yourself with
+the basics of the
 [Helidon Service Registry](../../../service) and terminology before continuing further if you need to maintain an
 existing 4.x application.
 

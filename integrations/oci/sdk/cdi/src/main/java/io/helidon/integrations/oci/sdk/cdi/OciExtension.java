@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -467,11 +467,14 @@ import static java.lang.invoke.MethodType.methodType;
  *
  * </table>
  *
+ * @deprecated no direct replacement; use the OCI Java SDK directly and use {@code helidon-integrations-oci}
+ *             only for OCI authentication, region, and configuration support
  * @see Extension
  *
  * @see <a href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html" target="_top">Oracle Cloud
  * Infrastructure Java SDK</a>
  */
+@Deprecated(forRemoval = true, since = "4.4.1")
 public final class OciExtension implements Extension {
 
 

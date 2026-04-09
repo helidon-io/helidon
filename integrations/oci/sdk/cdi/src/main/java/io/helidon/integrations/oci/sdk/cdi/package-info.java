@@ -21,9 +21,8 @@
  * target="_top">Oracle Cloud Infrastructure Java SDK</a> into CDI
  * 3.0-based applications.
  *
- * @deprecated replaced with {@code helidon-integrations-oci}; Helidon MP/CDI applications should use the
- *             service-registry CDI bridge from {@code io.helidon.microprofile.cdi.ServiceRegistryExtension}
+ * @deprecated no direct replacement; use the OCI Java SDK directly and use {@code helidon-integrations-oci}
+ *             only for OCI authentication, region, and configuration support
  * @see io.helidon.integrations.oci.sdk.cdi.OciExtension
  */
-@Deprecated(forRemoval = true, since = "4.4.1")
 package io.helidon.integrations.oci.sdk.cdi;
