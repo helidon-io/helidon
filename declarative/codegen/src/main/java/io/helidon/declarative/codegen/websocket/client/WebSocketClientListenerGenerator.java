@@ -50,6 +50,7 @@ import static io.helidon.common.types.TypeNames.PRIMITIVE_INT;
 import static io.helidon.common.types.TypeNames.STRING;
 import static io.helidon.declarative.codegen.DeclarativeTypes.BUFFER_DATA;
 import static io.helidon.declarative.codegen.DeclarativeTypes.BYTE_BUFFER;
+import static io.helidon.declarative.codegen.DeclarativeTypes.COMMON_MAPPERS;
 import static io.helidon.declarative.codegen.DeclarativeTypes.THROWABLE;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_PATH_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.websocket.WebSocketTypes.ANNOTATION_ON_CLOSE;
@@ -105,12 +106,21 @@ class WebSocketClientListenerGenerator extends AbstractParametersProvider {
                 .name("endpoint")
         );
 
+        classModel.addField(mappers -> mappers
+                .accessModifier(AccessModifier.PRIVATE)
+                .isFinal(true)
+                .type(COMMON_MAPPERS)
+                .name("mappers")
+        );
+
         Constructor.Builder ctr = Constructor.builder()
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .addParameter(COMMON_MAPPERS, "mappers")
                 .addParameter(endpoint -> endpoint
                         .type(endpointType)
                         .name("endpoint")
                 )
+                .addContentLine("this.mappers = mappers;")
                 .addContentLine("this.endpoint = endpoint;");
 
         for (var pathParam : pathParams.entrySet()) {

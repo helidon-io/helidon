@@ -272,7 +272,7 @@ class WebSocketClientFactoryGenerator {
                     .addContent(Map.class)
                     .addContent(".of(), () -> new ")
                     .addContent(generatedListener)
-                    .addContentLine("(endpointSupplier.get()));");
+                    .addContentLine("(mappers, endpointSupplier.get()));");
         } else {
             // now for each parameter that is not a string, convert to String
             connectWithClient.addContent(Map.class)
@@ -308,7 +308,7 @@ class WebSocketClientFactoryGenerator {
                     .addContentLine("pathParams,")
                     .addContent("() -> new ")
                     .addContent(generatedListener)
-                    .addContent("(endpointSupplier.get(), ")
+                    .addContent("(mappers, endpointSupplier.get(), ")
                     .addContent(pathParams.keySet()
                                         .stream()
                                         .map(name -> prefixParams ? "user_" + name : name)
