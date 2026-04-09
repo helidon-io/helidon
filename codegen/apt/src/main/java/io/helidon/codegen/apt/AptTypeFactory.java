@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -273,7 +273,7 @@ public final class AptTypeFactory {
     }
 
     private static Optional<TypeName> createTypeName(Elements elements, Set<TypeMirror> processed, Element type) {
-        if (type instanceof VariableElement) {
+        if (type instanceof VariableElement || type.getKind() == ElementKind.RECORD_COMPONENT) {
             return createTypeName(elements, processed, type.asType());
         }
 
