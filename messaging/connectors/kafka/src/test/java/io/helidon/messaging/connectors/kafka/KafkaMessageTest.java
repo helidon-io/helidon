@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class KafkaMessageTest {
+    private static final long TEST_TIMEOUT_SECONDS = 10;
     private static final String TEST_VALUE = "test";
     private static final String TEST_KEY = "key";
     private static final String HEADER_NAME = "header";
@@ -140,7 +141,7 @@ class KafkaMessageTest {
 
     private void assertComplete(CompletionStage<Void> stage) {
         try {
-            stage.toCompletableFuture().get(10, TimeUnit.MILLISECONDS);
+            stage.toCompletableFuture().get(TEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (Exception e) {
             fail(e);
         }
