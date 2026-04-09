@@ -47,14 +47,6 @@ import static io.helidon.common.media.type.MediaTypes.TEXT_PROPERTIES;
 public class PropertiesConfigParser implements ConfigParser {
 
     /**
-     * Java properties media type.
-     *
-     * @deprecated use {@link io.helidon.common.media.type.MediaTypes#TEXT_PROPERTIES}
-     */
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    public static final MediaType MEDIA_TYPE_TEXT_JAVA_PROPERTIES = TEXT_PROPERTIES;
-
-    /**
      * Priority of the parser used if registered by {@link io.helidon.config.Config.Builder} automatically.
      */
     public static final double WEIGHT = Weighted.DEFAULT_WEIGHT - 10;
@@ -87,6 +79,6 @@ public class PropertiesConfigParser implements ConfigParser {
 
     @Override
     public String toString() {
-        return "Properties(" + MEDIA_TYPE_TEXT_JAVA_PROPERTIES.text() + ")";
+        return "Properties(" + TEXT_PROPERTIES.text() + ")";
     }
 }

@@ -234,7 +234,7 @@ public class ConfigSourcesTest {
         //          to System properties and Environment variables
         //
         //       2. An upper-to-lower case mapping is performed in SE but is not in MP (correctly, per spec). This is a
-        //          consequence of the static mapping (see EnvironmentVariables.expand()) required in SE to preserve
+        //          consequence of the SE environment-variable alias lookup (see EnvVars.node(String)) required to preserve
         //          precedence of aliased env vars during the merge step (see MergingStrategy.merge()). Fixing this
         //          is much harder but probably not very important.
         //
