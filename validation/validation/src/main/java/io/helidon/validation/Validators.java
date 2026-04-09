@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -386,6 +386,32 @@ public class Validators {
     }
 
     /**
+     * Check that the number value is a multiple of the specified factor.
+     *
+     * @param value value to check
+     * @param factor positive factor
+     * @return validation response
+     */
+    public static ValidationResponse validateMultipleOf(Number value, String factor) {
+        var ctx = validationContext(value);
+        Services.get(ValidatorsService.class).validateNumberMultipleOf(ctx, value, factor);
+        return ctx.response();
+    }
+
+    /**
+     * Check that the number value is a multiple of the specified factor.
+     *
+     * @param value value to check
+     * @param factor positive factor
+     * @throws ValidationException if the validation fails
+     */
+    public static void checkMultipleOf(Number value, String factor) {
+        var ctx = validationContext(value);
+        Services.get(ValidatorsService.class).validateNumberMultipleOf(ctx, value, factor);
+        ctx.throwOnFailure();
+    }
+
+    /**
      * Check that the integer value is greater than or equal to the minimum value.
      *
      * @param value value to check
@@ -438,6 +464,32 @@ public class Validators {
     }
 
     /**
+     * Check that the integer value is a multiple of the specified factor.
+     *
+     * @param value value to check
+     * @param factor positive factor
+     * @return validation response
+     */
+    public static ValidationResponse validateMultipleOf(Integer value, int factor) {
+        var ctx = validationContext(value);
+        Services.get(ValidatorsService.class).validateIntegerMultipleOf(ctx, value, factor);
+        return ctx.response();
+    }
+
+    /**
+     * Check that the integer value is a multiple of the specified factor.
+     *
+     * @param value value to check
+     * @param factor positive factor
+     * @throws ValidationException if the validation fails
+     */
+    public static void checkMultipleOf(Integer value, int factor) {
+        var ctx = validationContext(value);
+        Services.get(ValidatorsService.class).validateIntegerMultipleOf(ctx, value, factor);
+        ctx.throwOnFailure();
+    }
+
+    /**
      * Check that the long value is greater than or equal to the minimum value.
      *
      * @param value value to check
@@ -486,6 +538,32 @@ public class Validators {
     public static void checkMax(Long value, long maxValue) {
         var ctx = validationContext(value);
         Services.get(ValidatorsService.class).validateLongMax(ctx, value, maxValue);
+        ctx.throwOnFailure();
+    }
+
+    /**
+     * Check that the long value is a multiple of the specified factor.
+     *
+     * @param value value to check
+     * @param factor positive factor
+     * @return validation response
+     */
+    public static ValidationResponse validateMultipleOf(Long value, long factor) {
+        var ctx = validationContext(value);
+        Services.get(ValidatorsService.class).validateLongMultipleOf(ctx, value, factor);
+        return ctx.response();
+    }
+
+    /**
+     * Check that the long value is a multiple of the specified factor.
+     *
+     * @param value value to check
+     * @param factor positive factor
+     * @throws ValidationException if the validation fails
+     */
+    public static void checkMultipleOf(Long value, long factor) {
+        var ctx = validationContext(value);
+        Services.get(ValidatorsService.class).validateLongMultipleOf(ctx, value, factor);
         ctx.throwOnFailure();
     }
 

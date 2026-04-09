@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,9 @@ import io.helidon.common.features.api.HelidonFlavor;
  * The constraints are grouped (through container classes) based on types that can be constrained.
  * Some constraints are for convenience - such as {@link io.helidon.validation.Validation.Integer.Max} and
  * {@link io.helidon.validation.Validation.Long.Max} - this allows usage of properly typed constants, as the general number
- * constraint {@link io.helidon.validation.Validation.Number.Max} must use a String value (as it can be used for any number,
- * ranging from {@link java.lang.Byte} to a {@link java.math.BigDecimal}.
+ * constraints such as {@link io.helidon.validation.Validation.Number.Max} and
+ * {@link io.helidon.validation.Validation.Number.MultipleOf} must use a String value
+ * (as they can be used for any number, ranging from {@link java.lang.Byte} to a {@link java.math.BigDecimal}).
  *
  * <h2>Object constraints</h2>
  * Any type can be annotated with (see details in the following list):
@@ -68,6 +69,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  * <ul>
  *     <li>{@link io.helidon.validation.Validation.Integer.Max} - maximal value</li>
  *     <li>{@link io.helidon.validation.Validation.Integer.Min} - minimal value</li>
+ *     <li>{@link io.helidon.validation.Validation.Integer.MultipleOf} - number must be divisible by the configured factor</li>
  * </ul>
  * Note that byte is always considered to be unsigned (i.e. values are from 0 to 255 inclusive).
  *
@@ -76,6 +78,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  * <ul>
  *     <li>{@link io.helidon.validation.Validation.Long.Max} - maximal value</li>
  *     <li>{@link io.helidon.validation.Validation.Long.Min} - minimal value</li>
+ *     <li>{@link io.helidon.validation.Validation.Long.MultipleOf} - number must be divisible by the configured factor</li>
  * </ul>
  *
  * <h2>Number constraints</h2>
@@ -84,6 +87,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  *     <li>{@link io.helidon.validation.Validation.Number.Digits} - max number of integer and fractional digits</li>
  *     <li>{@link io.helidon.validation.Validation.Number.Max} - maximal value</li>
  *     <li>{@link io.helidon.validation.Validation.Number.Min} - minimal value</li>
+ *     <li>{@link io.helidon.validation.Validation.Number.MultipleOf} - number must be divisible by the configured factor</li>
  *     <li>{@link io.helidon.validation.Validation.Number.Negative} - number must be negative (negative zero for longs is a zero)</li>
  *     <li>{@link io.helidon.validation.Validation.Number.NegativeOrZero} - number must not be positive</li>
  *     <li>{@link io.helidon.validation.Validation.Number.Positive} - number must be positive (zero is not positive)</li>
