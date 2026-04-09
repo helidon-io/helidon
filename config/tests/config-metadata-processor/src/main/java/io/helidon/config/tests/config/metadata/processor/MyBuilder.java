@@ -46,10 +46,4 @@ class MyBuilder extends AbstractBuilder<MyBuilder, MyTarget> {
     MyBuilder ignored(String ignored) {
         return this;
     }
-
-    // this is also not a configured option
-    @ConfiguredOption(configured = false)
-    MyBuilder ignoredToo(String ignored) {
-        return this;
-    }
 }
