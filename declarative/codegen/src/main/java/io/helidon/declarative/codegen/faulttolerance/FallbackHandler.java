@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,6 +114,7 @@ class FallbackHandler extends FtHandler {
         boolean expectsThrowable = false;
         boolean found = false;
         TypedElementInfo fallbackMethod = null;
+        TypedElementInfo privateFallbackMethod = null;
         List<BadCandidate> badCandidates = new ArrayList<>();
 
         Predicate<TypedElementInfo> withThrowable = ElementInfoPredicates.hasParams(argsWithThrowable);
@@ -122,12 +123,24 @@ class FallbackHandler extends FtHandler {
             String reason;
             if (elementInfo.typeName().resolvedName().equals(returnType.resolvedName())) {
                 if (withThrowable.test(elementInfo)) {
+                    if (elementInfo.accessModifier() == AccessModifier.PRIVATE) {
+                        privateFallbackMethod = elementInfo;
+                        reason = "Method is private and cannot be called from generated interceptors";
+                        badCandidates.add(new BadCandidate(elementInfo, reason));
+                        continue;
+                    }
                     expectsThrowable = true;
                     found = true;
                     fallbackMethod = elementInfo;
                     break;
                 }
                 if (noThrowable.test(elementInfo)) {
+                    if (elementInfo.accessModifier() == AccessModifier.PRIVATE) {
+                        privateFallbackMethod = elementInfo;
+                        reason = "Method is private and cannot be called from generated interceptors";
+                        badCandidates.add(new BadCandidate(elementInfo, reason));
+                        continue;
+                    }
                     found = true;
                     fallbackMethod = elementInfo;
                     break;
@@ -140,6 +153,12 @@ class FallbackHandler extends FtHandler {
             badCandidates.add(new BadCandidate(elementInfo, reason));
         }
         if (!found) {
+            if (privateFallbackMethod != null) {
+                throw new CodegenException("Fallback method " + privateFallbackMethod.signature().text()
+                                                   + " on " + typeInfo.typeName().fqName()
+                                                   + " must not be private, generated interceptors cannot call private methods.",
+                                           privateFallbackMethod.originatingElementValue());
+            }
             throw new CodegenException("Could not find matching fallback method for  "
                                                + returnType.className() + " "
                                                + fallbackMethodName
