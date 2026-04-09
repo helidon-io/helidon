@@ -93,6 +93,12 @@ class GreetServiceEndpoint implements GreetService {
         return queryParam;
     }
 
+    @Http.GET
+    @Http.Path("/query-default")
+    String queryParamDefault(@Http.QueryParam("limit") @Default.Value("13") Integer limit) {
+        return Integer.toString(limit);
+    }
+
     /**
      * Return a worldly greeting message.
      */
