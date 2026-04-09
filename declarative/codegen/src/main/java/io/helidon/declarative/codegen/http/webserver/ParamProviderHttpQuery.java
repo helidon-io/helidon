@@ -21,6 +21,7 @@ import java.util.Optional;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.TypeName;
 import io.helidon.declarative.codegen.http.webserver.spi.HttpParameterCodegenProvider;
 import io.helidon.service.codegen.DefaultsCodegen;
 import io.helidon.service.codegen.DefaultsParams;
@@ -38,21 +39,22 @@ class ParamProviderHttpQuery extends AbstractParametersProvider implements HttpP
             return false;
         }
 
-        Optional<DefaultsCodegen.DefaultCode> defaultCode = DefaultsCodegen.findDefault(ctx.annotations(),
-                                                                                        HTTP_QUERY_PARAM_ANNOTATION);
-
         Annotation queryParam = first.get();
         String queryParamName = queryParam.value()
                 .orElseThrow(() -> new CodegenException("@QueryParam annotation must have a value."));
+
+        TypeName parameterType = ctx.parameterType();
+        TypeName realType = parameterType.isOptional() ? parameterType.typeArguments().getFirst() : parameterType;
+        Optional<DefaultsCodegen.DefaultCode> defaultCode = DefaultsCodegen.findDefault(ctx.annotations(), realType);
 
         ContentBuilder<?> contentBuilder = ctx.contentBuilder();
         contentBuilder.addContent(ctx.serverRequestParamName())
                 .addContent(".query()");
 
         codegenFromParameters(contentBuilder,
-                              ctx.parameterType(),
+                              parameterType,
                               queryParamName,
-                              ctx.parameterType().isOptional() || defaultCode.isPresent());
+                              parameterType.isOptional() || defaultCode.isPresent());
 
         if (defaultCode.isPresent()) {
             var defaultInfo = defaultCode.get();
