@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Testing.Test
 public class LongMultipleOfValidatorProviderTest {
+
     private final ConstraintValidatorProvider validatorProvider;
     private final ValidatorContext ctx;
 
@@ -41,7 +42,7 @@ public class LongMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testValidLongs() {
+    public void testValid() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.MultipleOf.class))
                 .property("value", 10L)
@@ -53,7 +54,7 @@ public class LongMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testInvalidLongs() {
+    public void testInvalid() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.MultipleOf.class))
                 .property("value", 10L)
@@ -64,7 +65,7 @@ public class LongMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testCustomMessage() {
+    public void testMessage() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.MultipleOf.class))
                 .property("value", 10L)
@@ -78,7 +79,7 @@ public class LongMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testNonLongValues() {
+    public void testUnsupported() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.MultipleOf.class))
                 .property("value", 10L)
@@ -91,7 +92,7 @@ public class LongMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testNullValue() {
+    public void testNull() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.MultipleOf.class))
                 .property("value", 10L)
@@ -101,7 +102,7 @@ public class LongMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testInvalidFactor() {
+    public void testZeroFactor() {
         var annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.MultipleOf.class))
                 .property("value", 0L)

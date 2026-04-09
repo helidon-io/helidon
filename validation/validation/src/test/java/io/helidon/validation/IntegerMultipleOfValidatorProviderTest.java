@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Testing.Test
 public class IntegerMultipleOfValidatorProviderTest {
+
     private final ConstraintValidatorProvider validatorProvider;
     private final ValidatorContext ctx;
 
@@ -41,7 +42,7 @@ public class IntegerMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testValidIntegers() {
+    public void testValid() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_INT, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.MultipleOf.class))
                 .property("value", 5)
@@ -53,7 +54,7 @@ public class IntegerMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testInvalidIntegers() {
+    public void testInvalid() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_INT, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.MultipleOf.class))
                 .property("value", 5)
@@ -64,7 +65,7 @@ public class IntegerMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testCustomMessage() {
+    public void testMessage() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_INT, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.MultipleOf.class))
                 .property("value", 5)
@@ -78,7 +79,7 @@ public class IntegerMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testNonIntegerValues() {
+    public void testUnsupportedType() {
         assertThrows(ValidationException.class, () -> validatorProvider.create(TypeNames.STRING, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.MultipleOf.class))
                 .property("value", 5)
@@ -86,7 +87,7 @@ public class IntegerMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testNullValue() {
+    public void testNull() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_INT, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.MultipleOf.class))
                 .property("value", 5)
@@ -96,7 +97,7 @@ public class IntegerMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testByteType() {
+    public void testByte() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_BYTE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.MultipleOf.class))
                 .property("value", 5)
@@ -110,7 +111,7 @@ public class IntegerMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testShortType() {
+    public void testShort() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_SHORT, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.MultipleOf.class))
                 .property("value", 5)
@@ -121,7 +122,7 @@ public class IntegerMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testLongType() {
+    public void testLong() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.MultipleOf.class))
                 .property("value", 5)
@@ -132,7 +133,7 @@ public class IntegerMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testCharacterValues() {
+    public void testChar() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_CHAR, Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.MultipleOf.class))
                 .property("value", 5)
@@ -146,7 +147,7 @@ public class IntegerMultipleOfValidatorProviderTest {
     }
 
     @Test
-    public void testInvalidFactor() {
+    public void testZeroFactor() {
         var annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.MultipleOf.class))
                 .property("value", 0)

@@ -233,7 +233,7 @@ public class ValidatorsTest {
     }
 
     @Test
-    public void testMultipleOf() {
+    public void testNumberMultipleOf() {
         var response = Validators.validateMultipleOf(1.10, "0.05");
         assertThat(response.valid(), is(true));
 
@@ -272,7 +272,7 @@ public class ValidatorsTest {
     }
 
     @Test
-    public void testIntegerMultipleOf() {
+    public void testIntMultipleOf() {
         var response = Validators.validateMultipleOf(10, 5);
         assertThat(response.valid(), is(true));
 

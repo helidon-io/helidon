@@ -192,7 +192,7 @@ public class ValidationTest {
     }
 
     @Test
-    public void testInvalidParameterMultipleOf() {
+    public void testNumberMultipleOf() {
         var result = assertThrows(ValidationException.class,
                                   () -> service.process(new ValidatedType("good_test_value",
                                                                           42,
@@ -217,7 +217,7 @@ public class ValidationTest {
     }
 
     @Test
-    public void testInvalidParameterIntegerMultipleOf() {
+    public void testIntMultipleOf() {
         var result = assertThrows(ValidationException.class,
                                   () -> service.process(new ValidatedMultiplesType(11, 20L)));
 
@@ -240,7 +240,7 @@ public class ValidationTest {
     }
 
     @Test
-    public void testInvalidParameterLongMultipleOf() {
+    public void testLongMultipleOf() {
         var result = assertThrows(ValidationException.class,
                                   () -> service.process(new ValidatedMultiplesType(10, 21L)));
 
