@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package io.helidon.messaging.connectors.kafka;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -37,12 +39,21 @@ public class KafkaProducerMessage<K, V> implements KafkaMessage<K, V> {
     private final K key;
     private final V payload;
     private final Supplier<CompletionStage<Void>> ack;
+    private final Function<Throwable, CompletionStage<Void>> nack;
 
     KafkaProducerMessage(K key, V payload, Supplier<CompletionStage<Void>> ack) {
+        this(key, payload, ack, reason -> CompletableFuture.completedFuture(null));
+    }
+
+    KafkaProducerMessage(K key,
+                         V payload,
+                         Supplier<CompletionStage<Void>> ack,
+                         Function<Throwable, CompletionStage<Void>> nack) {
         Objects.requireNonNull(payload);
         this.key = key;
         this.payload = payload;
         this.ack = ack;
+        this.nack = nack;
         headers = new RecordHeaders();
     }
 
@@ -82,7 +93,12 @@ public class KafkaProducerMessage<K, V> implements KafkaMessage<K, V> {
     }
 
     @Override
-    public CompletionStage<Void> ack() {
-        return ack.get();
+    public Supplier<CompletionStage<Void>> getAck() {
+        return ack;
+    }
+
+    @Override
+    public Function<Throwable, CompletionStage<Void>> getNack() {
+        return nack;
     }
 }
