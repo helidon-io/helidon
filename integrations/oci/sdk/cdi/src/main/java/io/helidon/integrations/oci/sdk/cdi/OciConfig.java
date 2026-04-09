@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider#SessionTokenAuthenticationDetailsProvider(com.oracle.bmc.ConfigFileReader.ConfigFile)
  * OCI configuration file}. It can be useful to qualify production in the second case with this qualifier
  * annotation.</p>
+ *
+ * @deprecated no direct replacement; use the OCI Java SDK directly and use {@code helidon-integrations-oci}
+ *             only for OCI authentication, region, and configuration support
  */
+@Deprecated(forRemoval = true, since = "4.4.1")
 @Documented
 @Qualifier
 @Retention(RUNTIME)

@@ -1,15 +1,32 @@
 # helidon-integrations-oci-sdk
 
-There are two different approaches for [OCI SDK](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm) integration from Helidon depending upon which type of application you are developing.
-* **Helidon MP** (using _CDI_). For this refer to the [cdi](./cdi) module.
-* **Helidon SE** (not using _CDI_). For this refer to the information below.
-
+This directory contains the legacy OCI SDK integration modules for Helidon 4.x.
 
 > [!WARNING]
-> The Helidon SE support described below is deprecated in favor of [helidon-integrations-oci module](../oci)
+> The remaining `helidon-integrations-oci-sdk-*` modules are deprecated and will be removed in a
+> future release.
+> Use the OCI Java SDK directly for new OCI SDK integrations.
+> Use the [helidon-integrations-oci module](../oci) only for OCI authentication, region, and
+> configuration support.
 
-## Helidon Service Registry and OCI SDK Integration
-This section only applies for **Helidon SE** type applications. If you are using **Helidon MP** then this section does not apply to you, and you should instead refer to the [cdi](./cdi) module. If you are using **Helidon SE** then continue reading below. Please familiarize yourself with the basics of the [Helidon Service Registry](../../../service) and terminology before continuing further.
+## Helidon MP / CDI
+
+The [cdi](./cdi) module is deprecated. For new applications and migrations, use the OCI Java SDK directly.
+
+Use the [helidon-integrations-oci module](../oci) only for OCI authentication, region, and configuration support.
+
+Refer to the [cdi](./cdi) module only for legacy behavior in existing applications that still depend on
+`helidon-integrations-oci-sdk-cdi`.
+
+## Helidon SE / Service Registry
+
+### Helidon Service Registry and OCI SDK Integration
+This section describes the legacy **Helidon SE** support. It is also deprecated. For new
+applications, use the OCI Java SDK directly and use the [helidon-integrations-oci module](../oci)
+only for OCI authentication, region, and configuration support. Please familiarize yourself with
+the basics of the
+[Helidon Service Registry](../../../service) and terminology before continuing further if you need to maintain an
+existing 4.x application.
 
 The **Helidon Service Registry** offers two modules for integrating with the **OCI SDK API** - the _codegen_ module and the _runtime_ module.
 

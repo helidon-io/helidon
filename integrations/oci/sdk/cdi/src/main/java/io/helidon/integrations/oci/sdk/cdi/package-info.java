@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@
  * target="_top">Oracle Cloud Infrastructure Java SDK</a> into CDI
  * 3.0-based applications.
  *
+ * @deprecated no direct replacement; use the OCI Java SDK directly and use {@code helidon-integrations-oci}
+ *             only for OCI authentication, region, and configuration support
  * @see io.helidon.integrations.oci.sdk.cdi.OciExtension
  */
 package io.helidon.integrations.oci.sdk.cdi;
