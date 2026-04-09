@@ -90,6 +90,15 @@ public class JsonSupport extends MediaSupportBase<JsonSupportConfig> implements 
     }
 
     /**
+     * Create a JSON reader with default settings.
+     *
+     * @return a reader for {@link io.helidon.json.JsonObject}
+     */
+    public static EntityReader<JsonObject> serverRequestReader() {
+        return new JsonValueReader<>();
+    }
+
+    /**
      * Create a new Helidon JSON support using a configuration consumer.
      *
      * @param consumer the consumer to configure the builder

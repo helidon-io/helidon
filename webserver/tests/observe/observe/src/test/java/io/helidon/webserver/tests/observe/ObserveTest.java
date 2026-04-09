@@ -16,7 +16,10 @@
 
 package io.helidon.webserver.tests.observe;
 
+import java.util.logging.Logger;
+
 import io.helidon.config.Config;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
@@ -134,6 +137,30 @@ class ObserveTest {
         assertThat(response.status(), is(Status.OK_200));
         JsonObject entity = response.entity();
         assertThat("Entity: " + entity, entity.getJsonObject("io.helidon.webserver.ServerListener"), notNullValue());
+    }
+
+    @Test
+    void testLogObserverSetLevel(WebClient client) {
+        String loggerName = getClass().getName() + ".level";
+
+        try {
+            ClientResponseTyped<String> response = client.post("/observe/log/loggers/" + loggerName)
+                    .header(HeaderNames.CONTENT_TYPE, "application/json")
+                    .submit("{\"level\":\"WARNING\"}", String.class);
+
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
+
+            ClientResponseTyped<JsonObject> loggerResponse = client.get("/observe/log/loggers/" + loggerName)
+                    .request(JsonObject.class);
+
+            assertThat(loggerResponse.status(), is(Status.OK_200));
+            JsonObject entity = loggerResponse.entity();
+            assertThat("Entity: " + entity,
+                       entity.getJsonObject(loggerName).getString("configuredLevel"),
+                       is("WARNING"));
+        } finally {
+            Logger.getLogger(loggerName).setLevel(null);
+        }
     }
 
     @Test
