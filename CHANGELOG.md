@@ -19,12 +19,19 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 
 ### CHANGES
 
+
+- Codegen: Honor record components and type mappers in codegen APT [11579](https://github.com/helidon-io/helidon/pull/11579)
 - Config: Fix for ProvidedUtil ordering [11334](https://github.com/helidon-io/helidon/pull/11334)
 - Config: Restore env-backed nested config nodes [11545](https://github.com/helidon-io/helidon/pull/11545)
 - DBClient: Apply DbMapper to MongoDB DML statements [11405](https://github.com/helidon-io/helidon/pull/11405)
 - Declarative: Fix problems enabling request scope in the Webserver [11368](https://github.com/helidon-io/helidon/pull/11368)
 - Declarative: Fix raw types in declarative code generator [11559](https://github.com/helidon-io/helidon/pull/11559)
+- Declarative: Declarative websocket client without path params generates invalid factory code [11589](https://github.com/helidon-io/helidon/pull/11589)
+- Declarative: Fix declarative websocket client primitive text listeners [11596](https://github.com/helidon-io/helidon/pull/11596)
+- Declarative: Use parameter type for declarative query defaults [11600](https://github.com/helidon-io/helidon/pull/11600)
+- Declarative: Reject private declarative fallback methods [11608](https://github.com/helidon-io/helidon/pull/11608)
 - Discovery: Discover services not working in inherited blueprints [11438](https://github.com/helidon-io/helidon/pull/11438)
+- FT: Fix bulkhead waiting metric accounting [11571](https://github.com/helidon-io/helidon/pull/11571)
 - HTTP: 11435: Prevent extra data requests on zero-length reads [11436](https://github.com/helidon-io/helidon/pull/11436)
 - HTTP: Avoid expansion of bit set [11390](https://github.com/helidon-io/helidon/pull/11390)
 - HTTP: Handle tokenized HTTP header values and fix HTTP/1 redirect probe framing
@@ -36,9 +43,12 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 - JSON: HTTP Media Support JSON Smile rename [11566](https://github.com/helidon-io/helidon/pull/11566)
 - JSON: Json improvements and fixes [11451](https://github.com/helidon-io/helidon/pull/11451)
 - JSON: Smile format implementation [11318](https://github.com/helidon-io/helidon/pull/11318)
+- JWT Provider: Issuer validation fix
 - LC4J: Add TLS support to LangChain4j MCP client config [11363](https://github.com/helidon-io/helidon/pull/11363)
 - Media: Fix MapperManager service caching [11402](https://github.com/helidon-io/helidon/pull/11402)
+- Messaging: KafkaMessage.of missing producer nack support [11609](https://github.com/helidon-io/helidon/pull/11609)
 - Metrics: backport options metrics feature fix [11314](https://github.com/helidon-io/helidon/pull/11314)
+- Telemetry: Avoid multiple assignments of global OpenTelemetry instance [11572](https://github.com/helidon-io/helidon/pull/11572)
 - Tests: Add request delay filter for optional metrics async TCK endpoint [11297](https://github.com/helidon-io/helidon/pull/11297)
 - Tests: Add test to make sure validation fails when constraint is declared on private element [11374](https://github.com/helidon-io/helidon/pull/11374)
 - Tests: Intermittent DbClient MapperTest failure [11437](https://github.com/helidon-io/helidon/pull/11437)
@@ -48,7 +58,6 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 - Tracing: Change 'requires' to 'requires static' for features API [11392](https://github.com/helidon-io/helidon/pull/11392)
 - WebClient: Header propagation fix
 - WebServer: Fix access log year format. [11375](https://github.com/helidon-io/helidon/pull/11375)
-- WebServer: Issuer validation fix
 - WebServer: NioSocket partial read [11384](https://github.com/helidon-io/helidon/pull/11384)
 - WebSocket: Correctly handle default origin logic in Websockets [11421](https://github.com/helidon-io/helidon/pull/11421)
 - WebSocket: Preserve Tyrus handshake rejection headers in websocket upgrade failu… [11530](https://github.com/helidon-io/helidon/pull/11530)
