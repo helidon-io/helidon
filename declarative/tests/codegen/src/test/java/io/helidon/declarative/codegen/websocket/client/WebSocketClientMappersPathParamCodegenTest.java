@@ -44,7 +44,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-class WebSocketClientEmptyPathParamsCodegenTest {
+class WebSocketClientMappersPathParamCodegenTest {
     private static final List<Class<?>> CLASSPATH = List.of(
             Annotation.class,
             Config.class,
@@ -62,13 +62,13 @@ class WebSocketClientEmptyPathParamsCodegenTest {
     );
 
     @Test
-    void generatedFixedPathClientFactoryCompiles() throws IOException {
+    void generatedClientFactoryHandlesPathParamNamedMappers() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
                 .addProcessor(AptProcessor::new)
-                .workDir(Path.of("target/test-compiler/websocket-client-empty-path-params"))
-                .addSource("FixedPathClientEndpoint.java", """
+                .workDir(Path.of("target/test-compiler/websocket-client-mappers-path-param"))
+                .addSource("ShadowedMappersClientEndpoint.java", """
                         package com.example;
 
                         import io.helidon.http.Http;
@@ -80,14 +80,14 @@ class WebSocketClientEmptyPathParamsCodegenTest {
                         @SuppressWarnings("deprecation")
                         @WebSocketClient.Endpoint("ws://localhost:8080")
                         @Service.Singleton
-                        @Http.Path("/fixed")
-                        class FixedPathClientEndpoint {
+                        @Http.Path("/shadow/{mappers}")
+                        class ShadowedMappersClientEndpoint {
                             @WebSocket.OnOpen
-                            void onOpen(WsSession session) {
+                            void onOpen(WsSession session, @Http.PathParam("mappers") String mappers) {
                             }
 
                             @WebSocket.OnMessage
-                            void onMessage(WsSession session, String message) {
+                            void onMessage(int message) {
                             }
                         }
                         """)
@@ -95,16 +95,18 @@ class WebSocketClientEmptyPathParamsCodegenTest {
                 .compile();
 
         String diagnostics = String.join("\n", result.diagnostics());
-        assertThat(diagnostics, result.success(), is(true));
 
-        var generatedFactory = result.sourceOutput().resolve("com/example/FixedPathClientEndpointFactory.java");
+        var generatedFactory = result.sourceOutput().resolve("com/example/ShadowedMappersClientEndpointFactory.java");
         assertThat(diagnostics, Files.exists(generatedFactory), is(true));
 
         var factoryContent = Files.readString(generatedFactory, StandardCharsets.UTF_8);
-        assertThat(factoryContent, containsString("connect(this.client);"));
-        assertThat(factoryContent, containsString("connect(client);"));
+        assertThat(factoryContent, containsString("public void connect(String u_mappers)"));
+        assertThat(factoryContent, containsString("pathParams.put(\"mappers\", u_mappers);"));
         assertThat(factoryContent,
-                   containsString("doConnect(client, Map.of(), () -> new FixedPathClientEndpoint__WsListener("
-                                          + "mappers, endpointSupplier.get()));"));
+                   containsString("new ShadowedMappersClientEndpoint__WsListener(mappers, "
+                                          + "endpointSupplier.get(), u_mappers)"));
+        assertThat(factoryContent, containsString("var u_mappers = pathParameters.get(\"mappers\");"));
+        assertThat(factoryContent, containsString("connect(client, u_mappers);"));
+        assertThat(diagnostics, result.success(), is(true));
     }
 }
