@@ -165,7 +165,7 @@ class LogService implements HttpService {
                                              req.content().inputStream(),
                                              req.headers());
 
-        Level desiredLevel = Level.parse(requestJson.stringValue("level").orElseThrow());
+        Level desiredLevel = Level.parse(requestJson.stringValue("level").orElse(null));
         Logger.getLogger(logger)
                 .setLevel(desiredLevel);
 
