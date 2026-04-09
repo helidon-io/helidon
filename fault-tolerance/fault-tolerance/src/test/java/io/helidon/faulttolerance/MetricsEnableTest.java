@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.NoSuchElementException;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Tag;
+import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 
 import org.hamcrest.Matchers;
@@ -41,7 +42,7 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
 
     @BeforeAll
     static void setupTest() {
-        FaultTolerance.config(Config.empty());      // empty config
+        Services.set(Config.class, Config.empty());      // empty config
     }
 
     @Test

@@ -229,10 +229,9 @@ The supplier `() -> Thread.currentThread()` is executed in a new thread and
 the value it produces printed by the consumer and passed to `thenAccept`.
 
 By default, asynchronous tasks are executed using a _new virtual thread per
-task_ based on the `ExecutorService` defined in
-`io.helidon.faulttolerance.FaultTolerance` and
-configurable by an application. Alternatively, an `ExecutorService` can be specified
-when building a non-standard `Async` instance.
+task_ based on the default `ExecutorService` used by the Fault Tolerance
+module. Alternatively, an `ExecutorService` can be specified when building a
+non-standard `Async` instance.
 
 === Handler Composition
 
@@ -306,8 +305,9 @@ closed to open state
 === Enabling Metrics Programmatically
 
 Metrics can be enabled programmatically either globally or, if disabled globally, individually for
-each command instance. To enable metrics globally, call `FaultTolerance.config(Config)` passing
-a Config instance that sets `ft.metrics.default-enabled=true`. This must be done on application startup,
+each command instance. To enable metrics globally, configure the application `Config` with
+`ft.metrics.default-enabled=true` and make that config available through the service registry, for example
+by calling `io.helidon.service.registry.Services.set(Config.class, config)` on application startup,
 before any command instances are created.
 
 If metrics are not enabled globally, they can be enabled programmatically on each command instance
