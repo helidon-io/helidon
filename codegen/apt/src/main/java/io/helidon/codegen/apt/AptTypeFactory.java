@@ -270,7 +270,7 @@ final class AptTypeFactory {
     }
 
     private static Optional<TypeName> createTypeName(Elements elements, Set<TypeMirror> processed, Element type) {
-        if (type instanceof VariableElement) {
+        if (type instanceof VariableElement || type.getKind() == ElementKind.RECORD_COMPONENT) {
             return createTypeName(elements, processed, type.asType());
         }
 
