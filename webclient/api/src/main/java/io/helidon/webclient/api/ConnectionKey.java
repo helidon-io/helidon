@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.webclient.api;
 
-import java.time.Duration;
 import java.util.Objects;
 
 import io.helidon.common.tls.Tls;
@@ -33,36 +32,17 @@ public final class ConnectionKey {
     private final DnsResolver dnsResolver;
     private final DnsAddressLookup dnsAddressLookup;
     private final Proxy proxy;
-    private final Duration readTimeout;
 
-
-    /**
-     * Create new instance.
-     *
-     * @param scheme           uri address scheme
-     * @param host             uri address host
-     * @param port             uri address port
-     * @param readTimeout      SO read timeout
-     * @param tls              TLS to be used in connection
-     * @param dnsResolver      DNS resolver to be used
-     * @param dnsAddressLookup DNS address lookup strategy
-     * @param proxy            Proxy server to use for outgoing requests
-     * @deprecated readTimeout is deprecated to be part of the connection key.
-     * Use {@link #create(String, String, int, Tls, DnsResolver, DnsAddressLookup, Proxy)} instead.
-     */
-    @Deprecated(forRemoval = true, since = "4.2.4")
-    public ConnectionKey(String scheme,
-                         String host,
-                         int port,
-                         Duration readTimeout,
-                         Tls tls,
-                         DnsResolver dnsResolver,
-                         DnsAddressLookup dnsAddressLookup,
-                         Proxy proxy) {
+    private ConnectionKey(String scheme,
+                          String host,
+                          int port,
+                          Tls tls,
+                          DnsResolver dnsResolver,
+                          DnsAddressLookup dnsAddressLookup,
+                          Proxy proxy) {
         this.scheme = scheme;
         this.host = host;
         this.port = port;
-        this.readTimeout = readTimeout;
         this.tls = tls;
         this.dnsResolver = dnsResolver;
         this.dnsAddressLookup = dnsAddressLookup;
@@ -88,7 +68,7 @@ public final class ConnectionKey {
                                        DnsResolver dnsResolver,
                                        DnsAddressLookup dnsAddressLookup,
                                        Proxy proxy) {
-        return new ConnectionKey(scheme, host, port, Duration.ZERO, tls, dnsResolver, dnsAddressLookup, proxy);
+        return new ConnectionKey(scheme, host, port, tls, dnsResolver, dnsAddressLookup, proxy);
     }
 
     /**
@@ -116,16 +96,6 @@ public final class ConnectionKey {
      */
     public int port() {
         return port;
-    }
-
-    /**
-     * Socket read timeout.
-     *
-     * @return socket read timeout
-     */
-    @Deprecated(forRemoval = true, since = "4.2.4")
-    public Duration readTimeout() {
-        return readTimeout;
     }
 
     /**
@@ -176,7 +146,6 @@ public final class ConnectionKey {
         return Objects.equals(this.scheme, that.scheme)
                 && Objects.equals(this.host, that.host)
                 && this.port == that.port
-                && Objects.equals(this.readTimeout, that.readTimeout)
                 && Objects.equals(this.tls, that.tls)
                 && Objects.equals(this.dnsResolver, that.dnsResolver)
                 && Objects.equals(this.dnsAddressLookup, that.dnsAddressLookup)
@@ -185,7 +154,7 @@ public final class ConnectionKey {
 
     @Override
     public int hashCode() {
-        return Objects.hash(scheme, host, port, readTimeout, tls, dnsResolver, dnsAddressLookup, proxy);
+        return Objects.hash(scheme, host, port, tls, dnsResolver, dnsAddressLookup, proxy);
     }
 
     @Override
@@ -194,7 +163,6 @@ public final class ConnectionKey {
                 + "scheme=" + scheme + ", "
                 + "host=" + host + ", "
                 + "port=" + port + ", "
-                + "readTimeout=" + readTimeout + ", "
                 + "tls=" + tls + ", "
                 + "dnsResolver=" + dnsResolver + ", "
                 + "dnsAddressLookup=" + dnsAddressLookup + ", "
