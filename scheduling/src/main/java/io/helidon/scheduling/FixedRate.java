@@ -24,8 +24,8 @@ import io.helidon.builder.api.RuntimeType;
  * Scheduling periodically executed task with specified fixed rate.
  *
  * <pre>{@code
- * Scheduling.fixedRate()
- *      .interval(Duration.ofSecond(2))
+ * FixedRate.builder()
+ *      .interval(Duration.ofSeconds(2))
  *      .task(inv -> System.out.println("Executed every 2 seconds"))
  *      .build();
  * }</pre>

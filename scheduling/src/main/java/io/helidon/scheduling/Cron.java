@@ -24,10 +24,10 @@ import io.helidon.builder.api.RuntimeType;
  * Scheduling periodically executed task with specified cron expression.
  *
  * <pre>{@code
- * Scheduling.cron()
+ * Cron.builder()
  *      .expression("0 45 9 ? * *")
  *      .task(inv -> System.out.println("Executed every day at 9:45"))
- *      .build()
+ *      .build();
  * }</pre>
  */
 public interface Cron extends RuntimeType.Api<CronConfig>, Task {

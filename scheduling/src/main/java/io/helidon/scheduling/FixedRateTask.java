@@ -123,21 +123,6 @@ class FixedRateTask implements FixedRate {
                 }
 
                 @Override
-                public long initialDelay() {
-                    return initialDelay.toMillis();
-                }
-
-                @Override
-                public long delay() {
-                    return interval.toMillis();
-                }
-
-                @Override
-                public TimeUnit timeUnit() {
-                    return TimeUnit.MILLISECONDS;
-                }
-
-                @Override
                 public long iteration() {
                     return it;
                 }

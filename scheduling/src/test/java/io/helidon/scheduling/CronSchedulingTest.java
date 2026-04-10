@@ -42,7 +42,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 
-@SuppressWarnings("removal")
 @Testing.Test
 @Execution(ExecutionMode.CONCURRENT)
 class CronSchedulingTest {
@@ -58,25 +57,6 @@ class CronSchedulingTest {
     @AfterAll
     static void afterAll() {
         assertThat(Services.get(TaskManager.class).tasks(), empty());
-    }
-
-    @Test
-    void cronTestDeprecated() {
-        ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
-        IntervalMeter meter = new IntervalMeter();
-        var cron = Scheduling.cronBuilder()
-                .executor(executorService)
-                .expression("0/2 * * * * ? *")
-                .task(cronInvocation -> meter
-                        .start()
-                        .sleep(200, TimeUnit.MILLISECONDS)
-                        .end())
-                .build();
-        assertThat(taskManager.tasks(), hasItem(cron));
-        meter.awaitTill(2, 20, TimeUnit.SECONDS);
-        cron.close();
-        executorService.shutdownNow();
-        meter.assertAverageDuration(Duration.ofSeconds(2), Duration.ofMillis(ERROR_MARGIN_MILLIS));
     }
 
     @Test
@@ -98,30 +78,6 @@ class CronSchedulingTest {
         cron.close();
         executorService.shutdownNow();
         meter.assertAverageDuration(Duration.ofSeconds(2), Duration.ofMillis(ERROR_MARGIN_MILLIS));
-    }
-
-    @Test
-    void cronConcurrencyDisabledDeprecated() {
-        ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
-        IntervalMeter meter = new IntervalMeter();
-        var cron = Scheduling.cronBuilder()
-                .executor(executorService)
-                .concurrentExecution(false)
-                //every 1 sec
-                .expression("* * * * * ? *")
-                .task(cronInvocation -> meter
-                        .start()
-                        .sleep(2, TimeUnit.SECONDS)
-                        .end())
-                .build();
-
-        meter.awaitTill(3, 20, TimeUnit.SECONDS);
-        assertThat(taskManager.tasks(), hasItem(cron));
-        cron.close();
-        executorService.shutdownNow();
-        // every 1 sec + 2 secs sleeping
-        meter.assertAverageDuration(Duration.ofSeconds(3), Duration.ofMillis(ERROR_MARGIN_MILLIS));
-        meter.assertNonConcurrent();
     }
 
     @Test
@@ -147,33 +103,6 @@ class CronSchedulingTest {
         // every 1 sec + 2 secs sleeping
         meter.assertAverageDuration(Duration.ofSeconds(3), Duration.ofMillis(ERROR_MARGIN_MILLIS));
         meter.assertNonConcurrent();
-    }
-
-    @Test
-    void cronConcurrencyEnabledDeprecated() {
-        IntervalMeter meter = new IntervalMeter();
-        ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
-        Task cron = null;
-        try {
-            cron = Scheduling.cronBuilder()
-                    .executor(executorService)
-                    //every 1 sec
-                    .expression("* * * * * ? *")
-                    .task(cronInvocation -> meter
-                            .start()
-                            .sleep(2, TimeUnit.SECONDS)
-                            .end())
-                    .build();
-
-            meter.awaitTill(3, 20, TimeUnit.SECONDS);
-        } finally {
-            if (cron != null) {
-                cron.close();
-            }
-            executorService.shutdownNow();
-        }
-        // every 1 sec + 2 secs sleeping
-        meter.assertAverageDuration(Duration.ofSeconds(1), Duration.ofMillis(ERROR_MARGIN_MILLIS));
     }
 
     @Test
@@ -204,29 +133,6 @@ class CronSchedulingTest {
     }
 
     @Test
-    void cronDefaultExecutorDeprecated() {
-        IntervalMeter meter = new IntervalMeter();
-        List<String> threadNames = new ArrayList<>();
-        Task task = Scheduling.cronBuilder()
-                .expression("0/3 * * * * ? *")
-                .task(cronInvocation -> meter
-                        .start()
-                        .doSomething(() -> threadNames.add(Thread.currentThread().getName()))
-                        .sleep(200, TimeUnit.MILLISECONDS)
-                        .end())
-                .build();
-
-        meter.awaitTill(2, 20, TimeUnit.SECONDS);
-        task.close();
-        task.executor().shutdown();
-        meter.assertAverageDuration(Duration.ofSeconds(3), Duration.ofMillis(ERROR_MARGIN_MILLIS));
-        threadNames.stream()
-                .map(s -> s.substring(0, Scheduling.DEFAULT_THREAD_NAME_PREFIX.length()))
-                .forEach(s -> assertThat(s, Matchers.equalTo(Scheduling.DEFAULT_THREAD_NAME_PREFIX)));
-        assertThat(threadNames.size(), Matchers.greaterThan(0));
-    }
-
-    @Test
     void cronDefaultExecutor() {
         IntervalMeter meter = new IntervalMeter();
         List<String> threadNames = new ArrayList<>();
@@ -250,23 +156,6 @@ class CronSchedulingTest {
     }
 
     @Test
-    void cronWrongExpressionDeprecated() {
-        ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
-        try {
-            IntervalMeter meter = new IntervalMeter();
-            Assertions.assertThrows(IllegalArgumentException.class, () -> Scheduling.cronBuilder()
-                    .executor(executorService)
-                    .expression("0/2 I N V A ? D")
-                    .task(cronInvocation -> meter
-                            .start()
-                            .end())
-                    .build());
-        } finally {
-            executorService.shutdown();
-        }
-    }
-
-    @Test
     void cronWrongExpression() {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
         try {
@@ -277,19 +166,6 @@ class CronSchedulingTest {
                     .task(cronInvocation -> meter
                             .start()
                             .end())
-                    .build());
-        } finally {
-            executorService.shutdown();
-        }
-    }
-
-    @Test
-    void cronMissingTaskDeprecated() {
-        ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
-        try {
-            Assertions.assertThrows(SchedulingException.class, () -> Scheduling.cronBuilder()
-                    .executor(executorService)
-                    .expression("* * * * * ? *")
                     .build());
         } finally {
             executorService.shutdown();

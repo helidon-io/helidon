@@ -50,28 +50,6 @@ class FixedRateSchedulingTest {
         this.taskManager = taskManager;
     }
 
-    @SuppressWarnings("removal")
-    @Test
-    void fixedRateDelayDeprecated() {
-        IntervalMeter meter = new IntervalMeter();
-        ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
-        try {
-            Scheduling.fixedRateBuilder()
-                    .executor(executorService)
-                    .delay(2)
-                    .task(cronInvocation -> meter
-                            .start()
-                            .sleep(200, TimeUnit.MILLISECONDS)
-                            .end())
-                    .build();
-
-            meter.awaitTill(2, 20, TimeUnit.SECONDS);
-        } finally {
-            executorService.shutdownNow();
-        }
-        meter.assertAverageDuration(Duration.ofSeconds(2), Duration.ofMillis(ERROR_MARGIN_MILLIS));
-    }
-
     @Test
     void fixedRateDelay() {
         IntervalMeter meter = new IntervalMeter();
@@ -151,43 +129,6 @@ class FixedRateSchedulingTest {
         }
     }
 
-    @SuppressWarnings("removal")
-    @Test
-    void fixedRateInitialDelayDeprecated() {
-        IntervalMeter meter = new IntervalMeter();
-        ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
-
-        final long expectedInitialDelay = 2000;
-
-        try {
-
-            Scheduling.FixedRateBuilder builder = Scheduling.fixedRateBuilder()
-                    .executor(executorService)
-                    .initialDelay(expectedInitialDelay)
-                    .delay(1000)
-                    .timeUnit(TimeUnit.MILLISECONDS)
-                    .task(cronInvocation -> meter
-                            .start()
-                            .sleep(200, TimeUnit.MILLISECONDS)
-                            .end());
-
-            long initialTime = System.currentTimeMillis();
-            builder.build();
-
-            meter.awaitTill(2, 20, TimeUnit.SECONDS);
-
-            long actualInitialDelay = meter.getFirst().startTime().toEpochMilli() - initialTime;
-            long difference = Math.abs(actualInitialDelay - expectedInitialDelay);
-
-            assertThat("Initial delay " + Duration.ofMillis(actualInitialDelay).toString()
-                               + " differs from expected " + Duration.ofMillis(expectedInitialDelay),
-                       difference, Matchers.lessThanOrEqualTo(ERROR_MARGIN_MILLIS));
-        } finally {
-            executorService.shutdownNow();
-        }
-        meter.assertAverageDuration(Duration.ofSeconds(1), Duration.ofMillis(ERROR_MARGIN_MILLIS));
-    }
-
     @Test
     void fixedRateInitialDelay() {
         IntervalMeter meter = new IntervalMeter();
@@ -223,23 +164,6 @@ class FixedRateSchedulingTest {
         meter.assertAverageDuration(Duration.ofSeconds(1), Duration.ofMillis(ERROR_MARGIN_MILLIS));
     }
 
-    @SuppressWarnings("removal")
-    @Test
-    void fixedRateInvalidDelayDeprecated() {
-        ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
-        try {
-            Assertions.assertThrows(IllegalArgumentException.class, () -> Scheduling.fixedRateBuilder()
-                    .executor(executorService)
-                    .delay(0)
-                    .task(inv -> {
-                    })
-                    .build());
-
-        } finally {
-            executorService.shutdownNow();
-        }
-    }
-
     @Test
     void fixedRateInvalidDelay() {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
@@ -247,22 +171,6 @@ class FixedRateSchedulingTest {
             Assertions.assertThrows(IllegalArgumentException.class, () -> FixedRate.builder()
                     .executor(executorService)
                     .interval(Duration.ZERO)
-                    .task(inv -> {
-                    })
-                    .build());
-
-        } finally {
-            executorService.shutdownNow();
-        }
-    }
-
-    @SuppressWarnings("removal")
-    @Test
-    void fixedRateInvalidMissingDelayDeprecated() {
-        ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
-        try {
-            Assertions.assertThrows(SchedulingException.class, () -> Scheduling.fixedRateBuilder()
-                    .executor(executorService)
                     .task(inv -> {
                     })
                     .build());
@@ -280,21 +188,6 @@ class FixedRateSchedulingTest {
                     .executor(executorService)
                     .task(inv -> {
                     })
-                    .build());
-
-        } finally {
-            executorService.shutdownNow();
-        }
-    }
-
-    @SuppressWarnings("removal")
-    @Test
-    void fixedRateMissingTaskDeprecated() {
-        ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
-        try {
-            Assertions.assertThrows(SchedulingException.class, () -> Scheduling.fixedRateBuilder()
-                    .executor(executorService)
-                    .delay(2)
                     .build());
 
         } finally {
