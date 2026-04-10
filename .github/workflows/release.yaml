@@ -169,6 +169,7 @@ jobs:
         env:
           CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
           CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          DEPLOYMENT_ID: ${{ needs.deploy.outputs.deployment_id }}
         run: |
           ./etc/scripts/setup-central-settings.sh
       - uses: ./.github/actions/common
