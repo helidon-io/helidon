@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,17 +160,6 @@ interface ListenerConfigBlueprint {
     long maxPayloadSize();
 
     /**
-     * Listener receive buffer size.
-     *
-     * @return buffer size in bytes
-     * @deprecated use {@link SocketOptions#socketReceiveBufferSize()} instead
-     * via {@link #connectionOptions()}.
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    @Option.Configured
-    Optional<Integer> receiveBufferSize();
-
-    /**
      * Number of buffers queued for write operations.
      *
      * @return maximal number of queued writes, defaults to 0
@@ -211,16 +200,6 @@ interface ListenerConfigBlueprint {
     @Option.Configured
     @Option.Default("PT0.5S")
     Duration shutdownGracePeriod();
-
-    /**
-     * Configuration of a connection (established from client against our server).
-     *
-     * @return connection configuration
-     * @deprecated use {@link #connectionOptions()} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    @Option.Configured
-    Optional<ConnectionConfig> connectionConfig();
 
     /**
      * Listener TLS configuration.

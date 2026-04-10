@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.http.HttpPrologue;
@@ -111,7 +112,7 @@ class DirectWsConnection {
             ClientWsConnection clientConnection = ClientWsConnection.create(new DirectConnect(clientReader, clientWriter),
                                                                             clientListener);
             serverFuture = executorService.submit(() -> {
-                serverConnection.handle(new Semaphore(1024));
+                serverConnection.handle(FixedLimit.create(new Semaphore(1024)));
             });
             clientFuture = executorService.submit(clientConnection);
         }

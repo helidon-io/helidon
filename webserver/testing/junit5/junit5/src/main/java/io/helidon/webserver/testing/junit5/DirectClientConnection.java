@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webserver.ProtocolConfigs;
@@ -144,7 +145,6 @@ class DirectClientConnection implements ClientConnection {
         });
     }
 
-    @SuppressWarnings("deprecation")
     private void startServer() {
         ServerConnection connection = new Http1ConnectionProvider()
                 .create(WebServer.DEFAULT_SOCKET_NAME, Http1Config.create(), ProtocolConfigs.create(List.of()))
@@ -153,7 +153,7 @@ class DirectClientConnection implements ClientConnection {
         serverContext.executor()
                 .submit(() -> {
                     try {
-                        connection.handle(new Semaphore(1024));
+                        connection.handle(FixedLimit.create(new Semaphore(1024)));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
