@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2025 Oracle and/or its affiliates.
+# Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -69,6 +69,12 @@ if [ -z "${CENTRAL_PASSWORD}" ] ; then
     exit 1
 fi
 
+if [ -z "${DEPLOYMENT_ID}" ] ; then
+    echo "ERROR: environment variable DEPLOYMENT_ID is required." >&2
+    usage
+    exit 1
+fi
+
 if [ -z "${DESTINATION_DIRECTORY}" ] ; then
     DESTINATION_DIRECTORY="${HOME}/.m2"
     mkdir -p "${DESTINATION_DIRECTORY}"
@@ -114,14 +120,14 @@ maven_settings() {
            <repository>
              <id>central.manual.testing</id>
              <name>Central Testing repository</name>
-             <url>https://central.sonatype.com/api/v1/publisher/deployments/download</url>
+             <url>https://central.sonatype.com/api/v1/publisher/deployment/${DEPLOYMENT_ID}/download</url>
            </repository>
          </repositories>
          <pluginRepositories>
              <pluginRepository>
                  <id>central.manual.testing</id>
                  <name>Central Testing repository</name>
-                 <url>https://central.sonatype.com/api/v1/publisher/deployments/download</url>
+                 <url>https://central.sonatype.com/api/v1/publisher/deployment/${DEPLOYMENT_ID}/download</url>
              </pluginRepository>
          </pluginRepositories>
        </profile>
