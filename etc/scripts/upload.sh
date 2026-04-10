@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2025 Oracle and/or its affiliates.
+# Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ $(basename "${0}") [OPTIONS] --directory=DIR CMD
   CMD:
 
     upload_release
-        Upload staging directory to a release repository
+        Upload staging directory to a release repository. Prints deployment ID
 
     upload_snapshot
         Uploading staging directory to a snapshots repository
@@ -186,12 +186,13 @@ upload_release() {
   version=$(find_version)
 
   # Make sure version does NOT end in -SNAPSHOT
-  if [[ "${v}" = *-SNAPSHOT ]]; then
+  if [[ "${version}" = *-SNAPSHOT ]]; then
     echo "ERROR: Version ${version} is a SNAPSHOT version" >&2
     exit 1
   fi
 
   deployment_id="$(central_upload "${CENTRAL_URL}" "${STAGING_DIR}")"
+  printf "deployment_id=%s\n" "${deployment_id}" >&6
   central_finish "${deployment_id}"
 }
 
