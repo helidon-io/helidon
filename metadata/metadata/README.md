@@ -12,7 +12,6 @@ the file name is the only element we can use for grouping.
 The following files are expected in a single location on classpath, and will not work with shaded jar, unless correctly merged (this will not cause runtime failures):
 - `default-media-types.properties` - default media types (there should be exactly one instance of this file used by Helidon)
 - `config-metadata.json` - configuration metadata, may be used by tooling to find all configurable options (i.e. from IDE), not used at runtime of Helidon
-- `feature-metadata.properties` - deprecated feature metadata
 
 
 The following files are expected to be under `META-INF/helidon` directory structure.
