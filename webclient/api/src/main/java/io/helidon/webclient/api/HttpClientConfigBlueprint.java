@@ -17,7 +17,6 @@
 package io.helidon.webclient.api;
 
 import java.net.SocketAddress;
-import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,6 @@ import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.config.Config;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.WritableHeaders;
@@ -49,18 +47,6 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 @Prototype.Blueprint(decorator = HttpClientConfigSupport.HttpBuilderDecorator.class)
 @Prototype.CustomMethods(HttpClientConfigSupport.HttpCustomMethods.class)
 interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
-    /**
-     * This method is internal only and was used from the builder and will be removed without replacement.
-     * You can easily map ClientUri from config using {@code config.asString().map(ClientUri::create)}.
-     *
-     * @param config config instance
-     * @return client URI mapped
-     */
-    @Deprecated(forRemoval = true, since = "4.3.0")
-    static ClientUri createBaseUri(Config config) {
-        return config.as(URI.class).map(ClientUri::create).orElseThrow();
-    }
-
     /**
      * Base uri used by the client in all requests.
      *
