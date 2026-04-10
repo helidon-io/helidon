@@ -21,7 +21,7 @@ import java.time.Duration;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
-@Prototype.Blueprint(decorator = FixedRateDecorator.class)
+@Prototype.Blueprint
 @Prototype.Configured
 interface FixedRateConfigBlueprint extends TaskConfigBlueprint, Prototype.Factory<FixedRate> {
 

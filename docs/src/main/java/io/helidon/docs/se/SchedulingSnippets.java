@@ -40,7 +40,7 @@ class SchedulingSnippets {
     void snippet_2() {
         // tag::snippet_2[]
         FixedRate.builder()
-                .interval(Duration.ofMinutes(10))
+                .interval(Duration.ofSeconds(10))
                 .task(inv -> System.out.println("Method invoked " + inv.description()))
                 .build();
         // end::snippet_2[]
@@ -60,7 +60,7 @@ class SchedulingSnippets {
         FixedRate.builder()
                 .config(Config.create(() -> ConfigSources.create(
                         """
-                                interval: PT4M
+                                interval: PT4S
                                 delay-type: SINCE_PREVIOUS_END
                                 delay-by: PT1S
                                 """,
@@ -83,7 +83,7 @@ class SchedulingSnippets {
     void snippet_6() {
         // tag::snippet_6[]
         FixedRate.builder()
-                .interval(Duration.ofMinutes(10))
+                .interval(Duration.ofSeconds(10))
                 .task(inv -> System.out.println("Method invoked " + inv.description()))
                 .build();
         // end::snippet_6[]
