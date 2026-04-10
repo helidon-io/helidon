@@ -30,7 +30,7 @@ module io.helidon.openapi {
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.common.media.type;
-    requires io.helidon.servicecommon;
+    requires io.helidon.webserver;
 
     requires org.yaml.snakeyaml;
 

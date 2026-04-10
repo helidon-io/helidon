@@ -43,7 +43,6 @@
         <module>jsonrpc</module>
         <module>observe</module>
         <module>security</module>
-        <module>service-common</module>
         <module>sse</module>
         <module>static-content</module>
         <module>testing</module>
