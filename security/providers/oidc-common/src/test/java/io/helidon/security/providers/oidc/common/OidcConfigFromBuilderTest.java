@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
+import io.helidon.webclient.api.Proxy;
 
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +42,6 @@ import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_PARAM
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_PARAM_USE;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_REDIRECT;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_REDIRECT_URI;
-import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_RELATIVE_URIS;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_TOKEN_REFRESH_SKEW;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -68,7 +68,7 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 .tokenEndpointUri(URI.create("https://identity.oracle.com/tokens"))
                 .authorizationEndpointUri(URI.create("https://identity.oracle.com/authorization"))
                 .introspectEndpointUri(URI.create("https://identity.oracle.com/introspect"))
-                .relativeUris(true)
+                .webclient(it -> it.relativeUris(true))
                 .build();
     }
 
@@ -94,7 +94,6 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Logout URI", config.logoutUri(), is(DEFAULT_LOGOUT_URI)),
                 () -> assertThat("Use Parameter", config.useParam(), is(DEFAULT_PARAM_USE)),
                 () -> assertThat("Parameter Name", config.paramName(), is(DEFAULT_PARAM_NAME)),
-                () -> assertThat("Relative URIs", config.relativeUris(), is(DEFAULT_RELATIVE_URIS)),
                 () -> assertThat("Use Cookie", config.useCookie(), is(DEFAULT_COOKIE_USE)),
                 () -> assertThat("Use Header", config.useHeader(), is(DEFAULT_HEADER_USE)),
                 () -> assertThat("Base scopes to use", config.baseScopes(), is(DEFAULT_BASE_SCOPES)),
@@ -159,9 +158,11 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 .identityUri(URI.create(baseUri + "/identity"))
                 .clientId("client-id-value")
                 .clientSecret("client-secret-value")
-                .proxyProtocol("http")
-                .proxyHost("localhost")
-                .proxyPort(server.port())
+                .webclient(it -> it.proxy(Proxy.builder()
+                                               .type(Proxy.ProxyType.HTTP)
+                                               .host("localhost")
+                                               .port(server.port())
+                                               .build()))
                 .build();
 
         // 2nd test will simulate relativeUris=true and will fail if URI is absolute
@@ -171,10 +172,12 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 .identityUri(URI.create(baseUri + "/identity"))
                 .clientId("client-id-value")
                 .clientSecret("client-secret-value")
-                .proxyProtocol("http")
-                .proxyHost("localhost")
-                .proxyPort(server.port())
-                .relativeUris(relativeUris[0])
+                .webclient(it -> it.proxy(Proxy.builder()
+                                               .type(Proxy.ProxyType.HTTP)
+                                               .host("localhost")
+                                               .port(server.port())
+                                               .build())
+                        .relativeUris(relativeUris[0]))
                 .build();
         server.stop();
     }

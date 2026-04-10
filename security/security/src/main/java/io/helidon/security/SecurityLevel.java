@@ -24,8 +24,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import io.helidon.common.Builder;
 import io.helidon.common.Errors;
@@ -68,37 +66,6 @@ public class SecurityLevel {
     }
 
     /**
-     * Creates builder for security levels based on class name.
-     *
-     * @param className class name
-     * @return new builder
-     * @see io.helidon.common.types.TypeName#create(String)
-     * @deprecated use {@link #builder()}
-     *         and {@link io.helidon.security.SecurityLevel.SecurityLevelBuilder#type(io.helidon.common.types.TypeName)}
-     *         instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    public static SecurityLevelBuilder create(String className) {
-        Objects.requireNonNull(className);
-        return builder().type(TypeName.create(className));
-    }
-
-    /**
-     * Creates builder for security levels based on previously created security level.
-     *
-     * @param copyFrom existing security level
-     * @return new builder
-     * @deprecated use {@link #builder()} and
-     *         {@link io.helidon.security.SecurityLevel.SecurityLevelBuilder#from(io.helidon.security.SecurityLevel)}
-     *         instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    public static SecurityLevelBuilder create(SecurityLevel copyFrom) {
-        Objects.requireNonNull(copyFrom);
-        return builder().from(copyFrom);
-    }
-
-    /**
      * Filters out all annotations of the specific type in the specific scope.
      *
      * @param annotationType type of the annotation
@@ -112,56 +79,6 @@ public class SecurityLevel {
             case METHOD -> methodLevelAnnotations.getOrDefault(annotationType, List.of());
             default -> List.of();
         };
-    }
-
-    /**
-     * Filters out all annotations of the specific type in the specific scope.
-     *
-     * @param annotationType type of the annotation
-     * @param scope          desired scope
-     * @param <T>            annotation type
-     * @return list of annotations
-     * @see TypeName#create(String)
-     * @deprecated use
-     *         {@link #filterAnnotations(io.helidon.common.types.TypeName, io.helidon.security.EndpointConfig.AnnotationScope)}
-     *         instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    public <T extends Annotation> List<T> filterAnnotations(Class<T> annotationType, EndpointConfig.AnnotationScope scope) {
-        return switch (scope) {
-            case CLASS -> classLevelAnnotations.getOrDefault(TypeName.create(annotationType), List.of())
-                    .stream()
-                    .map(AnnotationFactory::<T>synthesize)
-                    .flatMap(Optional::stream)
-                    .collect(Collectors.toUnmodifiableList());
-            case METHOD -> methodLevelAnnotations.getOrDefault(TypeName.create(annotationType), List.of())
-                    .stream()
-                    .map(AnnotationFactory::<T>synthesize)
-                    .flatMap(Optional::stream)
-                    .collect(Collectors.toUnmodifiableList());
-            default -> List.of();
-        };
-    }
-
-    /**
-     * Combines all the annotations of the specific type across all the requested scopes.
-     *
-     * @param annotationType type of the annotation
-     * @param scopes         desired scopes
-     * @param <T>            annotation type
-     * @return list of annotations
-     * @deprecated use
-     *         {@link #combineAnnotations(io.helidon.common.types.TypeName,
-     *         io.helidon.security.EndpointConfig.AnnotationScope...)}
-     *         instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    public <T extends Annotation> List<T> combineAnnotations(Class<T> annotationType, EndpointConfig.AnnotationScope... scopes) {
-        List<T> result = new LinkedList<>();
-        for (EndpointConfig.AnnotationScope scope : scopes) {
-            result.addAll(filterAnnotations(annotationType, scope));
-        }
-        return result;
     }
 
     /**
@@ -181,25 +98,6 @@ public class SecurityLevel {
     }
 
     /**
-     * Returns class level and method level annotations together in one {@link java.util.Map}.
-     *
-     * @return map with class and method level annotations
-     * @deprecated use {@link #annotations()} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    public Map<Class<? extends Annotation>, List<Annotation>> allAnnotations() {
-        Map<Class<? extends Annotation>, List<Annotation>> result = new HashMap<>();
-
-        annotations()
-                .stream()
-                .map(AnnotationFactory::synthesize)
-                .flatMap(Optional::stream)
-                .forEach(a -> result.computeIfAbsent(a.annotationType(), it -> new ArrayList<>()).add(a));
-
-        return result;
-    }
-
-    /**
      * Returns all class level and method level annotations.
      *
      * @return list with class and method level annotations
@@ -214,18 +112,6 @@ public class SecurityLevel {
     }
 
     /**
-     * Returns the name of the class which this level represents.
-     *
-     * @return class name
-     * @see io.helidon.common.types.TypeName#fqName()
-     * @deprecated use {@link #typeName()} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    public String getClassName() {
-        return typeName.fqName();
-    }
-
-    /**
      * Type of the class this level represents (such as an endpoint class).
      *
      * @return the type name
@@ -235,61 +121,12 @@ public class SecurityLevel {
     }
 
     /**
-     * Returns the name of the method which this level represents.
-     *
-     * @return method name
-     * @deprecated use {@link #methodName()} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    public String getMethodName() {
-        return methodName;
-    }
-
-    /**
      * Name of the method this level represents, or {@code Unknown} if this level does not represent a method.
      *
      * @return method name
      */
     public String methodName() {
         return methodName;
-    }
-
-    /**
-     * Returns class level annotations.
-     *
-     * @return map of annotations
-     * @deprecated use {@link #classAnnotations()} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    public Map<Class<? extends Annotation>, List<Annotation>> getClassLevelAnnotations() {
-        Map<Class<? extends Annotation>, List<Annotation>> result = new HashMap<>();
-
-        classAnnotations()
-                .stream()
-                .map(AnnotationFactory::synthesize)
-                .flatMap(Optional::stream)
-                .forEach(a -> result.computeIfAbsent(a.annotationType(), it -> new ArrayList<>()).add(a));
-
-        return result;
-    }
-
-    /**
-     * Returns method level annotations.
-     *
-     * @return map of annotations
-     * @deprecated use {@link #methodAnnotations()} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    public Map<Class<? extends Annotation>, List<Annotation>> getMethodLevelAnnotations() {
-        Map<Class<? extends Annotation>, List<Annotation>> result = new HashMap<>();
-
-        methodAnnotations()
-                .stream()
-                .map(AnnotationFactory::synthesize)
-                .flatMap(Optional::stream)
-                .forEach(a -> result.computeIfAbsent(a.annotationType(), it -> new ArrayList<>()).add(a));
-
-        return result;
     }
 
     /**
@@ -402,20 +239,6 @@ public class SecurityLevel {
         }
 
         /**
-         * Sets new method name.
-         *
-         * @param methodName new method name
-         * @return updated builder instance
-         * @deprecated use {@link #methodName(String)} instead
-         */
-        @Deprecated(forRemoval = true, since = "4.2.0")
-        public SecurityLevelBuilder withMethodName(String methodName) {
-            Objects.requireNonNull(methodName);
-
-            return methodName(methodName);
-        }
-
-        /**
          * Method name of the method being secured.
          *
          * @param methodName new method name
@@ -426,23 +249,6 @@ public class SecurityLevel {
 
             this.methodName = methodName;
             return this;
-        }
-
-        /**
-         * Sets new class level annotations.
-         *
-         * @param classAnnotations new class level annotations
-         * @return updated builder instance
-         * @see io.helidon.metadata.reflection.AnnotationFactory
-         * @deprecated use {@link #classAnnotations(java.util.List)} instead
-         */
-        @Deprecated(forRemoval = true, since = "4.2.0")
-        public SecurityLevelBuilder withClassAnnotations(Map<Class<? extends Annotation>, List<Annotation>> classAnnotations) {
-            return classAnnotations(classAnnotations.values()
-                                            .stream()
-                                            .flatMap(List::stream)
-                                            .map(AnnotationFactory::create)
-                                            .collect(Collectors.toUnmodifiableList()));
         }
 
         /**
@@ -521,22 +327,6 @@ public class SecurityLevel {
                         .add(annotation);
             }
             return this;
-        }
-
-        /**
-         * Sets new method level annotations.
-         *
-         * @param methodAnnotations new method level annotations
-         * @return updated builder instance
-         * @deprecated use {@link #methodAnnotations(java.util.List)} instead
-         */
-        @Deprecated(forRemoval = true, since = "4.2.0")
-        public SecurityLevelBuilder withMethodAnnotations(Map<Class<? extends Annotation>, List<Annotation>> methodAnnotations) {
-            return methodAnnotations(methodAnnotations.values()
-                                             .stream()
-                                             .flatMap(List::stream)
-                                             .map(AnnotationFactory::create)
-                                             .collect(Collectors.toUnmodifiableList()));
         }
 
         /**
