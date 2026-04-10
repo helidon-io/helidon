@@ -49,7 +49,7 @@ $(basename "${0}") [OPTIONS] --directory=DIR CMD
   CMD:
 
     upload_release
-        Upload staging directory to a release repository
+        Upload staging directory to a release repository. Prints deployment ID
 
     upload_snapshot
         Uploading staging directory to a snapshots repository
@@ -193,6 +193,7 @@ upload_release() {
 
   deployment_id="$(central_upload "${CENTRAL_URL}" "${STAGING_DIR}")"
   central_finish "${deployment_id}"
+  printf "deployment_id=%s\n" "${deployment_id}" >&6
 }
 
 # Upload contents of the staging directory to central portal

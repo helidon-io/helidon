@@ -94,6 +94,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     environment: release
+    outputs:
+      deployment_id: ${{ steps.deploy.outputs.deployment_id }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -104,14 +106,15 @@ jobs:
           pattern: io-helidon-artifacts-part-*
           path: staging
           merge-multiple: true
-      - shell: bash
+      - id: deploy
+        shell: bash
         env:
           CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
           CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
         run: |
           etc/scripts/upload.sh upload_release \
             --dir="staging" \
-            --description="Helidon v%{version}"
+            --description="Helidon v%{version}" >> ${GITHUB_OUTPUT}
       - uses: actions/upload-artifact@v4
         with:
           name: io-helidon-artifacts-${{ needs.create-tag.outputs.version }}
@@ -130,6 +133,7 @@ jobs:
         env:
           CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
           CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          DEPLOYMENT_ID: ${{ needs.deploy.outputs.deployment_id }}
         run: |
           ./etc/scripts/setup-central-settings.sh
       - uses: ./.github/actions/common
