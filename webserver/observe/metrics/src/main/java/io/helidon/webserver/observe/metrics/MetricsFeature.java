@@ -37,7 +37,6 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
-import io.helidon.service.registry.Services;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRouting;
@@ -46,7 +45,6 @@ import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.SecureHandler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-import io.helidon.webserver.observe.metrics.spi.AutoHttpMetricsProvider;
 
 import static io.helidon.http.HeaderNames.ALLOW;
 import static io.helidon.http.Status.METHOD_NOT_ALLOWED_405;
@@ -108,10 +106,6 @@ class MetricsFeature {
 
     void register(HttpRouting.Builder routing, String endpoint) {
         configureVendorMetrics(routing);
-        Services.all(AutoHttpMetricsProvider.class)
-                .stream()
-                .map(conv -> conv.filter(metricsObserverConfig))
-                .forEach(filter -> filter.ifPresent(routing::addFilter));
         routing.register(endpoint, new MetricsService());
     }
 
