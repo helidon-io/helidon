@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.List;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
+import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsClientAuth;
 import io.helidon.http.Method;
@@ -32,7 +33,6 @@ import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
-import io.helidon.webserver.ConnectionConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
@@ -120,8 +120,11 @@ class MtlsTest {
                                 .keystore(Resource.create("server.p12"))))
                 .build();
 
-        builder.connectionConfig(ConnectionConfig.builder().readTimeout(Duration.ZERO)
-                .connectTimeout(Duration.ZERO).build()).tls(tls);
+        builder.connectionOptions(SocketOptions.builder()
+                                          .readTimeout(Duration.ZERO)
+                                          .connectTimeout(Duration.ZERO)
+                                          .build())
+                .tls(tls);
     }
 
     @Test

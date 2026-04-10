@@ -23,11 +23,9 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
@@ -205,12 +203,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             state = State.FINISHED;
             throw e;
         }
-    }
-
-    @SuppressWarnings("removal")
-    @Override
-    public void handle(Semaphore requestSemaphore) throws InterruptedException {
-        handle(FixedLimit.create(requestSemaphore));
     }
 
     /**

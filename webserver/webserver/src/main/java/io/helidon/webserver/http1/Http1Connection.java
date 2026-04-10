@@ -23,14 +23,12 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 
 import io.helidon.common.ParserHelper;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.mapper.MapperException;
@@ -141,7 +139,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         return true;
     }
 
-    @SuppressWarnings("removal")
     @Override
     public void handle(Limit limit) throws InterruptedException {
         this.myThread = Thread.currentThread();
@@ -166,7 +163,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
 
                 WritableHeaders<?> headers = http1headers.readHeaders(prologue);
                 if (http1Config.validateRequestHeaders()) {
-                    validateHostHeader(prologue, headers, http1Config.validateRequestHostHeader());
+                    validateHostHeader(prologue, headers, true);
                 }
                 ctx.remotePeer().tlsCertificates()
                         .flatMap(TlsUtils::parseCn)
@@ -248,12 +245,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                            .cause(e)
                                            .build());
         }
-    }
-
-    @SuppressWarnings("removal")
-    @Override
-    public void handle(Semaphore requestSemaphore) throws InterruptedException {
-        handle(FixedLimit.create(requestSemaphore));
     }
 
     @Override

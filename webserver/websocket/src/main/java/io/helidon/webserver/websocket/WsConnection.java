@@ -21,11 +21,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Optional;
-import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitException;
 import io.helidon.common.socket.SocketContext;
@@ -125,12 +123,6 @@ public class WsConnection implements ServerConnection, WsSession {
                                       String wsKey,
                                       WsRoute wsRoute) {
         return new WsConnection(ctx, prologue, upgradeHeaders, wsKey, wsRoute.listener());
-    }
-
-    @SuppressWarnings("removal")
-    @Override
-    public void handle(Semaphore requestSemaphore) {
-        handle(FixedLimit.create(requestSemaphore));
     }
 
     @Override

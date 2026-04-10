@@ -313,36 +313,31 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
         for (SinkProvider<?> p : SINK_PROVIDERS) {
             if (p.supports(sinkType, request)) {
-                try {
-                    return (X) p.create(new SinkProviderContext() {
-                        @Override
-                        public ServerResponse serverResponse() {
-                            return Http1ServerResponse.this;
-                        }
+                return (X) p.create(new SinkProviderContext() {
+                    @Override
+                    public ServerResponse serverResponse() {
+                        return Http1ServerResponse.this;
+                    }
 
-                        @Override
-                        public ServerRequest serverRequest() {
-                            return Http1ServerResponse.this.request;
-                        }
+                    @Override
+                    public ServerRequest serverRequest() {
+                        return Http1ServerResponse.this.request;
+                    }
 
-                        @Override
-                        public ConnectionContext connectionContext() {
-                            return Http1ServerResponse.this.ctx;
-                        }
+                    @Override
+                    public ConnectionContext connectionContext() {
+                        return Http1ServerResponse.this.ctx;
+                    }
 
-                        @Override
-                        public Runnable closeRunnable() {
-                            return () -> {
-                                Http1ServerResponse.this.isSent = true;
-                                afterSend();
-                                request.reset();
-                            };
-                        }
-                    });
-                } catch (UnsupportedOperationException e) {
-                    // deprecated - will be removed in 5.x
-                    return (X) p.create(this, this::handleSinkData, this::commit);
-                }
+                    @Override
+                    public Runnable closeRunnable() {
+                        return () -> {
+                            Http1ServerResponse.this.isSent = true;
+                            afterSend();
+                            request.reset();
+                        };
+                    }
+                });
             }
         }
         // Request not acceptable if provider not found
