@@ -48,6 +48,7 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 - Media: Fix MapperManager service caching [11402](https://github.com/helidon-io/helidon/pull/11402)
 - Messaging: KafkaMessage.of missing producer nack support [11609](https://github.com/helidon-io/helidon/pull/11609)
 - Metrics: backport options metrics feature fix [11314](https://github.com/helidon-io/helidon/pull/11314)
+- Metrics: Enroll auto HTTP metrics provider filters only once [11618](https://github.com/helidon-io/helidon/pull/11618)
 - Telemetry: Avoid multiple assignments of global OpenTelemetry instance [11572](https://github.com/helidon-io/helidon/pull/11572)
 - Tracing: Change 'requires' to 'requires static' for features API [11392](https://github.com/helidon-io/helidon/pull/11392)
 - Validation: Add validation support for MultipleOf constraints [11615](https://github.com/helidon-io/helidon/pull/11615)
