@@ -21,6 +21,7 @@ import java.io.StringWriter;
 import java.util.List;
 
 import io.helidon.common.types.AnnotationProperty;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
@@ -63,6 +64,25 @@ class ClassModelTest {
                 
                     }
                 
+                }
+                """));
+    }
+
+    @Test
+    void testInterfaceType() throws IOException {
+        var sw = new StringWriter();
+        ClassModel.builder()
+                .packageName("com.acme")
+                .name("Shade")
+                .classType(ElementKind.INTERFACE)
+                .build()
+                .write(sw);
+
+        assertThat(sw.toString(), isSource("""
+                package com.acme;
+
+                public interface Shade {
+
                 }
                 """));
     }
