@@ -34,9 +34,10 @@ obtained from a `ServiceRegistryManager`.
 
 ## Declare a service
 
-Use `io.helidon.service.registry.Service.Provider` annotation on your service provider type (implementation of a contract).
- Alternatively, 
-`java.util.function.Supplier` can also be used in this scenario.
+Use one of the `io.helidon.service.registry.Service.Scope` annotations, such as
+`io.helidon.service.registry.Service.Singleton` or `io.helidon.service.registry.Service.PerLookup`,
+on your service provider type (implementation of a contract). Service factories implemented as
+`java.util.function.Supplier` use the same scope annotations.
 
 Use `io.helidon.service.registry.Service.Descriptor` to create a hand-crafted service descriptor (see below "Behind the scenes")
 
@@ -45,7 +46,7 @@ Service example:
 ```java
 import io.helidon.service.registry.Service;
 
-@Service.Provider
+@Service.Singleton
 class MyService implements MyContract {
     MyService() {
     }
@@ -62,7 +63,7 @@ Service with dependency example:
 ```java
 import io.helidon.service.registry.Service;
 
-@Service.Provider
+@Service.Singleton
 class MyService2 implements MyContract2 {
     private final MyContract dependency;
 
@@ -84,10 +85,10 @@ import java.util.function.Supplier;
 
 import io.helidon.service.registry.Service;
 
-@Service.Provider
+@Service.PerLookup
 // the type must be fully qualified, as it is code generated
 class MyService3 implements Supplier<Optional<com.foo.bar.MyContract3>> {
-    
+
     MyService3() {
     }
 
@@ -240,9 +241,6 @@ Services are:
       messaging message)
 2. Any class with `@Service.Inject` annotation that does not have a scope annotation. In such a case, the
    service will be `@Service.PerLookup`.
-3. Any `core` service defined for Helidon Service Registry (using annotation `Service.Provider`), the scope is `PerLookup` if the
-   service implements a `Supplier`, and `@Singleton` otherwise; all dependencies are considered injection points
-
 Only services can have Injection points.
 
 ## Qualifiers
@@ -691,9 +689,8 @@ resolved only once you call `get()` on the supplier.
 
 | Term            | Description                                                                                                                                                                                                   |
 |-----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Core Service    | A class annotated with `@Service.Provider`                                                                                                                                                                    |
 | Contract        | A class extended by a service, or an interface implemented by a service, can be used to lookup instances                                                                                                      |
-| Dependency      | A "Core Service" constructor parameter (type must be another service or a "Contract")                                                                                                                         |
-| Service         | A class annotated with one of the scope annotations, or a core service                                                                                                                                        |
-| Factory         | A "Core Service" or "Service" that implements one of the factory interfaces; Core service is a factory only if it implements a `Supplier                                                                      |
+| Dependency      | A service constructor parameter (type must be another service or a "Contract")                                                                                                                                |
+| Service         | A class annotated with one of the scope annotations, or with `@Service.Inject` and no scope annotation                                                                                                       |
+| Factory         | A `Service` that implements one of the factory interfaces                                                                                                                                                     |
 | Injection Point | Field annotated with `@Service.Inject`, or a constructor parameter of a constructor used for injection (either the only accessible constructor, or the only constructor annotated with `@Service.Inject`) |

@@ -41,54 +41,6 @@ public final class Service {
     }
 
     /**
-     * A service provider. This is similar to {@link java.util.ServiceLoader} service providers.
-     * <p>
-     * The provider is an implementation of a {@link io.helidon.service.registry.Service.Contract} that is discoverable by
-     * the service registry.
-     * A service provider annotated with this annotation must provide either of:
-     * <ul>
-     *     <li>an accessible no-argument constructor
-     *      (package private is sufficient), and must itself be at least package private</li>
-     *      <li>an accessible constructor with arguments that are all services as well</li>
-     * </ul>
-     *
-     * The support for providing constructor arguments is limited to the following types:
-     * <ul>
-     *     <li>{@code Contract} - obtain an instance of a service providing that contract</li>
-     *     <li>{@code Optional<Contract>} - the other service may not be available</li>
-     *     <li>{@code List<Contract>} - obtain all instances of services providing the contract</li>
-     *     <li>{@code Supplier<Contract>} - and <b>suppliers of all above</b>, to break instantiation chaining, and to support
-     *     cyclic
-     *                  service references, just make sure you call the {@code get} method outside of the constructor</li>
-     * </ul>
-     *
-     * A service provider may implement the contract in two ways:
-     * <ul>
-     *     <li>Direct implementation of interface (or extending an abstract class)</li>
-     *     <li>Implementing a {@link java.util.function.Supplier} of the contract; when using supplier, service registry
-     *     supports the capability to return {@link java.util.Optional} in case the service cannot provide a value; such
-     *     a service will be ignored and only other implementations (with lower weight) would be used. Supplier will be
-     *     called each time the dependency is used, or each time a method on registry is called to request an instance. If the
-     *     provided instance should be singleton-like as well, use {@link io.helidon.common.LazyValue} or
-     *     similar approach to create it once and return the same instance every time</li>
-     * </ul>
-     *
-     * @deprecated use one of the scope annotations instead ({@link io.helidon.service.registry.Service.Singleton},
-     *         {@link io.helidon.service.registry.Service.PerLookup}).
-     */
-    @Documented
-    @Retention(RetentionPolicy.CLASS)
-    @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
-    @Inherited
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    public @interface Provider {
-        /**
-         * Type name of this annotation.
-         */
-        TypeName TYPE = TypeName.create(Provider.class);
-    }
-
-    /**
      * Scope annotation.
      * A scope defines the cardinality of instances. This is a meta-annotation used to define that an annotation is a scope.
      * Note that a single service can only have one scope annotation, and that scopes are not inheritable.
