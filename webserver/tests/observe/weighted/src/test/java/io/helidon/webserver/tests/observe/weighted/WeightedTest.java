@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 package io.helidon.webserver.tests.observe.weighted;
 
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -46,14 +46,15 @@ class WeightedTest {
     void testInfoObserver(WebClient client) {
         JsonObject jsonObject = client.get("/observe/info/name")
                 .requestEntity(JsonObject.class);
-        assertThat("JSON: " + jsonObject, jsonObject.getString("name"), is("name"));
-        assertThat("JSON: " + jsonObject, jsonObject.getString("value"), is("ObserveTest"));
+        assertThat("JSON: " + jsonObject, jsonObject.stringValue("name").orElseThrow(), is("name"));
+        assertThat("JSON: " + jsonObject, jsonObject.stringValue("value").orElseThrow(), is("ObserveTest"));
 
         jsonObject = client.get("/observe/info")
                 .requestEntity(JsonObject.class);
-        assertThat("JSON: " + jsonObject, jsonObject.getString("name"), is("ObserveTest"));
-        assertThat("JSON: " + jsonObject, jsonObject.getString("description"), is("Test for observability features"));
-        assertThat("JSON: " + jsonObject, jsonObject.getString("version"), is("1.0.0"));
+        assertThat("JSON: " + jsonObject, jsonObject.stringValue("name").orElseThrow(), is("ObserveTest"));
+        assertThat("JSON: " + jsonObject, jsonObject.stringValue("description").orElseThrow(),
+                   is("Test for observability features"));
+        assertThat("JSON: " + jsonObject, jsonObject.stringValue("version").orElseThrow(), is("1.0.0"));
     }
 
     @Test
@@ -75,12 +76,12 @@ class WeightedTest {
 
     @Test
     void testLogObserver(WebClient client) {
-        ClientResponseTyped<JsonObject> response = client.get("/observe/log/loggers")
-                .request(JsonObject.class);
+        ClientResponseTyped<String> response = client.get("/observe/log/loggers")
+                .request(String.class);
 
         assertThat(response.status(), is(Status.OK_200));
-        JsonObject entity = response.entity();
-        assertThat("Entity: " + entity, entity.getJsonArray("levels").getString(0), is("OFF"));
+        String entity = response.entity();
+        assertThat("Entity: " + entity, entity, containsString("\"levels\":[\"OFF\""));
     }
 
     @Test
@@ -90,7 +91,9 @@ class WeightedTest {
 
         assertThat(response.status(), is(Status.OK_200));
         JsonObject entity = response.entity();
-        assertThat("Entity: " + entity, entity.getJsonObject("io.helidon.webserver.ServerListener"), notNullValue());
+        assertThat("Entity: " + entity,
+                   entity.objectValue("io.helidon.webserver.ServerListener").orElse(null),
+                   notNullValue());
     }
 
     @Test
