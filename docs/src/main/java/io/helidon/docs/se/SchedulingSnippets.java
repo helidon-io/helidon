@@ -60,9 +60,9 @@ class SchedulingSnippets {
         FixedRate.builder()
                 .config(Config.create(() -> ConfigSources.create(
                         """
-                                interval: PT4S
+                                interval: PT4M
                                 delay-type: SINCE_PREVIOUS_END
-                                delay-by: PT1S
+                                delay-by: PT1M
                                 """,
                         MediaTypes.APPLICATION_X_YAML)))
                 .task(inv -> System.out.println("Every 4 minutes, first invocation 1 minutes after start"))
