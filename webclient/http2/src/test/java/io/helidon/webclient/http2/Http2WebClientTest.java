@@ -185,7 +185,8 @@ class Http2WebClientTest {
                 .putSocket("https", builder -> builder.port(-1)
                         .host("localhost")
                         .tls(tls)
-                        .receiveBufferSize(4096)
+                        .connectionOptions(connectionOptions -> connectionOptions
+                                .socketReceiveBufferSize(4096))
                         .backlog(8192)
                 )
                 .routing(router)
