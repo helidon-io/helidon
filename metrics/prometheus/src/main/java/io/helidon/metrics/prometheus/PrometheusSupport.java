@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,16 @@ package io.helidon.metrics.prometheus;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.config.Config;
 import io.helidon.http.HttpMediaType;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
-import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-import io.helidon.webserver.servicecommon.HelidonFeatureSupport;
 
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
@@ -43,9 +43,7 @@ import io.prometheus.client.CollectorRegistry;
  *        ..addFeature(PrometheusSupport.create())
  * }</pre>
  */
-public final class PrometheusSupport extends HelidonFeatureSupport {
-
-    private static final System.Logger LOGGER = System.getLogger(PrometheusSupport.class.getName());
+public final class PrometheusSupport implements HttpFeature {
 
     /**
      * Standard path of Prometheus client resource: {@code /metrics}.
@@ -56,20 +54,39 @@ public final class PrometheusSupport extends HelidonFeatureSupport {
 
     private final CollectorRegistry collectorRegistry;
     private final String path;
+    private final String context;
+    private final boolean enabled;
+    private final String routing;
 
     private PrometheusSupport(Builder builder) {
-        super(LOGGER, builder, "prometheus");
         this.collectorRegistry = builder.registry;
         this.path = builder.path;
-    }
+        this.enabled = builder.enabled;
+        this.routing = builder.routing;
 
-    private void configureRoutes(HttpRules rules) {
-        rules.get(path, this::process);
+        String configuredContext = builder.webContext;
+        this.context = (configuredContext.startsWith("/") ? "" : "/") + configuredContext;
     }
 
     @Override
-    public Optional<HttpService> service() {
-            return Optional.of(this::configureRoutes);
+    public void setup(HttpRouting.Builder routing) {
+        if (enabled) {
+            routing.register(context, this::configureRoutes);
+        }
+    }
+
+    @Override
+    public String socket() {
+        return routing == null ? WebServer.DEFAULT_SOCKET_NAME : routing;
+    }
+
+    /**
+     * Web context of this service.
+     *
+     * @return context path to be registered
+     */
+    public String context() {
+        return context;
     }
 
     private void process(ServerRequest req, ServerResponse res) {
@@ -161,18 +178,13 @@ public final class PrometheusSupport extends HelidonFeatureSupport {
     }
 
     private static String typeString(Collector.Type t) {
-        switch (t) {
-        case GAUGE:
-            return "gauge";
-        case COUNTER:
-            return "counter";
-        case SUMMARY:
-            return "summary";
-        case HISTOGRAM:
-            return "histogram";
-        default:
-            return "untyped";
-        }
+        return switch (t) {
+            case GAUGE -> "gauge";
+            case COUNTER -> "counter";
+            case SUMMARY -> "summary";
+            case HISTOGRAM -> "histogram";
+            default -> "untyped";
+        };
     }
 
     /**
@@ -210,16 +222,21 @@ public final class PrometheusSupport extends HelidonFeatureSupport {
         return new Builder();
     }
 
+    private void configureRoutes(HttpRules rules) {
+        rules.get(path, this::process);
+    }
+
     /**
      * A builder of {@link PrometheusSupport}.
      */
-    public static final class Builder extends HelidonFeatureSupport.Builder<Builder, PrometheusSupport> {
-
+    public static final class Builder implements io.helidon.common.Builder<Builder, PrometheusSupport> {
         private CollectorRegistry registry = CollectorRegistry.defaultRegistry;
         private String path = DEFAULT_PATH;
+        private String webContext = "/";
+        private String routing;
+        private boolean enabled = true;
 
         private Builder() {
-            super("/");
         }
 
         /**
@@ -245,6 +262,57 @@ public final class PrometheusSupport extends HelidonFeatureSupport {
             } else {
                 this.path = path;
             }
+            return this;
+        }
+
+        /**
+         * Sets the web context to use for the service's endpoint.
+         *
+         * @param webContext web context
+         * @return updated builder
+         */
+        public Builder webContext(String webContext) {
+            this.webContext = webContext;
+            return this;
+        }
+
+        /**
+         * Sets the routing name to use for setting up the service's endpoint.
+         *
+         * @param routing routing name as defined in the server settings
+         * @return updated builder
+         */
+        public Builder routing(String routing) {
+            this.routing = routing;
+            return this;
+        }
+
+        /**
+         * Is this service enabled or not.
+         *
+         * @param enabled set to {@code false} to disable this service
+         * @return updated builder
+         */
+        public Builder enabled(boolean enabled) {
+            this.enabled = enabled;
+            return this;
+        }
+
+        /**
+         * Updates settings using the provided {@link io.helidon.config.Config} node for the service of interest.
+         *
+         * @param config config node for the service
+         * @return updated builder
+         */
+        public Builder config(Config config) {
+            config.get("web-context")
+                    .asString()
+                    .ifPresent(this::webContext);
+            config.get("routing")
+                    .asString()
+                    .ifPresent(this::routing);
+            config.get("enabled").asBoolean().ifPresent(this::enabled);
+
             return this;
         }
 

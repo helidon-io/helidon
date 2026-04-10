@@ -55,10 +55,6 @@
             <artifactId>helidon-common-context</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-service-common</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
         </dependency>

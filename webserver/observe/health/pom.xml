@@ -45,10 +45,6 @@
             <artifactId>helidon-health</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-service-common</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media-json</artifactId>
         </dependency>

@@ -861,11 +861,6 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.webserver</groupId>
-                <artifactId>helidon-webserver-service-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.webserver</groupId>
                 <artifactId>helidon-webserver-concurrency-limits</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
