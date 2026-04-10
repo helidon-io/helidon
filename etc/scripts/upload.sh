@@ -186,14 +186,14 @@ upload_release() {
   version=$(find_version)
 
   # Make sure version does NOT end in -SNAPSHOT
-  if [[ "${v}" = *-SNAPSHOT ]]; then
+  if [[ "${version}" = *-SNAPSHOT ]]; then
     echo "ERROR: Version ${version} is a SNAPSHOT version" >&2
     exit 1
   fi
 
   deployment_id="$(central_upload "${CENTRAL_URL}" "${STAGING_DIR}")"
-  central_finish "${deployment_id}"
   printf "deployment_id=%s\n" "${deployment_id}" >&6
+  central_finish "${deployment_id}"
 }
 
 # Upload contents of the staging directory to central portal
