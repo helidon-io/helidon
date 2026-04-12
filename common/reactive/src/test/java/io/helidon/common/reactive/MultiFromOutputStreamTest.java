@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -119,6 +120,22 @@ public class MultiFromOutputStreamTest {
         ByteBuffer bb = subscriber.getItems().get(0);
         assertThat(new String(bb.array()), is(equalTo("foo")));
     }
+
+    @Test
+    void testByteArrayWriteWithOffset() throws IOException {
+        OutputStreamMulti publisher = IoMulti.outputStreamMulti();
+        TestSubscriber<ByteBuffer> subscriber = new TestSubscriber<>();
+
+        publisher.subscribe(subscriber);
+        subscriber.requestMax();
+
+        publisher.write(new byte[] {10, 20, 30, 40}, 1, 2);
+        publisher.close();
+
+        subscriber.assertItemCount(1).assertComplete();
+        assertArrayEquals(new byte[] {20, 30}, subscriber.getItems().get(0).array());
+    }
+
 
     @Test
     void testCloseOnNoDataWritten() throws IOException {

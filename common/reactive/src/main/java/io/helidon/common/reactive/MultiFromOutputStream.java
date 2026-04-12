@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,7 +156,7 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
     }
 
     private void publish(byte[] b, int off, int len) throws IOException {
-        ByteBuffer emitBuffer = ByteBuffer.allocate(len - off);
+        ByteBuffer emitBuffer = ByteBuffer.allocate(len);
         emitBuffer.put(b, off, len);
         emitBuffer.flip();
         doPublish(emitBuffer);
