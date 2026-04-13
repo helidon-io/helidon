@@ -1,0 +1,35 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeLoggerConfigLevel
+
+== Description
+
+++++
+This type is an enumeration.
+++++
+
+== Allowed Values
+
+|===
+|Value|Description
+
+|`ERROR`
+|pass:[Error level]
+
+|`WARNING`
+|pass:[Warning level]
+
+|`INFO`
+|pass:[Info level]
+
+|`DEBUG`
+|pass:[Debug level]
+
+|===
+
+== Usages
+
+* xref:{rootdir}/config/com_acme_AcmeLoggerConfig.adoc#a6d972690-level[`server.features.logging.loggers.level`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

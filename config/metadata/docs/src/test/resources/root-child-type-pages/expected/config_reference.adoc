@@ -1,0 +1,16 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= Config Reference
+
+== Config Roots
+
+|===
+|Key|Description
+
+|[[a50e613ef-clients]] xref:{rootdir}/config/com_acme_AcmeClientsConfig.adoc[`clients`]
+|pass:[Configuration for <code>clients</code>]
+
+|===
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

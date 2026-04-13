@@ -1,0 +1,22 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= Config Reference
+
+== Config Roots
+
+|===
+|Key|Description
+
+|[[a9950f4db-fault-tolerance]] xref:{rootdir}/config/io_helidon_FaultToleranceConfig.adoc[`fault-tolerance`]
+|pass:[Configuration for <code>fault-tolerance</code>]
+
+|[[a8b6f54c9-rest-client]] xref:{rootdir}/config/io_helidon_RestClientConfig.adoc[`rest-client`]
+|pass:[Configuration for <code>rest-client</code>]
+
+|[[ac6d482f1-server]] xref:{rootdir}/config/com_acme_AcmeServerConfig.adoc[`server`]
+|pass:[Configuration for <code>server</code>]
+
+|===
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

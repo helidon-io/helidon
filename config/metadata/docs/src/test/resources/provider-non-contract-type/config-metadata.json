@@ -1,0 +1,21 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.AcmeConfig",
+        "standalone": true,
+        "prefix": "acme",
+        "description": "ACME configuration.",
+        "options": [
+          {
+            "key": "manager",
+            "type": "java.lang.String",
+            "description": "Configured manager value.",
+            "provider": true
+          }
+        ]
+      }
+    ]
+  }
+]

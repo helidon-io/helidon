@@ -1,0 +1,51 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.AcmeBulkheadConfig",
+        "standalone": true,
+        "prefix": "fault-tolerance.bulkheads",
+        "description": "ACME Bulkhead configuration."
+      },
+      {
+        "type": "com.acme.AcmeRestClientSslConfig",
+        "standalone": true,
+        "prefix": "rest-client.ssl",
+        "description": "ACME REST client SSL configuration."
+      },
+      {
+        "type": "com.acme.AcmeServerConfig",
+        "standalone": true,
+        "prefix": "server",
+        "description": "ACME server configuration.",
+        "options": [
+          {
+            "key": "features",
+            "type": "com.acme.AcmeFeature",
+            "description": "Feature contract",
+            "provider": true
+          }
+        ]
+      },
+      {
+        "type": "com.acme.AcmeOpenAiFeatureConfig",
+        "standalone": true,
+        "prefix": "open-ai",
+        "description": "Open AI implementation.",
+        "provides": [
+          "com.acme.AcmeFeature"
+        ]
+      },
+      {
+        "type": "com.acme.AcmeOpenAiAltFeatureConfig",
+        "standalone": true,
+        "prefix": "open-ai",
+        "description": "Alternative Open AI implementation.",
+        "provides": [
+          "com.acme.AcmeFeature"
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,46 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.AcmeKeysConfig",
+        "standalone": true,
+        "prefix": "keys",
+        "description": "Keys configuration.",
+        "options": [
+          {
+            "key": "resource",
+            "type": "com.acme.AcmeResourceConfig",
+            "description": "Top-level resource."
+          },
+          {
+            "key": "group.name",
+            "type": "java.lang.String",
+            "description": "Group name."
+          },
+          {
+            "key": "group.enabled",
+            "type": "java.lang.Boolean",
+            "description": "Group enabled."
+          },
+          {
+            "key": "group.resource",
+            "type": "com.acme.AcmeResourceConfig",
+            "description": "Grouped resource."
+          }
+        ]
+      },
+      {
+        "type": "com.acme.AcmeResourceConfig",
+        "description": "Resource configuration.",
+        "options": [
+          {
+            "key": "location",
+            "type": "java.lang.String",
+            "description": "Resource location."
+          }
+        ]
+      }
+    ]
+  }
+]

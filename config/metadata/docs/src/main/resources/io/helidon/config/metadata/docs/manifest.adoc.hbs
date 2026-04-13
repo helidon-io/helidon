@@ -20,21 +20,29 @@ limitations under the License.
 See the xref:config_reference.adoc[root] type.
 
 {{#each configTypes~}}
-* xref:{{fileName}}[{{typeName}}]
+* xref:{{this}}[{{@key}}]
 {{/each~}}
 
-{{~#if providerTypes}}
+{{#each contracts~}}
+{{#if @first}}
 == Provider Types
 
-{{#each providerTypes~}}
-* xref:{{fileName}}[{{typeName}}]
+{{/if~}}
+* xref:{{this}}[{{@key}}]
 {{/each~}}
-{{~/if~}}
-
-{{~#if enumTypes}}
-== Enum Types
 
 {{#each enumTypes~}}
-* xref:{{fileName}}[{{typeName}}]
+{{#if @first}}
+== Enum Types
+
+{{/if~}}
+* xref:{{this}}[{{@key}}]
 {{/each~}}
-{{~/if~}}
+
+{{#each syntheticTypes~}}
+{{#if @first}}
+== Synthetic Types
+
+{{/if~}}
+* xref:{{this}}[{{@key}}]
+{{/each~}}

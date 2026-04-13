@@ -1,0 +1,13 @@
+
+= Config Types
+
+== Config Types
+
+See the xref:config_reference.adoc[root] type.
+
+* xref:com_acme_AcmeKeysConfig.adoc[com.acme.AcmeKeysConfig]
+* xref:com_acme_AcmeResourceConfig.adoc[com.acme.AcmeResourceConfig]
+
+== Synthetic Types
+
+* xref:io_helidon_keys_GroupConfig.adoc[io.helidon.keys.GroupConfig]

@@ -1,0 +1,28 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeHelperConfig
+
+== Description
+
+++++
+Helper configuration.
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Description
+
+|[[a29d47920-services]] xref:{rootdir}/config/com_acme_AcmeService.adoc[`services`]
+|`AcmeService`
+|pass:[Services]
+
+|===
+
+// end::config[]
+
+
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

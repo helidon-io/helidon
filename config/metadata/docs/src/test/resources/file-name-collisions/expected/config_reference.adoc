@@ -1,0 +1,19 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= Config Reference
+
+== Config Roots
+
+|===
+|Key|Description
+
+|[[a0f10a996-config]] xref:{rootdir}/config/io_helidon_ConfigConfig.adoc[`config`]
+|pass:[Configuration for <code>config</code>]
+
+|[[a1f396e0e-config_reference]] xref:{rootdir}/config/io_helidon_ConfigReferenceConfig.adoc[`config_reference`]
+|pass:[Configuration for <code>config_reference</code>]
+
+|===
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

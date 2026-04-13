@@ -14,40 +14,54 @@ See the License for the specific language governing permissions and
 limitations under the License.
 }}
 ifndef::rootdir[:rootdir: {docdir}/..]
-= {{type}}
+= {{typeName}}
 
 == Description
 
 ++++
-{{{description}}}.
+{{{description}}}
 ++++
 
-== Usages
-{{#each usages}}
-* xref:{rootdir}/config/{{fileName}}#{{id}}[`{{path}}`]
-{{~/each}}
-
 // tag::config[]
-
 == Configuration options
 
-{{#if options.options~}}
-{{> options.adoc options}}
-{{~/if~}}
+{{#unless tables.isEmpty~}}
+{{#unless tables.standard.isEmpty~}}
+{{> table.adoc tables.standard}}
+{{/unless}}
 
-{{~#if experimentalOptions.options}}
+{{~#unless tables.experimental.isEmpty}}
 === Experimental Options
 
-{{> options.adoc experimentalOptions}}
-{{~/if~}}
+{{> table.adoc tables.experimental}}
+{{/unless}}
 
-{{~#if deprecatedOptions.options}}
+{{~#unless tables.deprecated.isEmpty}}
 === Deprecated Options
 
-{{> options.adoc deprecatedOptions}}
-{{/if~}}
-
+{{> table.adoc tables.deprecated}}
+{{~/unless}}
+{{~else}}
+This config type has no options.
+{{~/unless}}
 // end::config[]
 
+{{#each mergedTypes~}}
+{{#if @first}}
+== Merged Types
+
+{{/if~}}
+* xref:{rootdir}/config/{{this}}[{{@key}}]
+{{/each}}
+
+{{~#each dependentTypes}}
+{{#if @first}}
+== Dependent Types
+
+{{/if~}}
+* xref:{rootdir}/config/{{this}}[{{@key}}]
+{{/each~}}
+
+{{~> usages.adoc}}
 '''
 See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

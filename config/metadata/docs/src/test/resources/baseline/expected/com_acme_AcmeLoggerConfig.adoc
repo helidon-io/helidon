@@ -1,0 +1,46 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeLoggerConfig
+
+== Description
+
+++++
+ACME Logger configuration
+++++
+
+// tag::config[]
+== Configuration options
+
+
+=== Experimental Options
+
+|===
+|Key|Type|Description
+
+| `logger`
+|`String`
+|pass:[Logger name]
+
+|===
+
+=== Deprecated Options
+
+|===
+|Key|Type|Default Value|Description
+
+|[[a6d972690-level]] xref:{rootdir}/config/com_acme_AcmeLoggerConfigLevel.adoc[`level`]
+|`AcmeLoggerConfigLevel`
+|`INFO`
+|pass:[Logging level]
+
+|===
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/com_acme_AcmeLoggingConfig.adoc#affacdb29-loggers[`server.features.logging.loggers`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

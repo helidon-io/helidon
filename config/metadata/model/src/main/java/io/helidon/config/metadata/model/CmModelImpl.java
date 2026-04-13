@@ -79,7 +79,7 @@ record CmModelImpl(List<CmModule> modules) implements CmModel {
     /**
      * {@link CmType} implementation.
      *
-     * @param type        type
+     * @param typeName        type
      * @param options     options
      * @param description description
      * @param prefix      prefix
@@ -87,7 +87,7 @@ record CmModelImpl(List<CmModule> modules) implements CmModel {
      * @param inherits    inherits
      * @param provides    provides
      */
-    record CmTypeImpl(String type,
+    record CmTypeImpl(String typeName,
                       List<CmOption> options,
                       Optional<String> description,
                       Optional<String> prefix,
@@ -97,11 +97,11 @@ record CmModelImpl(List<CmModule> modules) implements CmModel {
 
         CmTypeImpl {
             if (standalone && prefix.isEmpty()) {
-                throw new IllegalArgumentException("Standalone type does not have a prefix: " + type);
+                throw new IllegalArgumentException("Standalone type does not have a prefix: " + typeName);
             }
             if (!provides.isEmpty()) {
                 if (prefix.isEmpty()) {
-                    throw new IllegalArgumentException("Provider implementation does not have a prefix: " + type);
+                    throw new IllegalArgumentException("Provider implementation does not have a prefix: " + typeName);
                 }
             }
         }
@@ -134,7 +134,7 @@ record CmModelImpl(List<CmModule> modules) implements CmModel {
         static Hson.Struct toJson(CmType o) {
             var that = (CmTypeImpl) o;
             var builder = Hson.Struct.builder();
-            builder.set("type", that.type);
+            builder.set("type", that.typeName);
             if (that.standalone) {
                 builder.set("standalone", true);
             }
@@ -156,7 +156,7 @@ record CmModelImpl(List<CmModule> modules) implements CmModel {
 
         @Override
         public int compareTo(CmType o) {
-            return type.compareTo(o.type());
+            return typeName.compareTo(o.typeName());
         }
 
         /**
@@ -231,7 +231,7 @@ record CmModelImpl(List<CmModule> modules) implements CmModel {
      *
      * @param key           key
      * @param description   description
-     * @param type          type
+     * @param typeName          type
      * @param defaultValue  default value
      * @param required      required
      * @param experimental  experimental
@@ -243,7 +243,7 @@ record CmModelImpl(List<CmModule> modules) implements CmModel {
      */
     record CmOptionImpl(Optional<String> key,
                         Optional<String> description,
-                        String type,
+                        String typeName,
                         Optional<String> defaultValue,
                         boolean required,
                         boolean experimental,
@@ -257,7 +257,7 @@ record CmModelImpl(List<CmModule> modules) implements CmModel {
             if (required && defaultValue.isPresent()) {
                 throw new IllegalArgumentException(
                         "Required option cannot have a default value: key=%s, type=%s"
-                                .formatted(key, type));
+                                .formatted(key, typeName));
             }
         }
 
@@ -297,8 +297,8 @@ record CmModelImpl(List<CmModule> modules) implements CmModel {
             var that = (CmOptionImpl) o;
             var builder = Hson.Struct.builder();
             that.key.ifPresent(it -> builder.set("key", it));
-            if (!that.type.equals(DEFAULT_TYPE)) {
-                builder.set("type", that.type);
+            if (!that.typeName.equals(DEFAULT_TYPE)) {
+                builder.set("type", that.typeName);
             }
             that.description.ifPresent(it -> builder.set("description", it));
             that.defaultValue.ifPresent(it -> builder.set("defaultValue", it));
@@ -469,14 +469,14 @@ record CmModelImpl(List<CmModule> modules) implements CmModel {
     /**
      * {@link CmEnum} implementation.
      *
-     * @param type   type
+     * @param typeName   type
      * @param values values
      */
-    record CmEnumImpl(String type, List<CmAllowedValue> values) implements CmEnum {
+    record CmEnumImpl(String typeName, List<CmAllowedValue> values) implements CmEnum {
 
         @Override
         public int compareTo(CmEnum o) {
-            return type.compareTo(o.type());
+            return typeName.compareTo(o.typeName());
         }
     }
 }

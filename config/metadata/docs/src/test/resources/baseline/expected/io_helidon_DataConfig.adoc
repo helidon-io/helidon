@@ -1,0 +1,31 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= io.helidon.DataConfig
+
+== Description
+
+++++
+Configuration for <code>data</code>
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Description
+
+|[[a52e9ee40-sources]] xref:{rootdir}/config/io_helidon_data_SourcesConfig.adoc[`sources`]
+|pass:[Configuration for <code>sources</code>]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/config_reference.adoc#ad71360ab-data[`data`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

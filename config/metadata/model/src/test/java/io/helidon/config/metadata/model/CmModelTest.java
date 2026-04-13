@@ -58,7 +58,7 @@ class CmModelTest {
         assertThat(actual.modules(), is(hasItem(allOf(
                 hasProperty("module", CmModule::module, is("com.acme")),
                 hasProperty("types", CmModule::types, is(hasItem(allOf(List.of(
-                        hasProperty("type", CmType::type, is("com.acme.AcmeConfig")),
+                        hasProperty("type", CmType::typeName, is("com.acme.AcmeConfig")),
                         hasProperty("description", CmType::description, is(Optional.of("ACME configuration"))),
                         hasProperty("prefix", CmType::prefix, is(Optional.of("acme"))),
                         hasProperty("standalone", CmType::standalone, is(false)),
@@ -68,7 +68,7 @@ class CmModelTest {
                         hasProperty("options", CmType::options, is(hasItem(allOf(List.of(
                                 hasProperty("key", CmOption::key, is(Optional.of("mode"))),
                                 hasProperty("description", CmOption::description, is(Optional.of("Mode"))),
-                                hasProperty("type", CmOption::type, is("com.acme.AcmeMode")),
+                                hasProperty("type", CmOption::typeName, is("com.acme.AcmeMode")),
                                 hasProperty("defaultValue", CmOption::defaultValue, is(Optional.of("MODE1"))),
                                 hasProperty("required", CmOption::required, is(false)),
                                 hasProperty("experimental", CmOption::experimental, is(false)),
@@ -128,6 +128,16 @@ class CmModelTest {
         var actual = CmModel.fromJson(parseJson(new ByteArrayInputStream(expectedJson.getBytes())));
 
         assertThat(actual, is(expected));
+    }
+
+    @Test
+    void testSimpleTypeName() {
+        var type = CmType.builder().type("com.acme.AcmeConfig").build();
+        var option = CmOption.builder().type("com.acme.AcmeMode").build();
+
+        assertThat(CmType.simpleTypeName("com.acme.AcmeConfig"), is("AcmeConfig"));
+        assertThat(type.simpleTypeName(), is("AcmeConfig"));
+        assertThat(option.simpleTypeName(), is("AcmeMode"));
     }
 
     static Hson.Array parseJson(InputStream is) {

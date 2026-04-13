@@ -1,0 +1,12 @@
+
+= Config Types
+
+== Config Types
+
+See the xref:config_reference.adoc[root] type.
+
+* xref:com_acme_AcmeConfig.adoc[com.acme.AcmeConfig]
+
+== Provider Types
+
+* xref:com_acme_AcmeManager.adoc[com.acme.AcmeManager]
