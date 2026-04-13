@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -281,8 +281,9 @@ security:
       identity-uri: "http://localhost:8080/realms/myRealm" # <4>
       audience: "account"
       header-use: "true"
-      # proxy-host should be defined if you operate behind a proxy, can be removed otherwise
-      proxy-host: ""
+      webclient:
+        # proxy-host should be defined if you operate behind a proxy, can be removed otherwise
+        proxy-host: ""
       frontend-uri: "http://localhost:7987" # <5>
       server-type: "oidc"
 ----

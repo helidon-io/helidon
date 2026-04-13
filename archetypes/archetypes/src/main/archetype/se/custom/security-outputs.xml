@@ -30,7 +30,8 @@
         identity-uri: "https://your-tenant-id.identity.oracle.com"
         # A prefix used for custom scopes
         scope-audience: "http://localhost:7987/test-application"
-        proxy-host: ""
+        webclient:
+          proxy-host: ""
         # Used as a base for redirects back to us (based on Host header now, so no need to explicitly define it)
         # If explicitly defined, will override host header
         # frontend-uri: "http://localhost:7987"
@@ -128,7 +129,7 @@ Edit application.yaml for IdcsMain.java or OidcConfig variable definition for Id
  2. idcs-client-id  : This is obtained from your IDCS application in the IDCS console
  3. idcs-client-secret   : This is obtained from your IDCS application in the IDCS console
  4. frontend-uri : This is the base URL of your application when run, e.g. `http://localhost:7987`
- 5. proxy-host   : Your proxy server if needed
+ 5. webclient.proxy-host   : Your proxy server if needed
  6. scope-audience : This is the scope audience which MUST match the primary audience in the IDCS resource, recommendation is not to have a trailing slash (/)
 
 ## Try the application
