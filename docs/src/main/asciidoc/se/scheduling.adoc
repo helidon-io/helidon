@@ -59,7 +59,7 @@ For scheduling periodic tasks, it is possible to choose a fixed rate or a Cron e
 === Fixed rate
 
 [source,java]
-.Scheduling with fixed rate using `Scheduling.fixedRate()` builder.
+.Scheduling with fixed rate using `FixedRate.builder()`.
 ----
 include::{sourcedir}/se/SchedulingSnippets.java[tag=snippet_1, indent=0]
 ----
@@ -78,7 +78,7 @@ include::{rootdir}/config/io_helidon_scheduling_FixedRate.adoc[tag=config,levelo
 === Cron
 
 For more complicated interval definition, Cron expression can be leveraged with
-`Scheduling.cron()` builder.
+`Cron.builder()`.
 
 [source,java]
 .Scheduling with Cron expression
@@ -132,7 +132,7 @@ When using declarative programming model, the `TaskManager` can be injected. It 
 == Examples
 
 === Fixed Rate Example
-For simple fixed rate invocation use .
+For simple fixed-rate invocation use `FixedRate.builder()`.
 
 [source,java]
 .Example of scheduling with fixed rate using `FixedRate.builder()` builder.
