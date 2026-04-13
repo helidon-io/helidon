@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.context.ContextFeature;
+import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.observe.ObserveFeature;
@@ -372,6 +373,18 @@ public class ServerCdiExtension implements Extension {
                     .orElseGet(() -> RequestScopeFeature.create(GlobalServiceRegistry.registry().supply(Scopes.class), true));
 
             serverBuilder.addFeature(feature);
+        }
+    }
+
+    private void registerHttpFeatures(@Observes
+                              @Priority(LIBRARY_BEFORE)
+                              @Initialized(ApplicationScoped.class) Object event) {
+        for (var feature : GlobalServiceRegistry.registry().all(HttpFeature.class)) {
+            HttpRouting.Builder routing = findRouting(
+                    feature.getClass().getName(),
+                    feature.socket(),
+                    feature.socketRequired());
+            routing.addFeature(feature);
         }
     }
 
