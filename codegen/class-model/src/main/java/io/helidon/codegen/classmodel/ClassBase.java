@@ -37,7 +37,6 @@ import io.helidon.common.types.TypeName;
 /**
  * Abstract class type model. Contains common logic for all class related models.
  */
-@SuppressWarnings("removal")
 public abstract class ClassBase extends AnnotatedComponent {
 
     private final boolean isFinal;
@@ -209,7 +208,7 @@ public abstract class ClassBase extends AnnotatedComponent {
             }
             writer.write("abstract ");
         }
-        writer.write(ClassType.toTypeName(this.classType) + " " + name());
+        writer.write(typeName(this.classType) + " " + name());
         if (!genericParameters.isEmpty()) {
             writeGenericParameters(writer, combinedTokens, imports);
         }
@@ -777,25 +776,6 @@ public abstract class ClassBase extends AnnotatedComponent {
          * Type of the Java type we are creating.
          * For example: class, interface etc.
          *
-         * @param classType Java type
-         * @return updated builder instance
-         * @deprecated use {@link #classType(io.helidon.common.types.ElementKind)}
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(forRemoval = true, since = "4.4.0")
-        public B classType(ClassType classType) {
-            switch (classType) {
-            case INTERFACE -> classType(ElementKind.INTERFACE);
-            case CLASS -> classType(ElementKind.CLASS);
-            default -> throw new IllegalStateException("Unexpected value: " + classType);
-            }
-            return identity();
-        }
-
-        /**
-         * Type of the Java type we are creating.
-         * For example: class, interface etc.
-         *
          * @param kind the element kind, must be a supported top level type
          * @return updated builder instance
          * @throws IllegalArgumentException in case the kind is not supported
@@ -880,5 +860,17 @@ public abstract class ClassBase extends AnnotatedComponent {
                 throw new IllegalStateException("Trying to add enum constants to a class of type: " + classType);
             }
         }
+    }
+
+    private static String typeName(ElementKind kind) {
+        return switch (kind) {
+        case CLASS -> "class";
+        case INTERFACE -> "interface";
+        case ENUM -> "enum";
+        case ANNOTATION_TYPE -> "@interface";
+        case RECORD -> "record";
+        case CONSTRUCTOR, FIELD, METHOD, PARAMETER, PACKAGE, RECORD_COMPONENT, STATIC_INIT, INSTANCE_INIT, ENUM_CONSTANT,
+             LOCAL_VARIABLE, MODULE, OTHER -> throw new IllegalStateException("Invalid kind for a Java class: " + kind);
+        };
     }
 }
