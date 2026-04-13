@@ -134,17 +134,11 @@ class InterceptorGenerator {
     }
 
     private boolean isService(TypeInfo type) {
-        // must be annotated with @Service.Provider, or @Service.Scope
-        if (type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER)) {
-            return true;
-        }
+        // must be annotated with a scope annotation
         if (type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_SCOPE)) {
             return true;
         }
         for (Annotation annotation : type.annotations()) {
-            if (annotation.hasMetaAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER)) {
-                return true;
-            }
             if (annotation.hasMetaAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_SCOPE)) {
                 return true;
             }

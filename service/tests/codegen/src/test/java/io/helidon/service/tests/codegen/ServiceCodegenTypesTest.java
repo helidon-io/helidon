@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,10 +68,8 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@SuppressWarnings("deprecation")
 @Testing.Test
 class ServiceCodegenTypesTest {
-    @SuppressWarnings("removal")
     @Test
     void testTypes() {
         // it is really important to test ALL constants on the class, so let's use reflection
@@ -93,7 +91,6 @@ class ServiceCodegenTypesTest {
             fields.put(name, declaredField);
         }
 
-        checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_PROVIDER", Service.Provider.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_PRE_DESTROY", Service.PreDestroy.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_POST_CONSTRUCT", Service.PostConstruct.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_CONTRACT", Service.Contract.class);

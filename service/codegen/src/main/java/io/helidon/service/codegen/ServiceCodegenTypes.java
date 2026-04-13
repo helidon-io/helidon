@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,15 +25,11 @@ import io.helidon.common.types.TypeNames;
  */
 public final class ServiceCodegenTypes {
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.Provider}.
-     */
-    public static final TypeName SERVICE_ANNOTATION_PROVIDER = TypeName.create("io.helidon.service.registry.Service.Provider");
-    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.Singleton}.
      */
     public static final TypeName SERVICE_ANNOTATION_SINGLETON = TypeName.create("io.helidon.service.registry.Service.Singleton");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.Singleton}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.PerLookup}.
      */
     public static final TypeName SERVICE_ANNOTATION_PER_LOOKUP = TypeName.create("io.helidon.service.registry.Service.PerLookup");
     /**

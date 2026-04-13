@@ -76,7 +76,6 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PER_INSTANCE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PER_LOOKUP;
-import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_QUALIFIER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_RUN_LEVEL;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_SCOPE;
@@ -643,17 +642,6 @@ public class ServiceDescriptorCodegen {
         }
 
         if (service.hasAnnotation(SERVICE_ANNOTATION_PER_INSTANCE)) {
-            return SERVICE_ANNOTATION_SINGLETON;
-        }
-
-        if (service.hasAnnotation(SERVICE_ANNOTATION_PROVIDER)) {
-            // if supplier, per lookup, otherwise singleton; will be removed once we remove Service.Provider (if we remove it)
-            if (service.interfaceTypeInfo()
-                    .stream()
-                    .map(TypeInfo::typeName)
-                    .anyMatch(TypeNames.SUPPLIER::equals)) {
-                return SERVICE_ANNOTATION_PER_LOOKUP;
-            }
             return SERVICE_ANNOTATION_SINGLETON;
         }
 
