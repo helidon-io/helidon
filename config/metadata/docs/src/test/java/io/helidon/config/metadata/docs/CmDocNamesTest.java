@@ -19,9 +19,7 @@ package io.helidon.config.metadata.docs;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.startsWith;
 
 /**
  * Tests {@link CmDocNames}.
@@ -60,21 +58,29 @@ class CmDocNamesTest {
     void testFileNamesNormalizeAndResolveCollisions() {
         var names = new CmDocNames("initial.html");
 
-        assertThat(names.fileName("alpha.beta", ".html"), is("alpha_beta.html"));
-        assertThat(names.fileName("alpha/beta", ".html"), is("alpha_beta_2.html"));
+        assertThat(names.fileName("alpha.beta", ".html"), is("alpha.beta.html"));
+        assertThat(names.fileName("alpha/beta", ".html"), is("alpha_beta.html"));
         assertThat(names.fileName("initial", ".html"), is("initial_2.html"));
     }
 
     @Test
-    void testAnchorsAreStableAndSanitized() {
+    void testAnchorsAreStablePerPage() {
         var names = new CmDocNames();
 
-        var anchor = names.anchor("com_acme_AcmeServerConfig.adoc", "cert.alias", "com.acme.AcmeServerConfig");
+        assertThat(names.anchor("com.acme.AcmeServerConfig.md", "cert.alias", "com.acme.AcmeServerConfig"),
+                is("cert-alias"));
+        assertThat(names.anchor("com.acme.AcmeServerConfig.md", "cert.alias", "com.acme.AcmeServerConfig"),
+                is("cert-alias"));
+        assertThat(names.anchor("com.acme.AcmeServerConfig.md", "cert.alias", "com.acme.AcmeTlsConfig"),
+                is("cert-alias-2"));
+        assertThat(names.anchor("com.acme.AcmeTlsConfig.md", "cert.alias", "com.acme.AcmeTlsConfig"),
+                is("cert-alias"));
+    }
 
-        assertThat(anchor, startsWith("a"));
-        assertThat(anchor, containsString("-cert-alias"));
-        assertThat(anchor.matches("a[0-9a-f]{8}-cert-alias"), is(true));
-        assertThat(names.anchor("com_acme_AcmeServerConfig.adoc", "cert.alias", "com.acme.AcmeServerConfig"),
-                is(anchor));
+    @Test
+    void testAnchorsSanitizeBlankKeys() {
+        var names = new CmDocNames();
+
+        assertThat(names.anchor("config_reference.md", "...", "root"), is("entry"));
     }
 }

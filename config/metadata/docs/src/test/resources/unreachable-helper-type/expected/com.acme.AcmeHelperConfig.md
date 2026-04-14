@@ -1,0 +1,38 @@
+# com.acme.AcmeHelperConfig
+
+## Description
+
+Helper configuration.
+
+## Configuration options
+
+<style>
+    code {
+        white-space: nowrap !important;
+    }
+</style>
+
+<table>
+<thead>
+<tr>
+<th>Key</th><th>Type</th><th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a id="nested"></a><a href="com.acme.AcmeNestedConfig.md"><code>nested</code></a></td>
+<td><code>AcmeNestedConfig</code></td>
+<td>Nested</td>
+</tr>
+<tr>
+<td><code>enabled</code></td>
+<td><code>Boolean</code></td>
+<td>Enabled</td>
+</tr>
+</tbody>
+</table>
+
+
+---
+
+See the [manifest](manifest.md) for all available types.

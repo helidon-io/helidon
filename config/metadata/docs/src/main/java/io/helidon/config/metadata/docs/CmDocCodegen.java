@@ -42,7 +42,7 @@ import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
  */
 class CmDocCodegen {
     private static final System.Logger LOGGER = System.getLogger(CmDocCodegen.class.getName());
-    private static final String PAGE_EXT = ".adoc";
+    private static final String PAGE_EXT = ".md";
     private static final String CONFIG_REFERENCE = "config_reference" + PAGE_EXT;
     private static final String MANIFEST = "manifest" + PAGE_EXT;
 
@@ -116,7 +116,9 @@ class CmDocCodegen {
                 var context = Context.newBuilder(model)
                         .push(ValueResolverImpl.INSTANCE)
                         .build();
-                var rendered = template.apply(context).replaceAll("\\n+\\z", "\n");
+                var rendered = template.apply(context)
+                        .replaceAll("\\A\\n+", "")
+                        .replaceAll("\\n+\\z", "\n");
                 writer.write(rendered);
             }
             return fileName;

@@ -73,7 +73,7 @@ class CmPageResolverTest {
                                         hasProperty("rows", CmPage.Table::rows, hasItem(allOf(
                                                 hasProperty("key", CmPage.Row::key, is("sockets")),
                                                 hasProperty("fileName", CmPage.Row::fileName,
-                                                        is("com_acme_AcmeListenerConfig.html")),
+                                                        is("com.acme.AcmeListenerConfig.html")),
                                                 hasProperty("anchor", CmPage.Row::anchor, not(is("")))
                                         )))))
                 )),
@@ -82,11 +82,11 @@ class CmPageResolverTest {
                         hasProperty("key", CmPage::key, is("config/com.acme.AcmeListenerConfig")),
                         hasProperty("dependentTypes", CmPage::dependentTypes, allOf(
                                 hasProperty("size", Map::size, is(1)),
-                                hasEntry("com.acme.AcmeServerConfig", "com_acme_AcmeServerConfig.html")
+                                hasEntry("com.acme.AcmeServerConfig", "com.acme.AcmeServerConfig.html")
                         )),
                         hasProperty("usages", CmPage::usages, hasItem(allOf(
                                 hasProperty("path", CmPage.Usage::path, is("server.sockets")),
-                                hasProperty("fileName", CmPage.Usage::fileName, is("com_acme_AcmeServerConfig.html"))
+                                hasProperty("fileName", CmPage.Usage::fileName, is("com.acme.AcmeServerConfig.html"))
                         )))
                 )),
                 hasItem(allOf(
@@ -94,7 +94,7 @@ class CmPageResolverTest {
                         hasProperty("key", CmPage::key, is("config/com.acme.AcmeOptionsConfig")),
                         hasProperty("dependentTypes", CmPage::dependentTypes, allOf(
                                 hasProperty("size", Map::size, is(1)),
-                                hasEntry("com.acme.AcmeServerConfig", "com_acme_AcmeServerConfig.html")
+                                hasEntry("com.acme.AcmeServerConfig", "com.acme.AcmeServerConfig.html")
                         ))
                 )),
                 hasItem(allOf(
@@ -125,7 +125,7 @@ class CmPageResolverTest {
                         hasProperty("key", CmPage::key, is("contract/com.acme.AcmeFeature")),
                         hasProperty("usages", CmPage::usages, contains(allOf(
                                 hasProperty("path", CmPage.Usage::path, is("server.features")),
-                                hasProperty("fileName", CmPage.Usage::fileName, is("com_acme_AcmeServerConfig.html"))
+                                hasProperty("fileName", CmPage.Usage::fileName, is("com.acme.AcmeServerConfig.html"))
                         ))),
                         hasProperty("tables", CmPage::tables, allOf(
                                 hasProperty("standard", CmPage.Tables::standard,
@@ -141,7 +141,7 @@ class CmPageResolverTest {
                         hasProperty("key", CmPage::key, is("enum/com.acme.AcmeLoggerConfigLevel")),
                         hasProperty("usages", CmPage::usages, contains(allOf(
                                 hasProperty("path", CmPage.Usage::path, is("server.features.logging.loggers.level")),
-                                hasProperty("fileName", CmPage.Usage::fileName, is("com_acme_AcmeLoggerConfig.html"))
+                                hasProperty("fileName", CmPage.Usage::fileName, is("com.acme.AcmeLoggerConfig.html"))
                         )))
                 )),
                 hasItem(allOf(
@@ -150,9 +150,9 @@ class CmPageResolverTest {
                         hasProperty("typeName", CmPage::typeName, is("io.helidon.MetricsConfig")),
                         hasProperty("mergedTypes", CmPage::mergedTypes, allOf(
                                 hasProperty("size", Map::size, is(2)),
-                                hasEntry("com.acme.AcmeMetricsConfig", "com_acme_AcmeMetricsConfig.html"),
+                                hasEntry("com.acme.AcmeMetricsConfig", "com.acme.AcmeMetricsConfig.html"),
                                 hasEntry("com.acme.AcmeMetricsObserverConfig",
-                                        "com_acme_AcmeMetricsObserverConfig.html")
+                                        "com.acme.AcmeMetricsObserverConfig.html")
                         ))
                 )),
                 hasItem(allOf(
@@ -167,10 +167,10 @@ class CmPageResolverTest {
     void testSyntheticPages() throws Exception {
         var resolver = resolver();
 
-        assertThat(resolver.syntheticTypes(), hasEntry("io.helidon.MetricsConfig", "io_helidon_MetricsConfig.html"));
-        assertThat(resolver.configTypes(), hasEntry("com.acme.AcmeServerConfig", "com_acme_AcmeServerConfig.html"));
-        assertThat(resolver.contracts(), hasEntry("com.acme.AcmeFeature", "com_acme_AcmeFeature.html"));
-        assertThat(resolver.enumTypes(), hasEntry("com.acme.AcmeLoggerConfigLevel", "com_acme_AcmeLoggerConfigLevel.html"));
+        assertThat(resolver.syntheticTypes(), hasEntry("io.helidon.MetricsConfig", "io.helidon.MetricsConfig.html"));
+        assertThat(resolver.configTypes(), hasEntry("com.acme.AcmeServerConfig", "com.acme.AcmeServerConfig.html"));
+        assertThat(resolver.contracts(), hasEntry("com.acme.AcmeFeature", "com.acme.AcmeFeature.html"));
+        assertThat(resolver.enumTypes(), hasEntry("com.acme.AcmeLoggerConfigLevel", "com.acme.AcmeLoggerConfigLevel.html"));
     }
 
     static CmPageResolver resolver() throws Exception {

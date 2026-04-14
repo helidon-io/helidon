@@ -48,7 +48,7 @@ final class CmPageResolver {
     private static final System.Logger LOGGER = System.getLogger(CmPageResolver.class.getName());
 
     private static final String ROOT_PAGE_KEY = "root/root";
-    private static final String N_A = "<code>N/A</code>";
+    private static final String N_A = "N/A";
 
     private final CmResolver resolver;
     private final CmDocNames names;
@@ -538,11 +538,11 @@ final class CmPageResolver {
     }
 
     private static String mergedDescription(String key) {
-        return "Merged configuration for <code>%s</code>".formatted(key);
+        return "Merged configuration for %s".formatted(key);
     }
 
     private static String pathDescription(String key) {
-        return "Configuration for <code>%s</code>".formatted(key);
+        return "Configuration for %s".formatted(key);
     }
 
     private static String optionType(CmOption option) {
