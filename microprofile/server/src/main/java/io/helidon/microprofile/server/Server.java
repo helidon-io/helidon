@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import java.util.List;
 import java.util.Objects;
 
 import io.helidon.common.context.Contexts;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.cdi.HelidonContainer;
 
@@ -120,7 +118,6 @@ public interface Server {
     /**
      * Builder to build {@link Server} instance.
      */
-    @Configured(prefix = "server", description = "Configuration of Helidon Microprofile Server", root = true)
     final class Builder implements io.helidon.common.Builder<Builder, Server> {
         private static final System.Logger STARTUP_LOGGER = System.getLogger("io.helidon.microprofile.startup.builder");
 
@@ -251,7 +248,6 @@ public interface Server {
          * @param host hostname
          * @return modified builder
          */
-        @ConfiguredOption
         public Builder host(String host) {
             this.host = host;
             return this;
@@ -278,7 +274,6 @@ public interface Server {
          * @param port port
          * @return modified builder
          */
-        @ConfiguredOption
         public Builder port(int port) {
             this.port = port;
             return this;

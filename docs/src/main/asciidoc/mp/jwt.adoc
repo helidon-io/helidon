@@ -97,7 +97,7 @@ The following interfaces and annotations are used to work with JWT in Helidon MP
 |`5`
 |Clock skew to be accounted for in token expiration and max age validations in seconds
 
-|[[afc4c7251-mp-jwt-decrypt-key-algorithm]] xref:{rootdir}/config/io_helidon_microprofile_jwt_auth_JwtAuthProviderMp_jwt_decrypt_key_algorithm.adoc[`mp.jwt.decrypt.key.algorithm`]
+|<<MpJwtDecryptKeyAlgorithmAllowedValues,`mp.jwt.decrypt.key.algorithm`>>
 |`algorithm`
 |{nbsp}
 |Expected key management algorithm supported by the MP JWT endpoint
@@ -117,7 +117,7 @@ The following interfaces and annotations are used to work with JWT in Helidon MP
 |{nbsp}
 |Expected audiences of incoming tokens
 
-|[[aa1a7fcb1-security-providers-mp-jwt-auth-atn-token-jwk-resource]] xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[`security.providers.mp-jwt-auth.atn-token.jwk.resource`]
+|xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[`security.providers.mp-jwt-auth.atn-token.jwk.resource`]
 |`Resource`
 |{nbsp}
 |JWK resource for authenticating the request
@@ -142,7 +142,7 @@ The following interfaces and annotations are used to work with JWT in Helidon MP
 |{nbsp}
 |Default JWT key ID which should be used
 
-|[[a044b1acf-security-providers-mp-jwt-auth-sign-token]] xref:{rootdir}/config/io_helidon_security_providers_common_OutboundConfig.adoc[`security.providers.mp-jwt-auth.sign-token`]
+|xref:{rootdir}/config/io_helidon_security_providers_common_OutboundConfig.adoc[`security.providers.mp-jwt-auth.sign-token`]
 |`OutboundConfig`
 |{nbsp}
 |Configuration of outbound rules
@@ -157,7 +157,7 @@ The following interfaces and annotations are used to work with JWT in Helidon MP
 |{nbsp}
 |Path to public key
 
-|[[a9043a809-security-providers-mp-jwt-auth-atn-token-handler]] xref:{rootdir}/config/io_helidon_security_util_TokenHandler.adoc[`security.providers.mp-jwt-auth.atn-token.handler`]
+|xref:{rootdir}/config/io_helidon_security_util_TokenHandler.adoc[`security.providers.mp-jwt-auth.atn-token.handler`]
 |`TokenHandler`
 |{nbsp}
 |Token handler to extract username from request
@@ -182,7 +182,7 @@ The following interfaces and annotations are used to work with JWT in Helidon MP
 |{nbsp}
 |Maximal expected token age in seconds
 
-|[[a26e9ec7f-security-providers-mp-jwt-auth-principal-type]] xref:{rootdir}/config/io_helidon_security_SubjectType.adoc[`security.providers.mp-jwt-auth.principal-type`]
+|xref:{rootdir}/config/io_helidon_security_SubjectType.adoc[`security.providers.mp-jwt-auth.principal-type`]
 |`SubjectType`
 |`USER`
 |Principal type this provider extracts (and also propagates)
@@ -191,6 +191,19 @@ The following interfaces and annotations are used to work with JWT in Helidon MP
 |`Boolean`
 |`false`
 |Whether authentication is required
+
+|===
+
+==== Allowed values for `mp.jwt.decrypt.key.algorithm` [[MpJwtDecryptKeyAlgorithmAllowedValues]]
+
+|===
+|Value|Description
+
+|`RSA-OAEP`
+|RSA-OAEP Algorithm
+
+|`RSA-OAEP-256`
+|RSA-OAEP-256 Algorithm
 
 |===
 
