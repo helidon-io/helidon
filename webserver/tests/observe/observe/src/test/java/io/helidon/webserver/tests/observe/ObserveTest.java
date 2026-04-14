@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 import io.helidon.config.Config;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.service.registry.Services;
@@ -34,7 +35,6 @@ import io.helidon.webserver.observe.metrics.MetricsObserver;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -82,14 +82,16 @@ class ObserveTest {
     void testInfoObserver(WebClient client) {
         JsonObject jsonObject = client.get("/observe/myInfo/name")
                 .requestEntity(JsonObject.class);
-        assertThat("JSON: " + jsonObject, jsonObject.getString("name"), is("name"));
-        assertThat("JSON: " + jsonObject, jsonObject.getString("value"), is("ObserveTest"));
+        assertThat("JSON: " + jsonObject, jsonObject.stringValue("name").orElseThrow(), is("name"));
+        assertThat("JSON: " + jsonObject, jsonObject.stringValue("value").orElseThrow(), is("ObserveTest"));
 
         jsonObject = client.get("/observe/myInfo")
                 .requestEntity(JsonObject.class);
-        assertThat("JSON: " + jsonObject, jsonObject.getString("name"), is("ObserveTest"));
-        assertThat("JSON: " + jsonObject, jsonObject.getString("description"), is("Test for observability features"));
-        assertThat("JSON: " + jsonObject, jsonObject.getString("version"), is("1.0.0"));
+        assertThat("JSON: " + jsonObject, jsonObject.stringValue("name").orElseThrow(), is("ObserveTest"));
+        assertThat("JSON: " + jsonObject,
+                   jsonObject.stringValue("description").orElseThrow(),
+                   is("Test for observability features"));
+        assertThat("JSON: " + jsonObject, jsonObject.stringValue("version").orElseThrow(), is("1.0.0"));
     }
 
     @Test
@@ -121,12 +123,12 @@ class ObserveTest {
 
     @Test
     void testLogObserver(WebClient client) {
-        ClientResponseTyped<JsonObject> response = client.get("/observe/log/loggers")
-                .request(JsonObject.class);
+        ClientResponseTyped<String> response = client.get("/observe/log/loggers")
+                .request(String.class);
 
         assertThat(response.status(), is(Status.OK_200));
-        JsonObject entity = response.entity();
-        assertThat("Entity: " + entity, entity.getJsonArray("levels").getString(0), is("OFF"));
+        String entity = response.entity();
+        assertThat("Entity: " + entity, entity, containsString("\"levels\":[\"OFF\""));
     }
 
     @Test
@@ -136,7 +138,9 @@ class ObserveTest {
 
         assertThat(response.status(), is(Status.OK_200));
         JsonObject entity = response.entity();
-        assertThat("Entity: " + entity, entity.getJsonObject("io.helidon.webserver.ServerListener"), notNullValue());
+        assertThat("Entity: " + entity,
+                   entity.objectValue("io.helidon.webserver.ServerListener").orElse(null),
+                   notNullValue());
     }
 
     @Test
@@ -156,7 +160,9 @@ class ObserveTest {
             assertThat(loggerResponse.status(), is(Status.OK_200));
             JsonObject entity = loggerResponse.entity();
             assertThat("Entity: " + entity,
-                       entity.getJsonObject(loggerName).getString("configuredLevel"),
+                       entity.objectValue(loggerName)
+                               .flatMap(it -> it.stringValue("configuredLevel"))
+                               .orElseThrow(),
                        is("WARNING"));
         } finally {
             Logger.getLogger(loggerName).setLevel(null);

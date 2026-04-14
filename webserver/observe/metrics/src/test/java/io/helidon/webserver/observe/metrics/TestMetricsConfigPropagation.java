@@ -16,13 +16,13 @@
 package io.helidon.webserver.observe.metrics;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,16 +47,16 @@ class TestMetricsConfigPropagation {
                 .request()) {
             assertThat("Metrics endpoint", response.status().code(), is(200));
             JsonObject metricsResponse = response.as(JsonObject.class);
-            JsonObject vendorMeters = metricsResponse.getJsonObject("vendor");
+            JsonObject vendorMeters = metricsResponse.objectValue("vendor").orElseThrow();
             assertThat("Vendor meters", vendorMeters, notNullValue());
 
             // Make sure that the extended KPI metrics were turned on as directed by the configuration.
             assertThat("Metrics KPI load",
-                       vendorMeters.getJsonNumber("requests.load").intValue(),
+                       vendorMeters.numberValue("requests.load").orElseThrow().intValue(),
                        greaterThan(0));
 
             // Make sure that requests.count is absent because of the filtering in the config.
-            assertThat("Metrics KPI requests.count", vendorMeters.get("requests.count"), nullValue());
+            assertThat("Metrics KPI requests.count", vendorMeters.value("requests.count").orElse(null), nullValue());
         }
     }
 }

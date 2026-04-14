@@ -28,7 +28,8 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
-import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.http.media.json.JsonSupport;
+import io.helidon.json.JsonObject;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
@@ -44,8 +45,6 @@ import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.SecureHandler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-
-import jakarta.json.JsonObject;
 
 import static io.helidon.http.HeaderNames.ALLOW;
 import static io.helidon.http.Status.METHOD_NOT_ALLOWED_405;
@@ -228,8 +227,8 @@ class MetricsFeature {
             // Json formatting must use an explicit media support, as it may not be configured on the webserver by user
             var entity = output.get();
             if (entity instanceof JsonObject o) {
-                JsonpSupport.<JsonObject>serverResponseWriter()
-                        .write(JsonpSupport.JSON_OBJECT_TYPE,
+                JsonSupport.serverResponseWriter()
+                        .write(JsonSupport.JSON_OBJECT_TYPE,
                                o,
                                res.outputStream(),
                                req.headers(),
