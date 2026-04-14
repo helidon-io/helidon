@@ -44,8 +44,8 @@
             <artifactId>helidon-common-testing-junit5</artifactId>
         </dependency>
         <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json</artifactId>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -56,12 +56,6 @@
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.eclipse.parsson</groupId>
-            <artifactId>parsson</artifactId>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
 
     <build>

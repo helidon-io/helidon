@@ -22,9 +22,9 @@ module io.helidon.telemetry.testing.tracing {
     requires java.logging;
 
     requires io.helidon.common.testing.junit5;
+    requires io.helidon.json;
 
     requires io.opentelemetry.exporter.logging.otlp;
-    requires jakarta.json;
     requires hamcrest.all;
 
 }
