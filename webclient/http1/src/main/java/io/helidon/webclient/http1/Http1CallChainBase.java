@@ -290,7 +290,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         if (responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             long length = responseHeaders.contentLength().getAsLong();
             inputStream = new ContentLengthInputStream(helidonSocket, reader, whenComplete, response, length);
-        } else if (responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        } else if (responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             inputStream = new ChunkedInputStream(helidonSocket, reader, whenComplete, response);
         } else {
             // we assume the rest of the connection is entity (valid for HTTP/1.0, HTTP CONNECT method etc.
@@ -309,7 +309,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         }
         if ((
                 responseHeaders.contains(HeaderNames.UPGRADE)
-                        && !responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED))) {
+                        && !responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED))) {
             // this is an upgrade response and there is no entity
             return false;
         }

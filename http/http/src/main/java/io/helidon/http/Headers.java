@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,43 @@ public interface Headers extends Iterable<Header> {
      * @return {@code true} if the header is defined
      */
     boolean contains(Header value);
+
+    /**
+     * Whether these headers contain all tokenized values from the provided header.
+     * This is useful for headers that are defined as comma-separated token lists, such as
+     * {@code Connection}, {@code TE}, or {@code Transfer-Encoding}.
+     *
+     * @param value expected header name and tokenized value(s)
+     * @return {@code true} if all expected tokens are present, ignoring case and surrounding whitespace
+     */
+    default boolean containsToken(Header value) {
+        List<String> actualValues = values(value.headerName());
+        if (actualValues.isEmpty()) {
+            return false;
+        }
+
+        for (String expectedValue : value.allValues()) {
+            for (String expectedToken : Utils.tokenize(',', "\"", true, expectedValue)) {
+                String trimmedExpected = expectedToken.trim();
+                if (trimmedExpected.isEmpty()) {
+                    continue;
+                }
+
+                boolean matched = false;
+                for (String actualValue : actualValues) {
+                    if (actualValue.trim().equalsIgnoreCase(trimmedExpected)) {
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
 
     /**
      * Get a header value.

@@ -20,7 +20,9 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
@@ -292,7 +294,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
      */
     static boolean upgradeHasEntity(WritableHeaders<?> headers) {
         return headers.contains(HeaderNames.CONTENT_LENGTH) && !headers.contains(HeaderValues.CONTENT_LENGTH_ZERO)
-                || headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                || headers.contains(HeaderNames.TRANSFER_ENCODING);
     }
 
     static void validateHostHeader(HttpPrologue prologue, WritableHeaders<?> headers, boolean fullValidation) {
@@ -495,7 +497,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                        LimitAlgorithm.Outcome limitOutcome) {
         EntityStyle entity = EntityStyle.NONE;
 
-        if (headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        if (headers.contains(HeaderNames.TRANSFER_ENCODING)) {
+            validateRequestTransferEncoding(prologue, headers);
             entity = EntityStyle.CHUNKED;
             this.currentEntitySize = -1;
         } else if (headers.contains(HeaderNames.CONTENT_LENGTH)) {
@@ -533,7 +536,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                    sendListener,
                                                                    writer,
                                                                    request,
-                                                                   !headers.contains(HeaderValues.CONNECTION_CLOSE),
+                                                                   !headers.containsToken(HeaderValues.CONNECTION_CLOSE),
                                                                    http1Config.validateResponseHeaders());
 
             routing.route(ctx, request, response);
@@ -544,7 +547,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         boolean expectContinue = false;
 
         // Expect: 100-continue
-        if (headers.contains(HeaderValues.EXPECT_100)) {
+        if (headers.containsToken(HeaderValues.EXPECT_100)) {
             if (this.http1Config.continueImmediately()) {
                 try {
                     writer.writeNow(BufferData.create(CONTINUE_100));
@@ -602,7 +605,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                writer,
                                                                request,
                                                                !request.headers()
-                                                                       .contains(HeaderValues.CONNECTION_CLOSE),
+                                                                       .containsToken(HeaderValues.CONNECTION_CLOSE),
                                                                http1Config.validateResponseHeaders());
 
         routing.route(ctx, request, response);
@@ -621,7 +624,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void consumeEntity(Http1ServerRequest request, Http1ServerResponse response, CountDownLatch entityReadLatch) {
-        if (response.headers().contains(HeaderValues.CONNECTION_CLOSE) || request.content().consumed()) {
+        if (response.headers().containsToken(HeaderValues.CONNECTION_CLOSE) || request.content().consumed()) {
             // we do not care about request entity if connection is getting closed
             entityReadLatch.countDown();
             return;
@@ -637,6 +640,69 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             }
             throw new CloseConnectionException("Failed to consume request entity, must close", e);
         }
+    }
+
+    private void validateRequestTransferEncoding(HttpPrologue prologue, WritableHeaders<?> headers) {
+        if (headers.contains(HeaderNames.CONTENT_LENGTH)) {
+            throw invalidRequestFraming(prologue,
+                                        headers,
+                                        "Transfer-Encoding and Content-Length headers must not be combined");
+        }
+
+        List<String> transferEncodings = requestTransferEncodings(headers);
+        if (transferEncodings.isEmpty()) {
+            throw invalidRequestFraming(prologue, headers, "Transfer-Encoding header must contain a value");
+        }
+
+        String finalTransferEncoding = transferEncodings.get(transferEncodings.size() - 1);
+        if (!"chunked".equals(finalTransferEncoding)) {
+            throw invalidRequestFraming(prologue, headers, "Final Transfer-Encoding for requests must be chunked");
+        }
+
+        long chunkedCount = transferEncodings.stream()
+                .filter("chunked"::equals)
+                .count();
+        if (chunkedCount > 1) {
+            throw invalidRequestFraming(prologue, headers, "Chunked Transfer-Encoding must not be applied more than once");
+        }
+
+        if (transferEncodings.size() > 1) {
+            throw unsupportedRequestTransferEncoding(prologue, headers);
+        }
+    }
+
+    private List<String> requestTransferEncodings(WritableHeaders<?> headers) {
+        List<String> transferEncodings = new ArrayList<>();
+        for (String headerValue : headers.values(HeaderNames.TRANSFER_ENCODING)) {
+            String trimmed = headerValue.trim();
+            if (!trimmed.isEmpty()) {
+                transferEncodings.add(trimmed.toLowerCase(Locale.ROOT));
+            }
+        }
+        return transferEncodings;
+    }
+
+    private RequestException invalidRequestFraming(HttpPrologue prologue,
+                                                   WritableHeaders<?> headers,
+                                                   String message) {
+        return RequestException.builder()
+                .type(EventType.BAD_REQUEST)
+                .status(Status.BAD_REQUEST_400)
+                .request(DirectTransportRequest.create(prologue, headers))
+                .setKeepAlive(false)
+                .message(message)
+                .build();
+    }
+
+    private RequestException unsupportedRequestTransferEncoding(HttpPrologue prologue,
+                                                               WritableHeaders<?> headers) {
+        return RequestException.builder()
+                .type(EventType.BAD_REQUEST)
+                .status(Status.NOT_IMPLEMENTED_501)
+                .request(DirectTransportRequest.create(prologue, headers))
+                .setKeepAlive(false)
+                .message("Unsupported request transfer encoding")
+                .build();
     }
 
     private void handleRequestException(RequestException e) {

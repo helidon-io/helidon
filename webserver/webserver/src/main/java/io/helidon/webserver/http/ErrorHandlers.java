@@ -154,7 +154,7 @@ public final class ErrorHandlers {
         boolean keepAlive = e.keepAlive();
         if (keepAlive && !request.content().consumed()) {
             // there is a chance, that the 100-Continue was already sent! In such a case, we MUST consume entity
-            if (request.headers().contains(HeaderValues.EXPECT_100) && !request.continueSent()) {
+            if (request.headers().containsToken(HeaderValues.EXPECT_100) && !request.continueSent()) {
                 // No content is coming, reset connection
                 request.reset();
             } else {

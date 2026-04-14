@@ -542,7 +542,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             // initial request from outside
             io.helidon.http.Headers httpHeaders = upgradeHeaders.httpHeaders();
             boolean hasEntity = httpHeaders.contains(HeaderNames.CONTENT_LENGTH)
-                    || httpHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                    || httpHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED);
             // we now have all information needed to execute
             Http2ServerStream stream = stream(1).stream();
             stream.prologue(upgradePrologue);
