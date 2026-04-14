@@ -1,7 +1,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -227,7 +227,16 @@ Config sources can be configured using the following properties.
 
 The class responsible for configuration is:
 
-include::{rootdir}/config/io_helidon_config_mp_MpConfigBuilder.adoc[leveloffset=+1,tag=config]
+=== Configuration options
+
+|===
+|Key|Type|Description
+
+| `profile`
+|`String`
+|Configure an explicit profile name
+
+|===
 
 Current properties may be set in `application.yaml` or in `microprofile-config.properties` with `mp.config` prefix.
 

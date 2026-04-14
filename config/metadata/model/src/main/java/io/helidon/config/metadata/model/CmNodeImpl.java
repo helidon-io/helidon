@@ -15,64 +15,31 @@
  */
 package io.helidon.config.metadata.model;
 
-import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.config.metadata.model.CmModel.CmOption;
 import io.helidon.config.metadata.model.CmModel.CmType;
 
 /**
  * {@link CmNode} implementation.
  */
-final class CmNodeImpl implements CmNode {
+abstract sealed class CmNodeImpl implements CmNode, Comparable<CmNode> {
     private final CmNode parent;
     private final String path;
     private final String key;
-    private final String typeName;
-    private final CmType type;
-    private final List<CmNodeImpl> children;
+    private final Collection<CmType> types;
+    private final List<CmNode> children;
 
-    CmNodeImpl(CmNode parent,
-               String path,
-               String key,
-               String typeName,
-               CmType type,
-               List<CmNodeImpl> children) {
-
+    CmNodeImpl(CmNode parent, String path, String key, Collection<CmType> types, List<CmNode> children) {
         this.parent = parent;
-        this.path = path;
-        this.key = key;
-        this.typeName = typeName;
-        this.type = type;
-        this.children = children;
-    }
-
-    @Override
-    public void visit(Visitor visitor) {
-        var stack = new ArrayDeque<CmNodeImpl>();
-        stack.push(this);
-        var parent = this.parent;
-        while (!stack.isEmpty()) {
-            var node = stack.getFirst();
-            if (node == parent) {
-                visitor.postVisit(node);
-                parent = node.parent;
-                stack.pop();
-            } else {
-                if (visitor.visit(node)) {
-                    var children = node.children;
-                    for (int i = children.size() - 1; i >= 0; i--) {
-                        stack.push(children.get(i));
-                    }
-                }
-                if (parent != node.parent) {
-                    throw new IllegalStateException("Parent mismatch");
-                }
-                parent = node;
-            }
-        }
+        this.path = Objects.requireNonNull(path);
+        this.key = Objects.requireNonNull(key);
+        this.types = Objects.requireNonNull(types);
+        this.children = Collections.unmodifiableList(Objects.requireNonNull(children));
     }
 
     @Override
@@ -91,56 +58,90 @@ final class CmNodeImpl implements CmNode {
     }
 
     @Override
-    public String typeName() {
-        return typeName;
-    }
-
-    @Override
-    public Optional<CmType> type() {
-        return Optional.ofNullable(type);
+    public List<CmType> types() {
+        return List.copyOf(types);
     }
 
     @Override
     public List<CmNode> children() {
-        return Collections.unmodifiableList(children);
-    }
-
-    void addChild(CmNodeImpl child) {
-        children.add(child);
+        return children;
     }
 
     @Override
-    public int compareTo(CmNode o) {
-        return key.compareTo(o.key());
+    public int compareTo(CmNode other) {
+        int compare = key.compareTo(other.key());
+        if (compare == 0) {
+            compare = path.compareTo(other.path());
+        }
+        return compare;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == this) {
+        if (this == obj) {
             return true;
         }
-        if (obj == null || obj.getClass() != this.getClass()) {
+        if (!(obj instanceof CmNode other)) {
             return false;
         }
-        var that = (CmNodeImpl) obj;
-        return Objects.equals(this.path, that.path)
-               && Objects.equals(this.key, that.key)
-               && Objects.equals(this.typeName, that.typeName)
-               && Objects.equals(this.type, that.type);
+        return key.equals(other.key()) && path.equals(other.path());
     }
 
     @Override
     public int hashCode() {
-        return System.identityHashCode(this);
+        return Objects.hash(key, path);
     }
 
-    @Override
-    public String toString() {
-        return "CmNodeImpl{"
-               + ", path=" + path
-               + ", key=" + key
-               + ", typeName=" + typeName
-               + ", type=" + type
-               + '}';
+    static final class CmPathNodeImpl extends CmNodeImpl implements CmPathNode {
+        CmPathNodeImpl(CmNode parent, String path, String key, Collection<CmType> types, List<CmNode> children) {
+            super(parent, path, key, types, children);
+        }
+
+        @Override
+        public String toString() {
+            return "CmPathNodeImpl{"
+                   + "path='" + path() + '\''
+                   + ", key='" + key() + '\''
+                   + ", types=" + types()
+                   + '}';
+        }
+    }
+
+    static final class CmOptionNodeImpl extends CmNodeImpl implements CmOptionNode {
+        private final CmOption option;
+        private final CmType type;
+
+        CmOptionNodeImpl(CmNode parent,
+                         String path,
+                         String key,
+                         Collection<CmType> types,
+                         List<CmNode> children,
+                         CmOption option,
+                         CmType type) {
+            super(parent, path, key, types, children);
+            this.option = Objects.requireNonNull(option);
+            this.type = type;
+        }
+
+        @Override
+        public CmOption option() {
+            return option;
+        }
+
+        @Override
+        public Optional<CmType> type() {
+            return Optional.ofNullable(type);
+        }
+
+        @Override
+        public String toString() {
+            return "CmOptionNodeImpl{"
+                   + "option=" + option
+                   + ", type=" + type
+                   + ", path='" + path() + '\''
+                   + ", key='" + key() + '\''
+                   + ", types=" + types()
+                   + '}';
+        }
     }
 }

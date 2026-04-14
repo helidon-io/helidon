@@ -1,0 +1,47 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.AcmeServerConfig",
+        "standalone": true,
+        "prefix": "server",
+        "description": "ACME server configuration.",
+        "options": [
+          {
+            "key": "features",
+            "type": "com.acme.AcmeFeature",
+            "description": "Feature contract",
+            "provider": true
+          },
+          {
+            "key": "plugins",
+            "type": "com.acme.AcmePlugin",
+            "description": "Plugin contract",
+            "provider": true
+          }
+        ]
+      },
+      {
+        "type": "com.acme.AlphaFeatureConfig",
+        "standalone": true,
+        "prefix": "alpha",
+        "description": "Alpha implementation.",
+        "provides": [
+          "com.acme.AcmeFeature",
+          "com.acme.AcmePlugin"
+        ]
+      },
+      {
+        "type": "com.acme.BetaFeatureConfig",
+        "standalone": true,
+        "prefix": "beta",
+        "description": "Beta implementation.",
+        "provides": [
+          "com.acme.AcmeFeature",
+          "com.acme.AcmePlugin"
+        ]
+      }
+    ]
+  }
+]

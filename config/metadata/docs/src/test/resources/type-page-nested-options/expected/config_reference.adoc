@@ -1,0 +1,16 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= Config Reference
+
+== Config Roots
+
+|===
+|Key|Description
+
+|[[a854fed05-store]] xref:{rootdir}/config/com_acme_AcmeStoreConfig.adoc[`store`]
+|pass:[Configuration for <code>store</code>]
+
+|===
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

@@ -1,0 +1,48 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeServerConfig
+
+== Description
+
+++++
+ACME Server configuration.
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Default Value|Description
+
+|[[afc445d1a-features]] xref:{rootdir}/config/com_acme_AcmeFeature.adoc[`features`]
+|`List<AcmeFeature>`
+|{nbsp}
+|pass:[Dynamic features]
+
+| `port`
+|`Integer`
+|`8080`
+|pass:[Listen port]
+
+| `host`
+|`String`
+|`localhost`
+|pass:[Listen address]
+
+|[[a9d0cc898-sockets]] xref:{rootdir}/config/com_acme_AcmeListenerConfig.adoc[`sockets`]
+|`Map<String, AcmeListenerConfig>`
+|{nbsp}
+|pass:[Sockets]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/config_reference.adoc#ac6d482f1-server[`server`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

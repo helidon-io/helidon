@@ -1,0 +1,43 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeListenerConfig
+
+== Description
+
+++++
+ACME Listener configuration
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Default Value|Description
+
+| `port`
+|`Integer`
+|`0`
+|pass:[Listen port]
+
+| `host`
+|`String`
+|`0.0.0.0`
+|pass:[Listen address]
+
+|===
+
+// end::config[]
+
+
+
+== Dependent Types
+
+* xref:{rootdir}/config/com_acme_AcmeServerConfig.adoc[com.acme.AcmeServerConfig]
+
+
+== Usages
+
+* xref:{rootdir}/config/com_acme_AcmeServerConfig.adoc#a9d0cc898-sockets[`server.sockets`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

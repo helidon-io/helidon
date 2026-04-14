@@ -1,0 +1,21 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.example.profile.server.Server
+
+== Description
+
+++++
+Profile server configuration.
+++++
+
+// tag::config[]
+== Configuration options
+
+
+This config type has no options.
+// end::config[]
+
+
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

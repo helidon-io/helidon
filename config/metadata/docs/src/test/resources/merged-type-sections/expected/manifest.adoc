@@ -1,0 +1,9 @@
+
+= Config Types
+
+== Config Types
+
+See the xref:config_reference.adoc[root] type.
+
+* xref:com_acme_api_MetricsConfig.adoc[com.acme.api.MetricsConfig]
+* xref:com_acme_metrics_MetricsConfig.adoc[com.acme.metrics.MetricsConfig]

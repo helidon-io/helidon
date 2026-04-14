@@ -16,6 +16,7 @@
 package io.helidon.config.metadata.model;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -43,15 +44,7 @@ public interface CmResolver {
     }
 
     /**
-     * Find config types that provide the given contract.
-     *
-     * @param typeName contract type name
-     * @return list of tree nodes
-     */
-    List<CmType> providers(String typeName);
-
-    /**
-     * Get the provided contract type names.
+     * Get all provider contract type names referenced by config options.
      *
      * @return list of type names
      */
@@ -74,9 +67,18 @@ public interface CmResolver {
     Set<CmNode> usage(String typeName);
 
     /**
-     * Get the tree view of the config metadata.
+     * Find provider implementations of a provider contract grouped by
+     * config key.
      *
-     * @return list of root tree nodes
+     * @param contractTypeName provider contract type name
+     * @return provider implementations grouped by config key
+     */
+    Map<String, List<CmType>> providers(String contractTypeName);
+
+    /**
+     * Get the root config-node view of the config metadata.
+     *
+     * @return list of root nodes
      */
     List<CmNode> roots();
 
@@ -95,10 +97,11 @@ public interface CmResolver {
     List<CmEnum> enums();
 
     /**
-     * Test if the given type is an enum.
+     * Test if the given type is known by the resolver as a config type,
+     * enum, or provider contract.
      *
      * @param typeName type name
-     * @return {@code true} if an enum, {@code false} otherwise
+     * @return {@code true} if known, {@code false} otherwise
      */
-    boolean isEnum(String typeName);
+    boolean isKnownType(String typeName);
 }

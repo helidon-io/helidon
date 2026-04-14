@@ -1,0 +1,31 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= io.helidon.data.SourcesConfig
+
+== Description
+
+++++
+Configuration for <code>data.sources</code>
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Description
+
+|[[abc978c18-sql]] xref:{rootdir}/config/com_acme_AcmeSqlDataSourceConfig.adoc[`sql`]
+|pass:[Configuration for <code>sql</code>]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/io_helidon_DataConfig.adoc#a52e9ee40-sources[`data.sources`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

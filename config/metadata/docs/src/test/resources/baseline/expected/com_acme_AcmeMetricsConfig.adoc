@@ -1,0 +1,34 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeMetricsConfig
+
+== Description
+
+++++
+ACME Metrics configuration
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Default Value|Description
+
+| `scope`
+|`String`
+|{nbsp}
+|pass:[Metrics scope]
+
+| `enabled`
+|`Boolean`
+|`true`
+|pass:[Enable metrics]
+
+|===
+
+// end::config[]
+
+
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

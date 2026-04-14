@@ -19,14 +19,17 @@ package io.helidon.config.metadata.docs;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.stream.Stream;
 
 import io.helidon.config.metadata.model.CmModel;
 
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 
 /**
  * Tests {@link CmDocCodegenTest}.
@@ -34,35 +37,203 @@ import static org.hamcrest.Matchers.is;
 class CmDocCodegenTest {
 
     @Test
-    void test1() throws Exception {
-        var classesDir = Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
-        var targetDir = classesDir.getParent();
+    void testBaseline() throws Exception {
+        var testDir = testDir("baseline");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
 
-        // ensure unique directory
-        var outputDir = targetDir.resolve("config-docs-ut/test1/config");
+    @Test
+    void testRootChildTypePages() throws Exception {
+        var testDir = testDir("root-child-type-pages");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testSortRootEntries() throws Exception {
+        var testDir = testDir("sort-root-entries");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testTypePageNestedOptions() throws Exception {
+        var testDir = testDir("type-page-nested-options");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testTypePageDottedOptions() throws Exception {
+        var testDir = testDir("type-page-dotted-options");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testJavaTypeNotation() throws Exception {
+        var testDir = testDir("java-type-notation");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testFileNameCollisions() throws Exception {
+        var testDir = testDir("file-name-collisions");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testUnderscoreFileNames() throws Exception {
+        var testDir = testDir("underscore-file-names");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testMergedServerRoot() throws Exception {
+        var testDir = testDir("merged-server-root");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testMergedTypeSections() throws Exception {
+        var testDir = testDir("merged-type-sections");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testProviderSort() throws Exception {
+        var testDir = testDir("provider-sort");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testProviderNoImpls() throws Exception {
+        var testDir = testDir("provider-no-impls");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testProviderNonContractType() throws Exception {
+        var testDir = testDir("provider-non-contract-type");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testUnreachableProviderContract() throws Exception {
+        var testDir = testDir("unreachable-provider-contract");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testUnreachableHelperType() throws Exception {
+        var testDir = testDir("unreachable-helper-type");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testDetachedProviderUsage() throws Exception {
+        var testDir = testDir("detached-provider-usage");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testProviderDuplicateKeys() throws Exception {
+        var testDir = testDir("provider-duplicate-keys");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    @Test
+    void testProviderDuplicateContracts() throws Exception {
+        var testDir = testDir("provider-duplicate-contracts");
+        var outputDir = generate(testDir);
+        assertThat(outputDir, isDirectory(testDir.resolve("expected")));
+    }
+
+    static Path testDir(String testName) throws Exception {
+        return classesDir().resolve(testName);
+    }
+
+    static Path generate(Path testDir) throws Exception {
+        var outputDir = outputDir(testDir.getFileName().toString());
+        try (var is = Files.newInputStream(testDir.resolve("config-metadata.json"))) {
+            var metadata = CmModel.fromJson(is);
+            new CmDocCodegen(outputDir, metadata).process();
+        }
+        return outputDir;
+    }
+
+    static Matcher<Path> isDirectory(Path expectedDir) {
+        return new DirectoryMatcher(expectedDir);
+    }
+
+    static List<Path> files(Path dir) throws Exception {
+        try (Stream<Path> files = Files.walk(dir)) {
+            return files.filter(Files::isRegularFile)
+                    .map(dir::relativize)
+                    .sorted()
+                    .toList();
+        }
+    }
+
+    static Path outputDir(String testName) throws Exception {
+        var targetDir = classesDir().getParent();
+        var outputDir = targetDir.resolve("config-docs-ut").resolve(testName).resolve("output");
         for (int i = 1; Files.exists(outputDir); i++) {
-            outputDir = targetDir.resolve("config-docs-ut" + "-" + i + "/test1/config");
+            outputDir = targetDir.resolve("config-docs-ut-" + i).resolve(testName).resolve("output");
+        }
+        return outputDir;
+    }
+
+    static Path classesDir() throws Exception {
+        return Paths.get(CmDocCodegenTest.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+    }
+
+    static final class DirectoryMatcher extends TypeSafeDiagnosingMatcher<Path> {
+        private final Path expectedDir;
+
+        private DirectoryMatcher(Path expectedDir) {
+            this.expectedDir = expectedDir;
         }
 
-        // generate docs
-        var is = Files.newInputStream(classesDir.resolve("config-metadata.json"));
-        var metadata = CmModel.fromJson(is);
-        new CmDocCodegen(outputDir, metadata).process();
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("directory matching ").appendValue(expectedDir);
+        }
 
-        // verify content
-        try (Stream<Path> stream = Files.list(classesDir.resolve("config"))
-                .filter(it -> it.getFileName().toString().endsWith(".adoc"))) {
-
-            var expectedFiles = stream.toList();
-            for (var expectedFile : expectedFiles) {
-
-                var expectedFileName = expectedFile.getFileName();
-                var actualFile = outputDir.resolve(expectedFileName);
-                assertThat(expectedFileName + " does not exist", Files.exists(actualFile), is(true));
-
-                var expected = Files.readString(expectedFile);
-                var actual = Files.readString(actualFile);
-                assertThat(actual, is(expected));
+        @Override
+        protected boolean matchesSafely(Path actualDir, Description mismatchDescription) {
+            try {
+                var expectedFiles = files(expectedDir);
+                var actualFiles = files(actualDir);
+                if (!actualFiles.equals(expectedFiles)) {
+                    mismatchDescription.appendText("had files ").appendValue(actualFiles);
+                    return false;
+                }
+                for (var expectedFile : expectedFiles) {
+                    var actual = Files.readString(actualDir.resolve(expectedFile));
+                    var expected = Files.readString(expectedDir.resolve(expectedFile));
+                    if (!actual.equals(expected)) {
+                        mismatchDescription.appendText("had different content in ").appendValue(expectedFile);
+                        return false;
+                    }
+                }
+                return true;
+            } catch (Exception ex) {
+                mismatchDescription.appendText("failed to compare directories: ").appendValue(ex.getMessage());
+                return false;
             }
         }
     }

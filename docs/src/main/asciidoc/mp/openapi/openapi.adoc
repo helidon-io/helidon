@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -91,6 +91,17 @@ Helidon OpenAPI configuration supports the following settings:
 include::{rootdir}/config/io_helidon_openapi_OpenApiFeature.adoc[leveloffset=+1,tag=config]
 
 Further, Helidon OpenAPI supports the MicroProfile OpenAPI settings described in link:{microprofile-open-api-spec-url}#_configuration[the MicroProfile OpenAPI specification].
+
+=== MicroProfile OpenAPI configuration options
+
+|===
+|Key|Type|Description
+
+| `mp.openapi.extensions.helidon.use-jaxrs-semantics`
+|`Boolean`
+|If `true` and the `jakarta.ws.rs.core.Application` class returns a non-empty set, endpoints defined by other resources are not included in the OpenAPI document
+
+|===
 
 == Examples
 

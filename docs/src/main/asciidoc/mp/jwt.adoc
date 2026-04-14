@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -77,7 +77,122 @@ The following interfaces and annotations are used to work with JWT in Helidon MP
 
 == Configuration
 
-include::{rootdir}/config/io_helidon_microprofile_jwt_auth_JwtAuthProvider.adoc[leveloffset=+1,tag=config]
+=== Configuration options
+
+|===
+|Key|Type|Default Value|Description
+
+| `mp.jwt.verify.publickey`
+|`String`
+|{nbsp}
+|String representation of the public key
+
+| `mp.jwt.decrypt.key.location`
+|`String`
+|{nbsp}
+|Private key for decryption of encrypted claims
+
+| `mp.jwt.verify.clock.skew`
+|`Integer`
+|`5`
+|Clock skew to be accounted for in token expiration and max age validations in seconds
+
+|[[afc4c7251-mp-jwt-decrypt-key-algorithm]] xref:{rootdir}/config/io_helidon_microprofile_jwt_auth_JwtAuthProviderMp_jwt_decrypt_key_algorithm.adoc[`mp.jwt.decrypt.key.algorithm`]
+|`algorithm`
+|{nbsp}
+|Expected key management algorithm supported by the MP JWT endpoint
+
+| `security.providers.mp-jwt-auth.propagate`
+|`Boolean`
+|`true`
+|Whether to propagate identity
+
+| `mp.jwt.token.cookie`
+|`String`
+|`Bearer`
+|Specific cookie property name where we should search for JWT property
+
+| `mp.jwt.verify.audiences`
+|`List<String>`
+|{nbsp}
+|Expected audiences of incoming tokens
+
+|[[aa1a7fcb1-security-providers-mp-jwt-auth-atn-token-jwk-resource]] xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[`security.providers.mp-jwt-auth.atn-token.jwk.resource`]
+|`Resource`
+|{nbsp}
+|JWK resource for authenticating the request
+
+| `security.providers.mp-jwt-auth.atn-token.jwt-audience`
+|`String`
+|{nbsp}
+|Audience expected in inbound JWTs
+
+| `security.providers.mp-jwt-auth.load-on-startup`
+|`Boolean`
+|`false`
+|Whether to load JWK verification keys on server startup Default value is `false`
+
+| `mp.jwt.verify.publickey.location`
+|`String`
+|{nbsp}
+|Path to public key
+
+| `security.providers.mp-jwt-auth.atn-token.default-key-id`
+|`String`
+|{nbsp}
+|Default JWT key ID which should be used
+
+|[[a044b1acf-security-providers-mp-jwt-auth-sign-token]] xref:{rootdir}/config/io_helidon_security_providers_common_OutboundConfig.adoc[`security.providers.mp-jwt-auth.sign-token`]
+|`OutboundConfig`
+|{nbsp}
+|Configuration of outbound rules
+
+| `mp.jwt.verify.issuer`
+|`String`
+|{nbsp}
+|Expected issuer in incoming requests
+
+| `security.providers.mp-jwt-auth.atn-token.verify-key`
+|`String`
+|{nbsp}
+|Path to public key
+
+|[[a9043a809-security-providers-mp-jwt-auth-atn-token-handler]] xref:{rootdir}/config/io_helidon_security_util_TokenHandler.adoc[`security.providers.mp-jwt-auth.atn-token.handler`]
+|`TokenHandler`
+|{nbsp}
+|Token handler to extract username from request
+
+| `security.providers.mp-jwt-auth.allow-impersonation`
+|`Boolean`
+|`false`
+|Whether to allow impersonation by explicitly overriding username from outbound requests using `io.helidon.security.EndpointConfig#PROPERTY_OUTBOUND_ID` property
+
+| `security.providers.mp-jwt-auth.authenticate`
+|`Boolean`
+|`true`
+|Whether to authenticate requests
+
+| `mp.jwt.token.header`
+|`String`
+|`Authorization`
+|Name of the header expected to contain the token
+
+| `mp.jwt.verify.token.age`
+|`Integer`
+|{nbsp}
+|Maximal expected token age in seconds
+
+|[[a26e9ec7f-security-providers-mp-jwt-auth-principal-type]] xref:{rootdir}/config/io_helidon_security_SubjectType.adoc[`security.providers.mp-jwt-auth.principal-type`]
+|`SubjectType`
+|`USER`
+|Principal type this provider extracts (and also propagates)
+
+| `security.providers.mp-jwt-auth.optional`
+|`Boolean`
+|`false`
+|Whether authentication is required
+
+|===
 
 A configuration example in `microprofile-config.properties`:
 [source, properties]
@@ -144,4 +259,3 @@ link:{microprofile-jwt-base-url}#_introduction[Eclipse MicroProfile Interoperabl
 
 * {microprofile-jwt-spec-url}[MicroProfile JWT Auth Spec]
 * https://github.com/eclipse/microprofile-jwt-auth[MicroProfile JWT Auth GitHub Repository]
-
