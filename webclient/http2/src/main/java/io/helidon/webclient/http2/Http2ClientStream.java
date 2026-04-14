@@ -291,7 +291,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      */
     public void writeHeaders(Http2Headers http2Headers, boolean endOfStream) {
         this.state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, true, endOfStream, true);
-        this.readState = readState.check(http2Headers.httpHeaders().contains(HeaderValues.EXPECT_100)
+        this.readState = readState.check(http2Headers.httpHeaders().containsToken(HeaderValues.EXPECT_100)
                                                  ? ReadState.CONTINUE_100_HEADERS
                                                  : ReadState.HEADERS);
         Http2Flag.HeaderFlags flags;

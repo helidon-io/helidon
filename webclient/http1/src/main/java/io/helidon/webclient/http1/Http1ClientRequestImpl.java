@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     private static final System.Logger LOGGER = System.getLogger(Http1ClientRequestImpl.class.getName());
     private final Http1ClientImpl http1Client;
     private final FullClientRequest<?> delegate;
+    private boolean outputStreamRedirect;
 
     Http1ClientRequestImpl(Http1ClientImpl http1Client,
                            Method method,
@@ -81,6 +82,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
         tls(request.tls());
+        outputStreamRedirect(request.outputStreamRedirect());
     }
 
     @Override
@@ -268,6 +270,22 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                                            mediaContext(),
                                            resolvedUri,
                                            complete);
+    }
+
+    /**
+     * Whether this request is part of an output stream redirection probe.
+     * Default is {@code false}.
+     *
+     * @param outputStreamRedirect whether this request is part of output stream redirection
+     * @return updated request
+     */
+    Http1ClientRequestImpl outputStreamRedirect(boolean outputStreamRedirect) {
+        this.outputStreamRedirect = outputStreamRedirect;
+        return this;
+    }
+
+    boolean outputStreamRedirect() {
+        return outputStreamRedirect;
     }
 
 }
