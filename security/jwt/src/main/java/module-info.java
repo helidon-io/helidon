@@ -24,6 +24,7 @@ module io.helidon.security.jwt {
     requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.common;
     requires transitive io.helidon.config;
+    requires transitive io.helidon.json;
     requires transitive jakarta.json;
 
     exports io.helidon.security.jwt;

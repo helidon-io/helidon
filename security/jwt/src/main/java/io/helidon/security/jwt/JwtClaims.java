@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,13 @@ package io.helidon.security.jwt;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Collections;
 
 import io.helidon.common.Errors;
-
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReaderFactory;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 
 class JwtClaims {
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     protected JwtClaims() {
     }
@@ -45,7 +41,7 @@ class JwtClaims {
 
     protected static JsonObject parseJson(String jsonString, Errors.Collector collector, String base64, String description) {
         try {
-            return JSON.createReader(new StringReader(jsonString)).readObject();
+            return JsonParser.create(new StringReader(jsonString)).readJsonObject();
         } catch (Exception e) {
             collector.fatal(base64, description + " is not a valid JSON object (value is base64 encoded)");
             return null;

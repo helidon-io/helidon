@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,10 @@ import java.security.spec.RSAPublicKeySpec;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
-
-import jakarta.json.JsonObject;
 
 import static io.helidon.security.jwt.JwtUtil.asBigInteger;
 import static io.helidon.security.jwt.JwtUtil.getKeyFactory;
@@ -147,10 +147,22 @@ public class JwkRSA extends JwkPki {
      *
      * @param json with definition of this RSA web key
      * @return new instance of this class constructed from json
-     * @see Jwk#create(JsonObject) for generic method that can load any supported JWK type.
+     * @see Jwk#create(io.helidon.json.JsonObject) for generic method that can load any supported JWK type.
      */
     public static JwkRSA create(JsonObject json) {
         return builder().fromJson(json).build();
+    }
+
+    /**
+     * Create an instance from Json object.
+     *
+     * @param json with definition of this RSA web key
+     * @return new instance of this class constructed from json
+     * @deprecated use {@link #create(io.helidon.json.JsonObject)} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public static JwkRSA create(jakarta.json.JsonObject json) {
+        return create(JsonParser.create(json.toString()).readJsonObject());
     }
 
     @Override
@@ -257,7 +269,7 @@ public class JwkRSA extends JwkPki {
          *
          * @param json JsonObject with the JWK
          * @return updated builder instance, just call {@link #build()} to build the {@link JwkRSA} instance
-         * @see JwkRSA#create(JsonObject) as a shortcut if no additional configuration is to be done
+         * @see JwkRSA#create(io.helidon.json.JsonObject) as a shortcut if no additional configuration is to be done
          */
         public Builder fromJson(JsonObject json) {
             super.fromJson(json);
@@ -275,6 +287,18 @@ public class JwkRSA extends JwkPki {
             this.publicKey = toPublicKey(kf, modulus, publicExponent);
 
             return this;
+        }
+
+        /**
+         * Update this builder from JWK in json format.
+         *
+         * @param json JsonObject with the JWK
+         * @return updated builder instance, just call {@link #build()} to build the {@link JwkRSA} instance
+         * @deprecated use {@link #fromJson(io.helidon.json.JsonObject)} instead
+         */
+        @Deprecated(since = "4.5.0", forRemoval = true)
+        public Builder fromJson(jakarta.json.JsonObject json) {
+            return fromJson(JsonParser.create(json.toString()).readJsonObject());
         }
 
         /**

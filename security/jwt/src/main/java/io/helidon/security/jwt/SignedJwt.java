@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,17 +20,14 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.common.Errors;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.security.jwt.jwk.Jwk;
 import io.helidon.security.jwt.jwk.JwkKeys;
-
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReaderFactory;
 
 /**
  * The JWT used to transfer content across network - e.g. the base64 parts concatenated
@@ -41,8 +38,6 @@ public final class SignedJwt {
             .compile("([a-zA-Z0-9-_=]+)\\.([a-zA-Z0-9-_=]+)\\.([a-zA-Z0-9-_=]*)");
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder().withoutPadding();
-
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     private final String tokenContent;
     private final JwtHeaders headers;
@@ -94,8 +89,8 @@ public final class SignedJwt {
      *                      the algorithms of JWK and JWT do not match, or in case of other mis-matches
      */
     public static SignedJwt sign(Jwt jwt, Jwk jwk) throws JwtException {
-        JsonObject headerJson = jwt.headerJson();
-        JsonObject payloadJson = jwt.payloadJson();
+        JsonObject headerJson = jwt.headerJsonObject();
+        JsonObject payloadJson = jwt.payloadJsonObject();
 
         // now serialize to string
         String headerJsonString = headerJson.toString();
@@ -228,7 +223,7 @@ public final class SignedJwt {
 
     private static JsonObject parseJson(String jsonString, Errors.Collector collector, String base64, String description) {
         try {
-            return JSON.createReader(new StringReader(jsonString)).readObject();
+            return JsonParser.create(new StringReader(jsonString)).readJsonObject();
         } catch (Exception e) {
             collector.fatal(base64, description + " is not a valid JSON object (value is base64 encoded)");
             return null;
@@ -276,7 +271,7 @@ public final class SignedJwt {
      * @return header json
      */
     JsonObject headerJson() {
-        return headers.headerJson();
+        return headers.headerJsonObject();
     }
 
     /**

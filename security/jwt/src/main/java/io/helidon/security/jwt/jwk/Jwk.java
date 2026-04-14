@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.security.jwt.JwtException;
-
-import jakarta.json.JsonObject;
 
 import static io.helidon.security.jwt.JwtUtil.asString;
 import static io.helidon.security.jwt.JwtUtil.getString;
@@ -202,6 +202,18 @@ public abstract class Jwk {
         default:
             throw new JwtException("Unknown JWK type: " + keyType);
         }
+    }
+
+    /**
+     * Create an instance from Json object.
+     *
+     * @param json with definition of a web key (any key type)
+     * @return new instance of a descendant of this class constructed from json, based on key type
+     * @deprecated use {@link #create(io.helidon.json.JsonObject)} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public static Jwk create(jakarta.json.JsonObject json) {
+        return create(JsonParser.create(json.toString()).readJsonObject());
     }
 
     /**

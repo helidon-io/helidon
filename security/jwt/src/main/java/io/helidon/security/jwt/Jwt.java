@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.jwt;
 
+import java.io.StringReader;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -37,16 +38,14 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.helidon.common.Errors;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonNull;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.security.jwt.jwk.Jwk;
 
 import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
+import jakarta.json.JsonReaderFactory;
 
 /**
  * JWT token.
@@ -91,7 +90,7 @@ public class Jwt {
     static final String NONCE = "nonce";
     static final String SCOPE = "scope";
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+    private static final JsonReaderFactory JSONP = Json.createReaderFactory(Collections.emptyMap());
 
     /*
      All header information.
@@ -268,14 +267,14 @@ public class Jwt {
         this.issueTime = JwtUtil.toInstant(payloadJson, ISSUED_AT);
         this.notBefore = JwtUtil.toInstant(payloadJson, NOT_BEFORE);
         this.subject = JwtUtil.getString(payloadJson, SUBJECT);
-        JsonValue groups = payloadJson.get(USER_GROUPS);
+        JsonValue groups = payloadJson.value(USER_GROUPS, JsonNull.instance());
         if (groups instanceof JsonArray) {
             this.userGroups = JwtUtil.getStrings(payloadJson, USER_GROUPS);
         } else {
             this.userGroups = JwtUtil.getString(payloadJson, USER_GROUPS).map(List::of);
         }
 
-        JsonValue aud = payloadJson.get(AUDIENCE);
+        JsonValue aud = payloadJson.value(AUDIENCE, JsonNull.instance());
         // support both a single string and an array
         if (aud instanceof JsonArray) {
             this.audience = JwtUtil.getStrings(payloadJson, AUDIENCE);
@@ -315,7 +314,7 @@ public class Jwt {
     private Jwt(Builder builder) {
         // generic stuff
         this.payloadClaims = new HashMap<>();
-        this.payloadClaims.putAll(JwtUtil.transformToJson(builder.payloadClaims));
+        this.payloadClaims.putAll(JwtUtil.transformToJsonValue(builder.payloadClaims));
 
         // headers
         this.headers = builder.headerBuilder.build();
@@ -515,7 +514,12 @@ public class Jwt {
     }
 
     private Map<String, JsonValue> getClaims(JsonObject headerJson) {
-        return Collections.unmodifiableMap(headerJson);
+        Map<String, JsonValue> claims = new HashMap<>();
+        headerJson.keysAsStrings().forEach(key -> claims.put(key,
+                                                             headerJson.value(key)
+                                                                     .orElseThrow(() -> new JwtException(
+                                                                             "Claim \"" + key + "\" is missing"))));
+        return Collections.unmodifiableMap(claims);
     }
 
     /**
@@ -533,8 +537,8 @@ public class Jwt {
      * @param claim name of a claim
      * @return claim value if present
      */
-    public Optional<JsonValue> headerClaim(String claim) {
-        return headers.headerClaim(claim);
+    public Optional<JsonValue> headerClaimValue(String claim) {
+        return headers.headerClaimValue(claim);
     }
 
     /**
@@ -543,7 +547,7 @@ public class Jwt {
      * @param claim name of a claim
      * @return claim value if present
      */
-    public Optional<JsonValue> payloadClaim(String claim) {
+    public Optional<JsonValue> payloadClaimValue(String claim) {
         JsonValue rawValue = payloadClaims.get(claim);
 
         if (claim.equals(AUDIENCE)) {
@@ -557,9 +561,31 @@ public class Jwt {
             return rawValue;
         }
 
-        return JSON.createArrayBuilder()
-                .add(rawValue)
-                .build();
+        return JsonArray.create(rawValue);
+    }
+
+    /**
+     * Get a claim by its name from header.
+     *
+     * @param claim name of a claim
+     * @return claim value if present
+     * @deprecated use {@link #headerClaimValue(String)} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public Optional<jakarta.json.JsonValue> headerClaim(String claim) {
+        return headerClaimValue(claim).map(Jwt::toJsonpValue);
+    }
+
+    /**
+     * Get a claim by its name from payload.
+     *
+     * @param claim name of a claim
+     * @return claim value if present
+     * @deprecated use {@link #payloadClaimValue(String)} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public Optional<jakarta.json.JsonValue> payloadClaim(String claim) {
+        return payloadClaimValue(claim).map(Jwt::toJsonpValue);
     }
 
     /**
@@ -576,8 +602,21 @@ public class Jwt {
      *
      * @return map of payload names to claims
      */
-    public Map<String, JsonValue> payloadClaims() {
+    public Map<String, JsonValue> payloadClaimsJson() {
         return Collections.unmodifiableMap(payloadClaims);
+    }
+
+    /**
+     * All payload claims in raw json form.
+     *
+     * @return map of payload names to claims
+     * @deprecated use {@link #payloadClaimsJson()} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public Map<String, jakarta.json.JsonValue> payloadClaims() {
+        Map<String, jakarta.json.JsonValue> result = new HashMap<>();
+        payloadClaims.forEach((key, value) -> result.put(key, toJsonpValue(value)));
+        return Collections.unmodifiableMap(result);
     }
 
     /**
@@ -900,8 +939,19 @@ public class Jwt {
      *
      * @return JsonObject for header
      */
-    public JsonObject headerJson() {
-        return headers.headerJson();
+    public JsonObject headerJsonObject() {
+        return headers.headerJsonObject();
+    }
+
+    /**
+     * Create a JSON header object.
+     *
+     * @return JsonObject for header
+     * @deprecated use {@link #headerJsonObject()} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public jakarta.json.JsonObject headerJson() {
+        return JSONP.createReader(new StringReader(headerJsonObject().toString())).readObject();
     }
 
     /**
@@ -909,57 +959,57 @@ public class Jwt {
      *
      * @return JsonObject for payload
      */
-    public JsonObject payloadJson() {
-        JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
-        payloadClaims.forEach(objectBuilder::add);
+    public JsonObject payloadJsonObject() {
+        JsonObject.Builder objectBuilder = JsonObject.builder();
+        payloadClaims.forEach(objectBuilder::set);
 
         // known payload
-        this.issuer.ifPresent(it -> objectBuilder.add(ISSUER, it));
-        this.expirationTime.ifPresent(it -> objectBuilder.add(EXPIRATION, it.getEpochSecond()));
-        this.issueTime.ifPresent(it -> objectBuilder.add(ISSUED_AT, it.getEpochSecond()));
-        this.notBefore.ifPresent(it -> objectBuilder.add(NOT_BEFORE, it.getEpochSecond()));
-        this.subject.ifPresent(it -> objectBuilder.add(SUBJECT, it));
-        this.userPrincipal.ifPresent(it -> objectBuilder.add(USER_PRINCIPAL, it));
-        this.userGroups.ifPresent(it -> {
-            JsonArrayBuilder jab = JSON.createArrayBuilder();
-            it.forEach(jab::add);
-            objectBuilder.add(USER_GROUPS, jab);
-        });
-        this.audience.ifPresent(it -> {
-            JsonArrayBuilder jab = JSON.createArrayBuilder();
-            it.forEach(jab::add);
-            objectBuilder.add(AUDIENCE, jab);
-        });
-        this.jwtId.ifPresent(it -> objectBuilder.add(JWT_ID, it));
-        this.email.ifPresent(it -> objectBuilder.add(EMAIL, it));
-        this.emailVerified.ifPresent(it -> objectBuilder.add(EMAIL_VERIFIED, it));
-        this.fullName.ifPresent(it -> objectBuilder.add(FULL_NAME, it));
-        this.givenName.ifPresent(it -> objectBuilder.add(GIVEN_NAME, it));
-        this.middleName.ifPresent(it -> objectBuilder.add(MIDDLE_NAME, it));
-        this.familyName.ifPresent(it -> objectBuilder.add(FAMILY_NAME, it));
-        this.locale.ifPresent(it -> objectBuilder.add(LOCALE, it.toLanguageTag()));
-        this.nickname.ifPresent(it -> objectBuilder.add(NICKNAME, it));
-        this.preferredUsername.ifPresent(it -> objectBuilder.add(PREFERRED_USERNAME, it));
-        this.profile.ifPresent(it -> objectBuilder.add(PROFILE, it.toASCIIString()));
-        this.picture.ifPresent(it -> objectBuilder.add(PICTURE, it.toASCIIString()));
-        this.website.ifPresent(it -> objectBuilder.add(WEBSITE, it.toASCIIString()));
-        this.gender.ifPresent(it -> objectBuilder.add(GENDER, it));
-        this.birthday.ifPresent(it -> objectBuilder.add(BIRTHDAY, JwtUtil.toDate(it)));
-        this.timeZone.ifPresent(it -> objectBuilder.add(ZONE_INFO, it.getId()));
-        this.phoneNumber.ifPresent(it -> objectBuilder.add(PHONE_NUMBER, it));
-        this.phoneNumberVerified.ifPresent(it -> objectBuilder.add(PHONE_NUMBER_VERIFIED, it));
-        this.updatedAt.ifPresent(it -> objectBuilder.add(UPDATED_AT, it.getEpochSecond()));
-        this.address.ifPresent(it -> objectBuilder.add(ADDRESS, it.getJson()));
-        this.atHash.ifPresent(it -> objectBuilder.add(AT_HASH, JwtUtil.base64Url(it)));
-        this.cHash.ifPresent(it -> objectBuilder.add(C_HASH, JwtUtil.base64Url(it)));
-        this.nonce.ifPresent(it -> objectBuilder.add(NONCE, it));
+        this.issuer.ifPresent(it -> objectBuilder.set(ISSUER, it));
+        this.expirationTime.ifPresent(it -> objectBuilder.set(EXPIRATION, it.getEpochSecond()));
+        this.issueTime.ifPresent(it -> objectBuilder.set(ISSUED_AT, it.getEpochSecond()));
+        this.notBefore.ifPresent(it -> objectBuilder.set(NOT_BEFORE, it.getEpochSecond()));
+        this.subject.ifPresent(it -> objectBuilder.set(SUBJECT, it));
+        this.userPrincipal.ifPresent(it -> objectBuilder.set(USER_PRINCIPAL, it));
+        this.userGroups.ifPresent(it -> objectBuilder.set(USER_GROUPS, JsonArray.createStrings(it)));
+        this.audience.ifPresent(it -> objectBuilder.set(AUDIENCE, JsonArray.createStrings(it)));
+        this.jwtId.ifPresent(it -> objectBuilder.set(JWT_ID, it));
+        this.email.ifPresent(it -> objectBuilder.set(EMAIL, it));
+        this.emailVerified.ifPresent(it -> objectBuilder.set(EMAIL_VERIFIED, it));
+        this.fullName.ifPresent(it -> objectBuilder.set(FULL_NAME, it));
+        this.givenName.ifPresent(it -> objectBuilder.set(GIVEN_NAME, it));
+        this.middleName.ifPresent(it -> objectBuilder.set(MIDDLE_NAME, it));
+        this.familyName.ifPresent(it -> objectBuilder.set(FAMILY_NAME, it));
+        this.locale.ifPresent(it -> objectBuilder.set(LOCALE, it.toLanguageTag()));
+        this.nickname.ifPresent(it -> objectBuilder.set(NICKNAME, it));
+        this.preferredUsername.ifPresent(it -> objectBuilder.set(PREFERRED_USERNAME, it));
+        this.profile.ifPresent(it -> objectBuilder.set(PROFILE, it.toASCIIString()));
+        this.picture.ifPresent(it -> objectBuilder.set(PICTURE, it.toASCIIString()));
+        this.website.ifPresent(it -> objectBuilder.set(WEBSITE, it.toASCIIString()));
+        this.gender.ifPresent(it -> objectBuilder.set(GENDER, it));
+        this.birthday.ifPresent(it -> objectBuilder.set(BIRTHDAY, JwtUtil.toDate(it)));
+        this.timeZone.ifPresent(it -> objectBuilder.set(ZONE_INFO, it.getId()));
+        this.phoneNumber.ifPresent(it -> objectBuilder.set(PHONE_NUMBER, it));
+        this.phoneNumberVerified.ifPresent(it -> objectBuilder.set(PHONE_NUMBER_VERIFIED, it));
+        this.updatedAt.ifPresent(it -> objectBuilder.set(UPDATED_AT, it.getEpochSecond()));
+        this.address.ifPresent(it -> objectBuilder.set(ADDRESS, it.jsonObject()));
+        this.atHash.ifPresent(it -> objectBuilder.set(AT_HASH, JwtUtil.base64Url(it)));
+        this.cHash.ifPresent(it -> objectBuilder.set(C_HASH, JwtUtil.base64Url(it)));
+        this.nonce.ifPresent(it -> objectBuilder.set(NONCE, it));
 
-        this.scopes.ifPresent(it -> {
-            String scopesString = String.join(" ", it);
-            objectBuilder.add(SCOPE, scopesString);
-        });
+        this.scopes.ifPresent(it -> objectBuilder.set(SCOPE, String.join(" ", it)));
 
         return objectBuilder.build();
+    }
+
+    /**
+     * Create a JSON payload object.
+     *
+     * @return JsonObject for payload
+     * @deprecated use {@link #payloadJsonObject()} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public jakarta.json.JsonObject payloadJson() {
+        return JSONP.createReader(new StringReader(payloadJsonObject().toString())).readObject();
     }
 
     /**
@@ -1228,8 +1278,8 @@ public class Jwt {
                                                      String expectedValue,
                                                      boolean mandatory) {
 
-            return create(jwt -> jwt.headerClaim(fieldKey)
-                                  .map(it -> ((JsonString) it).getString()),
+            return create(jwt -> jwt.headerClaimValue(fieldKey)
+                                  .map(it -> it.asString().value()),
                           name,
                           expectedValue,
                           mandatory);
@@ -1263,8 +1313,8 @@ public class Jwt {
                                                       String name,
                                                       String expectedValue,
                                                       boolean mandatory) {
-            return create(jwt -> jwt.payloadClaim(fieldKey)
-                                  .map(it -> ((JsonString) it).getString()),
+            return create(jwt -> jwt.payloadClaimValue(fieldKey)
+                                  .map(it -> it.asString().value()),
                           name,
                           expectedValue,
                           false);
@@ -2037,5 +2087,9 @@ public class Jwt {
             super.validate("User Principal", object.userPrincipal(), collector);
         }
 
+    }
+
+    private static jakarta.json.JsonValue toJsonpValue(JsonValue jsonValue) {
+        return JSONP.createReader(new StringReader(jsonValue.toString())).readValue();
     }
 }

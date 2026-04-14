@@ -330,7 +330,7 @@ public final class EncryptedJwt {
     public SignedJwt decrypt(JwkKeys jwkKeys, Jwk defaultJwk) {
         Errors.Collector errors = Errors.collector();
 
-        String headerBase64 = encode(header.headerJson().toString().getBytes(StandardCharsets.UTF_8));
+        String headerBase64 = encode(header.headerJsonObject().toString().getBytes(StandardCharsets.UTF_8));
         String alg = header.algorithm().orElse(null);
         String kid = header.keyId().orElse(null);
         String enc = header.encryption().orElse(null);
@@ -579,7 +579,7 @@ public final class EncryptedJwt {
             }
             JwtHeaders headers = headersBuilder.build();
             StringBuilder tokenBuilder = new StringBuilder();
-            String headersBase64 = encode(headers.headerJson().toString());
+            String headersBase64 = encode(headers.headerJsonObject().toString());
             AesAlgorithm contentEncryption = CONTENT_ENCRYPTION.get(encryption);
             //Base64 headers are used as an aad. This aad has to be in US_ASCII encoding.
             EncryptionParts encryptionParts = contentEncryption.encrypt(jwt.tokenContent().getBytes(StandardCharsets.UTF_8),

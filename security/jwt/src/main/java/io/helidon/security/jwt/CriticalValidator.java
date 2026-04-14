@@ -113,7 +113,7 @@ final class CriticalValidator implements ClaimValidator {
     }
 
     private void checkAllCriticalAvailable(Jwt jwt, List<String> critical, Errors.Collector collector) {
-        Set<String> headerClaims = jwt.headers().headerClaims().keySet();
+        Set<String> headerClaims = jwt.headers().headerClaimsJson().keySet();
         boolean containsAllCritical = headerClaims.containsAll(critical);
         if (!containsAllCritical) {
             collector.fatal(jwt, "JWT must contain " + critical + ", yet it contains: " + headerClaims);

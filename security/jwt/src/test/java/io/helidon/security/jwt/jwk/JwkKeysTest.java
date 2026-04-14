@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.jwt.jwk;
 
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
@@ -24,8 +25,11 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.configurable.Resource;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.security.jwt.JwtException;
 
+import jakarta.json.Json;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +39,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -121,6 +126,29 @@ public class JwkKeysTest {
                        is("QzBCMDM1QTI2MjRFMTFDNDBDRTYwRkU4RDdEMzU5RTcwNDRBNjhCNQ=="));
             assertThat(pki.sha256Thumbprint(), is(Optional.empty()));
         }, () -> fail("Key with id \"" + keyId + "\" should be presenit in auth0-jwk.json file"));
+    }
+
+    @Test
+    public void testJsonApiCompatibilityCreateMethods() throws Exception {
+        try (InputStream helidonJsonStream = Resource.create("jwk_data.json").stream();
+             InputStream jsonpStream = Resource.create("jwk_data.json").stream()) {
+            JsonObject helidonJson = JsonParser.create(helidonJsonStream).readJsonObject();
+            jakarta.json.JsonObject jsonp = Json.createReader(jsonpStream).readObject();
+
+            JwkKeys helidonKeys = JwkKeys.create(helidonJson);
+            JwkKeys jsonpKeys = JwkKeys.create(jsonp);
+
+            assertThat(helidonKeys.forKeyId("HS_512").map(Jwk::algorithm), is(Optional.of(JwkOctet.ALG_HS512)));
+            assertThat(jsonpKeys.forKeyId("HS_512").map(Jwk::algorithm), is(Optional.of(JwkOctet.ALG_HS512)));
+        }
+    }
+
+    @Test
+    public void testMissingKeysArrayFailsFast() {
+        JwtException exception = assertThrows(JwtException.class,
+                                              () -> JwkKeys.create(JsonObject.builder().build()));
+
+        assertThat(exception.getMessage(), is("JWK JSON does not contain a \"keys\" array"));
     }
 
     @Test

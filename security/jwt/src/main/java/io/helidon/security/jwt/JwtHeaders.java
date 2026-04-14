@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.jwt;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,14 +31,13 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
 import io.helidon.common.GenericType;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonString;
+import io.helidon.json.JsonValue;
 
 import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
+import jakarta.json.JsonReaderFactory;
 
 /**
  * Representation of the header section of a JWT.
@@ -66,7 +66,7 @@ public class JwtHeaders extends JwtClaims {
     static final String AGREEMENT_PARTYVINFO = "apv";
     static final String EPHEMERAL_PUBLIC_KEY = "epk";
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+    private static final JsonReaderFactory JSONP = Json.createReaderFactory(Collections.emptyMap());
 
     private final Optional<String> algorithm;
     private final Optional<String> encryption;
@@ -156,11 +156,22 @@ public class JwtHeaders extends JwtClaims {
      *
      * @return JsonObject for header
      */
-    public JsonObject headerJson() {
-        JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
-        headerClaims.forEach(objectBuilder::add);
+    public JsonObject headerJsonObject() {
+        JsonObject.Builder objectBuilder = JsonObject.builder();
+        headerClaims.forEach(objectBuilder::set);
 
         return objectBuilder.build();
+    }
+
+    /**
+     * Create a JSON header object.
+     *
+     * @return JsonObject for header
+     * @deprecated use {@link #headerJsonObject()} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public jakarta.json.JsonObject headerJson() {
+        return JSONP.createReader(new StringReader(headerJsonObject().toString())).readObject();
     }
 
     /**
@@ -169,8 +180,20 @@ public class JwtHeaders extends JwtClaims {
      * @param claim name of a claim
      * @return claim value if present
      */
-    public Optional<JsonValue> headerClaim(String claim) {
+    public Optional<JsonValue> headerClaimValue(String claim) {
         return Optional.ofNullable(headerClaims.get(claim));
+    }
+
+    /**
+     * Get a claim by its name from header.
+     *
+     * @param claim name of a claim
+     * @return claim value if present
+     * @deprecated use {@link #headerClaimValue(String)} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public Optional<jakarta.json.JsonValue> headerClaim(String claim) {
+        return headerClaimValue(claim).map(JwtHeaders::toJsonpValue);
     }
 
     /**
@@ -261,8 +284,21 @@ public class JwtHeaders extends JwtClaims {
      *
      * @return header claims
      */
-    public Map<String, JsonValue> headerClaims() {
+    public Map<String, JsonValue> headerClaimsJson() {
         return Collections.unmodifiableMap(headerClaims);
+    }
+
+    /**
+     * Return map of all header claims.
+     *
+     * @return header claims
+     * @deprecated use {@link #headerClaimsJson()} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public Map<String, jakarta.json.JsonValue> headerClaims() {
+        Map<String, jakarta.json.JsonValue> result = new LinkedHashMap<>();
+        headerClaims.forEach((key, value) -> result.put(key, toJsonpValue(value)));
+        return Collections.unmodifiableMap(result);
     }
 
     /**
@@ -342,7 +378,7 @@ public class JwtHeaders extends JwtClaims {
          */
         public Builder addHeaderClaim(String claim, Object value) {
             setFromGeneric(claim, value);
-            this.claims.put(claim, JwtUtil.toJson(value));
+            this.claims.put(claim, JwtUtil.toJsonValue(value));
             return this;
         }
 
@@ -525,11 +561,10 @@ public class JwtHeaders extends JwtClaims {
 
         private static List<String> jsonToStringList(JsonValue jsonValue) {
             if (jsonValue instanceof JsonString) {
-                return List.of(((JsonString) jsonValue).getString());
+                return List.of(jsonValue.asString().value());
             }
             if (jsonValue instanceof JsonArray) {
-                return ((JsonArray) jsonValue)
-                        .stream()
+                return jsonValue.asArray().values().stream()
                         .map(KnownField::jsonToString)
                         .collect(Collectors.toList());
             }
@@ -541,7 +576,9 @@ public class JwtHeaders extends JwtClaims {
         }
 
         void fromJson(JsonObject headerJson) {
-            headerJson.forEach((claim, value) -> {
+            headerJson.keysAsStrings().forEach(claim -> {
+                JsonValue value = headerJson.value(claim)
+                        .orElseThrow(() -> new JwtException("Claim \"" + claim + "\" is missing from header json"));
                 KnownField<?> knownField = KNOWN_HEADER_CLAIMS.get(claim);
                 if (knownField == null) {
                     addHeaderClaim(claim, value);
@@ -574,7 +611,7 @@ public class JwtHeaders extends JwtClaims {
 
         private static String jsonToString(JsonValue jsonValue) {
             if (jsonValue instanceof JsonString) {
-                return ((JsonString) jsonValue).getString();
+                return jsonValue.asString().value();
             }
             throw new JwtException("Json value should have been a String, but is " + jsonValue);
         }
@@ -584,7 +621,7 @@ public class JwtHeaders extends JwtClaims {
         }
 
         void set(Map<String, JsonValue> claims, T value) {
-            claims.put(name, JwtUtil.toJson(value));
+            claims.put(name, JwtUtil.toJsonValue(value));
         }
 
         void set(Builder builder, JsonValue value) {
@@ -594,5 +631,9 @@ public class JwtHeaders extends JwtClaims {
         public boolean supports(Object value) {
             return type.rawType().isAssignableFrom(value.getClass());
         }
+    }
+
+    private static jakarta.json.JsonValue toJsonpValue(JsonValue jsonValue) {
+        return JSONP.createReader(new StringReader(jsonValue.toString())).readValue();
     }
 }
