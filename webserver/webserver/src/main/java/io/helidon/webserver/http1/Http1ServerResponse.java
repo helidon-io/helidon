@@ -119,7 +119,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             // A 204 response is terminated by the end of the header section; it cannot contain content or trailers
             // ditto for 205, and 304
             if ((headers.contains(HeaderNames.CONTENT_LENGTH) && !headers.contains(HeaderValues.CONTENT_LENGTH_ZERO))
-                         || headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                         || headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
                 status = noEntityInternalError(status);
             }
         }
@@ -259,7 +259,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
     @Override
     public ServerResponseTrailers trailers() {
-        if (request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER)) {
+        if (request.headers().containsToken(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER)) {
             return trailers;
         }
         throw new IllegalStateException(
@@ -411,7 +411,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         boolean forcedChunkedEncoding = false;
 
-        if (headers.contains(HeaderNames.TRANSFER_ENCODING) && headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        if (headers.contains(HeaderNames.TRANSFER_ENCODING) && headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             headers.remove(HeaderNames.CONTENT_LENGTH);
             // chunked enforced (and even if empty entity, will be used)
             forcedChunkedEncoding = true;
@@ -484,7 +484,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     }
 
     boolean keepConnectionOpen() {
-        return keepAlive && !headers.contains(HeaderValues.CONNECTION_CLOSE);
+        return keepAlive && !headers.containsToken(HeaderValues.CONNECTION_CLOSE);
     }
 
     private static Status noEntityInternalError(Status status) {
@@ -562,7 +562,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 forcedChunked = true;
             } else {
                 isChunked = !headers.contains(HeaderNames.CONTENT_LENGTH);
-                forcedChunked = headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                forcedChunked = headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED);
             }
         }
 
@@ -621,7 +621,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             this.closed = true;
             boolean sendTrailers =
                     (isChunked || forcedChunked)
-                    && (request.headers().contains(HeaderValues.TE_TRAILERS)
+                    && (request.headers().containsToken(HeaderValues.TE_TRAILERS)
                                 || headers.contains(HeaderNames.TRAILER));
 
             if (firstByte) {
@@ -726,7 +726,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             if (firstByte) {
-                if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
+                if (request.headers().containsToken(HeaderValues.TE_TRAILERS)) {
                     // proper stream with multiple buffers, write status amd headers
                     headers.add(STREAM_TRAILERS);
                 }
@@ -786,7 +786,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                     headers.set(HeaderValues.TRANSFER_ENCODING_CHUNKED);
                 } else {
                     // Add chunked encoding, if it's not part of existing transfer-encoding headers
-                    if (!headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                    if (!headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
                         headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
                     }
                 }

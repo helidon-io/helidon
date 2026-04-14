@@ -535,7 +535,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
     private void handle() {
         Headers httpHeaders = headers.httpHeaders();
-        if (headers.httpHeaders().contains(HeaderValues.EXPECT_100)) {
+        if (httpHeaders.containsToken(HeaderValues.EXPECT_100)) {
             writeState.updateAndGet(s -> s.checkAndMove(WriteState.EXPECTED_100));
         }
 

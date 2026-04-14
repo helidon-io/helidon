@@ -170,7 +170,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
         streamingEntity = true;
 
-        if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
+        if (request.headers().containsToken(HeaderValues.TE_TRAILERS)) {
             headers.add(STREAM_TRAILERS);
         }
 

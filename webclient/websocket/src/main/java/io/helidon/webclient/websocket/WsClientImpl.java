@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,6 @@ class WsClientImpl implements WsClient {
 
     private static final System.Logger LOGGER = System.getLogger(WsClient.class.getName());
     private static final Header HEADER_CONN_UPGRADE = HeaderValues.create(HeaderNames.CONNECTION, "Upgrade");
-    private static final Header HEADER_CONN_UPGRADE_LOWERCASE = HeaderValues.create(HeaderNames.CONNECTION, "upgrade");
     private static final HeaderName HEADER_WS_ACCEPT = HeaderNames.create("Sec-WebSocket-Accept");
     private static final HeaderName HEADER_WS_KEY = HeaderNames.create("Sec-WebSocket-Key");
     private static final LazyValue<Random> RANDOM = LazyValue.create(SecureRandom::new);
@@ -128,13 +127,12 @@ class WsClientImpl implements WsClient {
         ClientWsConnection session;
         try (HttpClientResponse response = upgradeResponse.response()) {
             ClientResponseHeaders responseHeaders = response.headers();
-            if (!responseHeaders.contains(HEADER_CONN_UPGRADE)
-                    && !responseHeaders.contains(HEADER_CONN_UPGRADE_LOWERCASE)) {
-                throw new WsClientException("Failed to upgrade to WebSocket, expected one of "
-                        + "[Connection: Upgrade, Connection: upgrade] header. Headers: " + responseHeaders);
+            if (!responseHeaders.containsToken(HEADER_CONN_UPGRADE)) {
+                throw new WsClientException("Failed to upgrade to WebSocket, expected Connection: Upgrade token. Headers: "
+                                                    + responseHeaders);
             }
-            if (!responseHeaders.contains(HEADER_UPGRADE_WS)) {
-                throw new WsClientException("Failed to upgrade to WebSocket, expected Upgrade: websocket header. Headers: "
+            if (!responseHeaders.containsToken(HEADER_UPGRADE_WS)) {
+                throw new WsClientException("Failed to upgrade to WebSocket, expected Upgrade: websocket token. Headers: "
                                                     + responseHeaders);
             }
             if (!responseHeaders.contains(HEADER_WS_ACCEPT)) {

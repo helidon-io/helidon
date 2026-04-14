@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,9 @@ class Http1CallEntityChain extends Http1CallChainBase {
                                               DataReader reader,
                                               BufferData writeBuffer) {
 
-        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, entity.length));
+        if (!originalRequest().outputStreamRedirect()) {
+            headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, entity.length));
+        }
 
         writeHeaders(connection, headers, writeBuffer, protocolConfig().validateRequestHeaders());
         // we have completed writing the headers
