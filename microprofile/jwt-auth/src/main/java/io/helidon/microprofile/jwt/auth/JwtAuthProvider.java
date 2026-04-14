@@ -56,9 +56,6 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.config.metadata.ConfiguredValue;
 import io.helidon.http.HeaderNames;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -630,9 +627,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
      * Fluent API builder for {@link JwtAuthProvider}.
      */
     @SuppressWarnings("removal")
-    @Configured(description = "MP-JWT Auth configuration is defined by the spec (options prefixed with `mp.jwt.`), "
-            + "and we add a few configuration options for the security provider (options prefixed with "
-            + "`security.providers.mp-jwt-auth.`)")
     public static class Builder implements io.helidon.common.Builder<Builder, JwtAuthProvider> {
         private static final String HELIDON_CONFIG_PREFIX = "security.providers.mp-jwt-auth.";
         private static final String CONFIG_PUBLIC_KEY = "mp.jwt.verify.publickey";
@@ -971,7 +965,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param propagate whether to propagate identity (true) or not (false)
          * @return updated builder instance
          */
-        @ConfiguredOption(key = HELIDON_CONFIG_PREFIX + "propagate", value = "true")
         public Builder propagate(boolean propagate) {
             this.propagate = propagate;
             return this;
@@ -983,7 +976,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param authenticate whether to authenticate (true) or not (false)
          * @return updated builder instance
          */
-        @ConfiguredOption(key = HELIDON_CONFIG_PREFIX + "authenticate", value = "true")
         public Builder authenticate(boolean authenticate) {
             this.authenticate = authenticate;
             return this;
@@ -998,7 +990,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param allowImpersonation set to true to allow impersonation
          * @return updated builder instance
          */
-        @ConfiguredOption(key = HELIDON_CONFIG_PREFIX + "allow-impersonation", value = "false")
         public Builder allowImpersonation(boolean allowImpersonation) {
             this.allowImpersonation = allowImpersonation;
             return this;
@@ -1010,7 +1001,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param subjectType type of principal
          * @return updated builder instance
          */
-        @ConfiguredOption(key = HELIDON_CONFIG_PREFIX + "principal-type", value = "USER")
         public Builder subjectType(SubjectType subjectType) {
             this.subjectType = subjectType;
 
@@ -1032,7 +1022,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param tokenHandler token handler instance
          * @return updated builder instance
          */
-        @ConfiguredOption(key = HELIDON_CONFIG_PREFIX + "atn-token.handler")
         public Builder atnTokenHandler(TokenHandler tokenHandler) {
             this.atnTokenHandler = tokenHandler;
 
@@ -1047,7 +1036,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param optional whether authentication is optional (true) or required (false)
          * @return updated builder instance
          */
-        @ConfiguredOption(key = HELIDON_CONFIG_PREFIX + "optional", value = "false")
         public Builder optional(boolean optional) {
             this.optional = optional;
             return this;
@@ -1060,7 +1048,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          *               to add our configuration.
          * @return updated builder instance
          */
-        @ConfiguredOption(key = HELIDON_CONFIG_PREFIX + "sign-token")
         public Builder outboundConfig(OutboundConfig config) {
             this.outboundConfig = config;
             return this;
@@ -1105,7 +1092,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param publicKey String representation
          * @return updated builder instance
          */
-        @ConfiguredOption(key = CONFIG_PUBLIC_KEY)
         public Builder publicKey(String publicKey) {
             // from MP specification - if defined, get rid of publicKeyPath from Helidon Config,
             // as we must fail if both are defined using MP configuration options
@@ -1121,8 +1107,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param publicKeyPath Public key path
          * @return updated builder instance
          */
-        @ConfiguredOption(key = CONFIG_PUBLIC_KEY_PATH)
-        @ConfiguredOption(key = HELIDON_CONFIG_PREFIX + "atn-token.verify-key")
         public Builder publicKeyPath(String publicKeyPath) {
             this.publicKeyPath = publicKeyPath;
             return this;
@@ -1145,7 +1129,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param defaultKeyId Default JWT key ID
          * @return updated builder instance
          */
-        @ConfiguredOption(key = HELIDON_CONFIG_PREFIX + "atn-token.default-key-id")
         public Builder defaultKeyId(String defaultKeyId) {
             this.defaultKeyId = defaultKeyId;
             return this;
@@ -1170,9 +1153,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param config configuration to load from
          * @return updated builder instance
          */
-        @ConfiguredOption(key = HELIDON_CONFIG_PREFIX + "atn-token.jwk.resource",
-                          type = Resource.class,
-                          description = "JWK resource for authenticating the request")
         public Builder config(Config config) {
             config.get("optional").asBoolean().ifPresent(this::optional);
             config.get("authenticate").asBoolean().ifPresent(this::authenticate);
@@ -1222,7 +1202,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param header header name which should be used
          * @return updated builder instance
          */
-        @ConfiguredOption(key = CONFIG_JWT_HEADER, value = "Authorization")
         public Builder jwtHeader(String header) {
             if (HeaderNames.COOKIE.defaultCase().equalsIgnoreCase(header)) {
                 useCookie = true;
@@ -1242,7 +1221,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param cookieProperty cookie property name
          * @return updated builder instance
          */
-        @ConfiguredOption(key = CONFIG_COOKIE_PROPERTY_NAME, value = "Bearer")
         public Builder cookieProperty(String cookieProperty) {
             this.cookieProperty = cookieProperty;
             return this;
@@ -1254,7 +1232,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param issuer name of issuer
          * @return updated builder instance
          */
-        @ConfiguredOption(key = CONFIG_EXPECTED_ISSUER)
         public Builder expectedIssuer(String issuer) {
             this.expectedIssuer = issuer;
             return this;
@@ -1268,7 +1245,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @deprecated use {@link #addExpectedAudience(String)} instead
          */
         @Deprecated(forRemoval = true, since = "2.4.0")
-        @ConfiguredOption(key = HELIDON_CONFIG_PREFIX + "atn-token.jwt-audience")
         public Builder expectedAudience(String audience) {
             return addExpectedAudience(audience);
         }
@@ -1290,9 +1266,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param audiences expected audiences to use
          * @return updated builder instance
          */
-        @ConfiguredOption(key = CONFIG_EXPECTED_AUDIENCES,
-                          type = String.class,
-                          kind = ConfiguredOption.Kind.LIST)
         public Builder expectedAudiences(Collection<String> audiences) {
             this.expectedAudiences.clear();
             this.expectedAudiences.addAll(audiences);
@@ -1305,7 +1278,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param expectedMaxTokenAge expected maximal token age in seconds
          * @return updated builder instance
          */
-        @ConfiguredOption(key = CONFIG_EXPECTED_MAX_TOKEN_AGE)
         public Builder expectedMaxTokenAge(int expectedMaxTokenAge) {
             this.expectedMaxTokenAge = Duration.ofSeconds(expectedMaxTokenAge);
             return this;
@@ -1318,7 +1290,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param decryptKeyLocation private key location
          * @return updated builder instance
          */
-        @ConfiguredOption(key = CONFIG_JWT_DECRYPT_KEY_LOCATION)
         public Builder decryptKeyLocation(String decryptKeyLocation) {
             this.decryptKeyLocation = decryptKeyLocation;
             return this;
@@ -1332,9 +1303,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param decryptionKeyAlgorithm expected decryption key algorithm
          * @return updated builder instance
          */
-        @ConfiguredOption(key = CONFIG_JWT_DECRYPT_KEY_ALGORITHM,
-                          allowedValues = {@ConfiguredValue(value = "RSA-OAEP", description = "RSA-OAEP Algorithm"),
-                                  @ConfiguredValue(value = "RSA-OAEP-256", description = "RSA-OAEP-256 Algorithm")})
         public Builder decryptKeyAlgorithm(String decryptionKeyAlgorithm) {
             this.decryptionKeyAlgorithm = decryptionKeyAlgorithm;
             return this;
@@ -1347,7 +1315,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param loadOnStartup load verification keys on server startup
          * @return updated builder instance
          */
-        @ConfiguredOption(key = HELIDON_CONFIG_PREFIX + "load-on-startup", value = "false")
         public Builder loadOnStartup(boolean loadOnStartup) {
             this.loadOnStartup = loadOnStartup;
             return this;
@@ -1359,7 +1326,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @param clockSkew clock skew
          * @return updated builder instance
          */
-        @ConfiguredOption(key = CONFIG_CLOCK_SKEW, value = "5")
         public Builder clockSkew(int clockSkew) {
             this.clockSkew = Duration.ofSeconds(clockSkew);
             return this;
