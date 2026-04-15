@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -907,7 +908,15 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private static boolean sameOrigin(URI sourceUri, URI targetUri) {
         return sourceUri.getScheme().equalsIgnoreCase(targetUri.getScheme())
                 && sourceUri.getHost().equalsIgnoreCase(targetUri.getHost())
-                && sourceUri.getPort() == targetUri.getPort();
+                && effectivePort(sourceUri) == effectivePort(targetUri);
+    }
+
+    private static int effectivePort(URI uri) {
+        int port = uri.getPort();
+        if (port != -1) {
+            return port;
+        }
+        return DEFAULT_SUPPORTED_PROTOCOLS.getOrDefault(uri.getScheme().toLowerCase(Locale.ROOT), -1);
     }
 
     /**
