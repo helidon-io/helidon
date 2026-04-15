@@ -1,0 +1,19 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.AcmeHelperConfig",
+        "description": "Helper configuration.",
+        "options": [
+          {
+            "key": "services",
+            "type": "com.acme.AcmeService",
+            "description": "Services",
+            "provider": true
+          }
+        ]
+      }
+    ]
+  }
+]

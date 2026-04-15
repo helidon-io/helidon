@@ -1,0 +1,17 @@
+
+= Config Types
+
+== Config Types
+
+See the xref:config_reference.adoc[root] type.
+
+* xref:com_acme_AcmeClientsConfig.adoc[com.acme.AcmeClientsConfig]
+* xref:com_acme_AcmeMetricsConfig.adoc[com.acme.AcmeMetricsConfig]
+* xref:com_acme_AcmeMetricsObserverConfig.adoc[com.acme.AcmeMetricsObserverConfig]
+* xref:com_acme_AcmeServerConfig.adoc[com.acme.AcmeServerConfig]
+* xref:com_acme_AcmeSqlDataSourceConfig.adoc[com.acme.AcmeSqlDataSourceConfig]
+
+== Synthetic Types
+
+* xref:io_helidon_DataConfig.adoc[io.helidon.DataConfig]
+* xref:io_helidon_data_SourcesConfig.adoc[io.helidon.data.SourcesConfig]

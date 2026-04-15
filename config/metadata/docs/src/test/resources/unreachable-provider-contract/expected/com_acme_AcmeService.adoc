@@ -1,0 +1,18 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeService
+
+== Description
+
+++++
+This type is a provider contract.
+++++
+
+== Implementations
+
+
+No implementations are currently known.
+
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

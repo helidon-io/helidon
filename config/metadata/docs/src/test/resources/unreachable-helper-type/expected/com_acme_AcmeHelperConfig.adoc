@@ -1,0 +1,32 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeHelperConfig
+
+== Description
+
+++++
+Helper configuration.
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Description
+
+|[[ae37c456e-nested]] xref:{rootdir}/config/com_acme_AcmeNestedConfig.adoc[`nested`]
+|`AcmeNestedConfig`
+|pass:[Nested]
+
+| `enabled`
+|`Boolean`
+|pass:[Enabled]
+
+|===
+
+// end::config[]
+
+
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

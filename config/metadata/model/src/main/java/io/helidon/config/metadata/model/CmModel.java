@@ -155,7 +155,27 @@ public sealed interface CmModel permits CmModelImpl {
          *
          * @return type name, never {@code null}
          */
-        String type();
+        String typeName();
+
+        /**
+         * Simple type name derived from a fully qualified type name.
+         *
+         * @param typeName type name
+         * @return simple type name, never {@code null}
+         */
+        static String simpleTypeName(String typeName) {
+            var lastDot = typeName.lastIndexOf('.');
+            return lastDot >= 0 ? typeName.substring(lastDot + 1) : typeName;
+        }
+
+        /**
+         * Simple type name.
+         *
+         * @return simple type name, never {@code null}
+         */
+        default String simpleTypeName() {
+            return simpleTypeName(typeName());
+        }
 
         /**
          * Options.
@@ -198,6 +218,18 @@ public sealed interface CmModel permits CmModelImpl {
          * @return list of provider type names
          */
         List<String> provides();
+
+        /**
+         * Compare types by their type names while handling {@code null}.
+         *
+         * @param first first type
+         * @param second second type
+         * @return {@code true} if both refer to the same type name,
+         *         {@code false} otherwise
+         */
+        static boolean matches(CmType first, CmType second) {
+            return first == second || first != null && second != null && first.typeName().equals(second.typeName());
+        }
 
         /**
          * Create a new builder.
@@ -277,7 +309,7 @@ public sealed interface CmModel permits CmModelImpl {
     sealed interface CmOption extends Comparable<CmOption> permits CmOptionImpl {
 
         /**
-         * Default value for {@link #type()}.
+         * Default value for {@link #typeName()}.
          */
         String DEFAULT_TYPE = "java.lang.String";
 
@@ -323,7 +355,16 @@ public sealed interface CmModel permits CmModelImpl {
          *
          * @return type name, never {@code null}
          */
-        String type();
+        String typeName();
+
+        /**
+         * Simple type name.
+         *
+         * @return simple type name, never {@code null}
+         */
+        default String simpleTypeName() {
+            return CmType.simpleTypeName(typeName());
+        }
 
         /**
          * Default value.
@@ -527,7 +568,7 @@ public sealed interface CmModel permits CmModelImpl {
          *
          * @return type name, never {@code null}
          */
-        String type();
+        String typeName();
 
         /**
          * Values.

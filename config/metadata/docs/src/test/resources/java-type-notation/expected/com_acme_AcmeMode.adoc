@@ -1,0 +1,30 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeMode
+
+== Description
+
+++++
+This type is an enumeration.
+++++
+
+== Allowed Values
+
+|===
+|Value|Description
+
+|`STRICT`
+|pass:[Strict mode]
+
+|`RELAXED`
+|pass:[Relaxed mode]
+
+|===
+
+== Usages
+
+* xref:{rootdir}/config/com_acme_AcmeServerConfig.adoc#a1e29f58e-mode[`server.mode`]
+* xref:{rootdir}/config/com_acme_AcmeServerConfig.adoc#a8db7cc09-modes[`server.modes`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

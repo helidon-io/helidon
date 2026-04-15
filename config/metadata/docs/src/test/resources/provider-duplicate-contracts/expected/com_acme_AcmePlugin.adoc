@@ -1,0 +1,31 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmePlugin
+
+== Description
+
+++++
+This type is a provider contract.
+++++
+
+== Implementations
+
+
+|===
+|Key|Description
+
+|xref:{rootdir}/config/com_acme_AlphaFeatureConfig.adoc[`alpha`]
+|pass:[Alpha implementation.]
+
+|xref:{rootdir}/config/com_acme_BetaFeatureConfig.adoc[`beta`]
+|pass:[Beta implementation.]
+
+|===
+
+
+== Usages
+
+* xref:{rootdir}/config/com_acme_AcmeServerConfig.adoc#a6f893dd3-plugins[`server.plugins`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import io.helidon.config.metadata.model.CmModel.CmAllowedValue;
@@ -36,7 +37,11 @@ import io.helidon.config.metadata.model.CmModel.CmEnum;
 import io.helidon.config.metadata.model.CmModel.CmOption;
 import io.helidon.config.metadata.model.CmModel.CmType;
 import io.helidon.config.metadata.model.CmModelImpl.CmTypeImpl;
+import io.helidon.config.metadata.model.CmNode.CmOptionNode;
+import io.helidon.config.metadata.model.CmNodeImpl.CmOptionNodeImpl;
+import io.helidon.config.metadata.model.CmNodeImpl.CmPathNodeImpl;
 
+import static io.helidon.config.metadata.model.CmModel.CmOption.DEFAULT_TYPE;
 import static java.util.function.Predicate.not;
 
 /**
@@ -44,19 +49,19 @@ import static java.util.function.Predicate.not;
  */
 final class CmResolverImpl implements CmResolver {
 
-    private static final System.Logger LOGGER = System.getLogger(CmResolverImpl.class.getName());
+    private static final System.Logger LOGGER =
+            System.getLogger(CmResolverImpl.class.getName());
 
     private final CmModel metadata;
-    private final Map<String, List<CmType>> prefixes = new HashMap<>(); // standalone types by prefixes
-    private final Map<String, CmType> types = new HashMap<>(); // unresolved types
-    private final Map<String, CmType> resolvedTypes = new TreeMap<>(); // resolved types
-    private final Map<String, List<CmType>> providers = new TreeMap<>(); // providers by contract
-    private final Set<String> errors = new HashSet<>(); // errors logged once
+    private final Map<String, List<CmType>> prefixes = new TreeMap<>();
+    private final Map<String, CmType> types = new HashMap<>();
+    private final Map<String, CmType> resolvedTypes = new TreeMap<>();
+    private final Map<String, Map<String, List<CmType>>> providers = new TreeMap<>();
+    private final Set<String> contracts = new TreeSet<>();
+    private final Set<String> errors = new HashSet<>();
     private final Map<String, CmEnum> enums = new TreeMap<>();
-    private final Map<String, Set<CmNode>> usages = new HashMap<>(); // tree nodes by option type
-    private final Set<String> unreachableTypes = new HashSet<>();
-    private final List<CmNodeImpl> tree = new ArrayList<>();
-    private final List<CmNode> readOnlyTree = Collections.unmodifiableList(tree);
+    private final Map<String, Set<CmNode>> usages = new HashMap<>();
+    private final List<CmNode> tree = new ArrayList<>();
 
     CmResolverImpl(CmModel metadata) {
         this.metadata = metadata;
@@ -71,13 +76,8 @@ final class CmResolverImpl implements CmResolver {
     }
 
     @Override
-    public List<CmType> providers(String typeName) {
-        return Collections.unmodifiableList(providers.getOrDefault(typeName, List.of()));
-    }
-
-    @Override
     public List<String> contracts() {
-        return List.copyOf(providers.keySet());
+        return List.copyOf(contracts);
     }
 
     @Override
@@ -86,8 +86,13 @@ final class CmResolverImpl implements CmResolver {
     }
 
     @Override
+    public Map<String, List<CmType>> providers(String contractTypeName) {
+        return providers.getOrDefault(contractTypeName, Map.of());
+    }
+
+    @Override
     public List<CmNode> roots() {
-        return readOnlyTree;
+        return List.copyOf(tree);
     }
 
     @Override
@@ -101,185 +106,279 @@ final class CmResolverImpl implements CmResolver {
     }
 
     @Override
-    public boolean isEnum(String typeName) {
-        return enums.containsKey(typeName);
+    public boolean isKnownType(String typeName) {
+        return resolvedTypes.containsKey(typeName)
+                || enums.containsKey(typeName)
+                || contracts.contains(typeName);
     }
 
     private void initTypes() {
         for (var module : metadata.modules()) {
             for (var type : module.types()) {
-                types.put(type.type(), type);
+                types.put(type.typeName(), type);
+                initContracts(type);
+            }
+        }
+    }
+
+    private void initContracts(CmType type) {
+        for (var option : type.options()) {
+            if (!option.provider()) {
+                continue;
+            }
+            var contractTypeName = option.typeName();
+            if (!DEFAULT_TYPE.equals(contractTypeName)) {
+                contracts.add(contractTypeName);
             }
         }
     }
 
     private void resolveTypes() {
-        types.forEach((k, v) -> {
-            var type = resolveType(v);
+        var providerTypes = new TreeMap<String, List<CmType>>();
+        for (var entry : types.entrySet()) {
+            var typeName = entry.getKey();
+            var type = resolveType(entry.getValue());
             for (var provide : type.provides()) {
-                providers.computeIfAbsent(provide, ignored -> new ArrayList<>()).add(type);
+                providerTypes.computeIfAbsent(provide, k -> new ArrayList<>()).add(type);
             }
             if (type.standalone()) {
                 var prefix = type.prefix().orElse(null);
                 if (prefix != null) {
-                    prefixes.computeIfAbsent(prefix, ignored -> new ArrayList<>()).add(type);
+                    prefixes.computeIfAbsent(prefix, k -> new ArrayList<>()).add(type);
                 } else {
-                    LOGGER.log(Level.WARNING, "Standalone type does not have a prefix: {0}", type.type());
+                    LOGGER.log(Level.WARNING, "Standalone type does not have a prefix: {0}", type.typeName());
                 }
             }
-            resolvedTypes.put(k, type);
-            unreachableTypes.add(type.type());
-        });
+            resolvedTypes.put(typeName, type);
+        }
+        initProviders(providerTypes);
+    }
+
+    private void initProviders(Map<String, List<CmType>> providerTypes) {
+        for (var entry : providerTypes.entrySet()) {
+            var grouped = new TreeMap<String, List<CmType>>();
+            for (var impl : entry.getValue()) {
+                var typeName = impl.typeName();
+                var key = impl.prefix().orElse(null);
+                if (key == null) {
+                    LOGGER.log(Level.WARNING,
+                            "Provider type does not have a prefix: {0}",
+                            typeName);
+                } else {
+                    grouped.computeIfAbsent(key, k -> new ArrayList<>()).add(impl);
+                }
+            }
+            var sorted = new TreeMap<String, List<CmType>>();
+            for (var providerEntry : grouped.entrySet()) {
+                var values = providerEntry.getValue();
+                values.sort(CmType::compareTo);
+                sorted.put(providerEntry.getKey(), List.copyOf(values));
+            }
+            providers.put(entry.getKey(), Collections.unmodifiableMap(sorted));
+        }
     }
 
     private void initTree() {
-        for (var entry : prefixes.entrySet()) {
-            var prefix = entry.getKey();
-            for (var type : entry.getValue()) {
-                var typeName = type.type();
-                var resolvedType = resolvedTypes.get(typeName);
-                var node = new CmNodeImpl(null, prefix, prefix, typeName, resolvedType, new ArrayList<>());
-                usage(usages, typeName, node);
-                tree.add(node);
-            }
+        // read-write root node
+        var root = new Slot("", "");
+
+        // split dotted root prefixes
+        for (var e : prefixes.entrySet()) {
+            addPrefix(root, e.getKey(), e.getValue());
         }
 
-        var types = traverse(tree, usages);
-        types.forEach(unreachableTypes::remove);
+        // traverse all types
+        initTree(root);
 
-        // process each unreachable type as a root
-        // use a local usages map to avoid pollution
-        var unreachableUsages = new HashMap<String, Set<CmNode>>();
-        for (var typeName : unreachableTypes) {
-            var resolvedType = resolvedTypes.get(typeName);
-            if (resolvedType != null) {
-                var key = resolvedType.prefix().orElse("<?>");
-                var node = new CmNodeImpl(null, key, key, typeName, resolvedType, new ArrayList<>());
-                types.addAll(traverse(List.of(node), unreachableUsages));
-            }
+        // build read-only tree
+        for (var entry : root.children.values()) {
+            tree.add(entry.build());
+        }
+
+        // record usages
+        for (var rootNode : tree) {
+            rootNode.visit((node, ignored) -> {
+                for (var type : node.types()) {
+                    usage(usages, type.typeName(), node);
+                }
+                if (node instanceof CmOptionNode optionNode) {
+                    var option = optionNode.option();
+                    var optionTypeName = option.typeName();
+                    var optionType = optionNode.type().orElse(null);
+                    if (option.provider()) {
+                        if (!DEFAULT_TYPE.equals(optionTypeName)) {
+                            usage(usages, optionTypeName, optionNode);
+                        }
+                    } else if (optionType != null || enums.containsKey(optionTypeName)) {
+                        usage(usages, optionTypeName, optionNode);
+                    }
+                }
+                return true;
+            }, null);
         }
     }
 
-    private List<String> traverse(List<CmNodeImpl> roots, Map<String, Set<CmNode>> usages) {
-        // depth-first traversal
-        var stack = new ArrayDeque<>(roots);
-        var types = new ArrayList<String>();
-        while (!stack.isEmpty()) {
-            var node = stack.pop();
-            var enclosingTypeName = node.typeName();
-            types.add(enclosingTypeName);
+    private void addPrefix(Slot root, String prefix, List<CmType> exactTypes) {
+        var slot = materializePath(root, prefix, "config prefix " + prefix);
+        if (slot == root) {
+            throw new IllegalArgumentException(
+                    "Config prefix does not contain a valid path segment: " + prefix);
+        }
+        slot.types.addAll(exactTypes);
+    }
 
-            // process options
-            var options = node.type().map(CmType::options).orElse(List.of());
-            for (var i = options.size() - 1; i >= 0; i--) {
-                var option = options.get(i);
-                var optionTypeName = option.type();
-                var optionType = type(optionTypeName).orElse(null);
+    private Slot materializePath(Slot parent, String path, String source) {
+        var current = parent;
+        for (var segment : path.split("\\.")) {
+            if (segment.isBlank()) {
+                continue;
+            }
+            if (!hasValidPathCharacters(segment)) {
+                error("invalid-path-segment:" + source + ":" + segment,
+                        "Skipping invalid config path segment {0} in {1}",
+                        segment,
+                        source);
+                continue;
+            }
+            var child = current.children.get(segment);
+            if (child == null) {
+                child = new Slot(path(current.path, segment), segment);
+                current.children.put(segment, child);
+            }
+            current = child;
+        }
+        return current;
+    }
+
+    private void initTree(Slot root) {
+        // depth-first traversal of TypeContext
+        var stack = new ArrayDeque<TypeContext>();
+
+        // traverse the root to populate the stack
+        root.visit(node -> {
+            for (var it : node.types.descendingSet()) {
+                stack.push(new TypeContext(node, it, Set.of(it.typeName())));
+            }
+        });
+
+        while (!stack.isEmpty()) {
+            var e = stack.pop();
+            for (var option : e.type.options()) {
                 var optionKey = option.key().orElse(null);
                 if (optionKey == null) {
-                    LOGGER.log(Level.WARNING, "Type contains an option without key: {0}", enclosingTypeName);
+                    LOGGER.log(Level.WARNING,
+                            "Type contains an option without key: {0}",
+                            e.type.typeName());
                     continue;
                 }
-                if (optionType != null) {
-                    types.add(optionTypeName);
+                var optionTypeName = option.typeName();
+                var optionType = type(optionTypeName).orElse(null);
+                var slot = materializePath(e.node, optionKey, "option key " + e.type.typeName() + "#" + optionKey);
+                if (slot == e.node) {
+                    error("option-no-path:" + e.type.typeName() + "#" + optionKey,
+                            "Option key does not contain a valid path segment: {0}#{1}",
+                            e.type.typeName(),
+                            optionKey);
+                    continue;
                 }
-                var optionPath = node.path() + "." + optionKey;
-                var optionNode = new CmNodeImpl(
-                        node,
-                        optionPath,
-                        optionKey,
-                        optionTypeName,
-                        optionType,
-                        new ArrayList<>());
-                node.addChild(optionNode);
 
-                // process provider implementations
+                // merge option
+                if (slot.option != null) {
+                    if (!matches(slot.option, slot.optionType, optionTypeName, optionType, option.provider())) {
+                        if (matches(slot.option, optionTypeName, option.provider()) && slot.optionType == null) {
+                            slot.option = option;
+                            slot.optionType = optionType;
+                        } else {
+                            error("option-conflict:" + slot.path,
+                                    "Conflicting option metadata for path {0}: keeping {1}, ignoring {2}",
+                                    slot.path,
+                                    slot.option.typeName(),
+                                    optionTypeName);
+                        }
+                    }
+                } else {
+                    slot.option = option;
+                    slot.optionType = optionType;
+                }
+
+                // handle provider
                 if (option.provider()) {
-                    if (optionTypeName.equals(CmOption.DEFAULT_TYPE)) {
-                        if (errors.add("provider-no-type: " + optionTypeName)) {
-                            LOGGER.log(Level.WARNING, "Provider option without type: {0}#{1}", enclosingTypeName, optionKey);
-                        }
+                    if (DEFAULT_TYPE.equals(optionTypeName)) {
+                        error("provider-no-type:" + e.type.typeName() + "#" + optionKey,
+                                "Provider option without type: {0}#{1}",
+                                e.type.typeName(),
+                                optionKey);
                         continue;
                     }
-                    var implTypes = providers.computeIfAbsent(optionTypeName, k -> List.of());
-                    if (implTypes.isEmpty()) {
-                        if (errors.add("provider-no-impl: " + optionTypeName)) {
-                            LOGGER.log(Level.WARNING, "Provider contract does not have implementations: {0}", optionTypeName);
-                        }
+                    var providers = providers(optionTypeName);
+                    if (providers.isEmpty()) {
+                        error("provider-no-impl:" + optionTypeName,
+                                "Provider contract does not have implementations: {0}",
+                                optionTypeName);
                         continue;
                     }
-                    for (var implType : implTypes) {
-                        var implTypeName = implType.type();
-                        var implKey = implType.prefix().orElse(null);
-                        if (implKey == null) {
-                            LOGGER.log(Level.WARNING, "Provider type does not have a prefix: {0}", implTypeName);
-                            continue;
+
+                    // add provider
+                    for (var entry : providers.entrySet()) {
+                        var node = slot.children.get(entry.getKey());
+                        if (node == null) {
+                            node = new Slot(path(slot.path, entry.getKey()), entry.getKey());
+                            slot.children.put(entry.getKey(), node);
                         }
-                        var implPath = optionPath + "." + implKey;
-                        var implNode = new CmNodeImpl(
-                                optionNode,
-                                implPath,
-                                implKey,
-                                implTypeName,
-                                implType,
-                                new ArrayList<>());
-                        optionNode.addChild(implNode);
-                        usage(usages, implTypeName, implNode);
-                        stack.push(implNode);
-                        types.add(implTypeName);
+                        for (var type : entry.getValue()) {
+                            if (node.types.add(type)) {
+                                var next = e.next(node, type);
+                                if (next != null) {
+                                    stack.push(next);
+                                }
+                            }
+                        }
                     }
-                    usage(usages, optionTypeName, optionNode);
                 } else if (optionType != null) {
-                    if (!optionTypeName.equals(node.typeName())) {
-                        // an option may reference its enclosing type
-                        // prevent infinite recursion
-                        usage(usages, optionTypeName, optionNode);
-                        stack.push(optionNode);
+                    var next = e.next(slot, optionType);
+                    if (next != null) {
+                        stack.push(next);
                     }
-                } else if (enums.containsKey(optionTypeName)) {
-                    usage(usages, optionTypeName, optionNode);
                 }
             }
         }
-        return types;
     }
 
     private CmType resolveType(CmType type) {
-        // build the reverse hierarchy (parents first)
         var hierarchy = new ArrayList<CmType>();
-        for (var e : type.inherits()) {
-            var superTypeName = type.type();
-            var t = types.get(e);
-            if (t == null) {
-                LOGGER.log(Level.WARNING, "Cannot resolve inherited type of {0}: {1}", superTypeName, e);
+        for (var inheritedTypeName : type.inherits()) {
+            var inheritedType = types.get(inheritedTypeName);
+            if (inheritedType == null) {
+                LOGGER.log(Level.WARNING,
+                        "Cannot resolve inherited type of {0}: {1}",
+                        type.typeName(),
+                        inheritedTypeName);
             } else {
-                hierarchy.addFirst(t);
+                hierarchy.addFirst(inheritedType);
             }
         }
         hierarchy.addLast(type);
 
-        // traverse the reverse hierarchy to override options
         var options = new HashMap<String, CmOption>();
-        for (var t : hierarchy) {
-            for (var e : resolveOptions(t)) {
-                var key = e.key().orElse(null);
+        for (var currentType : hierarchy) {
+            for (var option : resolveOptions(currentType)) {
+                var key = option.key().orElse(null);
                 if (key != null) {
-                    var resolvedOption = resolveOption(type, e);
-                    options.put(key, resolvedOption);
+                    options.put(key, resolveOption(type, option));
                 } else {
-                    LOGGER.log(Level.WARNING, "Type contains an option without key: {0}", t.type());
+                    LOGGER.log(Level.WARNING,
+                            "Type contains an option without key: {0}",
+                            currentType.typeName());
                 }
             }
         }
 
-        // return a copy with updates
-        return new CmTypeImpl(
-                type.type(),
+        return new CmTypeImpl(type.typeName(),
                 List.copyOf(options.values()),
                 type.description(),
                 type.prefix(),
                 type.standalone(),
-                List.of(), // empty inherits
+                List.of(),
                 type.provides());
     }
 
@@ -289,7 +388,7 @@ final class CmResolverImpl implements CmResolver {
         while (!stack.isEmpty()) {
             var option = stack.pop();
             if (option.merge()) {
-                var optionTypeName = option.type();
+                var optionTypeName = option.typeName();
                 var resolvedType = types.get(optionTypeName);
                 if (resolvedType != null) {
                     var options = resolvedType.options();
@@ -298,7 +397,9 @@ final class CmResolverImpl implements CmResolver {
                     }
                 } else {
                     merged.add(option);
-                    LOGGER.log(Level.WARNING, "Cannot resolve merge option type: {0}", option.type());
+                    LOGGER.log(Level.WARNING,
+                            "Cannot resolve merge option type: {0}",
+                            option.typeName());
                 }
             } else {
                 merged.add(option);
@@ -308,20 +409,29 @@ final class CmResolverImpl implements CmResolver {
     }
 
     private CmOption resolveOption(CmType type, CmOption option) {
-        validateDefaultValue(option);
+        var optionType = option.typeName();
         var optionKey = option.key().orElseThrow();
-        var optionType = option.type();
+        var defaultValue = option.defaultValue().orElse(null);
+        if (defaultValue != null) {
+            try {
+                parseValue(optionType, defaultValue);
+            } catch (NumberFormatException ex) {
+                LOGGER.log(Level.WARNING,
+                        "Unable to parse {0} as {1}",
+                        defaultValue,
+                        optionType);
+            }
+        }
         var allowedValues = option.allowedValues();
         if (!allowedValues.isEmpty()) {
             if (isSyntheticEnum(option)) {
-                optionType = syntheticTypeName(type.type(), optionKey);
+                optionType = syntheticTypeName(type.typeName(), optionKey);
                 enums.put(optionType, CmEnum.of(optionType, allowedValues));
             } else {
                 enums.putIfAbsent(optionType, CmEnum.of(optionType, allowedValues));
             }
         }
         var description = option.description().orElse(null);
-        var defaultValue = option.defaultValue().orElse(null);
         return CmOption.builder()
                 .key(optionKey)
                 .type(optionType)
@@ -337,41 +447,48 @@ final class CmResolverImpl implements CmResolver {
     }
 
     private boolean isSyntheticEnum(CmOption option) {
-        var optionTypeName = option.type();
-        if (optionTypeName.startsWith("java.lang")) {
+        var typeName = option.typeName();
+        if (typeName.startsWith("java.lang")) {
             return true;
-        } else {
-            var existing = enums.get(optionTypeName);
-            if (existing != null) {
-                var expected = existing.values().stream()
-                        .map(CmAllowedValue::value)
-                        .collect(Collectors.toSet());
-                var actual = option.allowedValues().stream()
-                        .map(CmAllowedValue::value)
-                        .collect(Collectors.toSet());
-                return !actual.equals(expected);
-            } else {
-                return false;
-            }
+        }
+        var existing = enums.get(typeName);
+        if (existing == null) {
+            return false;
+        }
+        var expected = existing.values().stream()
+                .map(CmAllowedValue::value)
+                .collect(Collectors.toSet());
+        var actual = option.allowedValues().stream()
+                .map(CmAllowedValue::value)
+                .collect(Collectors.toSet());
+        return !actual.equals(expected);
+    }
+
+    private void error(String key, String message, Object... args) {
+        if (errors.add(key)) {
+            LOGGER.log(Level.WARNING, message, args);
         }
     }
 
     private static void usage(Map<String, Set<CmNode>> usages, String typeName, CmNode node) {
-        usages.computeIfAbsent(typeName, k -> new TreeSet<>(Comparator.comparing(CmNode::path)))
-                .add(node);
+        usages.computeIfAbsent(typeName, ignored -> new TreeSet<>(Comparator.comparing(CmNode::path)
+                .thenComparing(CmNode::key))).add(node);
     }
 
-    private static void validateDefaultValue(CmOption option) {
-        var optionType = option.type();
-        var defaultValue = option.defaultValue().orElse(null);
-        if (defaultValue != null) {
-            try {
-                parseValue(optionType, defaultValue);
-            } catch (NumberFormatException ex) {
-                LOGGER.log(Level.WARNING,
-                        "Unable to parse \"%s\" as %s".formatted(defaultValue, optionType));
-            }
-        }
+    private static String path(String prefix, String key) {
+        return prefix.isEmpty() ? key : prefix + "." + key;
+    }
+
+    private static boolean hasValidPathCharacters(String segment) {
+        return segment.chars().anyMatch(ch -> ch != '*');
+    }
+
+    private static boolean matches(CmOption option, String typeName, boolean provider) {
+        return option.typeName().equals(typeName) && option.provider() == provider;
+    }
+
+    private static boolean matches(CmOption option, CmType optionType, String typeName, CmType type, boolean provider) {
+        return matches(option, typeName, provider) && CmType.matches(optionType, type);
     }
 
     private static String syntheticTypeName(String typeName, String option) {
@@ -379,11 +496,11 @@ final class CmResolverImpl implements CmResolver {
                 .filter(not(String::isBlank))
                 .map(str -> {
                     char c = Character.toUpperCase(str.charAt(0));
-                    var captalized = String.valueOf(c);
+                    var capitalized = String.valueOf(c);
                     if (str.length() > 1) {
-                        captalized += str.substring(1);
+                        capitalized += str.substring(1);
                     }
-                    return captalized;
+                    return capitalized;
                 })
                 .collect(Collectors.joining("", typeName, ""));
     }
@@ -400,5 +517,84 @@ final class CmResolverImpl implements CmResolver {
             case "java.lang.Integer" -> Integer.parseInt(defaultValue);
             default -> null;
         };
+    }
+
+    private record TypeContext(Slot node, CmType type, Set<String> typeNames) {
+
+        TypeContext next(Slot slot, CmType type) {
+            var typeName = type.typeName();
+            if (!typeNames.contains(typeName)) {
+                var next = new HashSet<>(typeNames);
+                next.add(typeName);
+                return new TypeContext(slot, type, next);
+            }
+            return null;
+        }
+    }
+
+    private record NodeContext(CmNode node, List<CmNode> children) {
+    }
+
+    private static final class Slot {
+        private final TreeSet<CmType> types = new TreeSet<>();
+        private final TreeMap<String, Slot> children = new TreeMap<>();
+        private final String path;
+        private final String key;
+        private CmOption option;
+        private CmType optionType;
+
+        Slot(String path, String key) {
+            this.path = path;
+            this.key = key;
+        }
+
+        void visit(Consumer<Slot> visitor) {
+            var stack = new ArrayDeque<Slot>();
+            stack.push(this);
+            while (!stack.isEmpty()) {
+                var e = stack.pop();
+                visitor.accept(e);
+                for (var child : e.children.descendingMap().values()) {
+                    stack.push(child);
+                }
+            }
+        }
+
+        NodeContext build(CmNode parent) {
+            var children = new ArrayList<CmNode>();
+            if (option != null) {
+                var node = new CmOptionNodeImpl(
+                        parent,
+                        path,
+                        key,
+                        types,
+                        children,
+                        option,
+                        optionType);
+                return new NodeContext(node, children);
+            }
+            var node = new CmPathNodeImpl(
+                    parent,
+                    path,
+                    key,
+                    types,
+                    children);
+            return new NodeContext(node, children);
+        }
+
+        CmNode build() {
+            var stack = new ArrayDeque<NodeContext>();
+            var root = build(null);
+            stack.push(root);
+            visit(current -> {
+                var view = stack.pop();
+                for (var child : current.children.descendingMap().values()) {
+                    var ctx = child.build(view.node);
+                    stack.push(ctx);
+                    view.children.addFirst(ctx.node);
+                }
+            });
+            return root.node;
+        }
     }
 }

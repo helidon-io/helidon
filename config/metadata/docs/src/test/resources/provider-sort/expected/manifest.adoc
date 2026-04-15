@@ -1,0 +1,14 @@
+
+= Config Types
+
+== Config Types
+
+See the xref:config_reference.adoc[root] type.
+
+* xref:com_acme_AcmeServerConfig.adoc[com.acme.AcmeServerConfig]
+* xref:com_acme_AlphaFeatureConfig.adoc[com.acme.AlphaFeatureConfig]
+* xref:com_acme_ZebraFeatureConfig.adoc[com.acme.ZebraFeatureConfig]
+
+== Provider Types
+
+* xref:com_acme_AcmeFeature.adoc[com.acme.AcmeFeature]

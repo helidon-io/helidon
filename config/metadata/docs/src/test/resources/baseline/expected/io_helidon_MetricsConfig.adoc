@@ -1,0 +1,53 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= io.helidon.MetricsConfig
+
+== Description
+
+++++
+Merged configuration for <code>metrics</code>
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Default Value|Description
+
+| `buckets`
+|`List<String>`
+|{nbsp}
+|pass:[Published buckets]
+
+| `enabled`
+|`Boolean`
+|`true`
+|pass:[Enable metrics]
+
+| `endpoint`
+|`String`
+|{nbsp}
+|pass:[Observation endpoint]
+
+| `scope`
+|`String`
+|{nbsp}
+|pass:[Metrics scope]
+
+|===
+
+// end::config[]
+
+
+== Merged Types
+
+* xref:{rootdir}/config/com_acme_AcmeMetricsConfig.adoc[com.acme.AcmeMetricsConfig]
+* xref:{rootdir}/config/com_acme_AcmeMetricsObserverConfig.adoc[com.acme.AcmeMetricsObserverConfig]
+
+
+== Usages
+
+* xref:{rootdir}/config/config_reference.adoc#acca9442d-metrics[`metrics`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

@@ -1,0 +1,68 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeServerConfig
+
+== Description
+
+++++
+ACME server configuration.
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Description
+
+|[[a1e29f58e-mode]] xref:{rootdir}/config/com_acme_AcmeMode.adoc[`mode`]
+|`AcmeMode`
+|pass:[Mode]
+
+|[[afc445d1a-features]] xref:{rootdir}/config/com_acme_AcmeFeature.adoc[`features`]
+|`List<AcmeFeature>`
+|pass:[Dynamic features]
+
+| `external-handlers`
+|`Map<String, ExternalHandler>`
+|pass:[Handlers]
+
+|[[a01448b27-default-socket]] xref:{rootdir}/config/com_acme_AcmeListenerConfig.adoc[`default-socket`]
+|`AcmeListenerConfig`
+|pass:[Default socket]
+
+|[[a8db7cc09-modes]] xref:{rootdir}/config/com_acme_AcmeMode.adoc[`modes`]
+|`List<AcmeMode>`
+|pass:[Modes]
+
+|[[a3937574f-named-modes]] xref:{rootdir}/config/com_acme_AcmeNamedMode.adoc[`named-modes`]
+|`Map<String, AcmeNamedMode>`
+|pass:[Named modes]
+
+| `external-listeners`
+|`List<ExternalListener>`
+|pass:[Listeners]
+
+| `host`
+|`String`
+|pass:[Host]
+
+| `external-scalar`
+|`ExternalScalar`
+|pass:[External scalar]
+
+|[[a9d0cc898-sockets]] xref:{rootdir}/config/com_acme_AcmeListenerConfig.adoc[`sockets`]
+|`Map<String, AcmeListenerConfig>`
+|pass:[Sockets]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/config_reference.adoc#ac6d482f1-server[`server`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

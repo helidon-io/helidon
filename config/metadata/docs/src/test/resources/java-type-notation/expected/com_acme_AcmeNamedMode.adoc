@@ -1,0 +1,29 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeNamedMode
+
+== Description
+
+++++
+This type is an enumeration.
+++++
+
+== Allowed Values
+
+|===
+|Value|Description
+
+|`STRICT`
+|pass:[Strict mode]
+
+|`RELAXED`
+|pass:[Relaxed mode]
+
+|===
+
+== Usages
+
+* xref:{rootdir}/config/com_acme_AcmeServerConfig.adoc#a3937574f-named-modes[`server.named-modes`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

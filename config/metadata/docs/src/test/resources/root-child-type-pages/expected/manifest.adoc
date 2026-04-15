@@ -1,0 +1,9 @@
+
+= Config Types
+
+== Config Types
+
+See the xref:config_reference.adoc[root] type.
+
+* xref:com_acme_AcmeClientsConfig.adoc[com.acme.AcmeClientsConfig]
+* xref:com_acme_AcmeHttpClientsConfig.adoc[com.acme.AcmeHttpClientsConfig]
