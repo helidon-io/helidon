@@ -181,15 +181,11 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         }
 
         Jwt jwt = signedJwt.getJwt();
-        Errors validate = validateJwt(jwt);
+        Errors validate = jwt.validate(expectedIssuer, expectedAudience);
         if (!validate.isValid()) {
             return failOrAbstain(validate.toString());
         }
         return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
-    }
-
-    private Errors validateJwt(Jwt jwt) {
-        return jwt.validate(expectedIssuer, expectedAudience);
     }
 
     private AuthenticationResponse failOrAbstain(String message) {
