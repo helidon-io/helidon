@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
-import io.helidon.webserver.staticcontent.StaticContentService;
+import io.helidon.webserver.staticcontent.ClasspathHandlerConfig;
+import io.helidon.webserver.staticcontent.StaticContentFeature;
 import io.helidon.webserver.websocket.WsRouting;
 import io.helidon.websocket.WsListener;
 import io.helidon.websocket.WsSession;
@@ -57,9 +58,11 @@ class WebSocketSnippets {
 
     void snippet_3(WebServerConfig.Builder server) {
         // tag::snippet_3[]
-        StaticContentService staticContent = StaticContentService.builder("/WEB")
-                .welcomeFileName("index.html")
-                .build();
+        HttpService staticContent = StaticContentFeature.createService(
+                ClasspathHandlerConfig.builder()
+                        .location("/WEB")
+                        .welcome("index.html")
+                        .build());
         Queue<String> messageQueue = new ConcurrentLinkedQueue<>();
         server.routing(it -> it
                         .register("/web", staticContent)

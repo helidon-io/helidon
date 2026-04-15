@@ -45,14 +45,14 @@ import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 /**
  * Base implementation of static content support.
  */
-@SuppressWarnings("removal") // will be replaced with HttpService once removed, or made package local
-abstract class StaticContentHandler implements StaticContentService {
+abstract class StaticContentHandler implements HttpService {
     private static final System.Logger LOGGER = System.getLogger(StaticContentHandler.class.getName());
 
     private final LruCache<String, CachedHandler> handlerCache;

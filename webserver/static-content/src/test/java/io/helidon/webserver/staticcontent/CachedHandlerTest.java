@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -59,7 +60,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("removal")
 class CachedHandlerTest {
     private static final System.Logger LOGGER = System.getLogger(CachedHandlerTest.class.getName());
     private static final MediaType MEDIA_TYPE_ICON = MediaTypes.create("image/x-icon");
@@ -71,16 +71,20 @@ class CachedHandlerTest {
 
     @BeforeAll
     static void initTestClass() {
-        classpathHandler = (ClassPathContentHandler) StaticContentService.builder("/web")
-                .addCacheInMemory("favicon.ico")
-                .welcomeFileName("resource.txt")
-                .build();
+        classpathHandler = (ClassPathContentHandler) StaticContentFeature.createService(
+                ClasspathHandlerConfig.builder()
+                        .location("/web")
+                        .cachedFiles(Set.of("favicon.ico"))
+                        .welcome("resource.txt")
+                        .build());
         classpathHandler.beforeStart();
 
-        fsHandler = (FileSystemContentHandler) StaticContentService.builder(Paths.get("./src/test/resources/web"))
-                .addCacheInMemory("nested")
-                .welcomeFileName("resource.txt")
-                .build();
+        fsHandler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(Paths.get("./src/test/resources/web"))
+                        .cachedFiles(Set.of("nested"))
+                        .welcome("resource.txt")
+                        .build());
         fsHandler.beforeStart();
     }
 
