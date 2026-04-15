@@ -17,6 +17,7 @@
 package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,6 +38,7 @@ import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -49,6 +51,7 @@ import static io.helidon.http.HeaderNames.IF_NONE_MATCH;
 import static io.helidon.http.HeaderNames.LOCATION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -203,6 +206,22 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void handlePreservesServerConnectionException() {
+        ServerRequest request = mockRequestWithPath(Method.GET, "/foo/some.txt");
+        ServerResponse response = mock(ServerResponse.class);
+        ServerConnectionException expected = new ServerConnectionException("Failed to write response",
+                                                                          new UncheckedIOException(new IOException(
+                                                                                  "Broken pipe")));
+        ThrowingContentHandler handler = ThrowingContentHandler.create(expected);
+
+        ServerConnectionException actual = assertThrows(ServerConnectionException.class,
+                                                        () -> handler.handle(request, response));
+
+        assertThat(actual, is(expected));
+        verify(response, never()).next();
+    }
+
+    @Test
     void classpathHandleSpaces() {
         ServerRequest request = mockRequestWithPath(Method.GET, "foo/I have spaces.txt");
         ServerResponse response = mock(ServerResponse.class);
@@ -328,5 +347,31 @@ class StaticContentHandlerTest {
             return returnValue;
         }
 
+    }
+
+    static class ThrowingContentHandler extends FileSystemContentHandler {
+        private final RuntimeException exception;
+
+        ThrowingContentHandler(FileSystemHandlerConfig config, RuntimeException exception) {
+            super(config);
+            this.exception = exception;
+        }
+
+        static ThrowingContentHandler create(RuntimeException exception) {
+            return new ThrowingContentHandler(FileSystemHandlerConfig.builder()
+                                                    .location(Paths.get("."))
+                                                    .build(),
+                                             exception);
+        }
+
+        @Override
+        boolean doHandle(Method method,
+                         String requestedResource,
+                         ServerRequest req,
+                         ServerResponse res,
+                         String rawPath,
+                         Path path) {
+            throw exception;
+        }
     }
 }
