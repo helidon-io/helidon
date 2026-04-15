@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,8 @@ public class ConfigurationTest {
                 .connectTimeout(Duration.of(4000, ChronoUnit.MILLIS))
                 .readTimeout(Duration.of(5000, ChronoUnit.MILLIS))
                 .followRedirects(true)
+                .filterRedirectHeaders(false)
+                .addRedirectSensitiveHeader("x-API-key")
                 .maxRedirects(10)
                 .userAgent("HelidonTest")
                 .defaultHeader(Http.Header.ACCEPT, List.of("application/json", "text/plain"))
@@ -63,6 +65,8 @@ public class ConfigurationTest {
         assertThat(wcc.connectTimeout(), is(Duration.of(4000, ChronoUnit.MILLIS)));
         assertThat(wcc.readTimout(), is(Duration.of(5000, ChronoUnit.MILLIS)));
         assertThat(wcc.followRedirects(), is(true));
+        assertThat(wcc.filterRedirectHeaders(), is(false));
+        assertThat(wcc.redirectSensitiveHeaders(), containsInAnyOrder(Http.Header.AUTHORIZATION, "x-API-key"));
         assertThat(wcc.maxRedirects(), is(10));
         assertThat(wcc.userAgent(), is("HelidonTest"));
         assertThat(wcc.headers().acceptedTypes(), containsInAnyOrder(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN));

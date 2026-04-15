@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -380,6 +380,28 @@ public interface WebClient {
          */
         public Builder followRedirects(boolean follow) {
             configuration.followRedirects(follow);
+            return this;
+        }
+
+        /**
+         * Whether headers sensitive to cross-origin redirects should be filtered.
+         *
+         * @param filterRedirectHeaders whether to filter sensitive headers on cross-origin redirects
+         * @return updated builder instance
+         */
+        public Builder filterRedirectHeaders(boolean filterRedirectHeaders) {
+            configuration.filterRedirectHeaders(filterRedirectHeaders);
+            return this;
+        }
+
+        /**
+         * Adds a header name to strip on cross-origin redirects.
+         *
+         * @param headerName header name to add
+         * @return updated builder instance
+         */
+        public Builder addRedirectSensitiveHeader(String headerName) {
+            configuration.addRedirectSensitiveHeader(headerName);
             return this;
         }
 

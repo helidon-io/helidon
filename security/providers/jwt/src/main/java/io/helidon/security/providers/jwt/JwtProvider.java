@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
     private final TokenHandler defaultTokenHandler;
     private final JwkKeys verifyKeys;
     private final String expectedAudience;
+    private final String expectedIssuer;
     private final JwkKeys signKeys;
     private final OutboundConfig outboundConfig;
     private final String issuer;
@@ -104,6 +105,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         this.signKeys = builder.signKeys;
         this.issuer = builder.issuer;
         this.expectedAudience = builder.expectedAudience;
+        this.expectedIssuer = builder.expectedIssuer;
         this.verifySignature = builder.verifySignature;
         this.useJwtGroups = builder.useJwtGroups;
 
@@ -123,7 +125,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         }
 
         if (!verifySignature) {
-            LOGGER.info("JWT Signature validation is disabled. Any JWT will be accepted.");
+            LOGGER.info("JWT signature validation is disabled. JWT claims will still be validated.");
         }
     }
 
@@ -173,21 +175,17 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         }
         if (verifySignature) {
             Errors errors = signedJwt.verifySignature(verifyKeys, defaultJwk);
-            if (errors.isValid()) {
-                Jwt jwt = signedJwt.getJwt();
-                // perform all validations, including expected audience verification
-                Errors validate = jwt.validate(null, expectedAudience);
-                if (validate.isValid()) {
-                    return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
-                } else {
-                    return failOrAbstain(validate.toString());
-                }
-            } else {
+            if (!errors.isValid()) {
                 return failOrAbstain(errors.toString());
             }
-        } else {
-            return AuthenticationResponse.success(buildSubject(signedJwt.getJwt(), signedJwt));
         }
+
+        Jwt jwt = signedJwt.getJwt();
+        Errors validate = jwt.validate(expectedIssuer, expectedAudience);
+        if (!validate.isValid()) {
+            return failOrAbstain(validate.toString());
+        }
+        return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
     }
 
     private AuthenticationResponse failOrAbstain(String message) {
@@ -618,6 +616,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         private JwkKeys signKeys;
         private String issuer;
         private String expectedAudience;
+        private String expectedIssuer;
         private boolean useJwtGroups = true;
 
         private Builder() {
@@ -693,7 +692,8 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          * <p>
          * <b>Make sure your service is properly secured on network level and only
          * accessible from a secure endpoint that provides the JWTs when signature verification
-         * is disabled. If signature verification is disabled, this service will accept <i>ANY</i> JWT</b>
+         * is disabled. If signature verification is disabled, configured claim validation still applies,
+         * but signatures are not checked.</b>
          *
          * @param shouldValidate set to false to disable validation of JWT signatures
          * @return updated builder instance
@@ -816,6 +816,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
             config.get("atn-token.handler").as(TokenHandler::create).ifPresent(this::atnTokenHandler);
             config.get("atn-token").ifExists(this::verifyKeys);
             config.get("atn-token.jwt-audience").asString().ifPresent(this::expectedAudience);
+            config.get("atn-token.jwt-issuer").asString().ifPresent(this::expectedIssuer);
             config.get("atn-token.verify-signature").asBoolean().ifPresent(this::verifySignature);
             config.get("sign-token").ifExists(outbound -> outboundConfig(OutboundConfig.create(outbound)));
             config.get("sign-token").ifExists(this::outbound);
@@ -833,6 +834,16 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         @ConfiguredOption(key = "atn-token.jwt-audience")
         public void expectedAudience(String audience) {
             this.expectedAudience = audience;
+        }
+
+        /**
+         * Issuer expected in inbound JWTs.
+         *
+         * @param issuer issuer string
+         */
+        @ConfiguredOption(key = "atn-token.jwt-issuer")
+        public void expectedIssuer(String issuer) {
+            this.expectedIssuer = issuer;
         }
 
         /**

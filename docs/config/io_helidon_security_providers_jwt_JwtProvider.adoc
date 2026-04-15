@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -67,13 +67,15 @@ This type provides the following service implementations:
 |`atn-token.handler` |xref:{rootdir}/config/io_helidon_security_util_TokenHandler.adoc[TokenHandler] |{nbsp} |Token handler to extract username from request.
 |`atn-token.jwk.resource` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |JWK resource used to verify JWTs created by other parties.
 |`atn-token.jwt-audience` |string |{nbsp} |Audience expected in inbound JWTs.
+|`atn-token.jwt-issuer` |string |{nbsp} |Issuer expected in inbound JWTs.
 |`atn-token.verify-signature` |boolean |`true` |Configure whether to verify signatures.
  Signatures verification is enabled by default. You can configure the provider
  not to verify signatures.
 
  <b>Make sure your service is properly secured on network level and only
  accessible from a secure endpoint that provides the JWTs when signature verification
- is disabled. If signature verification is disabled, this service will accept <i>ANY</i> JWT</b>
+ is disabled. If signature verification is disabled, configured claim validation still applies,
+ but signatures are not checked.</b>
 |`authenticate` |boolean |`true` |Whether to authenticate requests.
 |`optional` |boolean |`false` |Whether authentication is required.
  By default, request will fail if the username cannot be extracted.

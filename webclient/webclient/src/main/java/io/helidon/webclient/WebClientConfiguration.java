@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,18 +22,21 @@ import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
@@ -85,6 +88,8 @@ class WebClientConfiguration {
     private final boolean relativeUris;
     private final DnsResolverType dnsResolverType;
     private final boolean mediaTypeParserRelaxed;
+    private final boolean filterRedirectHeaders;
+    private final Set<String> redirectSensitiveHeaders;
 
     /**
      * Creates a new instance of client configuration.
@@ -117,6 +122,8 @@ class WebClientConfiguration {
         this.relativeUris = builder.relativeUris;
         this.dnsResolverType = builder.dnsResolverType;
         this.mediaTypeParserRelaxed = builder.mediaTypeParserRelaxed;
+        this.filterRedirectHeaders = builder.filterRedirectHeaders;
+        this.redirectSensitiveHeaders = copyRedirectSensitiveHeaders(builder.redirectSensitiveHeaders);
     }
 
     /**
@@ -289,12 +296,37 @@ class WebClientConfiguration {
         return relativeUris;
     }
 
+    /**
+     * Whether headers sensitive to cross-origin redirects should be filtered.
+     *
+     * @return whether redirect header filtering is enabled
+     */
+    boolean filterRedirectHeaders() {
+        return filterRedirectHeaders;
+    }
+
+    /**
+     * Header names to strip on cross-origin redirects.
+     *
+     * @return sensitive redirect header names
+     */
+    Set<String> redirectSensitiveHeaders() {
+        return redirectSensitiveHeaders;
+    }
+
     DnsResolverType dnsResolverType() {
         return dnsResolverType;
     }
 
     boolean mediaTypeParserRelaxed() {
         return mediaTypeParserRelaxed;
+    }
+
+    private static Set<String> copyRedirectSensitiveHeaders(Set<String> headerNames) {
+        TreeSet<String> effectiveHeaderNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        effectiveHeaderNames.add(Http.Header.AUTHORIZATION);
+        effectiveHeaderNames.addAll(headerNames);
+        return Collections.unmodifiableSet(effectiveHeaderNames);
     }
 
     /**
@@ -330,6 +362,8 @@ class WebClientConfiguration {
         private boolean relativeUris;
         private DnsResolverType dnsResolverType;
         private boolean mediaTypeParserRelaxed;
+        private boolean filterRedirectHeaders = true;
+        private final Set<String> redirectSensitiveHeaders;
         @SuppressWarnings("unchecked")
         private B me = (B) this;
 
@@ -340,6 +374,8 @@ class WebClientConfiguration {
             clientHeaders = new WebClientRequestHeadersImpl();
             defaultCookies = new HashMap<>();
             clientServices = new ArrayList<>();
+            redirectSensitiveHeaders = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+            redirectSensitiveHeaders.add(Http.Header.AUTHORIZATION);
         }
 
         @Override
@@ -381,6 +417,18 @@ class WebClientConfiguration {
         @ConfiguredOption("false")
         public B followRedirects(boolean followRedirects) {
             this.followRedirects = followRedirects;
+            return me;
+        }
+
+        /**
+         * Whether headers sensitive to cross-origin redirects should be filtered.
+         *
+         * @param filterRedirectHeaders whether to filter sensitive headers on cross-origin redirects
+         * @return updated builder instance
+         */
+        @ConfiguredOption("true")
+        public B filterRedirectHeaders(boolean filterRedirectHeaders) {
+            this.filterRedirectHeaders = filterRedirectHeaders;
             return me;
         }
 
@@ -510,6 +558,20 @@ class WebClientConfiguration {
                                   + "Each list entry has to have \"name\" and \"value\" node")
         public B defaultHeader(String key, List<String> values) {
             clientHeaders.put(key, values);
+            return me;
+        }
+
+        /**
+         * Adds a header name to strip on cross-origin redirects.
+         *
+         * @param headerName header name to add
+         * @return updated builder instance
+         */
+        @ConfiguredOption(key = "redirect-sensitive-headers",
+                          type = List.class,
+                          description = "Header names to strip on cross-origin redirects")
+        public B addRedirectSensitiveHeader(String headerName) {
+            redirectSensitiveHeaders.add(headerName);
             return me;
         }
 
@@ -688,6 +750,14 @@ class WebClientConfiguration {
          *     <td>Max number of followed redirections</td>
          * </tr>
          * <tr>
+         *     <td>filter-redirect-headers</td>
+         *     <td>Whether headers sensitive to cross-origin redirects should be filtered</td>
+         * </tr>
+         * <tr>
+         *     <td>redirect-sensitive-headers</td>
+         *     <td>Header names to strip on cross-origin redirects</td>
+         * </tr>
+         * <tr>
          *     <td>user-agent</td>
          *     <td>Name of the user agent which should be used</td>
          * </tr>
@@ -727,6 +797,9 @@ class WebClientConfiguration {
             config.get("connect-timeout-millis").asLong().ifPresent(timeout -> connectTimeout(Duration.ofMillis(timeout)));
             config.get("read-timeout-millis").asLong().ifPresent(timeout -> readTimeout(Duration.ofMillis(timeout)));
             config.get("follow-redirects").asBoolean().ifPresent(this::followRedirects);
+            config.get("filter-redirect-headers").asBoolean().ifPresent(this::filterRedirectHeaders);
+            config.get("redirect-sensitive-headers").asList(String.class)
+                    .ifPresent(headerNames -> headerNames.forEach(this::addRedirectSensitiveHeader));
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("user-agent").asString().ifPresent(this::userAgent);
             config.get("keep-alive").asBoolean().ifPresent(this::keepAlive);
@@ -759,10 +832,12 @@ class WebClientConfiguration {
             connectTimeout(configuration.connectTimeout);
             readTimeout(configuration.readTimeout);
             followRedirects(configuration.followRedirects);
+            filterRedirectHeaders(configuration.filterRedirectHeaders);
             userAgent(configuration.userAgent);
             proxy(configuration.proxy);
             tls(configuration.webClientTls);
             maxRedirects(configuration.maxRedirects);
+            configuration.redirectSensitiveHeaders().forEach(this::addRedirectSensitiveHeader);
             clientHeaders(configuration.clientHeaders);
             enableAutomaticCookieStore(configuration.enableAutomaticCookieStore);
             cookieStore(configuration.cookieManager.getCookieStore());

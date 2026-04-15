@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -145,6 +147,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private Long requestId;
     private boolean allowChunkedEncoding;
     private DnsResolverType dnsResolverType;
+    private URI redirectSourceUri;
+    private final Set<String> suppressedRedirectHeaders;
 
     private WebClientRequestBuilderImpl(NioEventLoopGroup eventGroup,
                                         WebClientConfiguration configuration,
@@ -176,6 +180,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.proxy = configuration.proxy().orElse(Proxy.noProxy());
         this.keepAlive = configuration.keepAlive();
         this.dnsResolverType = configuration.dnsResolverType();
+        this.suppressedRedirectHeaders = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
     }
 
     static WebClientRequestBuilder create(NioEventLoopGroup eventGroup,
@@ -197,6 +202,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         builder.httpVersion = clientRequest.version();
         builder.proxy = clientRequest.proxy();
         builder.redirectionCount = clientRequest.redirectionCount() + 1;
+        builder.redirectSourceUri = clientRequest.configuration().requestURI();
+        builder.suppressedRedirectHeaders.addAll(clientRequest.suppressedRedirectHeaders());
         int maxRedirects = builder.configuration.maxRedirects();
         if (builder.redirectionCount > maxRedirects) {
             throw new WebClientException("Max number of redirects extended! (" + maxRedirects + ")");
@@ -535,6 +542,10 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return context;
     }
 
+    Set<String> suppressedRedirectHeaders() {
+        return suppressedRedirectHeaders;
+    }
+
     private <T> Single<T> invokeWithEntity(Flow.Publisher<DataChunk> requestEntity, GenericType<T> responseType) {
         return invoke(requestEntity)
                 .map(this::getContentFromClientResponse)
@@ -565,6 +576,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             URI requestUri = relativizeNoProxy(finalUri, proxy, configuration.relativeUris());
             requestId = serviceRequest.requestId();
             HttpHeaders headers = toNettyHttpHeaders();
+            applyRedirectSensitiveHeaderSuppression(headers);
             DefaultHttpRequest request = new DefaultHttpRequest(toNettyHttpVersion(httpVersion),
                                                                 toNettyMethod(method),
                                                                 requestUri.toASCIIString(),
@@ -868,6 +880,43 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         if (!headers.contains(header)) {
             headers.set(header, headerValue);
         }
+    }
+
+    /**
+     * Applies sensitive-header suppression for the current redirect hop.
+     * <p>
+     * This must update builder state as well as the Netty request headers:
+     * the builder state has to stay sanitized for any later redirect hops and for request snapshots
+     * exposed through the service API, while the Netty copy must also be sanitized because additional
+     * headers can be added when the outbound request is serialized.
+     *
+     * @param nettyHeaders headers that will be written to the wire for the current hop
+     */
+    private void applyRedirectSensitiveHeaderSuppression(HttpHeaders nettyHeaders) {
+        if (configuration.filterRedirectHeaders()
+                && redirectSourceUri != null
+                && !sameOrigin(redirectSourceUri, finalUri)) {
+            suppressedRedirectHeaders.addAll(configuration.redirectSensitiveHeaders());
+        }
+        if (suppressedRedirectHeaders.isEmpty()) {
+            return;
+        }
+        suppressedRedirectHeaders.forEach(headers::remove);
+        suppressedRedirectHeaders.forEach(nettyHeaders::remove);
+    }
+
+    private static boolean sameOrigin(URI sourceUri, URI targetUri) {
+        return sourceUri.getScheme().equalsIgnoreCase(targetUri.getScheme())
+                && sourceUri.getHost().equalsIgnoreCase(targetUri.getHost())
+                && effectivePort(sourceUri) == effectivePort(targetUri);
+    }
+
+    private static int effectivePort(URI uri) {
+        int port = uri.getPort();
+        if (port != -1) {
+            return port;
+        }
+        return DEFAULT_SUPPORTED_PROTOCOLS.getOrDefault(uri.getScheme().toLowerCase(Locale.ROOT), -1);
     }
 
     /**
