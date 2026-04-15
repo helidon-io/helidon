@@ -502,7 +502,14 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 if (!headersSent) {
                     http2Headers.status(io.helidon.http.Status.OK_200);
                 }
-                writeHeaders(http2Headers, HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM));
+                try {
+                    writeHeaders(http2Headers, HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM));
+                } catch (CloseConnectionException e) {
+                    callCancelled = true;
+                    currentStreamState.updateAndGet(
+                            current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_LOCAL));
+                    return;
+                }
                 currentStreamState.updateAndGet(
                         current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_LOCAL));
 

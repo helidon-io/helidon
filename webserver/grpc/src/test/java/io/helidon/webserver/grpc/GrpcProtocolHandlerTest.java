@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -57,6 +58,7 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class GrpcProtocolHandlerTest {
@@ -184,6 +186,15 @@ class GrpcProtocolHandlerTest {
         );
     }
 
+    @Test
+    void testCloseSuppressesTrailerWriteDisconnect() {
+        ServerCall<String, String> serverCall = createServerCall(closeFailingWriter());
+        serverCall.sendHeaders(new Metadata());
+
+        assertDoesNotThrow(() -> serverCall.close(Status.OK, new Metadata()));
+        assertThat(serverCall.isCancelled(), is(true));
+    }
+
     private static ServerCall<String, String> createServerCall(Http2StreamWriter streamWriter) {
         GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
                                                                                 Http2Headers.create(WritableHeaders.create()),
@@ -281,6 +292,39 @@ class GrpcProtocolHandlerTest {
                                     Http2Flag.HeaderFlags flags,
                                     FlowControl.Outbound flowControl) {
                 return 0;
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    Http2FrameData dataFrame,
+                                    FlowControl.Outbound flowControl) {
+                throw new UnsupportedOperationException("Unused");
+            }
+        };
+    }
+
+    private static Http2StreamWriter closeFailingWriter() {
+        AtomicInteger headerWrites = new AtomicInteger();
+        return new Http2StreamWriter() {
+            @Override
+            public void write(Http2FrameData frame) {
+            }
+
+            @Override
+            public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    FlowControl.Outbound flowControl) {
+                if (headerWrites.incrementAndGet() == 1) {
+                    return 0;
+                }
+                throw new UncheckedIOException(new IOException("Broken pipe"));
             }
 
             @Override
