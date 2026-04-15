@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.webclient.http2;
 
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -222,10 +221,6 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
             String contentEncoding = responseHeaders.get(CONTENT_ENCODING).get();
             if (encodingSupport.contentDecodingSupported(contentEncoding)) {
                 return encodingSupport.decoder(contentEncoding);
-            } else {
-                throw new IllegalStateException("Unsupported content encoding: \n"
-                                                        + BufferData.create(contentEncoding.getBytes(StandardCharsets.UTF_8))
-                        .debugDataHex());
             }
         }
         return ContentDecoder.NO_OP;

@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.UnixDomainSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -279,9 +278,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             if (encodingSupport.contentDecodingSupported(contentEncoding)) {
                 decoder = encodingSupport.decoder(contentEncoding);
             } else {
-                throw new IllegalStateException("Unsupported content encoding: \n"
-                                                        + BufferData.create(contentEncoding.getBytes(StandardCharsets.UTF_8))
-                        .debugDataHex());
+                decoder = ContentDecoder.NO_OP;
             }
         } else {
             decoder = ContentDecoder.NO_OP;
