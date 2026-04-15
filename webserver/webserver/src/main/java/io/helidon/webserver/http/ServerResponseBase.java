@@ -322,7 +322,9 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      */
     protected byte[] entityBytes(byte[] configuredEntity, int position, int length) {
         byte[] entity = configuredEntity;
-        if (contentEncodingContext.contentEncodingEnabled() && length > 0) {
+        if (contentEncodingContext.contentEncodingEnabled()
+                && length > 0
+                && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
             // we want to preserve optimization here, let's create a new byte array
             ByteArrayOutputStream baos = new ByteArrayOutputStream(length);
