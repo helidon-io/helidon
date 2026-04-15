@@ -1,0 +1,28 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.AcmeHelperConfig",
+        "description": "Helper configuration.",
+        "options": [
+          {
+            "key": "services",
+            "type": "com.acme.AcmeService",
+            "description": "Services",
+            "provider": true
+          }
+        ]
+      },
+      {
+        "type": "com.acme.AcmeAuditServiceConfig",
+        "standalone": true,
+        "prefix": "audit",
+        "description": "Audit implementation.",
+        "provides": [
+          "com.acme.AcmeService"
+        ]
+      }
+    ]
+  }
+]

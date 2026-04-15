@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.config.metadata.docs;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.metadata.docs.CmDocNames.shortPackageName;
-import static io.helidon.config.metadata.docs.CmDocNames.shortTypeName;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
 
 /**
  * Tests {@link CmDocNames}.
@@ -28,21 +29,52 @@ import static org.hamcrest.Matchers.is;
 class CmDocNamesTest {
 
     @Test
-    void testShortPackageName() {
-        assertThat(shortPackageName(""), is(""));
-        assertThat(shortPackageName("io.helidon.webclient.api"), is("i.h.w.a"));
-        assertThat(shortPackageName("io.helidon.webclient."), is("i.h.w"));
-        assertThat(shortPackageName(".helidon.webclient.api"), is("h.w.a"));
-        assertThat(shortPackageName("io..webclient.api"), is("i.w.a"));
+    void testTypeNamesRespectReservedNames() {
+        var names = new CmDocNames();
+
+        names.reserveTypeName("io.helidon.ServerConfig");
+
+        assertThat(names.typeName("io.helidon.ServerConfig"), is("io.helidon.ServerConfig2"));
+        assertThat(names.typeName("io.helidon.ServerConfig"), is("io.helidon.ServerConfig3"));
     }
 
     @Test
-    void testShortTypeName() {
-        assertThat(shortTypeName("WebClient"), is("WebClient"));
-        assertThat(shortTypeName("io.helidon.webclient.api.WebClient"), is("i.h.w.a.WebClient"));
-        assertThat(shortTypeName("java.lang.String"), is("String"));
-        assertThat(shortTypeName("java.time.Duration"), is("Duration"));
-        assertThat(shortTypeName("io.helidon.webserver.observe.ObserveFeatureConfig"),
-                is("i.h.w.o.ObserveFeatureConfig"));
+    void testSyntheticTypeNamesFollowPathRules() {
+        var names = new CmDocNames();
+
+        assertThat(names.syntheticTypeName("server"), is("io.helidon.ServerConfig"));
+        assertThat(names.syntheticTypeName("server.tls"), is("io.helidon.server.TlsConfig"));
+        assertThat(names.syntheticTypeName("io.helidon.data.sources"), is("io.helidon.data.SourcesConfig"));
+        assertThat(names.syntheticTypeName("*.rest-client"), is("io.helidon.RestClientConfig"));
+    }
+
+    @Test
+    void testSyntheticTypeNamesUseNumericSuffixes() {
+        var names = new CmDocNames();
+
+        assertThat(names.syntheticTypeName("foo-bar"), is("io.helidon.FooBarConfig"));
+        assertThat(names.syntheticTypeName("foo_bar"), is("io.helidon.FooBarConfig2"));
+    }
+
+    @Test
+    void testFileNamesNormalizeAndResolveCollisions() {
+        var names = new CmDocNames("initial.html");
+
+        assertThat(names.fileName("alpha.beta", ".html"), is("alpha_beta.html"));
+        assertThat(names.fileName("alpha/beta", ".html"), is("alpha_beta_2.html"));
+        assertThat(names.fileName("initial", ".html"), is("initial_2.html"));
+    }
+
+    @Test
+    void testAnchorsAreStableAndSanitized() {
+        var names = new CmDocNames();
+
+        var anchor = names.anchor("com_acme_AcmeServerConfig.adoc", "cert.alias", "com.acme.AcmeServerConfig");
+
+        assertThat(anchor, startsWith("a"));
+        assertThat(anchor, containsString("-cert-alias"));
+        assertThat(anchor.matches("a[0-9a-f]{8}-cert-alias"), is(true));
+        assertThat(names.anchor("com_acme_AcmeServerConfig.adoc", "cert.alias", "com.acme.AcmeServerConfig"),
+                is(anchor));
     }
 }

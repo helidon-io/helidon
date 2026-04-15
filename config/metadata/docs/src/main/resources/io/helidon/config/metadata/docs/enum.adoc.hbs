@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 }}
 ifndef::rootdir[:rootdir: {docdir}/..]
-= {{type}}
+= {{typeName}}
 
 == Description
 
@@ -22,22 +22,18 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 This type is an enumeration.
 ++++
 
-== Usages
-{{#each usages}}
-* xref:{{fileName}}#{{id}}[`{{path}}`]
-{{~/each}}
-
 == Allowed Values
 
 |===
 |Value|Description
-{{~#each values}}
+{{~#each tables.standard.rows}}
 
-|`{{value}}`
+|`{{key}}`
 |pass:[{{{description}}}]
 {{~/each}}
 
 |===
 
+{{~> usages.adoc}}
 '''
 See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

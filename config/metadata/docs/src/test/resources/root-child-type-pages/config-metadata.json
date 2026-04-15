@@ -1,0 +1,19 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.AcmeClientsConfig",
+        "standalone": true,
+        "prefix": "clients",
+        "description": "Clients configuration."
+      },
+      {
+        "type": "com.acme.AcmeHttpClientsConfig",
+        "standalone": true,
+        "prefix": "clients.http",
+        "description": "HTTP clients configuration."
+      }
+    ]
+  }
+]

@@ -1,0 +1,43 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeTracingConfig
+
+== Description
+
+++++
+ACME Tracing configuration
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Default Value|Description
+
+| `port`
+|`Integer`
+|`16686`
+|pass:[Tracing backend port]
+
+| `host`
+|`String`
+|{nbsp}
+|pass:[Tracing backend host]
+
+| `tags`
+|`List<String>`
+|{nbsp}
+|pass:[System tags]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/com_acme_AcmeFeature.adoc#a3de652cf-tracing[`server.features.tracing`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

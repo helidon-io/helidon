@@ -18,16 +18,7 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 
 == Config Roots
 
-|===
-|Key|Type|Description
-{{~#each roots}}
-
-|[[{{id}}]] xref:{{fileName}}[`{{prefix}}`]
-|`{{shortName}}`
-|pass:[{{{description}}}]
-{{~/each}}
-
-|===
+{{> table.adoc tables.standard}}
 
 '''
 See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

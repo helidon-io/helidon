@@ -1,0 +1,31 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeClientsConfig
+
+== Description
+
+++++
+Clients configuration.
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Description
+
+| `http`
+|pass:[Configuration for <code>http</code>]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/config_reference.adoc#a50e613ef-clients[`clients`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

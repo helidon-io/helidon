@@ -1,0 +1,32 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeConfig
+
+== Description
+
+++++
+ACME configuration.
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Description
+
+|[[a64494686-manager]] xref:{rootdir}/config/com_acme_AcmeManager.adoc[`manager`]
+|`AcmeManager`
+|pass:[Manager contract]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/config_reference.adoc#a4dd09b6e-acme[`acme`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.
