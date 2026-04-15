@@ -88,16 +88,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
     private static final String RESPONSE_PARAM_NAME = "helidonDeclarative__server_res";
     private static final String METHOD_RESPONSE_NAME = "helidonDeclarative__response";
     private static final List<HttpParameterCodegenProvider> PARAM_PROVIDERS =
-            HelidonServiceLoader.builder(ServiceLoader.load(HttpParameterCodegenProvider.class))
-                    .addService(new ParamProviderHttpEntity())
-                    .addService(new ParamProviderHttpHeader())
-                    .addService(new ParamProviderHttpPathParam())
-                    .addService(new ParamProviderHttpQuery())
-                    .addService(new ParamProviderHttpReqRes())
-                    .addService(new ParamProviderSecurityContext())
-                    .addService(new ParamProviderContext())
-                    .build()
-                    .asList();
+            loadParamProviders(RestServerExtension.class.getClassLoader());
 
     private final RegistryCodegenContext ctx;
 
@@ -117,6 +108,19 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
         for (ServerEndpoint endpoint : endpoints) {
             process(roundContext, endpoint);
         }
+    }
+
+    static List<HttpParameterCodegenProvider> loadParamProviders(ClassLoader classLoader) {
+        return HelidonServiceLoader.builder(ServiceLoader.load(HttpParameterCodegenProvider.class, classLoader))
+                .addService(new ParamProviderHttpEntity())
+                .addService(new ParamProviderHttpHeader())
+                .addService(new ParamProviderHttpPathParam())
+                .addService(new ParamProviderHttpQuery())
+                .addService(new ParamProviderHttpReqRes())
+                .addService(new ParamProviderSecurityContext())
+                .addService(new ParamProviderContext())
+                .build()
+                .asList();
     }
 
     private static void addSetupMethod(ClassModel.Builder endpointService, String path) {
