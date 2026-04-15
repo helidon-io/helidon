@@ -279,9 +279,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             if (encodingSupport.contentDecodingSupported(contentEncoding)) {
                 decoder = encodingSupport.decoder(contentEncoding);
             } else {
-                throw new IllegalStateException("Unsupported content encoding: \n"
-                                                        + BufferData.create(contentEncoding.getBytes(StandardCharsets.UTF_8))
-                        .debugDataHex());
+                decoder = ContentDecoder.NO_OP;
             }
         } else {
             decoder = ContentDecoder.NO_OP;
