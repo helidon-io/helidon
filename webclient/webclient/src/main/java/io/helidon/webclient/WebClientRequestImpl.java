@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.webclient;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.Set;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Parameters;
@@ -39,6 +40,7 @@ class WebClientRequestImpl implements WebClientRequestBuilder.ClientRequest {
     private final String fragment;
     private final int redirectionCount;
     private final Map<String, String> properties;
+    private final Set<String> suppressedRedirectHeaders;
 
     WebClientRequestImpl(WebClientRequestBuilderImpl builder) {
         clientRequestHeaders = new WebClientRequestHeadersImpl(builder.headers());
@@ -53,6 +55,7 @@ class WebClientRequestImpl implements WebClientRequestBuilder.ClientRequest {
         proxy = builder.proxy();
         redirectionCount = builder.redirectionCount();
         properties = Map.copyOf(builder.properties());
+        suppressedRedirectHeaders = Set.copyOf(builder.suppressedRedirectHeaders());
     }
 
     /**
@@ -118,6 +121,10 @@ class WebClientRequestImpl implements WebClientRequestBuilder.ClientRequest {
     @Override
     public String fragment() {
         return fragment;
+    }
+
+    Set<String> suppressedRedirectHeaders() {
+        return suppressedRedirectHeaders;
     }
 
 }

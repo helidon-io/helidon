@@ -19,6 +19,9 @@ test-client:
   connect-timeout-millis: 4000
   read-timeout-millis: 5000
   follow-redirects: true
+  filter-redirect-headers: false
+  redirect-sensitive-headers:
+    - "x-API-key"
   max-redirects: 10
   user-agent: "HelidonTest"
   headers:
