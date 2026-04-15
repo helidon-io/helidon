@@ -11,11 +11,14 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 ## [3.2.17]
 
-This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+This release of Helidon contains important bug fixes and dependency upgrades and is highly recommended for all users of Helidon 3.
+
+Helidon 3 requires Java 17 or newer.
 
 ### CHANGES
 
 - Config: File ConfigSource fails generating MD5 digest [11422](https://github.com/helidon-io/helidon/pull/11422)
+- JWT validation enhancements [11665](https://github.com/helidon-io/helidon/pull/11665)
 - Dependencies: Upgrade netty to 4.1.132.Final [11418](https://github.com/helidon-io/helidon/pull/11418)
 - Dependencies: Upgrade Jackson to 2.21.1 [11256](https://github.com/helidon-io/helidon/pull/11256)
 - Dependencies: Upgrade Kafka to 3.9.2 [11210](https://github.com/helidon-io/helidon/pull/11210)
