@@ -58,6 +58,25 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
 </suppress>
 
 
+<!--
+   These CVEs are against OpenTelemetry-Go, not Java
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: opentelemetry-api-1.22.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentelemetry/opentelemetry-.*@.*$</packageUrl>
+   <cve>CVE-2026-39883</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: opentelemetry-api-1.22.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentelemetry/opentelemetry-.*@.*$</packageUrl>
+   <cve>CVE-2026-39882</cve>
+</suppress>
+
+
 <!-- This CVE is against the etcd server. We use the Java client
 -->
 <suppress>
@@ -335,6 +354,24 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <packageUrl regex="true">^pkg:maven/io\.grpc/grpc.*@.*$</packageUrl>
    <cve>CVE-2024-11407</cve>
 </suppress>
+<!-- False Positive.
+     This CVE is against gRPC-Go servers not gRPC Java
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: grpc-core-1.65.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.grpc/grpc.*@.*$</packageUrl>
+   <cve>CVE-2026-33186</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: grpc-protobuf-1.65.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.grpc/grpc-protobuf@.*$</packageUrl>
+   <cve>CVE-2026-33186</cve>
+</suppress>
+
 
 
 <!-- False Positive.
