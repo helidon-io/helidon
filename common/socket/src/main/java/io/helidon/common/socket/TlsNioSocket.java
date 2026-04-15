@@ -179,10 +179,14 @@ public final class TlsNioSocket extends NioSocket {
 
     @Override
     public void write(BufferData buffer) {
+        // Handshake/closure and normal writes reuse the same TLS staging buffers.
+        handshakeLock.lock();
         try {
             doWrite(buffer);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        } finally {
+            handshakeLock.unlock();
         }
     }
 
