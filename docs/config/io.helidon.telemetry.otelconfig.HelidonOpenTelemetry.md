@@ -1,0 +1,62 @@
+# io.helidon.telemetry.otelconfig.HelidonOpenTelemetry
+
+## Description
+
+OpenTelemetry settings
+
+## Configuration options
+
+<style>
+    code {
+        white-space: nowrap !important;
+    }
+</style>
+
+<table>
+<thead>
+<tr>
+<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enabled</code></td>
+<td><code>Boolean</code></td>
+<td><code>true</code></td>
+<td>Whether the OpenTelemetry support is enabled</td>
+</tr>
+<tr>
+<td><code>global</code></td>
+<td><code>Boolean</code></td>
+<td><code>true</code></td>
+<td>Whether the &lt;code&gt;io.opentelemetry.api.OpenTelemetry&lt;/code&gt; instance created from this configuration should be made the global one</td>
+</tr>
+<tr>
+<td><code>propagators</code></td>
+<td><code>List&lt;CustomMethods&gt;</code></td>
+<td></td>
+<td>OpenTelemetry &lt;code&gt;io.opentelemetry.context.propagation.TextMapPropagator&lt;/code&gt; instances added explicitly by the app</td>
+</tr>
+<tr>
+<td><code>service</code></td>
+<td><code>String</code></td>
+<td></td>
+<td>Service name used in sending telemetry data to the collector</td>
+</tr>
+<tr>
+<td><a id="signals"></a><a href="io.helidon.telemetry.SignalsConfig.md"><code>signals</code></a></td>
+<td></td>
+<td></td>
+<td>Configuration for signals</td>
+</tr>
+</tbody>
+</table>
+
+
+## Usages
+
+- [`telemetry`](config_reference.md#telemetry)
+
+---
+
+See the [manifest](manifest.md) for all available types.

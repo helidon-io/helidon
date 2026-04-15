@@ -2,60 +2,86 @@
 
 ## Config Roots
 
-| Key | Type | Description |
-|----|----|----|
-| <span id="a7b703-clients"></span> [`clients`](io_helidon_webclient_api_WebClient.md) | `i.h.w.a.WebClient` | WebClient configuration |
-| <span id="ad017c-cors"></span> [`cors`](io_helidon_webserver_cors_CorsFeature.md) | `i.h.w.c.CorsFeature` | Configuration of CORS feature |
-| <span id="ac9c2c-health"></span> [`health`](io_helidon_webserver_observe_health_HealthObserver.md) | `i.h.w.o.h.HealthObserver` | Configuration of Health observer |
-| <span id="acd7ea-metrics"></span> [`metrics`](io_helidon_metrics_api_MetricsConfig.md) | `i.h.m.a.MetricsConfig` | Configuration settings for metrics |
-| <span id="a01ebb-metrics"></span> [`metrics`](io_helidon_webserver_observe_metrics_MetricsObserver.md) | `i.h.w.o.m.MetricsObserver` | Metrics Observer configuration |
-| <span id="a111fa-oci"></span> [`oci`](io_helidon_integrations_oci_sdk_runtime_OciConfig.md) | `i.h.i.o.s.r.OciConfig` | Configuration used by `OciAuthenticationDetailsProvider` |
-| <span id="a937cb-openapi"></span> [`openapi`](io_helidon_openapi_OpenApiFeature.md) | `i.h.o.OpenApiFeature` | `OpenApiFeature` prototype |
-| <span id="ac4d0b-security"></span> [`security`](io_helidon_security_Security.md) | `i.h.s.Security` | Configuration of security providers, integration and other security options |
-| <span id="a3be6d-server"></span> [`server`](io_helidon_webserver_WebServer.md) | `i.h.w.WebServer` | WebServer configuration bean |
-| <span id="ae1891-telemetry"></span> [`telemetry`](io_helidon_telemetry_otelconfig_HelidonOpenTelemetry.md) | `i.h.t.o.HelidonOpenTelemetry` | OpenTelemetry settings |
-| <span id="a56f94-tracing"></span> [`tracing`](io_helidon_tracing_providers_jaeger_JaegerTracerBuilder.md) | `i.h.t.p.j.JaegerTracerBuilder` | Jaeger tracer configuration |
-| <span id="ace1ff-tracing"></span> [`tracing`](io_helidon_tracing_providers_opentelemetry_OpenTelemetryTracer.md) | `i.h.t.p.o.OpenTelemetryTracer` | Settings for OpenTelemetry tracer configuration under the `OpenTelemetryTracerConfig#TRACING_CONFIG_KEY` config key |
-| <span id="abca8b-tracing"></span> [`tracing`](io_helidon_tracing_providers_zipkin_ZipkinTracerBuilder.md) | `i.h.t.p.z.ZipkinTracerBuilder` | Zipkin tracer configuration |
-| <span id="ac15c2-data-sources-sql"></span> [`data.sources.sql`](io_helidon_data_sql_datasource_DataSourceConfig.md) | `i.h.d.s.d.DataSourceConfig` | `javax.sql.DataSource` configuration |
-| <span id="a017e8-fault-tolerance-bulkheads"></span> [`fault-tolerance.bulkheads`](io_helidon_faulttolerance_Bulkhead.md) | `i.h.f.Bulkhead` | `Bulkhead` configuration bean |
-| <span id="a6df4a-fault-tolerance-circuit-breakers"></span> [`fault-tolerance.circuit-breakers`](io_helidon_faulttolerance_CircuitBreaker.md) | `i.h.f.CircuitBreaker` | Configuration of a circuit breaker |
-| <span id="a614ff-fault-tolerance-retries"></span> [`fault-tolerance.retries`](io_helidon_faulttolerance_Retry.md) | `i.h.f.Retry` | `Retry` configuration bean |
-| <span id="abdf4d-fault-tolerance-timeouts"></span> [`fault-tolerance.timeouts`](io_helidon_faulttolerance_Timeout.md) | `i.h.f.Timeout` | `Timeout` configuration bean |
-| <span id="a4b5dd-helidon-oci"></span> [`helidon.oci`](io_helidon_integrations_oci_OciConfig.md) | `i.h.i.o.OciConfig` | Meta configuration of OCI integration for Helidon |
-| <span id="ab76ee-langchain4j-agents"></span> [`langchain4j.agents`](io_helidon_integrations_langchain4j_AgentsConfig.md) | `i.h.i.l.AgentsConfig` | Configuration for a single LangChain4j agent |
-| <span id="a0e7c5-langchain4j-providers-cohere"></span> [`langchain4j.providers.cohere`](io_helidon_integrations_langchain4j_providers_cohere_CohereEmbeddingModelConfig.md) | `i.h.i.l.p.c.CohereEmbeddingModelConfig` | Configuration for LangChain4j model CohereEmbeddingModel |
-| <span id="a31757-langchain4j-providers-cohere"></span> [`langchain4j.providers.cohere`](io_helidon_integrations_langchain4j_providers_cohere_CohereScoringModelConfig.md) | `i.h.i.l.p.c.CohereScoringModelConfig` | Configuration for LangChain4j model CohereScoringModel |
-| <span id="afc71b-langchain4j-providers-coherence"></span> [`langchain4j.providers.coherence`](io_helidon_integrations_langchain4j_providers_coherence_CoherenceEmbeddingStoreConfig.md) | `i.h.i.l.p.c.CoherenceEmbeddingStoreConfig` | Configuration for LangChain4j model CoherenceEmbeddingStore |
-| <span id="a5e1ca-langchain4j-providers-google-gemini"></span> [`langchain4j.providers.google-gemini`](io_helidon_integrations_langchain4j_providers_gemini_GoogleAiGeminiChatModelConfig.md) | `i.h.i.l.p.g.GoogleAiGeminiChatModelConfig` | Configuration for LangChain4j model GoogleAiGeminiChatModel |
-| <span id="a43f3c-langchain4j-providers-google-gemini"></span> [`langchain4j.providers.google-gemini`](io_helidon_integrations_langchain4j_providers_gemini_GoogleAiGeminiStreamingChatModelConfig.md) | `i.h.i.l.p.g.GoogleAiGeminiStreamingChatModelConfig` | Configuration for LangChain4j model GoogleAiGeminiStreamingChatModel |
-| <span id="a5268a-langchain4j-providers-helidon-mock"></span> [`langchain4j.providers.helidon-mock`](io_helidon_integrations_langchain4j_providers_mock_MockChatModel.md) | `i.h.i.l.p.m.MockChatModel` | Configuration blueprint for `MockChatModel` |
-| <span id="a2fc71-langchain4j-providers-helidon-mock"></span> [`langchain4j.providers.helidon-mock`](io_helidon_integrations_langchain4j_providers_mock_MockStreamingChatModel.md) | `i.h.i.l.p.m.MockStreamingChatModel` | Configuration blueprint for `MockStreamingChatModel` |
-| <span id="a0b6bc-langchain4j-providers-jlama"></span> [`langchain4j.providers.jlama`](io_helidon_integrations_langchain4j_providers_jlama_JlamaChatModelConfig.md) | `i.h.i.l.p.j.JlamaChatModelConfig` | Configuration for LangChain4j model JlamaChatModel |
-| <span id="a2ba60-langchain4j-providers-jlama"></span> [`langchain4j.providers.jlama`](io_helidon_integrations_langchain4j_providers_jlama_JlamaEmbeddingModelConfig.md) | `i.h.i.l.p.j.JlamaEmbeddingModelConfig` | Configuration for LangChain4j model JlamaEmbeddingModel |
-| <span id="aaedd8-langchain4j-providers-jlama"></span> [`langchain4j.providers.jlama`](io_helidon_integrations_langchain4j_providers_jlama_JlamaLanguageModelConfig.md) | `i.h.i.l.p.j.JlamaLanguageModelConfig` | Configuration for LangChain4j model JlamaLanguageModel |
-| <span id="a40390-langchain4j-providers-jlama"></span> [`langchain4j.providers.jlama`](io_helidon_integrations_langchain4j_providers_jlama_JlamaStreamingChatModelConfig.md) | `i.h.i.l.p.j.JlamaStreamingChatModelConfig` | Configuration for LangChain4j model JlamaStreamingChatModel |
-| <span id="a3ca3d-langchain4j-providers-lc4j-in-process"></span> [`langchain4j.providers.lc4j-in-process`](io_helidon_integrations_langchain4j_providers_lc4jinprocess_InProcessEmbeddingModelConfig.md) | `i.h.i.l.p.l.InProcessEmbeddingModelConfig` | Configuration blueprint for LangChain4j in-process models |
-| <span id="a4c41d-langchain4j-providers-oci-gen-ai"></span> [`langchain4j.providers.oci-gen-ai`](io_helidon_integrations_langchain4j_providers_oci_genai_OciGenAiChatModelConfig.md) | `i.h.i.l.p.o.g.OciGenAiChatModelConfig` | Configuration for LangChain4j model OciGenAiChatModel |
-| <span id="a8c210-langchain4j-providers-oci-gen-ai"></span> [`langchain4j.providers.oci-gen-ai`](io_helidon_integrations_langchain4j_providers_oci_genai_OciGenAiStreamingChatModelConfig.md) | `i.h.i.l.p.o.g.OciGenAiStreamingChatModelConfig` | Configuration for LangChain4j model OciGenAiStreamingChatModel |
-| <span id="a456bb-langchain4j-providers-oci-gen-ai-cohere"></span> [`langchain4j.providers.oci-gen-ai-cohere`](io_helidon_integrations_langchain4j_providers_oci_genai_OciGenAiCohereChatModelConfig.md) | `i.h.i.l.p.o.g.OciGenAiCohereChatModelConfig` | Configuration for LangChain4j model OciGenAiCohereChatModel |
-| <span id="af05e9-langchain4j-providers-oci-gen-ai-cohere"></span> [`langchain4j.providers.oci-gen-ai-cohere`](io_helidon_integrations_langchain4j_providers_oci_genai_OciGenAiCohereStreamingChatModelConfig.md) | `i.h.i.l.p.o.g.OciGenAiCohereStreamingChatModelConfig` | Configuration for LangChain4j model OciGenAiCohereStreamingChatModel |
-| <span id="a20890-langchain4j-providers-ollama"></span> [`langchain4j.providers.ollama`](io_helidon_integrations_langchain4j_providers_ollama_OllamaChatModelConfig.md) | `i.h.i.l.p.o.OllamaChatModelConfig` | Configuration for LangChain4j model OllamaChatModel |
-| <span id="a503d7-langchain4j-providers-ollama"></span> [`langchain4j.providers.ollama`](io_helidon_integrations_langchain4j_providers_ollama_OllamaEmbeddingModelConfig.md) | `i.h.i.l.p.o.OllamaEmbeddingModelConfig` | Configuration for LangChain4j model OllamaEmbeddingModel |
-| <span id="aceb19-langchain4j-providers-ollama"></span> [`langchain4j.providers.ollama`](io_helidon_integrations_langchain4j_providers_ollama_OllamaLanguageModelConfig.md) | `i.h.i.l.p.o.OllamaLanguageModelConfig` | Configuration for LangChain4j model OllamaLanguageModel |
-| <span id="ae83f5-langchain4j-providers-ollama"></span> [`langchain4j.providers.ollama`](io_helidon_integrations_langchain4j_providers_ollama_OllamaStreamingChatModelConfig.md) | `i.h.i.l.p.o.OllamaStreamingChatModelConfig` | Configuration for LangChain4j model OllamaStreamingChatModel |
-| <span id="af16db-langchain4j-providers-open-ai"></span> [`langchain4j.providers.open-ai`](io_helidon_integrations_langchain4j_providers_openai_OpenAiChatModelConfig.md) | `i.h.i.l.p.o.OpenAiChatModelConfig` | Configuration for LangChain4j model OpenAiChatModel |
-| <span id="a224a9-langchain4j-providers-open-ai"></span> [`langchain4j.providers.open-ai`](io_helidon_integrations_langchain4j_providers_openai_OpenAiEmbeddingModelConfig.md) | `i.h.i.l.p.o.OpenAiEmbeddingModelConfig` | Configuration for LangChain4j model OpenAiEmbeddingModel |
-| <span id="ae8791-langchain4j-providers-open-ai"></span> [`langchain4j.providers.open-ai`](io_helidon_integrations_langchain4j_providers_openai_OpenAiImageModelConfig.md) | `i.h.i.l.p.o.OpenAiImageModelConfig` | Configuration for LangChain4j model OpenAiImageModel |
-| <span id="a76420-langchain4j-providers-open-ai"></span> [`langchain4j.providers.open-ai`](io_helidon_integrations_langchain4j_providers_openai_OpenAiLanguageModelConfig.md) | `i.h.i.l.p.o.OpenAiLanguageModelConfig` | Configuration for LangChain4j model OpenAiLanguageModel |
-| <span id="abe220-langchain4j-providers-open-ai"></span> [`langchain4j.providers.open-ai`](io_helidon_integrations_langchain4j_providers_openai_OpenAiModerationModelConfig.md) | `i.h.i.l.p.o.OpenAiModerationModelConfig` | Configuration for LangChain4j model OpenAiModerationModel |
-| <span id="ac2039-langchain4j-providers-open-ai"></span> [`langchain4j.providers.open-ai`](io_helidon_integrations_langchain4j_providers_openai_OpenAiStreamingChatModelConfig.md) | `i.h.i.l.p.o.OpenAiStreamingChatModelConfig` | Configuration for LangChain4j model OpenAiStreamingChatModel |
-| <span id="afcb77-langchain4j-providers-oracle"></span> [`langchain4j.providers.oracle`](io_helidon_integrations_langchain4j_providers_oracle_OracleEmbeddingStoreConfig.md) | `i.h.i.l.p.o.OracleEmbeddingStoreConfig` | Configuration for LangChain4j model OracleEmbeddingStore |
-| <span id="ab8e96-langchain4j-providers-oracle-ivf-index"></span> [`langchain4j.providers.oracle.ivf-index`](io_helidon_integrations_langchain4j_providers_oracle_IvfIndexConfig.md) | `i.h.i.l.p.o.IvfIndexConfig` | `N/A` |
-| <span id="a86391-langchain4j-providers-oracle-json-index"></span> [`langchain4j.providers.oracle.json-index`](io_helidon_integrations_langchain4j_providers_oracle_JsonIndexConfig.md) | `i.h.i.l.p.o.JsonIndexConfig` | `N/A` |
-| <span id="a4e373-langchain4j-providers-oracle-oracle"></span> [`langchain4j.providers.oracle.oracle`](io_helidon_integrations_langchain4j_providers_oracle_EmbeddingTableConfig.md) | `i.h.i.l.p.o.EmbeddingTableConfig` | `N/A` |
-| <span id="a98791-langchain4j-services"></span> [`langchain4j.services`](io_helidon_integrations_langchain4j_AiServicesConfig.md) | `i.h.i.l.AiServicesConfig` | `N/A` |
-| <span id="ac96b0-mp-config"></span> [`mp.config`](io_helidon_config_mp_MpConfigBuilder.md) | `i.h.c.m.MpConfigBuilder` | Configuration builder |
-| <span id="afecb9-rest-client-metrics"></span> [`rest-client.metrics`](io_helidon_microprofile_restclientmetrics_RestClientMetricsConfig.md) | `i.h.m.r.RestClientMetricsConfig` | Configuration settings for MP REST client metrics |
+<style>
+    code {
+        white-space: nowrap !important;
+    }
+</style>
 
-See the [manifest](../config/manifest.md) for all available types.
+<table>
+<thead>
+<tr>
+<th>Key</th><th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a id="clients"></a><a href="io.helidon.webclient.api.WebClient.md"><code>clients</code></a></td>
+<td>Configuration for clients</td>
+</tr>
+<tr>
+<td><a id="cors"></a><a href="io.helidon.webserver.cors.CorsFeature.md"><code>cors</code></a></td>
+<td>Configuration for cors</td>
+</tr>
+<tr>
+<td><a id="data"></a><a href="io.helidon.DataConfig.md"><code>data</code></a></td>
+<td>Configuration for data</td>
+</tr>
+<tr>
+<td><a id="fault-tolerance"></a><a href="io.helidon.FaultToleranceConfig.md"><code>fault-tolerance</code></a></td>
+<td>Configuration for fault-tolerance</td>
+</tr>
+<tr>
+<td><a id="health"></a><a href="io.helidon.webserver.observe.health.HealthObserver.md"><code>health</code></a></td>
+<td>Configuration for health</td>
+</tr>
+<tr>
+<td><a id="helidon"></a><a href="io.helidon.HelidonConfig.md"><code>helidon</code></a></td>
+<td>Configuration for helidon</td>
+</tr>
+<tr>
+<td><a id="langchain4j"></a><a href="io.helidon.Langchain4jConfig.md"><code>langchain4j</code></a></td>
+<td>Configuration for langchain4j</td>
+</tr>
+<tr>
+<td><a id="metrics"></a><a href="io.helidon.MetricsConfig.md"><code>metrics</code></a></td>
+<td>Configuration for metrics</td>
+</tr>
+<tr>
+<td><a id="mp"></a><a href="io.helidon.MpConfig.md"><code>mp</code></a></td>
+<td>Configuration for mp</td>
+</tr>
+<tr>
+<td><a id="oci"></a><a href="io.helidon.integrations.oci.sdk.runtime.OciConfig.md"><code>oci</code></a></td>
+<td>Configuration for oci</td>
+</tr>
+<tr>
+<td><a id="openapi"></a><a href="io.helidon.openapi.OpenApiFeature.md"><code>openapi</code></a></td>
+<td>Configuration for openapi</td>
+</tr>
+<tr>
+<td><a id="rest-client"></a><a href="io.helidon.RestClientConfig.md"><code>rest-client</code></a></td>
+<td>Configuration for rest-client</td>
+</tr>
+<tr>
+<td><a id="security"></a><a href="io.helidon.security.Security.md"><code>security</code></a></td>
+<td>Configuration for security</td>
+</tr>
+<tr>
+<td><a id="server"></a><a href="io.helidon.ServerConfig.md"><code>server</code></a></td>
+<td>Configuration for server</td>
+</tr>
+<tr>
+<td><a id="telemetry"></a><a href="io.helidon.telemetry.otelconfig.HelidonOpenTelemetry.md"><code>telemetry</code></a></td>
+<td>Configuration for telemetry</td>
+</tr>
+<tr>
+<td><a id="tracing"></a><a href="io.helidon.TracingConfig.md"><code>tracing</code></a></td>
+<td>Configuration for tracing</td>
+</tr>
+</tbody>
+</table>
+
+---
+
+See the [manifest](manifest.md) for all available types.
