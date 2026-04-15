@@ -34,6 +34,7 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.mapper.MapperException;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
 import io.helidon.common.uri.UriValidator;
@@ -753,8 +754,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         sendListener.data(ctx, buffer);
         try {
             writer.write(buffer);
-        } catch (UncheckedIOException uioe) {
-            throw new ServerConnectionException("Failed to write request exception", uioe);
+        } catch (SocketWriterException | UncheckedIOException writeException) {
+            throw new ServerConnectionException("Failed to write request exception", writeException);
         }
 
         if (response.status() == Status.INTERNAL_SERVER_ERROR_500) {
