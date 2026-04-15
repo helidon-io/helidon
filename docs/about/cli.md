@@ -15,14 +15,15 @@ The Helidon CLI is a standalone executable for Linux, macOS, and Windows systems
 | [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 
-Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
-
 Make sure `java` and `mvn` are in your PATH:
 
 ``` bash
 java -version
 mvn --version
 ```
+
+> [!TIP]
+> If you are on Windows then you will need the Visual C+ Redistributable Runtime. Download at [Microsoft Visual C++ Redistributable latest supported downloads](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-c-redistributable-v14).
 
 ### Install the Helidon CLI on Linux
 

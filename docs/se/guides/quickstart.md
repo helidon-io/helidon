@@ -6,7 +6,7 @@ This quick start describes how to create and run a basic Helidon SE application 
 
 The Helidon **Project Starter** allows you to quickly generate a project with basic functionality that lets you explore the features of Helidon and that’s also customizable enough to use as a starting point for your own projects and applications.
 
-1.  Make sure your environment is properly set up for Helidon development. See [Getting Started](../../about/prerequisites.md).
+1.  Make sure your environment is properly set up for Helidon development. See [Getting Started](../../about/get-started.md#system-requirements).
 2.  Go to the [Helidon Project Starter](https://helidon.io/starter) page on the Helidon website.
 3.  Under **Helidon Flavor**, select **Helidon SE** and click **Next**.
 4.  Under **Application Type**, select **Quickstart** and click **Next**.
