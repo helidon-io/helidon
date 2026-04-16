@@ -60,8 +60,8 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.jersey</groupId>
-            <artifactId>helidon-jersey-media-jsonp</artifactId>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

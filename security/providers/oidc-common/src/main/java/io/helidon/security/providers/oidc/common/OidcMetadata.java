@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,8 @@ import java.net.URI;
 import java.util.Optional;
 
 import io.helidon.common.Errors;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.api.WebClient;
-
-import jakarta.json.JsonObject;
 
 final class OidcMetadata {
     private static final System.Logger LOGGER = System.getLogger(OidcMetadata.class.getName());
@@ -59,7 +58,7 @@ final class OidcMetadata {
             }
         } else {
             // get it from metadata
-            String jsonValue = oidcMetadata.getString(metaKey, null);
+            String jsonValue = oidcMetadata.stringValue(metaKey).orElse(null);
             if (jsonValue != null) {
                 if (LOGGER.isLoggable(Level.TRACE)) {
                     LOGGER.log(Level.TRACE, metaKey + " loaded from well known metadata: " + jsonValue);
@@ -88,7 +87,7 @@ final class OidcMetadata {
 
     public Optional<String> getString(String key) {
         return Optional.ofNullable(oidcMetadata)
-                .map(it -> it.getString(key, null));
+                .flatMap(it -> it.stringValue(key));
     }
 
     static class Builder implements io.helidon.common.Builder<Builder, OidcMetadata> {

@@ -180,11 +180,33 @@ public interface TenantConfig {
     String serverType();
 
     /**
-     * OIDC metadata.
+     * OIDC metadata in Helidon JSON.
      *
      * @return configured oidc metadata
      */
+    default io.helidon.json.JsonObject oidcMetadataJsonObject() {
+        return OidcJsonSupport.toHelidonJson(oidcMetadata());
+    }
+
+    /**
+     * OIDC metadata in JSON-P.
+     *
+     * @return configured oidc metadata
+     * @deprecated use {@link #oidcMetadataJsonObject()} instead
+     */
+    @Deprecated(since = "4.4.1", forRemoval = true)
     JsonObject oidcMetadata();
+
+    /**
+     * OIDC metadata in Helidon JSON.
+     *
+     * @return configured oidc metadata
+     * @deprecated use {@link #oidcMetadataJsonObject()} instead
+     */
+    @Deprecated(since = "4.4.1", forRemoval = true)
+    default io.helidon.json.JsonObject oidcMetadataJson() {
+        return oidcMetadataJsonObject();
+    }
 
     /**
      * Whether to use OIDC well known metadata.

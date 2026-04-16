@@ -27,11 +27,11 @@ import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
 
 import jakarta.json.Json;
-import jakarta.json.JsonObject;
 import jakarta.json.JsonReaderFactory;
 
 /**
@@ -364,20 +364,34 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
      * @return updated builder instance
      */
     @ConfiguredOption(key = "oidc-metadata.resource")
+    @SuppressWarnings("removal")
     public B oidcMetadata(Resource resource) {
         return oidcMetadata(JSON.createReader(resource.stream()).readObject());
     }
 
     /**
-     * JsonObject with the OIDC Metadata.
+     * Helidon JSON with the OIDC metadata.
      *
      * @param metadata metadata JSON
      * @return updated builder instance
      * @see #oidcMetadata(Resource)
      */
-    public B oidcMetadata(JsonObject metadata) {
+    public B oidcMetadataJsonObject(JsonObject metadata) {
         this.oidcMetadata = metadata;
         return identity();
+    }
+
+    /**
+     * JSON-P with the OIDC metadata.
+     *
+     * @param metadata metadata JSON
+     * @return updated builder instance
+     * @see #oidcMetadataJsonObject(io.helidon.json.JsonObject)
+     * @deprecated use {@link #oidcMetadataJsonObject(io.helidon.json.JsonObject)} instead
+     */
+    @Deprecated(since = "4.4.1", forRemoval = true)
+    public B oidcMetadata(jakarta.json.JsonObject metadata) {
+        return oidcMetadataJsonObject(OidcJsonSupport.toHelidonJson(metadata));
     }
 
     /**
@@ -505,7 +519,7 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         return tokenEndpointAuthentication;
     }
 
-    JsonObject oidcMetadata() {
+    JsonObject oidcMetadataJsonObject() {
         return oidcMetadata;
     }
 
