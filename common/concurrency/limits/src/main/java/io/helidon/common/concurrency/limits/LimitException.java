@@ -25,6 +25,9 @@ import java.util.Objects;
  * @see io.helidon.common.concurrency.limits.LimitAlgorithm#run(Runnable)
  */
 public class LimitException extends RuntimeException {
+    /**
+     * Outcome that caused this exception.
+     */
     private final LimitAlgorithm.Outcome outcome;
 
     /**

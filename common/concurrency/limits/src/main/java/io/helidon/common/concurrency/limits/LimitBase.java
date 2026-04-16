@@ -25,7 +25,7 @@ abstract class LimitBase {
         this.limitExceptionMessage = limitExceptionMessage;
     }
 
-    protected <T> LimitAlgorithm.Result<T> doCall(Callable<T> callable) throws Exception {
+    <T> LimitAlgorithm.Result<T> doCall(Callable<T> callable) throws Exception {
 
         LimitAlgorithm.Outcome outcome = doTryAcquireOutcome(true);
 
@@ -47,5 +47,5 @@ abstract class LimitBase {
         }
     }
 
-    protected abstract LimitAlgorithm.Outcome doTryAcquireOutcome(boolean wait);
+    abstract LimitAlgorithm.Outcome doTryAcquireOutcome(boolean wait);
 }
