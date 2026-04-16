@@ -269,13 +269,9 @@ You can also extend the config system to handle other types of sources by implem
 
 ## Reference
 
-<div class="informalexample">
-
-*SE Config Guide*
-
-Step-by-step guide about using Config in your Helidon SE application.
-
-</div>
+| Name | Description |
+| --- | --- |
+| [SE Config Guide](../guides/config.md) | Step-by-step guide about using Config in your Helidon SE application. |
 
 ## Additional Information
 

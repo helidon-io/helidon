@@ -209,13 +209,9 @@ See [Config Profiles](#microprofile-config-profiles) for more information.
 
 ## Additional Information
 
-<div class="informalexample">
-
-*MP Config Guide*
-
-Step-by-step guide about using MicroProfile Config in your Helidon MP application.
-
-</div>
+| Name | Description |
+| --- | --- |
+| [MP Config Guide](../guides/config.md) | Step-by-step guide about using MicroProfile Config in your Helidon MP application. |
 
 ## Reference
 
