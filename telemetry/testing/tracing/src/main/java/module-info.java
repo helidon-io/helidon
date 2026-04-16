@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ module io.helidon.telemetry.testing.tracing {
     requires java.logging;
 
     requires io.helidon.common.testing.junit5;
+    requires io.helidon.json;
 
     requires io.opentelemetry.exporter.logging.otlp;
-    requires jakarta.json;
     requires hamcrest.all;
 
 }
