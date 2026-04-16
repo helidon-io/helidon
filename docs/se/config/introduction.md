@@ -1,14 +1,5 @@
 # The Configuration Component
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Reference](#reference)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 Helidon provides a very flexible and comprehensive configuration system, offering you many application configuration choices. The Config component provides a Java API to load and process configuration data from various sources into a `Config` object which the application can then use.

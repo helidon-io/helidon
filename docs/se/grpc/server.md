@@ -1,20 +1,5 @@
 # gRPC Server
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-  - [gRPC Server Routing](#grpc-server-routing)
-  - [Service Implementation](#service-implementation)
-  - [Server Interceptors](#server-interceptors)
-  - [Metrics](#metrics)
-- [Configuration](#configuration)
-  - [Configuring the gRPC Server](#configuring-the-grpc-server)
-  - [Configuring the gRPC Reflection Service](#configuring-the-grpc-reflection-service)
-  - [Configuring Compression](#configuring-compression)
-- [Examples](#examples)
-
 ## Overview
 
 The Helidon gRPC server provides a framework for building [gRPC](http://grpc.io/) applications. While it supports deploying any standard gRPC service that implements the `io.grpc.BindableService` interface—including those generated from Protobuf IDL files—it also allows a degree of customization.

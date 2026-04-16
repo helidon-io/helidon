@@ -1,11 +1,5 @@
 # RAG
 
-## Contents
-
-- [Maven Coordinates](#maven-coordinates)
-- [Retrieval-Augmented Generation](#retrieval-augmented-generation)
-- [Additional Information](#additional-information)
-
 ## Maven Coordinates
 
 No additional dependencies are required beyond the [LangChain4j integration core dependencies](langchain4j.md#maven-coordinates).

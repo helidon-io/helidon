@@ -1,13 +1,5 @@
 # Mock Connector
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Helidon Test](#helidon-test-with-mock-connector)
-
 ## Overview
 
 Mock connector is a simple application scoped bean that can be used for emitting to a channel or asserting received data in a test environment. All data received are kept in memory only.

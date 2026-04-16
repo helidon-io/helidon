@@ -1,16 +1,5 @@
 # Oracle OCI GenAI
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Components](#components)
-  - [OciGenAiChatModel](#ocigenaichatmodel)
-  - [OciGenAiStreamingChatModel](#ocigenaistreamingchatmodel)
-  - [OciGenAiCohereChatModel](#ocigenaicoherechatmodel)
-  - [OciGenAiCohereStreamingChatModel](#ocigenaicoherestreamingchatmodel)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 This module adds support for selected Oracle Cloud Infrastructure GenAI models.

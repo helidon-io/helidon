@@ -1,14 +1,5 @@
 # Cohere
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Components](#components)
-  - [CohereEmbeddingModel](#cohereembeddingmodel)
-  - [CohereScoringModel](#coherescoringmodel)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 This module adds support for selected Cohere models.

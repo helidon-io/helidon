@@ -1,19 +1,5 @@
 # About Helidon Data Repository
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Annotation Processor](#annotation-processor)
-- [Usage](#usage)
-- [Helidon Config](#helidon-config)
-- [SE Application](#se-application)
-- [Repository Interface](#repository-interface)
-- [Pagination](#pagination)
-- [Dynamic Ordering](#dynamic-ordering)
-- [Persistence Session Access](#persistence-session-access)
-- [Transactions](#transactions)
-
 ## Overview
 
 The Helidon SE Data Repository provides a unified API for working with database queries.

@@ -1,15 +1,5 @@
 # MicroProfile Health
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [REST Endpoints](#rest-endpoints)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Reference](#reference)
-
 ## Overview
 
 Microservices expose their health status primarily so external tools (for example, an orchestrator such as Kubernetes) can monitor each service and take action, such as restarting a service instance if it has failed or temporarily shunting traffic away from the instance if the service is unable to process incoming requests normally.

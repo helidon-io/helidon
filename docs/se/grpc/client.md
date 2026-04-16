@@ -1,18 +1,5 @@
 # gRPC Client
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-  - [Generated Stubs](#generated-stubs)
-  - [Service Descriptors](#service-descriptors)
-  - [Client URI Suppliers](#client-uri-suppliers)
-  - [Client Interceptors](#client-interceptors)
-  - [Metrics](#metrics)
-  - [Tracing](#tracing)
-- [Configuration](#configuration)
-
 ## Overview
 
 The Helidon gRPC client API is part of the WebClient API, but with specific support to invoke remote procedures and to register handlers for responses. All four types of gRPC calls are supported: unary, bi-directional, client stream and server stream. A Helidon gRPC client can be configured either using generated stubs (the most popular option) or using manually crafted service descriptors.

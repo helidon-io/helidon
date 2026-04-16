@@ -1,15 +1,5 @@
 # OpenAPI in Helidon
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Additional Information](#additional-information)
-- [Reference](#reference)
-
 ## Overview
 
 The [OpenAPI specification](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md) defines a standard way to express the interface exposed by a REST service.

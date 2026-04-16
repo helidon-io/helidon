@@ -1,14 +1,5 @@
 # Advanced Configuration Topics
 
-## Contents
-
-- [Overview](#overview)
-- [Advanced Config Sources](#advanced-config-sources)
-- [Advanced Config Parsers](#advanced-config-parsers)
-- [Config Keys with . in name](#config-keys-with-in-name)
-- [Filters, Overrides and Token Substitution](#filters-overrides-and-token-substitution)
-- [Executors for Asynchronous Config Activity](#executors-for-asynchronous-config-activity)
-
 ## Overview
 
 This section discusses several advanced topics related to Helidon configuration.

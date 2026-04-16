@@ -1,14 +1,5 @@
 # Scheduling
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Reference](#reference)
-
 ## Overview
 
 Scheduling is an essential feature for the Enterprise. Helidon has its own implementation of Scheduling functionality based on [Cron-utils](https://github.com/jmrozanec/cron-utils).

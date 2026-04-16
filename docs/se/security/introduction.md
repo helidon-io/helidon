@@ -1,11 +1,5 @@
 # Security Introduction
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-
 ## Overview
 
 Helidon Security provides authentication, authorization, and auditing for your Helidon application. It includes the following features:

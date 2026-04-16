@@ -1,20 +1,5 @@
 # Micrometer Metrics
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-  - [Registering and Updating Meters](#registering-and-updating-meters)
-  - [Accessing the Helidon Micrometer Endpoint](#accessing-the-helidon-micrometer-endpoint)
-- [API](#api)
-  - [The Helidon Micrometer API](#the-helidon-micrometer-api)
-- [Configuration](#configuration)
-- [Examples](#examples)
-  - [Register an Instance of MicrometerSupport with the Web Server](#register-an-instance-of-micrometersupport-with-the-web-server)
-  - [Create and Update Meters in Your Application Service](#create-and-update-meters-in-your-application-service)
-- [Additional Information](additional_information) 
-
 ## Overview
 
 > [!NOTE]

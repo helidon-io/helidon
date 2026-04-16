@@ -1,15 +1,5 @@
 # Hierarchical Features
 
-## Contents
-
-- [Overview](#overview)
-- [Configuration Node Types](#configuration-node-types)
-- [Configuration Key](#configuration-key)
-- [In-memory Representation of Configuration](#in-memory-representation-of-configuration)
-- [Access by Key](#access-by-key)
-- [Access by General Navigation](#access-by-general-navigation)
-- [Detaching a Config Subtree](#detaching-a-config-subtree)
-
 ## Overview
 
 The config system represents configuration as a tree in memory. Many developers will choose to work directly with config values — values from the leaves in the tree — accessing them by their keys. You can also navigate explicitly among the nodes of the tree without using keys. This section describes what the tree looks like and how you can traverse it.

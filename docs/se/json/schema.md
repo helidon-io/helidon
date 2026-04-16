@@ -1,13 +1,5 @@
 # JSON Schema
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-  - [Imperative Schema Creation](#imperative-schema-creation)
-  - [Declarative Schema Creation](#declarative-schema-creation)
-
 ## Overview
 
 JSON Schema is a specification for describing the structure and validation rules of JSON data. It lets you define what properties are required, their types, allowed values, and more. By using JSON Schema, you can validate that incoming or outgoing JSON matches the expected contract, provide clear documentation for APIs, and enable tooling support such as code generation and auto-completion.

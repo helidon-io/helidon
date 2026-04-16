@@ -1,24 +1,5 @@
 # Injection
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Basic terms](#basic-terms)
-- [How are services defined?](#how-are-services-defined)
-- [Injection points](#injection-points)
-- [Scopes](#scopes)
-- [Build time](#build-time)
-- [Basic injection example](#basic-injection-example)
-- [Service Lifecycle](#service-lifecycle)
-- [Qualifiers](#qualifiers)
-- [Factories](#factories)
-- [Interceptors](#interceptors)
-- [Events](#events)
-- [Programmatic Lookup](#programmatic-lookup)
-- [Startup](#startup)
-
 ## Overview
 
 Injection is the basic building stone for inversion of control. Dependency injection provides a mechanism to get an instance of a service at runtime, from the service registry, rather than constructing service instances through a constructor or a factory method.

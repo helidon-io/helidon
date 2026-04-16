@@ -1,16 +1,5 @@
 # Discovery
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [API Usage](#api-usage)
-- [Providers](#providers)
-  - [Eureka](#eureka)
-- [Integrations](#integrations)
-  - [Web Client](#web-client-discovery-integration)
-- [References](#references)
-
 ## Overview
 
 In Helidon, *discovery* is the general process of finding named sets of advertised resources at a moment of an application’s runtime. The advertised resources are often URIs representing microservice endpoints. In some environments, those endpoints might frequently come and go at unpredictable intervals, as microservices are started, stopped, and redeployed. The named applications they represent, however, are relatively static. Discovery helps link such a named application to its transient resources, so that clients can more easily contact it, knowing only its name.

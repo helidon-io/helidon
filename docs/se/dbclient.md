@@ -1,14 +1,5 @@
 # About Helidon DB Client
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [API](#api)
-- [Configuration](#configuration)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 The Helidon SE DB Client provides a unified API for working with databases.

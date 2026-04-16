@@ -1,16 +1,5 @@
 # JWT Authentication
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [API](#api)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Additional Information](#additional-information)
-- [Reference](#reference)
-
 ## Overview
 
 JSON Web Tokens (JWT) are an open, industry standard [(RFC 7519)](https://datatracker.ietf.org/doc/html/rfc7519) method for representing claims securely between two parties.

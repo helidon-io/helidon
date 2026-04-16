@@ -1,15 +1,5 @@
 # Kafka Connector
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Config](#config)
-- [Consuming Messages](#consuming-messages)
-- [Producing Messages](#producing-messages)
-- [NACK Strategy](#nack-strategy)
-- [Examples](#examples)
-
 ## Overview
 
 Connecting streams to Kafka with Reactive Messaging is easy to do. There is a standard Kafka client behind the scenes, all the [producer](https://kafka.apache.org/28/documentation.html#producerconfigs) and [consumer](https://kafka.apache.org/28/documentation.html#consumerconfigs) configs can be propagated through messaging config.

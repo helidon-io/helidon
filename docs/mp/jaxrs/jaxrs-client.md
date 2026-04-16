@@ -1,15 +1,5 @@
 # Jakarta REST Client
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [API](#api)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Additional Information](#additional-information)
-- [Reference](#reference)
-
 ## Overview
 
 The Jakarta REST Client defines a programmatic API to access REST resources. This API sits at a higher level than traditional HTTP client APIs and provides full integration with server-side API concepts like providers. It differs from the [Rest Client API](../restclient/restclient.md) in that it does not support annotations or proxies, but instead uses builders and a fluent API to create and execute requests.

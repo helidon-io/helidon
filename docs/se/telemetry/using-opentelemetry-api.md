@@ -1,9 +1,5 @@
 # Using OpenTelemetry Directly in Helidon SE
 
-## Contents
-
-- [Overview](#overview)
-
 ## Overview
 
 For developers of Helidon services, OpenTelemetry’s components are—​in all respects—​just like any other group of libraries a developer might use from an application. That said, OpenTelemetry is very feature-rich, comprising several libraries and involving considerable flexibility in setting up its runtime behavior. As a result, developers sometimes find it challenging to get the correct combination of dependencies and the right runtime behavior.

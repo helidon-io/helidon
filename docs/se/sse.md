@@ -1,16 +1,5 @@
 # Server-Sent Events in Helidon
 
-## Contents
-
-- [Overview](#overview)
-- [Server API](#server-api)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Client API](#client-api)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 Server-sent events (SSE) enable servers to push data to clients (e.g. Web browsers) using standard HTTP or HTTPS through a unidirectional server-to-client connection. In the server-sent events communication model, the client establishes the initial connection, and the server provides the data in the form of *event streams*. For more information about server-sent events, see the [`Server-sent events`](https://html.spec.whatwg.org/multipage/server-sent-events.html) specification.

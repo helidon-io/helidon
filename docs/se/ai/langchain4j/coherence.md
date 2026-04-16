@@ -1,13 +1,5 @@
 # Coherence Embedding Store
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Components](#components)
-  - [CoherenceEmbeddingStore](#coherenceembeddingstore)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 This module adds support for the Coherence embedding store.

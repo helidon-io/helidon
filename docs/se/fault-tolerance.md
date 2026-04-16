@@ -1,13 +1,5 @@
 # Fault Tolerance in Helidon
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [API](#api)
-- [Examples](#examples)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 Helidon Fault Tolerance support is inspired by [MicroProfile Fault Tolerance](https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/microprofile-fault-tolerance-spec-4.0.2.html). The API defines the notion of a *fault handler* that can be combined with other handlers to improve application robustness. Handlers are created to manage error conditions (faults) that may occur in real-world application environments. Examples include service restarts, network delays, temporal infrastructure instabilities, etc.

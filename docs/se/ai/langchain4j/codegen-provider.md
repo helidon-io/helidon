@@ -1,14 +1,5 @@
 # Model Provider Generator
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Lc4j Provider](#lc4j-provider)
-- [Configuration](#configuration)
-- [Injectable Properties](#injectable-properties)
-- [Default Injectable Properties](#default-injectable-properties)
-
 ## Overview
 
 The number of available AI providers and their models in the LangChain4j project is impressive and is growing every day. To maintain binding with all of them in Helidon is very challenging, and it may happen that the provider you are looking for is not one of those we are providing out of the box. But you can generate integration yourself the same way we are generating official LangChain4j binding modules, in build time, with our codegen tooling.

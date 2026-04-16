@@ -1,19 +1,5 @@
 # Tracing
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Additional Information](#additional-information)
-  - [Jaeger Tracing](#jaeger-tracing)
-  - [Zipkin Tracing](#zipkin-tracing)
-  - [OpenTelemetry Tracing](#opentelemetry-tracing)
-  - [Responding to Span Life Cycle Events](#responding-to-span-lifecycle-events)
-- [Reference](#reference)
-
 ## Overview
 
 > [!WARNING]

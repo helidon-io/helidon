@@ -1,13 +1,5 @@
 # Oracle Embedding Store
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [OracleEmbeddingStore](#oracleembeddingstore)
-  - [OracleEmbeddingTable](#oracleembeddingtable)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 This module adds support for the Oracle embedding store.

@@ -1,17 +1,5 @@
 # Tracing
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Additional Information](#additional-information)
-  - [Jaeger Tracing](#jaeger-tracing)
-  - [Zipkin Tracing](#zipkin-tracing)
-  - [OpenTelemetry Tracing](#opentelemetry-tracing)
-- [Reference](#reference)
-
 ## Overview
 
 Distributed tracing is a critical feature of microservice based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon includes support for distributed tracing through its own API, backed by either [OpenTelemetry](https://opentelemetry.io/docs/instrumentation/js/api/tracing/), [Jaeger](https://www.jaegertracing.io/), or [Zipkin](https://zipkin.io/). Tracing is integrated with WebServer and Security.

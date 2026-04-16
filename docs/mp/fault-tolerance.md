@@ -1,15 +1,5 @@
 # Fault Tolerance Introduction
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [API](#api)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Additional Information](#additional-information)
-- [Reference](#reference)
-
 ## Overview
 
 Fault Tolerance is part of the MicroProfile set of specifications. This API defines mostly annotations that improve application robustness by providing support to conveniently handle error conditions (faults) that may occur in real-world applications. Examples include service restarts, network delays, temporal infrastructure instabilities, etc.

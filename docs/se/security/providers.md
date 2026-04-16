@@ -1,11 +1,5 @@
 # Security Providers
 
-## Contents
-
-- [Implemented Security Providers](#implemented-security-providers)
-- [Maven Coordinates](#maven-coordinates)
-- [Reference](#reference)
-
 ## Implemented Security Providers
 
 Helidon provides the following security providers for endpoint protection:

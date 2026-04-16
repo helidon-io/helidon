@@ -1,17 +1,5 @@
 # Extensions
 
-## Contents
-
-- [Overview](#overview)
-- [Configuring an Extension](#configuring-an-extension)
-- [Config-SPI-ConfigSource](#configsource-spi)
-- [Config-SPI-ConfigParser](#configparser-spi)
-- [Config-SPI-OverrideSource](#overridesource-spi)
-- [Config-SPI-ConfigFilter](#configfilter-spi)
-- [Config-SPI-ConfigMapperProvider](#configmapperprovider-spi)
-- [Change Support SPI](#change-support-spi)
-- [Config-SPI-RetryPolicy](#retrypolicy-spi)
-
 ## Overview
 
 Developer-provided extensions influence how the config system behaves.

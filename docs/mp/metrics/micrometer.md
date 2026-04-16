@@ -1,15 +1,5 @@
 # Micrometer Support
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [API](#api)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 > [!NOTE]

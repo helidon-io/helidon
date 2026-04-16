@@ -1,14 +1,5 @@
 # Observability
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Additional Information](#additional-information)
-- [Reference](#reference)
-
 ## Overview
 
 In Helidon 4 all observability features were moved to one logical module: `observe`. The observability support groups all observe endpoints together under a single context root (the default behavior) `/observe`.

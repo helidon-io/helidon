@@ -1,14 +1,5 @@
 # OpenAPI UI
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [API](#api)
-- [Configuration](#configuration)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 SmallRye offers an [OpenAPI user interface component](https://github.com/smallrye/smallrye-open-api/tree/3.3.4/ui/open-api-ui) which displays a web page based on your application’s OpenAPI document. Through that UI, users can invoke the operations declared in the document.

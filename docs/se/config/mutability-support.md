@@ -1,12 +1,5 @@
 # Mutability Support
 
-## Contents
-
-- [Overview](#overview)
-- [Using Config Metadata](#using-config-metadata)
-- [Responding to Changes in Config Sources](#responding-to-changes-in-config-sources)
-- [Accessing Always-current Values](#accessing-always-current-values)
-
 ## Overview
 
 An in-memory config tree, once loaded, is immutable, even though the data in the underlying config sources *can* change over time. The config system internally records which config sources it used to load each config tree and some metadata about the configuration. Your application can be aware of updates to the underlying config sources by:

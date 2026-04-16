@@ -1,12 +1,5 @@
 # Built-in LangChain4j Providers
 
-## Contents
-
-- [Maven Coordinates](#maven-coordinates)
-- [Content Retriever](#content-retriever)
-- [In-Memory Embedding Store](#in-memory-embedding-store)
-- [Additional Information](#additional-information)
-
 ## Maven Coordinates
 
 No additional dependencies are required beyond the [LangChain4j integration core dependencies](langchain4j.md#maven-coordinates).

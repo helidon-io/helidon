@@ -1,15 +1,5 @@
 # JSON-RPC Client
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-  - [Simple Requests](#simple-requests)
-  - [Batch Requests](#batch-requests)
-- [Configuration](#configuration)
-- [Examples](#examples)
-
 ## Overview
 
 The Helidon JSON-RPC client API is part of the WebClient API, and can be used to create [JSON-RPC 2.0](https://www.jsonrpc.org/specification) client applications. It offers built-in support to invoke JSON-RPC server methods with minimal effort, including handling of JSON parameters and processing of JSON responses.

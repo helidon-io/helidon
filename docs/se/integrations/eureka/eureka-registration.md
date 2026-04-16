@@ -1,14 +1,5 @@
 # Eureka Server Service Instance Registration
 
-## Contents
-
-- [Overview](#overview)
-- [Usage](#usage)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Logging](#logging)
-- [Related Documentation](#related-documentation)
-
 ## Overview
 
 Helidon’s Eureka Server Service Instance Registration Integration provides a [`ServerFeature`](/apidocs/io.helidon.webserver/io/helidon/webserver/spi/ServerFeature.html) that offers support for automatically and unobtrusively attempting to register a running Helidon microservice with an available Netflix Eureka Server of at least version 2.0.5 in the microservice’s runtime environment.

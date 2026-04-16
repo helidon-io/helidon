@@ -1,14 +1,5 @@
 # HashiCorp Vault
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Examples](#examples)
-- [Local Testing](#local-testing)
-- [References](#references)
-
 ## Overview
 
 HashiCorp Vault is a commonly used Vault in many microservices. The APIs are REST-based and Helidon implements them using [WebClient](../../se/webclient.md).

@@ -1,24 +1,5 @@
 # LangChain4j
 
-## Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Maven Coordinates](#maven-coordinates)
-- [General Concepts](#general-concepts)
-  - [LangChain4j Providers](#providers)
-  - [Supplier Factory](#supplier-factory)
-- [Configuration](#configuration)
-  - [Configuration Migration Guide](#configuration-migration-guide)
-- [Declarative AI](#declarative-ai)
-  - [AI Services](#ai-services)
-  - [Agents](#agents)
-  - [Agentic Workflow](#agentic-workflow)
-- [Tools (Callback Functions)](#tools-callback-functions)
-- [Guardrails](#guardrails)
-- [Observability (ChatModelListeners)](#observability-chatmodellisteners)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 [LangChain4j](https://github.com/langchain4j/langchain4j) is a Java framework for building AI-powered applications using Large Language Models (LLMs). It provides seamless integration with multiple LLM providers, including OpenAI, Cohere, Hugging Face, and others. Key features include AI Services and Agents for model interaction, support for Retrieval-Augmented Generation (RAG) to enhance responses with external data, and tools for working with embeddings and knowledge retrieval.

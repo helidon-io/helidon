@@ -1,13 +1,5 @@
 # MicroProfile Config
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Reference](#reference)
-
 ## Overview
 
 Helidon MicroProfile Config is an implementation of [Eclipse MicroProfile Config](https://github.com/eclipse/microprofile-config/). You can configure your applications using MicroProfile’s config configuration sources and APIs. You can also extend the configuration using MicroProfile SPI to add custom `ConfigSource` and `Converter`.

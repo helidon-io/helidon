@@ -1,11 +1,5 @@
 # In-Process Embedding Models
 
-## Contents
-
-- [Maven Coordinates](#maven-coordinates)
-- [In-Process Embedding Model](#in-process-embedding-model)
-- [Additional Information](#additional-information)
-
 ## Maven Coordinates
 
 In addition to the [LangChain4j integration core dependencies](langchain4j.md#maven-coordinates), add:

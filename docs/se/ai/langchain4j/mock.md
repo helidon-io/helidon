@@ -1,13 +1,5 @@
 # Mock ChatModel
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Components](#components)
-  - [MockChatModel](#mockchatmodel)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 The mock chat model enables deterministic testing of LangChain4j features such as agents, tools, and chat memory without invoking an external AI service. By configuring rule patterns, fixed responses, and templated replies, tests remain reproducible and stable across runs, allowing developers to verify interaction logic, component chaining, and error handling in isolation.

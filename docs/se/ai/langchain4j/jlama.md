@@ -1,16 +1,5 @@
 # Jlama
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Components](#components)
-  - [JlamaChatModel](#jlamachatmodel)
-  - [JlamaEmbeddingModel](#jlamaembeddingmodel)
-  - [JlamaLanguageModel](#jlamalanguagemodel)
-  - [JlamaStreamingChatModel](#jlamastreamingchatmodel)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 This module adds support for selected [Jlama](https://github.com/tjake/Jlama) models.

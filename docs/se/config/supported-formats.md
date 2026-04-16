@@ -1,11 +1,5 @@
 # Additional Supported Formats and Sources
 
-## Contents
-
-- [Overview](#overview)
-- [Additional Config Formats and Parsers](#additional-config-formats-and-parsers)
-- [Additional Config Source Types](#additional-config-source-types)
-
 ## Overview
 
 Helidon Config provides several extension modules that support other configuration formats (parsers) and sources. This document describes how to include them and use them in your project. In each case you need to add module dependencies to your project and, in some cases, write your application accordingly.

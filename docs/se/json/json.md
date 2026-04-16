@@ -1,11 +1,5 @@
 # JSON Processing in Helidon SE
 
-## Contents
-
-- [Overview](#overview)
-- [JSON Binding](#json-binding)
-- [JSON Processor](#json-processor)
-
 ## Overview
 
 Helidon provides comprehensive JSON processing capabilities through two core modules that work together to offer efficient, streaming JSON processing optimized for virtual threads and modern Java applications.

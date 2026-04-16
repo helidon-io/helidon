@@ -1,13 +1,5 @@
 # OpenAPI-based Code Generation
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [References](#references)
-
 ## Overview
 
 The [OpenAPI specification](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md) provides a standard way to express RESTful APIs.

@@ -1,40 +1,5 @@
 # Persistence
 
-## Contents
-
-- [Overview](#overview)
-- [Named Data Source Integration](#named-data-source-integration)
-  - [Project Setup](#project-setup)
-    - [Setting Up a Connection Pool](#setting-up-a-connection-pool)
-      - [Setting Up the HikariCP Connection Pool](#setting-up-the-hikaricp-connection-pool)
-        - [Maven Coordinates (HikariCP)](#maven-coordinates-hikaricp)
-      - [Setting Up the Oracle Universal Connection Pool](#setting-up-the-oracle-universal-connection-pool)
-        - [Maven Coordinates (Oracle Universal Connection Pool)](#maven-coordinates-oracle-universal-connection-pool)
-    - [Setting Up a Database Driver](#setting-up-a-database-driver)
-      - [Setting Up H2](#setting-up-h2)
-        - [Maven Coordinates (H2)](#maven-coordinates-h2)
-      - [Setting Up Oracle JDBC](#setting-up-oracle-jdbc)
-        - [Maven Coordinates (Oracle JDBC)](#maven-coordinates-oracle-jdbc)
-  - [Configuration](#configuration)
-    - [Examples](#examples)
-  - [Usage](#usage)
-- [Jakarta Transactions (JTA) Integration](#jakarta-transactions-jta-integration)
-  - [Maven Coordinates](#maven-coordinates-jta)
-  - [Configuration](#configuration-1)
-  - [Usage](#usage-1)
-- [Jakarta Persistence (JPA) Integration](#jakarta-persistence-jpa)
-  - [Project Setup](#project-setup-1)
-    - [Common Maven Coordinates](#maven-coordinates-common)
-    - [Setting Up Static Metamodel Generation](#setting-up-static-metamodel-generation)
-    - [Maven Coordinates (Hibernate ORM)](#maven-coordinates-hibernate-orm)
-    - [Setting Up Static Weaving (Hibernate ORM)](#setting-up-static-weaving-hibernate-orm)
-    - [Maven Coordinates (Eclipselink)](#maven-coordinates-eclipselink)
-    - [Setting Up Static Weaving (Eclipselink)](#setting-up-static-weaving-eclipselink)
-  - [Configuration](#configuration-2)
-  - [Usage](#usage-2)
-  - [Examples](#examples-1)
-- [References](#references)
-
 ## Overview
 
 Helidon MP comes with deep integration for three specification-defined, broadly persistence-related technologies that can be used together or separately:

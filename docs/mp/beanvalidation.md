@@ -1,15 +1,5 @@
 # Bean Validation Introduction
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [API](#api)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Additional Information](#additional-information)
-- [Reference](#reference)
-
 ## Overview
 
 Helidon supports Bean Validation via its integration with JAX-RS/Jersey. The [Jakarta Bean Validation specification](https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0.html) defines an API to validate Java beans. Bean Validation is supported in REST resource classes as well as in regular application beans.

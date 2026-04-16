@@ -1,11 +1,5 @@
 # Declarative
 
-## Contents
-
-- [Overview](#overview)
-- [Usage](#usage)
-- [Features](#features)
-
 ## Overview
 
 Helidon declarative programming model allows inversion of control style programming with all the performance benefits of Helidon SE.

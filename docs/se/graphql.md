@@ -1,14 +1,5 @@
 # GraphQL Server Introduction
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [API](#api)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 The Helidon GraphQL Server provides a framework for creating [GraphQL](https://github.com/graphql-java/graphql-java) applications that integrate with the Helidon WebServer. GraphQL is a query language to access server data. The Helidon GraphQL integration enables HTTP clients to issue queries over the network and retrieve data; it is an alternative to other protocols such as REST or GRPC.

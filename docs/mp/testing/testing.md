@@ -1,16 +1,5 @@
 # Testing with JUnit5
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Examples](#examples)
-- [Mock Support](#mock-support)
-- [Virtual Threads](#virtual-threads)
-- [Additional Information](#additional-information)
-- [Reference](#reference)
-
 ## Overview
 
 Helidon provides a JUnit5 extension that integrates CDI to support testing with Helidon MP.

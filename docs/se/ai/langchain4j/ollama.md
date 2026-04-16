@@ -1,16 +1,5 @@
 # Ollama
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Components](#components)
-  - [OllamaChatModel](#ollamachatmodel)
-  - [OllamaEmbeddingModel](#ollamaembeddingmodel)
-  - [OllamaLanguageModel](#ollamalanguagemodel)
-  - [OllamaStreamingChatModel](#ollamastreamingchatmodel)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 This module adds support for selected [Ollama](https://ollama.ai/) models.

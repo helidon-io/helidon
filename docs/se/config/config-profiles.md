@@ -1,13 +1,5 @@
 # Configuration Profiles
 
-## Contents
-
-- [Overview](#overview)
-- [Profile Options](#profile-options)
-- [Profile Config Source](#profile-config-sources)
-- [Profile Files](#profile-files)
-- [Declarative](#declarative)
-
 ## Overview
 
 Configuration profiles provide a capability to prepare structure of configuration for each environment in advance, and then simply switch between these structures using a system property or an environment variable.

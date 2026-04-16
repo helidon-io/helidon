@@ -1,29 +1,5 @@
 # WebServer Introduction
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Configuration](#configuration)
-  - [Configuring the WebServer in Your Code](#configuring-the-webserver-in-your-code)
-  - [Configuring the WebServer in a Configuration File](#configuring-the-webserver-in-a-configuration-file)
-  - [Configuring TLS](#configuring-tls)
-  - [Configuration Options](#configuration-options)
-- [Routing](#routing)
-  - [Request Handling](#request-handling)
-  - [Error Handling](#error-handling)
-- [Server Features](#server-features)
-  - [Access Log](#access-log)
-  - [Context](#context)
-- [Supported Technologies](#supported-technologies)
-  - [HTTP/2 Support](#http2-support)
-  - [Static Content Support](#static-content-support)
-  - [Media Types Support](#media-types-support)
-  - [HTTP Content Encoding](#http-content-encoding)
-  - [Proxy Protocol Support](#proxy-protocol-support)
-- [Reference](#reference)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 WebServer provides an API for creating HTTP servers. It uses virtual threads and can handle nearly unlimited concurrent requests.

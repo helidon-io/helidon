@@ -1,12 +1,5 @@
 # JMS Connector
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Configuration](#configuration)
-- [Usage](#usage)
-
 ## Overview
 
 Connecting streams to JMS with Reactive Messaging couldn’t be easier.

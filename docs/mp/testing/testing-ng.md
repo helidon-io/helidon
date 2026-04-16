@@ -1,15 +1,5 @@
 # Testing with TestNG
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Examples](#examples)
-- [Mock Support](#mock-support)
-- [Virtual Threads](#virtual-threads)
-- [Reference](#reference)
-
 ## Overview
 
 Helidon provides a TestNG listener that integrates CDI to support testing with Helidon MP.

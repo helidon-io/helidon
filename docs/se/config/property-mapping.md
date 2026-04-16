@@ -1,14 +1,5 @@
 # Property Mapping
 
-## Contents
-
-- [Overview](#overview)
-- [Converting Configuration to Simple Types](#converting-configuration-to-simple-types)
-- [Converting Configuration to `enum` Values](#converting-configuration-to-enum-values)
-- [Converting Configuration to Complex Types](#converting-configuration-to-complex-types)
-- [Advanced Conversions using Explicit Mapping Logic](#advanced-conversions-using-explicit-mapping-logic)
-- [Conversions using JavaBean Deserialization](#conversions-using-javabean-deserialization)
-
 ## Overview
 
 Although config values are originally text, you can use the config system’s built-in conversions or add your own to translate text into Java primitive types and simple objects (such as `Double`), into `enum` values, and to express parts of the config tree as complex types (`List`, `Map`, and custom types specific to your application). This section introduces how to use the built-in mappings and your own custom ones to convert to simple and complex types.

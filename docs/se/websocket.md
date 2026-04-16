@@ -1,12 +1,5 @@
 # WebSocket Introduction
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Example](#example)
-- [Reference](#reference)
-
 ## Overview
 
 Helidon integrates with [Tyrus](https://projects.eclipse.org/projects/ee4j.tyrus) to provide support for the [Jakarta WebSocket API](https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html). The WebSocket API enables Java applications to participate in WebSocket interactions as both servers and clients. The server API supports two flavors: annotated and programmatic endpoints.

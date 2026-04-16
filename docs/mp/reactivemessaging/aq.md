@@ -1,12 +1,5 @@
 # Oracle AQ Connector
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Configuration](#configuration)
-- [Usage](#usage)
-
 ## Overview
 
 Connecting streams to Oracle AQ with Reactive Messaging couldn’t be easier. This connector extends Helidon’s JMS connector with Oracle’s AQ-specific API.

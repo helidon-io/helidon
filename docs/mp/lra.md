@@ -1,21 +1,5 @@
 # Long Running Actions (LRA)
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [API](#api)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Testing](#testing)
-- [Additional Information](#additional-information)
-  - [Coordinator](#coordinator)
-  - [MicroTx LRA Coordinator](#microtx-lra-coordinator)
-  - [Helidon LRA Coordinator](#helidon-lra-coordinator)
-  - [Narayana](#narayana)
-- [Reference](#reference)
-
 ## Overview
 
 Distributed transactions for microservices are known as SAGA design patterns and are defined by the [MicroProfile Long Running Actions specification](https://download.eclipse.org/microprofile/microprofile-lra-2.0/microprofile-lra-spec-2.0.html). Unlike well known XA protocol, LRA is asynchronous and therefore much more scalable. Every LRA JAX-RS resource ([participant](#participant)) defines endpoints to be invoked when transaction needs to be *completed* or *compensated*.

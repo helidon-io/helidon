@@ -1,18 +1,5 @@
 # gRPC MP Server
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [API](#api)
-- [Usage](#usage)
-  - [Defining a Service](#defining-a-service)
-  - [Using Custom Marshalers](#using-custom-marshalers)
-- [Implementing a gRPC Extension](#implementing-a-grpc-extension)
-- [gRPC Reflection Service](#grpc-reflection-service)
-- [Configuration](#configuration)
-- [Examples](#examples)
-
 ## Overview
 
 The gRPC MicroProfile (MP) API is an extension to [Helidon MP](../../mp/introduction.md) that enables building gRPC services integrated with MicroProfile APIs. Using Helidon MP simplifies the process of developing gRPC services compared to traditional approaches. Services can be implemented as plain POJOs, which are then automatically discovered and deployed at runtime—just like other Helidon MP web services.

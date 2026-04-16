@@ -1,18 +1,5 @@
 # gRPC MP Client
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [API](#api)
-- [Configuration](#configuration)
-  - [Configuring TLS](#configuring-tls)
-- [Usage](#usage)
-  - [Defining a Client Interface](#defining-a-client-interface)
-  - [Injecting Client Proxies](#injecting-client-proxies)
-  - [Injecting Channels](#injecting-channels)
-- [Examples](#examples)
-
 ## Overview
 
 Building Java-based gRPC clients using the Helidon MP gRPC API is very simple and removes a lot of the boilerplate code typically associated with more traditional approaches of writing gRPC clients. At its simplest, a gRPC Java client can be written using nothing more than a suitably annotated Java interface.

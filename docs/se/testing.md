@@ -1,16 +1,5 @@
 # Helidon Testing
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Examples](#examples)
-- [Virtual Threads](#virtual-threads)
-- [Service Registry](#service-registry)
-- [Additional Information](#additional-information)
-- [Reference](#reference)
-
 ## Overview
 
 Helidon provides built-in test support for Helidon testing with JUnit 5.

@@ -1,14 +1,5 @@
 # Observability
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Additional Information](#additional-information)
-- [Reference](#reference)
-
 ## Overview
 
 In Helidon 4 all observability features were moved to one logical module: `observe`. Observability features specified by MicroProfile—​such as metrics and health—​keep their familiar endpoints. The endpoints for other observability features are grouped together under a single context root which defaults to `/observe`.

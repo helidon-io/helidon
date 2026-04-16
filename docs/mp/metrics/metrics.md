@@ -1,15 +1,5 @@
 # Metrics in Helidon MP
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [API](#api)
-- [Configuration](#configuring-publishers)
-- [Examples](#examples)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 Helidon MP metrics implements the MicroProfile Metrics specification, providing:

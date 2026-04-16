@@ -1,20 +1,5 @@
 # Reactive Messaging
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-  - [Channel](#channel)
-  - [Processor](#processor)
-  - [Message](#message)
-  - [Connectors](#connectors)
-    - [Kafka Connector](#kafka-connector)
-    - [JMS Connector](#jms-connector)
-    - [AQ Connector](#aq-connector)
-- [Configuration](#configuration)
-- [Reference](#reference)
-
 ## Overview
 
 Asynchronous messaging is a commonly used form of communication in the world of microservices. While it is possible to start building your reactive streams directly by combining operators and connecting them to reactive APIs, with Helidon SE Reactive Messaging, you can now use prepared tools for repetitive use case scenarios .

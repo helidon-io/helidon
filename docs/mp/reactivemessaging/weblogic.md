@@ -1,12 +1,5 @@
 # WebLogic JMS Connector
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Configuration](#configuration)
-- [Usage](#usage)
-
 ## Overview
 
 WebLogic JMS Connector extends Helidon JMS connector with special handling for legacy WebLogic T3 thin clients. Legacy versions of thin client can be found in server/lib directory(`WL_HOME/server/lib/wlthint3client.jar`) of any WebLogic Server installation.

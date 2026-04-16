@@ -1,20 +1,5 @@
 # Health Checks
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [API](#api)
-  - [Enabling Health Support](#enabling-health-support-and-built-in-health-checks-in-your-application)
-  - [Writing Custom Health Checks](#writing-custom-health-checks)
-  - [Kubernetes Probes](#kubernetes-probes)
-  - [Troubleshooting Probes](#troubleshooting-probes)
-- [Configuration](#configuration)
-- [Examples](#examples)
-  - [JSON Response Example](#json-response-example)
-  - [Kubernetes Example](#kubernetes-example)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 It’s a good practice to monitor your microservice’s health to ensure that it is available and performs correctly. Applications implement health checks to expose health status that is collected at regular intervals by external tooling, such as orchestrators like Kubernetes. The orchestrator may then take action, such as restarting your application if the health check fails.

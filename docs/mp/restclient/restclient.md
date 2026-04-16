@@ -1,14 +1,5 @@
 # Rest Client
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [API](#api)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Reference](#reference)
-
 ## Overview
 
 MicroProfile Rest Client adds the capability to invoke remote services by defining a Java interface with Jakarta REST (JAX-RS) annotations that resembles a server-side resource class.

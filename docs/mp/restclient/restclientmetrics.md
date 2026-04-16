@@ -1,14 +1,5 @@
 # Rest Client Metrics
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [API](#api)
-- [Configuration](#configuration)
-- [Reference](#reference)
-
 ## Overview
 
 Helidon supports MicroProfile REST Client metrics by registering metrics automatically when developers add MicroProfile Metrics annotations to REST client interfaces and methods.

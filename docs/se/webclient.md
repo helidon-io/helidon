@@ -1,13 +1,5 @@
 # WebClient Introduction
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Configuring the WebClient](#configuring-the-webclient)
-- [Examples](#examples)
-
 ## Overview
 
 WebClient is an HTTP client for Helidon SE. It can be used to send requests and retrieve corresponding responses in a programmatic way.

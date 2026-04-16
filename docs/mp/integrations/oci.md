@@ -1,13 +1,5 @@
 # Oracle Cloud Infrastructure
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Authentication](#authentication)
-- [Accessing OCI Services](#accessing-oci-services)
-- [References](#references)
-
 ## Overview
 
 You can quickly and easily deploy Helidon applications on Oracle Cloud Infrastructure (OCI) and integrate them with OCI services using the OCI Java SDK and the Helidon OCI SDK Extension.

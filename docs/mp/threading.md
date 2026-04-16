@@ -1,13 +1,5 @@
 # Threading
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [API](#api)
-- [Configuration](#configuration)
-- [Examples](#examples)
-
 ## Overview
 
 Helidon 4 has been written from the ground up to take full advantage of Java 21’s virtual threads. With this new architecture, threads are no longer a scarce resource that need to be pooled and managed, instead they are an abundant resource that can be created as needed to satisfy your application needs.

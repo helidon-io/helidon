@@ -1,15 +1,5 @@
 # Helidon Connector
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [API](#api)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Additional Information](#additional-information)
-- [Reference](#reference)
-
 ## Overview
 
 Helidon uses Jersey as the Jakarta REST (JAX-RS) implementation. Jersey supports the concept of *connectors* which is an SPI to handle low-level HTTP connections when using the Jakarta REST Client API. Helidon provides a connector that is based on its `WebClient` implementation and that has a few benefits, most notably, configuration using Config and support for HTTP/2.

@@ -1,18 +1,5 @@
 # OpenAI
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Components](#components)
-  - [OpenAiChatModel](#openaichatmodel)
-  - [OpenAiEmbeddingModel](#openaiembeddingmodel)
-  - [OpenAiImageModel](#openaiimagemodel)
-  - [OpenAiLanguageModel](#openailanguagemodel)
-  - [OpenAiModerationModel](#openaimoderationmodel)
-  - [OpenAiStreamingChatModel](#openaistreamingchatmodel)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 This module adds support for selected Open AI models.

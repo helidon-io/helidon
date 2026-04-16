@@ -1,14 +1,5 @@
 # Google Gemini
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Components](#components)
-  - [GoogleAiGeminiChatModel](#googleaigeminichatmodel)
-  - [GoogleAiGeminiStreamingChatModel](#googleaigeministreamingchatmodel)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 This module adds support for selected [Google Gemini](https://ai.google.dev/gemini-api/docs/models) models.

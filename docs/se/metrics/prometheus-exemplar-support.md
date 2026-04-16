@@ -1,13 +1,5 @@
 # Metrics Support for Exemplars
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Examples](#examples)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 A meter typically reflects the usage of a *single* point in your service which processes *multiple* requests over time. A value such as the total time consumed by a given REST endpoint which can be invoked multiple times underscores the aggregate nature of meter values; Helidon accumulates the time from all requests in the total duration.

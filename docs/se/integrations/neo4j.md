@@ -1,15 +1,5 @@
 # Neo4j
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Additional Information](#additional-information)
-- [References](#references)
-
 ## Overview
 
 Neo4j is a graph database management system developed by Neo4j, Inc. It is an ACID-compliant transactional database with native graph storage and processing. Neo4j is available in a GPL3-licensed open-source “community edition”.

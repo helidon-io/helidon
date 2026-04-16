@@ -1,17 +1,5 @@
 # OpenTelemetry Support in Helidon SE
 
-## Contents
-
-- [Overview](#overview)
-- [API](#api)
-- [Maven Coordinates](#maven-coordinates)
-- [Configuration](#configuration)
-  - [Common Settings](#common-config)
-  - [Tracing](#tracing-config)
-  - [Metrics](#metrics-config)
-  - [Logging](#logger-config)
-- [Additional Information](#additional-information)
-
 ## Overview
 
 > [!NOTE]

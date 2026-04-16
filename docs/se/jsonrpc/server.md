@@ -1,14 +1,5 @@
 # JSON-RPC Server
 
-## Contents
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-  - [Service Implementation](#service-implementation)
-- [Configuration](#configuration)
-- [Examples](#examples)
-
 ## Overview
 
 The Helidon WebServer provides a framework for creating [JSON-RPC 2.0](https://www.jsonrpc.org/specification) applications. The JSON-RPC protocol is a stateless and lightweight protocol based on JSON that runs on top of HTTP/1.1. It offers the ability to invoke remote methods passing parameters and getting results as JSON values.
