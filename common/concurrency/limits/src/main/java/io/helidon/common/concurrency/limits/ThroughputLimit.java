@@ -59,47 +59,7 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
     private final ThroughputLimitConfig config;
 
     private ThroughputLimit(ThroughputLimitConfig config) {
-        Semaphore semaphore;
-        int initialPermits;
-        int queueLength;
-        LimitHandlers.LimiterHandler limiterHandler;
-        Supplier<Long> clock = LimitUtil.clock(config);
-
-        AtomicInteger concurrentRequests = new AtomicInteger();
-        AtomicInteger rejectedRequests = new AtomicInteger();
-        PermitStrategy permitStrategy = permitStrategy(config, clock);
-        semaphore = permitStrategy.semaphore().orElse(null);
-
-        SemaphoreMetrics metrics = new SemaphoreMetrics(config.enableMetrics(),
-                                                        semaphore,
-                                                        config.name(),
-                                                        concurrentRequests,
-                                                        rejectedRequests);
-
-        if (semaphore == null) {
-            initialPermits = 0;
-            queueLength = 0;
-            limiterHandler = new LimitHandlers.NoOpSemaphoreHandler();
-        } else {
-            initialPermits = semaphore.availablePermits();
-            queueLength = Math.max(0, config.queueLength());
-
-            Supplier<Token> tokenSupplier = () -> new ThroughputToken(concurrentRequests, clock, metrics);
-            limiterHandler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
-                                                                      queueLength,
-                                                                      config.queueTimeout(),
-                                                                      tokenSupplier,
-                                                                      permitStrategy.maxWaitMillis(),
-                                                                      permitStrategy::refillPermits);
-        }
-
-        super(initialPermits,
-              queueLength,
-              limiterHandler,
-              clock,
-              concurrentRequests,
-              rejectedRequests,
-              metrics);
+        super(context(config));
 
         this.config = config;
     }
@@ -202,6 +162,50 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
             case FIXED_RATE -> new FixedRatePermitStrategy(config, clock);
             case TOKEN_BUCKET -> new TokenBucketPermitStrategy(config, clock);
         };
+    }
+
+    private static Context context(ThroughputLimitConfig config) {
+        LimitHandlers.LimiterHandler limiterHandler;
+        Supplier<Long> clock = LimitUtil.clock(config);
+
+        AtomicInteger concurrentRequests = new AtomicInteger();
+        AtomicInteger rejectedRequests = new AtomicInteger();
+        PermitStrategy permitStrategy = permitStrategy(config, clock);
+        Semaphore semaphore = permitStrategy.semaphore().orElse(null);
+
+        SemaphoreMetrics metrics = new SemaphoreMetrics(config.enableMetrics(),
+                                                        semaphore,
+                                                        config.name(),
+                                                        concurrentRequests,
+                                                        rejectedRequests);
+
+        if (semaphore == null) {
+            return new Context(0,
+                               0,
+                               new LimitHandlers.NoOpSemaphoreHandler(),
+                               clock,
+                               new AtomicInteger(),
+                               rejectedRequests,
+                               metrics);
+        }
+        int initialPermits = semaphore.availablePermits();
+        int queueLength = Math.max(0, config.queueLength());
+
+        Supplier<Token> tokenSupplier = () -> new ThroughputToken(concurrentRequests, clock, metrics);
+        limiterHandler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
+                                                                  queueLength,
+                                                                  config.queueTimeout(),
+                                                                  tokenSupplier,
+                                                                  permitStrategy.maxWaitMillis(),
+                                                                  permitStrategy::refillPermits);
+
+        return new Context(initialPermits,
+                           queueLength,
+                           limiterHandler,
+                           clock,
+                           concurrentRequests,
+                           rejectedRequests,
+                           metrics);
     }
 
     private interface PermitStrategy {

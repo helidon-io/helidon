@@ -44,22 +44,16 @@ abstract class SemaphoreLimitBase extends LimitBase implements Limit {
     /**
      * Constructor initializing common fields.
      */
-    protected SemaphoreLimitBase(int initialPermits,
-                                 int queueLength,
-                                 LimiterHandler handler,
-                                 Supplier<Long> clock,
-                                 AtomicInteger concurrentRequests,
-                                 AtomicInteger rejectedRequests,
-                                 SemaphoreMetrics semaphoreMetrics) {
+    protected SemaphoreLimitBase(Context context) {
         super("No more permits available for the semaphore");
 
-        this.initialPermits = initialPermits;
-        this.handler = handler;
-        this.queueLength = queueLength;
-        this.concurrentRequests = concurrentRequests;
-        this.rejectedRequests = rejectedRequests;
-        this.clock = clock;
-        this.metrics = semaphoreMetrics;
+        this.initialPermits = context.initialPermits;
+        this.handler = context.handler;
+        this.queueLength = context.queueLength;
+        this.concurrentRequests = context.concurrentRequests;
+        this.rejectedRequests = context.rejectedRequests;
+        this.clock = context.clock;
+        this.metrics = context.semaphoreMetrics;
     }
 
     @Override
@@ -111,6 +105,15 @@ abstract class SemaphoreLimitBase extends LimitBase implements Limit {
         return concurrentRequests;
     }
 
+    /**
+     * Returns the {@link AtomicInteger} instance tracking the number of rejected requests.
+     *
+     * @return rejected requests counter
+     */
+    protected AtomicInteger rejectedRequests() {
+        return rejectedRequests;
+    }
+
     @Override
     protected Outcome doTryAcquireOutcome(boolean wait) {
 
@@ -132,9 +135,20 @@ abstract class SemaphoreLimitBase extends LimitBase implements Limit {
                                                   startWait,
                                                   endWait);
             }
+            rejectedRequests.getAndIncrement();
             return Outcome.deferredRejection(originName, type(), startWait, endWait);
         }
         rejectedRequests.getAndIncrement();
         return Outcome.immediateRejection(originName, type());
+    }
+
+    record Context(
+            int initialPermits,
+            int queueLength,
+            LimiterHandler handler,
+            Supplier<Long> clock,
+            AtomicInteger concurrentRequests,
+            AtomicInteger rejectedRequests,
+            SemaphoreMetrics semaphoreMetrics) {
     }
 }

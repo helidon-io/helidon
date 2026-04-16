@@ -18,7 +18,10 @@ package io.helidon.common.concurrency.limits;
 
 import java.util.function.Supplier;
 
-class LimitUtil {
+final class LimitUtil {
+    private LimitUtil() {
+    }
+
     static Supplier<Long> clock(ClockConfig config) {
         return config.clock().orElseGet(() -> System::nanoTime);
     }

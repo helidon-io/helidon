@@ -52,48 +52,7 @@ public class FixedLimit extends SemaphoreLimitBase implements RuntimeType.Api<Fi
     private final FixedLimitConfig config;
 
     private FixedLimit(FixedLimitConfig config) {
-        AtomicInteger concurrentRequests = new AtomicInteger();
-        AtomicInteger rejectedRequests = new AtomicInteger();
-
-        int initialPermits;
-        int queueLength;
-        LimitHandlers.LimiterHandler limiterHandler;
-        var clock = LimitUtil.clock(config);
-        SemaphoreMetrics metrics;
-
-        if (config.permits() == 0 && config.semaphore().isEmpty()) {
-            initialPermits = 0;
-            queueLength = 0;
-            limiterHandler = new LimitHandlers.NoOpSemaphoreHandler();
-            metrics = new SemaphoreMetrics(config.enableMetrics(),
-                                           null,
-                                           config.name(),
-                                           concurrentRequests,
-                                           rejectedRequests);
-        } else {
-            Semaphore semaphore = config.semaphore().orElseGet(() -> new Semaphore(config.permits(), config.fair()));
-            initialPermits = semaphore.availablePermits();
-            queueLength = Math.max(0, config.queueLength());
-            metrics = new SemaphoreMetrics(config.enableMetrics(),
-                                           semaphore,
-                                           config.name(),
-                                           concurrentRequests,
-                                           rejectedRequests);
-
-            Supplier<Token> tokenSupplier = () -> new FixedToken(semaphore, metrics, clock, concurrentRequests);
-            limiterHandler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
-                                                                      queueLength,
-                                                                      config.queueTimeout(),
-                                                                      tokenSupplier);
-        }
-
-        super(initialPermits,
-              queueLength,
-              limiterHandler,
-              clock,
-              concurrentRequests,
-              rejectedRequests,
-              metrics);
+        super(context(config));
         this.config = config;
 
     }
@@ -189,6 +148,50 @@ public class FixedLimit extends SemaphoreLimitBase implements RuntimeType.Api<Fi
                     .build();
         }
         return config.build();
+    }
+
+    private static Context context(FixedLimitConfig config) {
+        AtomicInteger concurrentRequests = new AtomicInteger();
+        AtomicInteger rejectedRequests = new AtomicInteger();
+
+        LimitHandlers.LimiterHandler limiterHandler;
+        var clock = LimitUtil.clock(config);
+
+        if (config.permits() == 0 && config.semaphore().isEmpty()) {
+            return new Context(0,
+                               0,
+                               new LimitHandlers.NoOpSemaphoreHandler(),
+                               clock,
+                               concurrentRequests,
+                               rejectedRequests,
+                               new SemaphoreMetrics(config.enableMetrics(),
+                                                    null,
+                                                    config.name(),
+                                                    concurrentRequests,
+                                                    rejectedRequests));
+        }
+
+        Semaphore semaphore = config.semaphore().orElseGet(() -> new Semaphore(config.permits(), config.fair()));
+        int queueLength = Math.max(0, config.queueLength());
+        SemaphoreMetrics metrics = new SemaphoreMetrics(config.enableMetrics(),
+                                       semaphore,
+                                       config.name(),
+                                       concurrentRequests,
+                                       rejectedRequests);
+
+        Supplier<Token> tokenSupplier = () -> new FixedToken(semaphore, metrics, clock, concurrentRequests);
+        limiterHandler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
+                                                                  queueLength,
+                                                                  config.queueTimeout(),
+                                                                  tokenSupplier);
+
+        return new Context(semaphore.availablePermits(),
+                           queueLength,
+                           limiterHandler,
+                           clock,
+                           concurrentRequests,
+                           rejectedRequests,
+                           metrics);
     }
 
     private static class FixedToken implements LimitAlgorithm.Token {

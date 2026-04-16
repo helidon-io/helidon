@@ -225,6 +225,26 @@ public class FixedLimitTest {
     }
 
     @Test
+    public void testDeferredRejectionIncrementsRejectedCounter() {
+        FixedLimit limiter = FixedLimit.builder()
+                .permits(1)
+                .queueLength(1)
+                .queueTimeout(Duration.ofMillis(10))
+                .build();
+
+        LimitAlgorithm.Outcome.Accepted accepted =
+                (LimitAlgorithm.Outcome.Accepted) limiter.tryAcquireOutcome(false);
+
+        LimitAlgorithm.Outcome outcome = limiter.tryAcquireOutcome(true);
+
+        assertThat(outcome.disposition(), is(LimitAlgorithm.Outcome.Disposition.REJECTED));
+        assertThat(outcome.timing(), is(LimitAlgorithm.Outcome.Timing.DEFERRED));
+        assertThat(limiter.rejectedRequests().get(), is(1));
+
+        accepted.token().success();
+    }
+
+    @Test
     public void testDroppedRequestReleasesConcurrentGauge() {
         FixedLimit limiter = FixedLimit.builder()
                 .permits(1)
