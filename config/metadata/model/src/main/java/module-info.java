@@ -20,5 +20,6 @@
 module io.helidon.config.metadata.model {
     requires io.helidon.metadata.hson;
     requires io.helidon.common;
+    requires transitive io.helidon.json;
     exports io.helidon.config.metadata.model;
 }

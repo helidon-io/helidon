@@ -29,6 +29,7 @@ import io.helidon.config.metadata.model.CmModelImpl.CmEnumImpl;
 import io.helidon.config.metadata.model.CmModelImpl.CmModuleImpl;
 import io.helidon.config.metadata.model.CmModelImpl.CmOptionImpl;
 import io.helidon.config.metadata.model.CmModelImpl.CmTypeImpl;
+import io.helidon.json.JsonArray;
 import io.helidon.metadata.hson.Hson;
 
 /**
@@ -58,7 +59,18 @@ public sealed interface CmModel permits CmModelImpl {
      *
      * @return JSON array, never {@code null}
      */
-    Hson.Array toJson();
+    JsonArray toJsonArray();
+
+    /**
+     * Convert to JSON.
+     *
+     * @return HSON array, never {@code null}
+     * @deprecated use {@link #toJsonArray()} instead
+     */
+    @Deprecated(since = "4.5.0")
+    default Hson.Array toJson() {
+        return CmModelImpl.toHson(this);
+    }
 
     /**
      * Create from JSON.
@@ -66,8 +78,20 @@ public sealed interface CmModel permits CmModelImpl {
      * @param jsonArray JSON array
      * @return model
      */
-    static CmModel fromJson(Hson.Array jsonArray) {
+    static CmModel fromJson(JsonArray jsonArray) {
         return CmModelImpl.fromJson(jsonArray);
+    }
+
+    /**
+     * Create from HSON.
+     *
+     * @param jsonArray HSON array
+     * @return model
+     * @deprecated use {@link #fromJson(io.helidon.json.JsonArray)} instead
+     */
+    @Deprecated(since = "4.5.0")
+    static CmModel fromJson(Hson.Array jsonArray) {
+        return CmModelImpl.fromHson(jsonArray);
     }
 
     /**
@@ -77,7 +101,7 @@ public sealed interface CmModel permits CmModelImpl {
      * @return model
      */
     static CmModel fromJson(InputStream is) {
-        return CmModelImpl.fromJson(Hson.parse(is).asArray());
+        return CmModelImpl.fromHson(Hson.parse(is).asArray());
     }
 
     /**
@@ -93,10 +117,7 @@ public sealed interface CmModel permits CmModelImpl {
             while (files.hasMoreElements()) {
                 URL url = files.nextElement();
                 try (InputStream is = url.openStream()) {
-                    var jsonArray = Hson.parse(is).asArray();
-                    for (var struct : jsonArray.getStructs()) {
-                        modules.add(CmModuleImpl.fromJson(struct));
-                    }
+                    modules.addAll(fromJson(is).modules());
                 }
             }
             return new CmModelImpl(Collections.unmodifiableList(modules));

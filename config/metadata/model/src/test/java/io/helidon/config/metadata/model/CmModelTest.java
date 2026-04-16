@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -30,6 +31,9 @@ import io.helidon.config.metadata.model.CmModel.CmAllowedValue;
 import io.helidon.config.metadata.model.CmModel.CmModule;
 import io.helidon.config.metadata.model.CmModel.CmOption;
 import io.helidon.config.metadata.model.CmModel.CmType;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.metadata.hson.Hson;
 
 import org.hamcrest.FeatureMatcher;
@@ -50,7 +54,7 @@ import static org.hamcrest.Matchers.nullValue;
 class CmModelTest {
 
     @Test
-    void testFromJson() {
+    void testFromJsonArray() {
         var is = getClass().getResourceAsStream("/" + CmModel.LOCATION);
         assertThat(is, is(not(nullValue())));
 
@@ -96,15 +100,63 @@ class CmModelTest {
     }
 
     @Test
-    void testToJson() throws IOException {
+    void testFromJsonArraySupplementaryUnicode() {
+        String description = "Smile \uD83D\uDE00";
+        JsonArray jsonArray = JsonArray.create(JsonObject.builder()
+                                                      .set("module", "com.acme")
+                                                      .setValues("types", List.of(JsonObject.builder()
+                                                                                           .set("type",
+                                                                                                "com.acme.AcmeConfig")
+                                                                                           .set("description",
+                                                                                                description)
+                                                                                           .build()))
+                                                      .build());
+
+        var actual = CmModel.fromJson(jsonArray);
+
+        assertThat(actual.modules().get(0).types().get(0).description(), is(Optional.of(description)));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void testFromJsonInputStream() throws IOException {
         var is = getClass().getResourceAsStream("/" + CmModel.LOCATION);
         assertThat(is, is(not(nullValue())));
 
-        var expected = new String(is.readAllBytes());
-        var metadata = CmModel.fromJson(parseJson(new ByteArrayInputStream(expected.getBytes())));
-        var actual = formatJson(metadata.toJson());
+        var bytes = is.readAllBytes();
+        var expected = CmModel.fromJson(parseHson(new ByteArrayInputStream(bytes)));
+        var actual = CmModel.fromJson(new ByteArrayInputStream(bytes));
 
         assertThat(actual, is(expected));
+    }
+
+    @Test
+    void testToJsonArray() throws IOException {
+        var is = getClass().getResourceAsStream("/" + CmModel.LOCATION);
+        assertThat(is, is(not(nullValue())));
+
+        var expected = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        var metadata = CmModel.fromJson(parseJson(
+                new ByteArrayInputStream(expected.getBytes(StandardCharsets.UTF_8))));
+        var actual = formatJson(metadata.toJsonArray());
+
+        assertThat(actual, is(expected));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void testDeprecatedHsonMethods() throws IOException {
+        var is = getClass().getResourceAsStream("/" + CmModel.LOCATION);
+        assertThat(is, is(not(nullValue())));
+
+        var expected = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        var expectedModel = CmModel.fromJson(parseJson(
+                new ByteArrayInputStream(expected.getBytes(StandardCharsets.UTF_8))));
+        var actualModel = CmModel.fromJson(parseHson(
+                new ByteArrayInputStream(expected.getBytes(StandardCharsets.UTF_8))));
+
+        assertThat(actualModel, is(expectedModel));
+        assertThat(formatHson(actualModel.toJson()), is(expected));
     }
 
     @Test
@@ -124,8 +176,9 @@ class CmModelTest {
         assertThat(is, is(not(nullValue())));
 
         var expected = CmModel.fromJson(parseJson(is));
-        var expectedJson = formatJson(expected.toJson());
-        var actual = CmModel.fromJson(parseJson(new ByteArrayInputStream(expectedJson.getBytes())));
+        var expectedJson = formatJson(expected.toJsonArray());
+        var actual = CmModel.fromJson(parseJson(
+                new ByteArrayInputStream(expectedJson.getBytes(StandardCharsets.UTF_8))));
 
         assertThat(actual, is(expected));
     }
@@ -140,16 +193,25 @@ class CmModelTest {
         assertThat(option.simpleTypeName(), is("AcmeMode"));
     }
 
-    static Hson.Array parseJson(InputStream is) {
+    static JsonArray parseJson(InputStream is) {
+        return JsonParser.create(is).readJsonArray();
+    }
+
+    static Hson.Array parseHson(InputStream is) {
         return Hson.parse(is).asArray();
     }
 
-    static String formatJson(Hson.Array jsonArray) {
+    static String formatJson(JsonArray jsonArray) {
+        return formatHson(Hson.parse(new ByteArrayInputStream(jsonArray.toString().getBytes(StandardCharsets.UTF_8)))
+                                  .asArray());
+    }
+
+    static String formatHson(Hson.Array jsonArray) {
         var baos = new ByteArrayOutputStream();
-        try (var printer = new PrintWriter(baos)) {
+        try (var printer = new PrintWriter(baos, true, StandardCharsets.UTF_8)) {
             jsonArray.write(printer, true);
         }
-        return baos.toString();
+        return baos.toString(StandardCharsets.UTF_8);
     }
 
     static <T, U> Matcher<T> hasProperty(String name, Function<T, U> extractor, Matcher<U> subMatcher) {

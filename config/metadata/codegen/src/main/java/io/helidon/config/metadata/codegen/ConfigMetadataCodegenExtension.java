@@ -17,8 +17,6 @@
 package io.helidon.config.metadata.codegen;
 
 import java.io.ByteArrayOutputStream;
-import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
@@ -33,6 +31,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.config.metadata.model.CmModel;
 import io.helidon.config.metadata.model.CmModel.CmModule;
 import io.helidon.config.metadata.model.CmModel.CmType;
+import io.helidon.json.JsonGenerator;
 
 class ConfigMetadataCodegenExtension implements CodegenExtension {
     private static final String META_FILE = "META-INF/helidon/config-metadata.json";
@@ -73,9 +72,8 @@ class ConfigMetadataCodegenExtension implements CodegenExtension {
                     .map(e -> CmModule.of(e.getKey(), new ArrayList<>(e.getValue())))
                     .toList());
             var baos = new ByteArrayOutputStream();
-            try (var w = new PrintWriter(baos, true, StandardCharsets.UTF_8)) {
-                var jsonArray = model.toJson();
-                jsonArray.write(w);
+            try (JsonGenerator generator = JsonGenerator.create(baos)) {
+                model.toJsonArray().toJson(generator);
             }
             ctx.filer().writeResource(baos.toByteArray(), META_FILE);
         }

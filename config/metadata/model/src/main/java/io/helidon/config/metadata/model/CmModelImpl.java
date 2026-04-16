@@ -15,11 +15,18 @@
  */
 package io.helidon.config.metadata.model;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
+import io.helidon.json.JsonValue;
 import io.helidon.metadata.hson.Hson;
 
 /**
@@ -28,17 +35,88 @@ import io.helidon.metadata.hson.Hson;
  * @param modules modules
  */
 record CmModelImpl(List<CmModule> modules) implements CmModel {
+    private static final String TEMPORARY_VALUE_KEY = "value";
+    private static final Hson.Value<?> HSON_NULL = Hson.Struct.builder()
+            .setNull(TEMPORARY_VALUE_KEY)
+            .build()
+            .value(TEMPORARY_VALUE_KEY)
+            .orElseThrow();
 
-    static CmModel fromJson(Hson.Array array) {
+    static CmModel fromJson(JsonArray array) {
+        return fromHson(toHsonArray(array));
+    }
+
+    static CmModel fromHson(Hson.Array array) {
         return new CmModelImpl(
                 array.getStructs().stream().map(CmModuleImpl::fromJson).toList());
     }
 
-    @Override
-    public Hson.Array toJson() {
-        return Hson.Array.create(modules.stream()
+    static Hson.Array toHson(CmModel model) {
+        return Hson.Array.create(model.modules().stream()
                 .map(CmModuleImpl::toJson)
                 .toList());
+    }
+
+    static byte[] hsonBytes(Hson.Value<?> value) {
+        var baos = new ByteArrayOutputStream();
+        try (var printer = new PrintWriter(baos, true, StandardCharsets.UTF_8)) {
+            value.write(printer);
+            printer.flush();
+            return baos.toByteArray();
+        }
+    }
+
+    private static Hson.Array toHsonArray(JsonArray array) {
+        return Hson.Array.create(array.values().stream()
+                                       .map(CmModelImpl::toHsonValue)
+                                       .toList());
+    }
+
+    private static Hson.Struct toHsonStruct(JsonObject object) {
+        var builder = Hson.Struct.builder();
+        object.keysAsStrings().forEach(key -> builder.set(key, toHsonValue(object.value(key).orElseThrow())));
+        return builder.build();
+    }
+
+    private static Hson.Value<?> toHsonValue(JsonValue value) {
+        return switch (value.type()) {
+        case ARRAY -> toHsonArray(value.asArray());
+        case OBJECT -> toHsonStruct(value.asObject());
+        case STRING -> hsonString(value.asString().value());
+        case NUMBER -> hsonNumber(value.asNumber().bigDecimalValue());
+        case BOOLEAN -> hsonBoolean(value.asBoolean().value());
+        case NULL -> HSON_NULL;
+        case UNKNOWN -> throw new IllegalArgumentException("Unsupported JsonValue type: " + value.type());
+        };
+    }
+
+    private static Hson.Value<?> hsonString(String value) {
+        return Hson.Struct.builder()
+                .set(TEMPORARY_VALUE_KEY, value)
+                .build()
+                .value(TEMPORARY_VALUE_KEY)
+                .orElseThrow();
+    }
+
+    private static Hson.Value<?> hsonNumber(java.math.BigDecimal value) {
+        return Hson.Struct.builder()
+                .set(TEMPORARY_VALUE_KEY, value)
+                .build()
+                .value(TEMPORARY_VALUE_KEY)
+                .orElseThrow();
+    }
+
+    private static Hson.Value<?> hsonBoolean(boolean value) {
+        return Hson.Struct.builder()
+                .set(TEMPORARY_VALUE_KEY, value)
+                .build()
+                .value(TEMPORARY_VALUE_KEY)
+                .orElseThrow();
+    }
+
+    @Override
+    public JsonArray toJsonArray() {
+        return JsonParser.create(hsonBytes(toHson(this))).readJsonArray();
     }
 
     /**

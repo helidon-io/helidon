@@ -21,8 +21,8 @@
  */
 module io.helidon.config.metadata.codegen {
     requires io.helidon.codegen;
-    requires io.helidon.metadata.hson;
     requires io.helidon.config.metadata.model;
+    requires io.helidon.json;
 
     exports io.helidon.config.metadata.codegen;
 
