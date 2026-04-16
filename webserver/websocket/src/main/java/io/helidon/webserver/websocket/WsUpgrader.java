@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.websocket;
 
+import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -27,6 +28,7 @@ import java.util.Set;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
@@ -38,6 +40,7 @@ import io.helidon.http.NotFoundException;
 import io.helidon.http.RequestException;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.websocket.WsListener;
@@ -171,24 +174,27 @@ public class WsUpgrader implements Http1Upgrader {
         }
 
         // write switch protocol response including headers from listener
-        DataWriter dataWriter = ctx.dataWriter();
         String switchingProtocols = SWITCHING_PROTOCOL_PREFIX + hash(ctx, wsKey);
-        dataWriter.write(BufferData.create(switchingProtocols.getBytes(US_ASCII)));
-        BufferData separator = BufferData.create(HEADERS_SEPARATOR);
-        dataWriter.write(separator);
-        upgradeHeaders.ifPresent(hs -> {
-            BufferData headerData = BufferData.growing(128);
-            hs.forEach(h -> h.writeHttp1Header(headerData));
-            dataWriter.write(headerData);
-        });
-        dataWriter.write(separator.rewind());
-        dataWriter.flush();
+        BufferData responseData = BufferData.growing(128);
+        responseData.write(switchingProtocols.getBytes(US_ASCII));
+        responseData.write(HEADERS_SEPARATOR);
+        upgradeHeaders.ifPresent(hs -> hs.forEach(h -> h.writeHttp1Header(responseData)));
+        responseData.write(HEADERS_SEPARATOR);
+        writeUpgradeResponse(ctx.dataWriter(), responseData);
 
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE, "Upgraded to websocket version " + version);
         }
 
         return WsConnection.create(ctx, prologue, upgradeHeaders.orElse(EMPTY_HEADERS), wsKey, wsListener);
+    }
+
+    private static void writeUpgradeResponse(DataWriter dataWriter, BufferData responseData) {
+        try {
+            dataWriter.writeNow(responseData);
+        } catch (SocketWriterException | UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write websocket upgrade response", e);
+        }
     }
 
     protected boolean anyOrigin() {

@@ -133,7 +133,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         this.connectionWriter = new Http2ConnectionWriter(ctx,
                                                           ctx.dataWriter(),
                                                           List.of(new Http2LoggingFrameListener("send")));
-        this.connectionChecks = new Http2ConnectionChecks(http2Config, connectionWriter, this);
+        this.connectionChecks = new Http2ConnectionChecks(http2Config, this);
         this.subProviders = subProviders;
         this.requestDynamicTable = Http2Headers.DynamicTable.create(
                 serverSettings.value(Http2Setting.HEADER_TABLE_SIZE));
@@ -764,7 +764,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         state = State.READ_FRAME;
     }
 
-    private void writeConnectionFrame(Http2FrameData frame) {
+    void writeConnectionFrame(Http2FrameData frame) {
         try {
             connectionWriter.write(frame);
         } catch (UncheckedIOException e) {

@@ -66,4 +66,33 @@ class Http2ConnectionTest {
                 () -> assertThat(exception.getCause().getCause(), instanceOf(SocketException.class))
         );
     }
+
+    @Test
+    void closeConnectionWrapsUncheckedIOException() {
+        DataWriter writer = mock(DataWriter.class);
+        doThrow(new UncheckedIOException(new SocketException("Broken pipe")))
+                .when(writer)
+                .writeNow(any(BufferData.class));
+
+        Http2Config config = Http2Config.builder()
+                .maxRapidResets(0)
+                .build();
+        ConnectionContext ctx = mock(ConnectionContext.class);
+        when(ctx.router()).thenReturn(Router.empty());
+        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
+        when(ctx.dataWriter()).thenReturn(writer);
+        when(ctx.dataReader()).thenReturn(mock(DataReader.class));
+
+        Http2Connection connection = new Http2Connection(ctx, config, List.of());
+        Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
+
+        checks.madeYouResetCheck(0);
+        ServerConnectionException exception = assertThrows(ServerConnectionException.class,
+                                                           () -> checks.madeYouResetCheck(0));
+
+        assertAll(
+                () -> assertThat(exception.getCause(), instanceOf(UncheckedIOException.class)),
+                () -> assertThat(exception.getCause().getCause(), instanceOf(SocketException.class))
+        );
+    }
 }

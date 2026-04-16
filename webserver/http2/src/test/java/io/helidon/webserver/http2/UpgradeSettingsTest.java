@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.http2;
 
+import java.io.UncheckedIOException;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -41,6 +43,7 @@ import io.helidon.http.http2.Http2Util;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
+import io.helidon.webserver.ServerConnectionException;
 
 import org.junit.jupiter.api.Test;
 
@@ -50,13 +53,16 @@ import static io.helidon.http.http2.Http2Setting.INITIAL_WINDOW_SIZE;
 import static io.helidon.http.http2.Http2Setting.MAX_CONCURRENT_STREAMS;
 import static io.helidon.http.http2.Http2Setting.MAX_FRAME_SIZE;
 import static io.helidon.http.http2.Http2Setting.MAX_HEADER_LIST_SIZE;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -166,6 +172,31 @@ class UpgradeSettingsTest {
         assertThat(goAway.errorCode(), is(Http2ErrorCode.PROTOCOL));
         assertThat(new String(payloadBytes, 8, payloadBytes.length - 8, StandardCharsets.UTF_8),
                    is("Frame size must be between 2^14 and 2^24-1, but is: 0"));
+    }
+
+    @Test
+    void upgradeWriteWrapsUncheckedIOException() {
+        DataWriter dataWriter = mock(DataWriter.class);
+        doThrow(new UncheckedIOException(new SocketException("Broken pipe")))
+                .when(dataWriter)
+                .writeNow(any(BufferData.class));
+
+        ConnectionContext connectionContext = mock(ConnectionContext.class);
+        when(connectionContext.router()).thenReturn(Router.empty());
+        when(connectionContext.listenerContext()).thenReturn(mock(ListenerContext.class));
+        when(connectionContext.dataWriter()).thenReturn(dataWriter);
+        when(connectionContext.dataReader()).thenReturn(mock(DataReader.class));
+
+        WritableHeaders<?> headers = WritableHeaders.create().add(HeaderValues.create("HTTP2-Settings", "AAEAABAAAAIAAAAB"));
+        Http2Upgrader http2Upgrader = Http2Upgrader.create(Http2Config.create());
+
+        ServerConnectionException exception = assertThrows(ServerConnectionException.class,
+                                                           () -> http2Upgrader.upgrade(connectionContext, prologue, headers));
+
+        assertAll(
+                () -> assertThat(exception.getCause(), instanceOf(UncheckedIOException.class)),
+                () -> assertThat(exception.getCause().getCause(), instanceOf(SocketException.class))
+        );
     }
 
     Http2Settings upgrade(String http2Settings) {
