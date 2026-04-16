@@ -241,6 +241,7 @@ interface ListenerConfigBlueprint {
     /**
      * Limits the number of connections that can be opened at a single point in time.
      * Defaults to {@code -1}, meaning "unlimited" - what the system allows.
+     * {@code 0} has the same meaning as {@code -1} - unlimited number of connections.
      *
      * @return number of TCP connections that can be opened to this listener, regardless of protocol
      */
@@ -251,6 +252,7 @@ interface ListenerConfigBlueprint {
     /**
      * Limits the number of requests that can be executed at the same time (the number of active virtual threads of requests).
      * Defaults to {@code -1}, meaning "unlimited" - what the system allows.
+     * {@code 0} has the same meaning as {@code -1} - unlimited number of requests.
      * Also make sure that this number is higher than the expected time it takes to handle a single request in your application,
      * as otherwise you may stop in-progress requests.
      * <p>

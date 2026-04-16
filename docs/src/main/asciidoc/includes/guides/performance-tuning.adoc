@@ -43,9 +43,9 @@ server:
   # These are used to prevent unbounded resource consumption of the server
   idle-connection-period: PT2M  # Check idle connections every 2 minutes
   idle-connection-timeout: PT5M # Close connections that have been idle for 5 minutes
-  max-concurrent-requests: NNNN # Maximum number of concurrent requests. -1 is unlimited.
-  max-requests-per-second: NNNN # Maximum throughput of requests over a one-second duration. -1 is unlimited.
-  max-tcp-connections: NNNN     # Max number of concurrent tcp connections. -1 is unlimited.
+  max-concurrent-requests: NNNN # Maximum number of concurrent requests. 0 or -1 is unlimited.
+  # For throughput limiting, use server.concurrency-limit.throughput.amount (0 is unlimited) with a matching duration.
+  max-tcp-connections: NNNN     # Max number of concurrent tcp connections. 0 or -1 is unlimited.
   max-in-memory-entity: NNNNNN  # Entities smaller than this are buffered in memory vs streamed (bytes)
   max-payload-size: NNNNNNN     # Reject requests with payload sizes greater than this. -1 is unlimited (bytes)
 

@@ -17,7 +17,6 @@
 package io.helidon.common.concurrency.limits;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
@@ -30,8 +29,7 @@ import io.helidon.config.Config;
  * congestion control. AIMD combines linear growth of the congestion window when there is no congestion with an exponential
  * reduction when congestion is detected.
  */
-@SuppressWarnings("removal")
-public class AimdLimit extends LimitAlgorithmDeprecatedBase implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLimitConfig> {
+public class AimdLimit implements LimitAlgorithm, Limit, RuntimeType.Api<AimdLimitConfig> {
 
     /**
      * Default length of the queue.
@@ -122,12 +120,6 @@ public class AimdLimit extends LimitAlgorithmDeprecatedBase implements Limit, Se
         return aimdLimitImpl.tryAcquireOutcome(wait);
     }
 
-    @SuppressWarnings("removal")
-    @Override
-    public Semaphore semaphore() {
-        return aimdLimitImpl.semaphore();
-    }
-
     @Override
     public String name() {
         return config.name();
@@ -150,18 +142,6 @@ public class AimdLimit extends LimitAlgorithmDeprecatedBase implements Limit, Se
 
     @Override
     public void init(String socketName) {
-        aimdLimitImpl.initMetrics(socketName, config);
-    }
-
-    @Deprecated(since = "4.3.0", forRemoval = true)
-    @Override
-    <T> Result<T> doInvokeObs(Callable<T> callable) throws Exception {
-        return call(callable);
-    }
-
-    @Deprecated(since = "4.3.0", forRemoval = true)
-    @Override
-    Outcome doTryAcquireObs(boolean wait) {
-        return tryAcquireOutcome(wait);
+        aimdLimitImpl.init(socketName);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,7 @@ interface AimdLimitConfigBlueprint extends Prototype.Factory<AimdLimit> {
      * We use {@link java.util.concurrent.Semaphore#getQueueLength()} in the
      * {@link io.helidon.common.concurrency.limits.AimdLimit} implementation.
      * Default value is {@value AimdLimit#DEFAULT_QUEUE_LENGTH}.
-     * If set to {code 0}, there is no queueing.
+     * If set to {@code 0}, there is no queueing.
      *
      * @return number of requests to enqueue
      */
