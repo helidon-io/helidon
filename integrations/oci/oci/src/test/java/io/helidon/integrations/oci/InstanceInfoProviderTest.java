@@ -83,6 +83,15 @@ class InstanceInfoProviderTest {
                 instanceInfo.compartmentId(),
                 instanceInfo.tenantId());
         assertInstanceInfoValues(
+                instanceInfo.helidonJsonObject().stringValue(ImdsInstanceInfoProvider.CANONICAL_REGION_NAME).orElseThrow(),
+                instanceInfo.helidonJsonObject().stringValue(ImdsInstanceInfoProvider.DISPLAY_NAME).orElseThrow(),
+                instanceInfo.helidonJsonObject().stringValue(ImdsInstanceInfoProvider.HOST_NAME).orElseThrow(),
+                instanceInfo.helidonJsonObject().stringValue(ImdsInstanceInfoProvider.REGION).orElseThrow(),
+                instanceInfo.helidonJsonObject().stringValue(ImdsInstanceInfoProvider.OCI_AD_NAME).orElseThrow(),
+                instanceInfo.helidonJsonObject().stringValue(ImdsInstanceInfoProvider.FAULT_DOMAIN).orElseThrow(),
+                instanceInfo.helidonJsonObject().stringValue(ImdsInstanceInfoProvider.COMPARTMENT_ID).orElseThrow(),
+                instanceInfo.helidonJsonObject().stringValue(ImdsInstanceInfoProvider.TENANT_ID).orElseThrow());
+        assertInstanceInfoValues(
                 instanceInfo.jsonObject().getString(ImdsInstanceInfoProvider.CANONICAL_REGION_NAME),
                 instanceInfo.jsonObject().getString(ImdsInstanceInfoProvider.DISPLAY_NAME),
                 instanceInfo.jsonObject().getString(ImdsInstanceInfoProvider.HOST_NAME),

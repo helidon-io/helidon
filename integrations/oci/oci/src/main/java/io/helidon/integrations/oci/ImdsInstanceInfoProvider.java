@@ -16,15 +16,17 @@
 
 package io.helidon.integrations.oci;
 
+import java.io.StringReader;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.json.JsonObject;
 import io.helidon.service.registry.Service;
 
-import jakarta.json.JsonObject;
+import jakarta.json.Json;
 
 // the type must be fully qualified, as it is code generated
 @Service.Provider
@@ -56,17 +58,28 @@ class ImdsInstanceInfoProvider implements Supplier<Optional<io.helidon.integrati
         JsonObject metadataJson = HelidonOci.imdsContent(ociConfig, HelidonOci.imdsUri(ociConfig));
         if (metadataJson != null) {
             return ImdsInstanceInfo.builder()
-                    .displayName(metadataJson.getString(DISPLAY_NAME))
-                    .hostName(metadataJson.getString(HOST_NAME))
-                    .canonicalRegionName(metadataJson.getString(CANONICAL_REGION_NAME))
-                    .region(metadataJson.getString(REGION))
-                    .ociAdName(metadataJson.getString(OCI_AD_NAME))
-                    .faultDomain(metadataJson.getString(FAULT_DOMAIN))
-                    .compartmentId(metadataJson.getString(COMPARTMENT_ID))
-                    .tenantId(metadataJson.getString(TENANT_ID))
-                    .jsonObject(metadataJson)
+                    .displayName(requiredString(metadataJson, DISPLAY_NAME))
+                    .hostName(requiredString(metadataJson, HOST_NAME))
+                    .canonicalRegionName(requiredString(metadataJson, CANONICAL_REGION_NAME))
+                    .region(requiredString(metadataJson, REGION))
+                    .ociAdName(requiredString(metadataJson, OCI_AD_NAME))
+                    .faultDomain(requiredString(metadataJson, FAULT_DOMAIN))
+                    .compartmentId(requiredString(metadataJson, COMPARTMENT_ID))
+                    .tenantId(requiredString(metadataJson, TENANT_ID))
+                    .jsonObject(toJakartaJsonObject(metadataJson))
                     .build();
         }
         return null;
+    }
+
+    private static String requiredString(JsonObject metadataJson, String key) {
+        return metadataJson.stringValue(key)
+                .orElseThrow(() -> new IllegalStateException("Missing IMDS metadata field: " + key));
+    }
+
+    private static jakarta.json.JsonObject toJakartaJsonObject(JsonObject metadataJson) {
+        try (var reader = Json.createReader(new StringReader(metadataJson.toString()))) {
+            return reader.readObject();
+        }
     }
 }
