@@ -10,6 +10,14 @@ ACME Metrics observer configuration
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
 
 <table>
@@ -21,12 +29,12 @@ ACME Metrics observer configuration
 <tbody>
 <tr>
 <td><code>endpoint</code></td>
-<td><code>String</code></td>
+<td class="cm-type-cell"><code class="cm-truncate-value">String</code></td>
 <td>Observation endpoint</td>
 </tr>
 <tr>
 <td><code>buckets</code></td>
-<td><code>List&lt;String&gt;</code></td>
+<td class="cm-type-cell"><code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code></td>
 <td>Published buckets</td>
 </tr>
 </tbody>

@@ -17,15 +17,41 @@ limitations under the License.
 <table>
 <thead>
 <tr>
-<th>Key</th>{{#if hasTypes}}<th>Type</th>{{/if}}{{#if hasDefaults}}<th>Default Value</th>{{/if}}<th>Description</th>
+<th>Key</th>
+{{~#if hasTypes~}}
+<th>Type</th>
+{{~/if}}
+{{~#if hasDefaults~}}
+<th>Default</th>
+{{~/if~}}
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 {{~#each rows}}
 <tr>
-<td>{{#if anchor}}<a id="{{anchor}}"></a>{{/if}}{{#if fileName}}<a href="{{fileName}}"><code>{{key}}</code></a>{{else}}<code>{{key}}</code>{{/if}}</td>{{#if ../hasTypes}}
-<td>{{#if type}}<code>{{type}}</code>{{/if}}</td>{{/if}}{{#if ../hasDefaults}}
-<td>{{#if defaultValue}}<code>{{defaultValue}}</code>{{/if}}</td>{{/if}}
+<td>
+{{~#if anchor~}}
+<a id="{{anchor}}"></a>
+{{~/if}}
+{{~#if fileName~}}
+<a href="{{fileName}}"><code>{{key}}</code></a>{{else}}<code>{{key}}</code>
+{{~/if~}}
+</td>
+{{~#if ../hasTypes}}
+<td class="cm-type-cell">
+{{~#if type~}}
+<code class="cm-truncate-value"{{#if hasTypeTooltip}} title="{{type}}"{{/if}}>{{type}}</code>
+{{~/if~}}
+</td>
+{{~/if}}
+{{~#if ../hasDefaults}}
+<td class="cm-default-cell">
+{{~#if defaultValue~}}
+<code class="cm-truncate-value"{{#if hasDefaultTooltip}} title="{{defaultValue}}"{{/if}}>{{defaultValue}}</code>
+{{~/if~}}
+</td>
+{{~/if}}
 <td>{{{description}}}</td>
 </tr>
 {{~/each}}

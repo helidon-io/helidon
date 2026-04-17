@@ -10,6 +10,14 @@ ACME Audit configuration
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
 
 <table>
@@ -21,12 +29,12 @@ ACME Audit configuration
 <tbody>
 <tr>
 <td><code>paths</code></td>
-<td><code>Map&lt;String, String&gt;</code></td>
+<td class="cm-type-cell"><code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code></td>
 <td>Audited paths</td>
 </tr>
 <tr>
 <td><code>strict</code></td>
-<td><code>Boolean</code></td>
+<td class="cm-type-cell"><code class="cm-truncate-value">Boolean</code></td>
 <td>Fail on error</td>
 </tr>
 </tbody>

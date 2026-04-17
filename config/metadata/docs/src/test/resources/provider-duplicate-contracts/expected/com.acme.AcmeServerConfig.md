@@ -10,6 +10,14 @@ ACME server configuration.
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
 
 <table>
@@ -21,12 +29,12 @@ ACME server configuration.
 <tbody>
 <tr>
 <td><a id="features"></a><a href="com.acme.AcmeFeature.md"><code>features</code></a></td>
-<td><code>AcmeFeature</code></td>
+<td class="cm-type-cell"><code class="cm-truncate-value" title="AcmeFeature">AcmeFeature</code></td>
 <td>Feature contract</td>
 </tr>
 <tr>
 <td><a id="plugins"></a><a href="com.acme.AcmePlugin.md"><code>plugins</code></a></td>
-<td><code>AcmePlugin</code></td>
+<td class="cm-type-cell"><code class="cm-truncate-value">AcmePlugin</code></td>
 <td>Plugin contract</td>
 </tr>
 </tbody>

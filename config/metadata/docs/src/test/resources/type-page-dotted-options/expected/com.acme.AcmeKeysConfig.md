@@ -10,6 +10,14 @@ Keys configuration.
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
 
 <table>
@@ -21,12 +29,12 @@ Keys configuration.
 <tbody>
 <tr>
 <td><a id="group"></a><a href="io.helidon.keys.GroupConfig.md"><code>group</code></a></td>
-<td></td>
+<td class="cm-type-cell"></td>
 <td>Configuration for group</td>
 </tr>
 <tr>
 <td><a id="resource"></a><a href="com.acme.AcmeResourceConfig.md"><code>resource</code></a></td>
-<td><code>AcmeResourceConfig</code></td>
+<td class="cm-type-cell"><code class="cm-truncate-value" title="AcmeResourceConfig">AcmeResourceConfig</code></td>
 <td>Top-level resource.</td>
 </tr>
 </tbody>

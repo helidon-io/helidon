@@ -10,6 +10,14 @@ Store configuration.
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
 
 <table>
@@ -21,17 +29,17 @@ Store configuration.
 <tbody>
 <tr>
 <td><a id="ivf-index"></a><a href="com.acme.AcmeIvfIndexConfig.md"><code>ivf-index</code></a></td>
-<td><code>AcmeIvfIndexConfig</code></td>
+<td class="cm-type-cell"><code class="cm-truncate-value" title="AcmeIvfIndexConfig">AcmeIvfIndexConfig</code></td>
 <td>IVF index</td>
 </tr>
 <tr>
 <td><a id="json-index"></a><a href="com.acme.AcmeJsonIndexConfig.md"><code>json-index</code></a></td>
-<td><code>AcmeJsonIndexConfig</code></td>
+<td class="cm-type-cell"><code class="cm-truncate-value" title="AcmeJsonIndexConfig">AcmeJsonIndexConfig</code></td>
 <td>JSON index</td>
 </tr>
 <tr>
 <td><code>data-source</code></td>
-<td><code>String</code></td>
+<td class="cm-type-cell"><code class="cm-truncate-value">String</code></td>
 <td>Data source</td>
 </tr>
 </tbody>

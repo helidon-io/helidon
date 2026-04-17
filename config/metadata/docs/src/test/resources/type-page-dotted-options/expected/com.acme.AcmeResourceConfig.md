@@ -10,6 +10,14 @@ Resource configuration.
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
 
 <table>
@@ -21,7 +29,7 @@ Resource configuration.
 <tbody>
 <tr>
 <td><code>location</code></td>
-<td><code>String</code></td>
+<td class="cm-type-cell"><code class="cm-truncate-value">String</code></td>
 <td>Resource location.</td>
 </tr>
 </tbody>

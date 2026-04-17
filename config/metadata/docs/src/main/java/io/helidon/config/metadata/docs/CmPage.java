@@ -45,6 +45,14 @@ record CmPage(Kind kind,
                String description,
                String fileName,
                String anchor) {
+
+        boolean hasTypeTooltip() {
+            return type.length() > 10;
+        }
+
+        boolean hasDefaultTooltip() {
+            return defaultValue.length() > 10;
+        }
     }
 
     record Usage(String path, String fileName, String anchor) {

@@ -10,6 +10,14 @@ Helper configuration.
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
 
 <table>
@@ -21,12 +29,12 @@ Helper configuration.
 <tbody>
 <tr>
 <td><a id="nested"></a><a href="com.acme.AcmeNestedConfig.md"><code>nested</code></a></td>
-<td><code>AcmeNestedConfig</code></td>
+<td class="cm-type-cell"><code class="cm-truncate-value" title="AcmeNestedConfig">AcmeNestedConfig</code></td>
 <td>Nested</td>
 </tr>
 <tr>
 <td><code>enabled</code></td>
-<td><code>Boolean</code></td>
+<td class="cm-type-cell"><code class="cm-truncate-value">Boolean</code></td>
 <td>Enabled</td>
 </tr>
 </tbody>

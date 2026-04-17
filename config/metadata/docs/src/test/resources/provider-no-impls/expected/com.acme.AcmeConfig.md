@@ -10,6 +10,14 @@ ACME configuration.
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
 
 <table>
@@ -21,7 +29,7 @@ ACME configuration.
 <tbody>
 <tr>
 <td><a id="manager"></a><a href="com.acme.AcmeManager.md"><code>manager</code></a></td>
-<td><code>AcmeManager</code></td>
+<td class="cm-type-cell"><code class="cm-truncate-value" title="AcmeManager">AcmeManager</code></td>
 <td>Manager contract</td>
 </tr>
 </tbody>

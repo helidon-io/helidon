@@ -10,6 +10,14 @@ ACME Logging configuration
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
 
 <table>
@@ -21,7 +29,7 @@ ACME Logging configuration
 <tbody>
 <tr>
 <td><a id="loggers"></a><a href="com.acme.AcmeLoggerConfig.md"><code>loggers</code></a></td>
-<td><code>List&lt;AcmeLoggerConfig&gt;</code></td>
+<td class="cm-type-cell"><code class="cm-truncate-value" title="List&lt;AcmeLoggerConfig&gt;">List&lt;AcmeLoggerConfig&gt;</code></td>
 <td>Loggers</td>
 </tr>
 </tbody>
