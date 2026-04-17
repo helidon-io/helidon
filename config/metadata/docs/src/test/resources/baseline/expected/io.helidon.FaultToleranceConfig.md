@@ -20,19 +20,27 @@ Configuration for fault-tolerance
     }
 </style>
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="bulkheads"></a><a href="com.acme.AcmeBulkheadConfig.md"><code>bulkheads</code></a></td>
+<td>
+<a id="bulkheads"></a>
+<a href="com.acme.AcmeBulkheadConfig.md">
+<code>bulkheads</code>
+</a>
+</td>
 <td>Configuration for bulkheads</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

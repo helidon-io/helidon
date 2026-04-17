@@ -8,19 +8,27 @@
     }
 </style>
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="clients"></a><a href="com.acme.AcmeClientsConfig.md"><code>clients</code></a></td>
+<td>
+<a id="clients"></a>
+<a href="com.acme.AcmeClientsConfig.md">
+<code>clients</code>
+</a>
+</td>
 <td>Configuration for clients</td>
 </tr>
 </tbody>
 </table>
+
 
 ---
 

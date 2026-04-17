@@ -20,25 +20,37 @@ ACME Audit configuration
     }
 </style>
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>paths</code></td>
-<td class="cm-type-cell"><code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code></td>
+<td>
+<code>paths</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+</td>
 <td>Audited paths</td>
 </tr>
 <tr>
-<td><code>strict</code></td>
-<td class="cm-type-cell"><code class="cm-truncate-value">Boolean</code></td>
+<td>
+<code>strict</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
 <td>Fail on error</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

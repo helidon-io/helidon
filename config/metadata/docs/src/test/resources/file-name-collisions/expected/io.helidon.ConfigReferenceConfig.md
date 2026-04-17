@@ -20,19 +20,24 @@ Configuration for config_reference
     }
 </style>
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>child</code></td>
+<td>
+<code>child</code>
+</td>
 <td>Configuration for child</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

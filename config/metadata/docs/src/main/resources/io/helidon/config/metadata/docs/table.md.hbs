@@ -13,48 +13,51 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 }}
-{{~#if this~}}
+{{#if this~}}
 <table>
 <thead>
 <tr>
 <th>Key</th>
-{{~#if hasTypes~}}
+{{#if hasTypes~}}
 <th>Type</th>
-{{~/if}}
+{{/if}}
 {{~#if hasDefaults~}}
 <th>Default</th>
-{{~/if~}}
+{{/if~}}
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-{{~#each rows}}
+{{#each rows~}}
 <tr>
 <td>
-{{~#if anchor~}}
+{{#if anchor~}}
 <a id="{{anchor}}"></a>
-{{~/if}}
+{{/if}}
 {{~#if fileName~}}
-<a href="{{fileName}}"><code>{{key}}</code></a>{{else}}<code>{{key}}</code>
-{{~/if~}}
+<a href="{{fileName}}">
+<code>{{key}}</code>
+</a>
+{{/if}}
+{{~#unless fileName~}}
+<code>{{key}}</code>
+{{/unless~}}
 </td>
-{{~#if ../hasTypes}}
+{{#if ../hasTypes~}}
 <td class="cm-type-cell">
-{{~#if type~}}
+{{#if type~}}
 <code class="cm-truncate-value"{{#if hasTypeTooltip}} title="{{type}}"{{/if}}>{{type}}</code>
-{{~/if~}}
-</td>
-{{~/if}}
-{{~#if ../hasDefaults}}
+{{/if}}</td>
+{{/if}}
+{{~#if ../hasDefaults~}}
 <td class="cm-default-cell">
-{{~#if defaultValue~}}
+{{#if defaultValue~}}
 <code class="cm-truncate-value"{{#if hasDefaultTooltip}} title="{{defaultValue}}"{{/if}}>{{defaultValue}}</code>
-{{~/if~}}
+{{/if~}}
 </td>
-{{~/if}}
+{{/if~}}
 <td>{{{description}}}</td>
 </tr>
-{{~/each}}
-</tbody>
+{{/each}}</tbody>
 </table>
-{{~/if~}}
+{{~/if}}

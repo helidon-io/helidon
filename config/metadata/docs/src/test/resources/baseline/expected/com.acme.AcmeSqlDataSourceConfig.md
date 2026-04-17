@@ -20,27 +20,43 @@ ACME SQL data source configuration
     }
 </style>
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>max-pool-size</code></td>
-<td class="cm-type-cell"><code class="cm-truncate-value">Integer</code></td>
-<td class="cm-default-cell"><code class="cm-truncate-value">20</code></td>
+<td>
+<code>max-pool-size</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">20</code>
+</td>
 <td>Maximum pool size</td>
 </tr>
 <tr>
-<td><code>url</code></td>
-<td class="cm-type-cell"><code class="cm-truncate-value">String</code></td>
-<td class="cm-default-cell"></td>
+<td>
+<code>url</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>JDBC URL</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

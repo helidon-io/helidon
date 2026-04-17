@@ -20,20 +20,31 @@ ACME Logging configuration
     }
 </style>
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="loggers"></a><a href="com.acme.AcmeLoggerConfig.md"><code>loggers</code></a></td>
-<td class="cm-type-cell"><code class="cm-truncate-value" title="List&lt;AcmeLoggerConfig&gt;">List&lt;AcmeLoggerConfig&gt;</code></td>
+<td>
+<a id="loggers"></a>
+<a href="com.acme.AcmeLoggerConfig.md">
+<code>loggers</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;AcmeLoggerConfig&gt;">List&lt;AcmeLoggerConfig&gt;</code>
+</td>
 <td>Loggers</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

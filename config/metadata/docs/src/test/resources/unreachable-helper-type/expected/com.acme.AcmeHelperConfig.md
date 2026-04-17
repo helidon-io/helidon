@@ -20,25 +20,40 @@ Helper configuration.
     }
 </style>
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="nested"></a><a href="com.acme.AcmeNestedConfig.md"><code>nested</code></a></td>
-<td class="cm-type-cell"><code class="cm-truncate-value" title="AcmeNestedConfig">AcmeNestedConfig</code></td>
+<td>
+<a id="nested"></a>
+<a href="com.acme.AcmeNestedConfig.md">
+<code>nested</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="AcmeNestedConfig">AcmeNestedConfig</code>
+</td>
 <td>Nested</td>
 </tr>
 <tr>
-<td><code>enabled</code></td>
-<td class="cm-type-cell"><code class="cm-truncate-value">Boolean</code></td>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
 <td>Enabled</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ---

@@ -20,19 +20,24 @@ Configuration for fault-tolerance
     }
 </style>
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>bulkheads</code></td>
+<td>
+<code>bulkheads</code>
+</td>
 <td>Configuration for bulkheads</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

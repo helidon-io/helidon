@@ -20,19 +20,24 @@ Clients configuration.
     }
 </style>
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>http</code></td>
+<td>
+<code>http</code>
+</td>
 <td>Configuration for http</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

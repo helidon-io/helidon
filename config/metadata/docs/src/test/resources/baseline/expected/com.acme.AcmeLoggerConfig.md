@@ -23,38 +23,60 @@ ACME Logger configuration
 
 ### Experimental Options
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>logger</code></td>
-<td class="cm-type-cell"><code class="cm-truncate-value">String</code></td>
+<td>
+<code>logger</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
 <td>Logger name</td>
 </tr>
 </tbody>
 </table>
 
+
 ### Deprecated Options
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="level"></a><a href="com.acme.AcmeLoggerConfigLevel.md"><code>level</code></a></td>
-<td class="cm-type-cell"><code class="cm-truncate-value" title="AcmeLoggerConfigLevel">AcmeLoggerConfigLevel</code></td>
-<td class="cm-default-cell"><code class="cm-truncate-value">INFO</code></td>
+<td>
+<a id="level"></a>
+<a href="com.acme.AcmeLoggerConfigLevel.md">
+<code>level</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="AcmeLoggerConfigLevel">AcmeLoggerConfigLevel</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">INFO</code>
+</td>
 <td>Logging level</td>
 </tr>
 </tbody>
 </table>
+
 
 ## Usages
 

@@ -20,19 +20,24 @@ Configuration for rest-client
     }
 </style>
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>ssl</code></td>
+<td>
+<code>ssl</code>
+</td>
 <td>Configuration for ssl</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

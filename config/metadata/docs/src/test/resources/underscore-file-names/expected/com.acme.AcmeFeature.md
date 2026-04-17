@@ -13,23 +13,34 @@ This type is a provider contract.
 </style>
 
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="com.acme.AcmeOpenAiAltFeatureConfig.md"><code>open-ai</code></a></td>
+<td>
+<a href="com.acme.AcmeOpenAiAltFeatureConfig.md">
+<code>open-ai</code>
+</a>
+</td>
 <td>Alternative Open AI implementation.</td>
 </tr>
 <tr>
-<td><a href="com.acme.AcmeOpenAiFeatureConfig.md"><code>open-ai</code></a></td>
+<td>
+<a href="com.acme.AcmeOpenAiFeatureConfig.md">
+<code>open-ai</code>
+</a>
+</td>
 <td>Open AI implementation.</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

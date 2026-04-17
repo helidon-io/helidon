@@ -13,27 +13,42 @@ This type is a provider contract.
 </style>
 
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="com.acme.AcmeAuditConfig.md"><code>audit</code></a></td>
+<td>
+<a href="com.acme.AcmeAuditConfig.md">
+<code>audit</code>
+</a>
+</td>
 <td>Audit implementation.</td>
 </tr>
 <tr>
-<td><a href="com.acme.AcmeFileFeatureConfig.md"><code>shared</code></a></td>
+<td>
+<a href="com.acme.AcmeFileFeatureConfig.md">
+<code>shared</code>
+</a>
+</td>
 <td>File implementation.</td>
 </tr>
 <tr>
-<td><a href="com.acme.AcmeSocketFeatureConfig.md"><code>shared</code></a></td>
+<td>
+<a href="com.acme.AcmeSocketFeatureConfig.md">
+<code>shared</code>
+</a>
+</td>
 <td>Socket implementation.</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

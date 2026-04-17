@@ -13,19 +13,26 @@ This type is a provider contract.
 </style>
 
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="com.acme.AcmeAuditServiceConfig.md"><code>audit</code></a></td>
+<td>
+<a href="com.acme.AcmeAuditServiceConfig.md">
+<code>audit</code>
+</a>
+</td>
 <td>Audit implementation.</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ---

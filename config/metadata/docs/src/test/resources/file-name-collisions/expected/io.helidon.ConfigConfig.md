@@ -20,19 +20,27 @@ Configuration for config
     }
 </style>
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="reference"></a><a href="io.helidon.config.ReferenceConfig.md"><code>reference</code></a></td>
+<td>
+<a id="reference"></a>
+<a href="io.helidon.config.ReferenceConfig.md">
+<code>reference</code>
+</a>
+</td>
 <td>Configuration for reference</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages
