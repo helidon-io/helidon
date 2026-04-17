@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@ enable Protobuf marshalling.
 
 NOTE: The `complete` method shown in the example above is just one of many helper
 methods available in the `ResponseHelper` class. See the full list
-link:{grpc-server-javadoc-base-url}/io/helidon/webserver/grpc/ResponseHelper.html[here].
+link:{javadoc-base-url}/io.helidon.grpc.core/io/helidon/grpc/core/ResponseHelper.html[here].
 
 === Server Interceptors
 

@@ -30,7 +30,6 @@ module io.helidon.webserver.grpc {
 
     requires io.helidon.builder.api;
     requires io.helidon.webserver.http2;
-    requires io.helidon.tracing;
     requires io.helidon.config;
     requires io.helidon.metrics.api;
     requires io.helidon.webserver;

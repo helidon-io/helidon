@@ -16,7 +16,6 @@
 package io.helidon.webserver.grpc.tracing;
 
 import io.helidon.config.Config;
-import io.helidon.webserver.grpc.GrpcTracingConfig;
 import io.helidon.webserver.grpc.spi.GrpcServerService;
 import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
 
