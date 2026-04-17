@@ -116,6 +116,7 @@ class Http1ServerResponseTest {
                                        dataWriter,
                                        request,
                                        true,
+                                       true,
                                        true);
     }
 }
