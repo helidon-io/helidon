@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,8 +67,8 @@ public class SignedJwtTest {
     public void testParsing() {
         SignedJwt signedJwt = SignedJwt.parseToken(AUTH_0_TOKEN);
 
-        assertThat(signedJwt.headerJson(), notNullValue());
-        assertThat(signedJwt.payloadJson(), notNullValue());
+        assertThat(signedJwt.getJwt().headerJsonObject(), notNullValue());
+        assertThat(signedJwt.getJwt().payloadJsonObject(), notNullValue());
         assertThat(signedJwt.getSignature(), notNullValue());
         assertThat(signedJwt.getSignedBytes(), notNullValue());
         assertThat(signedJwt.tokenContent(), is(AUTH_0_TOKEN));
@@ -78,8 +78,8 @@ public class SignedJwtTest {
     public void testParsingBase64URL() {
         SignedJwt signedJwt = SignedJwt.parseToken(BASE64URL_TOKEN);
 
-        assertThat(signedJwt.headerJson(), notNullValue());
-        assertThat(signedJwt.payloadJson(), notNullValue());
+        assertThat(signedJwt.getJwt().headerJsonObject(), notNullValue());
+        assertThat(signedJwt.getJwt().payloadJsonObject(), notNullValue());
         assertThat(signedJwt.getSignature(), notNullValue());
         assertThat(signedJwt.getSignedBytes(), notNullValue());
         assertThat(signedJwt.tokenContent(), is(BASE64URL_TOKEN));

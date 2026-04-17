@@ -16,9 +16,10 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
-import java.util.Collections;
 
 import io.helidon.common.Builder;
 import io.helidon.common.Errors;
@@ -27,12 +28,10 @@ import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
-
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReaderFactory;
 
 /**
  * Base builder of the OIDC config components.
@@ -48,7 +47,6 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     static final String DEFAULT_REALM = "helidon";
     static final boolean DEFAULT_JWT_VALIDATE_JWK = true;
     static final int DEFAULT_TIMEOUT_SECONDS = 30;
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     private JsonObject oidcMetadata;
     private OidcConfig.ClientAuthentication tokenEndpointAuthentication = OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC;
@@ -352,17 +350,21 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
      */
     @ConfiguredOption(key = "oidc-metadata.resource")
     public B oidcMetadata(Resource resource) {
-        return oidcMetadata(JSON.createReader(resource.stream()).readObject());
+        try (var resourceStream = resource.stream()) {
+            return oidcMetadataJsonObject(JsonParser.create(resourceStream).readJsonObject());
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to close input stream on resource: " + resource, e);
+        }
     }
 
     /**
-     * JsonObject with the OIDC Metadata.
+     * Helidon JSON with the OIDC metadata.
      *
      * @param metadata metadata JSON
      * @return updated builder instance
      * @see #oidcMetadata(Resource)
      */
-    public B oidcMetadata(JsonObject metadata) {
+    public B oidcMetadataJsonObject(JsonObject metadata) {
         this.oidcMetadata = metadata;
         return identity();
     }
@@ -492,7 +494,7 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         return tokenEndpointAuthentication;
     }
 
-    JsonObject oidcMetadata() {
+    JsonObject oidcMetadataJsonObject() {
         return oidcMetadata;
     }
 

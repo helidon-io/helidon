@@ -17,7 +17,6 @@ package io.helidon.security.providers.idcs.mapper;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,6 +26,8 @@ import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.HeaderNames;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -40,18 +41,11 @@ import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SubjectMappingProvider;
 import io.helidon.webclient.api.HttpClientRequest;
 
-import jakarta.json.Json;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObjectBuilder;
-
 /**
  * {@link io.helidon.security.spi.SubjectMappingProvider} to obtain roles from IDCS server for a user.
  * Supports multi tenancy in IDCS.
  */
 public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implements SubjectMappingProvider {
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
     private final EvictableCache<String, List<Grant>> roleCache;
     private final String asserterUri;
     private final URI tokenEndpointUri;
@@ -159,7 +153,7 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
         RoleMapTracing tracing = SecurityTracing.get().roleMapTracing("idcs");
 
         try {
-            List<? extends Grant> grants = appToken.getToken(tracing)
+            List<? extends Grant> grants = getAppToken(tracing)
                     .map(appToken -> obtainGrantsFromServer(subjectName, subjectType, appToken, tracing))
                     .orElseThrow(() -> new SecurityException("Application token not available"));
 
@@ -172,18 +166,22 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
         }
     }
 
+    // Added for testing purposes
+    Optional<String> getAppToken(RoleMapTracing tracing) {
+        return appToken.getToken(tracing);
+    }
+
     private List<? extends Grant> obtainGrantsFromServer(String subjectName,
                                                          String subjectType,
                                                          String appToken,
                                                          RoleMapTracing tracing) {
-        JsonObjectBuilder requestBuilder = JSON.createObjectBuilder()
-                .add("mappingAttributeValue", subjectName)
-                .add("subjectType", subjectType)
-                .add("includeMemberships", true);
-
-        JsonArrayBuilder arrayBuilder = JSON.createArrayBuilder();
-        arrayBuilder.add("urn:ietf:params:scim:schemas:oracle:idcs:Asserter");
-        requestBuilder.add("schemas", arrayBuilder);
+        JsonObject requestEntity = JsonObject.builder()
+                .set("mappingAttributeValue", subjectName)
+                .set("subjectType", subjectType)
+                .set("includeMemberships", true)
+                .set("schemas",
+                     JsonArray.createStrings(List.of("urn:ietf:params:scim:schemas:oracle:idcs:Asserter")))
+                .build();
 
         // use current span context as a parent for client outbound
         // using a custom child context, so we do not replace the parent in the current context
@@ -202,7 +200,7 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
                     it.add(HeaderNames.AUTHORIZATION, "Bearer " + appToken);
                 });
 
-        return processRoleRequest(request, requestBuilder.build(), subjectName);
+        return processRoleRequest(request, requestEntity, subjectName);
     }
 
     /**
