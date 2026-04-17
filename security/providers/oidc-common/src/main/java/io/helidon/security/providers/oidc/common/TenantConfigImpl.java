@@ -200,7 +200,7 @@ class TenantConfigImpl implements TenantConfig {
     }
 
     @Override
-    @Deprecated(since = "4.4.1", forRemoval = true)
+    @Deprecated(since = "4.5.0", forRemoval = true)
     public jakarta.json.JsonObject oidcMetadata() {
         return oidcMetadata;
     }

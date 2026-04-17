@@ -145,9 +145,9 @@ public class Tenant {
                                                    tenantConfig);
                     } else {
                         return JwkKeys.builder()
-                                .json(OidcJsonSupport.toJsonp(webClient.get()
-                                                                      .uri(jwkUri)
-                                                                      .requestEntity(JsonObject.class)))
+                                .json(webClient.get()
+                                              .uri(jwkUri)
+                                              .requestEntity(JsonObject.class))
                                 .build();
                     }
                 }

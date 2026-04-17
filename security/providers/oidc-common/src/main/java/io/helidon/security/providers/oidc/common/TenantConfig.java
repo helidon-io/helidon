@@ -23,9 +23,8 @@ import java.util.Optional;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.jwk.JwkKeys;
-
-import jakarta.json.JsonObject;
 
 /**
  * Tenant configuration.
@@ -184,7 +183,7 @@ public interface TenantConfig {
      *
      * @return configured oidc metadata
      */
-    default io.helidon.json.JsonObject oidcMetadataJsonObject() {
+    default JsonObject oidcMetadataJsonObject() {
         return OidcJsonSupport.toHelidonJson(oidcMetadata());
     }
 
@@ -194,19 +193,8 @@ public interface TenantConfig {
      * @return configured oidc metadata
      * @deprecated use {@link #oidcMetadataJsonObject()} instead
      */
-    @Deprecated(since = "4.4.1", forRemoval = true)
-    JsonObject oidcMetadata();
-
-    /**
-     * OIDC metadata in Helidon JSON.
-     *
-     * @return configured oidc metadata
-     * @deprecated use {@link #oidcMetadataJsonObject()} instead
-     */
-    @Deprecated(since = "4.4.1", forRemoval = true)
-    default io.helidon.json.JsonObject oidcMetadataJson() {
-        return oidcMetadataJsonObject();
-    }
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    jakarta.json.JsonObject oidcMetadata();
 
     /**
      * Whether to use OIDC well known metadata.

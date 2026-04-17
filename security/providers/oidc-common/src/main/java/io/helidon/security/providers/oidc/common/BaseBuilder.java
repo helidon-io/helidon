@@ -389,7 +389,7 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
      * @see #oidcMetadataJsonObject(io.helidon.json.JsonObject)
      * @deprecated use {@link #oidcMetadataJsonObject(io.helidon.json.JsonObject)} instead
      */
-    @Deprecated(since = "4.4.1", forRemoval = true)
+    @Deprecated(since = "4.5.0", forRemoval = true)
     public B oidcMetadata(jakarta.json.JsonObject metadata) {
         return oidcMetadataJsonObject(OidcJsonSupport.toHelidonJson(metadata));
     }

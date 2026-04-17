@@ -73,7 +73,7 @@ class IdcsSupport {
                         .header(HeaderNames.AUTHORIZATION, "Bearer " + accessToken)
                         .requestEntity(JsonObject.class);
 
-                return JwkKeys.create(OidcJsonSupport.toJsonp(jwkJson));
+                return JwkKeys.create(jwkJson);
             } else {
                 String errorEntity = response.as(String.class);
                 throw new SecurityException("Failed to read JWK from IDCS. Status: " + response.status()
