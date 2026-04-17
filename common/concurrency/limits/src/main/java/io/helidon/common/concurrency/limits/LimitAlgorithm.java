@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,69 +16,30 @@
 
 package io.helidon.common.concurrency.limits;
 
-import java.util.Optional;
 import java.util.concurrent.Callable;
 
 /**
  * Concurrency limit algorithm.
  * <p>
- * There are two options how to use a limit - by handling a token provided by {@link #tryAcquire()},
- * or by invoking a callable or runnable through one of the invoke methods (such as {@link #invoke(Runnable)}.
+ * There are two ways to use a limit: by handling the outcome returned by {@link #tryAcquireOutcome()} and the token it
+ * exposes when accepted, or by invoking a callable or runnable through {@link #call(Callable)} or {@link #run(Runnable)}.
  * <p>
- * The invoke methods are backed by the same {@link #tryAcquire()} methods, so behavior is consistent.
+ * The convenience methods are backed by the same {@link #tryAcquireOutcome(boolean)} decisions, so behavior is consistent.
  */
 public interface LimitAlgorithm {
     /**
      * Invoke a callable within the limits of this limiter.
      * <p>
-     * {@link io.helidon.common.concurrency.limits.Limit} implementor's note:
-     * Make sure to catch {@link io.helidon.common.concurrency.limits.IgnoreTaskException} from the
-     * callable, and call its {@link IgnoreTaskException#handle()} to either return the provided result,
-     * or throw the exception after ignoring the timing for future decisions.
-     *
-     * @param callable callable to execute within the limit
-     * @param <T>      the callable return type
-     * @return result of the callable
-     * @throws LimitException      in case the limiter did not have an available permit
-     * @throws java.lang.Exception in case the task failed with an exception
-     * @deprecated Use {@link #call(java.util.concurrent.Callable)}.
-     */
-    @Deprecated(since = "4.3.0", forRemoval = true)
-    default <T> T invoke(Callable<T> callable) throws LimitException, Exception {
-        Outcome outcome = tryAcquireOutcome();
-        if (outcome instanceof Outcome.Accepted accepted) {
-            var permit = accepted.token();
-            try {
-                T response = callable.call();
-                permit.success();
-                return response;
-            } catch (IgnoreTaskException e) {
-                permit.ignore();
-                return e.handle();
-            } catch (Exception e) {
-                permit.dropped();
-                throw e;
-            }
-        }
-        throw new LimitException("No token available.");
-    }
-
-    /**
-     * Invoke a callable within the limits of this limiter, invoking the provided {@link java.util.function.Consumer} with the
-     * {@link io.helidon.common.concurrency.limits.LimitAlgorithm.Outcome} resulting from applying the limit algorithm.
-     * <p>
-     * Note that custom implementations of this interface might not implement this method, in which case the caller's limit
-     * outcome consumer receives an "unknown" outcome. Clearly the algorithm made a decision, but does not expose it to callers.
-     * <p>
-     * {@link io.helidon.common.concurrency.limits.Limit} implementor's notes:
+     * Custom implementations that override this method should:
      * <ul>
-     * <li>Make sure to catch {@link io.helidon.common.concurrency.limits.IgnoreTaskException} from the
-     * callable, and call its {@link IgnoreTaskException#handle()} to either return the provided result,
-     * or throw the exception after ignoring the timing for future decisions.</li>
-     * <li>Make sure the {@code limitOutcomeConsumer} is non-null, and after determining the disposition of the item of work
-     * create a suitable {@code LimitOutcome} and pass it to the consumer. Also, make sure to use an outcome-aware token
-     * internally so when the caller invokes the token's methods the outcome is updated accordingly.</li>
+     * <li>Obtain the outcome for the submitted work from {@link #tryAcquireOutcome(boolean)}.</li>
+     * <li>Invoke {@link Token#success()}, {@link Token#ignore()}, or {@link Token#dropped()} on an accepted token to reflect
+     * the final state of the work item.</li>
+     * <li>Throw {@link LimitException} if no token is available.</li>
      * </ul>
+     * <p>
+     * If the callable throws {@link IgnoreTaskException}, call {@link IgnoreTaskException#handle()} after marking the token as
+     * ignored so the return value or wrapped exception is preserved.
      *
      * @param callable                 callable to execute within the limit
      * @param <T>                      the callable return type
@@ -102,43 +63,22 @@ public interface LimitAlgorithm {
                 throw e;
             }
         }
-        throw new LimitException("No token available.");
+        throw new LimitException("No token available.", outcome);
     }
 
     /**
      * Invoke a runnable within the limits of this limiter.
      * <p>
-     * {@link io.helidon.common.concurrency.limits.Limit} implementor's note:
-     * Make sure to catch {@link io.helidon.common.concurrency.limits.IgnoreTaskException} from the
-     * runnable, and call its {@link IgnoreTaskException#handle()} to either return the provided result,
-     * or throw the exception after ignoring the timing for future decisions.
-     *
-     * @param runnable runnable to execute within the limit
-     * @throws LimitException      in case the limiter did not have an available permit
-     * @throws java.lang.Exception in case the task failed with an exception
-     * @deprecated Use {@link #run(Runnable)}.
-     */
-    @Deprecated(since = "4.3.0", forRemoval = true)
-    default void invoke(Runnable runnable) throws LimitException, Exception {
-        run(runnable);
-    }
-
-    /**
-     * Invoke a runnable within the limits of this limiter, invoking the provided {@link java.util.function.Consumer} with the
-     * {@link io.helidon.common.concurrency.limits.LimitAlgorithm.Outcome} resulting from applying the limit algorithm.
-     * <p>
-     * Note that custom implementations of this interface might not implement this method, in which case the caller's limit
-     * outcome consumer receives an "unknown" outcome. Clearly the algorithm made a decision, but does not expose it to callers.
-     * <p>
-     * {@link io.helidon.common.concurrency.limits.Limit} implementor's notes:
+     * Custom implementations that override this method should:
      * <ul>
-     * <li>Make sure to catch {@link io.helidon.common.concurrency.limits.IgnoreTaskException} from the
-     * runnable, and call its {@link IgnoreTaskException#handle()} to either return the provided result,
-     * or throw the exception after ignoring the timing for future decisions.</li>
-     * <li>Make sure the {@code limitOutcomeConsumer} is non-null, and after determining the disposition of the item of work
-     * create a suitable {@code LimitOutcome} and pass it to the consumer. Also, make sure to use an outcome-aware token
-     * internally so when the caller invokes the token's methods the outcome is updated accordingly.</li>
+     * <li>Obtain the outcome for the submitted work from {@link #tryAcquireOutcome(boolean)}.</li>
+     * <li>Invoke {@link Token#success()}, {@link Token#ignore()}, or {@link Token#dropped()} on an accepted token to reflect
+     * the final state of the work item.</li>
+     * <li>Throw {@link LimitException} if no token is available.</li>
      * </ul>
+     * <p>
+     * If the runnable throws {@link IgnoreTaskException}, call {@link IgnoreTaskException#handle()} after marking the token as
+     * ignored so the wrapped exception is preserved when present.
      *
      * @param runnable             runnable to execute within the limit
      * @return                     {@code Outcome} from the limit algorithm
@@ -162,7 +102,7 @@ public interface LimitAlgorithm {
                 throw e;
             }
         }
-        throw new LimitException("No token available.");
+        throw new LimitException("No token available.", outcome);
     }
 
     /**
@@ -170,20 +110,7 @@ public interface LimitAlgorithm {
      * <p>
      * If acquired, the caller must call one of the {@link io.helidon.common.concurrency.limits.Limit.Token}
      * operations to release the token.
-     * If the response is empty, the limit does not have an available token.
-     *
-     * @return acquired token, or empty if there is no available token
-     * @deprecated Use {@link #tryAcquireOutcome()}.
-     */
-    @Deprecated(since = "4.3.0", forRemoval = true)
-    Optional<Token> tryAcquire();
-
-    /**
-     * Try to acquire a token, waiting for available permits for the configured amount of time, if queuing is enabled.
-     * <p>
-     * If acquired, the caller must call one of the {@link io.helidon.common.concurrency.limits.Limit.Token}
-     * operations to release the token.
-     * If the response is empty, the limit does not have an available token.
+     * If the response is rejected, the limit does not have an available token.
      *
      * @return {@link io.helidon.common.concurrency.limits.LimitAlgorithm.Outcome} of the tryAcquire attempt.
      */
@@ -192,45 +119,21 @@ public interface LimitAlgorithm {
     }
 
     /**
-     * Try to acquire a token, waiting for available permits for the configured amount of time, if
-     * {@code wait} is enabled, returning immediately otherwise.
+     * Tries to acquire a token, waiting for available permits for the configured amount of time if
+     * {@code wait} is enabled and the implementation supports queueing, returning immediately otherwise.
      * <p>
      * If acquired, the caller must call one of the {@link io.helidon.common.concurrency.limits.Limit.Token}
      * operations to release the token.
-     * If the response is empty, the limit does not have an available token.
-     *
-     * @param wait whether to wait in the queue (if one is configured/available in the limit), or to return immediately
-     * @return acquired token, or empty if there is no available token
-     * @deprecated Use {@link #tryAcquireOutcome(boolean)}
-     */
-    @Deprecated(since = "4.3.0", forRemoval = true)
-    Optional<Token> tryAcquire(boolean wait);
-
-    /**
-     * Tries to acquire a token, waiting for available permits for the configured amount of time, if
-     * {@code wait} is enabled, returning immediately otherwise. Concrete implementations should invoke the provided
-     * {@code outcomeConsumer}.
-     * <p>
-     * Note that custom implementations of this interface might not implement this method, in which case the caller's limit
-     * outcome consumer receives an "unknown" outcome. Clearly the algorithm made a decision, but does not expose it to callers.
-     * <p>
-     * If acquired, the caller must call one of the {@link io.helidon.common.concurrency.limits.Limit.Token}
-     * operations to release the token.
-     * If the response is empty, the limit does not have an available token.
+     * If the response is rejected, the limit does not have an available token.
      *
      * @param wait                 whether to wait in the queue (if one is configured/available in the limit), or to
      *                             return immediately
-     * @return acquired token, or empty if there is no available token
+     * @return outcome of the acquisition attempt
      */
-    default Outcome tryAcquireOutcome(boolean wait) {
-        // @Deprecated(since = "4.3.0", forRemoval = true) - For 5.0 remove the default implementation for this method to require
-        // implementations to implement it themselves.
-
-        return LimitAlgorithmOutcomeImpl.create(tryAcquire(wait));
-    }
+    Outcome tryAcquireOutcome(boolean wait);
 
     /**
-     * When a token is retrieved from {@link #tryAcquire()}, one of its methods must be called when the task
+     * When a token is retrieved from {@link #tryAcquireOutcome()}, one of its methods must be called when the task
      * is over, to release the token back to the pool (such as a permit returned to a {@link java.util.concurrent.Semaphore}).
      * <p>
      * Choice of method to invoke may influence the algorithm used for determining number of available permits.
@@ -275,7 +178,7 @@ public interface LimitAlgorithm {
             ACCEPTED,
 
             /**
-             * Algorithm rejects the work due to concurrency limit constratins.
+             * Algorithm rejects the work due to concurrency limit constraints.
              */
             REJECTED
         }
@@ -294,15 +197,7 @@ public interface LimitAlgorithm {
              * Algorithm had to wait to decide because too many concurrent executions were already in progress when it was
              * asked about the new work item.
              */
-            DEFERRED,
-
-            /**
-             * The algorithm decided how to deal with the work item but the caller used a legacy API that does not reveal
-             * the {@link io.helidon.common.concurrency.limits.LimitAlgorithm.Outcome} of the decision. As a result,
-             * the default implementation cannot find out whether the decision was immediate or deferred.
-             */
-            @Deprecated(since = "4.3.0", forRemoval = true)
-            UNKNOWN
+            DEFERRED
         }
 
         /**
@@ -375,7 +270,7 @@ public interface LimitAlgorithm {
         /**
          * Creates a new {@link io.helidon.common.concurrency.limits.LimitAlgorithm.Outcome} representing an immediate
          * rejection of a work item.
-         * }
+         *
          * @param originName origin name
          * @param algorithmType algorithm type
          * @return immediate rejection outcome

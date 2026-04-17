@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.common.concurrency.limits;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,7 +28,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -51,7 +49,7 @@ public class FixedLimitTest {
             int index = i;
             threads[i] = new Thread(() -> {
                 try {
-                    limiter.invoke(() -> {
+                    limiter.call(() -> {
                         threadsCdl.countDown();
                         cdl.await(10, TimeUnit.SECONDS);
                         lock.lock();
@@ -98,7 +96,7 @@ public class FixedLimitTest {
             int index = i;
             threads[i] = new Thread(() -> {
                 try {
-                    limiter.invoke(() -> {
+                    limiter.call(() -> {
                         threadsCdl.countDown();
                         cdl.await(10, TimeUnit.SECONDS);
                         lock.lock();
@@ -152,7 +150,7 @@ public class FixedLimitTest {
             int index = i;
             threads[i] = new Thread(() -> {
                 try {
-                    limiter.invoke(() -> {
+                    limiter.call(() -> {
                         cdl.await(10, TimeUnit.SECONDS);
                         lock.lock();
                         try {
@@ -192,7 +190,7 @@ public class FixedLimitTest {
                 .build();
 
         for (int i = 0; i < 5000; i++) {
-            limit.invoke(() -> {
+            limit.run(() -> {
             });
         }
     }
@@ -206,7 +204,7 @@ public class FixedLimitTest {
                 .build();
 
         for (int i = 0; i < 5000; i++) {
-            limit.invoke(() -> {
+            limit.run(() -> {
             });
         }
     }
@@ -220,9 +218,45 @@ public class FixedLimitTest {
                 .build();
 
         for (int i = 0; i < 5000; i++) {
-            Optional<LimitAlgorithm.Token> token = limit.tryAcquire();
-            assertThat(token, not(Optional.empty()));
-            token.get().success();
+            LimitAlgorithm.Outcome outcome = limit.tryAcquireOutcome();
+            assertThat(outcome.disposition(), is(LimitAlgorithm.Outcome.Disposition.ACCEPTED));
+            ((LimitAlgorithm.Outcome.Accepted) outcome).token().success();
         }
+    }
+
+    @Test
+    public void testDeferredRejectionIncrementsRejectedCounter() {
+        FixedLimit limiter = FixedLimit.builder()
+                .permits(1)
+                .queueLength(1)
+                .queueTimeout(Duration.ofMillis(10))
+                .build();
+
+        LimitAlgorithm.Outcome.Accepted accepted =
+                (LimitAlgorithm.Outcome.Accepted) limiter.tryAcquireOutcome(false);
+
+        LimitAlgorithm.Outcome outcome = limiter.tryAcquireOutcome(true);
+
+        assertThat(outcome.disposition(), is(LimitAlgorithm.Outcome.Disposition.REJECTED));
+        assertThat(outcome.timing(), is(LimitAlgorithm.Outcome.Timing.DEFERRED));
+        assertThat(limiter.rejectedRequests().get(), is(1));
+
+        accepted.token().success();
+    }
+
+    @Test
+    public void testDroppedRequestReleasesConcurrentGauge() {
+        FixedLimit limiter = FixedLimit.builder()
+                .permits(1)
+                .build();
+
+        LimitAlgorithm.Outcome.Accepted accepted =
+                (LimitAlgorithm.Outcome.Accepted) limiter.tryAcquireOutcome(true);
+
+        assertThat(limiter.concurrentRequests().get(), is(1));
+
+        accepted.token().dropped();
+
+        assertThat(limiter.concurrentRequests().get(), is(0));
     }
 }

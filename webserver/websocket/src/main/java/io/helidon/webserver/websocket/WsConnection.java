@@ -132,7 +132,7 @@ public class WsConnection implements ServerConnection, WsSession {
         myThread = Thread.currentThread();
 
         try {
-            limit.invoke(() -> listener.onOpen(this));
+            limit.run(() -> listener.onOpen(this));
         } catch (LimitException e) {
             close(WsCloseCodes.TRY_AGAIN_LATER, "Too Many Concurrent Requests");
             return;
@@ -149,7 +149,7 @@ public class WsConnection implements ServerConnection, WsSession {
             readingNetwork = false;
             lastRequestTimestamp = DateTime.timestamp();
             try {
-                boolean result = limit.invoke(() -> processFrame(frame));
+                boolean result = limit.call(() -> processFrame(frame)).result();
                 if (!result) {
                     lastRequestTimestamp = DateTime.timestamp();
                     return;

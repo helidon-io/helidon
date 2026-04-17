@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package io.helidon.webserver.concurrency.limits;
-
-import java.util.Optional;
 
 import io.helidon.common.Weighted;
 import io.helidon.common.concurrency.limits.Limit;
@@ -53,18 +51,19 @@ class LimitsRoutingFeature implements HttpFeature, Weighted {
     }
 
     private void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
-        Optional<LimitAlgorithm.Token> token = limits.tryAcquire();
+        var outcome = limits.tryAcquireOutcome();
 
-        if (token.isEmpty()) {
+        if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.REJECTED) {
             throw new HttpException("Limit exceeded", Status.SERVICE_UNAVAILABLE_503);
         }
 
-        LimitAlgorithm.Token permit = token.get();
+        LimitAlgorithm.Token token = ((LimitAlgorithm.Outcome.Accepted) outcome).token();
+
         try {
             chain.proceed();
-            permit.success();
+            token.success();
         } catch (Throwable e) {
-            permit.dropped();
+            token.dropped();
             throw e;
         }
     }

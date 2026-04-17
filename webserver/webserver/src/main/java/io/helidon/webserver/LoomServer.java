@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -230,6 +230,11 @@ class LoomServer implements WebServer, Resumable {
                 throw new IllegalStateException(message);
             }
         }
+    }
+
+    // Intended for testing. May return null!
+    ServerListener listener(String socketName) {
+        return listeners.get(socketName);
     }
 
     private void stopIt() {

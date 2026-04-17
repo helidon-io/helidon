@@ -29,8 +29,9 @@ public interface ServerConnection {
      * {@link ServerConnectionSelector#connection(io.helidon.webserver.ConnectionContext)}.
      *
      * @param limit that is responsible for maximal concurrent request limit, the connection implementation
-     *              is responsible invoking each request within the limit's
-     *              {@link io.helidon.common.concurrency.limits.Limit#invoke(java.util.concurrent.Callable)}
+     *              is responsible for invoking each request within the limit using
+     *              {@link io.helidon.common.concurrency.limits.Limit#tryAcquireOutcome(boolean)} or the convenience methods
+     *              on {@link io.helidon.common.concurrency.limits.LimitAlgorithm}
      * @throws InterruptedException to interrupt any waiting state and terminate this connection
      */
     void handle(Limit limit) throws InterruptedException;

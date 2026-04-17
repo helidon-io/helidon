@@ -17,7 +17,9 @@
 package io.helidon.common.concurrency.limits;
 
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.config.Config;
@@ -28,7 +30,6 @@ import io.helidon.config.Config;
  *
  * @see io.helidon.common.concurrency.limits.FixedLimitConfig
  */
-@SuppressWarnings("removal")
 public class FixedLimit extends SemaphoreLimitBase implements RuntimeType.Api<FixedLimitConfig> {
 
     /**
@@ -51,20 +52,9 @@ public class FixedLimit extends SemaphoreLimitBase implements RuntimeType.Api<Fi
     private final FixedLimitConfig config;
 
     private FixedLimit(FixedLimitConfig config) {
-        super(config.clock(), config.enableMetrics(), config.name());
+        super(context(config));
         this.config = config;
-        if (config.permits() == 0 && config.semaphore().isEmpty()) {
-            setSemaphore(null);
-            setInitialPermits(0);
-            setQueueLength(0);
-            setHandler(new LimitHandlers.NoOpSemaphoreHandler());
-        } else {
-            setSemaphore(config.semaphore().orElseGet(() -> new Semaphore(config.permits(), config.fair())));
-            setInitialPermits(getSemaphore().availablePermits());
-            setQueueLength(Math.max(0, config.queueLength()));
-            setHandler(new LimitHandlers.QueuedSemaphoreHandler(
-                getSemaphore(), getQueueLength(), config.queueTimeout(), FixedToken::new));
-        }
+
     }
 
     /**
@@ -153,42 +143,97 @@ public class FixedLimit extends SemaphoreLimitBase implements RuntimeType.Api<Fi
             Semaphore semaphore = config.semaphore().get();
 
             return FixedLimitConfig.builder()
-                .from(config)
-                .semaphore(new Semaphore(getInitialPermits(), semaphore.isFair()))
-                .build();
+                    .from(config)
+                    .semaphore(new Semaphore(initialPermits(), semaphore.isFair()))
+                    .build();
         }
         return config.build();
     }
 
-    private class FixedToken implements LimitAlgorithm.Token {
-        private final long startTime = getClock().get();
+    private static Context context(FixedLimitConfig config) {
+        AtomicInteger concurrentRequests = new AtomicInteger();
+        AtomicInteger rejectedRequests = new AtomicInteger();
 
-        FixedToken() {
-            getConcurrentRequests().incrementAndGet();
+        LimitHandlers.LimiterHandler limiterHandler;
+        var clock = LimitUtil.clock(config);
+
+        if (config.permits() == 0 && config.semaphore().isEmpty()) {
+            return new Context(0,
+                               0,
+                               new LimitHandlers.NoOpSemaphoreHandler(),
+                               clock,
+                               concurrentRequests,
+                               rejectedRequests,
+                               new SemaphoreMetrics(config.enableMetrics(),
+                                                    null,
+                                                    config.name(),
+                                                    concurrentRequests,
+                                                    rejectedRequests));
+        }
+
+        Semaphore semaphore = config.semaphore().orElseGet(() -> new Semaphore(config.permits(), config.fair()));
+        int queueLength = Math.max(0, config.queueLength());
+        SemaphoreMetrics metrics = new SemaphoreMetrics(config.enableMetrics(),
+                                       semaphore,
+                                       config.name(),
+                                       concurrentRequests,
+                                       rejectedRequests);
+
+        Supplier<Token> tokenSupplier = () -> new FixedToken(semaphore, metrics, clock, concurrentRequests);
+        limiterHandler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
+                                                                  queueLength,
+                                                                  config.queueTimeout(),
+                                                                  tokenSupplier);
+
+        return new Context(semaphore.availablePermits(),
+                           queueLength,
+                           limiterHandler,
+                           clock,
+                           concurrentRequests,
+                           rejectedRequests,
+                           metrics);
+    }
+
+    private static class FixedToken implements LimitAlgorithm.Token {
+        private final Semaphore semaphore;
+        private final SemaphoreMetrics metrics;
+        private final long startTime;
+        private final Supplier<Long> clock;
+        private final AtomicInteger concurrentRequests;
+
+        FixedToken(Semaphore semaphore, SemaphoreMetrics metrics, Supplier<Long> clock, AtomicInteger concurrentRequests) {
+            this.semaphore = semaphore;
+            this.metrics = metrics;
+            startTime = clock.get();
+            this.clock = clock;
+            this.concurrentRequests = concurrentRequests;
+            concurrentRequests.incrementAndGet();
         }
 
         @Override
         public void dropped() {
             try {
-                updateMetrics(startTime, getClock().get());
+                metrics.updateRtt(startTime, clock.get());
             } finally {
-                getSemaphore().release();
+                // Dropped work is no longer running, so keep the concurrency gauge accurate.
+                concurrentRequests.decrementAndGet();
+                semaphore.release();
             }
         }
 
         @Override
         public void ignore() {
-            getConcurrentRequests().decrementAndGet();
-            getSemaphore().release();
+            concurrentRequests.decrementAndGet();
+            semaphore.release();
         }
 
         @Override
         public void success() {
             try {
-                updateMetrics(startTime, getClock().get());
-                getConcurrentRequests().decrementAndGet();
+                metrics.updateRtt(startTime, clock.get());
+                concurrentRequests.decrementAndGet();
             } finally {
-                getSemaphore().release();
+                semaphore.release();
             }
         }
     }

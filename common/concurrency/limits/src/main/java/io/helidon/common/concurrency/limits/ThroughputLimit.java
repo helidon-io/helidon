@@ -18,13 +18,13 @@ package io.helidon.common.concurrency.limits;
 
 import java.util.Optional;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.config.Config;
-
-import static io.helidon.common.concurrency.limits.RateLimitingAlgorithmType.TOKEN_BUCKET;
 
 /**
  * Throughput based limit, that is backed by a semaphore with timeout on the queue.
@@ -32,7 +32,6 @@ import static io.helidon.common.concurrency.limits.RateLimitingAlgorithmType.TOK
  *
  * @see io.helidon.common.concurrency.limits.ThroughputLimitConfig
  */
-@SuppressWarnings("removal")
 public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.Api<ThroughputLimitConfig> {
 
     /**
@@ -58,24 +57,11 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
     static final String TYPE = "throughput";
 
     private final ThroughputLimitConfig config;
-    private final PermitStrategy permitStrategy;
 
     private ThroughputLimit(ThroughputLimitConfig config) {
-        super(config.clock(), config.enableMetrics(), config.name());
+        super(context(config));
+
         this.config = config;
-        this.permitStrategy = initializePermitStrategy();
-        setSemaphore(permitStrategy.initializePermits());
-        if (getSemaphore() == null) {
-            setInitialPermits(0);
-            setQueueLength(0);
-            setHandler(new LimitHandlers.NoOpSemaphoreHandler());
-        } else {
-            setInitialPermits(getSemaphore().availablePermits());
-            setQueueLength(Math.max(0, config.queueLength()));
-            setHandler(new LimitHandlers.QueuedSemaphoreHandler(
-                getSemaphore(), getQueueLength(), config.queueTimeout(),
-                ThroughputToken::new, permitStrategy.maxWaitMillis(), permitStrategy::refillPermits));
-        }
     }
 
     /**
@@ -105,8 +91,8 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
      */
     public static ThroughputLimit create(Semaphore semaphore) {
         return builder()
-            .semaphore(semaphore)
-            .build();
+                .semaphore(semaphore)
+                .build();
     }
 
     /**
@@ -117,8 +103,8 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
      */
     public static ThroughputLimit create(Config config) {
         return builder()
-            .config(config)
-            .build();
+                .config(config)
+                .build();
     }
 
     /**
@@ -139,8 +125,8 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
      */
     public static ThroughputLimit create(Consumer<ThroughputLimitConfig.Builder> consumer) {
         return builder()
-            .update(consumer)
-            .build();
+                .update(consumer)
+                .build();
     }
 
     @Override
@@ -164,44 +150,89 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
             Semaphore semaphore = config.semaphore().get();
 
             return ThroughputLimitConfig.builder()
-                .from(config)
-                .semaphore(new Semaphore(getInitialPermits(), semaphore.isFair()))
-                .build();
+                    .from(config)
+                    .semaphore(new Semaphore(initialPermits(), semaphore.isFair()))
+                    .build();
         }
         return config.build();
     }
 
-    private PermitStrategy initializePermitStrategy() {
-        return switch (Optional.ofNullable(config.rateLimitingAlgorithm())
-            .orElse(TOKEN_BUCKET)) {
-            case FIXED_RATE -> new FixedRatePermitStrategy();
-            case TOKEN_BUCKET -> new TokenBucketPermitStrategy();
+    private static PermitStrategy permitStrategy(ThroughputLimitConfig config, Supplier<Long> clock) {
+        return switch (config.rateLimitingAlgorithm()) {
+            case FIXED_RATE -> new FixedRatePermitStrategy(config, clock);
+            case TOKEN_BUCKET -> new TokenBucketPermitStrategy(config, clock);
         };
     }
 
-    private interface PermitStrategy {
-        Semaphore initializePermits();
+    private static Context context(ThroughputLimitConfig config) {
+        LimitHandlers.LimiterHandler limiterHandler;
+        Supplier<Long> clock = LimitUtil.clock(config);
 
+        AtomicInteger concurrentRequests = new AtomicInteger();
+        AtomicInteger rejectedRequests = new AtomicInteger();
+        PermitStrategy permitStrategy = permitStrategy(config, clock);
+        Semaphore semaphore = permitStrategy.semaphore().orElse(null);
+
+        SemaphoreMetrics metrics = new SemaphoreMetrics(config.enableMetrics(),
+                                                        semaphore,
+                                                        config.name(),
+                                                        concurrentRequests,
+                                                        rejectedRequests);
+
+        if (semaphore == null) {
+            return new Context(0,
+                               0,
+                               new LimitHandlers.NoOpSemaphoreHandler(),
+                               clock,
+                               new AtomicInteger(),
+                               rejectedRequests,
+                               metrics);
+        }
+        int initialPermits = semaphore.availablePermits();
+        int queueLength = Math.max(0, config.queueLength());
+
+        Supplier<Token> tokenSupplier = () -> new ThroughputToken(concurrentRequests, clock, metrics);
+        limiterHandler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
+                                                                  queueLength,
+                                                                  config.queueTimeout(),
+                                                                  tokenSupplier,
+                                                                  permitStrategy.maxWaitMillis(),
+                                                                  permitStrategy::refillPermits);
+
+        return new Context(initialPermits,
+                           queueLength,
+                           limiterHandler,
+                           clock,
+                           concurrentRequests,
+                           rejectedRequests,
+                           metrics);
+    }
+
+    private interface PermitStrategy {
         long maxWaitMillis();
 
         void refillPermits();
+
+        Optional<Semaphore> semaphore();
     }
 
-    private class TokenBucketPermitStrategy implements PermitStrategy {
+    private static class TokenBucketPermitStrategy implements PermitStrategy {
         private final long nanosPerToken;
         private final AtomicLong lastRefillTimeNanos = new AtomicLong();
+        private final int amount;
+        private final Supplier<Long> clock;
+        private final Semaphore semaphore;
 
-        TokenBucketPermitStrategy() {
+        TokenBucketPermitStrategy(ThroughputLimitConfig config, Supplier<Long> clock) {
             this.nanosPerToken = config.amount() > 0 ? config.duration().toNanos() / config.amount() : 0;
-        }
+            this.amount = config.amount();
+            this.clock = clock;
 
-        @Override
-        public Semaphore initializePermits() {
-            if (config.amount() == 0 && config.semaphore().isEmpty()) {
-                return null;
+            if (amount == 0 && config.semaphore().isEmpty()) {
+                this.semaphore = null;
             } else {
-                lastRefillTimeNanos.set(getClock().get());
-                return config.semaphore().orElseGet(() -> new Semaphore(config.amount(), config.fair()));
+                lastRefillTimeNanos.set(clock.get());
+                this.semaphore = config.semaphore().orElseGet(() -> new Semaphore(config.amount(), config.fair()));
             }
         }
 
@@ -213,33 +244,37 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
         @Override
         public void refillPermits() {
             long lastRefillTime = lastRefillTimeNanos.get();
-            int newTokens = (int) ((getClock().get() - lastRefillTime) / nanosPerToken);
+            int newTokens = (int) ((clock.get() - lastRefillTime) / nanosPerToken);
             if (newTokens > 0) {
-                int permitsToRefill = Math.min(newTokens, config.amount() - getSemaphore().availablePermits());
+                int permitsToRefill = Math.min(newTokens, amount - semaphore.availablePermits());
                 if (permitsToRefill > 0 && lastRefillTimeNanos.compareAndSet(
-                    lastRefillTime, lastRefillTime + (permitsToRefill * nanosPerToken))) {
+                        lastRefillTime, lastRefillTime + (permitsToRefill * nanosPerToken))) {
                     // Last refill time has been set to time when most recent token was generated
-                    getSemaphore().release(permitsToRefill);
+                    semaphore.release(permitsToRefill);
                 }
             }
         }
-    }
-
-    private class FixedRatePermitStrategy implements PermitStrategy {
-        private final long nanosPerRequest;
-        private final AtomicLong lastRequestTimeNanos = new AtomicLong();
-
-        FixedRatePermitStrategy() {
-            this.nanosPerRequest = config.amount() > 0 ? config.duration().toNanos() / config.amount() : 0;
-        }
 
         @Override
-        public Semaphore initializePermits() {
+        public Optional<Semaphore> semaphore() {
+            return Optional.ofNullable(semaphore);
+        }
+    }
+
+    private static class FixedRatePermitStrategy implements PermitStrategy {
+        private final long nanosPerRequest;
+        private final Supplier<Long> clock;
+        private final AtomicLong lastRequestTimeNanos = new AtomicLong();
+        private final Semaphore semaphore;
+
+        FixedRatePermitStrategy(ThroughputLimitConfig config, Supplier<Long> clock) {
+            this.nanosPerRequest = config.amount() > 0 ? config.duration().toNanos() / config.amount() : 0;
+            this.clock = clock;
             if (config.amount() == 0 && config.semaphore().isEmpty()) {
-                return null;
+                this.semaphore = null;
             } else {
-                lastRequestTimeNanos.set(getClock().get());
-                return config.semaphore().orElseGet(() -> new Semaphore(1, config.fair()));
+                lastRequestTimeNanos.set(clock.get());
+                this.semaphore = config.semaphore().orElseGet(() -> new Semaphore(1, config.fair()));
             }
         }
 
@@ -250,37 +285,55 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
 
         @Override
         public void refillPermits() {
-            long now = getClock().get();
+            long now = clock.get();
             long lastRequestTime = lastRequestTimeNanos.get();
             if ((now - lastRequestTime) > nanosPerRequest
-                && getSemaphore().availablePermits() <= 0
-                && lastRequestTimeNanos.compareAndSet(lastRequestTime, now)) {
-                getSemaphore().release();
+                    && semaphore.availablePermits() <= 0
+                    && lastRequestTimeNanos.compareAndSet(lastRequestTime, now)) {
+                semaphore.release();
             }
+        }
+
+        @Override
+        public Optional<Semaphore> semaphore() {
+            return Optional.ofNullable(semaphore);
         }
     }
 
-    private class ThroughputToken implements LimitAlgorithm.Token {
-        private final long startTime = getClock().get();
+    private static class ThroughputToken implements LimitAlgorithm.Token {
+        private final AtomicInteger concurrentRequests;
+        private final long startTime;
+        private final Supplier<Long> clock;
+        private final SemaphoreMetrics metrics;
 
-        ThroughputToken() {
-            getConcurrentRequests().incrementAndGet();
+        ThroughputToken(AtomicInteger concurrentRequests, Supplier<Long> clock, SemaphoreMetrics metrics) {
+            this.concurrentRequests = concurrentRequests;
+            this.startTime = clock.get();
+            this.clock = clock;
+            this.metrics = metrics;
+
+            concurrentRequests.incrementAndGet();
         }
 
         @Override
         public void dropped() {
-            updateMetrics(startTime, getClock().get());
+            try {
+                metrics.updateRtt(startTime, clock.get());
+            } finally {
+                // Dropped work is no longer running, so keep the concurrency gauge accurate.
+                concurrentRequests.decrementAndGet();
+            }
         }
 
         @Override
         public void ignore() {
-            getConcurrentRequests().decrementAndGet();
+            concurrentRequests.decrementAndGet();
         }
 
         @Override
         public void success() {
-            updateMetrics(startTime, getClock().get());
-            getConcurrentRequests().decrementAndGet();
+            metrics.updateRtt(startTime, clock.get());
+            concurrentRequests.decrementAndGet();
         }
     }
 }

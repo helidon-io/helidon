@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 
 import javax.net.ssl.SSLEngine;
@@ -39,6 +38,7 @@ import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.NioSocket;
 import io.helidon.common.socket.PeerInfo;
@@ -66,8 +66,8 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private static final String HTTP_1_0 = "HTTP/1.0\r";
 
     private final ListenerContext listenerContext;
-    // we must safely release the semaphore whenever this connection is finished, so other connections can be created!
-    private final Semaphore connectionSemaphore;
+    // we must safely release the token whenever this connection is finished, so other connections can be created!
+    private final LimitAlgorithm.Token limitToken;
     private final Limit requestLimit;
     private final ConnectionProviders connectionProviders;
     private final List<ServerConnectionSelector> providerCandidates;
@@ -85,7 +85,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private ProxyProtocolData proxyProtocolData;
 
     ConnectionHandler(ListenerContext listenerContext,
-                      Semaphore connectionSemaphore,
+                      LimitAlgorithm.Token limitToken,
                       Limit requestLimit,
                       ConnectionProviders connectionProviders,
                       Map<String, ServerConnection> activeConnections,
@@ -94,7 +94,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                       Router router,
                       Tls tls) {
         this.listenerContext = listenerContext;
-        this.connectionSemaphore = connectionSemaphore;
+        this.limitToken = limitToken;
         this.requestLimit = requestLimit;
         this.connectionProviders = connectionProviders;
         this.providerCandidates = connectionProviders.providerCandidates();
@@ -204,7 +204,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             helidonSocket.log(LOGGER, WARNING, "unexpected exception", e);
         } finally {
             // connection has finished the loop of handling, release the semaphore
-            connectionSemaphore.release();
+            limitToken.success();
             activeConnections.remove(socketsId);
             writer.close();
             closeChannel(channelId);

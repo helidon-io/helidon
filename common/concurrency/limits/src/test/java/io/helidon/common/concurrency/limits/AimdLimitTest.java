@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -29,7 +28,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -37,15 +35,11 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AimdLimitTest {
     @Test
@@ -197,6 +191,25 @@ public class AimdLimitTest {
 
             accepted.token().success();
         }
+    }
+
+    @Test
+    void droppedRequestReleasesConcurrentGauge() {
+        AimdLimitConfig config = AimdLimitConfig.builder()
+                .minLimit(1)
+                .initialLimit(1)
+                .buildPrototype();
+        AimdLimitImpl limiter = new AimdLimitImpl(config);
+
+        LimitAlgorithm.Outcome.Accepted accepted =
+                (LimitAlgorithm.Outcome.Accepted) limiter.tryAcquireOutcome(true);
+
+
+        assertThat(limiter.concurrentRequests(), is(1));
+
+        accepted.token().dropped();
+
+        assertThat(limiter.concurrentRequests(), is(0));
     }
 
     @RepeatedTest(3)

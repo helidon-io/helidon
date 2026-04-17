@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import java.util.Objects;
 
 /**
  * If this exception is thrown from a limited task within
- * {@link Limit#invoke(java.util.concurrent.Callable)}, the
- * invocation will be ignored by possible algorithms (for example when considering round-trip timing).
+ * {@link Limit#call(java.util.concurrent.Callable)}, the
+ * task will be ignored by possible algorithms (for example when considering round-trip timing).
  * <p>
  * This should be used for cases where we never got to execute the intended task.
  * This exception should never be thrown by {@link Limit}, it should always

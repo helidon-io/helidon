@@ -37,10 +37,10 @@ import io.helidon.common.concurrency.limits.spi.LimitProvider;
 @Prototype.Blueprint
 @Prototype.Configured(value = ThroughputLimit.TYPE, root = false)
 @Prototype.Provides(LimitProvider.class)
-interface ThroughputLimitConfigBlueprint extends Prototype.Factory<ThroughputLimit> {
+interface ThroughputLimitConfigBlueprint extends Prototype.Factory<ThroughputLimit>, ClockConfig {
     /**
      * The rate limiting algorithm to apply.
-     *
+     * <p>
      * Rate limiting algorithm is by default {@link RateLimitingAlgorithmType#TOKEN_BUCKET}.
      * @return the rate limiting algorithm to be applied
      */
@@ -85,7 +85,7 @@ interface ThroughputLimitConfigBlueprint extends Prototype.Factory<ThroughputLim
      * We use {@link java.util.concurrent.Semaphore#getQueueLength()} in the
      * {@link io.helidon.common.concurrency.limits.ThroughputLimit} implementation.
      * Default value is {@value ThroughputLimit#DEFAULT_QUEUE_LENGTH}.
-     * If set to {code 0}, there is no queueing.
+     * If set to {@code 0}, there is no queueing.
      *
      * @return number of requests to enqueue
      */
@@ -124,6 +124,7 @@ interface ThroughputLimitConfigBlueprint extends Prototype.Factory<ThroughputLim
      *
      * @return supplier of current nanoseconds, defaults to {@link java.lang.System#nanoTime()}
      */
+    @Override
     Optional<Supplier<Long>> clock();
 
     /**
