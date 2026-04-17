@@ -483,8 +483,17 @@ class ServerListener implements ListenerContext {
         return new ArrayList<>(activeConnections.values());
     }
 
+    // Intended for testing.
+    Thread serverThreads() {
+        return serverThread;
+    }
+
     void suspend() {
         inCheckpoint = true;
+        // Checkpoint suspend is expected to stop the listener thread. The connection-limit wait path
+        // converts interrupts into a rejected outcome, so clear the loop condition first to avoid
+        // re-entering the wait after the interrupt is consumed.
+        running = false;
         suspend(false);
         serverThread = null;
         closeFuture = null;
