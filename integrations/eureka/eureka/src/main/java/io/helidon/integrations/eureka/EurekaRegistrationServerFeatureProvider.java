@@ -15,6 +15,7 @@
  */
 package io.helidon.integrations.eureka;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
@@ -32,13 +33,10 @@ import static io.helidon.integrations.eureka.EurekaRegistrationServerFeature.EUR
 public final class EurekaRegistrationServerFeatureProvider implements ServerFeatureProvider<EurekaRegistrationServerFeature> {
 
     /**
-     * Creates a new {@link EurekaRegistrationServerFeatureProvider}.
-     *
-     * @deprecated For {@link java.util.ServiceLoader} use only.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated // For java.util.ServiceLoader use only.
+    @Api.Internal
     public EurekaRegistrationServerFeatureProvider() {
-        super();
     }
 
     /**

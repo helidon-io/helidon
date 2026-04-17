@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.integrations.oci.secrets.mp.configsource;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.config.mp.spi.MpMetaConfigProvider;
@@ -44,11 +45,9 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
     private final OciSecretsConfigSourceProvider p;
 
     /**
-     * Creates a new {@link OciSecretsMpMetaConfigProvider}.
-     *
-     * @deprecated For use by the Helidon Config subsystem only.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated // For java.util.ServiceLoader use only.
+    @Api.Internal
     public OciSecretsMpMetaConfigProvider() {
         super();
         this.p = new OciSecretsConfigSourceProvider();

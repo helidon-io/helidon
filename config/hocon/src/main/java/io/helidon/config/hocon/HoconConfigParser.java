@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.media.type.MediaType;
@@ -86,12 +87,9 @@ public class HoconConfigParser implements ConfigParser {
     }
 
     /**
-     * To be used by Java Service Loader only!!!
-     *
-     * @deprecated Use {@link #builder()} to construct a customized instance, or {@link #create()} to get an instance with
-     *         defaults
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public HoconConfigParser() {
         this(builder());
     }

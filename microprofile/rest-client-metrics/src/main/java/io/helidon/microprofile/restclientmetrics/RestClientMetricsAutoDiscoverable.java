@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.microprofile.restclientmetrics;
 
+import io.helidon.common.Api;
+
 import jakarta.ws.rs.ConstrainedTo;
 import jakarta.ws.rs.RuntimeType;
 import jakarta.ws.rs.core.FeatureContext;
@@ -27,9 +29,9 @@ import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 public class RestClientMetricsAutoDiscoverable implements AutoDiscoverable {
 
     /**
-     * For service loading.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public RestClientMetricsAutoDiscoverable() {
     }
 

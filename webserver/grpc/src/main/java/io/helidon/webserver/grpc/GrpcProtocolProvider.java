@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.grpc;
 
+import io.helidon.common.Api;
 import io.helidon.webserver.ProtocolConfigs;
 import io.helidon.webserver.http2.spi.Http2SubProtocolProvider;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
@@ -27,11 +28,9 @@ public class GrpcProtocolProvider implements Http2SubProtocolProvider<GrpcConfig
     static final String CONFIG_NAME = "grpc";
 
     /**
-     * Default constructor required by Java {@link java.util.ServiceLoader}.
-     *
-     * @deprecated please do not use directly outside of testing, this is reserved for Java {@link java.util.ServiceLoader}
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public GrpcProtocolProvider() {
     }
 

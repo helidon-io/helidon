@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.config.vault;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
@@ -29,10 +30,9 @@ import io.helidon.security.spi.SecurityProviderService;
 @Weight(Weighted.DEFAULT_WEIGHT - 20)
 public class ConfigVaultProviderService implements SecurityProviderService {
     /**
-     * @deprecated do not use, this should only be invoked by Java Service Loader
-     * @see ConfigVaultProvider
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public ConfigVaultProviderService() {
     }
 

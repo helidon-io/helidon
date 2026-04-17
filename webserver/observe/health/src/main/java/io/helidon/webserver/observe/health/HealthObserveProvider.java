@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.observe.health;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
@@ -28,11 +29,9 @@ import io.helidon.webserver.observe.spi.Observer;
 @Deprecated
 public class HealthObserveProvider implements ObserveProvider {
     /**
-     * Default constructor required by {@link java.util.ServiceLoader}. Do not use.
-     *
-     * @deprecated this constructor must be public for {@link java.util.ServiceLoader}
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public HealthObserveProvider() {
     }
 

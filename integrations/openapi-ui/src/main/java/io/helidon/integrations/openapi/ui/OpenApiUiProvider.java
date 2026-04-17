@@ -15,6 +15,7 @@
  */
 package io.helidon.integrations.openapi.ui;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.openapi.spi.OpenApiServiceProvider;
 
@@ -24,11 +25,9 @@ import io.helidon.openapi.spi.OpenApiServiceProvider;
 public final class OpenApiUiProvider implements OpenApiServiceProvider {
 
     /**
-     * Create a new instance.
-     *
-     * @deprecated to be used solely by {@link java.util.ServiceLoader}
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public OpenApiUiProvider() {
     }
 

@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -88,9 +89,9 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
     }
 
     /**
-     * Creates a new provider; reserved for service loading.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public OpenTelemetryTracerProvider() {
     }
 
