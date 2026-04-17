@@ -1,6 +1,11 @@
 CDI integration with Micronaut
 ---
 
+> [!WARNING]
+> `helidon-integrations-micronaut-cdi` and `helidon-integrations-micronaut-cdi-processor` are deprecated and will be
+> removed in a future Helidon release. Use the Helidon Declarative programming model instead.
+> `helidon-integrations-micronaut-data` is also deprecated; use `helidon-data` instead.
+
 #Introduction
 
 Goals of this integration:
@@ -63,4 +68,3 @@ The `helidon-integrations-micronaut-cdi-processor` must be used whenever integra
     </configuration>
 </plugin>
 ```
- 

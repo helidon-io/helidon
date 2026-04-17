@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,10 @@ import jakarta.inject.Singleton;
 
 /**
  * Transforms CDI ApplicationScoped annotation into Micronaut Singleton.
+ *
+ * @deprecated use the Helidon Declarative programming model instead
  */
+@Deprecated(forRemoval = true, since = "4.4.5")
 public class ApplicationScopedTransformer implements NamedAnnotationTransformer {
     @Override
     public String getName() {
