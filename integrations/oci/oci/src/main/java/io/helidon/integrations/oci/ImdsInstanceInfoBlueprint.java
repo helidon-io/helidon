@@ -19,12 +19,11 @@ package io.helidon.integrations.oci;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.json.JsonObject;
-import io.helidon.json.JsonParser;
 
 /**
  * Information about the instance retrieved from Imds.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(decorator = ImdsInstanceInfoSupport.Decorator.class)
 @Prototype.Configured
 interface ImdsInstanceInfoBlueprint {
     /**
@@ -94,7 +93,7 @@ interface ImdsInstanceInfoBlueprint {
     /**
      * Instance Data.
      *
-     * @deprecated for removal, use {@link #helidonJsonObject()}.
+     * @deprecated for removal, use {@link #json()}.
      * @return Full information about the instance as a {@link jakarta.json.JsonObject}
      */
     @Deprecated(forRemoval = true, since = "4.5.0")
@@ -104,10 +103,8 @@ interface ImdsInstanceInfoBlueprint {
     /**
      * Instance Data.
      *
-     * @return Full information about the instance as a {@link io.helidon.json.JsonObject}
+     * @return Full information about the instance as a {@link JsonObject}
      */
-    default JsonObject helidonJsonObject() {
-        return JsonParser.create(jsonObject().toString())
-                .readJsonObject();
-    }
+    @Option.Configured
+    JsonObject json();
 }

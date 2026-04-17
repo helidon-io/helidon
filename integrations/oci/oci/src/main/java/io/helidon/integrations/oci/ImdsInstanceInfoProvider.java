@@ -16,7 +16,6 @@
 
 package io.helidon.integrations.oci;
 
-import java.io.StringReader;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -25,8 +24,6 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.json.JsonObject;
 import io.helidon.service.registry.Service;
-
-import jakarta.json.Json;
 
 // the type must be fully qualified, as it is code generated
 @Service.Provider
@@ -66,7 +63,7 @@ class ImdsInstanceInfoProvider implements Supplier<Optional<io.helidon.integrati
                     .faultDomain(requiredString(metadataJson, FAULT_DOMAIN))
                     .compartmentId(requiredString(metadataJson, COMPARTMENT_ID))
                     .tenantId(requiredString(metadataJson, TENANT_ID))
-                    .jsonObject(toJakartaJsonObject(metadataJson))
+                    .json(metadataJson)
                     .build();
         }
         return null;
@@ -75,11 +72,5 @@ class ImdsInstanceInfoProvider implements Supplier<Optional<io.helidon.integrati
     private static String requiredString(JsonObject metadataJson, String key) {
         return metadataJson.stringValue(key)
                 .orElseThrow(() -> new IllegalStateException("Missing IMDS metadata field: " + key));
-    }
-
-    private static jakarta.json.JsonObject toJakartaJsonObject(JsonObject metadataJson) {
-        try (var reader = Json.createReader(new StringReader(metadataJson.toString()))) {
-            return reader.readObject();
-        }
     }
 }
