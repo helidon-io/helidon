@@ -8,6 +8,7 @@ Index of Helidon documentation topics.
 | [About Helidon](about/README.md)                        | What is Helidon? |
 | [Helidon SE](se/README.md)                              | Helidon SE documentation |
 | [Helidon MP](mp/README.md)                              | Helidon MP documentation |
+| [Javadocs](apidocs/index.html )                         | API documentation |
 | [Config Reference](config/config_reference)             | Configuration reference |
 | [Service Reference](service-registry/service_reference) | Service Registry reference |
 | [Community](about/community.md)                         | Helidon community and support |
