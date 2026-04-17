@@ -44,6 +44,7 @@ import io.helidon.http.PathMatchers;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -233,6 +234,8 @@ abstract class StaticContentHandler implements StaticContentService {
             if (!doHandle(method, requestPath, request, response, mapped)) {
                 response.next();
             }
+        } catch (CloseConnectionException e) {
+            throw e;
         } catch (HttpException httpException) {
             if (httpException.status().code() == Status.NOT_FOUND_404.code()) {
                 // Prefer to next() before NOT_FOUND

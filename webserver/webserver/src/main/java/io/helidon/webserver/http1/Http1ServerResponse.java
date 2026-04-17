@@ -31,6 +31,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
@@ -213,7 +214,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             bytesWritten = bufferData.available();
             isSent = true;
             request.reset();
-            dataWriter.write(bufferData);
+            writeResponse(dataWriter, bufferData, "Failed to write response");
             afterSend();
         } else {
             // we should skip encoders if no data is written (e.g. for GZIP)
@@ -369,6 +370,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
         for (Header header : headers) {
             header.writeHttp1Header(buffer);
+        }
+    }
+
+    private static void writeResponse(DataWriter dataWriter, BufferData bufferData, String message) {
+        try {
+            dataWriter.write(bufferData);
+        } catch (SocketWriterException | UncheckedIOException e) {
+            throw new ServerConnectionException(message, e);
         }
     }
 
@@ -627,7 +636,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 writeHeaders(trailers, buffer, this.validateHeaders);
                 buffer.write('\r');        // "\r\n" - empty line after headers
                 buffer.write('\n');
-                dataWriter.write(buffer);
+                writeResponse(dataWriter, buffer, "Failed to write response trailers");
             }
 
             responseCloseRunnable.run();
@@ -686,7 +695,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private void terminatingChunk(boolean trailers) {
             BufferData terminatingChunk = BufferData.create(trailers ? TERMINATING_CHUNK_TRAILERS : TERMINATING_CHUNK);
             sendListener.data(ctx, terminatingChunk);
-            dataWriter.write(terminatingChunk);
+            writeResponse(dataWriter, terminatingChunk, "Failed to write terminating chunk");
         }
 
         private void write(BufferData buffer) throws IOException {
@@ -713,7 +722,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                     // write single buffer headers and payload part
                     growing.write(buffer);
                     responseBytesTotal += growing.available();
-                    dataWriter.write(growing);
+                    writeResponse(dataWriter, growing, "Failed to write response");
                 } else {
                     // if not chunked, always write
                     writeContent(buffer);
@@ -775,7 +784,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
             sendListener.data(ctx, bufferData);
             responseBytesTotal += bufferData.available();
-            dataWriter.write(bufferData);
+            writeResponse(dataWriter, bufferData, "Failed to write response");
         }
 
         private void sendHeadersAndPrepare() {
@@ -803,7 +812,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             nonEntityBytes(headers, usedStatus, bufferData, keepAlive, sendKeepAliveHeader, validateHeaders);
             sendListener.data(ctx, bufferData);
             responseBytesTotal += bufferData.available();
-            dataWriter.write(bufferData);
+            writeResponse(dataWriter, bufferData, "Failed to write response headers");
         }
 
         private void writeChunked(BufferData buffer) {
@@ -820,7 +829,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
             sendListener.data(ctx, toWrite);
             responseBytesTotal += toWrite.available();
-            dataWriter.write(toWrite);
+            writeResponse(dataWriter, toWrite, "Failed to write chunked response data");
         }
 
         private void checkContentLength(BufferData ignored) throws IOException {
@@ -836,7 +845,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             checkContentLength(buffer);
             sendListener.data(ctx, buffer);
             responseBytesTotal += buffer.available();
-            dataWriter.write(buffer);
+            writeResponse(dataWriter, buffer, "Failed to write response content");
         }
     }
 
@@ -884,7 +893,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             closingDelegate.closing();     // inform of imminent call to close for last flush
             try {
                 delegate.close();
-            } catch (IOException | UncheckedIOException e) {
+            } catch (IOException | UncheckedIOException | SocketWriterException e) {
                 throw new ServerConnectionException("Failed to close server output stream", e);
             }
         }
@@ -897,7 +906,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             try {
                 flush();
                 closingDelegate.commit();
-            } catch (IOException | UncheckedIOException e) {
+            } catch (IOException | UncheckedIOException | SocketWriterException e) {
                 throw new ServerConnectionException("Failed to flush server output stream", e);
             }
         }
