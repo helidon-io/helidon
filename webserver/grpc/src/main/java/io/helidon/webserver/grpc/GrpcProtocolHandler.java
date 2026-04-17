@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
@@ -54,7 +56,9 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 
 import io.grpc.Codec;
@@ -173,7 +177,12 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     listener.onReady();
                     bytesReceived = 0L;
                 });
+        } catch (CloseConnectionException e) {
+            throw e;
         } catch (Throwable e) {
+            if (isPeerCancellation(e)) {
+                throw new ServerConnectionException("gRPC call cancelled by remote peer", e);
+            }
             LOGGER.log(ERROR, "Failed to initialize grpc protocol handler", e);
             throw e;
         }
@@ -271,7 +280,12 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     methodMetrics.recvMessageSize.record(bytesReceived);
                 }
             }
+        } catch (CloseConnectionException e) {
+            throw e;
         } catch (Exception e) {
+            if (isPeerCancellation(e)) {
+                throw new ServerConnectionException("gRPC call cancelled by remote peer", e);
+            }
             listener.onCancel();
             LOGGER.log(ERROR, "Failed to process grpc request: " + data.debugDataHex(true), e);
         }
@@ -334,6 +348,26 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         return identityCompressor;
     }
 
+    private boolean isPeerCancellation(Throwable throwable) {
+        return callCancelled && Status.fromThrowable(throwable).getCode() == Status.Code.CANCELLED;
+    }
+
+    private void writeHeaders(Http2Headers http2Headers, HeaderFlags flags) {
+        try {
+            streamWriter.writeHeaders(http2Headers, streamId, flags, outboundFlowControl());
+        } catch (UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write grpc response headers", e);
+        }
+    }
+
+    private void writeData(Http2FrameData frameData) {
+        streamWriter.writeData(frameData, outboundFlowControl());
+    }
+
+    private FlowControl.Outbound outboundFlowControl() {
+        return flowControl == null ? FlowControl.Outbound.NOOP : flowControl.outbound();
+    }
+
     private void addNumMessages(int n) {
         numMessages.getAndAdd(n);
     }
@@ -368,7 +402,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         };
     }
 
-    private ServerCall<REQ, RES> createServerCall() {
+    ServerCall<REQ, RES> createServerCall() {
         return new ServerCall<REQ, RES>() {
 
             private long bytesSent;
@@ -398,10 +432,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 // write headers frame
                 Http2Headers http2Headers = Http2Headers.create(writable);
                 http2Headers.status(io.helidon.http.Status.OK_200);
-                streamWriter.writeHeaders(http2Headers,
-                                          streamId,
-                                          HeaderFlags.create(END_OF_HEADERS),
-                                          flowControl.outbound());
+                writeHeaders(http2Headers, HeaderFlags.create(END_OF_HEADERS));
                 headersSent = true;
             }
 
@@ -440,8 +471,10 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                                                                       streamId);
 
                     // write data frame
-                    streamWriter.writeData(new Http2FrameData(header, bufferData), flowControl.outbound());
+                    writeData(new Http2FrameData(header, bufferData));
                     bytesSent += writeLength;
+                } catch (UncheckedIOException e) {
+                    throw new ServerConnectionException("Failed to write grpc response data", e);
                 } catch (IOException e) {
                     listener.onCancel();
                     LOGGER.log(ERROR, "Failed to respond to grpc request: " + route.method(), e);
@@ -469,10 +502,14 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 if (!headersSent) {
                     http2Headers.status(io.helidon.http.Status.OK_200);
                 }
-                streamWriter.writeHeaders(http2Headers,
-                                          streamId,
-                                          HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM),
-                                          flowControl.outbound());
+                try {
+                    writeHeaders(http2Headers, HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM));
+                } catch (CloseConnectionException e) {
+                    callCancelled = true;
+                    currentStreamState.updateAndGet(
+                            current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_LOCAL));
+                    return;
+                }
                 currentStreamState.updateAndGet(
                         current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_LOCAL));
 
@@ -491,7 +528,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             @Override
             public boolean isCancelled() {
-                return currentStreamState.get() == Http2StreamState.CLOSED;
+                return callCancelled || currentStreamState.get() == Http2StreamState.CLOSED;
             }
 
             @Override

@@ -60,6 +60,7 @@ import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.http.http2.WindowSize;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.spi.ServerConnection;
@@ -132,7 +133,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         this.connectionWriter = new Http2ConnectionWriter(ctx,
                                                           ctx.dataWriter(),
                                                           List.of(new Http2LoggingFrameListener("send")));
-        this.connectionChecks = new Http2ConnectionChecks(http2Config, connectionWriter, this);
+        this.connectionChecks = new Http2ConnectionChecks(http2Config, this);
         this.subProviders = subProviders;
         this.requestDynamicTable = Http2Headers.DynamicTable.create(
                 serverSettings.value(Http2Setting.HEADER_TABLE_SIZE));
@@ -185,7 +186,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             Http2GoAway frame = new Http2GoAway(0,
                                                 e.code(),
                                                 sendErrorDetails ? e.getMessage() : "");
-            connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+            writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
             state = State.FINISHED;
         } catch (CloseConnectionException
                  | InterruptedException
@@ -199,7 +200,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             Http2GoAway frame = new Http2GoAway(0,
                                                 Http2ErrorCode.INTERNAL,
                                                 sendErrorDetails ? e.getClass().getName() + ": " + e.getMessage() : "");
-            connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+            writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
             state = State.FINISHED;
             throw e;
         }
@@ -226,7 +227,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 Http2GoAway frame = new Http2GoAway(0,
                                                     Http2ErrorCode.FLOW_CONTROL,
                                                     "Window " + initialWindowSize + " size too large");
-                connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+                writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
             }
 
             //6.9.1/1 - changing the flow-control window for streams that are not yet active
@@ -355,7 +356,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
         if (state != State.FINISHED) {
             Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.NO_ERROR, "Idle timeout");
-            connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+            writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
         }
     }
 
@@ -464,13 +465,13 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void writeServerSettings() {
-        connectionWriter.write(serverSettings.toFrameData(serverSettings, 0, Http2Flag.SettingsFlags.create(0)));
+        writeConnectionFrame(serverSettings.toFrameData(serverSettings, 0, Http2Flag.SettingsFlags.create(0)));
 
         // Initial window size for connection is not configurable, subsequent update win update is needed
         int connectionWinSizeUpd = http2Config.initialWindowSize() - WindowSize.DEFAULT_WIN_SIZE;
         if (connectionWinSizeUpd > 0) {
             Http2WindowUpdate windowUpdate = new Http2WindowUpdate(http2Config.initialWindowSize() - WindowSize.DEFAULT_WIN_SIZE);
-            connectionWriter.write(windowUpdate.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+            writeConnectionFrame(windowUpdate.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
         }
 
         state = State.READ_FRAME;
@@ -491,13 +492,13 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             // overall connection
             if (increment == 0) {
                 Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL, "Window size 0");
-                connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+                writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
             }
 
             long size = flowControl.incrementOutboundConnectionWindowSize(increment);
             if (size > WindowSize.MAX_WIN_SIZE || size < 0) {
                 Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.FLOW_CONTROL, "Window size too big.");
-                connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+                writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
             }
         } else {
             try {
@@ -511,7 +512,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     // Used in inbound flow control instance to write WINDOW_UPDATE frame.
     private void writeWindowUpdateFrame(int streamId, Http2WindowUpdate windowUpdateFrame) {
-        connectionWriter.write(windowUpdateFrame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+        writeConnectionFrame(windowUpdateFrame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
     }
 
     private void doSettings() {
@@ -535,7 +536,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private void ackSettings() {
         Http2Flag.SettingsFlags flags = Http2Flag.SettingsFlags.create(Http2Flag.ACK);
         Http2FrameHeader header = Http2FrameHeader.create(0, Http2FrameTypes.SETTINGS, flags, 0);
-        connectionWriter.write(new Http2FrameData(header, BufferData.empty()));
+        writeConnectionFrame(new Http2FrameData(header, BufferData.empty()));
         state = State.READ_FRAME;
 
         if (upgradeHeaders != null) {
@@ -748,15 +749,27 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
     }
 
-    private void writePingAck() {
+    void pendingPing(Http2Ping ping) {
+        this.ping = ping;
+    }
+
+    void writePingAck() {
         BufferData frame = ping.data();
         Http2FrameHeader header = Http2FrameHeader.create(frame.available(),
                                                           Http2FrameTypes.PING,
                                                           Http2Flag.PingFlags.create(Http2Flag.ACK),
                                                           0);
         ping = null;
-        connectionWriter.write(new Http2FrameData(header, frame));
+        writeConnectionFrame(new Http2FrameData(header, frame));
         state = State.READ_FRAME;
+    }
+
+    void writeConnectionFrame(Http2FrameData frame) {
+        try {
+            connectionWriter.write(frame);
+        } catch (UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write HTTP/2 connection frame", e);
+        }
     }
 
     private void goAwayFrame() {
