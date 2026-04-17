@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,8 @@ import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.api.WebClient;
-
-import jakarta.json.JsonObject;
 
 import static io.helidon.integrations.oci.OciConfigSupport.IMDS_HOSTNAME;
 import static io.helidon.integrations.oci.OciConfigSupport.IMDS_URI;

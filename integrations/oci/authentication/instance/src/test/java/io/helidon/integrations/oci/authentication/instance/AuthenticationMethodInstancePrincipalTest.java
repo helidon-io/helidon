@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.integrations.oci.authentication.instance;
 
 import java.util.Properties;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
@@ -103,6 +104,7 @@ public class AuthenticationMethodInstancePrincipalTest {
                 """;
 
         private static void emulateImdsInstance(ServerRequest req, ServerResponse res) {
+            res.headers().contentType(MediaTypes.APPLICATION_JSON);
             res.send(IMDS_INSTANCE_RESPONSE);
         }
     }

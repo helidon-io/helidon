@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,12 @@ package io.helidon.integrations.oci;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-
-import jakarta.json.JsonObject;
+import io.helidon.json.JsonObject;
 
 /**
  * Information about the instance retrieved from Imds.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(decorator = ImdsInstanceInfoSupport.Decorator.class)
 @Prototype.Configured
 interface ImdsInstanceInfoBlueprint {
     /**
@@ -94,8 +93,18 @@ interface ImdsInstanceInfoBlueprint {
     /**
      * Instance Data.
      *
-     * @return Full information about the Instance as a {@link jakarta.json.JsonObject}
+     * @deprecated for removal, use {@link #json()}.
+     * @return Full information about the instance as a {@link jakarta.json.JsonObject}
+     */
+    @Deprecated(forRemoval = true, since = "4.5.0")
+    @Option.Configured
+    jakarta.json.JsonObject jsonObject();
+
+    /**
+     * Instance Data.
+     *
+     * @return Full information about the instance as a {@link JsonObject}
      */
     @Option.Configured
-    JsonObject jsonObject();
+    JsonObject json();
 }
