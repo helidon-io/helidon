@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.jwt;
 
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
@@ -26,6 +27,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
@@ -41,15 +43,17 @@ import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
 
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonBoolean;
+import io.helidon.json.JsonNull;
+import io.helidon.json.JsonNumber;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
+import io.helidon.json.JsonString;
+import io.helidon.json.JsonValue;
+
 import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonNumber;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
-import jakarta.json.spi.JsonProvider;
+import jakarta.json.JsonReaderFactory;
 
 /**
  * Utilities for JWT and JWK parsing.
@@ -63,8 +67,7 @@ public final class JwtUtil {
     private static final Pattern LOCALE_PATTERN = Pattern.compile("(\\w+)_(\\w+)");
 
     // Avoid reloading JSON providers. See https://github.com/eclipse-ee4j/jsonp/issues/154
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-    private static final JsonProvider JSON_PROVIDER = JsonProvider.provider();
+    private static final JsonReaderFactory JSONP = Json.createReaderFactory(Collections.emptyMap());
 
     private JwtUtil() {
     }
@@ -88,6 +91,21 @@ public final class JwtUtil {
     }
 
     /**
+     * Extract a key value from json object that is base64-url encoded and convert it to big integer.
+     *
+     * @param json        JsonObject to read key from
+     * @param key         key of the value we want to read
+     * @param description description of the field for error handling
+     * @return BigInteger value
+     * @throws JwtException in case the key is not present or is of invalid content
+     * @deprecated use {@link #asBigInteger(io.helidon.json.JsonObject, String, String)} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public static BigInteger asBigInteger(jakarta.json.JsonObject json, String key, String description) throws JwtException {
+        return asBigInteger(toJsonObject(json), key, description);
+    }
+
+    /**
      * Extract a key value from json object that is string.
      *
      * @param json        JsonObject to read key from
@@ -99,6 +117,21 @@ public final class JwtUtil {
     public static String asString(JsonObject json, String key, String description) throws JwtException {
         return getString(json, key)
                 .orElseThrow(() -> new JwtException("Key \"" + key + "\" is mandatory for " + description));
+    }
+
+    /**
+     * Extract a key value from json object that is string.
+     *
+     * @param json        JsonObject to read key from
+     * @param key         key of the value we want to read
+     * @param description description of the field for error handling
+     * @return String value
+     * @throws JwtException in case the key is not present or is of invalid content
+     * @deprecated use {@link #asString(io.helidon.json.JsonObject, String, String)} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public static String asString(jakarta.json.JsonObject json, String key, String description) throws JwtException {
+        return asString(toJsonObject(json), key, description);
     }
 
     /**
@@ -124,6 +157,22 @@ public final class JwtUtil {
     }
 
     /**
+     * Extract a key value from json object that is base64-url encoded and convert it to big integer if present.
+     *
+     * @param json        JsonObject to read key from
+     * @param key         key of the value we want to read
+     * @param description description of the field for error handling
+     * @return BigInteger value if present
+     * @throws JwtException in case the key is of invalid content
+     * @deprecated use {@link #getBigInteger(io.helidon.json.JsonObject, String, String)} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public static Optional<BigInteger> getBigInteger(jakarta.json.JsonObject json, String key, String description)
+            throws JwtException {
+        return getBigInteger(toJsonObject(json), key, description);
+    }
+
+    /**
      * Extract a key value from json object that is a list of strings if present.
      *
      * @param json JsonObject to read key from
@@ -132,14 +181,28 @@ public final class JwtUtil {
      * @throws JwtException in case the key is of invalid content
      */
     public static Optional<List<String>> getStrings(JsonObject json, String key) throws JwtException {
-        return Optional.ofNullable(json.getJsonArray(key))
+        return json.arrayValue(key)
                 .map(it -> {
                     try {
-                        return it.stream().map(it2 -> ((JsonString) it2).getString()).collect(Collectors.toList());
+                        return it.values().stream().map(JsonValue::asString).map(JsonString::value).collect(Collectors.toList());
                     } catch (Exception e) {
                         throw new JwtException("Invalid value. Expecting a string array for key " + key);
                     }
                 });
+    }
+
+    /**
+     * Extract a key value from json object that is a list of strings if present.
+     *
+     * @param json JsonObject to read key from
+     * @param key  key of the value we want to read
+     * @return List of String value if present
+     * @throws JwtException in case the key is of invalid content
+     * @deprecated use {@link #getStrings(io.helidon.json.JsonObject, String)} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public static Optional<List<String>> getStrings(jakarta.json.JsonObject json, String key) throws JwtException {
+        return getStrings(toJsonObject(json), key);
     }
 
     /**
@@ -151,7 +214,24 @@ public final class JwtUtil {
      * @throws JwtException in case the key is of invalid content
      */
     public static Optional<String> getString(JsonObject json, String key) throws JwtException {
-        return Optional.ofNullable(json.getString(key, null));
+        return json.value(key)
+                .filter(JsonString.class::isInstance)
+                .map(JsonValue::asString)
+                .map(JsonString::value);
+    }
+
+    /**
+     * Extract a key value from json object that is string if present.
+     *
+     * @param json JsonObject to read key from
+     * @param key  key of the value we want to read
+     * @return String value if present
+     * @throws JwtException in case the key is of invalid content
+     * @deprecated use {@link #getString(io.helidon.json.JsonObject, String)} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public static Optional<String> getString(jakarta.json.JsonObject json, String key) throws JwtException {
+        return getString(toJsonObject(json), key);
     }
 
     /**
@@ -176,6 +256,22 @@ public final class JwtUtil {
     }
 
     /**
+     * Extract a key value from json object that is a base64-url encoded byte array, if present.
+     *
+     * @param json        JsonObject to read key from
+     * @param key         key of the value we want to read
+     * @param description description of the field for error handling
+     * @return byte array value if present
+     * @throws JwtException in case the key is of invalid content or not base64 encoded
+     * @deprecated use {@link #getByteArray(io.helidon.json.JsonObject, String, String)} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public static Optional<byte[]> getByteArray(jakarta.json.JsonObject json, String key, String description)
+            throws JwtException {
+        return getByteArray(toJsonObject(json), key, description);
+    }
+
+    /**
      * Extract a key value from json object that is a base64-url encoded byte array.
      *
      * @param json        JsonObject to read key from
@@ -187,6 +283,21 @@ public final class JwtUtil {
     public static byte[] asByteArray(JsonObject json, String key, String description) throws JwtException {
         return getByteArray(json, key, description)
                 .orElseThrow(() -> new JwtException("Key \"" + key + "\" is mandatory for " + description));
+    }
+
+    /**
+     * Extract a key value from json object that is a base64-url encoded byte array.
+     *
+     * @param json        JsonObject to read key from
+     * @param key         key of the value we want to read
+     * @param description description of the field for error handling
+     * @return byte array value
+     * @throws JwtException in case the key is not present, is of invalid content or not base64 encoded
+     * @deprecated use {@link #asByteArray(io.helidon.json.JsonObject, String, String)} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public static byte[] asByteArray(jakarta.json.JsonObject json, String key, String description) throws JwtException {
+        return asByteArray(toJsonObject(json), key, description);
     }
 
     /**
@@ -242,12 +353,45 @@ public final class JwtUtil {
      * @param claims map to transform from
      * @return resulting map
      */
-    public static Map<String, JsonValue> transformToJson(Map<String, Object> claims) {
+    public static Map<String, JsonValue> transformToJsonValue(Map<String, Object> claims) {
         Map<String, JsonValue> result = new HashMap<>();
 
-        claims.forEach((s, o) -> result.put(s, toJson(o)));
+        claims.forEach((s, o) -> result.put(s, toJsonValue(o)));
 
         return result;
+    }
+
+    /**
+     * Transform a map of strings to objects to a map of string to JSON values.
+     * Each object is checked for type and if supported, transformed to appropriate
+     * JSON value.
+     *
+     * @param claims map to transform from
+     * @return resulting map
+     * @deprecated use {@link #transformToJsonValue(Map)} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public static Map<String, jakarta.json.JsonValue> transformToJson(Map<String, Object> claims) {
+        return toJsonpMap(transformToJsonValue(claims));
+    }
+
+    /**
+     * Create a {@link io.helidon.json.JsonValue} from an object.
+     * This will use correct types for known primitives, {@link io.helidon.security.jwt.JwtUtil.Address}
+     * otherwise it uses String value.
+     *
+     * @param object object to create json value from
+     * @return json value
+     */
+    public static JsonValue toJsonValue(Object object) {
+        JsonValue simpleValue = knownJsonValue(object);
+        if (simpleValue != null) {
+            return simpleValue;
+        }
+        if (object instanceof Collection) {
+            return toJsonArray((Collection<?>) object);
+        }
+        return JsonString.create(String.valueOf(object));
     }
 
     /**
@@ -257,40 +401,199 @@ public final class JwtUtil {
      *
      * @param object object to create json value from
      * @return json value
+     * @deprecated use {@link #toJsonValue(Object)} instead
      */
-    public static JsonValue toJson(Object object) {
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public static jakarta.json.JsonValue toJson(Object object) {
+        return toJsonpValue(toJsonValue(object));
+    }
+
+    private static JsonValue knownJsonValue(Object object) {
         if (object instanceof JsonValue) {
             return (JsonValue) object;
         }
-
+        if (object instanceof jakarta.json.JsonValue) {
+            return JsonParser.create(object.toString()).readJsonValue();
+        }
         if (object instanceof String) {
-            return JSON_PROVIDER.createValue((String) object);
+            return JsonString.create((String) object);
         }
         if (object instanceof Integer) {
-            return JSON_PROVIDER.createValue((Integer) object);
+            return JsonNumber.create(new BigDecimal((Integer) object));
         }
         if (object instanceof Double) {
-            return JSON_PROVIDER.createValue((Double) object);
+            return JsonNumber.create(BigDecimal.valueOf((Double) object));
         }
         if (object instanceof Long) {
-            return JSON_PROVIDER.createValue((Long) object);
+            return JsonNumber.create(new BigDecimal((Long) object));
         }
         if (object instanceof BigDecimal) {
-            return JSON_PROVIDER.createValue((BigDecimal) object);
+            return JsonNumber.create((BigDecimal) object);
         }
         if (object instanceof BigInteger) {
-            return JSON_PROVIDER.createValue((BigInteger) object);
+            return JsonNumber.create(new BigDecimal((BigInteger) object));
         }
         if (object instanceof Boolean) {
-            return ((Boolean) object) ? JsonValue.TRUE : JsonValue.FALSE;
+            return JsonBoolean.create((Boolean) object);
         }
         if (object instanceof Address) {
-            return ((Address) object).getJson();
+            return ((Address) object).jsonObject();
+        }
+        return null;
+    }
+
+    private static JsonArray toJsonArray(Collection<?> values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.size());
+
+        values.forEach(value -> addJsonArrayValue(jsonValues, value));
+
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(Object[] values) {
+        return toJsonArray(Arrays.asList(values));
+    }
+
+    private static JsonArray toJsonArray(int[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (int value : values) {
+            jsonValues.add(JsonNumber.create((long) value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(long[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (long value : values) {
+            jsonValues.add(JsonNumber.create(value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(double[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (double value : values) {
+            jsonValues.add(JsonNumber.create(value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(boolean[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (boolean value : values) {
+            jsonValues.add(JsonBoolean.create(value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(char[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (char value : values) {
+            jsonValues.add(JsonNumber.create((long) value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(float[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (float value : values) {
+            jsonValues.add(JsonNumber.create((double) value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(byte[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (byte value : values) {
+            jsonValues.add(JsonNumber.create((long) value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(short[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (short value : values) {
+            jsonValues.add(JsonNumber.create((long) value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonObject toJsonObject(Map<?, ?> values) {
+        JsonObject.Builder builder = JsonObject.builder();
+
+        values.forEach((key, value) -> addJsonObjectValue(builder, (String) key, value));
+
+        return builder.build();
+    }
+
+    private static void addJsonArrayValue(List<JsonValue> jsonValues, Object value) {
+        if (value instanceof Optional<?> optionalValue) {
+            optionalValue.ifPresent(it -> jsonValues.add(toNestedJsonValue(it)));
+            return;
+        }
+
+        jsonValues.add(toNestedJsonValue(value));
+    }
+
+    private static void addJsonObjectValue(JsonObject.Builder builder, String key, Object value) {
+        if (value instanceof Optional<?> optionalValue) {
+            optionalValue.ifPresent(it -> builder.set(key, toNestedJsonValue(it)));
+            return;
+        }
+
+        builder.set(key, toNestedJsonValue(value));
+    }
+
+    private static JsonValue toNestedJsonValue(Object object) {
+        if (object == null) {
+            return JsonNull.instance();
+        }
+
+        JsonValue simpleValue = knownJsonValue(object);
+        if (simpleValue != null) {
+            return simpleValue;
         }
         if (object instanceof Collection) {
-            return JSON.createArrayBuilder((Collection<?>) object).build();
+            return toJsonArray((Collection<?>) object);
         }
-        return JSON_PROVIDER.createValue(String.valueOf(object));
+        if (object instanceof Map) {
+            return toJsonObject((Map<?, ?>) object);
+        }
+        if (object instanceof Object[]) {
+            return toJsonArray((Object[]) object);
+        }
+        if (object instanceof int[]) {
+            return toJsonArray((int[]) object);
+        }
+        if (object instanceof long[]) {
+            return toJsonArray((long[]) object);
+        }
+        if (object instanceof double[]) {
+            return toJsonArray((double[]) object);
+        }
+        if (object instanceof boolean[]) {
+            return toJsonArray((boolean[]) object);
+        }
+        if (object instanceof char[]) {
+            return toJsonArray((char[]) object);
+        }
+        if (object instanceof float[]) {
+            return toJsonArray((float[]) object);
+        }
+        if (object instanceof byte[]) {
+            return toJsonArray((byte[]) object);
+        }
+        if (object instanceof short[]) {
+            return toJsonArray((short[]) object);
+        }
+        if (object instanceof jakarta.json.JsonObjectBuilder) {
+            return JsonParser.create(((jakarta.json.JsonObjectBuilder) object).build().toString()).readJsonObject();
+        }
+        if (object instanceof jakarta.json.JsonArrayBuilder) {
+            return JsonParser.create(((jakarta.json.JsonArrayBuilder) object).build().toString()).readJsonArray();
+        }
+
+        throw new IllegalArgumentException(String.format("Type %s is not supported.", object.getClass()));
     }
 
     private static Locale toLocale(String locale) {
@@ -305,12 +608,12 @@ public final class JwtUtil {
     }
 
     static Optional<Address> toAddress(JsonObject json, String name) {
-        return Optional.ofNullable(json.getJsonObject(name))
+        return json.objectValue(name)
                 .map(Address::new);
     }
 
     static Optional<List<String>> toScopes(JsonObject json) {
-        if (json.get(Jwt.SCOPE) instanceof JsonArray) {
+        if (json.value(Jwt.SCOPE).filter(it -> it.type() == io.helidon.json.JsonValueType.ARRAY).isPresent()) {
             return getStrings(json, Jwt.SCOPE);
         } else {
             return getString(json, Jwt.SCOPE)
@@ -346,14 +649,14 @@ public final class JwtUtil {
 
     static Optional<Boolean> toBoolean(JsonObject json, String name) {
         if (json.containsKey(name)) {
-            return Optional.of(json.getBoolean(name));
+            return Optional.of(json.booleanValue(name, false));
         }
         return Optional.empty();
     }
 
     static Optional<Instant> toInstant(JsonObject json, String name) {
-        return Optional.ofNullable(json.getJsonNumber(name))
-                .map(JsonNumber::longValue)
+        return json.numberValue(name)
+                .map(BigDecimal::longValue)
                 .map(Instant::ofEpochSecond);
     }
 
@@ -368,24 +671,34 @@ public final class JwtUtil {
      * @return object most correct for the type, or string value if not understood (e.g. json object)
      */
     public static Object toObject(JsonValue jsonValue) {
-        switch (jsonValue.getValueType()) {
+        switch (jsonValue.type()) {
         case ARRAY:
             return jsonValue.toString();
         case OBJECT:
             return jsonValue.toString();
         case STRING:
-            return ((JsonString) jsonValue).getString();
+            return jsonValue.asString().value();
         case NUMBER:
-            return ((JsonNumber) jsonValue).numberValue();
-        case TRUE:
-            return true;
-        case FALSE:
-            return false;
+            return jsonValue.asNumber().bigDecimalValue();
+        case BOOLEAN:
+            return jsonValue.asBoolean().value();
         case NULL:
             return null;
         default:
             return jsonValue.toString();
         }
+    }
+
+    /**
+     * Transform from json to object.
+     *
+     * @param jsonValue json value
+     * @return object most correct for the type, or string value if not understood (e.g. json object)
+     * @deprecated use {@link #toObject(io.helidon.json.JsonValue)} instead
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public static Object toObject(jakarta.json.JsonValue jsonValue) {
+        return toObject(toJsonValue(jsonValue));
     }
 
     /**
@@ -420,6 +733,17 @@ public final class JwtUtil {
             this.country = getString(jsonObject, "country");
         }
 
+        /**
+         * Create an address object from json representation.
+         *
+         * @param jsonObject object with expected keys
+         * @deprecated use {@link #Address(io.helidon.json.JsonObject)} instead
+         */
+        @Deprecated(since = "4.5.0", forRemoval = true)
+        public Address(jakarta.json.JsonObject jsonObject) {
+            this(toJsonObject(jsonObject));
+        }
+
         public Optional<String> getFormatted() {
             return formatted;
         }
@@ -449,17 +773,50 @@ public final class JwtUtil {
          *
          * @return Address as a Json object
          */
-        public JsonObject getJson() {
-            JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
+        public JsonObject jsonObject() {
+            JsonObject.Builder objectBuilder = JsonObject.builder();
 
-            formatted.ifPresent(it -> objectBuilder.add("formatted", it));
-            streetAddress.ifPresent(it -> objectBuilder.add("street_address", it));
-            locality.ifPresent(it -> objectBuilder.add("locality", it));
-            region.ifPresent(it -> objectBuilder.add("region", it));
-            postalCode.ifPresent(it -> objectBuilder.add("postal_code", it));
-            country.ifPresent(it -> objectBuilder.add("country", it));
+            formatted.ifPresent(it -> objectBuilder.set("formatted", it));
+            streetAddress.ifPresent(it -> objectBuilder.set("street_address", it));
+            locality.ifPresent(it -> objectBuilder.set("locality", it));
+            region.ifPresent(it -> objectBuilder.set("region", it));
+            postalCode.ifPresent(it -> objectBuilder.set("postal_code", it));
+            country.ifPresent(it -> objectBuilder.set("country", it));
 
             return objectBuilder.build();
         }
+
+        /**
+         * Create a json representation of this address.
+         *
+         * @return Address as a Json object
+         * @deprecated use {@link #jsonObject()} instead
+         */
+        @Deprecated(since = "4.5.0", forRemoval = true)
+        public jakarta.json.JsonObject getJson() {
+            return toJsonpObject(jsonObject());
+        }
+    }
+
+    private static JsonObject toJsonObject(jakarta.json.JsonObject json) {
+        return JsonParser.create(json.toString()).readJsonObject();
+    }
+
+    private static JsonValue toJsonValue(jakarta.json.JsonValue jsonValue) {
+        return JsonParser.create(jsonValue.toString()).readJsonValue();
+    }
+
+    private static jakarta.json.JsonObject toJsonpObject(JsonObject jsonObject) {
+        return JSONP.createReader(new StringReader(jsonObject.toString())).readObject();
+    }
+
+    private static jakarta.json.JsonValue toJsonpValue(JsonValue jsonValue) {
+        return JSONP.createReader(new StringReader(jsonValue.toString())).readValue();
+    }
+
+    private static Map<String, jakarta.json.JsonValue> toJsonpMap(Map<String, JsonValue> claims) {
+        Map<String, jakarta.json.JsonValue> result = new HashMap<>();
+        claims.forEach((key, value) -> result.put(key, toJsonpValue(value)));
+        return result;
     }
 }
