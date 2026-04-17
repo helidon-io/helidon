@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,15 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
 
+import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.webserver.WebServer;
 
+import jakarta.json.Json;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.security.providers.oidc.common.BaseBuilder.DEFAULT_BASE_SCOPES;
@@ -216,6 +220,121 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
         assertThat(config.checkAudience(), is(false));
     }
 
+    @Test
+    @SuppressWarnings("removal")
+    void testJsonpMetadataExposedAsHelidonJson() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientSecret("top-secret")
+                .clientId("client-id")
+                .oidcMetadata(Json.createObjectBuilder()
+                                      .add("issuer", "https://identity.oracle.com")
+                                      .build())
+                .build();
+
+        assertThat(config.oidcMetadataJsonObject().stringValue("issuer").orElse(null), is("https://identity.oracle.com"));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testResourceMetadataUsesLegacyJsonpHook() {
+        LegacyMetadataHookBuilder builder = new LegacyMetadataHookBuilder();
+
+        OidcConfig config = builder.identityUri(URI.create("https://identity.oracle.com"))
+                .clientSecret("top-secret")
+                .clientId("client-id")
+                .oidcMetadata(Resource.create("oidc-metadata", "{\"issuer\":\"https://identity.oracle.com\"}"))
+                .build();
+
+        assertAll("Resource metadata must still flow through the deprecated JSON-P override path",
+                  () -> assertThat(builder.metadataHookCalled(), is(true)),
+                  () -> assertThat(builder.capturedMetadata().getString("issuer"), is("https://identity.oracle.com")),
+                  () -> assertThat(config.oidcMetadataJsonObject().stringValue("issuer").orElse(null),
+                                   is("https://identity.oracle.com")));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testHelidonJsonMetadataExposedAsJsonp() {
+        JsonObject metadata = JsonObject.builder()
+                .set("issuer", "https://identity.oracle.com")
+                .build();
+
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientSecret("top-secret")
+                .clientId("client-id")
+                .oidcMetadataJsonObject(metadata)
+                .build();
+
+        assertAll("OIDC metadata remains available in both JSON APIs",
+                  () -> assertThat(config.oidcMetadataJsonObject(), is(metadata)),
+                  () -> assertThat(config.oidcMetadata(), notNullValue()),
+                  () -> assertThat(config.oidcMetadata().getString("issuer"), is("https://identity.oracle.com")));
+    }
+
+    @Test
+    void testWellKnownMetadataAndJwkReadThroughHelidonJson() {
+        JsonObject[] metadataHolder = new JsonObject[1];
+        JsonObject jwk = JsonParser.create("""
+                {
+                    "keys": [
+                        {
+                            "kty": "oct",
+                            "kid": "test-key",
+                            "alg": "HS256",
+                            "key_ops": [
+                                "sign",
+                                "verify"
+                            ],
+                            "k": "FdFYFzERwC2uCBB46pZQi4GG85LujR8obt-KWRBICVQ"
+                        }
+                    ]
+                }
+                """).readJsonObject();
+
+        WebServer server = WebServer.builder()
+                .host("localhost")
+                .routing(routing -> routing
+                        .get("/.well-known/openid-configuration", (req, res) -> res.send(metadataHolder[0]))
+                        .get("/jwk", (req, res) -> res.send(jwk)))
+                .build()
+                .start();
+
+        String baseUri = "http://localhost:" + server.port();
+        metadataHolder[0] = JsonParser.create("""
+                {
+                    "token_endpoint": "%1$s/tokens",
+                    "authorization_endpoint": "%1$s/authorization",
+                    "end_session_endpoint": "%1$s/logout",
+                    "issuer": "%1$s",
+                    "jwks_uri": "%1$s/jwk"
+                }
+                """.formatted(baseUri)).readJsonObject();
+
+        try {
+            OidcConfig config = OidcConfig.builder()
+                    .identityUri(URI.create(baseUri))
+                    .clientSecret("top-secret")
+                    .clientId("client-id")
+                    .build();
+
+            JsonObject jwkJson = config.generalWebClient()
+                    .get()
+                    .uri(URI.create(baseUri + "/jwk"))
+                    .requestEntity(JsonObject.class);
+
+            assertAll("Well known metadata and JWK are loaded using Helidon JSON",
+                      () -> assertThat(config.tokenEndpointUri(), is(URI.create(baseUri + "/tokens"))),
+                      () -> assertThat(config.authorizationEndpointUri(), is(baseUri + "/authorization")),
+                      () -> assertThat(config.issuer(), is(baseUri)),
+                      () -> assertThat(jwkJson.arrayValue("keys").orElseThrow().values().size(), is(1)),
+                      () -> assertThat(config.signJwk().forKeyId("test-key").isPresent(), is(true)));
+        } finally {
+            server.stop();
+        }
+    }
+
     // Stub the Builder class to be able to retrieve the cookie-encryption-password value
     private static class TestOidcConfigBuilder extends OidcConfig.Builder {
 
@@ -231,6 +350,27 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
             cookieEncryptionPasswordValue[0] = String.valueOf(cookieEncryptionPassword);
             super.cookieEncryptionPassword(cookieEncryptionPassword);
             return this;
+        }
+    }
+
+    private static final class LegacyMetadataHookBuilder extends OidcConfig.Builder {
+        private boolean metadataHookCalled;
+        private jakarta.json.JsonObject capturedMetadata;
+
+        @Override
+        @SuppressWarnings("removal")
+        public OidcConfig.Builder oidcMetadata(jakarta.json.JsonObject metadata) {
+            this.metadataHookCalled = true;
+            this.capturedMetadata = metadata;
+            return super.oidcMetadata(metadata);
+        }
+
+        private boolean metadataHookCalled() {
+            return metadataHookCalled;
+        }
+
+        private jakarta.json.JsonObject capturedMetadata() {
+            return capturedMetadata;
         }
     }
 }
