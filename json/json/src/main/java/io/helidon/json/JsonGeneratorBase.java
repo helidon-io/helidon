@@ -26,6 +26,7 @@ import io.helidon.common.buffers.Bytes;
  */
 public abstract class JsonGeneratorBase implements JsonGenerator {
 
+    static final int MAX_DEPTH = 64;
     static final int STACK_SIZE = 64;
     static final int INDENT_SIZE = 3;
     static final char[] INDENT = new char[STACK_SIZE * INDENT_SIZE];
