@@ -38,6 +38,7 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import jakarta.json.JsonObject;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -74,8 +75,16 @@ class TracingPropagationTest {
     static void server(WebServerConfig.Builder server) {
         tracing = new TestTracingSupport();
         server.addFeature(ObserveFeature.builder()
-                                  .addObserver(TracingObserver.create(tracing.tracer()))
-                                  .build());
+                .addObserver(TracingObserver.create(tracing.tracer()))
+                .build());
+    }
+
+    @AfterAll
+    static void tearDownTracing() {
+        if (tracing != null) {
+            tracing.close();
+            tracing = null;
+        }
     }
 
     @SetUpRoute
