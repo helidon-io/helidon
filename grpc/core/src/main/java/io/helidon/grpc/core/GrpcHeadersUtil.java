@@ -18,6 +18,7 @@ package io.helidon.grpc.core;
 
 import java.util.Base64;
 
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers;
@@ -77,5 +78,96 @@ public class GrpcHeadersUtil {
             }
         });
         return metadata;
+    }
+
+    /**
+     * The {@code grpc-timeout} header name.
+     *
+     * <p>Defined in the
+     * <a href="https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md">gRPC over HTTP/2 spec</a>:
+     * <pre>
+     * Timeout → "grpc-timeout" TimeoutValue TimeoutUnit
+     * TimeoutValue → {positive integer as ASCII string of at most 8 digits}
+     * TimeoutUnit → Hour / Minute / Second / Millisecond / Microsecond / Nanosecond
+     *   Hour        → "H"
+     *   Minute      → "M"
+     *   Second      → "S"
+     *   Millisecond → "m"
+     *   Microsecond → "u"
+     *   Nanosecond  → "n"
+     * </pre>
+     */
+    public static final HeaderName GRPC_TIMEOUT = HeaderNames.create("grpc-timeout");
+
+    // Per spec: TimeoutValue is a positive integer, at most 8 ASCII digits
+    private static final long MAX_TIMEOUT_VALUE = 99_999_999L;
+    private static final char[] TIMEOUT_UNITS   = { 'H',                 'M',              'S',           'm',       'u',    'n' };
+    private static final long[] NANOS_PER_UNIT  = { 3_600_000_000_000L,  60_000_000_000L,  1_000_000_000L, 1_000_000L, 1_000L, 1L };
+
+    /**
+     * Encodes a timeout as a {@code grpc-timeout} header value.
+     *
+     * <p>Picks the largest unit where the numeric value is both positive and
+     * fits in 8 ASCII digits, and the conversion is exact (no loss of precision).
+     * See <a href="https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md">spec</a>.
+     *
+     * @param timeoutNanos timeout in nanoseconds
+     * @return encoded header value such as {@code "500m"}, or {@code null} if {@code timeoutNanos <= 0}
+     */
+    public static String encodeTimeout(long timeoutNanos) {
+        if (timeoutNanos <= 0) {
+            return null;
+        }
+        // Walk from largest to smallest unit; pick the first where the value
+        // is positive, fits in 8 digits, and the division is exact (no truncation).
+        for (int i = 0; i < NANOS_PER_UNIT.length; i++) {
+            long value = timeoutNanos / NANOS_PER_UNIT[i];
+            if (value > 0 && value <= MAX_TIMEOUT_VALUE && timeoutNanos % NANOS_PER_UNIT[i] == 0) {
+                return value + String.valueOf(TIMEOUT_UNITS[i]);
+            }
+        }
+        // Nanoseconds with possible truncation to 8 digits (last resort for values
+        // that do not align to any unit boundary within 8 digits)
+        return Math.min(timeoutNanos, MAX_TIMEOUT_VALUE) + "n";
+    }
+
+    /**
+     * Decodes a {@code grpc-timeout} header value to nanoseconds.
+     *
+     * <p>See <a href="https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md">spec</a>.
+     *
+     * @param value header value such as {@code "500m"}
+     * @return timeout in nanoseconds
+     * @throws IllegalArgumentException if the value is null, empty, malformed, or overflows
+     */
+    public static long decodeTimeout(String value) {
+        if (value == null || value.isEmpty()) {
+            throw new IllegalArgumentException("grpc-timeout value is null or empty");
+        }
+        char unit = value.charAt(value.length() - 1);
+        String digits = value.substring(0, value.length() - 1);
+        if (digits.isEmpty()) {
+            throw new IllegalArgumentException("grpc-timeout has no numeric value: " + value);
+        }
+        long numericValue;
+        try {
+            numericValue = Long.parseLong(digits);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("grpc-timeout has invalid digits: " + value, e);
+        }
+        if (numericValue < 0) {
+            throw new IllegalArgumentException("grpc-timeout must be a positive integer: " + value);
+        }
+        for (int i = 0; i < TIMEOUT_UNITS.length; i++) {
+            if (unit == TIMEOUT_UNITS[i]) {
+                try {
+                    return Math.multiplyExact(numericValue, NANOS_PER_UNIT[i]);
+                } catch (ArithmeticException e) {
+                    throw new IllegalArgumentException(
+                            "grpc-timeout value overflows long: " + value, e);
+                }
+            }
+        }
+        throw new IllegalArgumentException("grpc-timeout has unknown unit '" + unit + "': " + value);
     }
 }

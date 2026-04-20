@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.helidon.common.LazyValue;
@@ -67,8 +68,11 @@ import io.helidon.webclient.http2.StreamTimeoutException;
 
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
+import io.grpc.Context;
+import io.grpc.Deadline;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
+import io.grpc.Status;
 
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 import static java.lang.System.Logger.Level.DEBUG;
@@ -119,6 +123,13 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private volatile MethodMetrics methodMetrics;
     private volatile long startMillis;
 
+    /**
+     * The lesser of the {@link CallOptions} deadline and the ambient {@link Context} deadline,
+     * or {@code null} when neither is set. When {@code null}, no {@code grpc-timeout} header
+     * is sent and no deadline timer is started.
+     */
+    private final Deadline effectiveDeadline;
+
     private AtomicLong bytesSent;
     private AtomicLong bytesRcvd;
 
@@ -135,6 +146,19 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         this.abortPollTimeExpired = grpcClient.prototype().protocolConfig().abortPollTimeExpired();
         this.heartbeatPeriod = grpcClient.prototype().protocolConfig().heartbeatPeriod();
         this.clientUriSupplier = grpcClient.prototype().clientUriSupplier().orElse(null);
+
+        // Compute effective deadline as min(callOptions, context).
+        // Gives automatic deadline propagation: if a server handler makes an outbound
+        // gRPC call, the remaining deadline from its context is automatically inherited.
+        Deadline optionsDeadline = callOptions.getDeadline();
+        Deadline contextDeadline = Context.current().getDeadline();
+        if (optionsDeadline == null) {
+            this.effectiveDeadline = contextDeadline;
+        } else if (contextDeadline == null) {
+            this.effectiveDeadline = optionsDeadline;
+        } else {
+            this.effectiveDeadline = optionsDeadline.minimum(contextDeadline);
+        }
     }
 
     @Override
@@ -143,13 +167,21 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
         this.responseListener = responseListener;
 
-        // init metrics
+        // init metrics before any early return so that all attempts are counted
         if (grpcConfig.enableMetrics()) {
             initMetrics();
             bytesSent = new AtomicLong(0L);
             bytesRcvd = new AtomicLong(0L);
             startMillis = System.currentTimeMillis();
             methodMetrics.callStarted.increment();
+        }
+
+        // Fail fast if deadline already expired — avoids wasting a TCP connection
+        if (effectiveDeadline != null && effectiveDeadline.isExpired()) {
+            responseListener.onClose(Status.DEADLINE_EXCEEDED
+                    .withDescription("deadline expired before call started"), EMPTY_METADATA);
+            unblockUnaryExecutor();
+            return;
         }
 
         // obtain HTTP2 connection
@@ -195,6 +227,14 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
         // send HEADERS frame
         WritableHeaders<?> headers = setupHeaders(metadata, clientUri.authority(), methodDescriptor.getFullMethodName());
+        // Write grpc-timeout header after metadata conversion so it cannot be overwritten
+        if (effectiveDeadline != null) {
+            long timeoutNanos = effectiveDeadline.timeRemaining(TimeUnit.NANOSECONDS);
+            String encoded = GrpcHeadersUtil.encodeTimeout(timeoutNanos);
+            if (encoded != null) {
+                headers.set(GrpcHeadersUtil.GRPC_TIMEOUT, encoded);
+            }
+        }
         clientStream.writeHeaders(Http2Headers.create(headers), false);
     }
 
@@ -280,6 +320,10 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 // ignored
             }
         }
+    }
+
+    Deadline effectiveDeadline() {
+        return effectiveDeadline;
     }
 
     GrpcClientImpl grpcClient() {

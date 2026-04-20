@@ -19,13 +19,19 @@ package io.helidon.webserver.grpc;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.Weight;
 import io.helidon.grpc.core.ContextKeys;
+import io.helidon.grpc.core.GrpcHeadersUtil;
 import io.helidon.grpc.core.InterceptorWeights;
 
 import io.grpc.Context;
 import io.grpc.Contexts;
+import io.grpc.Deadline;
+import io.grpc.ForwardingServerCallListener;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
@@ -40,6 +46,14 @@ import static io.helidon.grpc.core.GrpcHelper.extractMethodName;
 class ContextSettingServerInterceptor implements ServerInterceptor {
 
     private static final ContextSettingServerInterceptor INSTANCE = new ContextSettingServerInterceptor();
+    private static final Metadata.Key<String> TIMEOUT_KEY =
+            Metadata.Key.of("grpc-timeout", Metadata.ASCII_STRING_MARSHALLER);
+    private static final ScheduledExecutorService DEADLINE_SCHEDULER =
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "helidon-grpc-deadline-scheduler");
+                t.setDaemon(true);
+                return t;
+            });
 
     private ContextSettingServerInterceptor() {
     }
@@ -60,6 +74,20 @@ class ContextSettingServerInterceptor implements ServerInterceptor {
                 io.helidon.common.context.Contexts.context();
         context = context.withValue(ContextKeys.HELIDON_CONTEXT,
                 helidonContext.orElseGet(io.helidon.common.context.Context::create));
+
+        // parse grpc-timeout header and set deadline in context
+        String timeoutValue = headers.get(TIMEOUT_KEY);
+        Context.CancellableContext cancellableContext = null;
+        if (timeoutValue != null) {
+            try {
+                long timeoutNanos = GrpcHeadersUtil.decodeTimeout(timeoutValue);
+                cancellableContext = context.withDeadline(
+                        Deadline.after(timeoutNanos, TimeUnit.NANOSECONDS), DEADLINE_SCHEDULER);
+                context = cancellableContext;
+            } catch (IllegalArgumentException ignored) {
+                // malformed header — ignore and proceed without deadline
+            }
+        }
 
         if (helidonContext.isPresent()) {
             GrpcServiceDescriptor serviceDescriptor = helidonContext.get()
@@ -88,7 +116,30 @@ class ContextSettingServerInterceptor implements ServerInterceptor {
         }
 
         // intercept with new context
-        return Contexts.interceptCall(context, call, headers, next);
+        ServerCall.Listener<ReqT> listener = Contexts.interceptCall(context, call, headers, next);
+        if (cancellableContext != null) {
+            Context.CancellableContext ctxToCancel = cancellableContext;
+            return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(listener) {
+                @Override
+                public void onComplete() {
+                    try {
+                        super.onComplete();
+                    } finally {
+                        ctxToCancel.cancel(null);
+                    }
+                }
+
+                @Override
+                public void onCancel() {
+                    try {
+                        super.onCancel();
+                    } finally {
+                        ctxToCancel.cancel(null);
+                    }
+                }
+            };
+        }
+        return listener;
     }
 
     @Override

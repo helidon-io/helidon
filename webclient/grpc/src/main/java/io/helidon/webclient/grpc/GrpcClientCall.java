@@ -24,6 +24,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
@@ -32,6 +33,7 @@ import io.helidon.http.http2.Http2Headers;
 import io.helidon.webclient.http2.StreamTimeoutException;
 
 import io.grpc.CallOptions;
+import io.grpc.Deadline;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 
@@ -56,9 +58,13 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     private final CountDownLatch startReadBarrier = new CountDownLatch(1);
     private final CountDownLatch startWriteBarrier = new CountDownLatch(1);
 
-    private volatile Future<?> readStreamFuture;
-    private volatile Future<?> writeStreamFuture;
-    private volatile Future<?> heartbeatFuture;
+    // Initialized to completed futures so cancel() is safe to call before startStreamingThreads() runs
+    private volatile Future<?> readStreamFuture = CompletableFuture.completedFuture(null);
+    private volatile Future<?> writeStreamFuture = CompletableFuture.completedFuture(null);
+    private volatile Future<?> heartbeatFuture = CompletableFuture.completedFuture(null);
+
+    private final AtomicBoolean closeCalled = new AtomicBoolean(false);
+    private volatile Future<?> deadlineFuture = CompletableFuture.completedFuture(null);
 
     GrpcClientCall(GrpcChannel grpcChannel, MethodDescriptor<ReqT, ResT> methodDescriptor, CallOptions callOptions) {
         super(grpcChannel, methodDescriptor, callOptions);
@@ -75,11 +81,14 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     @Override
     public void cancel(String message, Throwable cause) {
         socket().log(LOGGER, DEBUG, "cancel called %s", message);
-        responseListener().onClose(Status.CANCELLED, EMPTY_METADATA);
+        if (closeCalled.compareAndSet(false, true)) {
+            responseListener().onClose(Status.CANCELLED, EMPTY_METADATA);
+            close();
+        }
         readStreamFuture.cancel(true);
         writeStreamFuture.cancel(true);
         heartbeatFuture.cancel(true);
-        close();
+        deadlineFuture.cancel(true);
     }
 
     @Override
@@ -157,7 +166,10 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             } catch (Throwable e) {
                 socket().log(LOGGER, ERROR, e.getMessage(), e);
                 Status errorStatus = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
-                responseListener().onClose(errorStatus, EMPTY_METADATA);
+                if (closeCalled.compareAndSet(false, true)) {
+                    deadlineFuture.cancel(true);
+                    responseListener().onClose(errorStatus, EMPTY_METADATA);
+                }
             }
             socket().log(LOGGER, DEBUG, "[Writing thread] exiting");
         });
@@ -230,18 +242,51 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                         status = Status.fromCodeValue(trailers.get(STATUS_NAME).getInt());
                     }
                 }
-                responseListener().onClose(status, EMPTY_METADATA);
+                if (closeCalled.compareAndSet(false, true)) {
+                    deadlineFuture.cancel(true);
+                    responseListener().onClose(status, EMPTY_METADATA);
+                }
             } catch (StreamTimeoutException e) {
-                responseListener().onClose(Status.DEADLINE_EXCEEDED, EMPTY_METADATA);
+                if (closeCalled.compareAndSet(false, true)) {
+                    deadlineFuture.cancel(true);
+                    responseListener().onClose(Status.DEADLINE_EXCEEDED, EMPTY_METADATA);
+                }
             } catch (Throwable e) {
                 socket().log(LOGGER, ERROR, e.getMessage(), e);
                 Status errorStatus = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
-                responseListener().onClose(errorStatus, EMPTY_METADATA);
+                if (closeCalled.compareAndSet(false, true)) {
+                    deadlineFuture.cancel(true);
+                    responseListener().onClose(errorStatus, EMPTY_METADATA);
+                }
             } finally {
                 close();
             }
             socket().log(LOGGER, DEBUG, "[Reading thread] exiting");
         });
+
+        // Deadline enforcement virtual thread
+        Deadline deadline = effectiveDeadline();
+        if (deadline != null && !deadline.isExpired()) {
+            deadlineFuture = executor.submit(() -> {
+                try {
+                    long remainingNanos = deadline.timeRemaining(TimeUnit.NANOSECONDS);
+                    if (remainingNanos > 0) {
+                        Thread.sleep(Duration.ofNanos(remainingNanos));
+                    }
+                    if (closeCalled.compareAndSet(false, true)) {
+                        socket().log(LOGGER, DEBUG, "[Deadline thread] deadline exceeded");
+                        responseListener().onClose(Status.DEADLINE_EXCEEDED
+                                .withDescription("deadline exceeded"), EMPTY_METADATA);
+                        readStreamFuture.cancel(true);
+                        writeStreamFuture.cancel(true);
+                        heartbeatFuture.cancel(true);
+                        close();
+                    }
+                } catch (InterruptedException e) {
+                    // Call completed before deadline — timer cancelled normally
+                }
+            });
+        }
     }
 
     private void close() {

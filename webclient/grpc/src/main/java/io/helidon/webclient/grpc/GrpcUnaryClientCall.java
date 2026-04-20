@@ -17,6 +17,11 @@
 package io.helidon.webclient.grpc;
 
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
@@ -24,6 +29,7 @@ import io.helidon.http.Headers;
 import io.helidon.http.http2.Http2Headers;
 
 import io.grpc.CallOptions;
+import io.grpc.Deadline;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 
@@ -40,7 +46,9 @@ import static java.lang.System.Logger.Level.DEBUG;
 class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     private static final System.Logger LOGGER = System.getLogger(GrpcUnaryClientCall.class.getName());
 
-    private volatile boolean closeCalled;
+    private final AtomicBoolean closeCalled = new AtomicBoolean(false);
+    // Initialize to completed future so cancel() is safe before startStreamingThreads() runs
+    private volatile Future<?> deadlineFuture = CompletableFuture.completedFuture(null);
     private volatile boolean requestSent;
     private volatile boolean responseReceived;
     private volatile Http2Headers responseHeaders;
@@ -134,17 +142,41 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     @Override
     protected void startStreamingThreads() {
-        // no-op
+        Deadline deadline = effectiveDeadline();
+        if (deadline != null && !deadline.isExpired()) {
+            ExecutorService executor = grpcClient().webClient().executor();
+            deadlineFuture = executor.submit(() -> {
+                try {
+                    long remainingNanos = deadline.timeRemaining(TimeUnit.NANOSECONDS);
+                    if (remainingNanos > 0) {
+                        Thread.sleep(java.time.Duration.ofNanos(remainingNanos));
+                    }
+                    if (closeCalled.compareAndSet(false, true)) {
+                        socket().log(LOGGER, DEBUG, "[Deadline thread] deadline exceeded");
+                        responseListener().onClose(Status.DEADLINE_EXCEEDED
+                                .withDescription("deadline exceeded"), EMPTY_METADATA);
+                        clientStream().cancel();
+                        connection().close();
+                        unblockUnaryExecutor();
+                    }
+                } catch (InterruptedException e) {
+                    // Call completed before deadline — timer cancelled normally
+                }
+            });
+        } else {
+            deadlineFuture = CompletableFuture.completedFuture(null);
+        }
     }
 
     private void close(Status status) {
-        if (!closeCalled) {
+        if (closeCalled.compareAndSet(false, true)) {
             socket().log(LOGGER, DEBUG, "closing client call");
+            // Cancel deadline timer (always safe — initialized to completedFuture)
+            deadlineFuture.cancel(true);
             responseListener().onClose(status, EMPTY_METADATA);
             clientStream().cancel();
             connection().close();
 
-            // update metrics
             if (enableMetrics() && status == Status.OK) {
                 MethodMetrics methodMetrics = methodMetrics();
                 methodMetrics.callDuration().record(
@@ -154,7 +186,6 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             }
 
             unblockUnaryExecutor();
-            closeCalled = true;
         }
     }
 }

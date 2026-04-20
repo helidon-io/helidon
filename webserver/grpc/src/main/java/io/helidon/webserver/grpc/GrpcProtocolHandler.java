@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -63,6 +64,7 @@ import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 
 import io.grpc.Codec;
 import io.grpc.Compressor;
+import io.grpc.Deadline;
 import io.grpc.CompressorRegistry;
 import io.grpc.Decompressor;
 import io.grpc.DecompressorRegistry;
@@ -129,6 +131,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private long startMillis;
 
     private volatile boolean callCancelled;
+    private volatile Deadline requestDeadline;
     private final AtomicReference<Http2StreamState> currentStreamState = new AtomicReference<>();
 
     GrpcProtocolHandler(ConnectionContext connectionContext,
@@ -157,6 +160,17 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             // setup compression
             initCompression(serverCall, httpHeaders);
+
+            // parse grpc-timeout to enable DEADLINE_EXCEEDED detection on cancellation
+            String timeoutValue = httpHeaders.first(GrpcHeadersUtil.GRPC_TIMEOUT).orElse(null);
+            if (timeoutValue != null) {
+                try {
+                    long timeoutNanos = GrpcHeadersUtil.decodeTimeout(timeoutValue);
+                    requestDeadline = Deadline.after(timeoutNanos, TimeUnit.NANOSECONDS);
+                } catch (IllegalArgumentException ignored) {
+                    // malformed grpc-timeout header — proceed without deadline tracking
+                }
+            }
 
             // init metrics
             if (grpcConfig.enableMetrics()) {
@@ -483,14 +497,22 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             @Override
             public void close(Status status, Metadata trailers) {
-                // prepare trailers, may override status code to CANCELLED
+                // prepare trailers; if the call was cancelled, status may be overridden to CANCELLED or DEADLINE_EXCEEDED
                 WritableHeaders<?> writable = WritableHeaders.create();
                 if (!headersSent) {
                     writable.set(GRPC_CONTENT_TYPE);
                 }
                 GrpcHeadersUtil.updateHeaders(writable, trailers);
-                int statusValue = callCancelled ? Status.CANCELLED.getCode().value()
-                        : status.getCode().value();
+                int statusValue;
+                if (callCancelled) {
+                    // Both deadline expiry and explicit client cancel arrive as RST_STREAM, so the `status`
+                    // argument cannot distinguish them. Check whether the client's stated timeout elapsed.
+                    statusValue = (requestDeadline != null && requestDeadline.isExpired())
+                            ? Status.DEADLINE_EXCEEDED.getCode().value()
+                            : Status.CANCELLED.getCode().value();
+                } else {
+                    statusValue = status.getCode().value();
+                }
                 writable.set(HeaderValues.create(GrpcStatus.STATUS_NAME, statusValue));
                 String description = status.getDescription();
                 if (description != null) {
