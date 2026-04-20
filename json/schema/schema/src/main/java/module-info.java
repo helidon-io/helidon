@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import io.helidon.common.features.api.Features;
 @Features.Incubating
 module io.helidon.json.schema {
     requires static io.helidon.common.features.api;
-    requires transitive io.helidon.metadata.hson;
+    requires transitive io.helidon.json;
     requires transitive io.helidon.builder.api;
 
     requires io.helidon.service.registry;
