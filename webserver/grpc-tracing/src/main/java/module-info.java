@@ -15,12 +15,15 @@
  */
 
 /**
- * Helidon WebClient gRPC Tracing Support.
+ * Helidon WebServer gRPC Tracing Support.
  */
 module io.helidon.webserver.grpc.tracing {
 
-    requires io.helidon.webserver.grpc;
-    requires io.helidon.grpc.core;
+    requires static io.helidon.config.metadata;
+
+    requires io.helidon.common.context;
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.webserver.grpc;
     requires io.helidon.tracing;
 
     exports io.helidon.webserver.grpc.tracing;

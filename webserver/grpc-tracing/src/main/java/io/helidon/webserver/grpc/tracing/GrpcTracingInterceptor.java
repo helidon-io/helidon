@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.grpc;
+package io.helidon.webserver.grpc.tracing;
 
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +35,7 @@ import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
+import io.helidon.webserver.grpc.ServerRequestAttribute;
 
 import io.grpc.Context;
 import io.grpc.Contexts;
@@ -49,10 +50,7 @@ import io.grpc.ServerInterceptor;
  * {@link io.helidon.webserver.grpc.spi.GrpcServerService} SPI to load this class
  * by adding a dependency on
  * {@code io.helidon.webserver:io.helidon.webserver.grpc-tracing} instead.
- *
- * @deprecated to be moved to {@code io.helidon.webserver.grpc.tracing}.
  */
-@Deprecated(forRemoval = true, since = "4.3.2")
 @Weight(InterceptorWeights.TRACING)
 public class GrpcTracingInterceptor implements ServerInterceptor {
 
