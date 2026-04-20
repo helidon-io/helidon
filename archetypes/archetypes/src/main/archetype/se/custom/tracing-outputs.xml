@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ tracing:
   service: helidon-tracing-service
 ]]></value>
             </list>
-            <list key="config-properties" if="${tracing.provider} == 'opentelemetry'">
+            <list key="config-properties">
                 <value>tracing.global=false</value>
             </list>
             <list key="dependencies">
@@ -45,13 +45,9 @@ tracing:
                     <value key="groupId">io.helidon.webserver</value>
                     <value key="artifactId">helidon-webserver-http2</value>
                 </map>
-                <map if="${tracing.provider} == 'opentelemetry'">
+                <map>
                     <value key="groupId">io.helidon.tracing.providers</value>
                     <value key="artifactId">helidon-tracing-providers-opentelemetry</value>
-                </map>
-                <map if="${tracing.provider} == 'zipkin'">
-                    <value key="groupId">io.helidon.tracing.providers</value>
-                    <value key="artifactId">helidon-tracing-providers-zipkin</value>
                 </map>
             </list>
             <list key="Main-routing-builder">

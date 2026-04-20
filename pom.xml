@@ -76,7 +76,6 @@
         <version.lib.shrinkwrap-resolver>3.0.1</version.lib.shrinkwrap-resolver>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
         <version.lib.testng>7.8.0</version.lib.testng>
-        <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
         <version.lib.bedrock>7.0.1</version.lib.bedrock>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
         <version.lib.jmh>1.23</version.lib.jmh>
@@ -152,9 +151,7 @@
         <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-databind>
         <javadoc.link.reactive-streams>https://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</javadoc.link.reactive-streams>
         <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</javadoc.link.typesafe-config>
-        <javadoc.link.opentracing>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</javadoc.link.opentracing>
         <javadoc.link.prometheus>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</javadoc.link.prometheus>
-        <javadoc.link.zipkin>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/2.12.3</javadoc.link.zipkin>
         <javadoc.link.grpc-api>https://grpc.github.io/grpc-java/javadoc</javadoc.link.grpc-api>
 
         <!--suppress UnresolvedMavenProperty -->
@@ -276,16 +273,8 @@
                                 <location>${javadoc.pkg.dir}/typesafe-config</location>
                             </offlineLink>
                             <offlineLink>
-                                <url>${javadoc.link.opentracing}</url>
-                                <location>${javadoc.pkg.dir}/opentracing</location>
-                            </offlineLink>
-                            <offlineLink>
                                 <url>${javadoc.link.prometheus}</url>
                                 <location>${javadoc.pkg.dir}/prometheus</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.zipkin}</url>
-                                <location>${javadoc.pkg.dir}/zipkin</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.jakarta-jsonb}</url>
@@ -934,11 +923,6 @@
                 <version>${version.lib.scala}</version>
             </dependency>
             <dependency>
-                <groupId>io.opentracing</groupId>
-                <artifactId>opentracing-mock</artifactId>
-                <version>${version.lib.opentracing}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.github.akarnokd</groupId>
                 <artifactId>rxjava2-jdk9-interop</artifactId>
                 <version>${version.lib.rxjava2-jdk9-interop}</version>
@@ -962,11 +946,6 @@
                 <groupId>org.mock-server</groupId>
                 <artifactId>mockserver-netty-no-dependencies</artifactId>
                 <version>${version.lib.mockserver}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.zipkin.zipkin2</groupId>
-                <artifactId>zipkin-junit</artifactId>
-                <version>${version.lib.zipkin.junit}</version>
             </dependency>
             <dependency>
                 <groupId>com.oracle.bedrock</groupId>

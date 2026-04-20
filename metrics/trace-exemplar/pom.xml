@@ -62,7 +62,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing.providers</groupId>
-            <artifactId>helidon-tracing-providers-jaeger</artifactId>
+            <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

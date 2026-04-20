@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,17 +35,15 @@ import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-import jakarta.json.JsonValue;
-
 class WebClientService implements HttpService {
     private static final Duration TRACE_TIMEOUT = Duration.ofSeconds(15);
     private static final System.Logger LOGGER = System.getLogger(WebClientService.class.getName());
     private final WebClient client;
-    private final MockZipkinService zipkinService;
+    private final MockOtlpService otlpService;
     private final String context;
 
-    WebClientService(Config config, MockZipkinService zipkinService) {
-        this.zipkinService = zipkinService;
+    WebClientService(Config config, MockOtlpService otlpService) {
+        this.otlpService = otlpService;
         this.context = "http://localhost:" + config.get("server.port").asInt().orElse(7076);
         client = WebClient.builder()
                 .baseUri(context)
@@ -94,13 +92,13 @@ class WebClientService implements HttpService {
     }
 
     public void testTracedGet() {
-        Single<JsonValue> nextTrace = zipkinService.next();
+        Single<byte[]> nextTrace = otlpService.next();
         Animal animal = client.get()
                 .path("/wc/endpoint")
                 .requestEntity(Animal.class);
 
         assertTrue(animal, a -> "Frank".equals(a.getName()));
-        //Wait for trace arrival to MockZipkin
+        // Wait for trace arrival to the mock OTLP collector.
         nextTrace.await(TRACE_TIMEOUT);
     }
 
