@@ -248,7 +248,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         builder.name(name)
                 .id(subject);
 
-        jwt.payloadClaims()
+        jwt.payloadClaimsJson()
                 .forEach((key, jsonValue) -> builder.addAttribute(key, JwtUtil.toObject(jsonValue)));
 
         jwt.email().ifPresent(value -> builder.addAttribute("email", value));

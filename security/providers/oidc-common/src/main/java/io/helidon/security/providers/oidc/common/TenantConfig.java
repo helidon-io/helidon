@@ -23,9 +23,8 @@ import java.util.Optional;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.jwk.JwkKeys;
-
-import jakarta.json.JsonObject;
 
 /**
  * Tenant configuration.
@@ -180,11 +179,11 @@ public interface TenantConfig {
     String serverType();
 
     /**
-     * OIDC metadata.
+     * OIDC metadata in Helidon JSON.
      *
      * @return configured oidc metadata
      */
-    JsonObject oidcMetadata();
+    JsonObject oidcMetadataJsonObject();
 
     /**
      * Whether to use OIDC well known metadata.

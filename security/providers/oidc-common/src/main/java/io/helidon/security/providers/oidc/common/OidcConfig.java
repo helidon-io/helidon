@@ -35,7 +35,7 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.SetCookie;
 import io.helidon.http.media.MediaContext;
-import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.http.media.json.JsonSupport;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -975,7 +975,7 @@ public final class OidcConfig extends TenantConfigImpl {
                 .addProtocolPreference(Http1Client.PROTOCOL_ID)
                 .mediaContext(MediaContext.builder()
                                       .mediaSupportsDiscoverServices(false)
-                                      .addMediaSupport(JsonpSupport.create(Config.empty()))
+                                      .addMediaSupport(JsonSupport.create())
                                       .build());
 
         protected Builder() {
@@ -1009,7 +1009,7 @@ public final class OidcConfig extends TenantConfigImpl {
                     String identityHost = identityUri().getHost();
                     if (frontendUri != null) {
                         String frontendHost = URI.create(frontendUri).getHost();
-                        if (identityHost.equals(frontendHost)) {
+                        if (identityHost != null && identityHost.equals(frontendHost)) {
                             LOGGER.log(Level.INFO, "As frontend host and identity host are equal, setting Same-Site policy"
                                     + " to Strict this can be overridden using configuration option of OIDC: "
                                     + "\"cookie-same-site\"");

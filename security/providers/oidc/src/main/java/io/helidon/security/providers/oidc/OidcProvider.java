@@ -36,6 +36,7 @@ import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
@@ -60,8 +61,6 @@ import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.util.TokenHandler;
 import io.helidon.webclient.api.HttpClientRequest;
-
-import jakarta.json.JsonObject;
 
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
@@ -265,7 +264,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             try (var response = postRequest.submit(formBuilder.build())) {
                 if (response.status().family() == Status.Family.SUCCESSFUL) {
                     JsonObject jsonObject = response.as(JsonObject.class);
-                    String accessToken = jsonObject.getString("access_token");
+                    String accessToken = jsonObject.stringValue("access_token")
+                            .orElseThrow(() -> new IllegalStateException("JSON field \"access_token\" must be defined"));
 
                     Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
                     target.tokenHandler.header(headers, accessToken);

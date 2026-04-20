@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.security.providers.oidc;
 
-import java.io.StringReader;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -44,6 +43,8 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.SetCookie;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -75,10 +76,6 @@ import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 
-import jakarta.json.JsonObject;
-
-import static io.helidon.security.providers.oidc.OidcFeature.JSON_BUILDER_FACTORY;
-import static io.helidon.security.providers.oidc.OidcFeature.JSON_READER_FACTORY;
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
 /**
@@ -147,7 +144,8 @@ class TenantAuthenticationHandler {
                     if (response.status().family() == Status.Family.SUCCESSFUL) {
                         try {
                             JsonObject jsonObject = response.as(JsonObject.class);
-                            if (!jsonObject.getBoolean("active")) {
+                            if (!jsonObject.booleanValue("active")
+                                    .orElseThrow(() -> new IllegalStateException("JSON field \"active\" must be defined"))) {
                                 collector.fatal(jsonObject, "Token is not active");
                             }
                         } catch (Exception e) {
@@ -274,10 +272,13 @@ class TenantAuthenticationHandler {
                         try {
                             String tokenValue = cookie.get();
                             String decodedJson = new String(Base64.getDecoder().decode(tokenValue), StandardCharsets.UTF_8);
-                            JsonObject jsonObject = JSON_READER_FACTORY.createReader(new StringReader(decodedJson)).readObject();
+                            JsonObject jsonObject = JsonParser.create(decodedJson).readJsonObject();
                             if (oidcConfig.accessTokenIpCheck()) {
                                 Object userIp = providerRequest.env().abacAttribute("userIp").orElseThrow();
-                                if (!jsonObject.getString("remotePeer").equals(userIp)) {
+                                String remotePeer = jsonObject.stringValue("remotePeer")
+                                        .orElseThrow(() -> new IllegalStateException("JSON field \"remotePeer\""
+                                                                                             + " must be defined"));
+                                if (!remotePeer.equals(userIp)) {
                                     if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                                         LOGGER.log(System.Logger.Level.DEBUG,
                                                    "Current peer IP does not match the one this access token was issued for");
@@ -289,7 +290,13 @@ class TenantAuthenticationHandler {
                                                          tenantId);
                                 }
                             }
-                            return validateAccessToken(tenantId, providerRequest, jsonObject.getString("accessToken"), idToken);
+                            String accessToken = jsonObject.stringValue("accessToken")
+                                    .orElseThrow(() -> new IllegalStateException("JSON field \"accessToken\""
+                                                                                         + " must be defined"));
+                            return validateAccessToken(tenantId,
+                                                       providerRequest,
+                                                       accessToken,
+                                                       idToken);
                         } catch (Exception e) {
                             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                                 LOGGER.log(System.Logger.Level.DEBUG, "Invalid access token in cookie", e);
@@ -405,11 +412,11 @@ class TenantAuthenticationHandler {
                         + "code_challenge_method=" + pkceChallengeMethod.method();
             }
 
-            JsonObject stateJson = JSON_BUILDER_FACTORY.createObjectBuilder()
-                    .add("originalUri", origUri)
-                    .add("state", state)
-                    .add("nonce", nonce)
-                    .add("pkceVerifier", pkceVerifier)
+            JsonObject stateJson = JsonObject.builder()
+                    .set("originalUri", origUri)
+                    .set("state", state)
+                    .set("nonce", nonce)
+                    .set("pkceVerifier", pkceVerifier)
                     .build();
 
             String stateBase64 = Base64.getEncoder().encodeToString(stateJson.toString().getBytes(StandardCharsets.UTF_8));
@@ -666,8 +673,10 @@ class TenantAuthenticationHandler {
                 if (response.status().family() == Status.Family.SUCCESSFUL) {
                     try {
                         JsonObject jsonObject = response.as(JsonObject.class);
-                        String accessToken = jsonObject.getString("access_token");
-                        String refreshToken = jsonObject.getString("refresh_token", null);
+                        String accessToken = jsonObject.stringValue("access_token")
+                                .orElseThrow(() -> new IllegalStateException("JSON field \"access_token\""
+                                                                                     + " must be defined"));
+                        String refreshToken = jsonObject.stringValue("refresh_token").orElse(null);
 
                         SignedJwt signedAccessToken;
                         try {
@@ -682,9 +691,9 @@ class TenantAuthenticationHandler {
                         Errors.Collector newAccessTokenCollector = jwtValidator.apply(signedAccessToken, Errors.collector());
                         Object remotePeer = providerRequest.env().abacAttribute("userIp").orElseThrow();
 
-                        JsonObject accessTokenCookie = JSON_BUILDER_FACTORY.createObjectBuilder()
-                                .add("accessToken", signedAccessToken.tokenContent())
-                                .add("remotePeer", remotePeer.toString())
+                        JsonObject accessTokenCookie = JsonObject.builder()
+                                .set("accessToken", signedAccessToken.tokenContent())
+                                .set("remotePeer", remotePeer.toString())
                                 .build();
                         String base64 = Base64.getEncoder()
                                 .encodeToString(accessTokenCookie.toString().getBytes(StandardCharsets.UTF_8));
@@ -871,7 +880,7 @@ class TenantAuthenticationHandler {
         builder.name(name)
                 .id(subject);
 
-        tokenToUse.payloadClaims()
+        tokenToUse.payloadClaimsJson()
                 .forEach((key, jsonValue) -> builder.addAttribute(key, JwtUtil.toObject(jsonValue)));
 
         tokenToUse.email().ifPresent(value -> builder.addAttribute("email", value));
