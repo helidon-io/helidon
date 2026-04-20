@@ -601,6 +601,9 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
         beforeWrite();
         writeKeyName(key);
         writeControlByte(Bytes.COLON_BYTE);
+        if (prettyPrint) {
+            writeByteExact(Bytes.SPACE_BYTE);
+        }
         keyWritten = true;
     }
 
