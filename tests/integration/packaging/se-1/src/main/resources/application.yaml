@@ -35,5 +35,3 @@ tracing:
 client:
   follow-redirects: true
   max-redirects: 5
-  services:
-    tracing:

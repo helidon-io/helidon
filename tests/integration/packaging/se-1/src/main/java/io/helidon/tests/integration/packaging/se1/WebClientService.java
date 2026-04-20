@@ -28,8 +28,11 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
+import io.helidon.tracing.Tracer;
+import io.helidon.tracing.TracerBuilder;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.tracing.WebClientTracing;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -45,10 +48,13 @@ class WebClientService implements HttpService {
     WebClientService(Config config, MockOtlpService otlpService) {
         this.otlpService = otlpService;
         this.context = "http://localhost:" + config.get("server.port").asInt().orElse(7076);
+        Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
         client = WebClient.builder()
                 .baseUri(context)
                 .addHeader(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                 .config(config.get("client"))
+                .servicesDiscoverServices(false)
+                .addService(WebClientTracing.create(tracer))
                 .build();
     }
 
