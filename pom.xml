@@ -55,7 +55,7 @@
         <version.lib.arquillian>1.4.0.Final</version.lib.arquillian>
         <version.lib.arquillian-weld-embedded>2.0.0.Final</version.lib.arquillian-weld-embedded>
         <version.lib.asciidoctor.diagram>1.5.18</version.lib.asciidoctor.diagram>
-        <version.lib.asm>6.0</version.lib.asm>
+        <version.lib.asm>9.8</version.lib.asm>
         <version.lib.checkstyle>8.29</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
@@ -115,7 +115,7 @@
         <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
         <version.plugin.resources>2.7</version.plugin.resources>
         <version.plugin.scm-publish-plugin>3.0.0</version.plugin.scm-publish-plugin>
-        <version.plugin.shade>3.0.0</version.plugin.shade>
+        <version.plugin.shade>3.5.0</version.plugin.shade>
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.4.2.2</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
