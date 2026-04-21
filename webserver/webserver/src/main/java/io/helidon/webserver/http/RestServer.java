@@ -30,7 +30,7 @@ import io.helidon.service.registry.Service;
 /**
  * APIs to define a declarative server endpoint.
  */
-@Api.Incubating
+@Api.Preview
 public final class RestServer {
     private RestServer() {
     }
