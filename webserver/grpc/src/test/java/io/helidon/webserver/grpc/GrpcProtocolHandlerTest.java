@@ -187,6 +187,38 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
+    void bufferDataInputStreamReturnsMinusOneAtEof() throws IOException {
+        byte[] content = "hello".getBytes(StandardCharsets.UTF_8);
+        BufferData bufferData = BufferData.create(content);
+        try (var stream = new GrpcProtocolHandler.BufferDataInputStream(bufferData)) {
+            // drain the stream
+            for (int i = 0; i < content.length; i++) {
+                assertThat("byte " + i, stream.read(), is(content[i] & 0xFF));
+            }
+
+            // InputStream contract: all three read overloads must return -1 at EOF
+            assertAll(
+                    () -> assertThat("read()", stream.read(), is(-1)),
+                    () -> assertThat("read(byte[])", stream.read(new byte[8]), is(-1)),
+                    () -> assertThat("read(byte[],off,len)", stream.read(new byte[8], 0, 8), is(-1))
+            );
+        }
+    }
+
+    @Test
+    void bufferDataInputStreamReadAllBytes() throws IOException {
+        byte[] content = "grpc payload".getBytes(StandardCharsets.UTF_8);
+        BufferData bufferData = BufferData.create(content);
+        try (var stream = new GrpcProtocolHandler.BufferDataInputStream(bufferData)) {
+            // readAllBytes() internally loops on read(byte[],off,len) until -1.
+            // Before the fix, this hung forever because the stream returned 0 instead of -1.
+            byte[] result = stream.readAllBytes();
+
+            assertThat(result, is(content));
+        }
+    }
+
+    @Test
     void testCloseSuppressesTrailerWriteDisconnect() {
         ServerCall<String, String> serverCall = createServerCall(closeFailingWriter());
         serverCall.sendHeaders(new Metadata());
