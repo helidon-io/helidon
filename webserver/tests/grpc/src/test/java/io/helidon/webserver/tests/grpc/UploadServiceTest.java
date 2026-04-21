@@ -49,7 +49,8 @@ class UploadServiceTest extends BaseServiceTest {
     private static final byte[] DATA_250K = new byte[250 * 1024];
     private static final byte[] DATA_500K = new byte[500 * 1024];
 
-    private static final byte[] DATA_2100K = new byte[2100 * 1024];     // over default limit
+    // 5 MB: over the default 4 MB limit
+    private static final byte[] DATA_5000K = new byte[5000 * 1024];
 
     static {
         Arrays.fill(DATA_50K,  (byte) 'A');
@@ -136,7 +137,7 @@ class UploadServiceTest extends BaseServiceTest {
         requestRef.set(request);
 
         // upload data with size over default limit in GrpcConfig
-        Stream.of(DATA_2100K)
+        Stream.of(DATA_5000K)
                 .map(b -> Uploads.Data.newBuilder()
                         .setPayload(ByteString.copyFrom(b))
                         .build())

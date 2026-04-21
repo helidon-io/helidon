@@ -80,11 +80,13 @@ interface GrpcConfigBlueprint extends ProtocolConfig {
     }
 
     /**
-     * Max size of gRPC reading buffer. If receiving an entity larger than this,
-     * processing will be aborted. This can help prevent DoS attacks. Default
-     * set to 2 MB.
+     * Max inbound message size. If receiving a message larger than this,
+     * processing will be aborted with a {@code RESOURCE_EXHAUSTED} status.
+     * This can help prevent DoS attacks. Matches the gRPC ecosystem standard of
+     * 4 MB ({@code GrpcUtil.DEFAULT_MAX_MESSAGE_SIZE} in grpc-java,
+     * https://github.com/grpc/grpc-java/blob/v1.73.0/core/src/main/java/io/grpc/internal/GrpcUtil.java#L212).
      */
     @Option.Configured
-    @Option.DefaultInt(2 * 1024 * 1024)
+    @Option.DefaultInt(4 * 1024 * 1024)
     int maxReadBufferSize();
 }
