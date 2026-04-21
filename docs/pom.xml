@@ -229,16 +229,8 @@
                             <location>${javadoc.pkg.dir}/typesafe-config</location>
                         </offlineLink>
                         <offlineLink>
-                            <url>${javadoc.link.opentracing}</url>
-                            <location>${javadoc.pkg.dir}/opentracing</location>
-                        </offlineLink>
-                        <offlineLink>
                             <url>${javadoc.link.prometheus}</url>
                             <location>${javadoc.pkg.dir}/prometheus</location>
-                        </offlineLink>
-                        <offlineLink>
-                            <url>${javadoc.link.zipkin}</url>
-                            <location>${javadoc.pkg.dir}/zipkin</location>
                         </offlineLink>
                         <offlineLink>
                             <url>${javadoc.link.jakarta-jsonb}</url>

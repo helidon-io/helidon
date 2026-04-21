@@ -37,7 +37,6 @@
         Changing these versions requires approval for a new third party dependency!
         -->
         <version.lib.antlr>4.13.2</version.lib.antlr>
-        <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.bytebuddy>1.18.5</version.lib.bytebuddy>
         <version.lib.commons-compress>1.27.1</version.lib.commons-compress>
         <version.lib.commons-lang>3.18.0</version.lib.commons-lang>
@@ -99,9 +98,6 @@
         <version.lib.opentelemetry.semconv>1.37.0</version.lib.opentelemetry.semconv>
         <version.lib.opentelemetry>1.58.0</version.lib.opentelemetry>
         <version.lib.opentelemetry.instrumentation.annotations>2.24.0</version.lib.opentelemetry.instrumentation.annotations>
-        <version.lib.opentracing>0.33.0</version.lib.opentracing>
-        <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
-        <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
         <version.lib.parsson>1.1.7</version.lib.parsson>
         <version.lib.postgresql>42.7.2</version.lib.postgresql>
         <version.lib.prometheus>0.16.0</version.lib.prometheus>
@@ -111,8 +107,6 @@
         <version.lib.testcontainers>1.21.4</version.lib.testcontainers>
         <version.lib.typesafe-config>1.4.4</version.lib.typesafe-config>
         <version.lib.yasson>3.0.4</version.lib.yasson>
-        <version.lib.zipkin.sender-urlconnection>2.16.4</version.lib.zipkin.sender-urlconnection>
-        <version.lib.zipkin>2.12.5</version.lib.zipkin>
         <version.lib.zookeeper>3.5.7</version.lib.zookeeper>
     </properties>
 
@@ -169,17 +163,6 @@
             </dependency>
             <!-- -->
             <dependency>
-                <groupId>io.opentracing</groupId>
-                <artifactId>opentracing-util</artifactId>
-                <version>${version.lib.opentracing}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.annotation</groupId>
-                        <artifactId>javax.annotation-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>io.opentelemetry.instrumentation</groupId>
                 <artifactId>opentelemetry-instrumentation-annotations</artifactId>
                 <version>${version.lib.opentelemetry.instrumentation.annotations}</version>
@@ -188,21 +171,6 @@
                 <groupId>io.opentelemetry.instrumentation</groupId>
                 <artifactId>opentelemetry-instrumentation-api</artifactId>
                 <version>${version.lib.opentelemetry}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentracing</groupId>
-                <artifactId>opentracing-api</artifactId>
-                <version>${version.lib.opentracing}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentracing</groupId>
-                <artifactId>opentracing-noop</artifactId>
-                <version>${version.lib.opentracing}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentracing.contrib</groupId>
-                <artifactId>opentracing-tracerresolver</artifactId>
-                <version>${version.lib.opentracing.tracerresolver}</version>
             </dependency>
             <!--
                 "Jakarta XML Binding API". (See
@@ -307,12 +275,6 @@
                 <artifactId>snakeyaml</artifactId>
                 <version>${version.lib.snakeyaml}</version>
             </dependency>
-            <dependency>
-              <groupId>io.opentracing.contrib</groupId>
-              <artifactId>opentracing-grpc</artifactId>
-              <version>${version.lib.opentracing.grpc}</version>
-            </dependency>
-
             <!-- Webserver related -->
             <dependency>
                 <groupId>io.prometheus</groupId>
@@ -328,36 +290,6 @@
                 <groupId>io.prometheus</groupId>
                 <artifactId>simpleclient_tracer_common</artifactId>
                 <version>${version.lib.prometheus}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.zipkin.zipkin2</groupId>
-                <artifactId>zipkin</artifactId>
-                <version>${version.lib.zipkin}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.zipkin.reporter2</groupId>
-                <artifactId>zipkin-sender-urlconnection</artifactId>
-                <version>${version.lib.zipkin.sender-urlconnection}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentracing.brave</groupId>
-                <artifactId>brave-opentracing</artifactId>
-                <version>${version.lib.brave-opentracing}</version>
-                <exclusions>
-                    <exclusion>
-                        <!-- failure in dependency convergence -->
-                        <groupId>io.zipkin.reporter2</groupId>
-                        <artifactId>zipkin-reporter</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.zipkin.brave</groupId>
-                        <artifactId>brave-tests</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.zipkin.zipkin2</groupId>
-                        <artifactId>zipkin</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>

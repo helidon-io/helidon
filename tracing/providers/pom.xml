@@ -30,10 +30,7 @@
     <name>Helidon Tracing Providers Project</name>
 
     <modules>
-        <module>opentracing</module>
         <module>opentelemetry</module>
-        <module>jaeger</module>
-        <module>zipkin</module>
     </modules>
 
     <!--

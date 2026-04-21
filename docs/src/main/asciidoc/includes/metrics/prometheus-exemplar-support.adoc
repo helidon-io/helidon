@@ -66,11 +66,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-Also, include the Helidon integration module for a tracing implementation (such as
-xref:{rootdir}/se/tracing.adoc#zipkin-tracing[Helidon Zipkin])
-include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
-
-Add the Helidon tracing component itself:
+Also, include the Helidon tracing component and an OpenTelemetry tracing provider:
 include::{rootdir}/se/tracing.adoc[tag=tracing-dependency]
 
 == Usage

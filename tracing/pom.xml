@@ -32,10 +32,8 @@
     <modules>
         <module>tracing</module>
         <module>config</module>
-        <module>tracer-resolver</module>
         <module>providers</module>
         <module>provider-tests</module>
-        <module>exporter-jaeger</module>
     </modules>
 
     <profiles>

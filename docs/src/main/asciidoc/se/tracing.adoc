@@ -31,8 +31,6 @@ include::{rootdir}/includes/se.adoc[]
 - <<Usage, Usage>>
 - <<Configuration, Configuration>>
 - <<Additional Information, Additional Information>>
-** <<Jaeger Tracing, Jaeger Tracing>>
-** <<Zipkin Tracing, Zipkin Tracing>>
 ** <<OpenTelemetry Tracing, OpenTelemetry Tracing>>
 - <<Reference, Reference>>
 
@@ -41,11 +39,9 @@ include::{rootdir}/includes/se.adoc[]
 Distributed tracing is a critical feature of microservice based applications, since it traces workflow both
 within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work,
 which helps you identify performance and operational issues.
-Helidon includes support for distributed tracing through its own API, backed by either
- https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry], https://www.jaegertracing.io/[Jaeger], or https://zipkin.io/[Zipkin].
+Helidon includes support for distributed tracing through its own API, backed by
+https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry].
 Tracing is integrated with WebServer and Security.
-
-NOTE: As OpenTelemetry has subsumed https://opentracing.io[OpenTracing], Helidon support for OpenTracing is deprecated and will likely be removed in a future release.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -61,51 +57,16 @@ include::{rootdir}/includes/dependencies.adoc[]
         <groupId>io.helidon.webserver.observe</groupId>
         <artifactId>helidon-webserver-observe-tracing</artifactId> <!--2-->
     </dependency>
+    <dependency>
+        <groupId>io.helidon.tracing.providers</groupId>
+        <artifactId>helidon-tracing-providers-opentelemetry</artifactId> <!--3-->
+        <scope>runtime</scope>
+    </dependency>
 </dependencies>
 ----
 <1> Helidon tracing dependency.
 <2> Observability dependencies for tracing.
-
-To transmit tracing data from your service to a backend, you need to add a tracing provider to your project.
-
-For Jaeger:
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-jaeger</artifactId>
-    <scope>runtime</scope>
-</dependency>
-----
-
-For Zipkin:
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-zipkin</artifactId>
-    <scope>runtime</scope>
-</dependency>
-----
-
-For OpenTelemetry:
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
-    <scope>runtime</scope>
-</dependency>
-----
-
-For OpenTracing (deprecated):
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-opentracing</artifactId>
-</dependency>
-----
+<3> OpenTelemetry tracing provider.
 // end::tracing-dependency[]
 
 == Usage
@@ -129,8 +90,7 @@ the Helidon abstraction layer and provide a specific tracer implementation as a 
 `ServiceLoader` service.
 Helidon provides such an implementation for:
 
-- OpenTracing tracers, either using the `GlobalTracer`, provider resolver approach, or explicitly using Zipkin tracer
-- OpenTelemetry tracers, either using the global OpenTelemetry instance, or explicitly using Jaeger tracer
+- OpenTelemetry tracers configured from Helidon tracing settings
 
 === Setup WebServer
 
@@ -343,21 +303,6 @@ Tracing propagation is automatic as long as the current span context is availabl
 include::{sourcedir}/se/TracingSnippets.java[tag=snippet_5, indent=0]
 ----
 
-=== Jaeger Tracing [[jaeger-tracing]]
-
-include::{rootdir}/includes/tracing/tracer-jaeger.adoc[tag=jaeger-dependency]
-include::{rootdir}/includes/tracing/tracer-jaeger.adoc[tag=jaeger-configuration]
-
-=== Jaeger Tracing Metrics [[jaeger-tracing-metrics]]
-
-As the <<jaeger-tracing, Jaeger Tracing>> section describes, you can use Jaeger tracing in your Helidon application.
-
-
-=== Zipkin Tracing [[zipkin-tracing]]
-
-include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
-include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-configuration]
-
 === OpenTelemetry Tracing [[opentelemetry-tracing]]
 
 include::{rootdir}/includes/tracing/tracer-otel.adoc[tags=setup;intro;otel-dependency]
@@ -367,4 +312,3 @@ include::{rootdir}/includes/tracing/tracer-otel.adoc[tag=exporters]
 == Reference
 
 * link:https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API]
-* link:https://opentracing.io/[Opentracing Project (now part of OpenTelemetry)]

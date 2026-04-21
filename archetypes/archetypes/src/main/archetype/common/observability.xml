@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -164,17 +164,6 @@ curl -X GET http://localhost:8080/observe/health/ready
                                 <model>
                                     <list key="readme-sections">
                                         <value file="/common/files/README.opentelemetry.md"/>
-                                    </list>
-                                </model>
-                            </output>
-                        </option>
-                        <option value="zipkin"
-                                name="Zipkin"
-                                description="Send traces to a Zipkin backend">
-                            <output>
-                                <model>
-                                    <list key="readme-sections">
-                                        <value file="/common/files/README.zipkin.md"/>
                                     </list>
                                 </model>
                             </output>

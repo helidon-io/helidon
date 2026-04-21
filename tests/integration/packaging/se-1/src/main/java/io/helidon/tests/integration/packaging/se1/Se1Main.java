@@ -18,7 +18,6 @@ package io.helidon.tests.integration.packaging.se1;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Set;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -117,8 +116,8 @@ public final class Se1Main {
     private static HttpRouting.Builder createRouting(Config config) {
 
         GreetService greetService = new GreetService(config);
-        MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
-        WebClientService webClientService = new WebClientService(config, zipkinService);
+        MockOtlpService otlpService = new MockOtlpService();
+        WebClientService webClientService = new WebClientService(config, otlpService);
 
         Path web = config.get("app.static.path")
                 .as(Path.class)
@@ -130,7 +129,7 @@ public final class Se1Main {
                 .register("/static/jar", StaticContentFeature.createService(ClasspathHandlerConfig.create("web-jar")))
                 .register("/greet", greetService)
                 .register("/wc", webClientService)
-                .register("/zipkin", zipkinService);
+                .register("/otlp", otlpService);
     }
 
 }
