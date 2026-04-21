@@ -120,14 +120,9 @@ public class ConfigUserStore implements SecureUserStore {
             return roles;
         }
 
-        @Override
-        public Optional<String> digestHa1(String realm, HttpDigest.Algorithm algorithm) {
-            return Optional.of(DigestToken.ha1(algorithm, realm, login(), password));
-        }
-
-        @Override
-        public String toString() {
-            return "User info for \"" + login + "\"";
-        }
+    @Override
+    public String toString() {
+        return "User info for \"" + login + "\"";
+    }
     }
 }

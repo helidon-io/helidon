@@ -92,8 +92,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
     /**
      * Load this provider from configuration.
      *
-     * @param config Configuration located at this provider's configuration (e.g. child is either http-basic-auth or
-     *               http-digest-auth)
+     * @param config Configuration located at this provider's configuration (e.g. child is http-basic-auth)
      * @return instance of provider configured from provided config
      */
     public static HttpBasicAuthProvider create(Config config) {
