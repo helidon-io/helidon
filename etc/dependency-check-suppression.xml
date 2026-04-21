@@ -185,4 +185,71 @@
    <cve>CVE-2020-29582</cve>
 </suppress>
 
+<!-- False Positive.
+   These CVEs are against OpenTelemetry-Go, not Java
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: opentelemetry-proto-1.5.0-alpha.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.proto/opentelemetry-proto@.*$</packageUrl>
+    <cve>CVE-2026-39882</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: opentelemetry-semconv-1.37.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
+    <cve>CVE-2026-29181</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: opentelemetry-semconv-1.37.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
+    <cve>CVE-2026-39883</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: opentelemetry-semconv-1.37.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
+    <cve>CVE-2026-39882</cve>
+</suppress>
+
+
+
+<!-- False Positive.
+     This CVE is against gRPC-Go servers not gRPC Java
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: grpc-core-1.65.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.grpc/grpc.*@.*$</packageUrl>
+   <cve>CVE-2026-33186</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: grpc-protobuf-1.65.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.grpc/grpc-protobuf@.*$</packageUrl>
+   <cve>CVE-2026-33186</cve>
+</suppress>
+
+
+<!--
+  This CVE is fixed in 3.6.1: https://github.com/codehaus-plexus/plexus-utils/releases/tag/plexus-utils-3.6.1
+  But NVD CPE data only states it as fixed in 4.0.3: https://nvd.nist.gov/vuln/detail/CVE-2025-67030
+  I have e-mailed a correction request to NVD. For now we exclude it as a false positive.
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: plexus-utils-3.6.1.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.codehaus\.plexus/plexus-utils@.*$</packageUrl>
+    <cve>CVE-2025-67030</cve>
+</suppress>
+
+
 </suppressions>
