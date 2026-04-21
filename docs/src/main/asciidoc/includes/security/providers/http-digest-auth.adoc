@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,7 +23,11 @@ ifndef::rootdir[:rootdir: {docdir}/../../..]
 :keywords: helidon, security, digest
 :feature-name: HTTP Digest Authentication Security Provider
 
-HTTP Digest authentication support
+[.line-through]#HTTP Digest authentication support#
+
+This provider is deprecated and will be removed in a future version of Helidon without replacement.
+It is kept in Helidon 4 for backward compatibility only, relies on obsolete MD5 hash,
+and should not be used in production.
 
 ==== Setup
 
@@ -80,6 +84,4 @@ The user store is defined so you never need the clear text password of the user.
 
 _Note on security of HTTP Digest Authentication_
 
-These authentication schemes
-should be _obsolete_, though they provide a very easy way to test a protected resource.
-
+This authentication scheme is obsolete and should only be used for local testing or short-lived compatibility work.

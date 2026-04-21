@@ -134,6 +134,7 @@ public class ConfigUserStore implements SecureUserStore {
         }
 
         @Override
+        @Deprecated(since = "4.5.0", forRemoval = true)
         public Optional<String> digestHa1(String realm, HttpDigest.Algorithm algorithm) {
             return Optional.of(DigestToken.ha1(algorithm, realm, login(), password));
         }

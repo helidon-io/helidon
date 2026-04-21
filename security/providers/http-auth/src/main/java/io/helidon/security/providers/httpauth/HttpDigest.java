@@ -22,13 +22,21 @@ import io.helidon.config.Config;
 
 /**
  * Digest specific enums.
+ *
+ * @deprecated HTTP Digest authentication relies on obsolete MD5-based authentication and will be removed in a future
+ *             version without replacement
  */
+@Deprecated(since = "4.5.0", forRemoval = true)
 public class HttpDigest {
     /**
      * Http digest algorithm.
      * See <a href="https://tools.ietf.org/html/rfc2617#page-9">https://tools.ietf.org/html/rfc2617#page-9</a>.
      * Only {@link #MD5} is supported.
+     *
+     * @deprecated HTTP Digest authentication relies on obsolete MD5-based authentication and will be removed in a
+     *             future version without replacement
      */
+    @Deprecated(since = "4.5.0", forRemoval = true)
     public enum Algorithm {
         /**
          * MD5 algorithm.
@@ -54,7 +62,11 @@ public class HttpDigest {
     /**
      * Http digest QOP (quality of protection).
      * See <a href="https://tools.ietf.org/html/rfc2617#page-9">https://tools.ietf.org/html/rfc2617#page-9</a>.
+     *
+     * @deprecated HTTP Digest authentication relies on obsolete MD5-based authentication and will be removed in a
+     *             future version without replacement
      */
+    @Deprecated(since = "4.5.0", forRemoval = true)
     public enum Qop {
         /**
          * Legacy approach - used internally to parse headers. Do not use this option when

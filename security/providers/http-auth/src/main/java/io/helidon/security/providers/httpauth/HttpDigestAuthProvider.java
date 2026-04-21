@@ -48,8 +48,12 @@ import io.helidon.security.spi.SecurityProvider;
 
 /**
  * Http authentication security provider.
- * Provides support for username and password authentication, with support for roles list.
+ * Provides support for HTTP Digest username and password authentication, with support for role mapping.
+ *
+ * @deprecated HTTP Digest authentication relies on obsolete MD5-based authentication and will be removed in a future
+ *             version without replacement
  */
+@Deprecated(since = "4.5.0", forRemoval = true)
 public final class HttpDigestAuthProvider implements AuthenticationProvider {
     static final String HEADER_AUTHENTICATION_REQUIRED = "WWW-Authenticate";
     static final String HEADER_AUTHENTICATION = "authorization";
@@ -291,10 +295,14 @@ public final class HttpDigestAuthProvider implements AuthenticationProvider {
 
     /**
      * {@link HttpDigestAuthProvider} fluent API builder.
+     *
+     * @deprecated HTTP Digest authentication relies on obsolete MD5-based authentication and will be removed in a
+     *             future version without replacement
      */
     @Configured(prefix = HttpDigestAuthService.PROVIDER_CONFIG_KEY,
                 description = "Http digest authentication security provider",
                 provides = {SecurityProvider.class, AuthenticationProvider.class})
+    @Deprecated(since = "4.5.0", forRemoval = true)
     public static final class Builder implements io.helidon.common.Builder<Builder, HttpDigestAuthProvider> {
 
         private static final String DEFAULT_REALM = "Helidon";
