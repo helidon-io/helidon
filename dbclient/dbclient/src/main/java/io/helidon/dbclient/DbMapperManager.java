@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.ServiceLoader;
 import io.helidon.common.GenericType;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.mapper.MapperException;
+import io.helidon.common.mapper.MapperNotFoundException;
 import io.helidon.dbclient.spi.DbMapperProvider;
 
 /**
@@ -75,7 +76,8 @@ public interface DbMapperManager {
      * @param expectedType class of the response
      * @param <T>          type of the response
      * @return instance with data from the row
-     * @throws io.helidon.common.mapper.MapperException in case the mapper was not found
+     * @throws MapperNotFoundException if no mapper is registered from {@link DbRow} to the expected type
+     * @throws MapperException if a mapper is found but reading the row fails
      * @see DbRow#as(Class)
      */
     <T> T read(DbRow row, Class<T> expectedType) throws MapperException;
@@ -87,7 +89,8 @@ public interface DbMapperManager {
      * @param expectedType generic type of the response
      * @param <T>          type of the response
      * @return instance with data from the row
-     * @throws MapperException in case the mapper was not found
+     * @throws MapperNotFoundException if no mapper is registered from {@link DbRow} to the expected type
+     * @throws MapperException if a mapper is found but reading the row fails
      * @see DbRow#as(io.helidon.common.GenericType)
      */
     <T> T read(DbRow row, GenericType<T> expectedType) throws MapperException;
@@ -99,6 +102,8 @@ public interface DbMapperManager {
      * @param valueClass type of the value object
      * @param <T>        type of value
      * @return map with the named parameters
+     * @throws MapperNotFoundException if no mapper is registered from the value type to named parameters
+     * @throws MapperException if a mapper is found but parameter mapping fails
      * @see DbStatement#namedParam(Object)
      */
     <T> Map<String, ?> toNamedParameters(T value, Class<T> valueClass);
@@ -110,6 +115,8 @@ public interface DbMapperManager {
      * @param valueClass type of the value object
      * @param <T>        type of value
      * @return list with indexed parameters (in the order expected by statements using this object)
+     * @throws MapperNotFoundException if no mapper is registered from the value type to indexed parameters
+     * @throws MapperException if a mapper is found but parameter mapping fails
      * @see DbStatement#indexedParam(Object)
      */
     <T> List<?> toIndexedParameters(T value, Class<T> valueClass);
