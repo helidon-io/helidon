@@ -18,7 +18,9 @@ package io.helidon.common.mapper;
 import io.helidon.common.GenericType;
 
 /**
- * A {@link MapperException} thrown when no mapper exists for the requested source and target types.
+ * A {@link MapperException} thrown when no mapper is registered for the requested source and target types.
+ * <p>
+ * This indicates that mapper lookup failed before any mapping logic could be executed.
  */
 public class MapperNotFoundException extends MapperException {
 

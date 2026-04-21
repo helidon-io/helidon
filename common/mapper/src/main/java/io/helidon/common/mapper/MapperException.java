@@ -19,8 +19,12 @@ import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 
 /**
- * An exception that is thrown when mapping failed to map source to target.
- * This may be either a problem that the mapper was not found (it is not registered) or that the mapping itself failed.
+ * A mapping failure between source and target types.
+ * <p>
+ * This base exception covers both lookup failures, when no mapper is registered, and execution failures reported by a
+ * mapper that was found. Use {@link #sourceType()}, {@link #targetType()}, and {@link #detail()} to inspect the
+ * failed mapping without parsing {@link #getMessage()}. Some APIs may report missing-mapper cases using the more
+ * specific {@link MapperNotFoundException}.
  */
 @Api.Stable
 public class MapperException extends RuntimeException {
@@ -60,7 +64,7 @@ public class MapperException extends RuntimeException {
     }
 
     /**
-     * Type of the source that failed to map.
+     * Type of the source involved in the failed mapping attempt.
      *
      * @return source type
      */
@@ -69,7 +73,7 @@ public class MapperException extends RuntimeException {
     }
 
     /**
-     * Type of the target that failed to map.
+     * Type of the requested target involved in the failed mapping attempt.
      *
      * @return target type
      */
@@ -79,6 +83,8 @@ public class MapperException extends RuntimeException {
 
     /**
      * Detail describing the mapping failure.
+     * <p>
+     * This is the unformatted detail appended to the standard exception message.
      *
      * @return failure detail
      */
