@@ -40,5 +40,6 @@ class GrpcBaseClientCallTest {
         assertThat(headers.get(Http2Headers.PATH_NAME).get(), is("/foo"));
         assertThat(headers.get(Http2Headers.SCHEME_NAME).get(), is("http"));
         assertThat(headers.get(HeaderNames.COOKIE).get(), is("sugar"));
+        assertThat(headers.get(HeaderNames.TE).get(), is("trailers"));
     }
 }
