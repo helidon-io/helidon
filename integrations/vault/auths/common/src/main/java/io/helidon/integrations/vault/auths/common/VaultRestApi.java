@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,8 @@ import io.helidon.integrations.common.rest.RestApiBase;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 import io.helidon.integrations.vault.VaultRestException;
 import io.helidon.integrations.vault.VaultUtil;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.api.HttpClientResponse;
-
-import jakarta.json.JsonObject;
 
 /**
  * REST API implementation with Vault specific features.
@@ -68,7 +67,9 @@ public class VaultRestApi extends RestApiBase {
             try {
                 JsonObject json = response.entity()
                                           .as(JsonObject.class);
-                List<String> errors = VaultUtil.arrayToList(json.getJsonArray("errors"));
+                List<String> errors = json.arrayValue("errors")
+                        .map(VaultUtil::arrayToList)
+                        .orElseGet(List::of);
                 return (T) ((VaultOptionalResponse.Builder<?, ?>) responseBuilder)
                         .errors(errors)
                         .headers(response.headers())
@@ -98,7 +99,9 @@ public class VaultRestApi extends RestApiBase {
 
         List<String> vaultErrors = new LinkedList<>();
         try {
-            vaultErrors.addAll(VaultUtil.arrayToList(entity.getJsonArray("errors")));
+            vaultErrors.addAll(entity.arrayValue("errors")
+                                       .map(VaultUtil::arrayToList)
+                                       .orElseGet(List::of));
         } catch (Exception e) {
             LOGGER.log(Level.DEBUG, "Failed to read error response", e);
             vaultErrors.add("Failed to read errors, entity: " + entity);

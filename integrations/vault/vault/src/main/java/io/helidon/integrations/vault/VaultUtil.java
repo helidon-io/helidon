@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,21 @@ public final class VaultUtil {
         }
         List<String> result = new LinkedList<>();
         array.forEach(it -> result.add(stringValue(it)));
+        return List.copyOf(result);
+    }
+
+    /**
+     * Create a list of strings from a Helidon JSON array.
+     *
+     * @param array array to process
+     * @return each element from the array as a string
+     */
+    public static List<String> arrayToList(io.helidon.json.JsonArray array) {
+        if (array == null) {
+            return List.of();
+        }
+        List<String> result = new LinkedList<>();
+        array.values().forEach(it -> result.add(stringValue(it)));
         return List.copyOf(result);
     }
 
@@ -97,6 +112,16 @@ public final class VaultUtil {
             case FALSE -> "false";
             case NULL -> "null";
             default -> value.toString();
+        };
+    }
+
+    private static String stringValue(io.helidon.json.JsonValue value) {
+        return switch (value.type()) {
+            case ARRAY -> throw new VaultApiException("Cannot create a simple String from an array: " + value);
+            case OBJECT -> throw new VaultApiException("Cannot create a simple String from an object: " + value);
+            case STRING -> value.asString().value();
+            case BOOLEAN, NUMBER, NULL -> value.toString();
+            case UNKNOWN -> throw new VaultApiException("Unsupported Helidon JSON value type: " + value.type());
         };
     }
 }
