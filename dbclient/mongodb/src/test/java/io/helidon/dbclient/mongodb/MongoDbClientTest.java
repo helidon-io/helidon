@@ -26,7 +26,11 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.mapper.MapperException;
+import io.helidon.common.mapper.MapperNotFoundException;
 import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbExecute;
@@ -34,10 +38,12 @@ import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.spi.DbMapperProvider;
+import io.helidon.json.JsonObject;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import jakarta.json.Json;
 
 import org.bson.Document;
 import org.junit.jupiter.api.BeforeAll;
@@ -46,8 +52,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -260,6 +268,119 @@ class MongoDbClientTest {
     }
 
     @Test
+    void testJsonPNamedAddParamDml() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        MongoDbClient dbClient = createClient(collection, null);
+        long result = dbClient.execute()
+                .createInsert("""
+                                      {
+                                        "collection": "foo",
+                                        "operation": "insert",
+                                        "value": { "pokemon": $pokemon }
+                                      }
+                                      """)
+                .addParam("pokemon", Json.createObjectBuilder()
+                        .add("id", 150)
+                        .add("name", "Mewtwo")
+                        .build())
+                .execute();
+
+        assertThat(result, is(1L));
+
+        ArgumentCaptor<Document> captor = ArgumentCaptor.forClass(Document.class);
+        verify(collection).insertOne(captor.capture());
+        Document pokemon = captor.getValue().get("pokemon", Document.class);
+        assertThat(pokemon.getInteger("id"), is(150));
+        assertThat(pokemon.getString("name"), is("Mewtwo"));
+    }
+
+    @Test
+    void testHelidonJsonNamedAddParamDml() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        MongoDbClient dbClient = createClient(collection, null);
+        JsonObject pokemon = JsonObject.builder()
+                .set("id", 94)
+                .set("name", "Gengar")
+                .setStrings("types", List.of("ghost", "poison"))
+                .build();
+        long result = dbClient.execute()
+                .createInsert("""
+                                      {
+                                        "collection": "foo",
+                                        "operation": "insert",
+                                        "value": { "pokemon": $pokemon }
+                                      }
+                                      """)
+                .addParam("pokemon", pokemon)
+                .execute();
+
+        assertThat(result, is(1L));
+
+        ArgumentCaptor<Document> captor = ArgumentCaptor.forClass(Document.class);
+        verify(collection).insertOne(captor.capture());
+        Document inserted = captor.getValue().get("pokemon", Document.class);
+        assertThat(inserted.getInteger("id"), is(94));
+        assertThat(inserted.getString("name"), is("Gengar"));
+        assertThat(inserted.getList("types", String.class), is(List.of("ghost", "poison")));
+    }
+
+    @Test
+    void testHelidonJsonNamedAddParamDmlDoesNotUseMapperWhenAvailable() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        MongoDbClient dbClient = createClient(collection,
+                                              builder -> builder.dbMapperManager(helidonJsonDbMapperManager()));
+        JsonObject pokemon = JsonObject.builder()
+                .set("id", 143)
+                .set("name", "Snorlax")
+                .build();
+        long result = dbClient.execute()
+                .createInsert("""
+                                      {
+                                        "collection": "foo",
+                                        "operation": "insert",
+                                        "value": { "pokemon": $pokemon }
+                                      }
+                                      """)
+                .addParam("pokemon", pokemon)
+                .execute();
+
+        assertThat(result, is(1L));
+
+        ArgumentCaptor<Document> captor = ArgumentCaptor.forClass(Document.class);
+        verify(collection).insertOne(captor.capture());
+        Document inserted = captor.getValue().get("pokemon", Document.class);
+        assertThat(inserted.getInteger("id"), is(143));
+        assertThat(inserted.getString("name"), is("Snorlax"));
+    }
+
+    @Test
+    void testHelidonJsonNamedParamUsesMapperWhenAvailable() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        MongoDbClient dbClient = createClient(collection,
+                                              builder -> builder.dbMapperManager(helidonJsonDbMapperManager()));
+        JsonObject pokemon = JsonObject.builder()
+                .set("id", 143)
+                .set("name", "Snorlax")
+                .build();
+        long result = dbClient.execute()
+                .createInsert("""
+                                      {
+                                        "collection": "foo",
+                                        "operation": "insert",
+                                        "value": {
+                                          "id": $id,
+                                          "name": $name
+                                        }
+                                      }
+                                      """)
+                .namedParam(pokemon)
+                .execute();
+
+        assertThat(result, is(1L));
+        assertInsertedPokemon(collection, 1143, "Snorlax-mapped");
+    }
+
+    @Test
     void testMappedCollectionParamsDml() {
         MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
         MongoDbClient dbClient = createClient(collection, builder -> builder.dbMapperManager(dbMapperManager()));
@@ -319,7 +440,7 @@ class MongoDbClientTest {
     }
 
     @Test
-    void testIssue10819NamedParamsMapDml() {
+    void testIssue10819NamedParamsMapFlattensMappedObject() {
         MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
         MongoDbClient dbClient = createClient(collection,
                                               builder -> builder.dbMapperManager(issue10819DbMapperManager()));
@@ -338,6 +459,27 @@ class MongoDbClientTest {
                                           "version": $version,
                                           "reviews": $reviews
                                         }
+                                      }
+                                      """)
+                .params(Map.of("product", product))
+                .execute();
+
+        assertThat(result, is(1L));
+        assertInsertedIssue10819Product(collection, product);
+    }
+
+    @Test
+    void testIssue10819NamedParamsMapBindsObjectValue() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        MongoDbClient dbClient = createClient(collection,
+                                              builder -> builder.dbMapperManager(issue10819DbMapperManager()));
+        Issue10819Product product = issue10819Product();
+        long result = dbClient.execute()
+                .createInsert("""
+                                      {
+                                        "collection": "products",
+                                        "operation": "insert",
+                                        "value": $product
                                       }
                                       """)
                 .params(Map.of("product", product))
@@ -377,7 +519,7 @@ class MongoDbClientTest {
     }
 
     @Test
-    void testIssue10819AttachedReproducer() {
+    void testIssue10819NamedAddParamFlattensMappedObject() {
         MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
         MongoDbClient dbClient = createClient(collection,
                                               builder -> builder.dbMapperManager(issue10819DbMapperManager()));
@@ -402,8 +544,176 @@ class MongoDbClientTest {
                 .execute();
 
         assertThat(result, is(1L));
+        assertInsertedIssue10819Product(collection, product);
+    }
+
+    @Test
+    void testIssue10819NamedAddParamBindsObjectValue() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        MongoDbClient dbClient = createClient(collection,
+                                              builder -> builder.dbMapperManager(issue10819DbMapperManager()));
+        Issue10819Product product = issue10819Product();
+        long result = dbClient.execute()
+                .createInsert("""
+                                      {
+                                        "collection": "products",
+                                        "operation": "insert",
+                                        "value": $product
+                                      }
+                                      """)
+                .addParam("product", product)
+                .execute();
+
+        assertThat(result, is(1L));
 
         assertInsertedIssue10819Product(collection, product);
+    }
+
+    @Test
+    void testSpecialFloatingPointNamedParamsDml() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        MongoDbClient dbClient = createClient(collection, null);
+        long result = dbClient.execute()
+                .createInsert("""
+                                      {
+                                        "collection": "foo",
+                                        "operation": "insert",
+                                        "value": {
+                                          "nan": $nan,
+                                          "positiveInfinity": $positiveInfinity,
+                                          "negativeInfinity": $negativeInfinity
+                                        }
+                                      }
+                                      """)
+                .addParam("nan", Double.NaN)
+                .addParam("positiveInfinity", Float.POSITIVE_INFINITY)
+                .addParam("negativeInfinity", Double.NEGATIVE_INFINITY)
+                .execute();
+
+        assertThat(result, is(1L));
+
+        ArgumentCaptor<Document> captor = ArgumentCaptor.forClass(Document.class);
+        verify(collection).insertOne(captor.capture());
+        Document inserted = captor.getValue();
+        assertThat(inserted.getString("nan"), is("NaN"));
+        assertThat(inserted.getString("positiveInfinity"), is("Infinity"));
+        assertThat(inserted.getString("negativeInfinity"), is("-Infinity"));
+    }
+
+    @Test
+    void testNamedAddParamUsesManagerMissingMapperFallback() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        MongoDbClient dbClient = createClient(collection, null);
+        LocalDate bestBefore = LocalDate.parse("2026-05-01");
+        long result = dbClient.execute()
+                .createInsert("""
+                                      {
+                                        "collection": "products",
+                                        "operation": "insert",
+                                        "value": { "bestBefore": $bestBefore }
+                                      }
+                                      """)
+                .addParam("bestBefore", bestBefore)
+                .execute();
+
+        assertThat(result, is(1L));
+
+        ArgumentCaptor<Document> captor = ArgumentCaptor.forClass(Document.class);
+        verify(collection).insertOne(captor.capture());
+        assertThat(captor.getValue().getString("bestBefore"), is(bestBefore.toString()));
+    }
+
+    @Test
+    void testNamedAddParamUsesTypedMissingMapperFallback() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        MongoDbClient dbClient = createClient(collection,
+                                              builder -> builder.dbMapperManager(typedMissingMapperDbMapperManager()));
+        LocalDate bestBefore = LocalDate.parse("2026-05-01");
+        long result = dbClient.execute()
+                .createInsert("""
+                                      {
+                                        "collection": "products",
+                                        "operation": "insert",
+                                        "value": { "bestBefore": $bestBefore }
+                                      }
+                                      """)
+                .addParam("bestBefore", bestBefore)
+                .execute();
+
+        assertThat(result, is(1L));
+
+        ArgumentCaptor<Document> captor = ArgumentCaptor.forClass(Document.class);
+        verify(collection).insertOne(captor.capture());
+        assertThat(captor.getValue().getString("bestBefore"), is(bestBefore.toString()));
+    }
+
+    @Test
+    void testNamedAddParamPropagatesMapperFailure() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        MongoDbClient dbClient = createClient(collection,
+                                              builder -> builder.dbMapperManager(failingMapperDbMapperManager()));
+        LocalDate bestBefore = LocalDate.parse("2026-05-01");
+        MapperException exception = assertThrows(MapperException.class,
+                                                () -> dbClient.execute()
+                                                        .createInsert("""
+                                                                              {
+                                                                                "collection": "products",
+                                                                                "operation": "insert",
+                                                                                "value": { "bestBefore": $bestBefore }
+                                                                              }
+                                                                              """)
+                                                        .addParam("bestBefore", bestBefore)
+                                                        .execute());
+
+        assertThat(exception.getMessage(), containsString("Custom mapping failure"));
+    }
+
+    @Test
+    void testNamedAddParamPropagatesNestedMapperNotFoundFailure() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        MongoDbClient dbClient = createClient(collection,
+                                              builder -> builder.dbMapperManager(nestedMissingMapperDbMapperManager()));
+        NestedMapperMissProduct product = new NestedMapperMissProduct(110, LocalDate.parse("2026-05-01"));
+        MapperNotFoundException exception = assertThrows(MapperNotFoundException.class,
+                                                         () -> dbClient.execute()
+                                                                 .createInsert("""
+                                                                                       {
+                                                                                         "collection": "products",
+                                                                                         "operation": "insert",
+                                                                                         "value": $product
+                                                                                       }
+                                                                                       """)
+                                                                 .addParam("product", product)
+                                                                 .execute());
+
+        assertThat(exception.sourceType(), is(GenericType.create(LocalDate.class)));
+        assertThat(exception.targetType(), is(DbMapperManager.TYPE_NAMED_PARAMS));
+        assertThat(exception.detail(), is("Failed to find DB mapper."));
+        verify(collection, Mockito.never()).insertOne(any());
+    }
+
+    @Test
+    void testNamedAddParamUsesLegacyMissingMapperFallback() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        MongoDbClient dbClient = createClient(collection,
+                                              builder -> builder.dbMapperManager(legacyMissingMapperDbMapperManager()));
+        LocalDate bestBefore = LocalDate.parse("2026-06-01");
+        long result = dbClient.execute()
+                .createInsert("""
+                                      {
+                                        "collection": "products",
+                                        "operation": "insert",
+                                        "value": { "bestBefore": $bestBefore }
+                                      }
+                                      """)
+                .addParam("bestBefore", bestBefore)
+                .execute();
+
+        assertThat(result, is(1L));
+
+        ArgumentCaptor<Document> captor = ArgumentCaptor.forClass(Document.class);
+        verify(collection).insertOne(captor.capture());
+        assertThat(captor.getValue().getString("bestBefore"), is(bestBefore.toString()));
     }
 
     private static void assertInsertedPokemon(MongoCollection<Document> collection,
@@ -486,6 +796,9 @@ class MongoDbClientTest {
     }
 
     record MappedPokemon(int id, String name) {
+    }
+
+    record NestedMapperMissProduct(int id, LocalDate bestBefore) {
     }
 
     private static final class Issue10819Product {
@@ -610,9 +923,45 @@ class MongoDbClientTest {
         }
     }
 
+    private static final class HelidonJsonObjectMapperProvider implements DbMapperProvider {
+        private static final DbMapper<JsonObject> JSON_OBJECT_MAPPER = new DbMapper<>() {
+            @Override
+            public JsonObject read(DbRow row) {
+                throw new UnsupportedOperationException("Read operation is not implemented.");
+            }
+
+            @Override
+            public Map<String, ?> toNamedParameters(JsonObject value) {
+                return Map.of(
+                        "id", value.intValue("id", 0) + 1000,
+                        "name", value.stringValue("name", "") + "-mapped");
+            }
+
+            @Override
+            public List<?> toIndexedParameters(JsonObject value) {
+                return List.of(toNamedParameters(value));
+            }
+        };
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T> Optional<DbMapper<T>> mapper(Class<T> type) {
+            if (type.equals(JsonObject.class)) {
+                return Optional.of((DbMapper<T>) JSON_OBJECT_MAPPER);
+            }
+            return Optional.empty();
+        }
+    }
+
     private static DbMapperManager dbMapperManager() {
         return DbMapperManager.builder()
                 .addMapperProvider(new PokemonMapperProvider())
+                .build();
+    }
+
+    private static DbMapperManager helidonJsonDbMapperManager() {
+        return DbMapperManager.builder()
+                .addMapperProvider(new HelidonJsonObjectMapperProvider())
                 .build();
     }
 
@@ -620,5 +969,135 @@ class MongoDbClientTest {
         return DbMapperManager.builder()
                 .addMapperProvider(new Issue10819ProductMapperProvider())
                 .build();
+    }
+
+    private static DbMapperManager nestedMissingMapperDbMapperManager() {
+        DbMapperManager[] managerHolder = new DbMapperManager[1];
+        DbMapperManager manager = DbMapperManager.builder()
+                .addMapperProvider(new NestedMapperMissProductMapperProvider(() -> managerHolder[0]))
+                .build();
+        managerHolder[0] = manager;
+        return manager;
+    }
+
+    private static DbMapperManager typedMissingMapperDbMapperManager() {
+        return new DbMapperManager() {
+            @Override
+            public <T> T read(DbRow row, Class<T> expectedType) {
+                throw new UnsupportedOperationException("Read operation is not implemented.");
+            }
+
+            @Override
+            public <T> T read(DbRow row, GenericType<T> expectedType) {
+                throw new UnsupportedOperationException("Read operation is not implemented.");
+            }
+
+            @Override
+            public <T> Map<String, ?> toNamedParameters(T value, Class<T> valueClass) {
+                throw new MapperNotFoundException(GenericType.create(valueClass),
+                                                  TYPE_NAMED_PARAMS,
+                                                  "Failed to find DB mapper.");
+            }
+
+            @Override
+            public <T> List<?> toIndexedParameters(T value, Class<T> valueClass) {
+                throw new UnsupportedOperationException("Indexed operation is not implemented.");
+            }
+        };
+    }
+
+    private static final class NestedMapperMissProductMapper implements DbMapper<NestedMapperMissProduct> {
+        private final Supplier<DbMapperManager> managerSupplier;
+
+        private NestedMapperMissProductMapper(Supplier<DbMapperManager> managerSupplier) {
+            this.managerSupplier = managerSupplier;
+        }
+
+        @Override
+        public NestedMapperMissProduct read(DbRow row) {
+            throw new UnsupportedOperationException("Read operation is not implemented.");
+        }
+
+        @Override
+        public Map<String, ?> toNamedParameters(NestedMapperMissProduct product) {
+            managerSupplier.get().toNamedParameters(product.bestBefore(), LocalDate.class);
+            return Map.of(
+                    "id", product.id(),
+                    "bestBefore", product.bestBefore().toString());
+        }
+
+        @Override
+        public List<?> toIndexedParameters(NestedMapperMissProduct product) {
+            return List.copyOf(toNamedParameters(product).values());
+        }
+    }
+
+    private static final class NestedMapperMissProductMapperProvider implements DbMapperProvider {
+        private final Supplier<DbMapperManager> managerSupplier;
+
+        private NestedMapperMissProductMapperProvider(Supplier<DbMapperManager> managerSupplier) {
+            this.managerSupplier = managerSupplier;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T> Optional<DbMapper<T>> mapper(Class<T> type) {
+            if (type.equals(NestedMapperMissProduct.class)) {
+                return Optional.of((DbMapper<T>) new NestedMapperMissProductMapper(managerSupplier));
+            }
+            return Optional.empty();
+        }
+    }
+
+    private static DbMapperManager failingMapperDbMapperManager() {
+        return new DbMapperManager() {
+            @Override
+            public <T> T read(DbRow row, Class<T> expectedType) {
+                throw new UnsupportedOperationException("Read operation is not implemented.");
+            }
+
+            @Override
+            public <T> T read(DbRow row, GenericType<T> expectedType) {
+                throw new UnsupportedOperationException("Read operation is not implemented.");
+            }
+
+            @Override
+            public <T> Map<String, ?> toNamedParameters(T value, Class<T> valueClass) {
+                throw new MapperException(GenericType.create(valueClass),
+                                          TYPE_NAMED_PARAMS,
+                                          "Custom mapping failure");
+            }
+
+            @Override
+            public <T> List<?> toIndexedParameters(T value, Class<T> valueClass) {
+                throw new UnsupportedOperationException("Indexed operation is not implemented.");
+            }
+        };
+    }
+
+    private static DbMapperManager legacyMissingMapperDbMapperManager() {
+        return new DbMapperManager() {
+            @Override
+            public <T> T read(DbRow row, Class<T> expectedType) {
+                throw new UnsupportedOperationException("Read operation is not implemented.");
+            }
+
+            @Override
+            public <T> T read(DbRow row, GenericType<T> expectedType) {
+                throw new UnsupportedOperationException("Read operation is not implemented.");
+            }
+
+            @Override
+            public <T> Map<String, ?> toNamedParameters(T value, Class<T> valueClass) {
+                throw new MapperException(GenericType.create(valueClass),
+                                          TYPE_NAMED_PARAMS,
+                                          "Failed to find DB mapper.");
+            }
+
+            @Override
+            public <T> List<?> toIndexedParameters(T value, Class<T> valueClass) {
+                throw new UnsupportedOperationException("Indexed operation is not implemented.");
+            }
+        };
     }
 }

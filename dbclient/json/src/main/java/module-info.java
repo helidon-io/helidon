@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,21 @@ import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
- * Helidon Database Client JSON-P Mapper.
- *
- * @deprecated use module {@code helidon-dbclient-json} instead
+ * Helidon Database Client JSON Mapper.
  */
-@SuppressWarnings("removal")
-@Deprecated(forRemoval = true, since = "4.5.0")
-@Features.Name("JSON-P")
-@Features.Description("JSON Processing mapping DbRow")
+@Features.Name("JSON")
+@Features.Description("Helidon JSON mapping DbRow")
 @Features.Flavor(HelidonFlavor.SE)
-@Features.Path({"DbClient", "JSON-P"})
-module io.helidon.dbclient.jsonp {
+@Features.Path({"DbClient", "JSON"})
+module io.helidon.dbclient.json {
 
     requires io.helidon.dbclient;
-    requires jakarta.json;
+    requires io.helidon.json;
 
     requires static io.helidon.common.features.api;
 
-    exports io.helidon.dbclient.jsonp;
+    exports io.helidon.dbclient.json;
 
-    provides io.helidon.dbclient.spi.DbMapperProvider with io.helidon.dbclient.jsonp.JsonProcessingMapperProvider;
+    provides io.helidon.dbclient.spi.DbMapperProvider with io.helidon.dbclient.json.HelidonJsonMapperProvider;
 
 }
