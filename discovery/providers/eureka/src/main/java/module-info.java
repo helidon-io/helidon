@@ -39,7 +39,6 @@ module io.helidon.discovery.providers.eureka {
     requires io.helidon.common.media.type;
     requires io.helidon.discovery;
     requires io.helidon.http;
-    requires io.helidon.http.media.json;
     requires io.helidon.http.media;
     requires io.helidon.json;
     requires io.helidon.service.registry;
