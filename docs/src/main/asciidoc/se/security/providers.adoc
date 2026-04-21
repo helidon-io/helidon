@@ -39,8 +39,7 @@ Helidon provides the following security providers for endpoint protection:
 ^|Provider ^|Type ^|Outbound supported ^|Description
 
 |<<OIDC Provider,OIDC Provider>> |Authentication |✅ |Open ID Connect supporting JWT, Scopes, Groups and OIDC code flow
-|<<HTTP Basic Authentication Provider,HTTP Basic Authentication>> |Authentication |✅ |HTTP Basic Authentication support
-|<<HTTP Digest Authentication Provider,HTTP Digest Authentication>> |Authentication |🚫 |HTTP Digest Authentication support
+|<<HTTP Basic Authentication Provider,HTTP Basic Authentication>> |Authentication |✅ |HTTP Basic authentication support for local testing and demos
 |<<Header Authentication Provider,Header Assertion>> |Authentication |✅ |Asserting a user based on a header value
 |<<HTTP Signatures Provider,HTTP Signatures>> |Authentication |✅ |Protecting service to service communication through signatures
 |<<IDCS Role Mapper,IDCS Roles>> |Role Mapping |🚫 |Retrieves roles from IDCS provider for authenticated user
@@ -83,8 +82,6 @@ include::{sourcedir}/se/security/ProvidersSnippets.java[tag=snippet_1, indent=0]
 include::{rootdir}/includes/security/providers/oidc.adoc[]
 
 include::{rootdir}/includes/security/providers/http-basic-auth.adoc[]
-
-include::{rootdir}/includes/security/providers/http-digest-auth.adoc[]
 
 include::{rootdir}/includes/security/providers/header-assertion.adoc[]
 

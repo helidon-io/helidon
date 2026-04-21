@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
- * Basic and digest authentication provider.
+ * Basic authentication provider.
  */
 @Features.Name("HTTP Basic")
 @Features.Description("Security provider for HTTP Basic authentication and outbound")
@@ -38,8 +38,7 @@ module io.helidon.security.providers.httpauth {
 
     exports io.helidon.security.providers.httpauth;
 
-    provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.httpauth.HttpBasicAuthService,
-                io.helidon.security.providers.httpauth.HttpDigestAuthService;
+    provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.httpauth.HttpBasicAuthService;
 
     uses io.helidon.security.providers.httpauth.spi.UserStoreService;
 

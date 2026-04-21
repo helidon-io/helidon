@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,10 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Store of users for resolving httpauth and digest authentication.
- * This implementation does not require to provide passwords. This is a more secure approach.
- * Keep in mind that HTTP Basic authentication is an unsafe protection, and even when combined with SSL, it still has some
- * severe issues.
+ * Store of users for resolving HTTP basic authentication.
+ * This implementation does not require exposing stored passwords to the provider itself.
+ * Keep in mind that HTTP Basic authentication is unsafe even when combined with SSL and should only be used for
+ * local testing and demos.
  */
 @FunctionalInterface
 public interface SecureUserStore {
@@ -70,23 +70,5 @@ public interface SecureUserStore {
             return Set.of();
         }
 
-        /**
-         * Digest authentication requires a hash of username, realm and password.
-         * As password should not be revealed by systems, this is to provide the HA1 (from Digest Auth terminology)
-         * based on the known (public) information combined with the secret information available to user store only (password).
-         * <p>
-         * ha1 algorithm ({@code unq} stands for "unquoted value")
-         * <pre>
-         *    ha1 = md5(a1);
-         *    a1 = unq(username-value) ":" unq(realm-value) ":" passwd
-         * </pre>
-         *
-         * @param realm configured realm
-         * @param algorithm algorithm of the hash (current only MD5 supported by Helidon)
-         * @return a digest to use for validation of incoming request
-         */
-        default Optional<String> digestHa1(String realm, HttpDigest.Algorithm algorithm) {
-            return Optional.empty();
-        }
     }
 }

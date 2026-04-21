@@ -30,12 +30,8 @@
     <name>Helidon Security Providers HTTP Authentication</name>
 
     <description>
-        HTTP basic and digest authentication provider
+        HTTP basic authentication provider
     </description>
-
-    <properties>
-        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
-    </properties>
 
     <dependencies>
         <dependency>

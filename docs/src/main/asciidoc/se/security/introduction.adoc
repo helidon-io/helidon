@@ -62,8 +62,8 @@ Security module is quite HTTP centric (as most common use cases are related to
  HTTP REST), though it is not HTTP specific (the security module may be used to
  secure even other transports, such as JMS messages etc. if an appropriate
  integration module is developed, as all APIs can be mapped to a non-HTTP
- protocol). Nevertheless, there may be security providers that only make sense with
- HTTP (such as HTTP digest authentication).
+protocol). Nevertheless, there may be security providers that only make sense with
+ HTTP (such as HTTP Basic authentication).
 
 include::{rootdir}/includes/dependencies.adoc[]
 
