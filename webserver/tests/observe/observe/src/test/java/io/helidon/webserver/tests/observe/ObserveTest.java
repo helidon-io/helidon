@@ -146,6 +146,8 @@ class ObserveTest {
     @Test
     void testLogObserverSetLevel(WebClient client) {
         String loggerName = getClass().getName() + ".level";
+        // Keep a strong reference so JUL does not drop this ad hoc logger between requests.
+        Logger logger = Logger.getLogger(loggerName);
 
         try {
             ClientResponseTyped<String> response = client.post("/observe/log/loggers/" + loggerName)
@@ -159,13 +161,13 @@ class ObserveTest {
 
             assertThat(loggerResponse.status(), is(Status.OK_200));
             JsonObject entity = loggerResponse.entity();
+            JsonObject loggerEntity = entity.objectValue(loggerName).orElse(null);
+            assertThat("Entity: " + entity, loggerEntity, notNullValue());
             assertThat("Entity: " + entity,
-                       entity.objectValue(loggerName)
-                               .flatMap(it -> it.stringValue("configuredLevel"))
-                               .orElseThrow(),
+                       loggerEntity.stringValue("configuredLevel").orElse(null),
                        is("WARNING"));
         } finally {
-            Logger.getLogger(loggerName).setLevel(null);
+            logger.setLevel(null);
         }
     }
 
