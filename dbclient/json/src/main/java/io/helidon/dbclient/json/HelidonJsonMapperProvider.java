@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.jsonp;
+package io.helidon.dbclient.json;
 
 import java.util.Optional;
 
@@ -21,22 +21,18 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.spi.DbMapperProvider;
-
-import jakarta.json.JsonObject;
+import io.helidon.json.JsonObject;
 
 /**
- * JSON-P mapper provider.
- *
- * @deprecated use module {@code helidon-dbclient-json} instead
+ * Helidon JSON mapper provider.
  */
-@Deprecated(forRemoval = true, since = "4.5.0")
 @Weight(Weighted.DEFAULT_WEIGHT)
-public class JsonProcessingMapperProvider implements DbMapperProvider {
+public class HelidonJsonMapperProvider implements DbMapperProvider {
     @SuppressWarnings("unchecked")
     @Override
     public <T> Optional<DbMapper<T>> mapper(Class<T> type) {
         if (type.equals(JsonObject.class)) {
-            return Optional.of((DbMapper<T>) JsonProcessingMapper.create());
+            return Optional.of((DbMapper<T>) HelidonJsonMapper.create());
         }
         return Optional.empty();
     }

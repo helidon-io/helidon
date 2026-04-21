@@ -33,9 +33,9 @@ import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.DbStatementBase;
 import io.helidon.dbclient.DbStatementParameters;
 import io.helidon.dbclient.DbStatementType;
+import io.helidon.json.JsonObject;
 
 import com.mongodb.client.MongoDatabase;
-import jakarta.json.Json;
 import org.bson.Document;
 
 import static io.helidon.dbclient.mongodb.MongoDbStatement.MongoOperation.COMMAND;
@@ -50,13 +50,12 @@ import static io.helidon.dbclient.mongodb.MongoDbStatement.MongoOperation.UPDATE
  * @param <S> type of subclass
  */
 abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBase<S> {
-
     private static final String ERROR_NO_MAPPER_FOUND = "Failed to find DB mapper.";
 
     /**
      * Empty JSON object.
      */
-    static final Document EMPTY = Document.parse(Json.createObjectBuilder().build().toString());
+    static final Document EMPTY = Document.parse(JsonObject.empty().text());
 
     /**
      * Operation JSON parameter name.
@@ -207,16 +206,12 @@ abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBas
         }
     }
 
-    private boolean isMissingMapper(MapperException exception, Class<?> valueClass) {
-        // DbMapperManager only exposes mapping operations, so we fall back
-        // only when the manager reports its specific "no mapper found" error.
-        String expectedMessage = "Failed to map "
-                + GenericType.create(valueClass).getTypeName()
-                + " to "
-                + DbMapperManager.TYPE_NAMED_PARAMS.getTypeName()
-                + ": "
-                + ERROR_NO_MAPPER_FOUND;
-        return expectedMessage.equals(exception.getMessage());
+    private static boolean isMissingMapper(MapperException exception, Class<?> valueClass) {
+        // Only the canonical top-level "no mapper found" signal should fall back to the raw value.
+        // Nested mapper failures from a real mapper use a different source/target signature and must propagate.
+        return GenericType.create(valueClass).equals(exception.sourceType())
+                && DbMapperManager.TYPE_NAMED_PARAMS.equals(exception.targetType())
+                && ERROR_NO_MAPPER_FOUND.equals(exception.detail());
     }
 
     private static boolean isScalar(Object value) {
@@ -225,6 +220,7 @@ abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBas
                 || value instanceof Boolean
                 || value instanceof Character
                 || value instanceof Enum<?>
+                || value instanceof io.helidon.json.JsonValue
                 || value instanceof jakarta.json.JsonValue;
     }
 

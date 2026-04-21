@@ -26,6 +26,10 @@ import io.helidon.common.GenericType;
 public class MapperException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
+    private final GenericType<?> sourceType;
+    private final GenericType<?> targetType;
+    private final String detail;
+
     /**
      * Failed with no underlying exception.
      *
@@ -34,7 +38,10 @@ public class MapperException extends RuntimeException {
      * @param detail descriptive message of what failed
      */
     public MapperException(GenericType<?> source, GenericType<?> target, String detail) {
-        super("Failed to map " + source.getTypeName() + " to " + target.getTypeName() + ": " + detail);
+        super(createMessage(source, target, detail));
+        this.sourceType = source;
+        this.targetType = target;
+        this.detail = detail;
     }
 
     /**
@@ -46,6 +53,40 @@ public class MapperException extends RuntimeException {
      * @param cause cause of this exception
      */
     public MapperException(GenericType<?> source, GenericType<?> target, String detail, Throwable cause) {
-        super("Failed to map " + source.getTypeName() + " to " + target.getTypeName() + ": " + detail, cause);
+        super(createMessage(source, target, detail), cause);
+        this.sourceType = source;
+        this.targetType = target;
+        this.detail = detail;
+    }
+
+    /**
+     * Type of the source that failed to map.
+     *
+     * @return source type
+     */
+    public GenericType<?> sourceType() {
+        return sourceType;
+    }
+
+    /**
+     * Type of the target that failed to map.
+     *
+     * @return target type
+     */
+    public GenericType<?> targetType() {
+        return targetType;
+    }
+
+    /**
+     * Detail describing the mapping failure.
+     *
+     * @return failure detail
+     */
+    public String detail() {
+        return detail;
+    }
+
+    private static String createMessage(GenericType<?> source, GenericType<?> target, String detail) {
+        return "Failed to map " + source.getTypeName() + " to " + target.getTypeName() + ": " + detail;
     }
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
+    Copyright (c) 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,32 +18,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.dbclient</groupId>
         <artifactId>helidon-dbclient-project</artifactId>
-        <version>4.5.0-SNAPSHOT</version>
+        <version>4.4.1-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-dbclient-mongodb</artifactId>
-    <name>Helidon Database Client MongoDB</name>
-    <description>Helidon Database Client MongoDB Support</description>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>helidon-dbclient-json</artifactId>
+    <name>Helidon Database Client JSON</name>
+    <description>Helidon Database Client Helidon JSON Support</description>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-mapper</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongodb-driver-sync</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.parsson</groupId>
-            <artifactId>parsson</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.json</groupId>
@@ -62,11 +50,6 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

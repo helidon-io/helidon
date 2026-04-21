@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.helidon.dbclient.mongodb.StatementParsers.NamedParser;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonString;
 
 import org.junit.jupiter.api.Test;
 
@@ -46,6 +49,28 @@ public class StatementParsersTest {
         NamedParser parser = new NamedParser(stmtIn, mapping);
         String stmtOut = parser.convert();
         assertThat(stmtOut, is(stmtExp));
+    }
+
+    @Test
+    void testStatementWithHelidonJsonValues() {
+        JsonObject jsonObject = JsonObject.builder()
+                .set("name", "Pikachu")
+                .set("id", 25)
+                .set("active", true)
+                .set("moves", JsonArray.createStrings(java.util.List.of("thunderbolt", "quick attack")))
+                .build();
+
+        assertThat(StatementParsers.toJson(JsonString.create("electric")), is("\"electric\""));
+        assertThat(StatementParsers.toJson(jsonObject),
+                   is("{\"name\":\"Pikachu\",\"id\":25,\"active\":true,\"moves\":[\"thunderbolt\",\"quick attack\"]}"));
+    }
+
+    @Test
+    void testStatementWithSpecialFloatingPointValues() {
+        assertThat(StatementParsers.toJson(Double.NaN), is("\"NaN\""));
+        assertThat(StatementParsers.toJson(Float.POSITIVE_INFINITY), is("\"Infinity\""));
+        assertThat(StatementParsers.toJson(Double.NEGATIVE_INFINITY), is("\"-Infinity\""));
+        assertThat(StatementParsers.toJson(42.5d), is("42.5"));
     }
 
 }

@@ -133,6 +133,17 @@ class JsonValueParserTest {
     }
 
     @Test
+    public void testJsonValueTextMatchesToString() {
+        JsonValue objectValue = JsonObject.create(
+                Map.of("key", JsonString.create("value"),
+                       "numbers", JsonArray.create(List.of(JsonNumber.create(new BigDecimal("42")))))
+        );
+
+        assertThat(JsonString.create("hello").text(), is("\"hello\""));
+        assertThat(objectValue.text(), is(objectValue.toString()));
+    }
+
+    @Test
     public void testJsonValueParserSkip() {
         JsonValue original = JsonString.create("test");
         JsonParser parser = JsonParser.create(original);
