@@ -187,6 +187,13 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
+    void defaultMaxReadBufferSizeMatchesGrpcEcosystemStandard() {
+        // Matches GrpcUtil.DEFAULT_MAX_MESSAGE_SIZE in grpc-java:
+        // https://github.com/grpc/grpc-java/blob/v1.73.0/core/src/main/java/io/grpc/internal/GrpcUtil.java#L212
+        assertThat(GrpcConfig.create().maxReadBufferSize(), is(4 * 1024 * 1024));
+    }
+
+    @Test
     void testCloseSuppressesTrailerWriteDisconnect() {
         ServerCall<String, String> serverCall = createServerCall(closeFailingWriter());
         serverCall.sendHeaders(new Metadata());
