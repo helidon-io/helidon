@@ -37,13 +37,11 @@ import java.util.function.Function;
 import io.helidon.config.NamedService;
 import io.helidon.discovery.DiscoveredUri;
 import io.helidon.http.media.ReadableEntity;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientConfig;
-
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
 
 import static io.helidon.common.media.type.MediaTypes.APPLICATION_JSON;
 import static io.helidon.http.HeaderNames.ACCEPT_ENCODING;
@@ -653,7 +651,7 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
         // call it a "stamp"). Optimization: If it hasn't changed since last time, there is no replacement that needs to
         // happen. Stamps are critical when Eureka's so-called "deltas" are involved, which are a primitive form of
         // optimistic versioning.
-        Object newStamp = applicationsObject.getString("apps__hashcode", "");
+        Object newStamp = applicationsObject.stringValue("apps__hashcode", "");
         if (this.applied(newStamp)) {
             // This fetch resulted in the same thing we already have. No replacement needs to occur.
             if (LOGGER.isLoggable(DEBUG)) {
@@ -661,7 +659,7 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
             }
             return;
         }
-        JsonArray applicationArray = applicationsObject.getJsonArray("application");
+        JsonArray applicationArray = applicationsObject.arrayValue("application").orElse(null);
         if (applicationArray == null) {
             if (LOGGER.isLoggable(ERROR)) {
                 LOGGER.log(ERROR, "Received malformed JSON: " + applicationsObject + "; no action will be taken");
@@ -741,14 +739,14 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
                     }
                     this.fetchAll = true; // non-volatile write, but only this thread reads and writes it
                 } else {
-                    JsonArray changes = changeSet.getJsonArray("application");
-                    if (changes.isEmpty()) {
+                    JsonArray changes = changeSet.arrayValue("application").orElse(JsonArray.empty());
+                    if (changes.values().isEmpty()) {
                         // There are no changes to apply.
                         if (LOGGER.isLoggable(DEBUG)) {
                             LOGGER.log(DEBUG, "Received no changes to apply; no action will be taken");
                         }
                     } else {
-                        Object newStamp = changeSet.getString("apps__hashcode", "");
+                        Object newStamp = changeSet.stringValue("apps__hashcode", "");
                         if (this.applied(newStamp)) {
                             // The change set reported a "stamp" that we already have. This means we already applied the
                             // change set's changes against the cache identified by the stamp. No need to do so again.
@@ -926,12 +924,13 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
                 if (e.hasEntity()) {
                     entity = e
                         .as(JsonObject.class)
-                        .getJsonObject("applications");
-                    if (LOGGER.isLoggable(INFO)) {
-                        JsonArray applications = entity.getJsonArray("application");
-                        LOGGER.log(INFO, "Retrieved " + applications.size() + " applications");
+                        .objectValue("applications")
+                        .orElse(null);
+                    if (entity != null && LOGGER.isLoggable(INFO)) {
+                        JsonArray applications = entity.arrayValue("application").orElse(JsonArray.empty());
+                        LOGGER.log(INFO, "Retrieved " + applications.values().size() + " applications");
                     }
-                    if (LOGGER.isLoggable(DEBUG)) {
+                    if (entity != null && LOGGER.isLoggable(DEBUG)) {
                         // This could be pretty darn big
                         LOGGER.log(DEBUG, entity.toString());
                     }
@@ -1048,10 +1047,10 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
                 //       "instance": []  // <-- this array is what this method returns
                 //     }
                 //   }
-                return Optional.of(response.entity()
-                                   .as(JsonObject.class)
-                                   .getJsonObject("application")
-                                   .getJsonArray("instance"));
+                return response.entity()
+                        .as(JsonObject.class)
+                        .objectValue("application")
+                        .flatMap(it -> it.arrayValue("instance"));
             case 404: // not found
                 if (LOGGER.isLoggable(DEBUG)) {
                     LOGGER.log(DEBUG,
@@ -1151,22 +1150,23 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
         //       ]
         //     }
         //   }
-        String host = jsonInstance.getString(preferIpAddress ? "ipAddr" : "hostName");
+        String host = jsonInstance.stringValue(preferIpAddress ? "ipAddr" : "hostName").orElse(null);
         if (host == null) {
             // Technically possible. We're supposed to ignore it.
             return Optional.empty();
         }
         Instance.Status status;
         try {
-            status = Instance.Status.valueOf(jsonInstance.getString("status", "UNKNOWN").toUpperCase(Locale.ROOT));
+            status = Instance.Status.valueOf(jsonInstance.stringValue("status", "UNKNOWN").toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             status = Instance.Status.UNKNOWN;
         }
 
-        Map<String, String> metadata = new HashMap<>(metadata(jsonInstance.getJsonObject("metadata")));
+        Map<String, String> metadata = new HashMap<>(metadata(jsonInstance.objectValue("metadata").orElse(null)));
         metadata.put("io.helidon.discovery.status", status.name());
         // (Yes, there can be two overridden status fields; yes, their case is just as it appears here.)
-        String overriddenStatus = jsonInstance.getString("overriddenstatus", jsonInstance.getString("overriddenStatus"));
+        String overriddenStatus = jsonInstance.stringValue("overriddenstatus")
+            .orElse(jsonInstance.stringValue("overriddenStatus").orElse(null));
         if (overriddenStatus != null && !overriddenStatus.equalsIgnoreCase("UNKNOWN")) {
             // Eureka can default the overriddenstatus and overriddenStatus fields (yes, there can be two of them, yes,
             // the case is just like that) to "UNKNOWN". This means the "real" status has not been overridden (!).
@@ -1181,11 +1181,16 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
             }
         }
 
-        JsonObject portObject = jsonInstance.getJsonObject("securePort");
+        JsonObject portObject = jsonInstance.objectValue("securePort").orElse(null);
         int securePort = enabled(portObject) ? port(portObject) : -1;
-        portObject = jsonInstance.getJsonObject("port");
+        portObject = jsonInstance.objectValue("port").orElse(null);
         int nonSecurePort = enabled(portObject) ? port(portObject) : -1;
-        return Optional.of(new Instance(jsonInstance.getString("instanceId"), host, securePort, nonSecurePort, status, metadata));
+        return Optional.of(new Instance(jsonInstance.stringValue("instanceId").orElse(null),
+                                        host,
+                                        securePort,
+                                        nonSecurePort,
+                                        status,
+                                        metadata));
     }
 
     /**
@@ -1213,12 +1218,16 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
      */
     // Static for testing.
     static Map<String, SequencedSet<Instance>> instancesMap(JsonArray applications, boolean preferIpAddress) {
-        if (applications == null || applications.isEmpty()) {
+        if (applications == null) {
             return Map.of();
         }
-        Map<String, SequencedSet<Instance>> m = newHashMap(applications.size());
-        for (JsonValue a : applications) {
-            JsonObject application = a.asJsonObject();
+        List<JsonValue> applicationValues = applications.values();
+        if (applicationValues.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, SequencedSet<Instance>> m = newHashMap(applicationValues.size());
+        for (JsonValue a : applicationValues) {
+            JsonObject application = a.asObject();
             // Reverse engineered:
             //
             //   { "appplications": {
@@ -1229,13 +1238,13 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
             //       ]
             //     }
             //   }
-            String name = application.getString("name");
+            String name = application.stringValue("name").orElse(null);
             if (name == null) {
                 continue; // technically speaking Eureka can do this; skip any such payload
             }
             List<Instance> instances = new ArrayList<>();
-            for (JsonValue jsonInstance : application.getJsonArray("instance")) {
-                instance(jsonInstance.asJsonObject(), preferIpAddress).ifPresent(instances::add);
+            for (JsonValue jsonInstance : application.arrayValue("instance").orElseThrow().values()) {
+                instance(jsonInstance.asObject(), preferIpAddress).ifPresent(instances::add);
             }
             if (instances.size() > 1) {
                 // Partially order the list by Instance.Status only.
@@ -1272,15 +1281,16 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
      */
     // Static for testing.
     static SequencedSet<Instance> instances(JsonArray jsonInstances, boolean preferIpAddress) {
-        return switch (jsonInstances == null ? 0 : jsonInstances.size()) {
+        List<JsonValue> instanceValues = jsonInstances == null ? List.of() : jsonInstances.values();
+        return switch (instanceValues.size()) {
         case 0 -> emptySequencedSet();
-        case 1 -> instance(jsonInstances.getJsonObject(0), preferIpAddress)
+        case 1 -> instance(instanceValues.get(0).asObject(), preferIpAddress)
             .map(i -> unmodifiableSequencedSet(new LinkedHashSet<>(List.of(i))))
             .orElse(emptySequencedSet());
         default -> {
             List<Instance> instances = new ArrayList<>();
-            for (JsonValue jsonInstance : jsonInstances) {
-                instance(jsonInstance.asJsonObject(), preferIpAddress).ifPresent(instances::add);
+            for (JsonValue jsonInstance : instanceValues) {
+                instance(jsonInstance.asObject(), preferIpAddress).ifPresent(instances::add);
             }
             if (instances.size() > 1) {
                 // Partially order the list by Instance.Status only.
@@ -1313,7 +1323,7 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
      */
     // Static for testing. Turns a metadata-shaped JsonObject structure (string key/value pairs) into an unmodifiable Map.
     static Map<String, String> metadata(JsonObject metadata) {
-        if (metadata == null || metadata.isEmpty()) {
+        if (metadata == null || metadata.size() == 0) {
             return Map.of();
         }
         Map<String, String> m = newHashMap(metadata.size());
@@ -1327,19 +1337,18 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
         //                 "someKey": "someValue" // string values only, they claim
         //               },
         //   ...
-        for (Entry<String, JsonValue> e : metadata.entrySet()) {
-            JsonValue v = e.getValue();
+        for (String key : metadata.keysAsStrings()) {
+            JsonValue v = metadata.value(key).orElse(null);
             if (v == null) {
                 continue;
             }
-            switch (v.getValueType()) {
+            switch (v.type()) {
                 // Vaules *should* be only strings but Eureka is undocumented so permit String representations of all
                 // scalar values.
-            case FALSE -> m.put(e.getKey(), "false");
-            case NUMBER -> m.put(e.getKey(), v.toString()); // guaranteed to be equivalent to BigDecimal#toString() output
-            case NULL -> m.put(e.getKey(), null);
-            case STRING -> m.put(e.getKey(), ((JsonString) v).getString());
-            case TRUE -> m.put(e.getKey(), "true");
+            case BOOLEAN -> m.put(key, Boolean.toString(v.asBoolean().value()));
+            case NUMBER -> m.put(key, v.toString()); // guaranteed to be equivalent to BigDecimal#toString() output
+            case NULL -> m.put(key, null);
+            case STRING -> m.put(key, v.asString().value());
             default -> {}
             }
         }
@@ -1374,8 +1383,7 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
      * the stored hostname
      *
      * @return an immutable {@link Map} of immutable {@link SequencedSet}s of {@link Instance}s representing the state
-     * that results from applying the changes, or {@code existingInstances} if {@code changes} {@linkplain
-     * JsonArray#isEmpty() is empty}
+     * that results from applying the changes, or {@code existingInstances} if {@code changes} {@link JsonArray} values is empty}
      *
      * @exception NullPointerException if any argument is {@code null}
      */
@@ -1383,7 +1391,8 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
     static Map<String, SequencedSet<Instance>> change(Map<String, SequencedSet<Instance>> existingInstances,
                                                       JsonArray changes,
                                                       boolean preferIpAddress) {
-        if (changes.isEmpty()) {
+        List<JsonValue> changeValues = changes.values();
+        if (changeValues.isEmpty()) {
             return requireNonNull(existingInstances, "existingInstances");
         }
 
@@ -1394,14 +1403,14 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
             returnValue.put(e.getKey(), new LinkedHashSet<>(e.getValue()));
         }
 
-        for (JsonValue change : changes) {
+        for (JsonValue change : changeValues) {
 
             // Groups of changes (Eureka calls them "deltas"), for some reason, are represented by "application"
             // objects: the same "application" object used when you simply ask for one or more applications, but here
             // with additional semantics (here they represent actions taken, not descriptions of state). It looks like
             // they just wanted to reuse the existing JSON data structure for a totally different purpose.
-            JsonObject application = change.asJsonObject();
-            String applicationName = application.getString("name");
+            JsonObject application = change.asObject();
+            String applicationName = application.stringValue("name").orElse(null);
             if (applicationName == null) {
                 // Technically possible; you're supposed to ignore it in this case.
                 if (LOGGER.isLoggable(WARNING)) {
@@ -1414,8 +1423,9 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
             // "actionType" that is significant in this case (when you simply retrieve an "application" and look at an
             // "instance" it contains, the "actionType" field does not seem to be significant). None of this is
             // documented.
-            JsonArray instances = application.getJsonArray("instance");
-            int size = instances == null ? 0 : instances.size();
+            JsonArray instances = application.arrayValue("instance").orElse(null);
+            List<JsonValue> instanceValues = instances == null ? List.of() : instances.values();
+            int size = instanceValues.size();
             if (size == 0) {
                 // (Simple optimization.)
                 continue;
@@ -1430,10 +1440,10 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
             List<Instance> additions = new ArrayList<>(size);
             List<Instance> modifications = new ArrayList<>(size);
             List<Instance> deletions = new ArrayList<>(size);
-            for (JsonValue i : instances) {
-                JsonObject jsonInstance = i.asJsonObject();
+            for (JsonValue i : instanceValues) {
+                JsonObject jsonInstance = i.asObject();
                 // See https://github.com/Netflix/eureka/blob/v2.0.5/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L1354-L1359
-                switch (jsonInstance.getString("actionType", "UNKNOWN").toUpperCase(Locale.ROOT)) {
+                switch (jsonInstance.stringValue("actionType", "UNKNOWN").toUpperCase(Locale.ROOT)) {
                 case "ADDED"    -> instance(jsonInstance, preferIpAddress).ifPresent(additions::add);
                 case "MODIFIED" -> instance(jsonInstance, preferIpAddress).ifPresent(modifications::add);
                 case "DELETED"  -> instance(jsonInstance, preferIpAddress).ifPresent(deletions::add);
@@ -1528,8 +1538,8 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
 
     /**
      * Returns {@code true} if and only if the supplied {@link JsonObject} is non-{@code null} and {@linkplain
-     * JsonObject#getBoolean(String, boolean) contains a <code>boolean</code> field} named {@code @enabled} whose value
-     * is {@code true}.
+     * JsonObject#stringValue(String, String) contains a string field} named {@code @enabled} whose value is
+     * {@code true}.
      *
      * @param portObject a {@link JsonObject} representing a Eureka-supplied port structure; may be {@code null} in
      * which case {@code false} will be returned
@@ -1540,13 +1550,13 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
     // Turns a weird port-information-shaped JsonObject into a boolean saying whether it is "enabled" or not.
     private static boolean enabled(JsonObject portObject) {
         // Yes, Eureka returns booleans in this case as lowercase strings.
-        return portObject != null && Boolean.parseBoolean(portObject.getString("@enabled", "false"));
+        return portObject != null && Boolean.parseBoolean(portObject.stringValue("@enabled", "false"));
     }
 
     /**
-     * Returns the port number represented by the supplied {@link JsonObject}, if it is non-{@code null} and {@linkplain
-     * JsonObject#getBoolean(String, boolean) contains a numeric field} named {@code $}, or a value less than {@code 0}
-     * in all other cases.
+     * Returns the port number represented by the supplied {@link JsonObject}, if it is non-{@code null} and
+     * {@linkplain JsonObject#intValue(String, int) contains an integer field} named {@code $}, or a value less than
+     * {@code 0} in all other cases.
      *
      * @param portObject a {@link JsonObject} representing a Eureka-supplied port structure; may be {@code null} in
      * which case a negative will be returned
@@ -1555,7 +1565,7 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
      */
     // Turns a weird port-information-shaped JsonObject into a port number.
     private static int port(JsonObject portObject) {
-        return portObject == null ? -1 : portObject.getInt("$", -1);
+        return portObject == null ? -1 : portObject.intValue("$", -1);
     }
 
 

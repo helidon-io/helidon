@@ -89,8 +89,8 @@
             <artifactId>helidon-webclient-http1</artifactId>
         </dependency>
         <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -108,7 +108,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.http.media</groupId>
-            <artifactId>helidon-http-media-jsonp</artifactId>
+            <artifactId>helidon-http-media-json</artifactId>
             <scope>runtime</scope>
         </dependency>
 

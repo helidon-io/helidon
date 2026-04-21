@@ -40,9 +40,8 @@ module io.helidon.discovery.providers.eureka {
     requires io.helidon.discovery;
     requires io.helidon.http;
     requires io.helidon.http.media;
+    requires io.helidon.json;
     requires io.helidon.service.registry;
-
-    requires jakarta.json;
 
     exports io.helidon.discovery.providers.eureka;
 
