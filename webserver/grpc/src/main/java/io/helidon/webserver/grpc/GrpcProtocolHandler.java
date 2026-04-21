@@ -72,6 +72,7 @@ import io.grpc.MethodDescriptor;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 
 import static io.helidon.http.HeaderNames.CONTENT_TYPE;
 import static io.helidon.http.http2.Http2Flag.DataFlags;
@@ -116,6 +117,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private final StreamFlowControl flowControl;
     private final GrpcConfig grpcConfig;
 
+    private ServerCall<REQ, RES> serverCall;
     private volatile ServerCall.Listener<REQ> listener;
     private BufferData entityBytes;
     private BufferData readBufferData = BufferData.create(INITIAL_BUFFER_SIZE);
@@ -152,7 +154,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     @Override
     public void init() {
         try {
-            ServerCall<REQ, RES> serverCall = createServerCall();
+            serverCall = createServerCall();
             Headers httpHeaders = headers.httpHeaders();
 
             // setup compression
@@ -282,6 +284,16 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             }
         } catch (CloseConnectionException e) {
             throw e;
+        } catch (StatusRuntimeException e) {
+            if (isPeerCancellation(e)) {
+                throw new ServerConnectionException("gRPC call cancelled by remote peer", e);
+            }
+            // Close the call with the embedded gRPC status (e.g. RESOURCE_EXHAUSTED for oversized messages).
+            // This sends status trailers back to the client rather than abruptly cancelling.
+            // See: MessageDeframer.processHeader() in
+            // https://github.com/grpc/grpc-java/blob/v1.73.0/core/src/main/java/io/grpc/internal/MessageDeframer.java#L388-L393
+            LOGGER.log(System.Logger.Level.DEBUG, "gRPC call closed with status: {0}", e.getStatus());
+            serverCall.close(e.getStatus(), new Metadata());
         } catch (Exception e) {
             if (isPeerCancellation(e)) {
                 throw new ServerConnectionException("gRPC call cancelled by remote peer", e);
@@ -296,7 +308,14 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         int capacity = readBufferData.capacity();
         if (length > capacity) {
             if (length > grpcConfig.maxReadBufferSize()) {
-                throw new IllegalStateException("gRPC message size exceeds max read buffer size");
+                // Throw RESOURCE_EXHAUSTED for oversized messages so the status
+                // propagates back to the client as gRPC trailers.
+                // See: MessageDeframer.processHeader() in
+                // https://github.com/grpc/grpc-java/blob/v1.73.0/core/src/main/java/io/grpc/internal/MessageDeframer.java#L388-L393
+                throw Status.RESOURCE_EXHAUSTED
+                        .withDescription("gRPC message exceeds maximum size "
+                                + grpcConfig.maxReadBufferSize() + ": " + length)
+                        .asRuntimeException();
             }
             readBufferData = BufferData.create(length);
         }

@@ -85,7 +85,8 @@ interface GrpcConfigBlueprint extends ProtocolConfig {
      * and must be buffered entirely before deserialization — this effectively
      * limits the maximum inbound message size.
      *
-     * <p>Messages larger than this are rejected. Defaults to 4 MB, matching
+     * <p>Messages larger than this are rejected with a
+     * {@code RESOURCE_EXHAUSTED} status. Defaults to 4 MB, matching
      * the gRPC ecosystem standard ({@code GrpcUtil.DEFAULT_MAX_MESSAGE_SIZE}
      * in grpc-java,
      * <a href="https://github.com/grpc/grpc-java/blob/v1.73.0/core/src/main/java/io/grpc/internal/GrpcUtil.java#L212">source</a>).
