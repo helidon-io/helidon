@@ -49,7 +49,15 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media-jsonp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>

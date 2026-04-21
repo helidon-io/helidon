@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.integrations.common.rest;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.lang.System.Logger;
 import java.util.List;
 import java.util.Map;
@@ -35,28 +34,26 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.integrations.common.rest.ApiOptionalResponse.BuilderBase;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.tracing.SpanContext;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
-
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReaderFactory;
-import jakarta.json.JsonWriterFactory;
 
 /**
  * Base REST API implementation.
  * Each integration module is expected to have its own implementation of this class to handle system specific operations,
  * such as security, processing of headers etc.
  */
+@SuppressWarnings("helidon:api:incubating")
 public abstract class RestApiBase implements RestApi {
     private static final System.Logger LOGGER = System.getLogger(RestApiBase.class.getName());
     private final WebClient webClient;
     private final FtHandler ftHandler;
-    private final JsonBuilderFactory jsonBuilderFactory;
-    private final JsonReaderFactory jsonReaderFactory;
-    private final JsonWriterFactory jsonWriterFactory;
+    private final jakarta.json.JsonBuilderFactory jsonBuilderFactory;
+    private final jakarta.json.JsonReaderFactory jsonReaderFactory;
+    private final jakarta.json.JsonWriterFactory jsonWriterFactory;
 
     /**
      * A new instance, requires a subclass of the {@link RestApi.Builder}.
@@ -85,10 +82,27 @@ public abstract class RestApiBase implements RestApi {
     }
 
     @Override
+    public <T extends ApiEntityResponse> T invokeWithJsonResponse(Method method,
+                                                                  String path,
+                                                                  ApiRequest<?> request,
+                                                                  ApiEntityResponse.Builder<?, T, JsonObject> responseBuilder) {
+
+        String requestId = requestId(request);
+        LOGGER.log(Logger.Level.TRACE, () -> requestId + ": Invoking " + method + " on path " + path + " JSON entity expected.");
+
+        Supplier<HttpClientResponse> responseSupplier = responseSupplier(method, path, request, requestId);
+
+        HttpClientResponse response = ftHandler.invoke(responseSupplier);
+        return handleHelidonJsonResponse(path, request, method, requestId, response, responseBuilder);
+    }
+
+    @Override
+    @Deprecated(since = "4.5.0", forRemoval = true)
     public <T extends ApiEntityResponse> T invokeWithResponse(Method method,
                                                               String path,
                                                               ApiRequest<?> request,
-                                                              ApiEntityResponse.Builder<?, T, JsonObject> responseBuilder) {
+                                                              ApiEntityResponse.Builder<?, T,
+                                                                      jakarta.json.JsonObject> responseBuilder) {
 
         String requestId = requestId(request);
         LOGGER.log(Logger.Level.TRACE, () -> requestId + ": Invoking " + method + " on path " + path + " JSON entity expected.");
@@ -160,10 +174,25 @@ public abstract class RestApiBase implements RestApi {
     }
 
     @Override
+    public <R, T extends ApiOptionalResponse<R>> T invokeOptionalJson(Method method,
+                                                                      String path,
+                                                                      ApiRequest<?> request,
+                                                                      BuilderBase<?, T, JsonObject, R> responseBuilder) {
+
+        String requestId = requestId(request);
+
+        LOGGER.log(Logger.Level.TRACE, () -> requestId + ": Invoking " + method + " on path " + path + " with optional response");
+
+        HttpClientResponse response = ftHandler.invoke(responseSupplier(method, path, request, requestId));
+        return handleOptionalHelidonJsonResponse(path, request, method, requestId, response, responseBuilder);
+    }
+
+    @Override
+    @Deprecated(since = "4.5.0", forRemoval = true)
     public <R, T extends ApiOptionalResponse<R>> T invokeOptional(Method method,
                                                                   String path,
                                                                   ApiRequest<?> request,
-                                                                  BuilderBase<?, T, JsonObject, R> responseBuilder) {
+                                                                  BuilderBase<?, T, jakarta.json.JsonObject, R> responseBuilder) {
 
         String requestId = requestId(request);
 
@@ -191,7 +220,8 @@ public abstract class RestApiBase implements RestApi {
         HttpClientRequest requestBuilder = webClient.method(method).path(path);
         addHeaders(requestBuilder, request.headers());
         addQueryParams(requestBuilder, request.queryParams());
-        Optional<JsonObject> payload = request.toJson(jsonBuilderFactory);
+        Optional<JsonObject> payload = request.toJson()
+                .or(() -> request.toJson(jsonBuilderFactory).map(ApiJsonBuilder::toHelidonJson));
 
         Supplier<HttpClientResponse> responseSupplier;
 
@@ -391,7 +421,7 @@ public abstract class RestApiBase implements RestApi {
      * @return typed response
      * @throws ApiRestException if an error occurs
      */
-    protected <R, T extends ApiOptionalResponse<R>> T handleOptionalJsonResponse(
+    protected <R, T extends ApiOptionalResponse<R>> T handleOptionalHelidonJsonResponse(
             String path,
             ApiRequest<?> request,
             Method method,
@@ -405,11 +435,60 @@ public abstract class RestApiBase implements RestApi {
                 LOGGER.log(Logger.Level.TRACE,
                         () -> requestId + ": " + method + " on path " + path + " returned " + response.status());
                 if (response.headers().contentLength().orElse(-1L) == 0) {
-                    // explicit content length set to 0
                     return emptyResponse(path, request, method, requestId, response, responseBuilder);
                 } else {
                     try {
                         JsonObject entity = response.entity().as(JsonObject.class);
+                        return jsonOkResponse(path, request, method, requestId, response, entity, responseBuilder);
+                    } catch (Throwable ex) {
+                        throw readErrorFailedEntity(path, request, method, requestId, response, ex);
+                    }
+                }
+            }
+            return emptyResponse(path, request, method, requestId, response, responseBuilder);
+        }
+        LOGGER.log(Logger.Level.TRACE, () -> requestId + ": " + method + " on path " + path + " failed " + response.status());
+        throw responseError(path, request, method, requestId, response);
+    }
+
+    /**
+     * Handle response for optional JSON-P entity.
+     * This method checks if this was a success and if the response should contain an entity.
+     * For success, it returns a response using the provided response builder.
+     *
+     * @param path            requested path
+     * @param request         API request
+     * @param method          HTTP method
+     * @param requestId       request ID
+     * @param response        the web client response
+     * @param responseBuilder builder to configure success response
+     * @param <R>             type of the optional part of the response
+     * @param <T>             type of the response
+     * @return typed response
+     * @throws ApiRestException if an error occurs
+     * @deprecated use {@link #handleOptionalHelidonJsonResponse(String, ApiRequest, Method, String, HttpClientResponse,
+     *             BuilderBase)}
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    protected <R, T extends ApiOptionalResponse<R>> T handleOptionalJsonResponse(
+            String path,
+            ApiRequest<?> request,
+            Method method,
+            String requestId,
+            HttpClientResponse response,
+            BuilderBase<?, T, jakarta.json.JsonObject, R> responseBuilder) {
+
+        ResponseState statusKind = responseState(path, request, method, requestId, response);
+        if (statusKind.success) {
+            if (statusKind.entityExpected) {
+                LOGGER.log(Logger.Level.TRACE,
+                        () -> requestId + ": " + method + " on path " + path + " returned " + response.status());
+                if (response.headers().contentLength().orElse(-1L) == 0) {
+                    // explicit content length set to 0
+                    return emptyResponse(path, request, method, requestId, response, responseBuilder);
+                } else {
+                    try {
+                        jakarta.json.JsonObject entity = response.entity().as(jakarta.json.JsonObject.class);
                         return jsonOkResponse(path, request, method, requestId, response, entity, responseBuilder);
                     } catch (Throwable ex) {
                         throw readErrorFailedEntity(path, request, method, requestId, response, ex);
@@ -478,6 +557,38 @@ public abstract class RestApiBase implements RestApi {
     }
 
     /**
+     * Builds the response using the response builder provided.
+     * This is the last chance to update the response builder with system specific information.
+     *
+     * @param path            requested path
+     * @param request         original request
+     * @param method          HTTP method
+     * @param requestId       ID of the request
+     * @param response        actual response where we do not expect an entity
+     * @param json            the JsonObject parsed from entity
+     * @param responseBuilder builder to create a response instance
+     * @param <T>             type of the response
+     * @return typed response
+     * @deprecated use {@link #jsonOkResponse(String, ApiRequest, Method, String, HttpClientResponse,
+     *             io.helidon.json.JsonObject, ResponseBuilder)}
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    @SuppressWarnings("unused")
+    protected <T> T jsonOkResponse(String path,
+                                   ApiRequest<?> request,
+                                   Method method,
+                                   String requestId,
+                                   HttpClientResponse response,
+                                   jakarta.json.JsonObject json,
+                                   ResponseBuilder<?, T, jakarta.json.JsonObject> responseBuilder) {
+        return responseBuilder.headers(response.headers())
+                              .status(response.status())
+                              .requestId(requestId)
+                              .entity(json)
+                              .build();
+    }
+
+    /**
      * Reads JsonObject from response entity and either calls the {@code jsonOkResponse}.
      *
      * @param path            requested path
@@ -490,7 +601,7 @@ public abstract class RestApiBase implements RestApi {
      * @return typed response
      * @throws ApiRestException if an error occurs
      */
-    protected <T extends ApiEntityResponse> T handleJsonResponse(
+    protected <T extends ApiEntityResponse> T handleHelidonJsonResponse(
             String path,
             ApiRequest<?> request,
             Method method,
@@ -503,6 +614,44 @@ public abstract class RestApiBase implements RestApi {
             LOGGER.log(Logger.Level.TRACE, () -> requestId + ": " + method + " on path " + path + " returned " + status);
             try {
                 JsonObject entity = response.entity().as(JsonObject.class);
+                return jsonOkResponse(path, request, method, requestId, response, entity, responseBuilder);
+            } catch (Throwable ex) {
+                throw readErrorFailedEntity(path, request, method, requestId, response, ex);
+            }
+        }
+        LOGGER.log(Logger.Level.TRACE, () -> requestId + ": " + method + " on path " + path + " failed " + status);
+        throw responseError(path, request, method, requestId, response);
+    }
+
+    /**
+     * Reads JSON-P JsonObject from response entity and either calls the {@code jsonOkResponse}.
+     *
+     * @param path            requested path
+     * @param request         original request
+     * @param method          HTTP method
+     * @param requestId       ID of the request
+     * @param response        actual response where we do not expect an entity
+     * @param responseBuilder builder to create a response instance
+     * @param <T>             type of the response
+     * @return typed response
+     * @throws ApiRestException if an error occurs
+     * @deprecated use {@link #handleHelidonJsonResponse(String, ApiRequest, Method, String, HttpClientResponse,
+     *             ApiEntityResponse.Builder)}
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    protected <T extends ApiEntityResponse> T handleJsonResponse(
+            String path,
+            ApiRequest<?> request,
+            Method method,
+            String requestId,
+            HttpClientResponse response,
+            ApiEntityResponse.Builder<?, T, jakarta.json.JsonObject> responseBuilder) {
+
+        Status status = response.status();
+        if (Status.Family.of(status.code()) == Status.Family.SUCCESSFUL) {
+            LOGGER.log(Logger.Level.TRACE, () -> requestId + ": " + method + " on path " + path + " returned " + status);
+            try {
+                jakarta.json.JsonObject entity = response.entity().as(jakarta.json.JsonObject.class);
                 return jsonOkResponse(path, request, method, requestId, response, entity, responseBuilder);
             } catch (Throwable ex) {
                 throw readErrorFailedEntity(path, request, method, requestId, response, ex);
@@ -567,8 +716,7 @@ public abstract class RestApiBase implements RestApi {
         try {
             String entity = response.entity().as(String.class);
             try {
-                JsonObject json = jsonReaderFactory.createReader(new StringReader(entity))
-                                                   .readObject();
+                JsonObject json = JsonParser.create(entity).readJsonObject();
                 return readError(path, request, method, requestId, response, json);
             } catch (Throwable ex) {
                 return readError(path, request, method, requestId, response, entity);
@@ -678,7 +826,38 @@ public abstract class RestApiBase implements RestApi {
                                          String requestId,
                                          HttpClientResponse response,
                                          JsonObject errorObject) {
-        LOGGER.log(Logger.Level.TRACE, () -> requestId + ": request failed for path " + path + ", error object: " + errorObject);
+        return readError(path,
+                         request,
+                         method,
+                         requestId,
+                         response,
+                         ApiJsonBuilder.toJsonP(jsonBuilderFactory, errorObject));
+    }
+
+    /**
+     * Read error with a JSON-P entity.
+     *
+     * @param path        requested path
+     * @param request     original API request
+     * @param method      HTTP method
+     * @param requestId   request ID
+     * @param response    web client response with entity consumed
+     * @param errorObject entity as a JSON object
+     * @return an ApiRestException
+     * @deprecated use {@link #readError(String, ApiRequest, Method, String, HttpClientResponse,
+     *             io.helidon.json.JsonObject)}
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    @SuppressWarnings("unused")
+    protected ApiRestException readError(String path,
+                                         ApiRequest<?> request,
+                                         Method method,
+                                         String requestId,
+                                         HttpClientResponse response,
+                                         jakarta.json.JsonObject errorObject) {
+        LOGGER.log(Logger.Level.TRACE, () -> requestId + ": request failed for path "
+                + path + ", error object: " + errorObject);
+
         return RestException.builder()
                             .requestId(requestId)
                             .status(response.status())
@@ -732,6 +911,53 @@ public abstract class RestApiBase implements RestApi {
                                                                String requestId,
                                                                HttpClientRequest requestBuilder,
                                                                JsonObject jsonObject) {
+        if (overridesJsonpRequestJsonPayload()) {
+            return requestJsonPayload(path,
+                                      request,
+                                      method,
+                                      requestId,
+                                      requestBuilder,
+                                      ApiJsonBuilder.toJsonP(jsonBuilderFactory, jsonObject));
+        }
+
+        AtomicBoolean updated = new AtomicBoolean();
+        return () -> {
+            // we should only update request builder once - if a retry is done, it should not be reset
+            HttpClientRequest clientRequest = requestBuilder;
+            if (updated.compareAndSet(false, true)) {
+                MediaType mediaType = request.responseMediaType().orElse(MediaTypes.APPLICATION_JSON);
+                clientRequest.accept(mediaType).contentType(mediaType);
+                clientRequest = updateRequestBuilder(requestBuilder,
+                        path,
+                        request,
+                        method,
+                        requestId,
+                        jsonObject);
+            }
+            return clientRequest.submit(jsonObject);
+        };
+    }
+
+    /**
+     * Create a supplier for a response with a JSON-P request.
+     *
+     * @param path           path requested
+     * @param request        API request
+     * @param method         HTTP method
+     * @param requestId      ID of this request
+     * @param requestBuilder {@link HttpClientRequest} request builder
+     * @param jsonObject     JSON-P object that should be sent as a request entity
+     * @return supplier of a client response
+     * @deprecated use {@link #requestJsonPayload(String, ApiRequest, Method, String, HttpClientRequest,
+     *             io.helidon.json.JsonObject)}
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    protected Supplier<HttpClientResponse> requestJsonPayload(String path,
+                                                               ApiRequest<?> request,
+                                                               Method method,
+                                                               String requestId,
+                                                               HttpClientRequest requestBuilder,
+                                                               jakarta.json.JsonObject jsonObject) {
         AtomicBoolean updated = new AtomicBoolean();
         return () -> {
             // we should only update request builder once - if a retry is done, it should not be reset
@@ -867,6 +1093,40 @@ public abstract class RestApiBase implements RestApi {
                                                       Method method,
                                                       String requestId,
                                                       JsonObject jsonObject) {
+        if (overridesJsonpUpdateRequestBuilder()) {
+            return updateRequestBuilder(requestBuilder,
+                                        path,
+                                        request,
+                                        method,
+                                        requestId,
+                                        ApiJsonBuilder.toJsonP(jsonBuilderFactory, jsonObject));
+        }
+
+        return updateRequestBuilderCommon(requestBuilder, path, request, method, requestId);
+    }
+
+    /**
+     * Update request builder with a JSON-P request payload.
+     * Default implementation does nothing.
+     *
+     * @param requestBuilder current request builder
+     * @param path           path to be executed
+     * @param request        API request
+     * @param method         method
+     * @param requestId      request ID
+     * @param jsonObject     JSON-P object with the request
+     * @return updated builder
+     * @deprecated use {@link #updateRequestBuilder(HttpClientRequest, String, ApiRequest, Method, String,
+     *             io.helidon.json.JsonObject)}
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    @SuppressWarnings("unused")
+    protected HttpClientRequest updateRequestBuilder(HttpClientRequest requestBuilder,
+                                                      String path,
+                                                      ApiRequest<?> request,
+                                                      Method method,
+                                                      String requestId,
+                                                      jakarta.json.JsonObject jsonObject) {
         return updateRequestBuilderCommon(requestBuilder, path, request, method, requestId);
     }
 
@@ -887,6 +1147,39 @@ public abstract class RestApiBase implements RestApi {
                                                             Method method,
                                                             String requestId) {
         return requestBuilder;
+    }
+
+    private boolean overridesJsonpRequestJsonPayload() {
+        return isOverriddenInSubclass("requestJsonPayload",
+                                      String.class,
+                                      ApiRequest.class,
+                                      Method.class,
+                                      String.class,
+                                      HttpClientRequest.class,
+                                      jakarta.json.JsonObject.class);
+    }
+
+    private boolean overridesJsonpUpdateRequestBuilder() {
+        return isOverriddenInSubclass("updateRequestBuilder",
+                                      HttpClientRequest.class,
+                                      String.class,
+                                      ApiRequest.class,
+                                      Method.class,
+                                      String.class,
+                                      jakarta.json.JsonObject.class);
+    }
+
+    private boolean isOverriddenInSubclass(String methodName, Class<?>... parameterTypes) {
+        Class<?> currentClass = getClass();
+        while ((currentClass != null) && (currentClass != RestApiBase.class)) {
+            try {
+                currentClass.getDeclaredMethod(methodName, parameterTypes);
+                return true;
+            } catch (NoSuchMethodException ignored) {
+                currentClass = currentClass.getSuperclass();
+            }
+        }
+        return false;
     }
 
     /**
@@ -935,7 +1228,7 @@ public abstract class RestApiBase implements RestApi {
      * @return builder factory
      */
     @SuppressWarnings("unused")
-    protected JsonBuilderFactory jsonBuilderFactory() {
+    protected jakarta.json.JsonBuilderFactory jsonBuilderFactory() {
         return jsonBuilderFactory;
     }
 
@@ -945,7 +1238,7 @@ public abstract class RestApiBase implements RestApi {
      * @return reader factory
      */
     @SuppressWarnings("unused")
-    protected JsonReaderFactory jsonReaderFactory() {
+    protected jakarta.json.JsonReaderFactory jsonReaderFactory() {
         return jsonReaderFactory;
     }
 
@@ -955,7 +1248,7 @@ public abstract class RestApiBase implements RestApi {
      * @return writer factory
      */
     @SuppressWarnings("unused")
-    protected JsonWriterFactory jsonWriterFactory() {
+    protected jakarta.json.JsonWriterFactory jsonWriterFactory() {
         return jsonWriterFactory;
     }
 

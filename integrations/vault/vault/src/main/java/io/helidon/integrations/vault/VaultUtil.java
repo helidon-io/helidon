@@ -50,6 +50,21 @@ public final class VaultUtil {
     }
 
     /**
+     * Create a list of strings from a Helidon JSON array.
+     *
+     * @param array array to process
+     * @return each element from the array as a string
+     */
+    public static List<String> arrayToList(io.helidon.json.JsonArray array) {
+        if (array == null) {
+            return List.of();
+        }
+        List<String> result = new LinkedList<>();
+        array.values().forEach(it -> result.add(stringValue(it)));
+        return List.copyOf(result);
+    }
+
+    /**
      * Process response from {@code LIST} operations.
      * Finds the {@code data} object, and processes the {@code keys} array.
      *
@@ -97,6 +112,16 @@ public final class VaultUtil {
             case FALSE -> "false";
             case NULL -> "null";
             default -> value.toString();
+        };
+    }
+
+    private static String stringValue(io.helidon.json.JsonValue value) {
+        return switch (value.type()) {
+            case ARRAY -> throw new VaultApiException("Cannot create a simple String from an array: " + value);
+            case OBJECT -> throw new VaultApiException("Cannot create a simple String from an object: " + value);
+            case STRING -> value.asString().value();
+            case BOOLEAN, NUMBER, NULL -> value.toString();
+            case UNKNOWN -> throw new VaultApiException("Unsupported Helidon JSON value type: " + value.type());
         };
     }
 }

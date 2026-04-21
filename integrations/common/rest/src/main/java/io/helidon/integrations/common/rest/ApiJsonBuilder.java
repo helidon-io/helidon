@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,23 +24,29 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import io.helidon.common.Base64Value;
-
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonBoolean;
+import io.helidon.json.JsonNull;
+import io.helidon.json.JsonNumber;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonString;
+import io.helidon.json.JsonValue;
 
 /**
  * Common base class for builders that construct a JSON object.
  *
  * @param <T> type of the subclass
  */
+@SuppressWarnings("helidon:api:incubating")
 public abstract class ApiJsonBuilder<T extends ApiJsonBuilder<T>> {
-    private final Map<String, Consumer<JsonObjectBuilder>> values = new HashMap<>();
+    private static final jakarta.json.JsonBuilderFactory DEFAULT_JSON_BUILDER_FACTORY =
+            jakarta.json.Json.createBuilderFactory(Map.of());
+
+    private final Map<String, Consumer<jakarta.json.JsonObjectBuilder>> values = new HashMap<>();
     private final Map<String, ApiJsonBuilder<?>> objects = new HashMap<>();
-    private final Map<String, List<Consumer<JsonArrayBuilder>>> arrays = new HashMap<>();
+    private final Map<String, List<Consumer<jakarta.json.JsonArrayBuilder>>> arrays = new HashMap<>();
     private final Map<String, List<ApiJsonBuilder<?>>> objectArrays = new HashMap<>();
-    private final Map<String, Map<String, Consumer<JsonObjectBuilder>>> objectsAsMaps = new HashMap<>();
+    private final Map<String, Map<String, Consumer<jakarta.json.JsonObjectBuilder>>> objectsAsMaps = new HashMap<>();
 
     /**
      * Default constructor.
@@ -50,25 +56,88 @@ public abstract class ApiJsonBuilder<T extends ApiJsonBuilder<T>> {
     }
 
     /**
-     * Create a JSON object from this builder.
+     * Create a Helidon JSON object from this builder.
+     *
+     * @return JSON object or empty
+     */
+    public Optional<JsonObject> toJson() {
+        return toJson(defaultJsonBuilderFactory()).map(ApiJsonBuilder::toHelidonJson);
+    }
+
+    /**
+     * Create a JSON-P object from this builder.
      *
      * @param factory builder factory to create objects
      * @return JSON object or empty
+     * @deprecated use {@link #toJson()}
      */
-    public Optional<JsonObject> toJson(JsonBuilderFactory factory) {
-        JsonObjectBuilder payload = factory.createObjectBuilder();
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    public Optional<jakarta.json.JsonObject> toJson(jakarta.json.JsonBuilderFactory factory) {
+        jakarta.json.JsonObjectBuilder payload = factory.createObjectBuilder();
         preBuild(factory, payload);
         values.forEach((key, value) -> value.accept(payload));
         objects.forEach((key, value) -> value.toJson(factory).ifPresent(it -> payload.add(key, it)));
         arrays.forEach((key, value) -> addArray(payload, factory, key, value));
         objectArrays.forEach((key, value) -> addObjectArray(payload, factory, key, value));
         objectsAsMaps.forEach((key, value) -> {
-            JsonObjectBuilder childObject = factory.createObjectBuilder();
+            jakarta.json.JsonObjectBuilder childObject = factory.createObjectBuilder();
             value.forEach((childKey, childValue) -> childValue.accept(childObject));
             payload.add(key, childObject);
         });
         postBuild(factory, payload);
         return Optional.of(payload.build());
+    }
+
+    static jakarta.json.JsonBuilderFactory defaultJsonBuilderFactory() {
+        return DEFAULT_JSON_BUILDER_FACTORY;
+    }
+
+    static JsonObject toHelidonJson(jakarta.json.JsonObject jsonObject) {
+        JsonObject.Builder builder = JsonObject.builder();
+        jsonObject.forEach((key, value) -> builder.set(key, toHelidonJson(value)));
+        return builder.build();
+    }
+
+    static JsonValue toHelidonJson(jakarta.json.JsonValue value) {
+        return switch (value.getValueType()) {
+        case ARRAY -> {
+            List<JsonValue> values = value.asJsonArray()
+                    .stream()
+                    .map(ApiJsonBuilder::toHelidonJson)
+                    .toList();
+            yield JsonArray.create(values);
+        }
+        case OBJECT -> toHelidonJson(value.asJsonObject());
+        case STRING -> JsonString.create(((jakarta.json.JsonString) value).getString());
+        case NUMBER -> JsonNumber.create(((jakarta.json.JsonNumber) value).bigDecimalValue());
+        case TRUE -> JsonBoolean.TRUE;
+        case FALSE -> JsonBoolean.FALSE;
+        case NULL -> JsonNull.instance();
+        };
+    }
+
+    static jakarta.json.JsonObject toJsonP(jakarta.json.JsonBuilderFactory factory, JsonObject jsonObject) {
+        jakarta.json.JsonObjectBuilder builder = factory.createObjectBuilder();
+        jsonObject.keysAsStrings()
+                .forEach(key -> builder.add(key,
+                                            toJsonP(factory, jsonObject.value(key).orElse(JsonNull.instance()))));
+        return builder.build();
+    }
+
+    static jakarta.json.JsonValue toJsonP(jakarta.json.JsonBuilderFactory factory, JsonValue value) {
+        return switch (value.type()) {
+        case ARRAY -> {
+            jakarta.json.JsonArrayBuilder builder = factory.createArrayBuilder();
+            value.asArray().values().forEach(it -> builder.add(toJsonP(factory, it)));
+            yield builder.build();
+        }
+        case OBJECT -> toJsonP(factory, value.asObject());
+        case STRING -> jakarta.json.Json.createValue(value.asString().value());
+        case NUMBER -> jakarta.json.Json.createValue(value.asNumber().bigDecimalValue());
+        case BOOLEAN -> value.asBoolean().value() ? jakarta.json.JsonValue.TRUE : jakarta.json.JsonValue.FALSE;
+        case NULL -> jakarta.json.JsonValue.NULL;
+        case UNKNOWN -> throw new ApiException("Unsupported Helidon JSON value type: " + value.type());
+        };
     }
 
     /**
@@ -87,7 +156,7 @@ public abstract class ApiJsonBuilder<T extends ApiJsonBuilder<T>> {
      * @param factory json factory
      * @param payload payload builder
      */
-    protected void preBuild(JsonBuilderFactory factory, JsonObjectBuilder payload) {
+    protected void preBuild(jakarta.json.JsonBuilderFactory factory, jakarta.json.JsonObjectBuilder payload) {
     }
 
     /**
@@ -96,7 +165,7 @@ public abstract class ApiJsonBuilder<T extends ApiJsonBuilder<T>> {
      * @param factory json factory
      * @param payload payload builder
      */
-    protected void postBuild(JsonBuilderFactory factory, JsonObjectBuilder payload) {
+    protected void postBuild(jakarta.json.JsonBuilderFactory factory, jakarta.json.JsonObjectBuilder payload) {
     }
 
     /**
@@ -352,21 +421,21 @@ public abstract class ApiJsonBuilder<T extends ApiJsonBuilder<T>> {
         return me();
     }
 
-    private void addArray(JsonObjectBuilder payloadBuilder,
-                          JsonBuilderFactory json,
+    private void addArray(jakarta.json.JsonObjectBuilder payloadBuilder,
+                          jakarta.json.JsonBuilderFactory json,
                           String name,
-                          List<Consumer<JsonArrayBuilder>> values) {
+                          List<Consumer<jakarta.json.JsonArrayBuilder>> values) {
 
-        JsonArrayBuilder arrayBuilder = json.createArrayBuilder();
-        for (Consumer<JsonArrayBuilder> value : values) {
+        jakarta.json.JsonArrayBuilder arrayBuilder = json.createArrayBuilder();
+        for (Consumer<jakarta.json.JsonArrayBuilder> value : values) {
             value.accept(arrayBuilder);
         }
 
         payloadBuilder.add(name, arrayBuilder);
     }
 
-    private void addObjectArray(JsonObjectBuilder payloadBuilder,
-                                JsonBuilderFactory json,
+    private void addObjectArray(jakarta.json.JsonObjectBuilder payloadBuilder,
+                                jakarta.json.JsonBuilderFactory json,
                                 String name,
                                 List<ApiJsonBuilder<?>> values) {
 
@@ -374,7 +443,7 @@ public abstract class ApiJsonBuilder<T extends ApiJsonBuilder<T>> {
             return;
         }
 
-        JsonArrayBuilder arrayBuilder = json.createArrayBuilder();
+        jakarta.json.JsonArrayBuilder arrayBuilder = json.createArrayBuilder();
         for (ApiJsonBuilder<?> element : values) {
             element.toJson(json).ifPresent(arrayBuilder::add);
         }
@@ -382,7 +451,7 @@ public abstract class ApiJsonBuilder<T extends ApiJsonBuilder<T>> {
         payloadBuilder.add(name, arrayBuilder);
     }
 
-    private T add(String name, Consumer<JsonObjectBuilder> consumer) {
+    private T add(String name, Consumer<jakarta.json.JsonObjectBuilder> consumer) {
         values.put(name, consumer);
 
         return me();

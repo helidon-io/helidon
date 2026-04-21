@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaType;
-
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
+import io.helidon.json.JsonObject;
 
 /**
  * Common base class for REST requests.
@@ -33,6 +31,7 @@ import jakarta.json.JsonObject;
  *
  * @param <T> type of the request
  */
+@SuppressWarnings("helidon:api:incubating")
 public interface ApiRequest<T extends ApiRequest<T>> {
     /**
      * Add an HTTP header.
@@ -95,15 +94,28 @@ public interface ApiRequest<T extends ApiRequest<T>> {
     Map<String, List<String>> queryParams();
 
     /**
-     * Return the JSON object used for POST and PUT requests (and other methods if needed).
+     * Return the Helidon JSON object used for POST and PUT requests (and other methods if needed).
+     * The default implementation returns an empty optional that can be used for GET, HEAD, DELETE
+     * methods (and other methods without an entity).
+     *
+     * @return JSON if available on this request
+     */
+    default Optional<JsonObject> toJson() {
+        return Optional.empty();
+    }
+
+    /**
+     * Return the JSON-P object used for POST and PUT requests (and other methods if needed).
      * The default implementation returns an
      * empty optional that can be used for GET, HEAD, DELETE methods (and other methods without an entity).
      *
      * @param factory builder factory to construct JSON object
      * @return JSON if available on this request
+     * @deprecated use {@link #toJson()}
      */
-    default Optional<JsonObject> toJson(JsonBuilderFactory factory) {
-        return Optional.empty();
+    @Deprecated(since = "4.5.0", forRemoval = true)
+    default Optional<jakarta.json.JsonObject> toJson(jakarta.json.JsonBuilderFactory factory) {
+        return toJson().map(json -> ApiJsonBuilder.toJsonP(factory, json));
     }
 
     /**

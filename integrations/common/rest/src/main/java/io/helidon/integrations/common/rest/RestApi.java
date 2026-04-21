@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,22 +25,39 @@ import io.helidon.config.Config;
 import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.faulttolerance.FtHandler;
 import io.helidon.http.Method;
+import io.helidon.http.media.json.JsonSupport;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.integrations.common.rest.ApiOptionalResponse.BuilderBase;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientConfig;
 import io.helidon.webclient.http1.Http1Client;
 
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReaderFactory;
-import jakarta.json.JsonWriterFactory;
-
 /**
  * JSON based REST API operations.
  */
+@SuppressWarnings("helidon:api:incubating")
 public interface RestApi {
+    /**
+     * Get with an optional Helidon JSON response. In case the call returns
+     * {@link io.helidon.http.Status#NOT_FOUND_404} this would return an empty optional entity,
+     * rather than fail.
+     * This may also be the case for requests that use {@code If-Modified-Since} that return a
+     * {@link io.helidon.http.Status#NOT_MODIFIED_304} response code.
+     *
+     * @param path            path to invoke
+     * @param request         request to use
+     * @param responseBuilder builder with appropriate response processor
+     * @param <R>             type of the optional part of the response
+     * @param <T>             type of the response
+     * @return response
+     */
+    default <R, T extends ApiOptionalResponse<R>> T getJson(String path,
+                                                            ApiRequest<?> request,
+                                                            BuilderBase<?, T, JsonObject, R> responseBuilder) {
+        return invokeOptionalJson(Method.GET, path, request, responseBuilder);
+    }
+
     /**
      * Get with an optional response. In case the call returns {@link io.helidon.http.Status#NOT_FOUND_404}
      * this would return an empty optional entity, rather than fail.
@@ -53,10 +70,12 @@ public interface RestApi {
      * @param <R>             type of the optional part of the response
      * @param <T>             type of the response
      * @return response
+     * @deprecated use {@link #getJson(String, ApiRequest, BuilderBase)}
      */
+    @Deprecated(since = "4.5.0", forRemoval = true)
     default <R, T extends ApiOptionalResponse<R>> T get(String path,
                                                         ApiRequest<?> request,
-                                                        BuilderBase<?, T, JsonObject, R> responseBuilder) {
+                                                        BuilderBase<?, T, jakarta.json.JsonObject, R> responseBuilder) {
 
         return invokeOptional(Method.GET, path, request, responseBuilder);
     }
@@ -170,10 +189,29 @@ public interface RestApi {
      * @param <T>             type of the response
      * @return future with entity and metadata if successful, future with error otherwise
      */
+    <T extends ApiEntityResponse> T invokeWithJsonResponse(Method method,
+                                                           String path,
+                                                           ApiRequest<?> request,
+                                                           ApiEntityResponse.Builder<?, T, JsonObject> responseBuilder);
+
+    /**
+     * Invoke a request that is expected to yield a JSON-P entity.
+     *
+     * @param method          HTTP method to invoke
+     * @param path            path to invoke
+     * @param request         request to use, should be an instance of
+     * {@link io.helidon.integrations.common.rest.ApiJsonRequest} if
+     *                        and entity is desired
+     * @param responseBuilder builder to construct response from API call
+     * @param <T>             type of the response
+     * @return future with entity and metadata if successful, future with error otherwise
+     * @deprecated use {@link #invokeWithJsonResponse(Method, String, ApiRequest, ApiEntityResponse.Builder)}
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
     <T extends ApiEntityResponse> T invokeWithResponse(Method method,
                                                        String path,
                                                        ApiRequest<?> request,
-                                                       ApiEntityResponse.Builder<?, T, JsonObject> responseBuilder);
+                                                       ApiEntityResponse.Builder<?, T, jakarta.json.JsonObject> responseBuilder);
 
     /**
      * The request media type should be provided in request, falls back to
@@ -250,10 +288,31 @@ public interface RestApi {
      * @param <T>             type of the response
      * @return response
      */
+    <R, T extends ApiOptionalResponse<R>> T invokeOptionalJson(Method method,
+                                                               String path,
+                                                               ApiRequest<?> request,
+                                                               BuilderBase<?, T, JsonObject, R> responseBuilder);
+
+    /**
+     * Invoke a request that may yield a JSON-P entity.
+     * The entity is expected to be missing if {@link io.helidon.http.Status#NOT_FOUND_404} is returned by the API call (and for some
+     * other cases, such as not modified).
+     *
+     * @param method          HTTP method to invoke
+     * @param path            path to invoke
+     * @param request         request to use, should be an instance of {@link ApiJsonRequest} if
+     *                        and entity is desired
+     * @param responseBuilder response builder with appropriate processor to create the optional part
+     * @param <R>             type of the optional part of the response
+     * @param <T>             type of the response
+     * @return response
+     * @deprecated use {@link #invokeOptionalJson(Method, String, ApiRequest, BuilderBase)}
+     */
+    @Deprecated(since = "4.5.0", forRemoval = true)
     <R, T extends ApiOptionalResponse<R>> T invokeOptional(Method method,
                                                            String path,
                                                            ApiRequest<?> request,
-                                                           BuilderBase<?, T, JsonObject, R> responseBuilder);
+                                                           BuilderBase<?, T, jakarta.json.JsonObject, R> responseBuilder);
 
     /**
      * Base builder for REST APIs.
@@ -266,9 +325,9 @@ public interface RestApi {
                 .followRedirects(true)
                 .keepAlive(true);
         private FtHandler ftHandler = FaultTolerance.builder().build();
-        private JsonBuilderFactory jsonBuilderFactory;
-        private JsonReaderFactory jsonReaderFactory;
-        private JsonWriterFactory jsonWriterFactory;
+        private jakarta.json.JsonBuilderFactory jsonBuilderFactory;
+        private jakarta.json.JsonReaderFactory jsonReaderFactory;
+        private jakarta.json.JsonWriterFactory jsonWriterFactory;
         private WebClient webClient;
 
         /**
@@ -307,13 +366,13 @@ public interface RestApi {
                     .orElseGet(Map::of);
 
             if (jsonBuilderFactory == null) {
-                jsonBuilderFactory = Json.createBuilderFactory(jsonConfig);
+                jsonBuilderFactory = jakarta.json.Json.createBuilderFactory(jsonConfig);
             }
             if (jsonReaderFactory == null) {
-                jsonReaderFactory = Json.createReaderFactory(jsonConfig);
+                jsonReaderFactory = jakarta.json.Json.createReaderFactory(jsonConfig);
             }
             if (jsonWriterFactory == null) {
-                jsonWriterFactory = Json.createWriterFactory(jsonConfig);
+                jsonWriterFactory = jakarta.json.Json.createWriterFactory(jsonConfig);
             }
 
             return me();
@@ -358,15 +417,17 @@ public interface RestApi {
          * This implementation builds the web client and sets up JSON factories.
          */
         protected void preBuild() {
-            webClient = webClientBuilder.addMediaSupport(JsonpSupport.create()).build();
+            webClient = webClientBuilder.addMediaSupport(JsonSupport.create())
+                    .addMediaSupport(JsonpSupport.create())
+                    .build();
             if (jsonBuilderFactory == null) {
-                jsonBuilderFactory = Json.createBuilderFactory(Map.of());
+                jsonBuilderFactory = jakarta.json.Json.createBuilderFactory(Map.of());
             }
             if (jsonReaderFactory == null) {
-                jsonReaderFactory = Json.createReaderFactory(Map.of());
+                jsonReaderFactory = jakarta.json.Json.createReaderFactory(Map.of());
             }
             if (jsonWriterFactory == null) {
-                jsonWriterFactory = Json.createWriterFactory(Map.of());
+                jsonWriterFactory = jakarta.json.Json.createWriterFactory(Map.of());
             }
         }
 
@@ -407,7 +468,7 @@ public interface RestApi {
          *
          * @return builder factory
          */
-        protected JsonBuilderFactory jsonBuilderFactory() {
+        protected jakarta.json.JsonBuilderFactory jsonBuilderFactory() {
             return jsonBuilderFactory;
         }
 
@@ -416,7 +477,7 @@ public interface RestApi {
          *
          * @return reader factory
          */
-        protected JsonReaderFactory jsonReaderFactory() {
+        protected jakarta.json.JsonReaderFactory jsonReaderFactory() {
             return jsonReaderFactory;
         }
 
@@ -425,7 +486,7 @@ public interface RestApi {
          *
          * @return writer factory
          */
-        protected JsonWriterFactory jsonWriterFactory() {
+        protected jakarta.json.JsonWriterFactory jsonWriterFactory() {
             return jsonWriterFactory;
         }
     }
