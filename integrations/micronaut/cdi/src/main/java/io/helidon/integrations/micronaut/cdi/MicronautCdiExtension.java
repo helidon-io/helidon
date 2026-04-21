@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,10 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  * Extension integrating CDI with Micronaut.
  * This extensions adds Micronaut beans to be injectable into CDI beans (limited to {@link jakarta.inject.Singleton}
  * scope), and adds support for invoking Micronaut interceptors.
+ *
+ * @deprecated use the Helidon Declarative programming model instead
  */
+@Deprecated(forRemoval = true, since = "4.4.5")
 public class MicronautCdiExtension implements Extension {
     private static final System.Logger LOGGER = System.getLogger(MicronautCdiExtension.class.getName());
     private static final String MICRONAUT_BEAN_PREFIX = "micronaut-";

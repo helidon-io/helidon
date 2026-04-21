@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,15 @@ import jakarta.interceptor.InvocationContext;
 /**
  * A CDI interceptor that invokes all Micronaut interceptors.
  * DO NOT USE DIRECTLY. Usage is computed by this CDI extension.
+ *
+ * @deprecated use the Helidon Declarative programming model instead
  */
 // interceptor binding is defined in code of extension, not on annotation
 @MicronautIntercepted
 @Interceptor
 @Priority(Interceptor.Priority.LIBRARY_BEFORE)
 @Internal
+@Deprecated(forRemoval = true, since = "4.4.5")
 public class MicronautInterceptor {
     private static final System.Logger LOGGER = System.getLogger(MicronautInterceptor.class.getName());
 
