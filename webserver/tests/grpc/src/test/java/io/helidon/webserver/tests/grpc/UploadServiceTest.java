@@ -34,6 +34,7 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import com.google.protobuf.ByteString;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -117,6 +118,7 @@ class UploadServiceTest extends BaseServiceTest {
     void testFailedLargeUpload() throws Throwable {
         // setup bad upload call
         CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<Throwable> errorRef = new AtomicReference<>();
         AtomicReference<StreamObserver<Data>> requestRef = new AtomicReference<>();
         StreamObserver<Data> request = stub.upload(new StreamObserver<>() {
             @Override
@@ -125,6 +127,7 @@ class UploadServiceTest extends BaseServiceTest {
 
             @Override
             public void onError(Throwable t) {
+                errorRef.set(t);
                 latch.countDown();
                 Objects.requireNonNull(requestRef.get());
                 requestRef.get().onError(t);
@@ -143,7 +146,8 @@ class UploadServiceTest extends BaseServiceTest {
                         .build())
                 .forEach(request::onNext);
 
-        // verify upload failed
+        // verify upload failed with the default-limit path returning RESOURCE_EXHAUSTED
         assertThat(latch.await(10, TimeUnit.SECONDS), is(true));
+        assertThat(Status.fromThrowable(errorRef.get()).getCode(), is(Status.Code.RESOURCE_EXHAUSTED));
     }
 }

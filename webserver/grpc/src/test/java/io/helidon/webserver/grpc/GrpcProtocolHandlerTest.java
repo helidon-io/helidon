@@ -252,6 +252,39 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void oversizedMessageBelowInitialBufferThrowsResourceExhausted() {
+        // A limit below the initial 16 KB read buffer must still be enforced. The gRPC length
+        // prefix carries the full message size, so the limit can be checked before any buffer
+        // is grown.
+        int limit = 8 * 1024;
+        GrpcProtocolHandler<?, ?> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                                       Http2Headers.create(WritableHeaders.create()),
+                                                                       null, 1, null,
+                                                                       Http2StreamState.OPEN, null,
+                                                                       GrpcConfig.builder().maxReadBufferSize(limit).build());
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
+                                                  () -> handler.allocateReadBuffer(limit + 1));
+        assertThat(ex.getStatus().getCode(), is(Status.Code.RESOURCE_EXHAUSTED));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void oversizedMessageExceedingIntRangeThrowsResourceExhausted() {
+        // The gRPC length prefix is an unsigned 32-bit value (up to 4_294_967_295), which does
+        // not fit in a signed int. The limit check must run on the full value, before any cast,
+        // so a declared length above Integer.MAX_VALUE cannot wrap negative and slip past it.
+        GrpcProtocolHandler<?, ?> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                                       Http2Headers.create(WritableHeaders.create()),
+                                                                       null, 1, null,
+                                                                       Http2StreamState.OPEN, null,
+                                                                       GrpcConfig.create());
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
+                                                  () -> handler.allocateReadBuffer(3_000_000_000L));
+        assertThat(ex.getStatus().getCode(), is(Status.Code.RESOURCE_EXHAUSTED));
+    }
+
+    @Test
     void testCloseSuppressesTrailerWriteDisconnect() {
         ServerCall<String, String> serverCall = createServerCall(closeFailingWriter());
         serverCall.sendHeaders(new Metadata());
