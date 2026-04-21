@@ -36,7 +36,7 @@ import io.helidon.service.registry.Service;
  * <p>
  * The type safe rest client is backed by Helidon {@link io.helidon.webclient.api.WebClient}.
  */
-@Api.Incubating
+@Api.Preview
 public final class RestClient {
     private RestClient() {
     }

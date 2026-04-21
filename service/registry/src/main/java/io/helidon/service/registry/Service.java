@@ -42,6 +42,7 @@ import io.helidon.common.types.TypeName;
  * {@link io.helidon.service.registry.ServiceRegistry} instead. This restriction applies throughout the service lifecycle,
  * including construction, post-construct, business methods, and pre-destroy.
  */
+@Api.Preview
 public final class Service {
     private Service() {
     }
@@ -476,7 +477,7 @@ public final class Service {
      * This annotation is used by framework developers that need to extend the set of entry points of an
      * application.
      */
-    @Api.Incubating
+    @Api.Preview
     @Api.Since("4.3.0")
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})

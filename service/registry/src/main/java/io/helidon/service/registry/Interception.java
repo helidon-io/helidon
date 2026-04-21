@@ -29,6 +29,7 @@ import io.helidon.common.Api;
  * Interception annotations and types.
  * This is the entry point for any annotation and type related to interception in Helidon Service Registry.
  */
+@Api.Preview
 public final class Interception {
     private Interception() {
     }
@@ -159,7 +160,7 @@ public final class Interception {
      * using Helidon Declarative. This is not triggered when using injection without declarative endpoint (i.e. when setting
      * up WebServer using routing imperatively).
      */
-    @Api.Incubating
+    @Api.Preview
     @Api.Since("4.3.0")
     @Service.Contract
     public interface EntryPointInterceptor {

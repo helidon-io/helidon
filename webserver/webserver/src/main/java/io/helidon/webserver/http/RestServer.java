@@ -40,7 +40,7 @@ import io.helidon.service.registry.Service;
  * Declarative response metadata has the same lifecycle as metadata configured imperatively on {@link ServerResponse}:
  * it remains on the current response unless later route or error handling changes it.
  */
-@Api.Incubating
+@Api.Preview
 public final class RestServer {
     private RestServer() {
     }
