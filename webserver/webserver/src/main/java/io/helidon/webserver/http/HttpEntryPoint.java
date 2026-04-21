@@ -30,10 +30,10 @@ import io.helidon.service.registry.ServiceDescriptor;
 /**
  * Container class for types related to HTTP entry points.
  * <p>
- * NOTE: this API is part of incubating features of Helidon. This API may change including backward incompatible changes
- *               and full removal. We welcome feedback for incubating features.
+ * NOTE: this API is part of preview features of Helidon. This API may still change between minor releases,
+ *               but it is intended for supported external use.
  */
-@Api.Incubating
+@Api.Preview
 public class HttpEntryPoint {
     /**
      * Interceptor of an HTTP entry point.

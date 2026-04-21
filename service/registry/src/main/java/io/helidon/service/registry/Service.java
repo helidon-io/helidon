@@ -36,6 +36,7 @@ import io.helidon.common.types.TypeName;
 /**
  * A set of annotations (and APIs) required to declare a service.
  */
+@Api.Preview
 public final class Service {
     private Service() {
     }
@@ -72,15 +73,12 @@ public final class Service {
      *     provided instance should be singleton-like as well, use {@link io.helidon.common.LazyValue} or
      *     similar approach to create it once and return the same instance every time</li>
      * </ul>
-     *
-     * @deprecated use one of the scope annotations instead ({@link io.helidon.service.registry.Service.Singleton},
-     *         {@link io.helidon.service.registry.Service.PerLookup}).
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
     @Inherited
-    @Deprecated(forRemoval = true, since = "4.2.0")
+    @Api.Preview
     public @interface Provider {
         /**
          * Type name of this annotation.
@@ -515,7 +513,7 @@ public final class Service {
      * This annotation is used by framework developers that need to extend the set of entry points of an
      * application.
      */
-    @Api.Incubating
+    @Api.Preview
     @Api.Since("4.3.0")
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})

@@ -42,7 +42,7 @@ import io.helidon.service.registry.Service;
  * <li>{@link io.helidon.http.DateTime}</li>
  * </ul>
  */
-@Api.Incubating
+@Api.Preview
 @Api.Since("4.3.0")
 public final class Http {
     private Http() {
