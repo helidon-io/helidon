@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,11 @@ public interface SecureUserStore {
          * @param realm configured realm
          * @param algorithm algorithm of the hash (current only MD5 supported by Helidon)
          * @return a digest to use for validation of incoming request
+         * @deprecated HTTP Digest authentication relies on obsolete MD5-based authentication and will be removed in a
+         *             future version without replacement; to have a future proof implementation of this interface, do not
+         *             implement this method
          */
+        @Deprecated(since = "4.5.0", forRemoval = true)
         default Optional<String> digestHa1(String realm, HttpDigest.Algorithm algorithm) {
             return Optional.empty();
         }

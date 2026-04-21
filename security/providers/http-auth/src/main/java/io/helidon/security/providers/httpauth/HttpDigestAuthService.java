@@ -22,7 +22,11 @@ import io.helidon.security.spi.SecurityProviderService;
 
 /**
  * Digest authentication service.
+ *
+ * @deprecated HTTP Digest authentication relies on obsolete MD5-based authentication and will be removed in a future
+ *             version without replacement
  */
+@Deprecated(since = "4.5.0", forRemoval = true)
 public class HttpDigestAuthService implements SecurityProviderService {
     static final String PROVIDER_CONFIG_KEY = "http-digest-auth";
 
