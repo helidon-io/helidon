@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,8 +101,8 @@ public class GrpcHeadersUtil {
 
     // Per spec: TimeoutValue is a positive integer, at most 8 ASCII digits
     private static final long MAX_TIMEOUT_VALUE = 99_999_999L;
-    private static final char[] TIMEOUT_UNITS   = { 'H',                 'M',              'S',           'm',       'u',    'n' };
-    private static final long[] NANOS_PER_UNIT  = { 3_600_000_000_000L,  60_000_000_000L,  1_000_000_000L, 1_000_000L, 1_000L, 1L };
+    private static final char[] TIMEOUT_UNITS = {'H', 'M', 'S', 'm', 'u', 'n'};
+    private static final long[] NANOS_PER_UNIT = {3_600_000_000_000L, 60_000_000_000L, 1_000_000_000L, 1_000_000L, 1_000L, 1L};
 
     /**
      * Encodes a timeout as a {@code grpc-timeout} header value.

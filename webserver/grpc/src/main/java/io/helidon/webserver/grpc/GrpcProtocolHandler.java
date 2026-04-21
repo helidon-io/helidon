@@ -64,8 +64,8 @@ import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 
 import io.grpc.Codec;
 import io.grpc.Compressor;
-import io.grpc.Deadline;
 import io.grpc.CompressorRegistry;
+import io.grpc.Deadline;
 import io.grpc.Decompressor;
 import io.grpc.DecompressorRegistry;
 import io.grpc.KnownLength;
@@ -503,17 +503,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     writable.set(GRPC_CONTENT_TYPE);
                 }
                 GrpcHeadersUtil.updateHeaders(writable, trailers);
-                int statusValue;
-                if (callCancelled) {
-                    // Both deadline expiry and explicit client cancel arrive as RST_STREAM, so the `status`
-                    // argument cannot distinguish them. Check whether the client's stated timeout elapsed.
-                    statusValue = (requestDeadline != null && requestDeadline.isExpired())
-                            ? Status.DEADLINE_EXCEEDED.getCode().value()
-                            : Status.CANCELLED.getCode().value();
-                } else {
-                    statusValue = status.getCode().value();
-                }
-                writable.set(HeaderValues.create(GrpcStatus.STATUS_NAME, statusValue));
+                writable.set(HeaderValues.create(GrpcStatus.STATUS_NAME, resolvedStatusCode(status)));
                 String description = status.getDescription();
                 if (description != null) {
                     writable.set(HeaderValues.create(GrpcStatus.MESSAGE_NAME, description));
@@ -567,6 +557,17 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 return writeBufferData;
             }
         };
+    }
+
+    // Both deadline expiry and explicit client cancel arrive as RST_STREAM, so the status
+    // argument from close() cannot distinguish them — check whether the deadline elapsed instead.
+    private int resolvedStatusCode(Status status) {
+        if (callCancelled) {
+            return (requestDeadline != null && requestDeadline.isExpired())
+                    ? Status.DEADLINE_EXCEEDED.getCode().value()
+                    : Status.CANCELLED.getCode().value();
+        }
+        return status.getCode().value();
     }
 
     /**

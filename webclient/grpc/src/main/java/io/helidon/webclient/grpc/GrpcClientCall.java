@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,26 +111,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     }
 
     protected void startStreamingThreads() {
-        // heartbeat thread
-        Duration period = heartbeatPeriod();
-        if (!period.isZero()) {
-            heartbeatFuture = executor.submit(() -> {
-                try {
-                    startWriteBarrier.await();
-                    socket().log(LOGGER, DEBUG, "[Heartbeat thread] started with period " + period);
-                    while (isRemoteOpen()) {
-                        Thread.sleep(period);
-                        if (sendingQueue.isEmpty()) {
-                            sendingQueue.add(PING_FRAME);
-                        }
-                    }
-                } catch (Throwable t) {
-                    socket().log(LOGGER, DEBUG, "[Heartbeat thread] exception " + t.getMessage());
-                }
-            });
-        } else {
-            heartbeatFuture = CompletableFuture.completedFuture(null);
-        }
+        startHeartbeatThread();
 
         // write streaming thread
         writeStreamFuture = executor.submit(() -> {
@@ -264,7 +245,32 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             socket().log(LOGGER, DEBUG, "[Reading thread] exiting");
         });
 
-        // Deadline enforcement virtual thread
+        startDeadlineThread();
+    }
+
+    private void startHeartbeatThread() {
+        Duration period = heartbeatPeriod();
+        if (!period.isZero()) {
+            heartbeatFuture = executor.submit(() -> {
+                try {
+                    startWriteBarrier.await();
+                    socket().log(LOGGER, DEBUG, "[Heartbeat thread] started with period " + period);
+                    while (isRemoteOpen()) {
+                        Thread.sleep(period);
+                        if (sendingQueue.isEmpty()) {
+                            sendingQueue.add(PING_FRAME);
+                        }
+                    }
+                } catch (Throwable t) {
+                    socket().log(LOGGER, DEBUG, "[Heartbeat thread] exception " + t.getMessage());
+                }
+            });
+        } else {
+            heartbeatFuture = CompletableFuture.completedFuture(null);
+        }
+    }
+
+    private void startDeadlineThread() {
         Deadline deadline = effectiveDeadline();
         if (deadline != null && !deadline.isExpired()) {
             deadlineFuture = executor.submit(() -> {
