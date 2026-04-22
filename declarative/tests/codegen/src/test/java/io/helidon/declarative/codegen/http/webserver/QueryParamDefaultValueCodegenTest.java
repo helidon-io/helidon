@@ -146,4 +146,63 @@ class QueryParamDefaultValueCodegenTest {
         assertThat(generated, containsString(".orElseGet(defaultValue::get)"));
         assertThat(generated, not(containsString(".orElseGet(() -> mappers.map(")));
     }
+
+    @Test
+    void generatedListQueryDefaultWrapsOptionalExpression() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/http-query-default-list"))
+                .addSource("DefaultListQueryEndpoint.java", """
+                        package com.example;
+
+                        import java.util.List;
+
+                        import io.helidon.common.Default;
+                        import io.helidon.http.Http;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @RestServer.Listener("@default")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/default-list-query")
+                        class DefaultListQueryEndpoint {
+                            @Http.GET
+                            String ids(@Http.QueryParam("ids") @Default.Value("13") List<Integer> ids) {
+                                return ids.toString();
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        var generatedSources = Files.walk(result.sourceOutput())
+                .filter(it -> it.getFileName().toString().endsWith(".java"))
+                .toList();
+
+        StringBuilder generatedContent = new StringBuilder();
+        for (Path generatedSource : generatedSources) {
+            generatedContent.append(Files.readString(generatedSource, StandardCharsets.UTF_8));
+            generatedContent.append('\n');
+        }
+
+        String generated = generatedContent.toString();
+        assertThat(generated, containsString("LazyValue<List<Integer>> defaultValue"));
+        assertThat(generated, containsString("Optional.<List<Integer>>empty()).orElseGet(defaultValue::get)"));
+        assertThat(generated, not(containsString("Optional.<List<Integer>>empty().orElseGet(defaultValue::get)")));
+    }
 }

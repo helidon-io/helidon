@@ -60,6 +60,7 @@ public abstract class AbstractParametersProvider {
             TypeName realType = parameterType.isOptional() ? parameterType.typeArguments().getFirst() : parameterType;
             if (realType.isList()) {
                 contentBuilder
+                        .addContent("(")
                         .addContent(source.accessor())
                         .addContent(".contains(\"")
                         .addContent(paramName)
@@ -80,7 +81,7 @@ public abstract class AbstractParametersProvider {
                         .addContent(Optional.class)
                         .addContent(".<")
                         .addContent(realType)
-                        .addContent(">empty()");
+                        .addContent(">empty())");
                 contentBuilder
                         .decreaseContentPadding()
                         .decreaseContentPadding();
