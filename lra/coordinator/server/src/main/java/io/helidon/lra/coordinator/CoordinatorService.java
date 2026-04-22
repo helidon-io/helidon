@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.lra.coordinator;
 import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -35,6 +34,8 @@ import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
 import io.helidon.scheduling.FixedRate;
 import io.helidon.scheduling.FixedRateInvocation;
 import io.helidon.scheduling.Task;
@@ -43,12 +44,6 @@ import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 
@@ -78,7 +73,6 @@ public class CoordinatorService implements HttpService {
     private static final HeaderName LRA_HTTP_RECOVERY_HEADER = HeaderNames.create(LRA.LRA_HTTP_RECOVERY_HEADER);
 
     private static final Set<LRAStatus> RECOVERABLE_STATUSES = Set.of(LRAStatus.Cancelling, LRAStatus.Closing, LRAStatus.Active);
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private final AtomicReference<CompletableFuture<Void>> completedRecovery = new AtomicReference<>(new CompletableFuture<>());
 
     private final LraPersistentRegistry lraPersistentRegistry;
@@ -350,29 +344,19 @@ public class CoordinatorService implements HttpService {
             LraImpl lra = lraPersistentRegistry.get(lraUUID.get());
             if (lra != null) {
                 if (RECOVERABLE_STATUSES.contains(lra.lraStatus().get())) {
-                    JsonObject json = JSON.createObjectBuilder()
-                            .add("lraId", lra.lraId())
-                            .add("status", lra.lraStatus().get().name())
-                            .add("recovering", Set.of(LRAStatus.Closed, LRAStatus.Cancelled).contains(lra.lraStatus().get()))
-                            .build();
-                    res.status(OK_200).send(json);
+                    res.status(OK_200).send(recoveryJson(lra));
                 } else {
-                    res.status(OK_200).send(JsonValue.EMPTY_JSON_OBJECT);
+                    res.status(OK_200).send(JsonObject.empty());
                 }
             } else {
-                res.status(NOT_FOUND_404).send(JsonValue.EMPTY_JSON_OBJECT);
+                res.status(NOT_FOUND_404).send(JsonObject.empty());
             }
         } else {
-            JsonArray jsonValues = lraPersistentRegistry
+            JsonArray jsonValues = JsonArray.create(lraPersistentRegistry
                     .stream()
                     .filter(lra -> RECOVERABLE_STATUSES.contains(lra.lraStatus().get()))
-                    .map(l -> JSON.createObjectBuilder()
-                            .add("lraId", l.lraId())
-                            .add("status", l.lraStatus().get().name())
-                            .build()
-                    )
-                    .collect(JSON::createArrayBuilder, JsonArrayBuilder::add, JsonArrayBuilder::addAll)
-                    .build();
+                    .map(this::lraJson)
+                    .toList());
 
             res.status(OK_200).send(jsonValues);
         }
@@ -382,20 +366,30 @@ public class CoordinatorService implements HttpService {
         Optional<String> lraId = req.path().pathParameters().first("LraId")
                 .or(() -> req.query().first("lraId").asOptional());
 
-        JsonArray array = lraPersistentRegistry
+        JsonArray array = JsonArray.create(lraPersistentRegistry
                 .stream()
                 // filter by lraId param or dont filter at all
                 .filter(lra -> lraId.map(id -> lra.lraId().equals(id)).orElse(true))
-                .map(l -> JSON.createObjectBuilder()
-                        .add("lraId", l.lraId())
-                        .add("status", l.lraStatus().get().name())
-                        .build()
-                )
-                .collect(JSON::createArrayBuilder, JsonArrayBuilder::add, JsonArrayBuilder::addAll)
-                .build();
+                .map(this::lraJson)
+                .toList());
 
         res.status(OK_200)
                 .send(array);
+    }
+
+    private JsonObject recoveryJson(LraImpl lra) {
+        return JsonObject.builder()
+                .set("lraId", lra.lraId())
+                .set("status", lra.lraStatus().get().name())
+                .set("recovering", Set.of(LRAStatus.Closed, LRAStatus.Cancelled).contains(lra.lraStatus().get()))
+                .build();
+    }
+
+    private JsonObject lraJson(LraImpl lra) {
+        return JsonObject.builder()
+                .set("lraId", lra.lraId())
+                .set("status", lra.lraStatus().get().name())
+                .build();
     }
 
     private void tick(FixedRateInvocation inv) {

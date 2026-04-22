@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,14 @@ module io.helidon.lra.coordinator {
     requires io.helidon.dbclient.jdbc;
     requires io.helidon.dbclient;
     requires io.helidon.health.checks;
-    requires io.helidon.http.media.jsonp;
+    requires io.helidon.http.media.json;
+    requires io.helidon.json;
     requires io.helidon.logging.common;
     requires io.helidon.metrics.api;
     requires io.helidon.scheduling;
     requires io.helidon.webclient;
     requires io.helidon.webserver.observe.health;
     requires io.helidon.webserver.observe.metrics;
-    requires jakarta.json;
     requires microprofile.lra.api;
 
     requires transitive io.helidon.webserver;
