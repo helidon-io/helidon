@@ -8,7 +8,7 @@ Other types may be annotated with annotations from `io.helidon.config.metadata` 
 
 The following modules for handling config metadata exist:
 
-- `io.helidon.config:helidon-config-metadata`: annotations to add to non-Blueprint types to generate documentation
+- `io.helidon.config.metadata:helidon-config-metadata`: annotations to add to non-Blueprint types to generate documentation
 - `io.helidon.config.metadata:helidon-config-metadata-codegen`: code generator that reads annotations and creates `config-metadata.json`
 - `io.helidon.config.metadata:helidon-config-metadata-docs`: code generator that reads `config.metadata.json` and generates Helidon `.adoc` files that are part of Helidon Config reference documentation
 
@@ -81,7 +81,7 @@ To add meta configuration:
 1. Add the following dependency to your `pom.xml` (optional dependency, as it only defines annotations):
     ```xml
     <dependency>
-        <groupId>io.helidon.config</groupId>
+        <groupId>io.helidon.config.metadata</groupId>
         <artifactId>helidon-config-metadata</artifactId>
     </dependency>
     ```

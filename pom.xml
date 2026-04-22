@@ -445,7 +445,7 @@
                                 <failOnWarning>true</failOnWarning>
                                 <ignoredDependencies>
                                     <dependency>io.helidon.common.features:helidon-common-features-api:*</dependency>
-                                    <dependency>io.helidon.config:helidon-config-metadata:*</dependency>
+                                    <dependency>io.helidon.config.metadata:helidon-config-metadata:*</dependency>
                                 </ignoredDependencies>
                             </configuration>
                         </execution>
