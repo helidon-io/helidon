@@ -84,6 +84,12 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     static final Metadata EMPTY_METADATA = new Metadata();
     static final Header GRPC_ACCEPT_ENCODING = HeaderValues.create(HeaderNames.ACCEPT_ENCODING, "gzip");
     static final Header GRPC_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE, "application/grpc");
+    // Listed in the gRPC-over-HTTP/2 Call-Definition as a non-optional field.
+    // Used to detect incompatible proxies: intermediaries that do not support HTTP/2 trailers
+    // may silently strip grpc-status and trailing metadata. RFC 7540 §8.1.2.2 permits TE in
+    // HTTP/2 headers only with the value "trailers".
+    // See: https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
+    static final Header GRPC_TE_TRAILERS = HeaderValues.create(HeaderNames.TE, "trailers");
     static final HeaderName STATUS_NAME = HeaderNames.createFromLowercase("grpc-status");
 
     static final BufferData PING_FRAME = BufferData.create("PING");
@@ -207,6 +213,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         headers.set(Http2Headers.SCHEME_NAME, "http");
         headers.set(GRPC_CONTENT_TYPE);
         headers.set(GRPC_ACCEPT_ENCODING);
+        headers.set(GRPC_TE_TRAILERS);
         return headers;
     }
 

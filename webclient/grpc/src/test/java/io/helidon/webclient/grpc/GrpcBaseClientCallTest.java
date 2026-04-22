@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,5 +40,6 @@ class GrpcBaseClientCallTest {
         assertThat(headers.get(Http2Headers.PATH_NAME).get(), is("/foo"));
         assertThat(headers.get(Http2Headers.SCHEME_NAME).get(), is("http"));
         assertThat(headers.get(HeaderNames.COOKIE).get(), is("sugar"));
+        assertThat(headers.get(HeaderNames.TE).get(), is("trailers"));
     }
 }
