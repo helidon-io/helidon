@@ -16,6 +16,7 @@
 
 package io.helidon.common.buffers;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.HexFormat;
 import java.util.stream.Stream;
@@ -310,6 +311,25 @@ class BufferDataTest {
             }
         });
         assertThat(b.available(), is(0));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
+    void writeToOutputStreamAfterPartialRead(TestContext context) {
+        // Regression test for https://github.com/helidon-io/helidon/issues/11738:
+        // writeTo(OutputStream) passed writePosition as the length argument instead of
+        // writePosition - readPosition, causing excess bytes to be written when readPosition > 0.
+        byte[] data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        BufferData b = context.bufferData();
+        b.write(data, 0, data.length);
+
+        // Advance readPosition by consuming 3 bytes
+        b.skip(3);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        b.writeTo(out);
+
+        assertThat(out.toByteArray(), is(new byte[] {4, 5, 6, 7, 8, 9, 10}));
     }
 
     BufferData dataFromHex(String hexEncoded) {
