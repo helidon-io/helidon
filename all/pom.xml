@@ -34,10 +34,6 @@
             <artifactId>helidon</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics-prometheus</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.graphql</groupId>
             <artifactId>helidon-graphql-server</artifactId>
         </dependency>

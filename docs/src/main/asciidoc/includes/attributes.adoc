@@ -125,7 +125,6 @@ endif::[]
 :metrics-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.api
 :metrics-serviceapi-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.serviceapi
 :micrometer-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.micrometer
-:prometheus-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.prometheus
 :openapi-javadoc-base-url: {javadoc-base-url}/io.helidon.openapi
 :reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive
 :scheduling-javadoc-base-url: {javadoc-base-url}/io.helidon.scheduling

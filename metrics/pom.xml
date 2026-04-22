@@ -32,7 +32,6 @@
     <modules>
         <module>metrics</module>
         <module>providers</module>
-        <module>prometheus</module>
         <module>trace-exemplar</module>
         <module>api</module>
         <module>system-meters</module>

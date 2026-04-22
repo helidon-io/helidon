@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,6 @@ package io.helidon.docs.se.metrics;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Metrics;
-// tag::snippet_4[]
-import io.helidon.metrics.prometheus.PrometheusSupport;
-// end::snippet_4[]
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
@@ -36,14 +33,6 @@ class MetricsSnippets {
     // stub
     class Main {
         static void routing(HttpRouting.Builder routing) {
-        }
-    }
-
-    // stub
-    class MyService implements HttpService {
-
-        @Override
-        public void routing(HttpRules rules) {
         }
     }
 
@@ -103,12 +92,4 @@ class MetricsSnippets {
         }
     }
     // end::snippet_2[]
-
-    void snippet_5(HttpRouting.Builder routing) {
-        // tag::snippet_3[]
-        routing
-                .addFeature(PrometheusSupport.create())
-                .register("/myapp", new MyService());
-        // end::snippet_3[]
-    }
 }
