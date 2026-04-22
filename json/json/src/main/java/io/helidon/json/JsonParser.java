@@ -23,6 +23,8 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 import static io.helidon.json.JsonParserArray.WHITESPACE_CHARS;
 
 /**
@@ -30,9 +32,8 @@ import static io.helidon.json.JsonParserArray.WHITESPACE_CHARS;
  * <p>
  * The parser operates on a byte-by-byte basis, providing low-level access to
  * JSON tokens and values.
- * <p>
- * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
+@Api.Preview
 public interface JsonParser {
 
     /**

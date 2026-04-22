@@ -106,7 +106,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <compilerArgs>
+                        <compilerArg>-Ahelidon.api.preview=ignore</compilerArg>
+                    </compilerArgs>
                     <annotationProcessorPaths>
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-api-stability</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
                         <path>
                             <groupId>io.helidon.codegen</groupId>
                             <artifactId>helidon-codegen-apt</artifactId>
@@ -145,6 +153,11 @@
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-api-stability</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
                     <dependency>
                         <groupId>io.helidon.codegen</groupId>
                         <artifactId>helidon-codegen-apt</artifactId>

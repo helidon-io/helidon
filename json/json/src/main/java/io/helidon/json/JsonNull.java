@@ -16,11 +16,12 @@
 
 package io.helidon.json;
 
+import io.helidon.common.Api;
+
 /**
  * Represents a JSON null value.
- * <p>
- * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
+@Api.Preview
 public final class JsonNull extends JsonValue {
 
     private static final JsonNull INSTANCE = new JsonNull();
