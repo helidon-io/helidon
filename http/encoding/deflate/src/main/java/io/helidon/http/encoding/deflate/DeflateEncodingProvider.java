@@ -16,6 +16,7 @@
 
 package io.helidon.http.encoding.deflate;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.http.encoding.ContentEncoding;
 import io.helidon.http.encoding.spi.ContentEncodingProvider;
@@ -25,8 +26,9 @@ import io.helidon.http.encoding.spi.ContentEncodingProvider;
  */
 public class DeflateEncodingProvider implements ContentEncodingProvider {
     /**
-     * Default constructor required by Java {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public DeflateEncodingProvider() {
     }
 

@@ -16,6 +16,7 @@
 
 package io.helidon.http.media.multipart;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.http.media.spi.MediaSupportProvider;
@@ -26,11 +27,10 @@ import io.helidon.http.media.spi.MediaSupportProvider;
 public class MultiPartSupportProvider implements MediaSupportProvider {
 
     /**
-     * This class should be only instantiated as part of java {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public MultiPartSupportProvider() {
-        super();
     }
 
     @Override

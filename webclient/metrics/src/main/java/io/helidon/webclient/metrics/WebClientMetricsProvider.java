@@ -15,6 +15,7 @@
  */
 package io.helidon.webclient.metrics;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webclient.spi.WebClientServiceProvider;
@@ -28,11 +29,9 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 @Deprecated
 public class WebClientMetricsProvider implements WebClientServiceProvider {
     /**
-     * Required public constructor.
-     *
-     * @deprecated This class should only be used via {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public WebClientMetricsProvider() {
     }
 

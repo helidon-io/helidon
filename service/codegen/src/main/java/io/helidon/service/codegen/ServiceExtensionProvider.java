@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.codegen.Option;
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.codegen.spi.InjectCodegenObserverProvider;
@@ -45,11 +46,9 @@ public class ServiceExtensionProvider implements RegistryCodegenExtensionProvide
                     .asList();
 
     /**
-     * Required default constructor for {@link java.util.ServiceLoader}.
-     *
-     * @deprecated only for {@link java.util.ServiceLoader}
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public ServiceExtensionProvider() {
     }
 

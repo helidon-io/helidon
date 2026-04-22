@@ -16,6 +16,7 @@
 
 package io.helidon.http.media.jsonb;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.http.media.MediaSupport;
@@ -27,11 +28,10 @@ import io.helidon.http.media.spi.MediaSupportProvider;
 public class JsonbMediaSupportProvider implements MediaSupportProvider, Weighted {
 
     /**
-     * This class should be only instantiated as part of java {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public JsonbMediaSupportProvider() {
-        super();
     }
 
     @Override

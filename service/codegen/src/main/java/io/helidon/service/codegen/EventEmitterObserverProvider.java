@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
@@ -48,8 +49,9 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SET_OF_QUALIFIERS;
  */
 public class EventEmitterObserverProvider implements InjectCodegenObserverProvider {
     /**
-     * Public constructor required by {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public EventEmitterObserverProvider() {
     }
 

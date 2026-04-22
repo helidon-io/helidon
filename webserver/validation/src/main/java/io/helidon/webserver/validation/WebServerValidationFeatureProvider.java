@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.validation;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
@@ -30,8 +31,9 @@ public class WebServerValidationFeatureProvider implements ServerFeatureProvider
     static final String VALIDATION_TYPE = "validation";
 
     /**
-     * Constructor required by {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public WebServerValidationFeatureProvider() {
     }
 
