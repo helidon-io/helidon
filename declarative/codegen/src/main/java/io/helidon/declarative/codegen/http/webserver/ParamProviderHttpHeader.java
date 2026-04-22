@@ -17,11 +17,13 @@
 package io.helidon.declarative.codegen.http.webserver;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.webserver.spi.HttpParameterCodegenProvider;
 import io.helidon.service.codegen.DefaultsCodegen;
@@ -63,6 +65,73 @@ class ParamProviderHttpHeader extends AbstractParametersProvider implements Http
         ContentBuilder<?> contentBuilder = ctx.contentBuilder();
         String serverRequestParamName = ctx.serverRequestParamName();
 
+        if (realType.isList()) {
+            TypeName itemType = realType.typeArguments().getFirst();
+
+            contentBuilder.addContent(serverRequestParamName)
+                    .addContent(".headers()")
+                    .addContent(".find(")
+                    .addContent(headerConstantName)
+                    .addContentLine(")")
+                    .increaseContentPadding()
+                    .increaseContentPadding()
+                    .addContent(".map(header -> ");
+            if (TypeNames.STRING.equals(itemType)) {
+                contentBuilder.addContent("header.allValues())");
+            } else {
+                contentBuilder.addContent("header.allValues()")
+                        .addContentLine(".stream()")
+                        .addContent(".map(value -> ");
+                mapStringValue(ctx,
+                               contentBuilder,
+                               itemType,
+                               "value",
+                               headerParamName,
+                               "headers");
+                contentBuilder.addContentLine(")")
+                        .addContent(".collect(")
+                        .addContent(Collectors.class)
+                        .addContent(".toList()))");
+            }
+
+            if (parameterType.isOptional() || defaultCode.isPresent()) {
+                contentBuilder.addContentLine(";")
+                        .decreaseContentPadding()
+                        .decreaseContentPadding();
+
+                if (defaultCode.isPresent()) {
+                    DefaultsCodegen.DefaultCode defaultInfo = defaultCode.get();
+                    if (defaultInfo.requiresMapper()) {
+                        ensureMapperField(ctx);
+                    }
+                    DefaultsParams params = DefaultsParams.builder()
+                            .contextField(ctx.serverRequestParamName() + ".headers()")
+                            .mapperQualifier("headers")
+                            .mappersField("mappers")
+                            .build();
+
+                    DefaultsCodegen.codegenOptional(contentBuilder,
+                                                    defaultInfo,
+                                                    fieldHandler,
+                                                    params);
+                    contentBuilder.addContentLine(";");
+                }
+            } else {
+                contentBuilder.addContentLine()
+                        .addContent(".orElseThrow(() -> new ")
+                        .addContent(BAD_REQUEST_EXCEPTION)
+                        .addContent("(\"Header \" + ")
+                        .addContent(headerConstantName)
+                        .addContent(".defaultCase() + ")
+                        .addContentLiteral(" is not present in the request.")
+                        .addContentLine("));")
+                        .decreaseContentPadding()
+                        .decreaseContentPadding();
+            }
+
+            return true;
+        }
+
         // we always want `req.headers().find(HEADER_CONSTANT).map(it -> it.get(SomeType.class)`
         contentBuilder.addContent(serverRequestParamName)
                 .addContent(".headers()")
@@ -71,9 +140,18 @@ class ParamProviderHttpHeader extends AbstractParametersProvider implements Http
                 .addContentLine(")")
                 .increaseContentPadding()
                 .increaseContentPadding()
-                .addContent(".map(it -> it.");
-        getMethod(contentBuilder, realType);
-        contentBuilder.addContent(")");
+                .addContent(".map(header -> ");
+        if (TypeNames.STRING.equals(realType)) {
+            contentBuilder.addContent("header.get())");
+        } else {
+            mapStringValue(ctx,
+                           contentBuilder,
+                           realType,
+                           "header.get()",
+                           headerParamName,
+                           "headers");
+            contentBuilder.addContent(")");
+        }
 
         // add generated code to obtain the header from request
         if (parameterType.isOptional() || defaultCode.isPresent()) {

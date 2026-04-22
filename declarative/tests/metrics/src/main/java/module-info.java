@@ -30,6 +30,8 @@ module io.helidon.declarative.tests.metrics {
 
     // required for generated binding
     requires io.helidon.webserver.observe;
+    requires io.helidon.common.mapper;
+    requires io.helidon.common;
 
     exports io.helidon.declarative.tests.metrics;
 }

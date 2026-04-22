@@ -48,13 +48,15 @@ class ParamProviderHttpQuery extends AbstractParametersProvider implements HttpP
         Optional<DefaultsCodegen.DefaultCode> defaultCode = DefaultsCodegen.findDefault(ctx.annotations(), realType);
 
         ContentBuilder<?> contentBuilder = ctx.contentBuilder();
-        contentBuilder.addContent(ctx.serverRequestParamName())
-                .addContent(".query()");
 
-        codegenFromParameters(contentBuilder,
+        codegenFromParameters(ctx,
+                              contentBuilder,
                               parameterType,
                               queryParamName,
-                              parameterType.isOptional() || defaultCode.isPresent());
+                              parameterType.isOptional() || defaultCode.isPresent(),
+                              ctx.serverRequestParamName() + ".query()",
+                              true,
+                              "uri/query");
 
         if (defaultCode.isPresent()) {
             var defaultInfo = defaultCode.get();

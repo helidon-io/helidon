@@ -28,13 +28,13 @@ import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Default;
 import io.helidon.common.Generated;
 import io.helidon.common.GenericType;
-import io.helidon.common.LazyValue;
 import io.helidon.common.mapper.Mappers;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.http.Http;
+import io.helidon.http.media.ReadableEntity;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
@@ -55,7 +55,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-class QueryParamDefaultValueCodegenTest {
+class EntityGenericTypeCodegenTest {
     private static final List<Class<?>> CLASSPATH = List.of(
             Annotation.class,
             Config.class,
@@ -63,7 +63,6 @@ class QueryParamDefaultValueCodegenTest {
             Dependency.class,
             Generated.class,
             GenericType.class,
-            LazyValue.class,
             Handler.class,
             Http.class,
             HttpEntryPoint.class,
@@ -74,6 +73,7 @@ class QueryParamDefaultValueCodegenTest {
             Mappers.class,
             Parameters.class,
             Prototype.class,
+            ReadableEntity.class,
             RestServer.class,
             ServerRequest.class,
             ServerResponse.class,
@@ -83,16 +83,17 @@ class QueryParamDefaultValueCodegenTest {
     );
 
     @Test
-    void generatedQueryDefaultUsesParameterType() throws IOException {
+    void generatedEntityUsesGenericTypeForParameterizedEntity() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
                 .addProcessor(AptProcessor::new)
-                .workDir(Path.of("target/test-compiler/http-query-default-value"))
-                .addSource("DefaultQueryEndpoint.java", """
+                .workDir(Path.of("target/test-compiler/http-entity-generic"))
+                .addSource("GenericEntityEndpoint.java", """
                         package com.example;
 
-                        import io.helidon.common.Default;
+                        import java.util.List;
+
                         import io.helidon.http.Http;
                         import io.helidon.service.registry.Service;
                         import io.helidon.webserver.http.RestServer;
@@ -100,11 +101,11 @@ class QueryParamDefaultValueCodegenTest {
                         @RestServer.Listener("@default")
                         @RestServer.Endpoint
                         @Service.Singleton
-                        @Http.Path("/default-query")
-                        class DefaultQueryEndpoint {
-                            @Http.GET
-                            String limit(@Http.QueryParam("limit") @Default.Value("13") Integer limit) {
-                                return Integer.toString(limit);
+                        @Http.Path("/generic-entity")
+                        class GenericEntityEndpoint {
+                            @Http.POST
+                            String entity(@Http.Entity List<String> entity) {
+                                return entity.toString();
                             }
                         }
                         """)
@@ -134,15 +135,7 @@ class QueryParamDefaultValueCodegenTest {
         }
 
         String generated = generatedContent.toString();
-        assertThat(generated, containsString("GenericType.create(Integer.class)"));
-        assertThat(generated,
-                   containsString("mappers.map(it, GenericType.STRING, GTYPE, me -> new BadRequestException(\"Query parameter"
-                                          + " limit has invalid value.\", me), \"uri/query\")"));
-        assertThat(generated, not(containsString("Value.create(mappers")));
-        assertThat(generated, containsString("LazyValue<Integer> defaultValue"));
-        assertThat(generated, containsString("defaultValue = LazyValue.create(() -> mappers.map(\"13\", GenericType.STRING, GTYPE"));
-        assertThat(generated, containsString("\"uri/query\"));"));
-        assertThat(generated, containsString(".orElseGet(defaultValue::get)"));
-        assertThat(generated, not(containsString(".orElseGet(() -> mappers.map(")));
+        assertThat(generated, containsString(".content().as(GTYPE"));
+        assertThat(generated, not(containsString("List<String>.class")));
     }
 }

@@ -186,7 +186,7 @@ class WebSocketListenerGenerator extends AbstractParametersProvider {
          */
         annotatedMethods = methods(serverEndpoint, ANNOTATION_ON_UPGRADE);
         checkMaxOne(annotatedMethods, ANNOTATION_ON_UPGRADE);
-        generateOnHttpUpgrade(classModel, pathParamFieldCounters, pathParamFields, annotatedMethods);
+        generateOnHttpUpgrade(classModel, fieldHandler, pathParamFieldCounters, pathParamFields, annotatedMethods);
 
         classModel.addConstructor(ctr);
         roundContext.addGeneratedType(generatedListener, classModel, endpointType, serverEndpoint.originatingElementValue());
@@ -662,6 +662,7 @@ class WebSocketListenerGenerator extends AbstractParametersProvider {
     }
 
     private void generateOnHttpUpgrade(ClassModel.Builder classModel,
+                                       FieldHandler fieldHandler,
                                        Map<String, AtomicInteger> pathParamFieldCounters,
                                        Map<PathParamKey, String> pathParamFields,
                                        List<TypedElementInfo> annotatedMethods) {
@@ -728,7 +729,10 @@ class WebSocketListenerGenerator extends AbstractParametersProvider {
                 );
                 onUpgrade.addContent(field)
                         .addContent(" = params");
-                codegenFromParameters(onUpgrade, key.type(), key.name(), key.type().isOptional());
+                codegenFromParameters(fieldHandler, onUpgrade, key.type(), key.name(), key.type().isOptional());
+                if (key.type().isOptional() || key.type().isList()) {
+                    onUpgrade.addContentLine(";");
+                }
             });
         }
         if (annotatedMethods.isEmpty()) {

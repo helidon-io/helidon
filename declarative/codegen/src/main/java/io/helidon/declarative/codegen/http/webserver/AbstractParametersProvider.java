@@ -16,12 +16,16 @@
 
 package io.helidon.declarative.codegen.http.webserver;
 
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.service.codegen.FieldHandler;
 
 import static io.helidon.declarative.codegen.DeclarativeTypes.COMMON_MAPPERS;
 import static io.helidon.declarative.codegen.http.HttpTypes.BAD_REQUEST_EXCEPTION;
@@ -45,43 +49,91 @@ public abstract class AbstractParametersProvider {
      * @param paramName name of the parameter we need to get
      * @param optional whether the parameter is optional
      */
-    protected void codegenFromParameters(ContentBuilder<?> contentBuilder,
+    protected void codegenFromParameters(ParameterCodegenContext ctx,
+                                         ContentBuilder<?> contentBuilder,
                                          TypeName parameterType,
                                          String paramName,
-                                         boolean optional) {
+                                         boolean optional,
+                                         String parametersAccessor,
+                                         boolean filterEmptyStringValues,
+                                         String mapperQualifier) {
         if (optional) {
             TypeName realType = parameterType.isOptional() ? parameterType.typeArguments().getFirst() : parameterType;
+            if (realType.isList()) {
+                contentBuilder
+                        .addContent(parametersAccessor)
+                        .addContent(".contains(\"")
+                        .addContent(paramName)
+                        .addContentLine("\")")
+                        .increaseContentPadding()
+                        .increaseContentPadding()
+                        .addContent("? ")
+                        .addContent(Optional.class)
+                        .addContent(".of(");
+                addListValueExpression(ctx,
+                                       contentBuilder,
+                                       realType.typeArguments().getFirst(),
+                                       paramName,
+                                       parametersAccessor,
+                                       filterEmptyStringValues,
+                                       mapperQualifier);
+                contentBuilder.addContent(") : ")
+                        .addContent(Optional.class)
+                        .addContent(".<")
+                        .addContent(realType)
+                        .addContent(">empty()");
+                contentBuilder
+                        .decreaseContentPadding()
+                        .decreaseContentPadding();
+                return;
+            }
             // optional
             contentBuilder
+                    .addContent(parametersAccessor)
                     .addContent(".first(\"")
                     .addContent(paramName)
-                    .addContent("\").");
-            asMethod(contentBuilder, realType);
-            contentBuilder.addContent(".asOptional()");
+                    .addContentLine("\")");
+            if (requiresMapper(realType)) {
+                contentBuilder.addContent(".map(it -> ");
+                mapStringValue(ctx,
+                               contentBuilder,
+                               realType,
+                               "it",
+                               paramName,
+                               mapperQualifier);
+                contentBuilder.addContent(")");
+            } else {
+                contentBuilder.addContent(".asOptional()");
+            }
         } else if (parameterType.isList()) {
             TypeName realType = parameterType.typeArguments().getFirst();
             // list
-            contentBuilder
-                    .addContent(".allValues(\"")
-                    .addContent(paramName)
-                    .addContentLine("\")")
-                    .addContentLine(".stream()")
-                    .addContent(".map(helidonDeclarative__it -> helidonDeclarative__it.");
-            getMethod(contentBuilder, realType);
-            contentBuilder.addContentLine(")")
-                    .addContent(".collect(")
-                    .addContent(Collectors.class)
-                    .addContent(".toList())");
+            addListValueExpression(ctx,
+                                   contentBuilder,
+                                   realType,
+                                   paramName,
+                                   parametersAccessor,
+                                   filterEmptyStringValues,
+                                   mapperQualifier);
         } else {
             // direct type
             contentBuilder
+                    .addContent(parametersAccessor)
                     .addContent(".first(\"")
                     .addContent(paramName)
                     .addContentLine("\")")
                     .increaseContentPadding()
-                    .increaseContentPadding()
-                    .addContent(".");
-            asMethod(contentBuilder, parameterType);
+                    .increaseContentPadding();
+            if (requiresMapper(parameterType)) {
+                contentBuilder.addContent(".map(it -> ");
+                mapStringValue(ctx,
+                               contentBuilder,
+                               parameterType,
+                               "it",
+                               paramName,
+                               mapperQualifier);
+                contentBuilder.addContent(")");
+            }
             // add .orElseThrow() in case the parameter is missing
             contentBuilder.addContentLine()
                     .addContent(".orElseThrow(() -> new ")
@@ -96,6 +148,32 @@ public abstract class AbstractParametersProvider {
         }
     }
 
+    protected void codegenFromParameters(FieldHandler fieldHandler,
+                                         ContentBuilder<?> contentBuilder,
+                                         TypeName parameterType,
+                                         String paramName,
+                                         boolean optional) {
+        codegenFromParameters(new ParamCodegenContextImpl(fieldHandler,
+                                                         Set.of(),
+                                                         parameterType,
+                                                         null,
+                                                         contentBuilder,
+                                                         "",
+                                                         "",
+                                                         TypeNames.OBJECT,
+                                                         "",
+                                                         paramName,
+                                                         0,
+                                                         0),
+                              contentBuilder,
+                              parameterType,
+                              paramName,
+                              optional,
+                              "",
+                              false,
+                              "http/path");
+    }
+
     /**
      * Type of this provider, such as "header", used when code generating error messages.
      *
@@ -103,7 +181,11 @@ public abstract class AbstractParametersProvider {
      */
     protected abstract String providerType();
 
-    void asMethod(ContentBuilder<?> content, TypeName type) {
+    boolean requiresMapper(TypeName type) {
+        return !TypeNames.STRING.equals(type);
+    }
+
+    void asMethod(ParameterCodegenContext ctx, ContentBuilder<?> content, TypeName type) {
         TypeName boxed = type.boxed();
 
         if (TypeNames.BOXED_BOOLEAN.equals(boxed)) {
@@ -132,41 +214,81 @@ public abstract class AbstractParametersProvider {
         }
 
         content.addContent("as(")
-                .addContent(boxed)
-                .addContent(".class)");
+                .addContent(genericTypeConstant(ctx, boxed))
+                .addContent(")");
     }
 
-    void getMethod(ContentBuilder<?> content, TypeName type) {
-        TypeName boxed = type.boxed();
-
-        if (TypeNames.BOXED_BOOLEAN.equals(boxed)) {
-            content.addContent("getBoolean()");
+    void mapStringValue(ParameterCodegenContext ctx,
+                        ContentBuilder<?> content,
+                        TypeName type,
+                        String valueExpression,
+                        String paramName,
+                        String qualifier) {
+        if (!requiresMapper(type)) {
+            content.addContent(valueExpression);
             return;
         }
 
-        if (TypeNames.BOXED_DOUBLE.equals(boxed)) {
-            content.addContent("getDouble()");
+        ensureMapperField(ctx);
+        content.addContent("mappers.map(")
+                .addContent(valueExpression)
+                .addContent(", ")
+                .addContent(TypeNames.GENERIC_TYPE)
+                .addContent(".STRING");
+        content.addContent(", ")
+                .addContent(genericTypeConstant(ctx, type.boxed()))
+                .addContent(", ")
+                .addContent("me -> new ")
+                .addContent(BAD_REQUEST_EXCEPTION)
+                .addContent("(\"")
+                .addContent(providerType())
+                .addContent(" ")
+                .addContent(paramName)
+                .addContent(" has invalid value.\", me), ")
+                .addContentLiteral(qualifier);
+        content.addContent(")");
+    }
+
+    void addListValueExpression(ParameterCodegenContext ctx,
+                                ContentBuilder<?> contentBuilder,
+                                TypeName itemType,
+                                String paramName,
+                                String parametersAccessor,
+                                boolean filterEmptyStringValues,
+                                String mapperQualifier) {
+        contentBuilder.addContent(parametersAccessor)
+                .addContent(".all(\"")
+                .addContent(paramName)
+                .addContent("\")");
+
+        if (filterEmptyStringValues || requiresMapper(itemType)) {
+            contentBuilder.addContent(".stream()");
+            if (filterEmptyStringValues) {
+                contentBuilder.addContent(".filter(it -> !it.isEmpty())");
+            }
+            if (requiresMapper(itemType)) {
+                contentBuilder.addContent(".map(it -> ");
+                mapStringValue(ctx,
+                               contentBuilder,
+                               itemType,
+                               "it",
+                               paramName,
+                               mapperQualifier);
+                contentBuilder.addContent(")");
+            }
+            contentBuilder.addContent(".collect(")
+                    .addContent(Collectors.class)
+                    .addContent(".toList())");
+        }
+    }
+
+    void addTypeArgument(ParameterCodegenContext ctx, ContentBuilder<?> content, TypeName type) {
+        if (type.typeArguments().isEmpty()) {
+            content.addContent(type)
+                    .addContent(".class");
             return;
         }
-
-        if (TypeNames.BOXED_INT.equals(boxed)) {
-            content.addContent("getInt()");
-            return;
-        }
-
-        if (TypeNames.BOXED_LONG.equals(boxed)) {
-            content.addContent("getLong()");
-            return;
-        }
-
-        if (TypeNames.STRING.equals(type)) {
-            content.addContent("get()");
-            return;
-        }
-
-        content.addContent("get(")
-                .addContent(boxed)
-                .addContent(".class)");
+        content.addContent(genericTypeConstant(ctx, type));
     }
 
     void ensureMapperField(ParameterCodegenContext ctx) {
@@ -182,5 +304,30 @@ public abstract class AbstractParametersProvider {
                                        .type(COMMON_MAPPERS))
                                .addContentLine("this.mappers = mappers;")
                 );
+    }
+
+    private String genericTypeConstant(ParameterCodegenContext ctx, TypeName type) {
+        TypeName boxed = type.boxed();
+        TypeName genericType = TypeName.builder(TypeNames.GENERIC_TYPE)
+                .addTypeArgument(boxed)
+                .build();
+
+        return ctx.fieldHandler().constant("GTYPE",
+                                           genericType,
+                                           ResolvedType.create(boxed),
+                                           content -> {
+                                               if (boxed.typeArguments().isEmpty()) {
+                                                   content.addContent(TypeNames.GENERIC_TYPE)
+                                                           .addContent(".create(")
+                                                           .addContent(boxed)
+                                                           .addContent(".class)");
+                                               } else {
+                                                   content.addContent("new ")
+                                                           .addContent(TypeNames.GENERIC_TYPE)
+                                                           .addContent("<")
+                                                           .addContent(boxed)
+                                                           .addContent(">() {}");
+                                               }
+                                           });
     }
 }
