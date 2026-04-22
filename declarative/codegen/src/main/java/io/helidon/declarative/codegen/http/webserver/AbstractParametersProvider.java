@@ -299,7 +299,11 @@ public abstract class AbstractParametersProvider {
         content.addContent(genericTypeConstant(ctx, type));
     }
 
-
+    /**
+     * Ensure the generated feature exposes the shared {@code mappers} dependency field.
+     *
+     * @param fieldHandler field handler used to declare the field and constructor parameter
+     */
     protected void ensureMapperField(FieldHandler fieldHandler) {
         fieldHandler.field(COMMON_MAPPERS,
                            "mappers",
@@ -328,6 +332,14 @@ public abstract class AbstractParametersProvider {
         }
     }
 
+    /**
+     * Create parameter-source metadata for shared parameter extraction helpers.
+     *
+     * @param accessor accessor expression used to obtain the parameter source
+     * @param filterEmptyStringValues whether empty string values should be filtered out
+     * @param mapperQualifier mapper qualifier used for mapped parameter conversion
+     * @return parameter-source metadata
+     */
     protected ParametersSource parametersSource(String accessor,
                                                 boolean filterEmptyStringValues,
                                                 String mapperQualifier) {
