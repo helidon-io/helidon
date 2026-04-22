@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -282,22 +282,12 @@ class Registry implements MetricRegistry {
 
     @Override
     public boolean remove(String name) {
-        lock.lock();
-        try {
-            return removeMatchingWithResult((id, metric) -> id.getName().equals(name));
-        } finally {
-            lock.unlock();
-        }
+        return removeMatchingWithResult((id, metric) -> id.getName().equals(name));
     }
 
     @Override
     public boolean remove(MetricID metricID) {
-        lock.lock();
-        try {
-            return removeViaDelegate(metricID);
-        } finally {
-            lock.unlock();
-        }
+        return removeViaDelegate(metricID);
     }
 
     @Override
@@ -660,23 +650,25 @@ class Registry implements MetricRegistry {
 
     private boolean removeMatchingWithResult(MetricFilter filter) {
         boolean result = false;
-        lock.lock();
-        try {
-            for (Map.Entry<MetricID, Metric> entry : getMetrics(filter).entrySet()) {
-                result |= remove(entry.getKey());
-            }
-            return result;
-        } finally {
-            lock.unlock();
+        for (MetricID metricId : matchingMetricIDs(filter)) {
+            result |= removeViaDelegate(metricId);
         }
+        return result;
     }
 
     private boolean removeViaDelegate(MetricID metricId) {
+        HelidonMetric<?> helidonMetric = access(() -> metricsById.get(metricId));
+        return helidonMetric != null && helidonMetric.removeViaDelegate(meterRegistry);
+    }
+
+    private List<MetricID> matchingMetricIDs(MetricFilter filter) {
         lock.lock();
         try {
-            HelidonMetric<?> helidonMetric = metricsById.get(metricId);
-            return helidonMetric != null
-                    && helidonMetric.removeViaDelegate(meterRegistry);
+            return metricsById.entrySet()
+                    .stream()
+                    .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
+                    .map(Map.Entry::getKey)
+                    .toList();
         } finally {
             lock.unlock();
         }
