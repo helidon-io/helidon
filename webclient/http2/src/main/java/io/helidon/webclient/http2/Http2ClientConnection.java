@@ -27,6 +27,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -80,7 +81,9 @@ public class Http2ClientConnection {
     private final ConnectionFlowControl connectionFlowControl;
     private final Http2Headers.DynamicTable inboundDynamicTable =
             Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
-    private final ReentrantLock inboundDynamicTableLock = new ReentrantLock();
+    private final AtomicLong inboundHeaderBlockSequence = new AtomicLong();
+    private final ReentrantLock inboundHeaderDecodeLock = new ReentrantLock();
+    private final Condition inboundHeaderDecodeTurn = inboundHeaderDecodeLock.newCondition();
     private final Http2ClientProtocolConfig protocolConfig;
     private final ClientConnection connection;
     private final SocketContext ctx;
@@ -90,13 +93,20 @@ public class Http2ClientConnection {
     private final Semaphore pingPongSemaphore = new Semaphore(0);
     private final AtomicLong pingIdSequence = new AtomicLong();
     private final Http2ClientConfig clientConfig;
+    private final ReentrantLock reservedStreamsLock = new ReentrantLock();
+    private final CountDownLatch initialSettingsLatch = new CountDownLatch(1);
     private volatile int lastStreamId;
     private volatile long expectedPingAck = NO_PING_ACK;
+    private volatile long peerMaxConcurrentStreams = Http2Setting.MAX_CONCURRENT_STREAMS.defaultValue();
+    private volatile boolean initialSettingsReceived;
+    private int reservedStreams;
 
     private Http2Settings serverSettings = Http2Settings.builder()
             .build();
     private Future<?> handleTask;
     private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
+    // Guarded by inboundHeaderDecodeLock.
+    private long nextInboundHeaderBlockToDecode = 1;
 
     Http2ClientConnection(Http2ClientImpl http2Client, ClientConnection connection) {
         this.protocolConfig = http2Client.protocolConfig();
@@ -127,6 +137,7 @@ public class Http2ClientConnection {
 
         Http2ClientConnection h2conn = new Http2ClientConnection(http2Client, connection);
         h2conn.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
+        h2conn.awaitInitialSettings();
 
         return h2conn;
     }
@@ -163,7 +174,20 @@ public class Http2ClientConnection {
         return streamIdSeq;
     }
 
+    /**
+     * Creates a new client stream after the peer's initial {@code SETTINGS} are known.
+     * Waiting here ensures we honor peer-provided limits such as
+     * {@code SETTINGS_MAX_CONCURRENT_STREAMS} before reserving capacity.
+     *
+     * @param config stream configuration
+     * @return a new client stream with one reserved peer-concurrency slot
+     */
     Http2ClientStream createStream(Http2StreamConfig config) {
+        // The peer can tighten MAX_CONCURRENT_STREAMS in its first SETTINGS frame.
+        awaitInitialSettings();
+        if (!reserveStream()) {
+            throw new IllegalStateException("Peer max concurrent streams reached: " + peerMaxConcurrentStreams);
+        }
         Http2ClientStream stream = new Http2ClientStream(this,
                 serverSettings,
                 ctx,
@@ -171,6 +195,22 @@ public class Http2ClientConnection {
                 clientConfig,
                 streamIdSeq);
         return stream;
+    }
+
+    /**
+     * Releases one previously reserved peer-concurrency slot.
+     * This is invoked from stream close paths so capacity is returned both after
+     * successful exchanges and after failures during stream startup.
+     */
+    void releaseReservedStream() {
+        reservedStreamsLock.lock();
+        try {
+            if (reservedStreams > 0) {
+                reservedStreams--;
+            }
+        } finally {
+            reservedStreamsLock.unlock();
+        }
     }
 
     /**
@@ -266,8 +306,10 @@ public class Http2ClientConnection {
      * Closes this connection.
      */
     public void close() {
+        initialSettingsLatch.countDown();
         this.goAway(0, Http2ErrorCode.NO_ERROR, "Closing connection");
         if (state.getAndSet(State.CLOSED) != State.CLOSED) {
+            signalInboundHeaderDecodeWaiters();
             try {
                 handleTask.cancel(true);
                 ctx.log(LOGGER, TRACE, "Closing connection");
@@ -275,7 +317,23 @@ public class Http2ClientConnection {
             } catch (Throwable e) {
                 ctx.log(LOGGER, TRACE, "Failed to close HTTP/2 connection.", e);
             }
+        } else {
+            signalInboundHeaderDecodeWaiters();
         }
+    }
+
+    /**
+     * Closes the connection after a stream is abandoned with queued or in-progress
+     * inbound header decoding.
+     * This is intentional: later streams decode HPACK state in connection wire order,
+     * so abandoning an earlier block would otherwise deadlock the remaining decoders.
+     *
+     * @param streamId stream that was closed while still owning undecoded headers
+     */
+    void closeUndecodedHeaders(int streamId) {
+        ctx.log(LOGGER, DEBUG, "%d: closing connection because stream %d was abandoned with undecoded headers",
+                0, streamId);
+        close();
     }
 
     static Http2Settings settings(Http2ClientProtocolConfig config) {
@@ -291,27 +349,58 @@ public class Http2ClientConnection {
 
     /**
      * Reads the HTTP/2 headers for the specified client stream from this connection.
-     * Thread-safe: Uses connection inbound dynamic table synchronized per connection.
+     * Thread-safe: Uses a connection-level decode lock to preserve inbound HPACK state.
      *
      * @param stream the HTTP/2 client stream for which headers are being read
      * @param decoder the Huffman decoder to decode the headers
      * @param headers the existing headers object to populate or use as a basis
+     * @param headerBlockOrder the order in which the complete inbound header block arrived on the wire
      * @param array the array of HTTP/2 frame data to process
      * @return the processed HTTP/2 headers
      */
     Http2Headers readHeaders(Http2ClientStream stream,
                              Http2HuffmanDecoder decoder,
                              Http2Headers headers,
+                             long headerBlockOrder,
                              Http2FrameData[] array) {
-        inboundDynamicTableLock.lock();
+        inboundHeaderDecodeLock.lock();
         try {
-            return Http2Headers.create(stream,
-                                       inboundDynamicTable,
-                                       decoder,
-                                       headers,
-                                       array);
+            // HPACK dynamic-table updates are connection-scoped, so blocks must decode in wire order.
+            while (headerBlockOrder != nextInboundHeaderBlockToDecode) {
+                if (state.get().closed()) {
+                    throw new IllegalStateException("Connection closed while waiting to decode HTTP/2 headers");
+                }
+                inboundHeaderDecodeTurn.await();
+            }
+            try {
+                return Http2Headers.create(stream,
+                                           inboundDynamicTable,
+                                           decoder,
+                                           headers,
+                                           array);
+            } finally {
+                nextInboundHeaderBlockToDecode++;
+                inboundHeaderDecodeTurn.signalAll();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting to decode HTTP/2 headers", e);
         } finally {
-            inboundDynamicTableLock.unlock();
+            inboundHeaderDecodeLock.unlock();
+        }
+    }
+
+    /**
+     * Wakes threads waiting for their inbound HPACK decode turn during shutdown.
+     * Without this signal, a blocked decoder could wait forever for an earlier
+     * header block that will never finish once the connection is closing.
+     */
+    private void signalInboundHeaderDecodeWaiters() {
+        inboundHeaderDecodeLock.lock();
+        try {
+            inboundHeaderDecodeTurn.signalAll();
+        } finally {
+            inboundHeaderDecodeLock.unlock();
         }
     }
 
@@ -380,6 +469,48 @@ public class Http2ClientConnection {
         }
     }
 
+    /**
+     * Waits for the peer's initial {@code SETTINGS} frame to be processed.
+     * Stream creation depends on these values, especially the peer's concurrent
+     * stream limit, so callers must not proceed until they are known.
+     */
+    private void awaitInitialSettings() {
+        if (initialSettingsReceived) {
+            return;
+        }
+        try {
+            if (!initialSettingsLatch.await(20, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("Failed to receive initial HTTP/2 settings within 20 seconds");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for initial HTTP/2 settings", e);
+        }
+        if (!initialSettingsReceived) {
+            throw new IllegalStateException("Connection closed before initial HTTP/2 settings were received");
+        }
+    }
+
+    /**
+     * Reserves one peer-concurrency slot before a stream is opened on the wire.
+     * Reserving early prevents concurrent callers from overshooting the peer's
+     * advertised {@code SETTINGS_MAX_CONCURRENT_STREAMS} while stream startup is in progress.
+     *
+     * @return {@code true} if a slot was reserved, {@code false} if the peer limit was already reached
+     */
+    private boolean reserveStream() {
+        reservedStreamsLock.lock();
+        try {
+            if (reservedStreams >= peerMaxConcurrentStreams) {
+                return false;
+            }
+            reservedStreams++;
+            return true;
+        } finally {
+            reservedStreamsLock.unlock();
+        }
+    }
+
     private void writeWindowsUpdate(int streamId, Http2WindowUpdate windowUpdateFrame) {
         if (streamId == 0) {
             writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
@@ -411,141 +542,205 @@ public class Http2ClientConnection {
         BufferData frameHeaderBuffer = this.reader.readBuffer(FRAME_HEADER_LENGTH);
         Http2FrameHeader frameHeader = Http2FrameHeader.create(frameHeaderBuffer);
         frameHeader.type().checkLength(frameHeader.length());
-        BufferData data;
-        if (frameHeader.length() != 0) {
-            data = this.reader.readBuffer(frameHeader.length());
-        } else {
-            data = BufferData.empty();
-        }
-
+        BufferData data = readFrameData(frameHeader);
         int streamId = frameHeader.streamId();
 
-        switch (frameHeader.type()) {
-        case GO_AWAY:
-            Http2GoAway http2GoAway = Http2GoAway.create(data);
-            recvListener.frameHeader(ctx, streamId, frameHeader);
-            recvListener.frame(ctx, streamId, http2GoAway);
-            this.close();
-            ctx.log(LOGGER, TRACE, "Connection closed by remote peer, error code: %s, last stream: %d",
-                    http2GoAway.errorCode(),
-                    http2GoAway.lastStreamId());
-            return false;
-        case SETTINGS:
-            Http2Flag.SettingsFlags flags = frameHeader.flags(Http2FrameTypes.SETTINGS);
-
-            // if ack flag set, empty frame and no processing
-            if (flags.ack()) {
-                if (frameHeader.length() > 0) {
-                    throw new Http2Exception(Http2ErrorCode.FRAME_SIZE,
-                                             "Settings with ACK should not have payload.");
-                }
-                return true;
-            }
-
-            serverSettings = Http2Settings.create(data);
-            recvListener.frameHeader(ctx, streamId, frameHeader);
-            recvListener.frame(ctx, streamId, serverSettings);
-            // §4.3.1 Endpoint communicates the size chosen by its HPACK decoder context
-            inboundDynamicTable.protocolMaxTableSize(serverSettings.value(Http2Setting.HEADER_TABLE_SIZE));
-            if (serverSettings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {
-                connectionFlowControl.resetMaxFrameSize(serverSettings.value(Http2Setting.MAX_FRAME_SIZE).intValue());
-            }
-            // §6.5.2 Update initial window size for new streams and window sizes of all already existing streams
-            if (serverSettings.hasValue(Http2Setting.INITIAL_WINDOW_SIZE)) {
-                Long initWinSizeLong = serverSettings.value(Http2Setting.INITIAL_WINDOW_SIZE);
-                if (initWinSizeLong > WindowSize.MAX_WIN_SIZE) {
-                    goAway(streamId, Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
-                    throw new Http2Exception(Http2ErrorCode.PROTOCOL,
-                                             "Received too big INITIAL_WINDOW_SIZE " + initWinSizeLong);
-                }
-                int initWinSize = initWinSizeLong.intValue();
-                connectionFlowControl.resetInitialWindowSize(initWinSize);
-                Lock lock = streamsLock.readLock();
-                lock.lock();
-                try {
-                    streams.values().forEach(stream -> stream.flowControl().outbound().resetStreamWindowSize(initWinSize));
-                } finally {
-                    lock.unlock();
-                }
-
-            }
-            // §6.5.3 Settings Synchronization
-            ackSettings();
-
-            return true;
-
-        case WINDOW_UPDATE:
-            Http2WindowUpdate windowUpdate = Http2WindowUpdate.create(data);
-            recvListener.frameHeader(ctx, streamId, frameHeader);
-            recvListener.frame(ctx, streamId, windowUpdate);
-            // Outbound flow-control window update
-            if (streamId == 0) {
-                int increment = windowUpdate.windowSizeIncrement();
-                boolean overflow;
-                // overall connection
-                if (increment == 0) {
-                    Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL, "Window size 0");
-                    writer.write(frame.toFrameData(serverSettings, 0, Http2Flag.NoFlags.create()));
-                }
-                overflow = connectionFlowControl.incrementOutboundConnectionWindowSize(increment) > WindowSize.MAX_WIN_SIZE;
-                if (overflow) {
-                    Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
-                    writer.write(frame.toFrameData(serverSettings, 0, Http2Flag.NoFlags.create()));
-                }
-
-            } else {
-                stream(streamId)
-                        .windowUpdate(windowUpdate);
-            }
-            return true;
-        case PING:
-            if (streamId != 0) {
-                throw new Http2Exception(Http2ErrorCode.PROTOCOL,
-                                         "Received ping for a stream " + streamId);
-            }
-            if (frameHeader.length() != 8) {
-                throw new Http2Exception(Http2ErrorCode.FRAME_SIZE,
-                                         "Received ping with wrong size. Should be 8 bytes, is " + frameHeader.length());
-            }
-            if (!frameHeader.flags(Http2FrameTypes.PING).ack()) {
-                Http2Ping ping = Http2Ping.create(data);
-                recvListener.frame(ctx, streamId, ping);
-                BufferData frame = ping.data();
-                Http2FrameHeader header = Http2FrameHeader.create(frame.available(),
-                                                                  Http2FrameTypes.PING,
-                                                                  Http2Flag.PingFlags.create(Http2Flag.ACK),
-                                                                  0);
-                writer.write(new Http2FrameData(header, frame));
-            } else {
-                pong(data.readLong());
-            }
-            break;
-
-        case RST_STREAM:
-            Http2RstStream rstStream = Http2RstStream.create(data);
-            recvListener.frame(ctx, streamId, rstStream);
-            stream(streamId).rstStream(rstStream);
-            break;
-
-        case DATA:
-            Http2ClientStream stream = stream(streamId);
-            if (stream == null) {
-                // most likely a closed stream
-                ctx.log(LOGGER, DEBUG, "%d: received data for stream %d, which does not exist", 0, streamId);
-            } else {
-                stream.flowControl().inbound().decrementWindowSize(frameHeader.length());
-                ctx.log(LOGGER, DEBUG, "%d: received data for stream %d", 0, streamId);
-                stream.push(new Http2FrameData(frameHeader, data));
-            }
-            break;
-        case HEADERS, CONTINUATION:
-            stream(streamId).push(new Http2FrameData(frameHeader, data));
-            return true;
-
-        default:
+        return switch (frameHeader.type()) {
+        case GO_AWAY -> handleGoAwayFrame(streamId, frameHeader, data);
+        case SETTINGS -> handleSettingsFrame(streamId, frameHeader, data);
+        case WINDOW_UPDATE -> handleWindowUpdateFrame(streamId, frameHeader, data);
+        case PING -> handlePingFrame(streamId, frameHeader, data);
+        case RST_STREAM -> {
+            handleRstStreamFrame(streamId, data);
+            yield true;
+        }
+        case DATA -> {
+            handleDataFrame(streamId, frameHeader, data);
+            yield true;
+        }
+        case HEADERS, CONTINUATION -> handleHeadersFrame(streamId, frameHeader, data);
+        default -> {
             LOGGER.log(WARNING, "Unsupported frame type!! " + frameHeader.type());
+            yield true;
+        }
+        };
+    }
+
+    private BufferData readFrameData(Http2FrameHeader frameHeader) {
+        if (frameHeader.length() == 0) {
+            return BufferData.empty();
+        }
+        return reader.readBuffer(frameHeader.length());
+    }
+
+    private boolean handleGoAwayFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {
+        Http2GoAway http2GoAway = Http2GoAway.create(data);
+        recvListener.frameHeader(ctx, streamId, frameHeader);
+        recvListener.frame(ctx, streamId, http2GoAway);
+        this.close();
+        ctx.log(LOGGER, TRACE, "Connection closed by remote peer, error code: %s, last stream: %d",
+                http2GoAway.errorCode(),
+                http2GoAway.lastStreamId());
+        return false;
+    }
+
+    private boolean handleSettingsFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {
+        Http2Flag.SettingsFlags flags = frameHeader.flags(Http2FrameTypes.SETTINGS);
+        if (flags.ack()) {
+            if (frameHeader.length() > 0) {
+                throw new Http2Exception(Http2ErrorCode.FRAME_SIZE,
+                                         "Settings with ACK should not have payload.");
+            }
+            return true;
         }
 
+        Http2Settings receivedSettings = Http2Settings.create(data);
+        recvListener.frameHeader(ctx, streamId, frameHeader);
+        recvListener.frame(ctx, streamId, receivedSettings);
+        serverSettings = mergeSettings(serverSettings, receivedSettings);
+        updatePeerSettings(receivedSettings);
+        initialSettingsReceived = true;
+        initialSettingsLatch.countDown();
+        ackSettings();
+        return true;
+    }
+
+    private void updatePeerSettings(Http2Settings receivedSettings) {
+        if (receivedSettings.hasValue(Http2Setting.MAX_CONCURRENT_STREAMS) || !initialSettingsReceived) {
+            reservedStreamsLock.lock();
+            try {
+                peerMaxConcurrentStreams = serverSettings.value(Http2Setting.MAX_CONCURRENT_STREAMS);
+            } finally {
+                reservedStreamsLock.unlock();
+            }
+        }
+        if (receivedSettings.hasValue(Http2Setting.HEADER_TABLE_SIZE)) {
+            inboundDynamicTable.protocolMaxTableSize(serverSettings.value(Http2Setting.HEADER_TABLE_SIZE));
+        }
+        if (receivedSettings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {
+            connectionFlowControl.resetMaxFrameSize(serverSettings.value(Http2Setting.MAX_FRAME_SIZE).intValue());
+        }
+        if (receivedSettings.hasValue(Http2Setting.INITIAL_WINDOW_SIZE)) {
+            updateInitialWindowSize(receivedSettings.value(Http2Setting.INITIAL_WINDOW_SIZE));
+        }
+    }
+
+    private void updateInitialWindowSize(long initWinSizeLong) {
+        if (initWinSizeLong > WindowSize.MAX_WIN_SIZE) {
+            goAway(0, Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                     "Received too big INITIAL_WINDOW_SIZE " + initWinSizeLong);
+        }
+        int initWinSize = (int) initWinSizeLong;
+        connectionFlowControl.resetInitialWindowSize(initWinSize);
+        Lock lock = streamsLock.readLock();
+        lock.lock();
+        try {
+            streams.values().forEach(stream -> stream.flowControl().outbound().resetStreamWindowSize(initWinSize));
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private static Http2Settings mergeSettings(Http2Settings currentSettings, Http2Settings receivedSettings) {
+        Http2Settings.Builder builder = Http2Settings.builder();
+        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.HEADER_TABLE_SIZE);
+        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.ENABLE_PUSH);
+        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.MAX_CONCURRENT_STREAMS);
+        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.INITIAL_WINDOW_SIZE);
+        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.MAX_FRAME_SIZE);
+        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.MAX_HEADER_LIST_SIZE);
+        return builder.build();
+    }
+
+    private static <T> void mergeSetting(Http2Settings.Builder builder,
+                                         Http2Settings currentSettings,
+                                         Http2Settings receivedSettings,
+                                         Http2Setting<T> setting) {
+        if (receivedSettings.hasValue(setting)) {
+            builder.add(setting, receivedSettings.value(setting));
+        } else if (currentSettings.hasValue(setting)) {
+            builder.add(setting, currentSettings.value(setting));
+        }
+    }
+
+    private boolean handleWindowUpdateFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {
+        Http2WindowUpdate windowUpdate = Http2WindowUpdate.create(data);
+        recvListener.frameHeader(ctx, streamId, frameHeader);
+        recvListener.frame(ctx, streamId, windowUpdate);
+        if (streamId == 0) {
+            updateConnectionWindow(windowUpdate);
+        } else {
+            stream(streamId).windowUpdate(windowUpdate);
+        }
+        return true;
+    }
+
+    private void updateConnectionWindow(Http2WindowUpdate windowUpdate) {
+        int increment = windowUpdate.windowSizeIncrement();
+        if (increment == 0) {
+            Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL, "Window size 0");
+            writer.write(frame.toFrameData(serverSettings, 0, Http2Flag.NoFlags.create()));
+        }
+        boolean overflow = connectionFlowControl.incrementOutboundConnectionWindowSize(increment) > WindowSize.MAX_WIN_SIZE;
+        if (overflow) {
+            Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
+            writer.write(frame.toFrameData(serverSettings, 0, Http2Flag.NoFlags.create()));
+        }
+    }
+
+    private boolean handlePingFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {
+        if (streamId != 0) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                     "Received ping for a stream " + streamId);
+        }
+        if (frameHeader.length() != 8) {
+            throw new Http2Exception(Http2ErrorCode.FRAME_SIZE,
+                                     "Received ping with wrong size. Should be 8 bytes, is " + frameHeader.length());
+        }
+        if (!frameHeader.flags(Http2FrameTypes.PING).ack()) {
+            Http2Ping ping = Http2Ping.create(data);
+            recvListener.frame(ctx, streamId, ping);
+            BufferData frame = ping.data();
+            Http2FrameHeader header = Http2FrameHeader.create(frame.available(),
+                                                              Http2FrameTypes.PING,
+                                                              Http2Flag.PingFlags.create(Http2Flag.ACK),
+                                                              0);
+            writer.write(new Http2FrameData(header, frame));
+        } else {
+            pong(data.readLong());
+        }
+        return true;
+    }
+
+    private void handleRstStreamFrame(int streamId, BufferData data) {
+        Http2RstStream rstStream = Http2RstStream.create(data);
+        recvListener.frame(ctx, streamId, rstStream);
+        stream(streamId).rstStream(rstStream);
+    }
+
+    private void handleDataFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {
+        Http2ClientStream stream = stream(streamId);
+        if (stream == null) {
+            ctx.log(LOGGER, DEBUG, "%d: received data for stream %d, which does not exist", 0, streamId);
+            return;
+        }
+        stream.flowControl().inbound().decrementWindowSize(frameHeader.length());
+        ctx.log(LOGGER, DEBUG, "%d: received data for stream %d", 0, streamId);
+        stream.push(new Http2FrameData(frameHeader, data));
+    }
+
+    private boolean handleHeadersFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {
+        Http2ClientStream headerStream = stream(streamId);
+        if (headerStream == null) {
+            ctx.log(LOGGER, DEBUG, "%d: received %s for stream %d, which does not exist", 0, frameHeader.type(), streamId);
+            return true;
+        }
+        if ((frameHeader.flags() & Http2Flag.END_OF_HEADERS) == Http2Flag.END_OF_HEADERS) {
+            // Capture the arrival order of each complete header block before stream threads decode it.
+            headerStream.inboundHeaderBlock(inboundHeaderBlockSequence.incrementAndGet());
+        }
+        headerStream.push(new Http2FrameData(frameHeader, data));
         return true;
     }
 
