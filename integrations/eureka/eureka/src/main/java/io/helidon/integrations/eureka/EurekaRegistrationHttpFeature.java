@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientConfig;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -30,14 +31,9 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 
-import jakarta.json.JsonObject;
-import jakarta.json.JsonString;
-
 import static io.helidon.common.media.type.MediaTypes.APPLICATION_JSON;
 import static io.helidon.http.HeaderNames.ACCEPT_ENCODING;
 import static io.helidon.http.Status.Family.SUCCESSFUL;
-import static jakarta.json.Json.createValue;
-import static jakarta.json.JsonValue.EMPTY_JSON_OBJECT;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.WARNING;
@@ -54,11 +50,11 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
 
     private static final Logger LOGGER = getLogger(EurekaRegistrationHttpFeature.class.getName());
 
-    private static final JsonString UP = createValue("UP");
-    private static final JsonString DOWN = createValue("DOWN");
-    private static final JsonString STARTING = createValue("STARTING");
-    private static final JsonString OUT_OF_SERVICE = createValue("OUT_OF_SERVICE");
-    private static final JsonString UNKNOWN = createValue("UNKNOWN");
+    private static final String UP = "UP";
+    private static final String DOWN = "DOWN";
+    private static final String STARTING = "STARTING";
+    private static final String OUT_OF_SERVICE = "OUT_OF_SERVICE";
+    private static final String UNKNOWN = "UNKNOWN";
 
 
     /*
@@ -270,8 +266,10 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
         // out to be important.
         this.up(instanceInfo, false);
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L55
-        JsonObject instance = instanceInfo.getJsonObject("instance");
-        return this.cancel(client, instance.getString("app"), instance.getString("instanceId"));
+        JsonObject instance = instanceInfo.objectValue("instance").orElseThrow();
+        return this.cancel(client,
+                           instance.stringValue("app").orElseThrow(),
+                           instance.stringValue("instanceId").orElseThrow());
     }
 
     // DELETE {baseUri}/v2/apps/{appName}/{id}
@@ -311,9 +309,10 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
             LOGGER.log(DEBUG,
                        "Creating and starting Eureka lease renewal loop");
         }
-        long sleepTimeInMilliSeconds = instanceInfo.getJsonObject("instance") // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L55
-            .getJsonObject("leaseInfo")
-            .getInt("renewalIntervalInSecs") * 1000L;
+        long sleepTimeInMilliSeconds = instanceInfo.objectValue("instance") // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L55
+            .flatMap(it -> it.objectValue("leaseInfo"))
+            .flatMap(it -> it.intValue("renewalIntervalInSecs"))
+            .orElseThrow() * 1000L;
         this.renewer = Thread.ofVirtual() // volatile write
             .name("Eureka lease renewer")
             .uncaughtExceptionHandler((t, e) -> {
@@ -374,13 +373,14 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
         // whether we should as well
     }
 
-    // POST {baseUri}/v2/apps/{payload.getJsonObject("instance").getString("app")}
+    // POST {baseUri}/v2/apps/{payload.objectValue("instance").flatMap(it -> it.stringValue("app")).orElseThrow()}
     private boolean register(JsonObject payload) {
         if (payload == null) {
             return false;
         }
+        String app = payload.objectValue("instance").flatMap(it -> it.stringValue("app")).orElseThrow();
         try (var response = this.client // volatile read
-             .post("/v2/apps/" + payload.getJsonObject("instance").getString("app"))
+             .post("/v2/apps/" + app)
              .accept(APPLICATION_JSON) // needed? native client has it, but throws any entity away
              .contentType(APPLICATION_JSON)
              .header(ACCEPT_ENCODING, "gzip")
@@ -404,7 +404,7 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
                     if (response.entity().hasEntity()) {
                         LOGGER.log(WARNING,
                                    "Registration failed: " + response.status()
-                                   + "; " + response.entity().as(JsonObject.class).getString("error"));
+                                   + "; " + response.entity().as(JsonObject.class).stringValue("error").orElse(""));
                     } else {
                         LOGGER.log(WARNING,
                                    "Registration failed: " + response.status());
@@ -428,12 +428,12 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
     private JsonObject renew() {
         JsonObject instanceInfo = this.instanceInfo;
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L55
-        JsonObject instance = instanceInfo.getJsonObject("instance");
+        JsonObject instance = instanceInfo.objectValue("instance").orElseThrow();
         try (var response =
-             this.heartbeat(instance.getString("app"),
-                            instance.getString("instanceId"),
-                            instance.getString("status"),
-                            instance.getJsonNumber("lastDirtyTimestamp").longValueExact())) {
+             this.heartbeat(instance.stringValue("app").orElseThrow(),
+                            instance.stringValue("instanceId").orElseThrow(),
+                            instance.stringValue("status").orElseThrow(),
+                            instance.numberValue("lastDirtyTimestamp").orElseThrow().longValueExact())) {
             switch (response.status()) {
             case Status s when s.family().equals(SUCCESSFUL):
                 if (LOGGER.isLoggable(DEBUG)) {
@@ -474,7 +474,7 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
                                "Heartbeat HTTP status: " + response.status());
                     if (response.entity().hasEntity()) {
                         LOGGER.log(WARNING,
-                                   response.entity().as(JsonObject.class).getString("error"));
+                                   response.entity().as(JsonObject.class).stringValue("error").orElse(""));
                     }
                 }
                 break;
@@ -511,42 +511,37 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
 
     private JsonObject json(JsonObject json, long lastDirtyTimestamp) {
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L55
-        JsonObject instance = json.getJsonObject("instance");
-        if (lastDirtyTimestamp <= instance.getJsonNumber("lastDirtyTimestamp").longValueExact()) {
+        JsonObject instance = json.objectValue("instance").orElseThrow();
+        if (lastDirtyTimestamp <= instance.numberValue("lastDirtyTimestamp").orElseThrow().longValueExact()) {
             return json;
         }
-        var jbf = this.prototype.instanceInfo().jsonBuilderFactory();
-        var b = jbf.createObjectBuilder();
-        instance.forEach((k, v) -> {
-                b.add(k, k.equals("lastDirtyTimestamp") ? createValue(lastDirtyTimestamp) : v);
-            });
-        return jbf.createObjectBuilder().add("instance", b).build();
+        JsonObject newInstance = JsonObject.builder()
+            .from(instance)
+            .set("lastDirtyTimestamp", lastDirtyTimestamp)
+            .build();
+        return JsonObject.builder()
+            .set("instance", newInstance)
+            .build();
     }
 
-    private JsonObject json(JsonObject json, JsonString status) {
+    private JsonObject json(JsonObject json, String status) {
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L55
-        JsonObject instance = json.getJsonObject("instance");
-        if (instance.get("status").equals(Objects.requireNonNull(status, "status"))) {
+        JsonObject instance = json.objectValue("instance").orElseThrow();
+        String newStatus = switch (Objects.requireNonNull(status, "status")) {
+            case UP, DOWN, STARTING, OUT_OF_SERVICE -> status;
+            default -> UNKNOWN;
+        };
+        if (newStatus.equals(instance.stringValue("status").orElseThrow())) {
             return json;
         }
-        var jbf = this.prototype.instanceInfo().jsonBuilderFactory();
-        var b = jbf.createObjectBuilder();
-        var b0 = jbf.createObjectBuilder();
-        instance.forEach((k, v) -> {
-                b0.add(k, switch (k) {
-                    case "lastDirtyTimestamp" -> createValue(Long.valueOf(System.currentTimeMillis()));
-                    case "status" -> switch (status.getString()) {
-                        case "UP" -> UP;
-                        case "DOWN" -> DOWN;
-                        case "STARTING" -> STARTING;
-                        case "OUT_OF_SERVICE" -> OUT_OF_SERVICE;
-                        default -> UNKNOWN;
-                    };
-                    default -> v;
-                    });
-            });
-        b.add("instance", b0);
-        return b.build();
+        JsonObject newInstance = JsonObject.builder()
+            .from(instance)
+            .set("lastDirtyTimestamp", System.currentTimeMillis())
+            .set("status", newStatus)
+            .build();
+        return JsonObject.builder()
+            .set("instance", newInstance)
+            .build();
     }
 
 
@@ -556,121 +551,120 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
 
 
     static JsonObject json(InstanceInfoConfig prototype, int actualPort, boolean tls) {
-        var jbf = prototype.jsonBuilderFactory();
-        var instance = jbf.createObjectBuilder();
+        var instance = JsonObject.builder();
 
-        instance.add("instanceId", prototype.instanceId(actualPort));
+        instance.set("instanceId", prototype.instanceId(actualPort));
 
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L892
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/PropertiesInstanceConfig.java#L233-L236
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/PropertyBasedInstanceConfigConstants.java#L12
-        instance.add("app", prototype.appName());
+        instance.set("app", prototype.appName());
 
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/PropertyBasedInstanceConfigConstants.java#L13
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/PropertiesInstanceConfig.java#L238-L241
-        instance.add("appGroupName", prototype.appGroupName());
+        instance.set("appGroupName", prototype.appGroupName());
 
-        instance.add("dataCenterInfo", jbf.createObjectBuilder()
-                     .add("name", "MyOwn") // ! yes really
-                     .add("@class", "com.netflix.appinfo.MyDataCenterInfo")); // ! yes really
+        instance.set("dataCenterInfo", builder -> builder
+            .set("name", "MyOwn") // ! yes really
+            .set("@class", "com.netflix.appinfo.MyDataCenterInfo")); // ! yes really
 
-        instance.add("ipAddr", prototype.ipAddr());
+        instance.set("ipAddr", prototype.ipAddr());
 
-        instance.add("hostName", prototype.hostName());
+        instance.set("hostName", prototype.hostName());
 
         boolean portEnabled = prototype.portEnabled(tls);
         int port = prototype.port(actualPort, tls);
-        instance.add("port", jbf.createObjectBuilder()
-                     .add("$", port)
-                     .add("@enabled", portEnabled));
+        instance.set("port", builder -> builder
+            .set("$", port)
+            .set("@enabled", portEnabled));
 
         boolean securePortEnabled = prototype.securePortEnabled(tls);
         int securePort = prototype.securePort(actualPort, tls);
-        instance.add("securePort", jbf.createObjectBuilder()
-                     .add("$", securePort)
-                     .add("@enabled", securePortEnabled));
+        instance.set("securePort", builder -> builder
+            .set("$", securePort)
+            .set("@enabled", securePortEnabled));
 
         if (portEnabled) {
-            instance.add("vipAddress",
+            instance.set("vipAddress",
                          prototype.vipAddress().orElseGet(() -> prototype.hostName() + ":" + port));
         }
 
         if (securePortEnabled) {
-            instance.add("secureVipAddress",
+            instance.set("secureVipAddress",
                          prototype.secureVipAddress().orElseGet(() -> prototype.hostName() + ":" + securePort));
         }
 
-        instance.add("homePageUrl",
+        instance.set("homePageUrl",
                      prototype.homePageUrl()
-                     .map(URI::toString)
-                     .orElseGet(() -> "http://" + prototype.hostName() + ":"
-                                + port + prototype.homePageUrlPath()));
+                         .map(URI::toString)
+                         .orElseGet(() -> "http://" + prototype.hostName() + ":"
+                                    + port + prototype.homePageUrlPath()));
 
-        instance.add("statusPageUrl",
+        instance.set("statusPageUrl",
                      prototype.statusPageUrl()
-                     .map(URI::toString)
-                     .orElseGet(() -> "http://" + prototype.hostName() + ":"
-                                + port
-                                + prototype.statusPageUrlPath()));
+                         .map(URI::toString)
+                         .orElseGet(() -> "http://" + prototype.hostName() + ":"
+                                    + port
+                                    + prototype.statusPageUrlPath()));
 
-        prototype.asgName().ifPresent(asgName -> instance.add("asgName", asgName));
+        prototype.asgName().ifPresent(asgName -> instance.set("asgName", asgName));
 
-        instance.add("healthCheckUrl",
+        instance.set("healthCheckUrl",
                      prototype.healthCheckUrl()
-                     .map(URI::toString)
-                     .orElseGet(() -> "http://" + prototype.hostName() + ":"
-                                + port
-                                + prototype.healthCheckUrlPath()));
+                         .map(URI::toString)
+                         .orElseGet(() -> "http://" + prototype.hostName() + ":"
+                                    + port
+                                    + prototype.healthCheckUrlPath()));
 
-        instance.add("secureHealthCheckUrl",
+        instance.set("secureHealthCheckUrl",
                      prototype.secureHealthCheckUrl()
-                     .map(URI::toString)
-                     .orElseGet(() -> "https://" + prototype.hostName() + ":"
-                                + securePort
-                                + prototype.healthCheckUrlPath()));
+                         .map(URI::toString)
+                         .orElseGet(() -> "https://" + prototype.hostName() + ":"
+                                    + securePort
+                                    + prototype.healthCheckUrlPath()));
 
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L98-L100
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L919-L929
         // But also:
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L228-L230
-        instance.add("sid", "na");
+        instance.set("sid", "na");
 
         // countryId; cannot be anything other than 1; must be shipped in the payload, however, to ensure data integrity
         // on the server side
-        instance.add("countryId", 1);
+        instance.set("countryId", 1);
 
         // (The default value must be shipped with the payload to ensure data integrity on the server. Or so it seems?
         // There are places in the Eureka codebase where the field is dereferenced assuming it is not null; the JSON
         // marshalling can and absolutely will set it to null. Which is correct? it is hard to say.)
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L209
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L138
-        instance.add("overriddenStatus", "UNKNOWN");
+        instance.set("overriddenStatus", UNKNOWN);
 
         long ts = System.currentTimeMillis();
-        instance.add("lastUpdatedTimestamp", ts);
-        instance.add("lastDirtyTimestamp", ts);
+        instance.set("lastUpdatedTimestamp", ts);
+        instance.set("lastDirtyTimestamp", ts);
 
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L137
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L316-L321
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/providers/EurekaConfigBasedInstanceInfoProvider.java#L104-L113
         // Eureka uses false as a default value, but I think true is better given that we are running in afterStart()
-        instance.add("status", prototype.trafficEnabled() ? "UP" : "STARTING");
+        instance.set("status", prototype.trafficEnabled() ? UP : STARTING);
 
         Map<String, String> metadata = prototype.metadata();
         if (metadata.isEmpty()) {
-            instance.add("metadata", EMPTY_JSON_OBJECT);
+            instance.set("metadata", JsonObject.empty());
         } else {
-            var mb = jbf.createObjectBuilder();
-            metadata.forEach(mb::add);
-            instance.add("metadata", mb);
+            JsonObject.Builder metadataBuilder = JsonObject.builder();
+            metadata.forEach(metadataBuilder::set);
+            instance.set("metadata", metadataBuilder.build());
         }
 
-        instance.add("leaseInfo", jbf.createObjectBuilder()
-                     .add("renewalIntervalInSecs", prototype.leaseInfo().renewalIntervalInSecs())
-                     .add("durationInSecs", prototype.leaseInfo().durationInSecs()));
+        instance.set("leaseInfo", builder -> builder
+            .set("renewalIntervalInSecs", prototype.leaseInfo().renewalIntervalInSecs())
+            .set("durationInSecs", prototype.leaseInfo().durationInSecs()));
 
-        return jbf.createObjectBuilder()
-            .add("instance", instance) // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L55
+        return JsonObject.builder()
+            .set("instance", instance.build()) // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L55
             .build();
     }
 
