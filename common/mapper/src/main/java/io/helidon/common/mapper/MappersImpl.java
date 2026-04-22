@@ -233,7 +233,8 @@ final class MappersImpl implements Mappers {
         private final String[] qualifiers;
 
         private QualifiersWrapper(String[] qualifiers) {
-            this.qualifiers = qualifiers;
+            // defensive copy, so if somebody modifies the original array, we do not get broken
+            this.qualifiers = Arrays.copyOf(qualifiers, qualifiers.length);
         }
 
         @Override

@@ -328,6 +328,38 @@ class MappersTest {
         assertThat(mm.typeCacheSize(), is(1));
     }
 
+    @Test
+    void testQualifierArrayMutationDoesNotCorruptCache() {
+        CountingQualifiedProvider provider = new CountingQualifiedProvider();
+        MappersImpl mm = new MappersImpl(Mappers.builder()
+                                                 .mapperProvidersDiscoverServices(false)
+                                                 .useBuiltInMappers(false)
+                                                 .addMapperProvider(provider)
+                                                 .buildPrototype());
+
+        String[] classQualifiers = {"http", "query"};
+        assertThat(mm.map("value", String.class, String.class, classQualifiers), is("class_value"));
+        assertThat(mm.classCacheSize(), is(1));
+        int classCalls = provider.classCalls();
+
+        classQualifiers[1] = "header";
+
+        assertThat(mm.map("value", String.class, String.class, "http", "query"), is("class_value"));
+        assertThat(mm.classCacheSize(), is(1));
+        assertThat(provider.classCalls(), is(classCalls));
+
+        String[] genericQualifiers = {"http", "query"};
+        assertThat(mm.map("value", GenericType.STRING, GenericType.STRING, genericQualifiers), is("type_value"));
+        assertThat(mm.typeCacheSize(), is(1));
+        int typeCalls = provider.typeCalls();
+
+        genericQualifiers[1] = "header";
+
+        assertThat(mm.map("value", GenericType.STRING, GenericType.STRING, "http", "query"), is("type_value"));
+        assertThat(mm.typeCacheSize(), is(1));
+        assertThat(provider.typeCalls(), is(typeCalls));
+    }
+
     private static class TestProvider implements MapperProvider {
         @Override
         public ProviderResponse mapper(Class<?> sourceClass, Class<?> targetClass, String qualifier) {
@@ -337,6 +369,37 @@ class MappersTest {
         @Override
         public ProviderResponse mapper(GenericType<?> sourceType, GenericType<?> targetType, String qualifier) {
             return MapperProvider.super.mapper(sourceType, targetType, qualifier);
+        }
+    }
+
+    private static class CountingQualifiedProvider implements MapperProvider {
+        private int classCalls;
+        private int typeCalls;
+
+        @Override
+        public ProviderResponse mapper(Class<?> sourceClass, Class<?> targetClass, String qualifier) {
+            classCalls++;
+            if (String.class.equals(sourceClass) && String.class.equals(targetClass) && qualifier.equals("http/query")) {
+                return new ProviderResponse(Support.SUPPORTED, req -> "class_" + req);
+            }
+            return ProviderResponse.unsupported();
+        }
+
+        @Override
+        public ProviderResponse mapper(GenericType<?> sourceType, GenericType<?> targetType, String qualifier) {
+            typeCalls++;
+            if (GenericType.STRING.equals(sourceType) && GenericType.STRING.equals(targetType) && qualifier.equals("http/query")) {
+                return new ProviderResponse(Support.SUPPORTED, req -> "type_" + req);
+            }
+            return ProviderResponse.unsupported();
+        }
+
+        int classCalls() {
+            return classCalls;
+        }
+
+        int typeCalls() {
+            return typeCalls;
         }
     }
 
