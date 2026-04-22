@@ -28,7 +28,6 @@ import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Default;
 import io.helidon.common.Generated;
 import io.helidon.common.GenericType;
-import io.helidon.common.LazyValue;
 import io.helidon.common.mapper.Mappers;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.types.Annotation;
@@ -55,7 +54,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-class QueryParamDefaultValueCodegenTest {
+class PathParamMappedCodegenTest {
     private static final List<Class<?>> CLASSPATH = List.of(
             Annotation.class,
             Config.class,
@@ -63,7 +62,6 @@ class QueryParamDefaultValueCodegenTest {
             Dependency.class,
             Generated.class,
             GenericType.class,
-            LazyValue.class,
             Handler.class,
             Http.class,
             HttpEntryPoint.class,
@@ -83,16 +81,15 @@ class QueryParamDefaultValueCodegenTest {
     );
 
     @Test
-    void generatedQueryDefaultUsesParameterType() throws IOException {
+    void generatedStringPathParamDoesNotUseFeatureMappers() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
                 .addProcessor(AptProcessor::new)
-                .workDir(Path.of("target/test-compiler/http-query-default-value"))
-                .addSource("DefaultQueryEndpoint.java", """
+                .workDir(Path.of("target/test-compiler/http-path-string"))
+                .addSource("StringPathEndpoint.java", """
                         package com.example;
 
-                        import io.helidon.common.Default;
                         import io.helidon.http.Http;
                         import io.helidon.service.registry.Service;
                         import io.helidon.webserver.http.RestServer;
@@ -100,11 +97,11 @@ class QueryParamDefaultValueCodegenTest {
                         @RestServer.Listener("@default")
                         @RestServer.Endpoint
                         @Service.Singleton
-                        @Http.Path("/default-query")
-                        class DefaultQueryEndpoint {
+                        @Http.Path("/string-path/{name}")
+                        class StringPathEndpoint {
                             @Http.GET
-                            String limit(@Http.QueryParam("limit") @Default.Value("13") Integer limit) {
-                                return Integer.toString(limit);
+                            String name(@Http.PathParam("name") String name) {
+                                return name;
                             }
                         }
                         """)
@@ -123,43 +120,22 @@ class QueryParamDefaultValueCodegenTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(true));
 
-        var generatedSources = Files.walk(result.sourceOutput())
-                .filter(it -> it.getFileName().toString().endsWith(".java"))
-                .toList();
-
-        StringBuilder generatedContent = new StringBuilder();
-        for (Path generatedSource : generatedSources) {
-            generatedContent.append(Files.readString(generatedSource, StandardCharsets.UTF_8));
-            generatedContent.append('\n');
-        }
-
-        String generated = generatedContent.toString();
-        assertThat(generated, containsString("GenericType.create(Integer.class)"));
-        assertThat(generated,
-                   containsString("mappers.map(it, GenericType.STRING, GTYPE, me -> new BadRequestException(\"Query parameter"
-                                          + " limit has invalid value.\", me), \"uri\", \"query\")"));
-        assertThat(generated, not(containsString("Value.create(mappers")));
-        assertThat(generated, containsString("LazyValue<Integer> defaultValue"));
-        assertThat(generated, containsString("defaultValue = LazyValue.create(() -> mappers.map(\"13\", GenericType.STRING, GTYPE"));
-        assertThat(generated, containsString("\"uri\", \"query\"));"));
-        assertThat(generated, not(containsString("\"uri/query\"")));
-        assertThat(generated, containsString(".orElseGet(defaultValue::get)"));
-        assertThat(generated, not(containsString(".orElseGet(() -> mappers.map(")));
+        String generated = generatedContent(result);
+        assertThat(generated, containsString(".path().pathParameters().first(\"name\")"));
+        assertThat(generated, not(containsString("helidonDeclarative__")));
+        assertThat(generated, not(containsString("Value.create(mappers, \"name\"")));
     }
 
     @Test
-    void generatedListQueryDefaultWrapsOptionalExpression() throws IOException {
+    void generatedMappedPathParamUsesFeatureMappers() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
                 .addProcessor(AptProcessor::new)
-                .workDir(Path.of("target/test-compiler/http-query-default-list"))
-                .addSource("DefaultListQueryEndpoint.java", """
+                .workDir(Path.of("target/test-compiler/http-path-mapped"))
+                .addSource("MappedPathEndpoint.java", """
                         package com.example;
 
-                        import java.util.List;
-
-                        import io.helidon.common.Default;
                         import io.helidon.http.Http;
                         import io.helidon.service.registry.Service;
                         import io.helidon.webserver.http.RestServer;
@@ -167,11 +143,11 @@ class QueryParamDefaultValueCodegenTest {
                         @RestServer.Listener("@default")
                         @RestServer.Endpoint
                         @Service.Singleton
-                        @Http.Path("/default-list-query")
-                        class DefaultListQueryEndpoint {
+                        @Http.Path("/mapped-path/{id}")
+                        class MappedPathEndpoint {
                             @Http.GET
-                            String ids(@Http.QueryParam("ids") @Default.Value("13") List<Integer> ids) {
-                                return ids.toString();
+                            String id(@Http.PathParam("id") Integer id) {
+                                return Integer.toString(id);
                             }
                         }
                         """)
@@ -190,6 +166,16 @@ class QueryParamDefaultValueCodegenTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(true));
 
+        String generated = generatedContent(result);
+        assertThat(generated,
+                   containsString("mappers.map(it, GenericType.STRING, GTYPE, me -> new BadRequestException(\"Path"
+                                          + " parameter id has invalid value.\", me), \"http\", \"path\")"));
+        assertThat(generated, not(containsString("\"http/path\"")));
+        assertThat(generated, not(containsString("Value.create(")));
+        assertThat(generated, not(containsString("helidonDeclarative__")));
+    }
+
+    private String generatedContent(TestCompiler.Result result) throws IOException {
         var generatedSources = Files.walk(result.sourceOutput())
                 .filter(it -> it.getFileName().toString().endsWith(".java"))
                 .toList();
@@ -200,9 +186,6 @@ class QueryParamDefaultValueCodegenTest {
             generatedContent.append('\n');
         }
 
-        String generated = generatedContent.toString();
-        assertThat(generated, containsString("LazyValue<List<Integer>> defaultValue"));
-        assertThat(generated, containsString("Optional.<List<Integer>>empty()).orElseGet(defaultValue::get)"));
-        assertThat(generated, not(containsString("Optional.<List<Integer>>empty().orElseGet(defaultValue::get)")));
+        return generatedContent.toString();
     }
 }

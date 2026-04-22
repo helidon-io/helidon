@@ -18,6 +18,7 @@ package io.helidon.declarative.tests.http;
 
 import java.net.URI;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -165,6 +166,77 @@ class DeclarativeHttpTest {
 
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("13"));
+    }
+
+    @Test
+    void testQueryOptionalListAbsent() {
+        var response = client.get("/greet/query-optional-list")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("missing"));
+    }
+
+    @Test
+    void testQueryOptionalListWithoutValue() {
+        var response = client.get()
+                .uri(URI.create("/greet/query-optional-list?param"))
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("[]"));
+    }
+
+    @Test
+    void testQueryOptionalListWithEmptyValue() {
+        var response = client.get("/greet/query-optional-list")
+                .queryParam("param", "")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("[]"));
+    }
+
+    @Test
+    void testQueryListRepeatedEmptyValues() {
+        var response = client.get("/greet/query-list")
+                .queryParam("param", "", "")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("[]"));
+    }
+
+    @Test
+    void testQueryMappedListIgnoresEmptyValues() {
+        var response = client.get("/greet/query-int-list")
+                .queryParam("param", "1", "")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("[1]"));
+    }
+
+    @Test
+    void testQueryParamEmptyStringPreserved() {
+        try (var response = client.get("/greet/query-param")
+                .queryParam("param", "")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.entity().hasEntity(), is(false));
+            assertThat(response.headers().contentLength(), is(OptionalLong.of(0L)));
+        }
+    }
+
+    @Test
+    void testMappedQueryParamEmptyValueFailure() {
+        var response = client.get("/greet/query-int")
+                .queryParam("param", "")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.BAD_REQUEST_400));
+        assertThat(response.entity(), is("Query parameter param has invalid value."));
     }
 
     @Test

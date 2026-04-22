@@ -41,10 +41,17 @@ class ParamProviderHttpPathParam extends AbstractParametersProvider implements H
                 .orElseThrow(() -> new CodegenException("@PathParam annotation must have a value."));
 
         ContentBuilder<?> contentBuilder = ctx.contentBuilder();
-        contentBuilder.addContent(ctx.serverRequestParamName())
-                .addContent(".path().pathParameters()");
 
-        codegenFromParameters(contentBuilder, ctx.parameterType(), pathParamName, ctx.parameterType().isOptional());
+        codegenFromParameters(ctx,
+                              ctx.parameterType(),
+                              pathParamName,
+                              ctx.parameterType().isOptional(),
+                              new ParametersSource(ctx.serverRequestParamName() + ".path().pathParameters()",
+                                                   false,
+                                                   "http/path"));
+        if (ctx.parameterType().isOptional() || ctx.parameterType().isList()) {
+            contentBuilder.addContentLine(";");
+        }
 
         return true;
     }

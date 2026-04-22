@@ -58,7 +58,6 @@ import io.helidon.webserver.http.ServerRequest;
 @RestServer.Listener("@default")
 @RestServer.Endpoint
 @Service.Singleton
-@SuppressWarnings("deprecation")
 class GreetServiceEndpoint implements GreetService {
 
     private static final AtomicInteger RETRY_CALLS = new AtomicInteger();
@@ -97,6 +96,30 @@ class GreetServiceEndpoint implements GreetService {
     @Http.Path("/query-default")
     String queryParamDefault(@Http.QueryParam("limit") @Default.Value("13") Integer limit) {
         return Integer.toString(limit);
+    }
+
+    @Http.GET
+    @Http.Path("/query-list")
+    String queryList(@Http.QueryParam("param") List<String> queryParams) {
+        return queryParams.toString();
+    }
+
+    @Http.GET
+    @Http.Path("/query-optional-list")
+    String queryOptionalList(@Http.QueryParam("param") Optional<List<String>> queryParams) {
+        return queryParams.map(List::toString).orElse("missing");
+    }
+
+    @Http.GET
+    @Http.Path("/query-int-list")
+    String queryIntList(@Http.QueryParam("param") List<Integer> queryParams) {
+        return queryParams.toString();
+    }
+
+    @Http.GET
+    @Http.Path("/query-int")
+    String queryInt(@Http.QueryParam("param") Integer queryParam) {
+        return Integer.toString(queryParam);
     }
 
     /**
