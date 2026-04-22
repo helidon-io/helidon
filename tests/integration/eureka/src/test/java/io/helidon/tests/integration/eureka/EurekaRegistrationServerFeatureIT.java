@@ -17,12 +17,11 @@ package io.helidon.tests.integration.eureka;
 
 import io.helidon.config.Config;
 import io.helidon.integrations.eureka.EurekaRegistrationServerFeature;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServer;
-
-import jakarta.json.JsonObject;
-import jakarta.json.JsonString;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -102,25 +101,34 @@ class EurekaRegistrationServerFeatureIT {
     void test() throws InterruptedException {
         assertThat(this.ws.isRunning(), is(true));
         Thread.sleep(500L); // wait for the registration/renewal attempt to happen in the background
+
+        String appName = this.ws.prototype()
+                .features()
+                .stream()
+                .filter(f -> f instanceof EurekaRegistrationServerFeature)
+                .map(EurekaRegistrationServerFeature.class::cast)
+                .toList()
+                .getFirst()
+                .prototype()
+                .instanceInfo()
+                .appName();
+
         try (var response = this.wc
-             .get("/v2/apps/" + ((EurekaRegistrationServerFeature)this.ws.prototype()
-                                 .features()
-                                 .stream()
-                                 .filter(f -> f instanceof EurekaRegistrationServerFeature)
-                                 .toList()
-                                 .getFirst())
-                  .prototype()
-                  .instanceInfo()
-                  .appName())
-             .accept(APPLICATION_JSON)
-             .header(ACCEPT_ENCODING, "gzip")
-             .request()) {
+                .get("/v2/apps/" + appName)
+                .accept(APPLICATION_JSON)
+                .header(ACCEPT_ENCODING, "gzip")
+                .request()) {
             assertThat(response.status().code(), is(200));
             assertThat(response.entity().hasEntity(), is(true));
-            assertThat(((JsonString)response.entity()
-                        .as(JsonObject.class)
-                        .getValue("/application/instance/0/status"))
-                       .getString(), is("UP"));
+            JsonObject payload = response.entity().as(JsonObject.class);
+
+            String status = payload.objectValue("application")
+                    .flatMap(it -> it.arrayValue("instance"))
+                    .flatMap(it -> it.get(0))
+                    .map(JsonValue::asObject)
+                    .flatMap(it -> it.stringValue("status"))
+                    .orElseThrow();
+            assertThat(status, is("UP"));
         }
     }
 

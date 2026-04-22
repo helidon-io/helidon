@@ -35,10 +35,10 @@ module io.helidon.integrations.eureka {
 
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.config;
+    requires io.helidon.json;
     requires io.helidon.service.registry;
     requires transitive io.helidon.webclient.http1;
     requires transitive io.helidon.webserver;
-    requires transitive jakarta.json;
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;

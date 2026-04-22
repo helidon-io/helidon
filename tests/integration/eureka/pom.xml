@@ -60,8 +60,20 @@
         </dependency>
 
         <dependency>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-json</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>io.helidon.integrations.eureka</groupId>
             <artifactId>helidon-integrations-eureka</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json</artifactId>
             <scope>test</scope>
         </dependency>
 

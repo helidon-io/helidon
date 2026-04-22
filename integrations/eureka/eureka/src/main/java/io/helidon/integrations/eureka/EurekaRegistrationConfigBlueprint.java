@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.Weighted;
 import io.helidon.webclient.http1.Http1ClientConfig;
 import io.helidon.webserver.spi.ServerFeatureProvider;
-
-import jakarta.json.JsonBuilderFactory;
 
 import static io.helidon.integrations.eureka.EurekaRegistrationServerFeature.EUREKA_ID;
 
@@ -77,15 +75,6 @@ interface EurekaRegistrationConfigBlueprint extends Prototype.Factory<EurekaRegi
     @Option.Configured("instance")
     @Option.DefaultMethod(value = "create")
     InstanceInfoConfig instanceInfo();
-
-    /**
-     * A {@link JsonBuilderFactory} used for working with JSON internally; the default value is normally entirely
-     * suitable.
-     *
-     * @return a {@link JsonBuilderFactory}
-     */
-    @Option.DefaultCode("@jakarta.json.Json@.createBuilderFactory(@java.util.Map@.of())")
-    JsonBuilderFactory jsonBuilderFactory();
 
     /**
      * Whether this feature will be enabled.

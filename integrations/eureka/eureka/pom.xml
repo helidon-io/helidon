@@ -98,8 +98,8 @@
         </dependency>
 
         <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json</artifactId>
         </dependency>
 
         <!-- Runtime-scoped dependencies. -->
@@ -112,7 +112,7 @@
 
         <dependency>
             <groupId>io.helidon.http.media</groupId>
-            <artifactId>helidon-http-media-jsonp</artifactId>
+            <artifactId>helidon-http-media-json</artifactId>
             <scope>runtime</scope>
         </dependency>
 
