@@ -137,8 +137,9 @@ public interface Mappers extends RuntimeType.Api<MappersConfig> {
      * @param qualifiers      qualifiers of the usage (such as {@code http-headers, http}, most specific one first)
      * @param <SOURCE>        type of the source
      * @param <TARGET>        type of the target
+     * @param <T>             type of the exception produced by {@code exceptionMapper}
      * @return result of the mapping
-     * @throws MapperException in case the mapper was not found or failed
+     * @throws T if mapping fails and {@code exceptionMapper} produces an exception
      */
     default <SOURCE, TARGET, T extends Throwable> TARGET map(SOURCE source,
                                                              GenericType<SOURCE> sourceType,

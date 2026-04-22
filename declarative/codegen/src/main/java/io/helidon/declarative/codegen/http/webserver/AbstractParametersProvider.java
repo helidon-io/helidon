@@ -44,24 +44,23 @@ public abstract class AbstractParametersProvider {
     /**
      * Code generate getting a value from parameters.
      *
-     * @param contentBuilder content builder to update
+     * @param ctx source generation context
      * @param parameterType type of the parameter we need to get
      * @param paramName name of the parameter we need to get
      * @param optional whether the parameter is optional
+     * @param source parameter source configuration
      */
     protected void codegenFromParameters(ParameterCodegenContext ctx,
-                                         ContentBuilder<?> contentBuilder,
                                          TypeName parameterType,
                                          String paramName,
                                          boolean optional,
-                                         String parametersAccessor,
-                                         boolean filterEmptyStringValues,
-                                         String mapperQualifier) {
+                                         ParametersSource source) {
+        ContentBuilder<?> contentBuilder = ctx.contentBuilder();
         if (optional) {
             TypeName realType = parameterType.isOptional() ? parameterType.typeArguments().getFirst() : parameterType;
             if (realType.isList()) {
                 contentBuilder
-                        .addContent(parametersAccessor)
+                        .addContent(source.accessor())
                         .addContent(".contains(\"")
                         .addContent(paramName)
                         .addContentLine("\")")
@@ -74,9 +73,9 @@ public abstract class AbstractParametersProvider {
                                        contentBuilder,
                                        realType.typeArguments().getFirst(),
                                        paramName,
-                                       parametersAccessor,
-                                       filterEmptyStringValues,
-                                       mapperQualifier);
+                                       source.accessor(),
+                                       source.filterEmptyStringValues(),
+                                       source.mapperQualifier());
                 contentBuilder.addContent(") : ")
                         .addContent(Optional.class)
                         .addContent(".<")
@@ -89,7 +88,7 @@ public abstract class AbstractParametersProvider {
             }
             // optional
             contentBuilder
-                    .addContent(parametersAccessor)
+                    .addContent(source.accessor())
                     .addContent(".first(\"")
                     .addContent(paramName)
                     .addContentLine("\")");
@@ -100,7 +99,7 @@ public abstract class AbstractParametersProvider {
                                realType,
                                "it",
                                paramName,
-                               mapperQualifier);
+                               source.mapperQualifier());
                 contentBuilder.addContent(")");
             } else {
                 contentBuilder.addContent(".asOptional()");
@@ -112,13 +111,13 @@ public abstract class AbstractParametersProvider {
                                    contentBuilder,
                                    realType,
                                    paramName,
-                                   parametersAccessor,
-                                   filterEmptyStringValues,
-                                   mapperQualifier);
+                                   source.accessor(),
+                                   source.filterEmptyStringValues(),
+                                   source.mapperQualifier());
         } else {
             // direct type
             contentBuilder
-                    .addContent(parametersAccessor)
+                    .addContent(source.accessor())
                     .addContent(".first(\"")
                     .addContent(paramName)
                     .addContentLine("\")")
@@ -131,7 +130,7 @@ public abstract class AbstractParametersProvider {
                                parameterType,
                                "it",
                                paramName,
-                               mapperQualifier);
+                               source.mapperQualifier());
                 contentBuilder.addContent(")");
             }
             // add .orElseThrow() in case the parameter is missing
@@ -148,6 +147,15 @@ public abstract class AbstractParametersProvider {
         }
     }
 
+    /**
+     * Code generate getting a value from path parameters without endpoint metadata.
+     *
+     * @param fieldHandler handler used to emit helper fields
+     * @param contentBuilder content builder to update
+     * @param parameterType type of the parameter we need to get
+     * @param paramName name of the parameter we need to get
+     * @param optional whether the parameter is optional
+     */
     protected void codegenFromParameters(FieldHandler fieldHandler,
                                          ContentBuilder<?> contentBuilder,
                                          TypeName parameterType,
@@ -165,13 +173,10 @@ public abstract class AbstractParametersProvider {
                                                          paramName,
                                                          0,
                                                          0),
-                              contentBuilder,
                               parameterType,
                               paramName,
                               optional,
-                              "",
-                              false,
-                              "http/path");
+                              new ParametersSource("", false, "http/path"));
     }
 
     /**
@@ -291,6 +296,7 @@ public abstract class AbstractParametersProvider {
         content.addContent(genericTypeConstant(ctx, type));
     }
 
+
     void ensureMapperField(ParameterCodegenContext ctx) {
         ctx.fieldHandler()
                 .field(COMMON_MAPPERS,
@@ -328,6 +334,18 @@ public abstract class AbstractParametersProvider {
                                                            .addContent(boxed)
                                                            .addContent(">() {}");
                                                }
-                                           });
+                                                   });
+    }
+
+    /**
+     * Information about the parameter source the generated code should read from.
+     *
+     * @param accessor expression prefix used to access the parameter collection
+     * @param filterEmptyStringValues whether empty strings should be ignored for list values
+     * @param mapperQualifier mapper qualifier to use for mapped values from this source
+     */
+    protected record ParametersSource(String accessor,
+                                      boolean filterEmptyStringValues,
+                                      String mapperQualifier) {
     }
 }

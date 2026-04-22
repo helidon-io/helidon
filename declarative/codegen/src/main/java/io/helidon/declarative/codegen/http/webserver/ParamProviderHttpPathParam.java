@@ -43,13 +43,12 @@ class ParamProviderHttpPathParam extends AbstractParametersProvider implements H
         ContentBuilder<?> contentBuilder = ctx.contentBuilder();
 
         codegenFromParameters(ctx,
-                              contentBuilder,
                               ctx.parameterType(),
                               pathParamName,
                               ctx.parameterType().isOptional(),
-                              ctx.serverRequestParamName() + ".path().pathParameters()",
-                              false,
-                              "http/path");
+                              new ParametersSource(ctx.serverRequestParamName() + ".path().pathParameters()",
+                                                   false,
+                                                   "http/path"));
         if (ctx.parameterType().isOptional() || ctx.parameterType().isList()) {
             contentBuilder.addContentLine(";");
         }
