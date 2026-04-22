@@ -46,7 +46,6 @@ include::{rootdir}/includes/se.adoc[]
 ** <<Example Configuration, Example Configuration>>
  - <<Additional Information, Additional Information>>
 ** <<References, References>>
-** <<Support for the Prometheus Metrics API, Support for the Prometheus Metrics API>>
 
 == Overview
 Helidon SE metrics is a neutral metrics API which provides
