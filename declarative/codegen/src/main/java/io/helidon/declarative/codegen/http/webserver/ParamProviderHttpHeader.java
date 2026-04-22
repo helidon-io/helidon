@@ -172,7 +172,7 @@ class ParamProviderHttpHeader extends AbstractParametersProvider implements Http
                                       ContentBuilder<?> contentBuilder,
                                       DefaultsCodegen.DefaultCode defaultInfo) {
         if (defaultInfo.requiresMapper()) {
-            ensureMapperField(ctx);
+            ensureMapperField(ctx.fieldHandler());
         }
 
         DefaultsCodegen.codegenOptional(contentBuilder,

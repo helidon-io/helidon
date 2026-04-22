@@ -148,19 +148,21 @@ public abstract class AbstractParametersProvider {
     }
 
     /**
-     * Code generate getting a value from path parameters without endpoint metadata.
+     * Code generate getting a value from parameters without endpoint metadata.
      *
      * @param fieldHandler handler used to emit helper fields
      * @param contentBuilder content builder to update
      * @param parameterType type of the parameter we need to get
      * @param paramName name of the parameter we need to get
      * @param optional whether the parameter is optional
+     * @param source parameter source configuration
      */
     protected void codegenFromParameters(FieldHandler fieldHandler,
                                          ContentBuilder<?> contentBuilder,
                                          TypeName parameterType,
                                          String paramName,
-                                         boolean optional) {
+                                         boolean optional,
+                                         ParametersSource source) {
         codegenFromParameters(new ParamCodegenContextImpl(fieldHandler,
                                                          Set.of(),
                                                          parameterType,
@@ -176,7 +178,7 @@ public abstract class AbstractParametersProvider {
                               parameterType,
                               paramName,
                               optional,
-                              new ParametersSource("", false, "http/path"));
+                              source);
     }
 
     /**
@@ -234,7 +236,7 @@ public abstract class AbstractParametersProvider {
             return;
         }
 
-        ensureMapperField(ctx);
+        ensureMapperField(ctx.fieldHandler());
         content.addContent("mappers.map(")
                 .addContent(valueExpression)
                 .addContent(", ")
@@ -249,8 +251,8 @@ public abstract class AbstractParametersProvider {
                 .addContent(providerType())
                 .addContent(" ")
                 .addContent(paramName)
-                .addContent(" has invalid value.\", me), ")
-                .addContentLiteral(qualifier);
+                .addContent(" has invalid value.\", me)");
+        addMapperQualifiers(content, qualifier);
         content.addContent(")");
     }
 
@@ -297,19 +299,38 @@ public abstract class AbstractParametersProvider {
     }
 
 
-    void ensureMapperField(ParameterCodegenContext ctx) {
-        ctx.fieldHandler()
-                .field(COMMON_MAPPERS,
-                       "mappers",
-                       AccessModifier.PRIVATE,
-                       "mappers",
-                       field -> {
-                       },
-                       (constructor, fieldName) -> constructor
-                               .addParameter(param -> param.name("mappers")
-                                       .type(COMMON_MAPPERS))
-                               .addContentLine("this.mappers = mappers;")
-                );
+    protected void ensureMapperField(FieldHandler fieldHandler) {
+        fieldHandler.field(COMMON_MAPPERS,
+                           "mappers",
+                           AccessModifier.PRIVATE,
+                           "mappers",
+                           field -> {
+                           },
+                           (constructor, fieldName) -> constructor
+                                   .addParameter(param -> param.name(fieldName)
+                                           .type(COMMON_MAPPERS))
+                                   .addContent("this.")
+                                   .addContent(fieldName)
+                                   .addContent(" = ")
+                                   .addContent(fieldName)
+                                   .addContentLine(";")
+        );
+    }
+
+    private void addMapperQualifiers(ContentBuilder<?> content, String qualifier) {
+        if (qualifier.isEmpty()) {
+            return;
+        }
+        for (String item : qualifier.split("/")) {
+            content.addContent(", ")
+                    .addContentLiteral(item);
+        }
+    }
+
+    protected ParametersSource parametersSource(String accessor,
+                                                boolean filterEmptyStringValues,
+                                                String mapperQualifier) {
+        return new ParametersSource(accessor, filterEmptyStringValues, mapperQualifier);
     }
 
     private String genericTypeConstant(ParameterCodegenContext ctx, TypeName type) {

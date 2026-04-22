@@ -61,7 +61,7 @@ class ParamProviderHttpQuery extends AbstractParametersProvider implements HttpP
             var defaultInfo = defaultCode.get();
             if (defaultInfo.requiresMapper()) {
                 // ensure mapper
-                ensureMapperField(ctx);
+                ensureMapperField(ctx.fieldHandler());
             }
 
             var params = DefaultsParams.builder()

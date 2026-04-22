@@ -137,11 +137,12 @@ class QueryParamDefaultValueCodegenTest {
         assertThat(generated, containsString("GenericType.create(Integer.class)"));
         assertThat(generated,
                    containsString("mappers.map(it, GenericType.STRING, GTYPE, me -> new BadRequestException(\"Query parameter"
-                                          + " limit has invalid value.\", me), \"uri/query\")"));
+                                          + " limit has invalid value.\", me), \"uri\", \"query\")"));
         assertThat(generated, not(containsString("Value.create(mappers")));
         assertThat(generated, containsString("LazyValue<Integer> defaultValue"));
         assertThat(generated, containsString("defaultValue = LazyValue.create(() -> mappers.map(\"13\", GenericType.STRING, GTYPE"));
-        assertThat(generated, containsString("\"uri/query\"));"));
+        assertThat(generated, containsString("\"uri\", \"query\"));"));
+        assertThat(generated, not(containsString("\"uri/query\"")));
         assertThat(generated, containsString(".orElseGet(defaultValue::get)"));
         assertThat(generated, not(containsString(".orElseGet(() -> mappers.map(")));
     }

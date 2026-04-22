@@ -203,7 +203,8 @@ class QueryParamOptionalListCodegenTest {
         assertThat(generated, containsString(".filter(it -> !it.isEmpty())"));
         assertThat(generated,
                    containsString("mappers.map(it, GenericType.STRING, GTYPE, me -> new BadRequestException(\"Query parameter"
-                                          + " ids has invalid value.\", me), \"uri/query\")"));
+                                          + " ids has invalid value.\", me), \"uri\", \"query\")"));
+        assertThat(generated, not(containsString("\"uri/query\"")));
         assertThat(generated,
                    not(containsString("catch (MapperException e)")));
         assertThat(generated, not(containsString("values.isEmpty() ? Optional")));

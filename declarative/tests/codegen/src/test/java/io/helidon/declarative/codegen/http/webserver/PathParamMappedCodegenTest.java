@@ -169,7 +169,8 @@ class PathParamMappedCodegenTest {
         String generated = generatedContent(result);
         assertThat(generated,
                    containsString("mappers.map(it, GenericType.STRING, GTYPE, me -> new BadRequestException(\"Path"
-                                          + " parameter id has invalid value.\", me), \"http/path\")"));
+                                          + " parameter id has invalid value.\", me), \"http\", \"path\")"));
+        assertThat(generated, not(containsString("\"http/path\"")));
         assertThat(generated, not(containsString("Value.create(")));
         assertThat(generated, not(containsString("helidonDeclarative__")));
     }

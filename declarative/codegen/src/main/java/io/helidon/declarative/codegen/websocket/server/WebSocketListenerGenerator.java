@@ -53,7 +53,6 @@ import static io.helidon.common.types.TypeNames.PRIMITIVE_INT;
 import static io.helidon.common.types.TypeNames.STRING;
 import static io.helidon.declarative.codegen.DeclarativeTypes.BUFFER_DATA;
 import static io.helidon.declarative.codegen.DeclarativeTypes.BYTE_BUFFER;
-import static io.helidon.declarative.codegen.DeclarativeTypes.COMMON_MAPPERS;
 import static io.helidon.declarative.codegen.DeclarativeTypes.PATH_MATCHERS;
 import static io.helidon.declarative.codegen.DeclarativeTypes.THROWABLE;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_HEADERS;
@@ -124,23 +123,16 @@ class WebSocketListenerGenerator extends AbstractParametersProvider {
                 .name("endpoint")
         );
 
-        classModel.addField(mappers -> mappers
-                .accessModifier(AccessModifier.PRIVATE)
-                .isFinal(true)
-                .type(COMMON_MAPPERS)
-                .name("mappers"));
-
         Constructor.Builder ctr = Constructor.builder()
-                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .addParameter(COMMON_MAPPERS, "mappers")
-                .addParameter(endpoint -> endpoint
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE);
+
+        FieldHandler fieldHandler = FieldHandler.create(classModel, ctr);
+        ensureMapperField(fieldHandler);
+        ctr.addParameter(endpoint -> endpoint
                         .type(endpointType)
                         .name("endpoint")
                 )
-                .addContentLine("this.mappers = mappers;")
                 .addContentLine("this.endpoint = endpoint;");
-
-        FieldHandler fieldHandler = FieldHandler.create(classModel, ctr);
 
         Map<String, AtomicInteger> pathParamFieldCounters = new HashMap<>();
         Map<PathParamKey, String> pathParamFields = new HashMap<>();
@@ -728,8 +720,13 @@ class WebSocketListenerGenerator extends AbstractParametersProvider {
                         .name(field)
                 );
                 onUpgrade.addContent(field)
-                        .addContent(" = params");
-                codegenFromParameters(fieldHandler, onUpgrade, key.type(), key.name(), key.type().isOptional());
+                        .addContent(" = ");
+                codegenFromParameters(fieldHandler,
+                                      onUpgrade,
+                                      key.type(),
+                                      key.name(),
+                                      key.type().isOptional(),
+                                      parametersSource("params", false, "http/path"));
                 if (key.type().isOptional() || key.type().isList()) {
                     onUpgrade.addContentLine(";");
                 }

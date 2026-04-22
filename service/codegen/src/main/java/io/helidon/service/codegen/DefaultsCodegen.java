@@ -153,27 +153,38 @@ public final class DefaultsCodegen {
                                                                                 params.mapperQualifier()),
                                                          field -> {
                                                          },
-                                                         (constructor, fieldName) -> constructor
-                                                                 .addContent("this.")
-                                                                 .addContent(fieldName)
-                                                                 .addContent(" = ")
-                                                                 .addContent(LazyValue.class)
-                                                                 .addContent(".create(() -> ")
-                                                                 .addContent(params.mappersField())
-                                                                 .addContent(".map(")
-                                                                 .addContentLiteral(defaultValue)
-                                                                 .addContent(", ")
-                                                                 .addContent(GenericType.class)
-                                                                 .addContent(".STRING, ")
-                                                                 .addContent(genericTypeField)
-                                                                 .addContent(", ")
-                                                                 .addContentLiteral(params.mapperQualifier())
-                                                                 .addContentLine("));"));
+                                                         (constructor, fieldName) -> {
+                                                             constructor
+                                                                     .addContent("this.")
+                                                                     .addContent(fieldName)
+                                                                     .addContent(" = ")
+                                                                     .addContent(LazyValue.class)
+                                                                     .addContent(".create(() -> ")
+                                                                     .addContent(params.mappersField())
+                                                                     .addContent(".map(")
+                                                                     .addContentLiteral(defaultValue)
+                                                                     .addContent(", ")
+                                                                     .addContent(GenericType.class)
+                                                                     .addContent(".STRING, ")
+                                                                     .addContent(genericTypeField);
+                                                             addMapperQualifiers(constructor, params.mapperQualifier());
+                                                             constructor.addContentLine("));");
+                                                         });
 
         // .orElseGet(defaultValue::get)
         contentBuilder.addContent(".orElseGet(")
                 .addContent(defaultValueField)
                 .addContent("::get)");
+    }
+
+    private static void addMapperQualifiers(ContentBuilder<?> contentBuilder, String qualifier) {
+        if (qualifier.isEmpty()) {
+            return;
+        }
+        for (String item : qualifier.split("/")) {
+            contentBuilder.addContent(", ")
+                    .addContentLiteral(item);
+        }
     }
 
     private static void generateTyped(ContentBuilder<?> contentBuilder, DefaultCode defaultCode) {
