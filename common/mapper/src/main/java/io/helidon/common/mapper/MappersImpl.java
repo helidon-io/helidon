@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
@@ -123,7 +124,9 @@ final class MappersImpl implements Mappers {
                                                                Class<TARGET> targetType,
                                                                boolean fromTypes,
                                                                String... qualifiers) {
-        Mapper<?, ?> mapper = classCache.computeIfAbsent(new ClassCacheKey(sourceType, targetType, List.of(qualifiers)), key -> {
+        Mapper<?, ?> mapper = classCache.computeIfAbsent(new ClassCacheKey(sourceType,
+                                                                           targetType,
+                                                                           new QualifiersWrapper(qualifiers)), key -> {
             // first attempt to find by classes
             return fromProviders(sourceType, targetType, qualifiers)
                     .orElseGet(() -> {
@@ -143,7 +146,9 @@ final class MappersImpl implements Mappers {
                                                                GenericType<TARGET> targetType,
                                                                boolean fromClasses,
                                                                String... qualifiers) {
-        Mapper<?, ?> mapper = typeCache.computeIfAbsent(new GenericCacheKey(sourceType, targetType, List.of(qualifiers)), key -> {
+        Mapper<?, ?> mapper = typeCache.computeIfAbsent(new GenericCacheKey(sourceType,
+                                                                            targetType,
+                                                                            new QualifiersWrapper(qualifiers)), key -> {
             // first attempt to find by types
             return fromProviders(sourceType, targetType, qualifiers)
                     .orElseGet(() -> {
@@ -223,10 +228,33 @@ final class MappersImpl implements Mappers {
                              qualifiers);
     }
 
-    private record GenericCacheKey(GenericType<?> sourceType, GenericType<?> targetType, List<String> qualifiers) {
+    // simple array wrapper that has equals and hashcode - faster than creating a List
+    private static class QualifiersWrapper {
+        private final String[] qualifiers;
+
+        private QualifiersWrapper(String[] qualifiers) {
+            // defensive copy, so if somebody modifies the original array, we do not get broken
+            this.qualifiers = Arrays.copyOf(qualifiers, qualifiers.length);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof QualifiersWrapper that)) {
+                return false;
+            }
+            return Objects.deepEquals(qualifiers, that.qualifiers);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(qualifiers);
+        }
     }
 
-    private record ClassCacheKey(Class<?> sourceType, Class<?> targetType, List<String> qualifiers) {
+    private record GenericCacheKey(GenericType<?> sourceType, GenericType<?> targetType, QualifiersWrapper qualifiers) {
+    }
+
+    private record ClassCacheKey(Class<?> sourceType, Class<?> targetType, QualifiersWrapper qualifiers) {
     }
 
     @SuppressWarnings("rawtypes")
