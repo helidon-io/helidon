@@ -20,8 +20,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 /**
  * Helidon JSON Core.
  * Provides fundamental JSON processing capabilities.
- * <p>
- * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
 @Features.Name("JSON")
 @Features.Description("JSON processing")
@@ -33,10 +31,4 @@ module io.helidon.json {
     requires io.helidon.common.buffers;
 
     exports io.helidon.json;
-
-    /*
-    This module cannot be marked as @Features.Incubating, because it is used as a transitive dependency of health,
-    and will be used by metrics (and maybe other modules) as a replacement for Jakarta JSON-P.
-    We do not want to warn the users about use of incubating module, that is used by us
-    */
 }

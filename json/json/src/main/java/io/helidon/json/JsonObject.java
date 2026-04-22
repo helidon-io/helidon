@@ -27,11 +27,12 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
+
 /**
  * Represents a JSON object value containing key-value pairs.
- * <p>
- * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
+@Api.Preview
 public final class JsonObject extends JsonValue {
 
     static final JsonObject EMPTY_OBJECT = JsonObject.create(List.of());

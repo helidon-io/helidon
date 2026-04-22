@@ -21,6 +21,8 @@ import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+import io.helidon.common.Api;
+
 /**
  * A JSON generator interface for writing JSON data.
  * <p>
@@ -31,9 +33,8 @@ import java.math.BigInteger;
  * <p>
  * The generator provides fluent method chaining for building JSON structures
  * and handles proper JSON syntax including quotes, commas, and brackets.
- * <p>
- * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
+@Api.Preview
 public interface JsonGenerator extends AutoCloseable {
 
     /**

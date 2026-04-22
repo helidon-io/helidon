@@ -21,11 +21,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * Represents a JSON array value containing an ordered list of JSON values.
- * <p>
- * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
+@Api.Preview
 public final class JsonArray extends JsonValue {
 
     /**

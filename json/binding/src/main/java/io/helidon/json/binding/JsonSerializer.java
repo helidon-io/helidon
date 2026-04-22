@@ -16,6 +16,7 @@
 
 package io.helidon.json.binding;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonException;
 import io.helidon.json.JsonGenerator;
 
@@ -30,6 +31,7 @@ import io.helidon.json.JsonGenerator;
  *
  * @param <T> the type this serializer handles
  */
+@Api.Preview
 public interface JsonSerializer<T> extends JsonComponent<T> {
 
     /**

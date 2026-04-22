@@ -23,10 +23,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import io.helidon.common.AccessorStyle;
+import io.helidon.common.Api;
 
 /**
  * Container class for JSON binding annotations.
  */
+@Api.Preview
 public final class Json {
 
     private Json() {

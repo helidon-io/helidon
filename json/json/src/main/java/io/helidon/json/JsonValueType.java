@@ -16,11 +16,12 @@
 
 package io.helidon.json;
 
+import io.helidon.common.Api;
+
 /**
  * Enumeration of JSON value types.
- * <p>
- * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
+@Api.Preview
 public enum JsonValueType {
 
     /**

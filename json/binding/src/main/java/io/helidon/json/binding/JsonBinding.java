@@ -23,6 +23,7 @@ import java.io.Writer;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
@@ -37,6 +38,7 @@ import io.helidon.json.JsonValue;
  * </p>
  * Serialization methods must accept null as the value to serialize.
  */
+@Api.Preview
 public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
 
     /**
