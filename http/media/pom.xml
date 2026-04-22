@@ -37,5 +37,6 @@
         <module>multipart</module>
         <module>json</module>
         <module>json-binding</module>
+        <module>smile</module>
     </modules>
 </project>

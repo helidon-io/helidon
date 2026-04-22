@@ -45,6 +45,8 @@ record here.
             checks="FileLength"/>
     <suppress files="json/json/src/main/java/io/helidon/json/JsonParserArray\.java"
             checks="FileLength"/>
+    <suppress files="json/smile/src/main/java/io/helidon/json/smile/SmileInputStreamParser\.java"
+            checks="FileLength"/>
 
     <!-- This can be removed once Jwt class has all Validators removed. They are deprecated now -->
     <suppress files="security/jwt/src/main/java/io/helidon/security/jwt/Jwt\.java"

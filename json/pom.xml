@@ -39,6 +39,7 @@
         <module>codegen</module>
         <module>binding</module>
         <module>json</module>
+        <module>smile</module>
     </modules>
 
     <profiles>
