@@ -20,6 +20,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.media.MediaSupportConfig;
@@ -30,6 +31,7 @@ import io.helidon.json.smile.SmileConfig;
 /**
  * Configuration of Smile media support.
  */
+@Api.Preview
 @Prototype.Configured(value = SmileSupport.ID, root = false)
 @Prototype.Provides(MediaSupportProvider.class)
 @Prototype.Blueprint

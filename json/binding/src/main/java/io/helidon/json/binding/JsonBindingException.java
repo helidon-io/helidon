@@ -16,11 +16,13 @@
 
 package io.helidon.json.binding;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonException;
 
 /**
  * Exception thrown during JSON binding operations.
  */
+@Api.Preview
 public class JsonBindingException extends JsonException {
     /**
      * Construct a new exception with the specified detail message.

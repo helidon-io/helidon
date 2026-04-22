@@ -25,7 +25,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Jackson Smile binary JSON implementation")
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"JSON", "Smile"})
-@Features.Incubating
 module io.helidon.json.smile {
 
     requires static io.helidon.common.features.api;

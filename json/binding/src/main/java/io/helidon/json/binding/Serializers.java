@@ -21,12 +21,14 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonKey;
 
 /**
  * Utility class for serialization operations.
  */
+@Api.Preview
 public final class Serializers {
     /*
      * This type is used from generated code

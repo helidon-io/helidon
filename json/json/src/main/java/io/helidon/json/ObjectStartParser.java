@@ -19,12 +19,13 @@ package io.helidon.json;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+import io.helidon.common.Api;
+
 /**
  * An implementation of the {@link io.helidon.json.JsonParser} which enforces object start as the current value.
  * Delegates all other calls to the provided JsonParser.
- * <p>
- * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
+@Api.Preview
 public final class ObjectStartParser implements JsonParser {
 
     private static final JsonParser OBJECT_START_PARSER = new ForcedObjectStartParser();

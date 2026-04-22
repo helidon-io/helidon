@@ -19,6 +19,7 @@ package io.helidon.http.media.json.smile;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.config.Config;
 import io.helidon.http.Headers;
@@ -33,6 +34,7 @@ import io.helidon.json.binding.JsonBinding;
  * <p>
  * This class provides Smile binary media support for Helidon HTTP.
  */
+@Api.Preview
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class SmileSupport extends MediaSupportBase<SmileSupportConfig> implements RuntimeType.Api<SmileSupportConfig> {
 

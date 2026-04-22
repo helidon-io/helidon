@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonBoolean;
@@ -46,6 +47,7 @@ import static io.helidon.json.Parsers.translateHex;
  *
  * <p>This class is not thread safe.
  */
+@Api.Preview
 public final class SmileParser extends JsonParserBase {
 
     private static final JsonString[] EMPTY = new JsonString[0];
