@@ -17,10 +17,12 @@
 package io.helidon.webserver.grpc;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -46,12 +48,14 @@ import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.ServerConnectionException;
 
+import io.grpc.Drainable;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.Status;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -397,6 +401,99 @@ class GrpcProtocolHandlerTest {
                 return 0;
             }
         };
+    }
+
+    @Nested
+    class BufferDataInputStreamTest {
+
+        @Test
+        void drainsFullBuffer() throws IOException {
+            byte[] content = "grpc payload".getBytes(StandardCharsets.UTF_8);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try (var stream = stream(content)) {
+                int count = stream.drainTo(out);
+                assertThat(count, is(content.length));
+                assertThat(out.toByteArray(), is(content));
+            }
+        }
+
+        @Test
+        void drainsRemainingBytesAfterPartialRead() throws IOException {
+            byte[] content = "grpc payload".getBytes(StandardCharsets.UTF_8);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try (var stream = stream(content)) {
+                stream.read(); // consume 'g'
+                stream.read(); // consume 'r'
+                int count = stream.drainTo(out);
+                assertThat(count, is(content.length - 2));
+                assertThat(out.toByteArray(), is(Arrays.copyOfRange(content, 2, content.length)));
+            }
+        }
+
+        @Test
+        void drainsNothingFromEmptyBuffer() throws IOException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try (var stream = stream(new byte[0])) {
+                int count = stream.drainTo(out);
+                assertThat(count, is(0));
+                assertThat(out.toByteArray().length, is(0));
+            }
+        }
+
+        @Test
+        void readAllBytesReturnsRemainingAfterPartialRead() throws IOException {
+            byte[] content = "grpc payload".getBytes(StandardCharsets.UTF_8);
+            try (var stream = stream(content)) {
+                stream.read(); // consume 'g'
+                stream.read(); // consume 'r'
+                assertThat(stream.readAllBytes(), is(Arrays.copyOfRange(content, 2, content.length)));
+            }
+        }
+
+        @Test
+        void readAllBytesOnExhaustedBufferReturnsEmptyArray() throws IOException {
+            try (var stream = stream(new byte[0])) {
+                assertThat(stream.readAllBytes().length, is(0));
+            }
+        }
+
+        @Test
+        void skipAdvancesPosition() throws IOException {
+            byte[] content = "grpc payload".getBytes(StandardCharsets.UTF_8);
+            try (var stream = stream(content)) {
+                long skipped = stream.skip(4);
+                assertThat(skipped, is(4L));
+                assertThat(stream.readAllBytes(), is(Arrays.copyOfRange(content, 4, content.length)));
+            }
+        }
+
+        @Test
+        void skipClampsToAvailable() throws IOException {
+            byte[] content = "hi".getBytes(StandardCharsets.UTF_8);
+            try (var stream = stream(content)) {
+                long skipped = stream.skip(100);
+                assertThat(skipped, is((long) content.length));
+                assertThat(stream.available(), is(0));
+            }
+        }
+
+        @Test
+        void skipZeroDoesNothing() throws IOException {
+            byte[] content = "grpc payload".getBytes(StandardCharsets.UTF_8);
+            try (var stream = stream(content)) {
+                long skipped = stream.skip(0);
+                assertThat(skipped, is(0L));
+                assertThat(stream.available(), is(content.length));
+            }
+        }
+
+        private GrpcProtocolHandler.BufferDataInputStream stream(String content) {
+            return stream(content.getBytes(StandardCharsets.UTF_8));
+        }
+
+        private GrpcProtocolHandler.BufferDataInputStream stream(byte[] content) {
+            return new GrpcProtocolHandler.BufferDataInputStream(BufferData.create(content));
+        }
     }
 
     private static class UnimplementedGrpcConnectionContext implements ConnectionContext {
