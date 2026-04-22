@@ -60,7 +60,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.http.media</groupId>
-            <artifactId>helidon-http-media-jsonp</artifactId>
+            <artifactId>helidon-http-media-json</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -101,10 +101,6 @@
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-hikari</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.parsson</groupId>
-            <artifactId>parsson</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.db</groupId>

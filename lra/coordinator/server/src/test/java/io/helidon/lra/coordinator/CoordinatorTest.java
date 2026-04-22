@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,19 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.http.Status;
+import io.helidon.http.media.json.JsonSupport;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.testing.junit5.Socket;
 
-import jakarta.json.JsonArray;
-import jakarta.json.JsonValue;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
@@ -98,10 +101,68 @@ class CoordinatorTest {
         assertThat(getParsedStatusOfLra(lraId), is(LRAStatus.Active));
         assertThat(status(lraId), is(LRAStatus.Active));
 
+        cancel(lraId);
+
+        assertThat(getParsedStatusOfLra(lraId), is(LRAStatus.Cancelled));
+        assertThat(status(lraId), is(LRAStatus.Cancelled));
+    }
+
+    @Test
+    void recoveryListReturnsJsonArrayForActiveLra() {
+        String lraId = start();
+        JsonObject lraRecovery = recoveryList().values()
+                .stream()
+                .map(JsonValue::asObject)
+                .filter(it -> it.stringValue("lraId").orElseThrow().equals(localLraId(lraId)))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Unable to find recovery entry for id: " + lraId));
+
+        assertThat(lraRecovery.stringValue("status").orElseThrow(), is(LRAStatus.Active.name()));
+        assertThat(lraRecovery.keysAsStrings().contains("recovering"), is(false));
+    }
+
+    @Test
+    void recoveryByIdReturnsJsonObjectForActiveLra() {
+        String lraId = start();
+
+        try (Http1ClientResponse response = recoveryClient(lraId + "/recovery")
+                .get()
+                .request()) {
+            JsonObject recovery = response.as(JsonObject.class);
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(recovery.stringValue("lraId").orElseThrow(), is(localLraId(lraId)));
+            assertThat(recovery.stringValue("status").orElseThrow(), is(LRAStatus.Active.name()));
+            assertThat(recovery.booleanValue("recovering").orElseThrow(), is(false));
+        }
+    }
+
+    @Test
+    void recoveryByIdReturnsEmptyObjectForClosedLra() {
+        String lraId = start();
         close(lraId);
 
-        assertThat(getParsedStatusOfLra(lraId), is(LRAStatus.Closed));
-        assertThat(status(lraId), is(LRAStatus.Closed));
+        try (Http1ClientResponse response = recoveryClient(lraId + "/recovery")
+                .get()
+                .request()) {
+            JsonObject recovery = response.as(JsonObject.class);
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(recovery.keysAsStrings().isEmpty(), is(true));
+        }
+    }
+
+    @Test
+    void recoveryByIdReturnsNotFoundAndEmptyObjectForMissingLra() {
+        try (Http1ClientResponse response = recoveryClient("http://localhost:" + coordinatorPort
+                                                                   + "/lra-coordinator/recovery?lraId=missing")
+                .get()
+                .request()) {
+            JsonObject recovery = response.as(JsonObject.class);
+
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
+            assertThat(recovery.keysAsStrings().isEmpty(), is(true));
+        }
     }
 
     private String start() {
@@ -110,15 +171,15 @@ class CoordinatorTest {
 
     private static LRAStatus getParsedStatusOfLra(String lraId) {
         return Http1Client.builder()
-                .addMediaSupport(JsonpSupport.create())
+                .addMediaSupport(JsonSupport.create())
                 // Lra id is already whole url
                 .baseUri(lraId)
                 .build()
                 .get()
                 .requestEntity(JsonArray.class)
+                .values()
                 .stream()
-                .map(JsonValue::asJsonObject)
-                .map(jo -> jo.getString("status"))
+                .map(it -> it.asObject().stringValue("status").orElseThrow())
                 .map(LRAStatus::valueOf)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Unable to get LRA status for id: " + lraId));
@@ -126,7 +187,6 @@ class CoordinatorTest {
 
     private static LRAStatus status(String lraId) {
         String lraStatus = Http1Client.builder()
-                .addMediaSupport(JsonpSupport.create())
                 // Lra id is already whole url
                 .baseUri(lraId + "/status")
                 .build()
@@ -137,7 +197,6 @@ class CoordinatorTest {
 
     private static void close(String lraId) {
         Http1Client.builder()
-                .addMediaSupport(JsonpSupport.create())
                 // Lra id is already whole url
                 .baseUri(lraId + "/close")
                 .build()
@@ -148,12 +207,28 @@ class CoordinatorTest {
 
     private static void cancel(String lraId) {
         Http1Client.builder()
-                .addMediaSupport(JsonpSupport.create())
                 // Lra id is already whole url
                 .baseUri(lraId + "/cancel")
                 .build()
                 .put()
                 .request()
                 .close();
+    }
+
+    private static JsonArray recoveryList() {
+        return recoveryClient("http://localhost:" + coordinatorPort + "/lra-coordinator")
+                .get("/recovery")
+                .requestEntity(JsonArray.class);
+    }
+
+    private static Http1Client recoveryClient(String baseUri) {
+        return Http1Client.builder()
+                .addMediaSupport(JsonSupport.create())
+                .baseUri(baseUri)
+                .build();
+    }
+
+    private static String localLraId(String lraId) {
+        return lraId.substring(lraId.lastIndexOf('/') + 1);
     }
 }
