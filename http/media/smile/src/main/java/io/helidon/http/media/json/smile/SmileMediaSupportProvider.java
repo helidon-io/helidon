@@ -39,7 +39,7 @@ public class SmileMediaSupportProvider implements MediaSupportProvider, Weighted
 
     @Override
     public MediaSupport create(Config config, String name) {
-        return SmileSupport.create(io.helidon.config.Config.config(config), name);
+        return SmileSupport.create(config, name);
     }
 
     @Override
