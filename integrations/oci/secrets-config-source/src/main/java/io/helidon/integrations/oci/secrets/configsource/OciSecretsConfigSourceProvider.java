@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.integrations.oci.secrets.configsource;
 
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.config.AbstractConfigSource;
 import io.helidon.config.Config;
@@ -64,11 +65,9 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
     private static final Set<String> SUPPORTED_TYPES = Set.of("oci-secrets");
 
     /**
-     * Creates a new {@link OciSecretsConfigSourceProvider}.
-     *
-     * @deprecated For use by {@link java.util.ServiceLoader} only.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public OciSecretsConfigSourceProvider() {
     }
 

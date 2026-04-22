@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.tracing;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
@@ -35,11 +36,9 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 @Weight(Weighted.DEFAULT_WEIGHT + 100)
 public class WebClientTracingProvider implements WebClientServiceProvider {
     /**
-     * Required public constructor.
-     *
-     * @deprecated This class should only be used via {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public WebClientTracingProvider() {
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ServiceLoader;
 
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.webserver.ProtocolConfigs;
 import io.helidon.webserver.http1.spi.Http1UpgradeProvider;
@@ -39,13 +40,9 @@ public class Http1ConnectionProvider implements ServerConnectionSelectorProvider
     static final String CONFIG_NAME = "http_1_1";
 
     /**
-     * Create a new instance with default configuration.
-     * To customize instance programmatically, use {@link Http1ConnectionSelector}
-     * instead.
-     *
-     * @deprecated to be used solely by {@link java.util.ServiceLoader}
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public Http1ConnectionProvider() {
     }
 

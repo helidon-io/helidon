@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.cdi;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.spi.HelidonStartupProvider;
@@ -26,11 +27,9 @@ import io.helidon.spi.HelidonStartupProvider;
 @Weight(Weighted.DEFAULT_WEIGHT + 100) // must have higher than default, to start CDI and not Helidon Injection
 public class CdiStartupProvider implements HelidonStartupProvider {
     /**
-     * Default constructor required by {@link java.util.ServiceLoader}.
-     *
-     * @deprecated please do not use directly
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public CdiStartupProvider() {
     }
 

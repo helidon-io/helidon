@@ -139,13 +139,6 @@ class BindingGenerator {
         classModel.addMethod(bindingMethod -> bindingMethod
                 .addAnnotation(Annotations.OVERRIDE)
                 .name("binding")
-                // constructors of services for service loader are marked as private API
-                .addAnnotation(Annotation.builder()
-                                       .type(SuppressWarnings.class)
-                                       .putProperty("value", AnnotationProperty.create(Api.SUPPRESS_ALL,
-                                                                                       TypeName.create(Api.class),
-                                                                                       "SUPPRESS_ALL"))
-                                       .build())
                 .addParameter(binderParam -> binderParam
                         .name("binder")
                         .type(SERVICE_PLAN_BINDER))
@@ -157,6 +150,13 @@ class BindingGenerator {
         classModel.addMethod(configureMethod -> configureMethod
                 .addAnnotation(Annotations.OVERRIDE)
                 .name("configure")
+                // service-loaded service descriptors use constructor references to internal constructors
+                .addAnnotation(Annotation.builder()
+                                       .type(SuppressWarnings.class)
+                                       .putProperty("value", AnnotationProperty.create(Api.SUPPRESS_ALL,
+                                                                                       TypeName.create(Api.class),
+                                                                                       "SUPPRESS_ALL"))
+                                       .build())
                 .addParameter(configBuilder -> configBuilder
                         .name("builder")
                         .type(SERVICE_CONFIG_BUILDER)

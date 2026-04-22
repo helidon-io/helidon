@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.accesslog;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.ServerFeatureProvider;
@@ -26,11 +27,9 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 @Weight(AccessLogFeature.WEIGHT)
 public class AccessLogFeatureProvider implements ServerFeatureProvider<AccessLogFeature> {
     /**
-     * Required for {@link java.util.ServiceLoader}.
-     *
-     * @deprecated only for {@link java.util.ServiceLoader}
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public AccessLogFeatureProvider() {
     }
 
