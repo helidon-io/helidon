@@ -56,6 +56,7 @@ public final class SmileGenerator extends JsonGeneratorBase {
     private final Map<String, Integer> sharedKeyIndex = new HashMap<>();
 
     private SmileGenerator(OutputStream outputStream, SmileConfig config) {
+        super(false);
         this.outputStream = outputStream;
         this.sharedKeyStrings = config.sharedKeyStrings();
         this.sharedValueStrings = config.sharedValueStrings();
