@@ -19,7 +19,6 @@ package io.helidon.webclient.http2;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -27,11 +26,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.socket.HelidonSocket;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -94,39 +94,138 @@ class Http2ClientConnectionTest {
             Http2Headers.DynamicTable inboundTable =
                     Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
             Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            assertHeadersDecodeInArrivalOrder(test,
+                                              firstStream,
+                                              secondStream,
+                                              new Http2FrameData[] {
+                                                      encodedHeaderFrame(firstStream.streamId(),
+                                                                         encodedResponseHeaders(false),
+                                                                         inboundTable,
+                                                                         huffman)
+                                              },
+                                              new Http2FrameData[] {
+                                                      encodedHeaderFrame(secondStream.streamId(),
+                                                                         encodedResponseHeaders(true),
+                                                                         inboundTable,
+                                                                         huffman)
+                                              });
+            firstStream.close();
+            secondStream.close();
+            connection.close();
+        }
+    }
+
+    @Test
+    void splitHeadersDoNotDependOnCallerDecodeOrder() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream firstStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream secondStream = connection.createStream(STREAM_CONFIG);
+
+            firstStream.writeHeaders(requestHeaders(), false);
+            secondStream.writeHeaders(requestHeaders(), false);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            assertHeadersDecodeInArrivalOrder(test,
+                                              firstStream,
+                                              secondStream,
+                                              encodedSplitHeaderFrames(firstStream.streamId(),
+                                                                      encodedResponseHeaders(false),
+                                                                      inboundTable,
+                                                                      huffman),
+                                              encodedSplitHeaderFrames(secondStream.streamId(),
+                                                                      encodedResponseHeaders(true),
+                                                                      inboundTable,
+                                                                      huffman));
+            firstStream.close();
+            secondStream.close();
+            connection.close();
+        }
+    }
+
+    @Test
+    void missingStreamHeadersStillAdvanceConnectionHpackState() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream abandonedStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream secondStream = connection.createStream(STREAM_CONFIG);
+
+            abandonedStream.writeHeaders(requestHeaders(), false);
+            secondStream.writeHeaders(requestHeaders(), false);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            Http2FrameData[] abandonedHeaderBlock =
+                    encodedSplitHeaderFrames(abandonedStream.streamId(), encodedResponseHeaders(false), inboundTable, huffman);
+            Http2FrameData secondHeaderBlock =
+                    encodedHeaderFrame(secondStream.streamId(), encodedResponseHeaders(true), inboundTable, huffman);
+
+            abandonedStream.close();
+
+            test.offerInbound(abandonedHeaderBlock);
+            test.offerInbound(secondHeaderBlock);
+
+            Http2Headers secondHeaders = secondStream.readHeaders();
+            assertThat(secondHeaders.status(), is(Status.OK_200));
+            assertThat(secondHeaders.httpHeaders().get(SHARED_HEADER).get(), is("shared-value"));
+            assertThat(secondHeaders.httpHeaders().get(HeaderNames.CACHE_CONTROL).get(), is("no-cache"));
+
+            secondStream.close();
+            connection.close();
+        }
+    }
+
+    @Test
+    void closedStreamDoesNotReceiveHeadersWhenClosedAfterDecode() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            AtomicReference<Http2ClientStream> streamToClose = new AtomicReference<>();
+            CountDownLatch firstHeadersDecoded = new CountDownLatch(1);
+            Http2ClientConnection connection = test.createConnection((client, clientConnection) ->
+                                                                             new HookedHttp2ClientConnection(client,
+                                                                                                             clientConnection,
+                                                                                                             streamToClose,
+                                                                                                             () -> {
+                                                                                                                 streamToClose.get().close();
+                                                                                                                 firstHeadersDecoded.countDown();
+                                                                                                             }),
+                                                                     false);
+            Http2ClientStream firstStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream secondStream = connection.createStream(STREAM_CONFIG);
+
+            firstStream.writeHeaders(requestHeaders(), false);
+            secondStream.writeHeaders(requestHeaders(), false);
+            streamToClose.set(firstStream);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
             Http2FrameData firstHeaderBlock =
                     encodedHeaderFrame(firstStream.streamId(), encodedResponseHeaders(false), inboundTable, huffman);
             Http2FrameData secondHeaderBlock =
                     encodedHeaderFrame(secondStream.streamId(), encodedResponseHeaders(true), inboundTable, huffman);
 
-            ExecutorService readExecutor = Executors.newSingleThreadExecutor();
             try {
-                CountDownLatch secondReadStarted = new CountDownLatch(1);
-                CompletableFuture<Http2Headers> secondRead = CompletableFuture.supplyAsync(() -> {
-                    secondReadStarted.countDown();
-                    return secondStream.readHeaders();
-                }, readExecutor);
-
-                assertTrue(secondReadStarted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
-
-                // Stream 3 must become readable as soon as its frames arrive; stream 1's caller is still idle here.
                 test.offerInbound(firstHeaderBlock);
+                assertTrue(firstHeadersDecoded.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+
                 test.offerInbound(secondHeaderBlock);
 
-                Http2Headers secondHeaders = secondRead.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                Http2Headers secondHeaders = secondStream.readHeaders();
                 assertThat(secondHeaders.status(), is(Status.OK_200));
                 assertThat(secondHeaders.httpHeaders().get(SHARED_HEADER).get(), is("shared-value"));
                 assertThat(secondHeaders.httpHeaders().get(HeaderNames.CACHE_CONTROL).get(), is("no-cache"));
 
-                Http2Headers firstHeaders = firstStream.readHeaders();
-                assertThat(firstHeaders.status(), is(Status.OK_200));
-                assertThat(firstHeaders.httpHeaders().get(SHARED_HEADER).get(), is("shared-value"));
+                assertThrows(IllegalStateException.class, firstStream::readHeaders);
             } finally {
-                readExecutor.shutdownNow();
+                secondStream.close();
+                connection.close();
             }
-            firstStream.close();
-            secondStream.close();
-            connection.close();
         }
     }
 
@@ -202,6 +301,34 @@ class Http2ClientConnectionTest {
         return new Http2FrameData(header, data);
     }
 
+    private static Http2FrameData[] encodedSplitHeaderFrames(int streamId,
+                                                             Http2Headers headers,
+                                                             Http2Headers.DynamicTable dynamicTable,
+                                                             Http2HuffmanEncoder huffman) {
+        BufferData data = BufferData.create(256);
+        headers.write(dynamicTable, huffman, data);
+        data.rewind();
+
+        int splitIndex = Math.min(data.available() - 1, Math.max(1, data.available() / 2));
+        byte[] firstPart = new byte[splitIndex];
+        data.read(firstPart);
+        byte[] secondPart = new byte[data.available()];
+        data.read(secondPart);
+
+        Http2FrameData firstFrame = new Http2FrameData(Http2FrameHeader.create(firstPart.length,
+                                                                               Http2FrameTypes.HEADERS,
+                                                                               Http2Flag.HeaderFlags.create(0),
+                                                                               streamId),
+                                                       BufferData.create(firstPart));
+        Http2FrameData secondFrame = new Http2FrameData(Http2FrameHeader.create(secondPart.length,
+                                                                                Http2FrameTypes.CONTINUATION,
+                                                                                Http2Flag.ContinuationFlags.create(
+                                                                                        Http2Flag.END_OF_HEADERS),
+                                                                                streamId),
+                                                        BufferData.create(secondPart));
+        return new Http2FrameData[] {firstFrame, secondFrame};
+    }
+
     private static Http2FrameData settingsFrame(long maxConcurrentStreams) {
         Http2Settings settings = Http2Settings.builder()
                 .add(Http2Setting.MAX_CONCURRENT_STREAMS, maxConcurrentStreams)
@@ -227,6 +354,38 @@ class Http2ClientConnectionTest {
                 .authority("www.example.com");
     }
 
+    private static void assertHeadersDecodeInArrivalOrder(MockedConnectionTestContext test,
+                                                          Http2ClientStream firstStream,
+                                                          Http2ClientStream secondStream,
+                                                          Http2FrameData[] firstHeaderBlock,
+                                                          Http2FrameData[] secondHeaderBlock) throws Exception {
+        ExecutorService readExecutor = Executors.newSingleThreadExecutor();
+        try {
+            CountDownLatch secondReadStarted = new CountDownLatch(1);
+            CompletableFuture<Http2Headers> secondRead = CompletableFuture.supplyAsync(() -> {
+                secondReadStarted.countDown();
+                return secondStream.readHeaders();
+            }, readExecutor);
+
+            assertTrue(secondReadStarted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+
+            // The later stream must become readable as soon as its frames arrive, even if an earlier stream caller is idle.
+            test.offerInbound(firstHeaderBlock);
+            test.offerInbound(secondHeaderBlock);
+
+            Http2Headers secondHeaders = secondRead.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            assertThat(secondHeaders.status(), is(Status.OK_200));
+            assertThat(secondHeaders.httpHeaders().get(SHARED_HEADER).get(), is("shared-value"));
+            assertThat(secondHeaders.httpHeaders().get(HeaderNames.CACHE_CONTROL).get(), is("no-cache"));
+
+            Http2Headers firstHeaders = firstStream.readHeaders();
+            assertThat(firstHeaders.status(), is(Status.OK_200));
+            assertThat(firstHeaders.httpHeaders().get(SHARED_HEADER).get(), is("shared-value"));
+        } finally {
+            readExecutor.shutdownNow();
+        }
+    }
+
     private static byte[] serializeFrame(Http2FrameData frameData) {
         BufferData serialized = BufferData.create(frameData.header().write(), frameData.data().copy());
         byte[] bytes = new byte[serialized.available()];
@@ -239,7 +398,7 @@ class Http2ClientConnectionTest {
         private final LinkedBlockingQueue<byte[]> inboundFrames = new LinkedBlockingQueue<>();
         private final AtomicBoolean failWrites = new AtomicBoolean();
         private final DataWriter dataWriter = mock(DataWriter.class);
-        private final HelidonSocket socket;
+        private final io.helidon.common.socket.HelidonSocket socket = mock(io.helidon.common.socket.HelidonSocket.class);
         private final Http2ClientConfig clientConfig;
         private final Http2ClientImpl client;
         private final ClientConnection clientConnection;
@@ -256,7 +415,6 @@ class Http2ClientConnectionTest {
 
             this.client = mock(Http2ClientImpl.class);
             this.clientConnection = mock(ClientConnection.class);
-            this.socket = mock(HelidonSocket.class);
             WebClient webClient = mock(WebClient.class);
 
             doAnswer(invocation -> {
@@ -291,8 +449,15 @@ class Http2ClientConnectionTest {
             return Http2ClientConnection.create(client, clientConnection, sendSettings);
         }
 
-        private void offerInbound(Http2FrameData frameData) {
-            inboundFrames.add(serializeFrame(frameData));
+        private <T extends Http2ClientConnection> T createConnection(ConnectionFactory<T> connectionFactory,
+                                                                     boolean sendSettings) {
+            return Http2ClientConnection.create(connectionFactory.create(client, clientConnection), client, sendSettings);
+        }
+
+        private void offerInbound(Http2FrameData... frameData) {
+            for (Http2FrameData oneFrame : frameData) {
+                inboundFrames.add(serializeFrame(oneFrame));
+            }
         }
 
         private void failWrites() {
@@ -321,6 +486,32 @@ class Http2ClientConnectionTest {
         @Override
         public void close() {
             connectionExecutor.shutdownNow();
+        }
+    }
+
+    @FunctionalInterface
+    private interface ConnectionFactory<T extends Http2ClientConnection> {
+        T create(Http2ClientImpl client, ClientConnection clientConnection);
+    }
+
+    private static final class HookedHttp2ClientConnection extends Http2ClientConnection {
+        private final AtomicReference<Http2ClientStream> streamToClose;
+        private final Runnable beforeDeliverHeaders;
+
+        private HookedHttp2ClientConnection(Http2ClientImpl client,
+                                            ClientConnection clientConnection,
+                                            AtomicReference<Http2ClientStream> streamToClose,
+                                            Runnable beforeDeliverHeaders) {
+            super(client, clientConnection);
+            this.streamToClose = streamToClose;
+            this.beforeDeliverHeaders = beforeDeliverHeaders;
+        }
+
+        @Override
+        void beforeDeliverInboundHeaders(Http2ClientStream stream, Http2Headers headers, boolean endOfStream) {
+            if (stream == streamToClose.get()) {
+                beforeDeliverHeaders.run();
+            }
         }
     }
 }

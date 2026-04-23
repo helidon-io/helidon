@@ -37,6 +37,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.ConnectionFlowControl;
 import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2ConnectionWriter;
@@ -53,12 +54,15 @@ import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2HuffmanDecoder;
 import io.helidon.http.http2.Http2LoggingFrameListener;
 import io.helidon.http.http2.Http2Ping;
+import io.helidon.http.http2.Http2Priority;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2Setting;
 import io.helidon.http.http2.Http2Settings;
+import io.helidon.http.http2.Http2Stream;
 import io.helidon.http.http2.Http2StreamState;
 import io.helidon.http.http2.Http2Util;
 import io.helidon.http.http2.Http2WindowUpdate;
+import io.helidon.http.http2.StreamFlowControl;
 import io.helidon.http.http2.WindowSize;
 import io.helidon.webclient.api.ClientConnection;
 
@@ -73,6 +77,44 @@ public class Http2ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http2ClientConnection.class.getName());
     private static final int FRAME_HEADER_LENGTH = 9;
     private static final long NO_PING_ACK = Long.MIN_VALUE;
+    private static final Http2Headers EMPTY_INBOUND_HEADERS = Http2Headers.create(WritableHeaders.create());
+    private static final Http2Stream DROPPED_INBOUND_HEADERS_STREAM = new Http2Stream() {
+        @Override
+        public boolean rstStream(Http2RstStream rstStream) {
+            return false;
+        }
+
+        @Override
+        public void windowUpdate(Http2WindowUpdate windowUpdate) {
+        }
+
+        @Override
+        public void headers(Http2Headers headers, boolean endOfStream) {
+        }
+
+        @Override
+        public void data(Http2FrameHeader header, BufferData data, boolean endOfStream) {
+        }
+
+        @Override
+        public void priority(Http2Priority http2Priority) {
+        }
+
+        @Override
+        public int streamId() {
+            return 0;
+        }
+
+        @Override
+        public Http2StreamState streamState() {
+            return Http2StreamState.CLOSED;
+        }
+
+        @Override
+        public StreamFlowControl flowControl() {
+            return null;
+        }
+    };
     private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
     private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
     private final LockingStreamIdSequence streamIdSeq = new LockingStreamIdSequence();
@@ -100,7 +142,8 @@ public class Http2ClientConnection {
     private volatile boolean initialSettingsReceived;
     private int reservedStreams;
 
-    private Http2Settings serverSettings = Http2Settings.builder()
+    // SETTINGS arrive on the connection thread and are read from stream threads when encoding outbound frames.
+    private volatile Http2Settings serverSettings = Http2Settings.builder()
             .build();
     private Future<?> handleTask;
     private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
@@ -133,10 +176,28 @@ public class Http2ClientConnection {
                                         boolean sendSettings) {
 
         Http2ClientConnection h2conn = new Http2ClientConnection(http2Client, connection);
-        h2conn.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
-        h2conn.awaitInitialSettings();
+        return create(h2conn, http2Client, sendSettings);
+    }
 
-        return h2conn;
+    /**
+     * Starts a pre-created client connection instance and waits for the peer's
+     * initial {@code SETTINGS}. This is primarily used by package-local tests
+     * that need a specialized connection subtype while keeping the production
+     * startup path identical.
+     *
+     * @param connection started connection instance
+     * @param http2Client owning client
+     * @param sendSettings whether to send the client preface settings
+     * @param <T> concrete connection type
+     * @return started connection instance
+     */
+    static <T extends Http2ClientConnection> T create(T connection,
+                                                      Http2ClientImpl http2Client,
+                                                      boolean sendSettings) {
+        Http2ClientConnection rawConnection = connection;
+        rawConnection.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
+        rawConnection.awaitInitialSettings();
+        return connection;
     }
 
     Http2ConnectionWriter writer() {
@@ -520,13 +581,46 @@ public class Http2ClientConnection {
      * @param headerFrames full {@code HEADERS}/{@code CONTINUATION} block in wire order
      * @return decoded headers
      */
-    private Http2Headers decodeInboundHeaders(Http2ClientStream stream, Http2FrameData... headerFrames) {
+    private Http2Headers decodeInboundHeaders(Http2Stream stream,
+                                              Http2Headers headerDecodeBasis,
+                                              Http2FrameData... headerFrames) {
         // Keep HPACK decode on the connection thread so the shared dynamic table advances in wire order.
         return Http2Headers.create(stream,
                                    inboundDynamicTable,
                                    Http2HuffmanDecoder.create(),
-                                   stream.inboundHeaderDecodeBasis(),
+                                   headerDecodeBasis,
                                    headerFrames);
+    }
+
+    private Http2Headers decodeInboundHeaders(Http2ClientStream stream, Http2FrameData... headerFrames) {
+        return decodeInboundHeaders(stream, stream.inboundHeaderDecodeBasis(), headerFrames);
+    }
+
+    /**
+     * Hook invoked on the connection thread once an inbound header block has
+     * been decoded and survived the post-decode stream-membership check, but
+     * before it is logged and delivered to the stream. Production code leaves
+     * this empty; tests can override it to force close timing in the narrow
+     * post-decode/pre-delivery window.
+     *
+     * @param stream live stream about to receive the decoded headers
+     * @param headers decoded headers
+     * @param endOfStream whether the block also closes the remote side
+     */
+    void beforeDeliverInboundHeaders(Http2ClientStream stream, Http2Headers headers, boolean endOfStream) {
+    }
+
+    /**
+     * Decodes and discards an inbound header block that no longer has a live stream consumer.
+     * Even abandoned streams can carry HPACK dynamic-table mutations, so the connection must
+     * still consume the block to keep later stream decodes aligned with the wire state.
+     * An empty semantic basis is intentional here because the decoded headers are discarded;
+     * only the connection-scoped HPACK side effects must be preserved.
+     *
+     * @param headerFrames full inbound header block in wire order
+     */
+    private void decodeDroppedInboundHeaders(Http2FrameData... headerFrames) {
+        decodeInboundHeaders(DROPPED_INBOUND_HEADERS_STREAM, EMPTY_INBOUND_HEADERS, headerFrames);
     }
 
     private boolean handleGoAwayFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {
@@ -716,6 +810,8 @@ public class Http2ClientConnection {
 
         Http2ClientStream headerStream = stream(streamId);
         if (headerStream == null) {
+            // Keep the shared inbound HPACK table in sync even if the application already closed the stream.
+            decodeDroppedInboundHeaders(headerFrames);
             if (LOGGER.isLoggable(DEBUG)) {
                 ctx.log(LOGGER, DEBUG, "%d: received %s for stream %d, which does not exist",
                         0, frameHeader.type(), streamId);
@@ -724,6 +820,7 @@ public class Http2ClientConnection {
         }
 
         Http2Headers headers = decodeInboundHeaders(headerStream, headerFrames);
+        beforeDeliverInboundHeaders(headerStream, headers, endOfStream);
         recvListener.headers(ctx, streamId, headers);
         headerStream.inboundHeaders(headers, endOfStream);
         return true;

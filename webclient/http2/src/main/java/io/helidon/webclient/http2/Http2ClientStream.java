@@ -20,7 +20,6 @@ import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -73,7 +72,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private final ReentrantLock inboundStateLock = new ReentrantLock();
     private final Condition inboundStateChanged = inboundStateLock.newCondition();
     private final CompletableFuture<Headers> trailers = new CompletableFuture<>();
-    private final AtomicBoolean closed = new AtomicBoolean();
+    private boolean closed;
 
     private Http2StreamState state = Http2StreamState.IDLE;
     private ReadState readState = ReadState.INIT;
@@ -243,19 +242,22 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * after local cancellation or connection shutdown.
      */
     public void close() {
-        if (closed.compareAndSet(false, true)) {
-            if (streamId != 0) {
-                connection.removeStream(streamId);
+        inboundStateLock.lock();
+        try {
+            if (closed) {
+                return;
             }
-            // A slot is reserved before request HEADERS are written, so every close must release it.
-            connection.releaseReservedStream();
-            inboundStateLock.lock();
-            try {
-                inboundStateChanged.signalAll();
-            } finally {
-                inboundStateLock.unlock();
-            }
+            closed = true;
+            inboundStateChanged.signalAll();
+        } finally {
+            inboundStateLock.unlock();
         }
+
+        if (streamId != 0) {
+            connection.removeStream(streamId);
+        }
+        // A slot is reserved before request HEADERS are written, so every close must release it.
+        connection.releaseReservedStream();
     }
 
     /**
@@ -296,7 +298,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         try {
             boolean expected100Continue = readState == ReadState.CONTINUE_100_HEADERS;
             long remainingNanos = readContinueTimeout.toNanos();
-            while (readState == ReadState.CONTINUE_100_HEADERS && !closed.get()) {
+            while (readState == ReadState.CONTINUE_100_HEADERS && !closed) {
                 if (remainingNanos <= 0) {
                     // Timeout, continue as if it was received.
                     readState = readState.check(ReadState.HEADERS);
@@ -403,13 +405,13 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         inboundStateLock.lock();
         try {
             long remainingNanos = timeout.toNanos();
-            while (readState == ReadState.HEADERS && !closed.get()) {
+            while (readState == ReadState.HEADERS && !closed) {
                 if (remainingNanos <= 0) {
                     throw new StreamTimeoutException(this, streamId, timeout);
                 }
                 remainingNanos = inboundStateChanged.awaitNanos(remainingNanos);
             }
-            if (currentHeaders == null && closed.get()) {
+            if (currentHeaders == null && closed) {
                 throw new IllegalStateException("Stream closed while waiting for response headers");
             }
             return currentHeaders;
@@ -487,6 +489,11 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     void inboundHeaders(Http2Headers headers, boolean endOfStream) {
         inboundStateLock.lock();
         try {
+            // A locally closed stream must not publish late headers, but the connection
+            // thread still decodes them to keep HPACK state aligned for other streams.
+            if (closed) {
+                return;
+            }
             switch (readState) {
             case CONTINUE_100_HEADERS -> continue100Locked(headers, endOfStream);
             case HEADERS -> headersLocked(headers, endOfStream);
