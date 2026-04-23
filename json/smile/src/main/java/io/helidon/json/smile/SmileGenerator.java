@@ -376,6 +376,11 @@ public final class SmileGenerator extends JsonGeneratorBase {
     }
 
     @Override
+    protected void writeNewLineIndent(int indentLevel) {
+        // Smile is a binary format and does not support whitespace-based pretty printing.
+    }
+
+    @Override
     protected void ensureCapacity(int extra) {
         if (index + extra >= buffer.length) {
             writeBuffer();
