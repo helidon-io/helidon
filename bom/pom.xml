@@ -209,6 +209,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.config.metadata</groupId>
+                <artifactId>helidon-config-metadata</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.config</groupId>
                 <artifactId>helidon-config-metadata</artifactId>
                 <version>${helidon.version}</version>

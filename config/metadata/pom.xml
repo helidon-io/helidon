@@ -26,7 +26,7 @@
         <artifactId>helidon-config-project</artifactId>
         <version>4.4.1-SNAPSHOT</version>
     </parent>
-    <!-- normally we would use io.helidon.config.metadata group id, but this would introduce backward incompatibility -->
+    <groupId>io.helidon.config.metadata</groupId>
     <artifactId>helidon-config-metadata-project</artifactId>
     <name>Helidon Config Metadata Project</name>
     <packaging>pom</packaging>
@@ -41,6 +41,7 @@
 
     <modules>
         <module>metadata</module>
+        <module>compatibility</module>
         <module>model</module>
         <module>codegen</module>
         <module>processor</module>
