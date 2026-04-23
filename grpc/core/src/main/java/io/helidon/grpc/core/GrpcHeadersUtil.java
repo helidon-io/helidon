@@ -17,6 +17,7 @@
 package io.helidon.grpc.core;
 
 import java.util.Base64;
+import java.util.Optional;
 
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -114,21 +115,21 @@ public class GrpcHeadersUtil {
      * @param timeoutNanos timeout in nanoseconds
      * @return encoded header value such as {@code "500m"}, or {@code null} if {@code timeoutNanos <= 0}
      */
-    public static String encodeTimeout(long timeoutNanos) {
+    public static Optional<String> encodeTimeout(long timeoutNanos) {
         if (timeoutNanos <= 0) {
-            return null;
+            return Optional.empty();
         }
         // Walk from largest to smallest unit; pick the first where the value
         // is positive, fits in 8 digits, and the division is exact (no truncation).
         for (int i = 0; i < NANOS_PER_UNIT.length; i++) {
             long value = timeoutNanos / NANOS_PER_UNIT[i];
             if (value > 0 && value <= MAX_TIMEOUT_VALUE && timeoutNanos % NANOS_PER_UNIT[i] == 0) {
-                return value + String.valueOf(TIMEOUT_UNITS[i]);
+                return Optional.of(value + String.valueOf(TIMEOUT_UNITS[i]));
             }
         }
         // Nanoseconds with possible truncation to 8 digits (last resort for values
         // that do not align to any unit boundary within 8 digits)
-        return Math.min(timeoutNanos, MAX_TIMEOUT_VALUE) + "n";
+        return Optional.of(Math.min(timeoutNanos, MAX_TIMEOUT_VALUE) + "n");
     }
 
     /**

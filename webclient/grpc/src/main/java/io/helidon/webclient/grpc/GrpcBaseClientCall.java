@@ -230,10 +230,8 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         // Write grpc-timeout header after metadata conversion so it cannot be overwritten
         if (effectiveDeadline != null) {
             long timeoutNanos = effectiveDeadline.timeRemaining(TimeUnit.NANOSECONDS);
-            String encoded = GrpcHeadersUtil.encodeTimeout(timeoutNanos);
-            if (encoded != null) {
-                headers.set(GrpcHeadersUtil.GRPC_TIMEOUT, encoded);
-            }
+            GrpcHeadersUtil.encodeTimeout(timeoutNanos)
+                    .ifPresent(encoded -> headers.set(GrpcHeadersUtil.GRPC_TIMEOUT, encoded));
         }
         clientStream.writeHeaders(Http2Headers.create(headers), false);
     }

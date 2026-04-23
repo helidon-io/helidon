@@ -28,9 +28,10 @@ import io.helidon.http.http2.Http2Headers;
 import io.grpc.Metadata;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -39,7 +40,7 @@ import static org.mockito.Mockito.when;
 class GrpcHeadersUtilTest {
 
     @Test
-    void updateHeaders() {
+    void testUpdateHeaders() {
         Metadata metadata = new Metadata();
         Metadata.Key<String> key = Metadata.Key.of("cookie", Metadata.ASCII_STRING_MARSHALLER);
         metadata.put(key, "sugar");
@@ -54,7 +55,7 @@ class GrpcHeadersUtilTest {
     }
 
     @Test
-    void updateBinaryHeaders() {
+    void testUpdateBinaryHeaders() {
         Metadata metadata = new Metadata();
         Metadata.Key<byte[]> key = Metadata.Key.of("secret-bin", Metadata.BINARY_BYTE_MARSHALLER);
         byte[] mySecret = "my-secret".getBytes(StandardCharsets.UTF_8);
@@ -68,7 +69,7 @@ class GrpcHeadersUtilTest {
     }
 
     @Test
-    void toMetadata() {
+    void testToMetadata() {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(HeaderNames.COOKIE, "sugar", "almond");
         Http2Headers http2Headers = mock(Http2Headers.class);
@@ -85,71 +86,71 @@ class GrpcHeadersUtilTest {
     @Test
     void encodeTimeoutHours() {
         // 2 hours in nanos
-        assertThat(GrpcHeadersUtil.encodeTimeout(7_200_000_000_000L), is("2H"));
+        assertThat(GrpcHeadersUtil.encodeTimeout(7_200_000_000_000L), optionalValue(is("2H")));
     }
 
     @Test
     void encodeTimeoutMinutes() {
         // 2 minutes in nanos = 120_000_000_000L
-        assertThat(GrpcHeadersUtil.encodeTimeout(120_000_000_000L), is("2M"));
+        assertThat(GrpcHeadersUtil.encodeTimeout(120_000_000_000L), optionalValue(is("2M")));
     }
 
     @Test
     void encodeTimeoutSeconds() {
         // 5 seconds in nanos = 5_000_000_000L
-        assertThat(GrpcHeadersUtil.encodeTimeout(5_000_000_000L), is("5S"));
+        assertThat(GrpcHeadersUtil.encodeTimeout(5_000_000_000L), optionalValue(is("5S")));
     }
 
     @Test
     void encodeTimeoutMilliseconds() {
         // 500ms in nanos = 500_000_000L
-        assertThat(GrpcHeadersUtil.encodeTimeout(500_000_000L), is("500m"));
+        assertThat(GrpcHeadersUtil.encodeTimeout(500_000_000L), optionalValue(is("500m")));
     }
 
     @Test
     void encodeTimeoutMicroseconds() {
         // 500us in nanos = 500_000L
-        assertThat(GrpcHeadersUtil.encodeTimeout(500_000L), is("500u"));
+        assertThat(GrpcHeadersUtil.encodeTimeout(500_000L), optionalValue(is("500u")));
     }
 
     @Test
     void encodeTimeoutNanoseconds() {
         // 500ns -- only nanoseconds fit
-        assertThat(GrpcHeadersUtil.encodeTimeout(500L), is("500n"));
+        assertThat(GrpcHeadersUtil.encodeTimeout(500L), optionalValue(is("500n")));
     }
 
     @Test
     void encodeTimeoutNanosecondsMinimum() {
-        assertThat(GrpcHeadersUtil.encodeTimeout(1L), is("1n"));
+        assertThat(GrpcHeadersUtil.encodeTimeout(1L), optionalValue(is("1n")));
     }
 
     @Test
     void encodeTimeoutPicksLargestExactUnit() {
         // 1_000_000ns = 1ms exactly, should encode as "1m" not "1000u" or "1000000n"
-        assertThat(GrpcHeadersUtil.encodeTimeout(1_000_000L), is("1m"));
+        assertThat(GrpcHeadersUtil.encodeTimeout(1_000_000L), optionalValue(is("1m")));
     }
 
     @Test
     void encodeTimeoutDoesNotTruncate() {
         // 1_500_000_000ns = 1.5s -- not an exact number of seconds.
         // Must encode as "1500m" (milliseconds), not "1S" (which would lose 500ms)
-        assertThat(GrpcHeadersUtil.encodeTimeout(1_500_000_000L), is("1500m"));
+        assertThat(GrpcHeadersUtil.encodeTimeout(1_500_000_000L), optionalValue(is("1500m")));
     }
 
     @Test
     void encodeTimeoutEightDigitBoundary() {
         // 99_999_999ms in nanos. Should encode as "99999999m" (exactly 8 digits).
-        assertThat(GrpcHeadersUtil.encodeTimeout(99_999_999_000_000L), is("99999999m"));
+        assertThat(GrpcHeadersUtil.encodeTimeout(99_999_999_000_000L), optionalValue(is("99999999m")));
     }
 
     @Test
-    void encodeTimeoutReturnsNullForZero() {
-        assertThat(GrpcHeadersUtil.encodeTimeout(0L), is(nullValue()));
+    void encodeTimeoutReturnsEmptyForZero() {
+        assertThat(GrpcHeadersUtil.encodeTimeout(0L), optionalEmpty());
     }
 
     @Test
-    void encodeTimeoutReturnsNullForNegative() {
-        assertThat(GrpcHeadersUtil.encodeTimeout(-1L), is(nullValue()));
+    void encodeTimeoutReturnsEmptyForNegative() {
+        assertThat(GrpcHeadersUtil.encodeTimeout(-1L), optionalEmpty());
     }
 
     @Test
@@ -237,7 +238,7 @@ class GrpcHeadersUtilTest {
                 1L,                  // 1 nanosecond
         };
         for (long nanos : testValues) {
-            String encoded = GrpcHeadersUtil.encodeTimeout(nanos);
+            String encoded = GrpcHeadersUtil.encodeTimeout(nanos).get();
             long decoded = GrpcHeadersUtil.decodeTimeout(encoded);
             assertThat("round-trip for " + nanos + "ns (encoded: " + encoded + ")",
                     decoded, is(nanos));
@@ -248,7 +249,7 @@ class GrpcHeadersUtilTest {
     void roundTripNonRoundMilliseconds() {
         // 1500ms — not an exact number of seconds, encodes as "1500m"
         long nanos = 1_500_000_000L;
-        String encoded = GrpcHeadersUtil.encodeTimeout(nanos);
+        String encoded = GrpcHeadersUtil.encodeTimeout(nanos).get();
         assertThat(encoded, is("1500m"));
         assertThat(GrpcHeadersUtil.decodeTimeout(encoded), is(nanos));
     }
