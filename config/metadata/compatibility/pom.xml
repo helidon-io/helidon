@@ -16,8 +16,9 @@
     limitations under the License.
 
 -->
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/POM/4.0.0"
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -26,23 +27,21 @@
         <version>4.4.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <groupId>io.helidon.config.metadata.tests</groupId>
-    <artifactId>helidon-config-metadata-tests-project</artifactId>
 
-    <name>Helidon Config Metadata Tests Project</name>
+    <groupId>io.helidon.config</groupId>
+    <artifactId>helidon-config-metadata</artifactId>
     <packaging>pom</packaging>
+    <name>Helidon Config Metadata Compatibility POM</name>
 
-    <properties>
-        <maven.deploy.skip>true</maven.deploy.skip>
-        <maven.sources.skip>true</maven.sources.skip>
-        <maven.javadoc.skip>true</maven.javadoc.skip>
-        <spotbugs.skip>true</spotbugs.skip>
-        <dependency-check.skip>true</dependency-check.skip>
-        <checkstyle.skip>true</checkstyle.skip>
-        <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
-    </properties>
+    <description>
+        Compatibility POM relocating the legacy config metadata coordinates to the current group.
+    </description>
 
-    <modules>
-        <module>test-codegen</module>
-    </modules>
+    <distributionManagement>
+        <relocation>
+            <groupId>io.helidon.config.metadata</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
+            <message>Artifact moved to io.helidon.config.metadata:helidon-config-metadata.</message>
+        </relocation>
+    </distributionManagement>
 </project>
