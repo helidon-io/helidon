@@ -52,6 +52,7 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -184,6 +185,30 @@ class GrpcProtocolHandlerTest {
                 () -> assertThat(exception.getCause(), instanceOf(RuntimeException.class)),
                 () -> assertThat(Status.fromThrowable(exception.getCause()).getCode(), is(Status.Code.CANCELLED))
         );
+    }
+
+    @Test
+    void defaultMaxReadBufferSizeMatchesGrpcEcosystemStandard() {
+        // Matches GrpcUtil.DEFAULT_MAX_MESSAGE_SIZE in grpc-java:
+        // https://github.com/grpc/grpc-java/blob/v1.73.0/core/src/main/java/io/grpc/internal/GrpcUtil.java#L212
+        assertThat(GrpcConfig.create().maxReadBufferSize(), is(4 * 1024 * 1024));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void oversizedMessageThrowsResourceExhausted() {
+        // grpc-java throws RESOURCE_EXHAUSTED (not a plain Java exception) for oversized messages.
+        // See: MessageDeframer.processHeader() in
+        // https://github.com/grpc/grpc-java/blob/v1.73.0/core/src/main/java/io/grpc/internal/MessageDeframer.java#L388-L393
+        int limit = 100 * 1024;
+        GrpcProtocolHandler<?, ?> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                                       Http2Headers.create(WritableHeaders.create()),
+                                                                       null, 1, null,
+                                                                       Http2StreamState.OPEN, null,
+                                                                       GrpcConfig.builder().maxReadBufferSize(limit).build());
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
+                                                  () -> handler.allocateReadBuffer(limit + 1));
+        assertThat(ex.getStatus().getCode(), is(Status.Code.RESOURCE_EXHAUSTED));
     }
 
     @Test
