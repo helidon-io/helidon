@@ -607,15 +607,13 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         @Override
         public int read(byte[] b) {
             // BufferData.read(byte[]) returns 0 when exhausted; InputStream requires -1 at EOF
-            if (bufferData.available() == 0) return -1;
-            return bufferData.read(b);
+            return bufferData.available() == 0 ? -1 : bufferData.read(b);
         }
 
         @Override
         public int read(byte[] b, int off, int len) {
             // BufferData.read(byte[],int,int) returns 0 when exhausted; InputStream requires -1 at EOF
-            if (bufferData.available() == 0) return -1;
-            return bufferData.read(b, off, len);
+            return bufferData.available() == 0 ? -1 : bufferData.read(b, off, len);
         }
 
         @Override
