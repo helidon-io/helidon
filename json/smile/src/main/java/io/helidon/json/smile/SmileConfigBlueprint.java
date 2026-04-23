@@ -18,10 +18,12 @@ package io.helidon.json.smile;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Configuration of Smile encoding and decoding.
  */
+@Api.Preview
 @Prototype.Blueprint
 interface SmileConfigBlueprint {
 

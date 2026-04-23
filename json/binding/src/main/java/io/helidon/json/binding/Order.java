@@ -16,9 +16,12 @@
 
 package io.helidon.json.binding;
 
+import io.helidon.common.Api;
+
 /**
  * Enumeration of ordering strategies.
  */
+@Api.Preview
 public enum Order {
 
     /**

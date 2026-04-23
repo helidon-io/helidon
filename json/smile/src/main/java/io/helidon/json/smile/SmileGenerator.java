@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.json.JsonException;
 import io.helidon.json.JsonGenerator;
@@ -35,6 +36,7 @@ import io.helidon.json.JsonKey;
  *
  * <p>This class is not thread safe.
  */
+@Api.Preview
 public final class SmileGenerator extends JsonGeneratorBase {
 
     private static final int SHARED_TABLE_SIZE = 1024;
