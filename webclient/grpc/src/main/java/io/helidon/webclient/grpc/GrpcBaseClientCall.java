@@ -320,6 +320,9 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         }
     }
 
+    /**
+     * @return {@code null} if this Call has no effective deadline.
+     */
     Deadline effectiveDeadline() {
         return effectiveDeadline;
     }
