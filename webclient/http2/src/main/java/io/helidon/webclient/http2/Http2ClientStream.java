@@ -18,14 +18,10 @@ package io.helidon.webclient.http2;
 
 import java.io.UncheckedIOException;
 import java.time.Duration;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.buffers.BufferData;
@@ -43,7 +39,6 @@ import io.helidon.http.http2.Http2FrameListener;
 import io.helidon.http.http2.Http2FrameType;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
-import io.helidon.http.http2.Http2HuffmanDecoder;
 import io.helidon.http.http2.Http2LoggingFrameListener;
 import io.helidon.http.http2.Http2Ping;
 import io.helidon.http.http2.Http2Priority;
@@ -75,9 +70,8 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
     private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
     private final Http2Settings settings = Http2Settings.create();
-    private final List<Http2FrameData> continuationData = new ArrayList<>();
-    private final Lock pendingInboundHeadersLock = new ReentrantLock();
-    private final Deque<PendingInboundHeaders> pendingInboundHeaders = new ArrayDeque<>();
+    private final ReentrantLock inboundStateLock = new ReentrantLock();
+    private final Condition inboundStateChanged = inboundStateLock.newCondition();
     private final CompletableFuture<Headers> trailers = new CompletableFuture<>();
     private final AtomicBoolean closed = new AtomicBoolean();
 
@@ -86,7 +80,6 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private Http2Headers currentHeaders;
     // accessed from stream thread an connection thread
     private volatile StreamFlowControl flowControl;
-    private PendingInboundHeaders activeInboundHeaders;
     private boolean hasEntity;
 
     // streamId and buffer can only be created when we are locked in the stream id sequence
@@ -119,10 +112,13 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     @Override
     public void headers(Http2Headers headers, boolean endOfStream) {
-        this.state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, false, endOfStream, true);
-        readState = readState.check(endOfStream ? ReadState.END : ReadState.DATA);
-        this.currentHeaders = headers;
-        this.hasEntity = !endOfStream;
+        inboundStateLock.lock();
+        try {
+            headersLocked(headers, endOfStream);
+            inboundStateChanged.signalAll();
+        } finally {
+            inboundStateLock.unlock();
+        }
     }
 
     @Override
@@ -189,9 +185,13 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     }
 
     void trailers(Http2Headers headers, boolean endOfStream) {
-        state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, false, endOfStream, true);
-        readState = readState.check(ReadState.END);
-        trailers.complete(headers.httpHeaders());
+        inboundStateLock.lock();
+        try {
+            trailersLocked(headers, endOfStream);
+            inboundStateChanged.signalAll();
+        } finally {
+            inboundStateLock.unlock();
+        }
     }
 
     /**
@@ -210,7 +210,12 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * @return {@code true} if entity expected, {@code false} otherwise.
      */
     public boolean hasEntity() {
-        return hasEntity;
+        inboundStateLock.lock();
+        try {
+            return hasEntity;
+        } finally {
+            inboundStateLock.unlock();
+        }
     }
 
     /**
@@ -233,23 +238,22 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     }
 
     /**
-     * Closes the stream, releases its reserved peer-concurrency slot, and
-     * escalates to a connection close if this stream still owns undecoded
-     * inbound header blocks.
-     * The connection close is deliberate because later streams cannot skip over
-     * an abandoned HPACK decode turn without corrupting connection-wide decoder state.
+     * Closes the stream and releases its reserved peer-concurrency slot.
+     * Waiting callers are signaled so response-header waits do not block forever
+     * after local cancellation or connection shutdown.
      */
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            boolean hasUndecodedInboundHeaders = hasUndecodedInboundHeaders();
             if (streamId != 0) {
                 connection.removeStream(streamId);
             }
             // A slot is reserved before request HEADERS are written, so every close must release it.
             connection.releaseReservedStream();
-            if (hasUndecodedInboundHeaders) {
-                // Leaving queued header blocks behind would stall later HPACK decodes on the connection.
-                connection.closeUndecodedHeaders(streamId);
+            inboundStateLock.lock();
+            try {
+                inboundStateChanged.signalAll();
+            } finally {
+                inboundStateLock.unlock();
             }
         }
     }
@@ -267,22 +271,6 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         buffer.push(frameData);
     }
 
-    /**
-     * Queues one completed inbound header block for later decoding by the stream thread.
-     * The connection assigns the decode order when {@code END_OF_HEADERS} arrives so
-     * HPACK dynamic-table mutations are replayed in wire order even across streams.
-     *
-     * @param headerBlockOrder wire-order position of the completed header block
-     */
-    void inboundHeaderBlock(long headerBlockOrder) {
-        pendingInboundHeadersLock.lock();
-        try {
-            pendingInboundHeaders.addLast(PendingInboundHeaders.create(headerBlockOrder));
-        } finally {
-            pendingInboundHeadersLock.unlock();
-        }
-    }
-
     BufferData read(int i) {
         return read();
     }
@@ -293,7 +281,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * @return the buffer data
      */
     public BufferData read() {
-        while (state == Http2StreamState.HALF_CLOSED_LOCAL && readState != ReadState.END && hasEntity) {
+        while (expectsEntityData()) {
             Http2FrameData frameData = readOne(timeout);
             if (frameData != null) {
                 return frameData.data();
@@ -304,23 +292,31 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     Status waitFor100Continue() {
         Duration readContinueTimeout = http2ClientConfig.readContinueTimeout();
-        boolean expected100Continue = readState == ReadState.CONTINUE_100_HEADERS;
+        inboundStateLock.lock();
         try {
-            while (readState == ReadState.CONTINUE_100_HEADERS) {
-                readOne(readContinueTimeout);
+            boolean expected100Continue = readState == ReadState.CONTINUE_100_HEADERS;
+            long remainingNanos = readContinueTimeout.toNanos();
+            while (readState == ReadState.CONTINUE_100_HEADERS && !closed.get()) {
+                if (remainingNanos <= 0) {
+                    // Timeout, continue as if it was received.
+                    readState = readState.check(ReadState.HEADERS);
+                    LOGGER.log(DEBUG, "Server didn't respond within 100 Continue timeout in "
+                            + readContinueTimeout
+                            + ", sending data.");
+                    return Status.CONTINUE_100;
+                }
+                remainingNanos = inboundStateChanged.awaitNanos(remainingNanos);
             }
-        } catch (StreamTimeoutException ignored) {
-            // Timeout, continue as if it was received
-            readState = readState.check(ReadState.HEADERS);
-            LOGGER.log(DEBUG, "Server didn't respond within 100 Continue timeout in "
-                    + readContinueTimeout
-                    + ", sending data.");
-            return Status.CONTINUE_100;
+            if (expected100Continue && currentHeaders != null) {
+                return currentHeaders.status();
+            }
+            return null;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for 100 Continue response", e);
+        } finally {
+            inboundStateLock.unlock();
         }
-        if (expected100Continue && currentHeaders != null) {
-            return currentHeaders.status();
-        }
-        return null;
     }
 
     /**
@@ -330,10 +326,16 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * @param endOfStream  end of stream marker
      */
     public void writeHeaders(Http2Headers http2Headers, boolean endOfStream) {
-        this.state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, true, endOfStream, true);
-        this.readState = readState.check(http2Headers.httpHeaders().containsToken(HeaderValues.EXPECT_100)
-                                                 ? ReadState.CONTINUE_100_HEADERS
-                                                 : ReadState.HEADERS);
+        inboundStateLock.lock();
+        try {
+            this.state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, true, endOfStream, true);
+            this.readState = readState.check(http2Headers.httpHeaders().containsToken(HeaderValues.EXPECT_100)
+                                                     ? ReadState.CONTINUE_100_HEADERS
+                                                     : ReadState.HEADERS);
+            inboundStateChanged.signalAll();
+        } finally {
+            inboundStateLock.unlock();
+        }
         Http2Flag.HeaderFlags flags;
         if (endOfStream) {
             flags = Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
@@ -398,13 +400,25 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * @return the headers
      */
     public Http2Headers readHeaders() {
-        while (readState == ReadState.HEADERS) {
-            Http2FrameData frameData = readOne(timeout);
-            if (frameData != null) {
-                throw new IllegalStateException("Unexpected frame type " + frameData.header() + ", HEADERS are expected.");
+        inboundStateLock.lock();
+        try {
+            long remainingNanos = timeout.toNanos();
+            while (readState == ReadState.HEADERS && !closed.get()) {
+                if (remainingNanos <= 0) {
+                    throw new StreamTimeoutException(this, streamId, timeout);
+                }
+                remainingNanos = inboundStateChanged.awaitNanos(remainingNanos);
             }
+            if (currentHeaders == null && closed.get()) {
+                throw new IllegalStateException("Stream closed while waiting for response headers");
+            }
+            return currentHeaders;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for response headers", e);
+        } finally {
+            inboundStateLock.unlock();
         }
-        return currentHeaders;
     }
 
     /**
@@ -426,81 +440,15 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         Http2FrameData frameData = buffer.poll(pollTimeout);
 
         if (frameData != null) {
-
             recvListener.frameHeader(ctx, streamId, frameData.header());
             recvListener.frame(ctx, streamId, frameData.data());
 
-            int flags = frameData.header().flags();
-            boolean endOfStream = (flags & Http2Flag.END_OF_STREAM) == Http2Flag.END_OF_STREAM;
-            boolean endOfHeaders = (flags & Http2Flag.END_OF_HEADERS) == Http2Flag.END_OF_HEADERS;
-
             switch (frameData.header().type()) {
             case DATA:
+                int flags = frameData.header().flags();
+                boolean endOfStream = (flags & Http2Flag.END_OF_STREAM) == Http2Flag.END_OF_STREAM;
                 data(frameData.header(), frameData.data(), endOfStream);
                 return frameData;
-
-            case HEADERS, CONTINUATION:
-                continuationData.add(frameData);
-
-                // (HEADERS[100-continue] CONTINUATION*)*
-                // ^------- endOfHeaders
-                // HEADERS+
-                // CONTINUATION*
-                // ^------- endOfHeaders
-                // DATA*
-                // (HEADERS[trailers] CONTINUATION*)+
-                // ^------- endOfHeaders
-                if (endOfHeaders) {
-                    var requestHuffman = Http2HuffmanDecoder.create();
-                    PendingInboundHeaders pendingInboundHeaders = beginInboundHeaderBlock();
-
-                    //  HTTP/1.1 100 Continue            HEADERS
-                    //  Extension-Field: bar       ==>     - END_STREAM
-                    //                                     + END_HEADERS
-                    //                                       :status = 100
-                    //                                       extension-field = bar
-                    //
-                    //  HTTP/1.1 200 OK                  HEADERS
-                    //  Content-Type: image/jpeg   ==>     - END_STREAM
-                    //  Transfer-Encoding: chunked         + END_HEADERS
-                    //  Trailer: Foo                         :status = 200
-                    //                                       content-type = image/jpeg
-                    //  123                                  trailer = Foo
-                    //  {binary data}
-                    //  0                                DATA
-                    //  Foo: bar                           - END_STREAM
-                    //                                   {binary data}
-                    //
-                    //                                   HEADERS
-                    //                                     + END_STREAM
-                    //                                     + END_HEADERS
-                    //                                       foo = bar
-                    try {
-                        switch (readState) {
-                        case CONTINUE_100_HEADERS -> {
-                            Http2Headers http2Headers = readHeaders(requestHuffman, false, pendingInboundHeaders);
-                            // Clear out for headers
-                            continuationData.clear();
-                            this.continue100(http2Headers, endOfStream);
-                        }
-                        case HEADERS -> {
-                            // Add extension headers from 100 Continue
-                            Http2Headers http2Headers = readHeaders(requestHuffman, true, pendingInboundHeaders);
-                            // Clear out for trailers
-                            continuationData.clear();
-                            this.headers(http2Headers, endOfStream);
-                        }
-                        case DATA, TRAILERS -> {
-                            Http2Headers http2Headers = readHeaders(requestHuffman, false, pendingInboundHeaders);
-                            this.trailers(http2Headers, endOfStream);
-                        }
-                        default -> throw new IllegalStateException("Client is in wrong read state " + readState.name());
-                        }
-                    } finally {
-                        finishInboundHeaderBlock();
-                    }
-                }
-                break;
             default:
                 LOGGER.log(DEBUG, "Dropping frame " + frameData.header() + " expected header or data.");
             }
@@ -508,97 +456,113 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         return null;
     }
 
-    private void continue100(Http2Headers headers, boolean endOfStream) {
-        // no stream state check as 100 continues are an exception
+    /**
+     * Returns the base headers to use when decoding the next inbound header block.
+     * Final response headers after a {@code 100 Continue} must merge the previously
+     * received informational headers, while the first informational block and trailers
+     * always start from a fresh header set.
+     *
+     * @return base headers for the next inbound decode
+     */
+    Http2Headers inboundHeaderDecodeBasis() {
+        inboundStateLock.lock();
+        try {
+            if (readState == ReadState.HEADERS && currentHeaders != null) {
+                return currentHeaders;
+            }
+            return Http2Headers.create(WritableHeaders.create());
+        } finally {
+            inboundStateLock.unlock();
+        }
+    }
+
+    /**
+     * Applies a fully decoded inbound header block received on the connection thread.
+     * The block is routed according to the current inbound read state:
+     * informational headers, final response headers, or trailers.
+     *
+     * @param headers decoded headers
+     * @param endOfStream whether the decoded block also ended the stream
+     */
+    void inboundHeaders(Http2Headers headers, boolean endOfStream) {
+        inboundStateLock.lock();
+        try {
+            switch (readState) {
+            case CONTINUE_100_HEADERS -> continue100Locked(headers, endOfStream);
+            case HEADERS -> headersLocked(headers, endOfStream);
+            case DATA, TRAILERS -> trailersLocked(headers, endOfStream);
+            default -> throw new IllegalStateException("Client is in wrong read state " + readState.name());
+            }
+            inboundStateChanged.signalAll();
+        } finally {
+            inboundStateLock.unlock();
+        }
+    }
+
+    /**
+     * Determines whether the caller should keep polling for inbound {@code DATA}
+     * frames. Once final headers or trailers mark the response complete, reads
+     * stop even if no explicit empty data frame is received.
+     *
+     * @return {@code true} when entity data is still expected
+     */
+    private boolean expectsEntityData() {
+        inboundStateLock.lock();
+        try {
+            return state == Http2StreamState.HALF_CLOSED_LOCAL && readState != ReadState.END && hasEntity;
+        } finally {
+            inboundStateLock.unlock();
+        }
+    }
+
+    /**
+     * Applies the final non-trailer response headers and advances the inbound
+     * stream state to either body reads or end-of-stream.
+     *
+     * @param headers decoded response headers
+     * @param endOfStream whether the headers also closed the remote side
+     */
+    private void headersLocked(Http2Headers headers, boolean endOfStream) {
+        this.state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, false, endOfStream, true);
+        readState = readState.check(endOfStream ? ReadState.END : ReadState.DATA);
+        this.currentHeaders = headers;
+        this.hasEntity = !endOfStream;
+    }
+
+    /**
+     * Applies informational headers received while the caller is still waiting
+     * on {@code Expect: 100-continue}. A final non-100 response can also arrive
+     * in this state, so this method must handle both cases.
+     *
+     * @param headers decoded informational or final headers
+     * @param endOfStream whether the headers also closed the remote side
+     */
+    private void continue100Locked(Http2Headers headers, boolean endOfStream) {
+        // No stream state check as 100 continues are an exception.
         this.currentHeaders = headers;
         if (endOfStream) {
             readState = readState.check(ReadState.END);
         } else if (headers.status() == Status.CONTINUE_100) {
-            // After 100 continue normal headers are expected
+            // After 100 continue normal headers are expected.
             readState = readState.check(ReadState.HEADERS);
         } else {
-            // Some headers already came, but not 100 continue
+            // Some headers already came, but not 100 continue.
             readState = readState.check(ReadState.DATA);
         }
         this.hasEntity = !endOfStream;
     }
 
     /**
-     * Decodes one completed inbound header block using the connection-assigned decode order
-     * stored in {@code pendingInboundHeaders}.
-     * That order preserves HPACK dynamic-table consistency when multiple streams are
-     * receiving headers concurrently.
+     * Publishes inbound trailers and completes the trailers future once the
+     * remote side finishes the response.
      *
-     * @param decoder Huffman decoder used for literal decoding
-     * @param mergeWithPrevious whether to merge into previously received headers
-     * @param pendingInboundHeaders captured frames and decode order for the current block
-     * @return decoded HTTP/2 headers
+     * @param headers decoded trailer headers
+     * @param endOfStream trailers must always close the remote side
      */
-    private Http2Headers readHeaders(Http2HuffmanDecoder decoder,
-                                     boolean mergeWithPrevious,
-                                     PendingInboundHeaders pendingInboundHeaders) {
-        Http2Headers http2Headers =
-                connection.readHeaders(this,
-                                       decoder,
-                                       mergeWithPrevious && currentHeaders != null
-                                               ? currentHeaders
-                                               : Http2Headers.create(WritableHeaders.create()),
-                                       pendingInboundHeaders.decodeOrder(),
-                                       pendingInboundHeaders.frameData());
-        recvListener.headers(ctx, streamId, http2Headers);
-        return http2Headers;
-    }
-
-    /**
-     * Marks the oldest queued inbound header block as actively decoding and snapshots
-     * the accumulated {@code HEADERS}/{@code CONTINUATION} frames for it.
-     * Tracking the active block lets {@link #close()} detect whether abandoning this
-     * stream would strand the connection-level decode sequence.
-     *
-     * @return metadata for the header block currently being decoded
-     */
-    private PendingInboundHeaders beginInboundHeaderBlock() {
-        pendingInboundHeadersLock.lock();
-        try {
-            PendingInboundHeaders pendingInboundHeaders = this.pendingInboundHeaders.pollFirst();
-            if (pendingInboundHeaders == null) {
-                throw new IllegalStateException("Missing inbound header block order for stream " + streamId);
-            }
-            pendingInboundHeaders.captureFrames(continuationData);
-            activeInboundHeaders = pendingInboundHeaders;
-            return pendingInboundHeaders;
-        } finally {
-            pendingInboundHeadersLock.unlock();
-        }
-    }
-
-    /**
-     * Clears the active inbound header block after decode completes or fails.
-     * This distinguishes finished work from stranded work when the stream is closed.
-     */
-    private void finishInboundHeaderBlock() {
-        pendingInboundHeadersLock.lock();
-        try {
-            activeInboundHeaders = null;
-        } finally {
-            pendingInboundHeadersLock.unlock();
-        }
-    }
-
-    /**
-     * Returns whether this stream still owns queued or in-progress inbound header blocks.
-     * This is used during close to decide whether the connection must also be closed to
-     * unblock later HPACK decoders waiting for this stream's turn.
-     *
-     * @return {@code true} if there are queued or active undecoded header blocks
-     */
-    private boolean hasUndecodedInboundHeaders() {
-        pendingInboundHeadersLock.lock();
-        try {
-            return activeInboundHeaders != null || !pendingInboundHeaders.isEmpty();
-        } finally {
-            pendingInboundHeadersLock.unlock();
-        }
+    private void trailersLocked(Http2Headers headers, boolean endOfStream) {
+        state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, false, endOfStream, true);
+        readState = readState.check(ReadState.END);
+        trailers.complete(headers.httpHeaders());
     }
 
     private void write(Http2FrameData frameData, boolean endOfStream) {
@@ -630,58 +594,6 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                 return newState;
             }
             throw new IllegalStateException("Transition from " + this + " to " + newState + " is not allowed!");
-        }
-    }
-
-    /**
-     * Captures one completed inbound header block until the stream thread is ready to decode it.
-     * The connection assigns {@link #decodeOrder()} when {@code END_OF_HEADERS} arrives because
-     * HPACK dynamic-table updates are connection-scoped and later blocks must not overtake earlier ones.
-     */
-    private static final class PendingInboundHeaders {
-        private final long decodeOrder;
-        private Http2FrameData[] frameData = new Http2FrameData[0];
-
-        private PendingInboundHeaders(long decodeOrder) {
-            this.decodeOrder = decodeOrder;
-        }
-
-        /**
-         * Creates a holder for one completed inbound header block.
-         *
-         * @param decodeOrder wire-order position assigned by the connection
-         * @return pending inbound header metadata
-         */
-        static PendingInboundHeaders create(long decodeOrder) {
-            return new PendingInboundHeaders(decodeOrder);
-        }
-
-        /**
-         * Returns the wire-order position this block must use during HPACK decode.
-         *
-         * @return decode order assigned by the connection
-         */
-        long decodeOrder() {
-            return decodeOrder;
-        }
-
-        /**
-         * Returns the captured {@code HEADERS}/{@code CONTINUATION} frames for this block.
-         *
-         * @return frame data for the completed header block
-         */
-        Http2FrameData[] frameData() {
-            return frameData;
-        }
-
-        /**
-         * Copies the accumulated header frames into this holder so the stream can reuse
-         * its working buffer for subsequent header blocks.
-         *
-         * @param continuationData frames collected for the completed header block
-         */
-        void captureFrames(List<Http2FrameData> continuationData) {
-            frameData = continuationData.toArray(new Http2FrameData[0]);
         }
     }
 }

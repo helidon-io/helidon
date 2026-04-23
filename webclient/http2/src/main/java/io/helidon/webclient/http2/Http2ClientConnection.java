@@ -17,6 +17,7 @@
 package io.helidon.webclient.http2;
 
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -46,6 +46,7 @@ import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameListener;
+import io.helidon.http.http2.Http2FrameType;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2GoAway;
 import io.helidon.http.http2.Http2Headers;
@@ -81,9 +82,7 @@ public class Http2ClientConnection {
     private final ConnectionFlowControl connectionFlowControl;
     private final Http2Headers.DynamicTable inboundDynamicTable =
             Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
-    private final AtomicLong inboundHeaderBlockSequence = new AtomicLong();
-    private final ReentrantLock inboundHeaderDecodeLock = new ReentrantLock();
-    private final Condition inboundHeaderDecodeTurn = inboundHeaderDecodeLock.newCondition();
+    private final PendingInboundHeaders pendingInboundHeaders;
     private final Http2ClientProtocolConfig protocolConfig;
     private final ClientConnection connection;
     private final SocketContext ctx;
@@ -105,12 +104,10 @@ public class Http2ClientConnection {
             .build();
     private Future<?> handleTask;
     private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
-    // Guarded by inboundHeaderDecodeLock.
-    private long nextInboundHeaderBlockToDecode = 1;
-
     Http2ClientConnection(Http2ClientImpl http2Client, ClientConnection connection) {
         this.protocolConfig = http2Client.protocolConfig();
         this.clientConfig = http2Client.clientConfig();
+        this.pendingInboundHeaders = new PendingInboundHeaders(protocolConfig.maxHeaderListSize());
         this.connectionFlowControl = ConnectionFlowControl.clientBuilder(this::writeWindowsUpdate)
                 .maxFrameSize(protocolConfig.maxFrameSize())
                 .initialWindowSize(protocolConfig.initialWindowSize())
@@ -144,10 +141,6 @@ public class Http2ClientConnection {
 
     Http2ConnectionWriter writer() {
         return writer;
-    }
-
-    Http2Headers.DynamicTable getInboundDynamicTable() {
-        return this.inboundDynamicTable;
     }
 
     ConnectionFlowControl flowControl() {
@@ -309,7 +302,6 @@ public class Http2ClientConnection {
         initialSettingsLatch.countDown();
         this.goAway(0, Http2ErrorCode.NO_ERROR, "Closing connection");
         if (state.getAndSet(State.CLOSED) != State.CLOSED) {
-            signalInboundHeaderDecodeWaiters();
             try {
                 handleTask.cancel(true);
                 ctx.log(LOGGER, TRACE, "Closing connection");
@@ -317,23 +309,7 @@ public class Http2ClientConnection {
             } catch (Throwable e) {
                 ctx.log(LOGGER, TRACE, "Failed to close HTTP/2 connection.", e);
             }
-        } else {
-            signalInboundHeaderDecodeWaiters();
         }
-    }
-
-    /**
-     * Closes the connection after a stream is abandoned with queued or in-progress
-     * inbound header decoding.
-     * This is intentional: later streams decode HPACK state in connection wire order,
-     * so abandoning an earlier block would otherwise deadlock the remaining decoders.
-     *
-     * @param streamId stream that was closed while still owning undecoded headers
-     */
-    void closeUndecodedHeaders(int streamId) {
-        ctx.log(LOGGER, DEBUG, "%d: closing connection because stream %d was abandoned with undecoded headers",
-                0, streamId);
-        close();
     }
 
     static Http2Settings settings(Http2ClientProtocolConfig config) {
@@ -345,63 +321,6 @@ public class Http2ClientConnection {
                 .add(Http2Setting.MAX_FRAME_SIZE, (long) config.maxFrameSize())
                 .add(Http2Setting.ENABLE_PUSH, false)
                 .build();
-    }
-
-    /**
-     * Reads the HTTP/2 headers for the specified client stream from this connection.
-     * Thread-safe: Uses a connection-level decode lock to preserve inbound HPACK state.
-     *
-     * @param stream the HTTP/2 client stream for which headers are being read
-     * @param decoder the Huffman decoder to decode the headers
-     * @param headers the existing headers object to populate or use as a basis
-     * @param headerBlockOrder the order in which the complete inbound header block arrived on the wire
-     * @param array the array of HTTP/2 frame data to process
-     * @return the processed HTTP/2 headers
-     */
-    Http2Headers readHeaders(Http2ClientStream stream,
-                             Http2HuffmanDecoder decoder,
-                             Http2Headers headers,
-                             long headerBlockOrder,
-                             Http2FrameData[] array) {
-        inboundHeaderDecodeLock.lock();
-        try {
-            // HPACK dynamic-table updates are connection-scoped, so blocks must decode in wire order.
-            while (headerBlockOrder != nextInboundHeaderBlockToDecode) {
-                if (state.get().closed()) {
-                    throw new IllegalStateException("Connection closed while waiting to decode HTTP/2 headers");
-                }
-                inboundHeaderDecodeTurn.await();
-            }
-            try {
-                return Http2Headers.create(stream,
-                                           inboundDynamicTable,
-                                           decoder,
-                                           headers,
-                                           array);
-            } finally {
-                nextInboundHeaderBlockToDecode++;
-                inboundHeaderDecodeTurn.signalAll();
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while waiting to decode HTTP/2 headers", e);
-        } finally {
-            inboundHeaderDecodeLock.unlock();
-        }
-    }
-
-    /**
-     * Wakes threads waiting for their inbound HPACK decode turn during shutdown.
-     * Without this signal, a blocked decoder could wait forever for an earlier
-     * header block that will never finish once the connection is closing.
-     */
-    private void signalInboundHeaderDecodeWaiters() {
-        inboundHeaderDecodeLock.lock();
-        try {
-            inboundHeaderDecodeTurn.signalAll();
-        } finally {
-            inboundHeaderDecodeLock.unlock();
-        }
     }
 
     private void sendPreface(Http2ClientProtocolConfig config, boolean sendSettings) {
@@ -544,6 +463,7 @@ public class Http2ClientConnection {
         frameHeader.type().checkLength(frameHeader.length());
         BufferData data = readFrameData(frameHeader);
         int streamId = frameHeader.streamId();
+        validateHeaderContinuation(frameHeader, streamId);
 
         return switch (frameHeader.type()) {
         case GO_AWAY -> handleGoAwayFrame(streamId, frameHeader, data);
@@ -571,6 +491,42 @@ public class Http2ClientConnection {
             return BufferData.empty();
         }
         return reader.readBuffer(frameHeader.length());
+    }
+
+    private void validateHeaderContinuation(Http2FrameHeader frameHeader, int streamId) {
+        int expectedStreamId = pendingInboundHeaders.streamId();
+        if (expectedStreamId == 0) {
+            return;
+        }
+        if (frameHeader.type() != Http2FrameType.CONTINUATION) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                     "Expecting CONTINUATION for stream " + expectedStreamId
+                                             + ", received " + frameHeader.type() + " for " + streamId);
+        }
+        if (expectedStreamId != streamId) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                     "Received CONTINUATION for stream " + streamId
+                                             + ", expected for " + expectedStreamId);
+        }
+    }
+
+    /**
+     * Decodes one complete inbound header block on the connection thread.
+     * The HPACK dynamic table is shared by all streams on this connection, so
+     * decoding must happen in wire order here instead of in whichever caller
+     * thread reaches {@code Http2ClientStream.readHeaders()} first.
+     *
+     * @param stream stream receiving the decoded headers
+     * @param headerFrames full {@code HEADERS}/{@code CONTINUATION} block in wire order
+     * @return decoded headers
+     */
+    private Http2Headers decodeInboundHeaders(Http2ClientStream stream, Http2FrameData... headerFrames) {
+        // Keep HPACK decode on the connection thread so the shared dynamic table advances in wire order.
+        return Http2Headers.create(stream,
+                                   inboundDynamicTable,
+                                   Http2HuffmanDecoder.create(),
+                                   stream.inboundHeaderDecodeBasis(),
+                                   headerFrames);
     }
 
     private boolean handleGoAwayFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {
@@ -722,26 +678,63 @@ public class Http2ClientConnection {
     private void handleDataFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {
         Http2ClientStream stream = stream(streamId);
         if (stream == null) {
-            ctx.log(LOGGER, DEBUG, "%d: received data for stream %d, which does not exist", 0, streamId);
+            if (LOGGER.isLoggable(DEBUG)) {
+                ctx.log(LOGGER, DEBUG, "%d: received data for stream %d, which does not exist", 0, streamId);
+            }
             return;
         }
         stream.flowControl().inbound().decrementWindowSize(frameHeader.length());
-        ctx.log(LOGGER, DEBUG, "%d: received data for stream %d", 0, streamId);
+        if (LOGGER.isLoggable(DEBUG)) {
+            ctx.log(LOGGER, DEBUG, "%d: received data for stream %d", 0, streamId);
+        }
         stream.push(new Http2FrameData(frameHeader, data));
     }
 
     private boolean handleHeadersFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {
+        recvListener.frameHeader(ctx, streamId, frameHeader);
+        // Http2LoggingFrameListener inspects BufferData without advancing it; copying here would drain the live payload.
+        recvListener.frame(ctx, streamId, data);
+
+        Http2FrameData[] headerFrames;
+        boolean endOfStream;
+        if (frameHeader.type() == Http2FrameType.HEADERS) {
+            if (!endOfHeaders(frameHeader)) {
+                pendingInboundHeaders.begin(frameHeader, data);
+                return true;
+            }
+            endOfStream = frameHeader.flags(Http2FrameTypes.HEADERS).endOfStream();
+            headerFrames = new Http2FrameData[] {new Http2FrameData(frameHeader, data)};
+        } else {
+            pendingInboundHeaders.add(frameHeader, data);
+            if (!endOfHeaders(frameHeader)) {
+                return true;
+            }
+            endOfStream = pendingInboundHeaders.endOfStream();
+            headerFrames = pendingInboundHeaders.frames();
+            pendingInboundHeaders.clear();
+        }
+
         Http2ClientStream headerStream = stream(streamId);
         if (headerStream == null) {
-            ctx.log(LOGGER, DEBUG, "%d: received %s for stream %d, which does not exist", 0, frameHeader.type(), streamId);
+            if (LOGGER.isLoggable(DEBUG)) {
+                ctx.log(LOGGER, DEBUG, "%d: received %s for stream %d, which does not exist",
+                        0, frameHeader.type(), streamId);
+            }
             return true;
         }
-        if ((frameHeader.flags() & Http2Flag.END_OF_HEADERS) == Http2Flag.END_OF_HEADERS) {
-            // Capture the arrival order of each complete header block before stream threads decode it.
-            headerStream.inboundHeaderBlock(inboundHeaderBlockSequence.incrementAndGet());
-        }
-        headerStream.push(new Http2FrameData(frameHeader, data));
+
+        Http2Headers headers = decodeInboundHeaders(headerStream, headerFrames);
+        recvListener.headers(ctx, streamId, headers);
+        headerStream.inboundHeaders(headers, endOfStream);
         return true;
+    }
+
+    private static boolean endOfHeaders(Http2FrameHeader frameHeader) {
+        return switch (frameHeader.type()) {
+        case HEADERS -> frameHeader.flags(Http2FrameTypes.HEADERS).endOfHeaders();
+        case CONTINUATION -> frameHeader.flags(Http2FrameTypes.CONTINUATION).endOfHeaders();
+        default -> false;
+        };
     }
 
     private void ackSettings() {
@@ -779,6 +772,113 @@ public class Http2ClientConnection {
 
         boolean closed() {
             return closed;
+        }
+    }
+
+    /**
+     * Collects one split inbound {@code HEADERS}/{@code CONTINUATION} block until
+     * the terminating {@code END_HEADERS} frame arrives.
+     * The client keeps a single HPACK dynamic table per connection, so the raw
+     * frames must stay on the connection thread and be decoded only once the
+     * full block is available in wire order. This also enforces the negotiated
+     * header-list cap while the block is still in flight, mirroring the server path.
+     */
+    static final class PendingInboundHeaders {
+        private final List<Http2FrameData> headerFrames = new ArrayList<>();
+        private final long maxHeaderListSize;
+        private Http2FrameHeader firstHeader;
+        private long headerListSize;
+
+        PendingInboundHeaders(long maxHeaderListSize) {
+            this.maxHeaderListSize = maxHeaderListSize;
+        }
+
+        /**
+         * Starts tracking a split inbound header block.
+         *
+         * @param frameHeader initial {@code HEADERS} frame header
+         * @param data initial payload bytes
+         */
+        void begin(Http2FrameHeader frameHeader, BufferData data) {
+            clear();
+            firstHeader = frameHeader;
+            headerFrames.add(new Http2FrameData(frameHeader, data));
+            addAndValidateHeaderListSize(frameHeader.length());
+        }
+
+        /**
+         * Appends one inbound {@code CONTINUATION} frame to the current block.
+         *
+         * @param frameHeader continuation frame header
+         * @param data continuation payload bytes
+         */
+        void add(Http2FrameHeader frameHeader, BufferData data) {
+            if (headerFrames.isEmpty()) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received continuation without headers.");
+            }
+            headerFrames.add(new Http2FrameData(frameHeader, data));
+            addAndValidateHeaderListSize(frameHeader.length());
+        }
+
+        /**
+         * Returns the stream id of the block currently being assembled, or {@code 0}
+         * when no split header block is in progress.
+         *
+         * @return stream id that still expects {@code CONTINUATION}
+         */
+        int streamId() {
+            if (firstHeader == null) {
+                return 0;
+            }
+            return firstHeader.streamId();
+        }
+
+        /**
+         * Returns the collected header frames in wire order.
+         *
+         * @return current pending frames
+         */
+        Http2FrameData[] frames() {
+            return headerFrames.toArray(new Http2FrameData[0]);
+        }
+
+        /**
+         * Returns whether the initial {@code HEADERS} frame carried the
+         * {@code END_STREAM} flag.
+         *
+         * @return {@code true} if the completed block also ends the stream
+         */
+        boolean endOfStream() {
+            if (firstHeader == null) {
+                throw new IllegalStateException("No inbound headers are pending.");
+            }
+            return firstHeader.flags(Http2FrameTypes.HEADERS).endOfStream();
+        }
+
+        /**
+         * Clears the currently tracked split header block after decode or error.
+         */
+        void clear() {
+            headerFrames.clear();
+            firstHeader = null;
+            headerListSize = 0;
+        }
+
+        /**
+         * Tracks the encoded header bytes accumulated for the current block and
+         * rejects peers that exceed the configured header-list budget before decode.
+         *
+         * @param headerSizeIncrement bytes contributed by the next frame
+         */
+        private void addAndValidateHeaderListSize(int headerSizeIncrement) {
+            if (maxHeaderListSize <= 0) {
+                return;
+            }
+            headerListSize += headerSizeIncrement;
+            if (headerListSize > maxHeaderListSize) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                         "Response Header Fields Too Large");
+            }
         }
     }
 }
