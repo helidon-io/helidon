@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.hsts;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.ServerFeatureProvider;
@@ -27,8 +28,9 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 @Weight(HstsFeature.WEIGHT)
 public class HstsFeatureProvider implements ServerFeatureProvider<HstsFeature> {
     /**
-     * Required for {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public HstsFeatureProvider() {
     }
 

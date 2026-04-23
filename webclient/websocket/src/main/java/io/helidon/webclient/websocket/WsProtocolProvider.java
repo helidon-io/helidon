@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.websocket;
 
+import io.helidon.common.Api;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.spi.ClientProtocolProvider;
@@ -28,8 +29,9 @@ public class WsProtocolProvider implements ClientProtocolProvider<WsClient, WsCl
     static final String CONFIG_KEY = "websocket";
 
     /**
-     * Public constructor required by {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public WsProtocolProvider() {
     }
 

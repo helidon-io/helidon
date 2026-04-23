@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http1;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.ProtocolConfigProvider;
 
@@ -24,8 +25,9 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
  */
 public class Http1ProtocolConfigProvider implements ProtocolConfigProvider<Http1Config> {
     /**
-     * Required default constructor for {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public Http1ProtocolConfigProvider() {
     }
 

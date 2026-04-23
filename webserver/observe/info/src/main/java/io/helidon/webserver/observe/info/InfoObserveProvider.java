@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.observe.info;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
@@ -28,11 +29,9 @@ import io.helidon.webserver.observe.spi.Observer;
 @Deprecated
 public class InfoObserveProvider implements ObserveProvider {
     /**
-     * Required for {@link java.util.ServiceLoader}.
-     *
-     * @deprecated only for {@link java.util.ServiceLoader}
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public InfoObserveProvider() {
     }
 

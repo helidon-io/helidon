@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.concurrency.limits;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.ServerFeatureProvider;
@@ -38,8 +39,9 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 @Weight(LimitsFeature.WEIGHT)
 public class LimitsFeatureProvider implements ServerFeatureProvider<LimitsFeature> {
     /**
-     * Public constructor required by {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public LimitsFeatureProvider() {
     }
 

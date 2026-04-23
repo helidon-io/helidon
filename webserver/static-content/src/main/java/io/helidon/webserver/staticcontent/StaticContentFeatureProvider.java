@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.staticcontent;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.ServerFeatureProvider;
@@ -26,11 +27,9 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 @Weight(StaticContentFeature.WEIGHT)
 public class StaticContentFeatureProvider implements ServerFeatureProvider<StaticContentFeature> {
     /**
-     * Required for {@link java.util.ServiceLoader}.
-     *
-     * @deprecated only for {@link java.util.ServiceLoader}
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public StaticContentFeatureProvider() {
     }
 

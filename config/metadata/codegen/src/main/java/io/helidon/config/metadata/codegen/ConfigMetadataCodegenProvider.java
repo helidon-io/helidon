@@ -21,6 +21,7 @@ import java.util.Set;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.codegen.spi.CodegenExtensionProvider;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.CONFIGURED;
@@ -32,8 +33,9 @@ import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.OPTIONS;
  */
 public class ConfigMetadataCodegenProvider implements CodegenExtensionProvider {
     /**
-     * Public constructor required by {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public ConfigMetadataCodegenProvider() {
     }
 

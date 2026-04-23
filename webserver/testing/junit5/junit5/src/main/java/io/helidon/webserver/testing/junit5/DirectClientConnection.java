@@ -22,6 +22,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
@@ -145,6 +146,7 @@ class DirectClientConnection implements ClientConnection {
         });
     }
 
+    @SuppressWarnings(Api.SUPPRESS_INTERNAL)
     private void startServer() {
         ServerConnection connection = new Http1ConnectionProvider()
                 .create(WebServer.DEFAULT_SOCKET_NAME, Http1Config.create(), ProtocolConfigs.create(List.of()))

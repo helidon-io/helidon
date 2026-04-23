@@ -29,6 +29,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
             <!-- todo required for @Generated -->
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>

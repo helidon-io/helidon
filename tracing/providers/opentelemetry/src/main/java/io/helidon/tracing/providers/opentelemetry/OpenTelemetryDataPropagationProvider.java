@@ -15,6 +15,7 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.context.spi.DataPropagationProvider;
 import io.helidon.tracing.Scope;
@@ -31,9 +32,9 @@ public class OpenTelemetryDataPropagationProvider
     private static final System.Logger LOGGER = System.getLogger(OpenTelemetryDataPropagationProvider.class.getName());
 
     /**
-     * Creates a new instance. (For service loading/registration.)
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public OpenTelemetryDataPropagationProvider() {
     }
 
