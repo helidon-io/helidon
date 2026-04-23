@@ -113,8 +113,6 @@ class GrpcMaxMessageSizeErrorTest extends BaseServiceTest {
         assertThat("Server did not respond within timeout", latch.await(10, TimeUnit.SECONDS), is(true));
         assertThat("Expected an error response", errorRef.get(), is(notNullValue()));
 
-        // grpc-java uses RESOURCE_EXHAUSTED (not CANCELLED or UNKNOWN) for oversized messages.
-        // See: https://github.com/grpc/grpc-java/blob/v1.73.0/core/src/main/java/io/grpc/internal/MessageDeframer.java#L388-L393
         Status status = Status.fromThrowable(errorRef.get());
         assertThat(status.getCode(), is(Status.Code.RESOURCE_EXHAUSTED));
     }
