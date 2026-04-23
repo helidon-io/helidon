@@ -139,6 +139,13 @@ class BindingGenerator {
         classModel.addMethod(bindingMethod -> bindingMethod
                 .addAnnotation(Annotations.OVERRIDE)
                 .name("binding")
+                // service-loaded service descriptors use constructor references to internal constructors
+                .addAnnotation(Annotation.builder()
+                                       .type(SuppressWarnings.class)
+                                       .putProperty("value", AnnotationProperty.create(Api.SUPPRESS_ALL,
+                                                                                       TypeName.create(Api.class),
+                                                                                       "SUPPRESS_ALL"))
+                                       .build())
                 .addParameter(binderParam -> binderParam
                         .name("binder")
                         .type(SERVICE_PLAN_BINDER))
