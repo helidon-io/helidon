@@ -232,6 +232,30 @@ class JsonGeneratorTest {
 
     @ParameterizedTest
     @EnumSource(GeneratorMethod.class)
+    public void testPrettyPrintObject(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createPrettyGenerator()) {
+            generator.writeObjectStart()
+                    .write("name", "John")
+                    .writeKey("address")
+                    .writeObjectStart()
+                    .write("city", "Prague")
+                    .writeObjectEnd()
+                    .writeObjectEnd();
+        }
+
+        String expected = """
+                {
+                   "name": "John",
+                   "address": {
+                      "city": "Prague"
+                   }
+                }""";
+        assertThat(target.generatedJson(), is(expected));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
     public void testWriteObjectWithJsonKey(GeneratorMethod generatorMethod) throws Exception {
         GeneratorMethod.Target target = generatorMethod.createTarget();
         try (JsonGenerator generator = target.createGenerator()) {
@@ -419,6 +443,29 @@ class JsonGeneratorTest {
         }
 
         assertThat(target.generatedJson(), is("[[1,2],[3,4]]"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testPrettyPrintArray(GeneratorMethod generatorMethod) throws Exception {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createPrettyGenerator()) {
+            generator.writeArrayStart()
+                    .write("a")
+                    .writeObjectStart()
+                    .write("active", true)
+                    .writeObjectEnd()
+                    .writeArrayEnd();
+        }
+
+        String expected = """
+                [
+                   "a",
+                   {
+                      "active": true
+                   }
+                ]""";
+        assertThat(target.generatedJson(), is(expected));
     }
 
     // Complex structure tests
