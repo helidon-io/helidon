@@ -640,9 +640,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         @Override
         public byte[] readAllBytes() {
             // single exact-size allocation; avoids the default growing-array loop
-            byte[] result = new byte[bufferData.available()];
-            bufferData.read(result);
-            return result;
+            return bufferData.readBytes();
         }
     }
 }
