@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,34 @@
 
 package io.helidon.common.buffers;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class ReadOnlyArrayDataTest {
+    @Test
+    void writeToOutputStreamAfterPartialRead() throws Exception {
+        // Regression test for https://github.com/helidon-io/helidon/issues/11738:
+        // writeTo(OutputStream) passed `length` as the byte count instead of
+        // `length - position`, causing excess bytes to be written when position > 0.
+        byte[] data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        ReadOnlyArrayData buf = new ReadOnlyArrayData(data, 0, data.length);
+
+        // Advance position by consuming 3 bytes
+        buf.skip(3);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        buf.writeTo(out);
+
+        assertThat(out.toByteArray(), is(new byte[] {4, 5, 6, 7, 8, 9, 10}));
+    }
+
     @Test
     void testDebugData() {
         byte[] test = "Hello World!".getBytes(StandardCharsets.UTF_8);
