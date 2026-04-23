@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -93,9 +93,12 @@ a JSON-RPC error response.
 
 Every JSON-RPC response contains either a result or an error, and that is
 the reason why `res.result()` returns an optional value. The last step
-shows how the result is mapped to a `StartStopResult` instance using JSON-B.
-See xref:{rootdir}/se/jsonrpc/server.adoc[JSON-RPC Server] for more
-information on these types.
+shows how the result is mapped to a `StartStopResult` instance using Helidon
+JSON binding. See xref:{rootdir}/se/jsonrpc/server.adoc[JSON-RPC Server] for
+more information on these types.
+
+NOTE: Custom types used with Helidon JSON binding must be annotated with
+`@Json.Entity` and compiled with the Helidon JSON annotation processor.
 
 === Batch Requests
 
@@ -117,7 +120,7 @@ The response of type `JsonClientBatchResponse` shall include an entry
 for each of the invocations in the request. In this example, we can test
 that the response returned HTTP status 200 and has a size of 2, and
 then verify the results by binding them to `StartStopResult` instances
-using JSON-B.
+using Helidon JSON binding.
 
 [source,java]
 ----

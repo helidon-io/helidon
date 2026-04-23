@@ -15,7 +15,6 @@
  */
 package io.helidon.webserver.tests.jsonrpc;
 
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -25,13 +24,13 @@ import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.sse.SseEvent;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.jsonrpc.JsonRpcClient;
 import io.helidon.webclient.sse.SseSource;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -67,8 +66,8 @@ class JsonRpcSseTest extends JsonRpcBaseTest {
                 @Override
                 public void onEvent(SseEvent value) {
                     String jsonRpc = value.data(String.class);
-                    JsonObject json = Json.createReader(new StringReader(jsonRpc)).readObject();
-                    methods.add(json.getString("method"));
+                    JsonObject json = JsonParser.create(jsonRpc).readJsonObject();
+                    methods.add(json.stringValue("method").orElseThrow());
                 }
 
                 @Override
@@ -100,8 +99,8 @@ class JsonRpcSseTest extends JsonRpcBaseTest {
                 @Override
                 public void onEvent(SseEvent value) {
                     String jsonRpc = value.data(String.class);
-                    JsonObject json = Json.createReader(new StringReader(jsonRpc)).readObject();
-                    results.add(json.getString("result"));
+                    JsonObject json = JsonParser.create(jsonRpc).readJsonObject();
+                    results.add(json.stringValue("result").orElseThrow());
                 }
 
                 @Override

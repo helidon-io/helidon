@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,16 +26,12 @@ import io.helidon.http.Header;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.jsonrpc.core.JsonUtil;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.spi.Sink;
-
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonValue;
-
-import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
 
 /**
  * An implementation of JSON-RPC response.
@@ -89,7 +85,7 @@ class JsonRpcResponseImpl implements JsonRpcResponse {
 
     @Override
     public JsonRpcResponse result(Object object) {
-        result = JsonUtil.jsonbToJsonp(object);
+        result = JsonUtil.toJsonObject(object);
         return this;
     }
 
@@ -121,15 +117,15 @@ class JsonRpcResponseImpl implements JsonRpcResponse {
 
     @Override
     public JsonObject asJsonObject() {
-        JsonObjectBuilder builder = JSON_BUILDER_FACTORY.createObjectBuilder()
-                .add("jsonrpc", "2.0");
+        JsonObject.Builder builder = JsonObject.builder()
+                .set("jsonrpc", "2.0");
         if (rpcId != null) {
-            builder.add("id", rpcId);
+            builder.set("id", rpcId);
         }
         if (result != null) {
-            builder.add("result", result);
+            builder.set("result", result);
         } else if (error != null) {
-            builder.add("error", error.asJsonObject());
+            builder.set("error", error.asJsonObject());
         }
         return builder.build();
     }
