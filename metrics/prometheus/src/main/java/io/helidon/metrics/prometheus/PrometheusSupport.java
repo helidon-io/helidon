@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,11 @@ import io.prometheus.client.CollectorRegistry;
  * HttpRouting.builder()
  *        ..addFeature(PrometheusSupport.create())
  * }</pre>
+ *
+ * @deprecated use Helidon's built-in metrics implementation, which already supports
+ *             Prometheus/OpenMetrics output, instead
  */
+@Deprecated(since = "4.5.0", forRemoval = true)
 public final class PrometheusSupport extends HelidonFeatureSupport {
 
     private static final System.Logger LOGGER = System.getLogger(PrometheusSupport.class.getName());
@@ -212,7 +216,11 @@ public final class PrometheusSupport extends HelidonFeatureSupport {
 
     /**
      * A builder of {@link PrometheusSupport}.
+     *
+     * @deprecated use Helidon's built-in metrics implementation, which already supports
+     *             Prometheus/OpenMetrics output, instead
      */
+    @Deprecated(since = "4.5.0", forRemoval = true)
     public static final class Builder extends HelidonFeatureSupport.Builder<Builder, PrometheusSupport> {
 
         private CollectorRegistry registry = CollectorRegistry.defaultRegistry;
