@@ -30,6 +30,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient-api</artifactId>
         </dependency>

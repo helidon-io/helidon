@@ -34,6 +34,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-core</artifactId>
         </dependency>
@@ -184,4 +188,3 @@
         </plugins>
     </build>
 </project>
-
