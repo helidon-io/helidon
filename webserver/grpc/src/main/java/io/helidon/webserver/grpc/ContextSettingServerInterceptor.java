@@ -19,8 +19,8 @@ package io.helidon.webserver.grpc;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.Weight;
@@ -49,11 +49,9 @@ class ContextSettingServerInterceptor implements ServerInterceptor {
     private static final Metadata.Key<String> TIMEOUT_KEY =
             Metadata.Key.of("grpc-timeout", Metadata.ASCII_STRING_MARSHALLER);
     private static final ScheduledExecutorService DEADLINE_SCHEDULER =
-            Executors.newSingleThreadScheduledExecutor(r -> {
-                Thread t = new Thread(r, "helidon-grpc-deadline-scheduler");
-                t.setDaemon(true);
-                return t;
-            });
+            new ScheduledThreadPoolExecutor(1, Thread.ofVirtual()
+                    .name("helidon-grpc-deadline-scheduler-", 0)
+                    .factory());
 
     private ContextSettingServerInterceptor() {
     }

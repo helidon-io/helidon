@@ -162,7 +162,10 @@ class DeadlineTest extends BaseServiceTest {
 
     @Test
     void stubLevelDeadlineExceeded() {
-        // Deadline is configured once on the stub, not per-call. The countdown starts at stub creation.
+        // withDeadlineAfter calls Deadline.after() immediately, fixing the expiry to the instant
+        // the stub is configured. The countdown therefore starts at stub-creation time, not at
+        // call-invocation time. See CallOptions.withDeadlineAfter:
+        // https://github.com/grpc/grpc-java/blob/v1.73.0/api/src/main/java/io/grpc/CallOptions.java#L177-L179
         SlowServiceGrpc.SlowServiceBlockingStub timedStub =
                 SlowServiceGrpc.newBlockingStub(channel)
                         .withDeadlineAfter(200, TimeUnit.MILLISECONDS);
