@@ -31,8 +31,13 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
 
     private static final int INITIAL_BUFFER_SIZE = 256;
     private static final int MAX_BUFFER_SIZE = 1024;
-    private static final byte[] HEX_DIGITS = "0123456789ABCDEF".getBytes(StandardCharsets.US_ASCII);
     private static final String LONG_MIN_VALUE_TEXT = Long.toString(Long.MIN_VALUE);
+    private static final byte[] HEX_DIGITS = "0123456789ABCDEF".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] INDENT = new byte[STACK_SIZE * INDENT_SIZE];
+
+    static {
+        java.util.Arrays.fill(INDENT, (byte) ' ');
+    }
 
     private final OutputStream outputStream;
     private byte[] buffer = new byte[INITIAL_BUFFER_SIZE];
@@ -40,7 +45,8 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
     private int index = 0;
     private boolean closed;
 
-    JsonGeneratorOutputStream(OutputStream outputStream) {
+    JsonGeneratorOutputStream(OutputStream outputStream, boolean prettyPrint) {
+        super(prettyPrint);
         this.outputStream = outputStream;
     }
 
@@ -59,6 +65,15 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
         if (extra > buffer.length) {
             growBuffer(extra);
         }
+    }
+
+    @Override
+    protected void writeNewLineIndent(int indentLevel) {
+        int indentLength = indentLevel * INDENT_SIZE;
+        ensureCapacity(indentLength + 1);
+        buffer[index++] = (byte) '\n';
+        System.arraycopy(INDENT, 0, buffer, index, indentLength);
+        index += indentLength;
     }
 
     @Override

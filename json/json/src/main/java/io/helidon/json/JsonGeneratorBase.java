@@ -27,6 +27,13 @@ import io.helidon.common.buffers.Bytes;
 public abstract class JsonGeneratorBase implements JsonGenerator {
 
     static final int MAX_DEPTH = 64;
+    static final int STACK_SIZE = 64;
+    static final int INDENT_SIZE = 3;
+    static final char[] INDENT = new char[STACK_SIZE * INDENT_SIZE];
+
+    static {
+        java.util.Arrays.fill(INDENT, ' ');
+    }
 
     private long structureTypes;
 
@@ -36,11 +43,15 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
     private boolean keyWritten = false;
     // depth: current nesting level in objects/arrays
     private int depth = 0;
+    private final boolean prettyPrint;
 
     /**
      * Protected default constructor for subclasses.
+     *
+     * @param prettyPrint whether to pretty print generated JSON output
      */
-    protected JsonGeneratorBase() {
+    protected JsonGeneratorBase(boolean prettyPrint) {
+        this.prettyPrint = prettyPrint;
     }
 
     /**
@@ -153,15 +164,28 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
      */
     protected abstract void writeNullValue();
 
+    /**
+     * Writes a newline followed by indentation for the provided nesting depth.
+     *
+     * @param indentLevel nesting depth to indent
+     */
+    protected abstract void writeNewLineIndent(int indentLevel);
+
     void beforeWrite() {
         if (depth > 0) {
             if (first) {
                 first = false;
+                if (prettyPrint) {
+                    writeNewLineIndent(depth);
+                }
             } else if (keyWritten) {
                 keyWritten = false;
             } else {
                 ensureCapacity(1);
                 writeControlByte(Bytes.COMMA_BYTE);
+                if (prettyPrint) {
+                    writeNewLineIndent(depth);
+                }
             }
         } else if (first) {
             first = false;
@@ -523,7 +547,11 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     @Override
     public JsonGenerator writeArrayEnd() {
+        boolean hasItems = !first;
         popStackType();
+        if (hasItems && prettyPrint) {
+            writeNewLineIndent(depth);
+        }
         writeControlByte(Bytes.SQUARE_BRACKET_CLOSE_BYTE);
         first = false;
         return this;
@@ -543,7 +571,11 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
 
     @Override
     public JsonGenerator writeObjectEnd() {
+        boolean hasItems = !first;
         popStackType();
+        if (hasItems && prettyPrint) {
+            writeNewLineIndent(depth);
+        }
         writeControlByte(Bytes.BRACE_CLOSE_BYTE);
         first = false;
         return this;
@@ -569,6 +601,9 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
         beforeWrite();
         writeKeyName(key);
         writeControlByte(Bytes.COLON_BYTE);
+        if (prettyPrint) {
+            writeByteExact(Bytes.SPACE_BYTE);
+        }
         keyWritten = true;
     }
 
@@ -580,6 +615,9 @@ public abstract class JsonGeneratorBase implements JsonGenerator {
         beforeWrite();
         writeKeyName(key);
         writeControlByte(Bytes.COLON_BYTE);
+        if (prettyPrint) {
+            writeByteExact(Bytes.SPACE_BYTE);
+        }
         keyWritten = true;
     }
 

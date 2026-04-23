@@ -32,7 +32,8 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
 
     private final Writer writer;
 
-    JsonGeneratorWriter(Writer writer) {
+    JsonGeneratorWriter(Writer writer, boolean prettyPrint) {
+        super(prettyPrint);
         this.writer = writer;
     }
 
@@ -42,6 +43,16 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
             writer.write(value);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write byte value", e);
+        }
+    }
+
+    @Override
+    protected void writeNewLineIndent(int indentLevel) {
+        try {
+            writer.write('\n');
+            writer.write(INDENT, 0, indentLevel * INDENT_SIZE);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to write indentation.", e);
         }
     }
 

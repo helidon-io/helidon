@@ -541,7 +541,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     }
 
     private <T> void serialize(Writer writer, T obj, JsonSerializer<T> serializer) {
-        try (JsonGenerator generator = JsonGenerator.create(writer)) {
+        try (JsonGenerator generator = JsonGenerator.create(writer, config.prettyPrint())) {
             serializer.serialize(generator, obj, false);
         } catch (RuntimeException e) {
             throw e;
@@ -551,7 +551,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     }
 
     private <T> void serialize(OutputStream stream, T obj, JsonSerializer<T> serializer) {
-        try (JsonGenerator generator = JsonGenerator.create(stream)) {
+        try (JsonGenerator generator = JsonGenerator.create(stream, config.prettyPrint())) {
             serializer.serialize(generator, obj, false);
         } catch (RuntimeException e) {
             throw e;
