@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,7 @@ import io.helidon.service.registry.Interception;
  * A main entry point for developers to the Helidon metrics system, allowing access to the global meter registry and providing
  * shortcut methods to register and locate meters in the global registry and remove meters from it.
  */
-public class Metrics {
-    private Metrics() {
-    }
+public interface Metrics {
 
     /**
      * Returns the global meter registry.
@@ -44,7 +42,7 @@ public class Metrics {
      * to get such an instance; until these methods are removed, the behavior may differ
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
-    public static MeterRegistry globalRegistry() {
+    static MeterRegistry globalRegistry() {
         return MetricsFactory.getInstance().globalRegistry();
     }
 
@@ -56,7 +54,7 @@ public class Metrics {
      * @deprecated use {@link io.helidon.metrics.api.MeterRegistry#create(MetricsConfig)} instead
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
-    public static MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
+    static MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
         return MeterRegistry.create(metricsConfig);
     }
 
@@ -68,7 +66,7 @@ public class Metrics {
      * @deprecated use {@link MeterRegistry#create()} instead
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
-    public static MeterRegistry createMeterRegistry() {
+    static MeterRegistry createMeterRegistry() {
         return createMeterRegistry(MetricsConfig.create());
     }
 
@@ -84,7 +82,7 @@ public class Metrics {
      *  to {@link #globalRegistry()}; this method will be removed without a replacement
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
-    public static <M extends Meter, B extends Meter.Builder<B, M>> M getOrCreate(B builder) {
+    static <M extends Meter, B extends Meter.Builder<B, M>> M getOrCreate(B builder) {
         return globalRegistry().getOrCreate(builder);
     }
 
@@ -98,7 +96,7 @@ public class Metrics {
      *  to {@link #globalRegistry()}; this method will be removed without a replacement
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
-    public static Optional<io.helidon.metrics.api.Counter> getCounter(String name, Iterable<io.helidon.metrics.api.Tag> tags) {
+    static Optional<io.helidon.metrics.api.Counter> getCounter(String name, Iterable<io.helidon.metrics.api.Tag> tags) {
         return globalRegistry().meter(io.helidon.metrics.api.Counter.class, name, tags);
     }
 
@@ -111,7 +109,7 @@ public class Metrics {
      *  to {@link #globalRegistry()}; this method will be removed without a replacement
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
-    public static Optional<Counter> getCounter(String name) {
+    static Optional<Counter> getCounter(String name) {
         return getCounter(name, Set.of());
     }
 
@@ -125,7 +123,7 @@ public class Metrics {
      *  to {@link #globalRegistry()}; this method will be removed without a replacement
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
-    public static Optional<DistributionSummary> getSummary(String name, Iterable<io.helidon.metrics.api.Tag> tags) {
+    static Optional<DistributionSummary> getSummary(String name, Iterable<io.helidon.metrics.api.Tag> tags) {
         return globalRegistry().meter(DistributionSummary.class, name, tags);
     }
 
@@ -138,7 +136,7 @@ public class Metrics {
      *  to {@link #globalRegistry()}; this method will be removed without a replacement
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
-    public static Optional<DistributionSummary> getSummary(String name) {
+    static Optional<DistributionSummary> getSummary(String name) {
         return getSummary(name, Set.of());
     }
 
@@ -153,7 +151,7 @@ public class Metrics {
      */
     @SuppressWarnings("rawtypes")
     @Deprecated(since = "4.4.0", forRemoval = true)
-    public static Optional<io.helidon.metrics.api.Gauge> getGauge(String name, Iterable<io.helidon.metrics.api.Tag> tags) {
+    static Optional<io.helidon.metrics.api.Gauge> getGauge(String name, Iterable<io.helidon.metrics.api.Tag> tags) {
         return globalRegistry().meter(io.helidon.metrics.api.Gauge.class, name, tags);
     }
 
@@ -167,7 +165,7 @@ public class Metrics {
      */
     @SuppressWarnings("rawtypes")
     @Deprecated(since = "4.4.0", forRemoval = true)
-    public static Optional<io.helidon.metrics.api.Gauge> getGauge(String name) {
+    static Optional<io.helidon.metrics.api.Gauge> getGauge(String name) {
         return getGauge(name, Set.of());
     }
 
@@ -181,7 +179,7 @@ public class Metrics {
      *  to {@link #globalRegistry()}; this method will be removed without a replacement
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
-    public static Optional<Timer> getTimer(String name, Iterable<io.helidon.metrics.api.Tag> tags) {
+    static Optional<Timer> getTimer(String name, Iterable<io.helidon.metrics.api.Tag> tags) {
         return globalRegistry().meter(Timer.class, name, tags);
     }
 
@@ -194,7 +192,7 @@ public class Metrics {
      *  to {@link #globalRegistry()}; this method will be removed without a replacement
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
-    public static Optional<Timer> getTimer(String name) {
+    static Optional<Timer> getTimer(String name) {
         return getTimer(name, Set.of());
     }
 
@@ -214,7 +212,7 @@ public class Metrics {
      *  to {@link #globalRegistry()}; this method will be removed without a replacement
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
-    public static <M extends Meter> Optional<M> get(Class<M> mClass, String name, Iterable<io.helidon.metrics.api.Tag> tags) {
+    static <M extends Meter> Optional<M> get(Class<M> mClass, String name, Iterable<io.helidon.metrics.api.Tag> tags) {
         return globalRegistry().meter(mClass, name, tags);
     }
 
@@ -227,7 +225,7 @@ public class Metrics {
      * @deprecated use {@link io.helidon.metrics.api.Tag#create(String, String)} instead
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
-    public static io.helidon.metrics.api.Tag tag(String key, String value) {
+    static io.helidon.metrics.api.Tag tag(String key, String value) {
         return MetricsFactory.getInstance().tagCreate(key, value);
     }
 
@@ -240,7 +238,7 @@ public class Metrics {
      * @deprecated use {@link io.helidon.metrics.api.Tag#create(String, String)} instead
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
-    public static Iterable<io.helidon.metrics.api.Tag> tags(String... keyValuePairs) {
+    static Iterable<io.helidon.metrics.api.Tag> tags(String... keyValuePairs) {
         if (keyValuePairs.length % 2 != 0) {
             throw new IllegalArgumentException("Must pass an even number of strings so keys and values are evenly matched");
         }
@@ -258,7 +256,7 @@ public class Metrics {
     @Target(ElementType.METHOD)
     @Documented
     @Interception.Intercepted
-    public @interface Counted {
+    @interface Counted {
         /**
          * Name of the counter.
          *
@@ -310,7 +308,7 @@ public class Metrics {
     @Target(ElementType.METHOD)
     @Documented
     @Interception.Intercepted
-    public @interface Timed {
+    @interface Timed {
         /**
          * Name of the timer.
          *
@@ -362,7 +360,7 @@ public class Metrics {
     @Documented
     @Interception.Intercepted
     @Target(ElementType.METHOD)
-    public @interface Gauge {
+    @interface Gauge {
         /**
          * Name of the gauge.
          *
@@ -420,7 +418,7 @@ public class Metrics {
     @Repeatable(Tags.class)
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
-    public @interface Tag {
+    @interface Tag {
         /**
          * Tag key.
          *
@@ -441,7 +439,7 @@ public class Metrics {
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
-    public @interface Tags {
+    @interface Tags {
         /**
          * Tags of this repeating container.
          *
