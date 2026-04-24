@@ -22,11 +22,11 @@ This type is an enumeration.
 <tbody>
 <tr>
 <td><code>STRICT</code></td>
-<td>&lt;code&gt;N/A&lt;/code&gt;</td>
+<td><code>N/A</code></td>
 </tr>
 <tr>
 <td><code>RELAXED</code></td>
-<td>&lt;code&gt;N/A&lt;/code&gt;</td>
+<td><code>N/A</code></td>
 </tr>
 </tbody>
 </table>

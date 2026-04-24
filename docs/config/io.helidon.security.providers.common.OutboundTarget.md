@@ -10,42 +10,74 @@ Configuration of outbound target
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>hosts</code></td>
-<td><code>List&lt;String&gt;</code></td>
+<td>
+<code>hosts</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
 <td>Add supported host for this target</td>
 </tr>
 <tr>
-<td><code>methods</code></td>
-<td><code>List&lt;String&gt;</code></td>
+<td>
+<code>methods</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
 <td>Add supported method for this target</td>
 </tr>
 <tr>
-<td><code>paths</code></td>
-<td><code>List&lt;String&gt;</code></td>
+<td>
+<code>paths</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
 <td>Add supported paths for this target</td>
 </tr>
 <tr>
-<td><code>name</code></td>
-<td><code>String</code></td>
+<td>
+<code>name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
 <td>Configure the name of this outbound target</td>
 </tr>
 <tr>
-<td><code>transport</code></td>
-<td><code>List&lt;String&gt;</code></td>
+<td>
+<code>transport</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
 <td>Add supported transports for this target</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

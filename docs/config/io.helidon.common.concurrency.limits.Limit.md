@@ -13,32 +13,47 @@ This type is a provider contract.
 </style>
 
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="io.helidon.common.concurrency.limits.AimdLimit.md"><code>aimd</code></a></td>
-<td>Configuration of &lt;code&gt;io.helidon.common.concurrency.limits.AimdLimit&lt;/code&gt;</td>
+<td>
+<a href="io.helidon.common.concurrency.limits.AimdLimit.md">
+<code>aimd</code>
+</a>
+</td>
+<td>Configuration of <code>io.helidon.common.concurrency.limits.AimdLimit</code></td>
 </tr>
 <tr>
-<td><a href="io.helidon.common.concurrency.limits.FixedLimit.md"><code>fixed</code></a></td>
-<td>Configuration of &lt;code&gt;FixedLimit&lt;/code&gt;</td>
+<td>
+<a href="io.helidon.common.concurrency.limits.FixedLimit.md">
+<code>fixed</code>
+</a>
+</td>
+<td>Configuration of <code>FixedLimit</code></td>
 </tr>
 <tr>
-<td><a href="io.helidon.common.concurrency.limits.ThroughputLimit.md"><code>throughput</code></a></td>
-<td>Configuration of &lt;code&gt;ThroughputLimit&lt;/code&gt;</td>
+<td>
+<a href="io.helidon.common.concurrency.limits.ThroughputLimit.md">
+<code>throughput</code>
+</a>
+</td>
+<td>Configuration of <code>ThroughputLimit</code></td>
 </tr>
 </tbody>
 </table>
 
 
+
 ## Usages
 
-- [`server.concurrency-limit`](io.helidon.ServerConfig.md#concurrency-limit)
+- [`server.concurrency-limit`](io.helidon.webserver.WebServer.md#concurrency-limit)
 - [`server.features.limits.concurrency-limit`](io.helidon.webserver.concurrency.limits.LimitsFeature.md#concurrency-limit)
 - [`server.sockets.concurrency-limit`](io.helidon.webserver.ListenerConfig.md#concurrency-limit)
 

@@ -10,23 +10,42 @@ Configuration for server.features.eureka.instance.traffic
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>enabled</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
-<td>Whether traffic is enabled on startup (normally &lt;code&gt;true&lt;/code&gt;)</td>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether traffic is enabled on startup (normally <code>true</code>)</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

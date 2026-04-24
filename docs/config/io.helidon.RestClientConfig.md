@@ -10,21 +10,37 @@ Configuration for rest-client
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="metrics"></a><a href="io.helidon.microprofile.restclientmetrics.RestClientMetricsConfig.md"><code>metrics</code></a></td>
+<td>
+<a id="metrics"></a>
+<a href="io.helidon.microprofile.restclientmetrics.RestClientMetricsConfig.md">
+<code>metrics</code>
+</a>
+</td>
 <td>Configuration for metrics</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

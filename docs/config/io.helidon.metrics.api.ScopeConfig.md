@@ -2,7 +2,7 @@
 
 ## Description
 
-Configuration settings for a scope within the &lt;code&gt;MetricsConfigBlueprint#METRICS_CONFIG_KEY&lt;/code&gt; config section
+Configuration settings for a scope within the <code>MetricsConfigBlueprint#METRICS_CONFIG_KEY</code> config section
 
 ## Configuration options
 
@@ -10,35 +10,66 @@ Configuration settings for a scope within the &lt;code&gt;MetricsConfigBlueprint
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>enabled</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
 <td>Whether the scope is enabled</td>
 </tr>
 <tr>
-<td><a id="filter"></a><a href="io.helidon.metrics.scoping.scopes.FilterConfig.md"><code>filter</code></a></td>
-<td></td>
-<td></td>
+<td>
+<a id="filter"></a>
+<a href="io.helidon.metrics.scoping.scopes.FilterConfig.md">
+<code>filter</code>
+</a>
+</td>
+<td class="cm-type-cell">
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Configuration for filter</td>
 </tr>
 <tr>
-<td><code>name</code></td>
-<td><code>String</code></td>
-<td></td>
+<td>
+<code>name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Name of the scope to which the configuration applies</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

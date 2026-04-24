@@ -2,7 +2,7 @@
 
 ## Description
 
-Configuration of &lt;code&gt;io.helidon.common.concurrency.limits.AimdLimit&lt;/code&gt;
+Configuration of <code>io.helidon.common.concurrency.limits.AimdLimit</code>
 
 ## Configuration options
 
@@ -10,71 +10,138 @@ Configuration of &lt;code&gt;io.helidon.common.concurrency.limits.AimdLimit&lt;/
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>queue-timeout</code></td>
-<td><code>Duration</code></td>
-<td><code>PT1S</code></td>
+<td>
+<code>queue-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">PT1S</code>
+</td>
 <td>How long to wait for a permit when enqueued</td>
 </tr>
 <tr>
-<td><code>min-limit</code></td>
-<td><code>Integer</code></td>
-<td><code>20</code></td>
+<td>
+<code>min-limit</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">20</code>
+</td>
 <td>Minimal limit</td>
 </tr>
 <tr>
-<td><code>enable-metrics</code></td>
-<td><code>Boolean</code></td>
-<td><code>false</code></td>
+<td>
+<code>enable-metrics</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
 <td>Whether to collect metrics for the AIMD implementation</td>
 </tr>
 <tr>
-<td><code>fair</code></td>
-<td><code>Boolean</code></td>
-<td><code>false</code></td>
-<td>Whether the &lt;code&gt;java.util.concurrent.Semaphore&lt;/code&gt; should be &lt;code&gt;java.util.concurrent.Semaphore#isFair()&lt;/code&gt;</td>
+<td>
+<code>fair</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether the <code>java.util.concurrent.Semaphore</code> should be <code>java.util.concurrent.Semaphore#isFair()</code></td>
 </tr>
 <tr>
-<td><code>initial-limit</code></td>
-<td><code>Integer</code></td>
-<td><code>20</code></td>
+<td>
+<code>initial-limit</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">20</code>
+</td>
 <td>Initial limit</td>
 </tr>
 <tr>
-<td><code>max-limit</code></td>
-<td><code>Integer</code></td>
-<td><code>200</code></td>
+<td>
+<code>max-limit</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">200</code>
+</td>
 <td>Maximal limit</td>
 </tr>
 <tr>
-<td><code>timeout</code></td>
-<td><code>Duration</code></td>
-<td><code>PT5S</code></td>
+<td>
+<code>timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">PT5S</code>
+</td>
 <td>Timeout that when exceeded is the same as if the task failed</td>
 </tr>
 <tr>
-<td><code>backoff-ratio</code></td>
-<td><code>Double</code></td>
-<td><code>0.9</code></td>
+<td>
+<code>backoff-ratio</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">0.9</code>
+</td>
 <td>Backoff ratio to use for the algorithm</td>
 </tr>
 <tr>
-<td><code>queue-length</code></td>
-<td><code>Integer</code></td>
-<td><code>0</code></td>
+<td>
+<code>queue-length</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">0</code>
+</td>
 <td>How many requests can be enqueued waiting for a permit after the max limit is reached</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

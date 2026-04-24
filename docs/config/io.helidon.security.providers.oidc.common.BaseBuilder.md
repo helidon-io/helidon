@@ -10,137 +10,270 @@ Base builder of the OIDC config components
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="oidc-metadata-resource"></a><a href="io.helidon.common.configurable.Resource.md"><code>oidc-metadata.resource</code></a></td>
-<td><code>Resource</code></td>
-<td></td>
+<td>
+<a id="oidc-metadata-resource"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>oidc-metadata.resource</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Resource</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Resource configuration for OIDC Metadata containing endpoints to various identity services, as well as information about the identity server</td>
 </tr>
 <tr>
-<td><code>identity-uri</code></td>
-<td><code>URI</code></td>
-<td></td>
+<td>
+<code>identity-uri</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">URI</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>URI of the identity server, base used to retrieve OIDC metadata</td>
 </tr>
 <tr>
-<td><code>audience</code></td>
-<td><code>String</code></td>
-<td></td>
+<td>
+<code>audience</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Audience of issued tokens</td>
 </tr>
 <tr>
-<td><code>optional-audience</code></td>
-<td><code>Boolean</code></td>
-<td><code>false</code></td>
+<td>
+<code>optional-audience</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
 <td>Allow audience claim to be optional</td>
 </tr>
 <tr>
-<td><code>introspect-endpoint-uri</code></td>
-<td><code>URI</code></td>
-<td></td>
+<td>
+<code>introspect-endpoint-uri</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">URI</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Endpoint to use to validate JWT</td>
 </tr>
 <tr>
-<td><a id="sign-jwk-resource"></a><a href="io.helidon.common.configurable.Resource.md"><code>sign-jwk.resource</code></a></td>
-<td><code>Resource</code></td>
-<td></td>
+<td>
+<a id="sign-jwk-resource"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>sign-jwk.resource</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Resource</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>A resource pointing to JWK with public keys of signing certificates used to validate JWT</td>
 </tr>
 <tr>
-<td><code>base-scopes</code></td>
-<td><code>String</code></td>
-<td><code>openid</code></td>
+<td>
+<code>base-scopes</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">openid</code>
+</td>
 <td>Configure base scopes</td>
 </tr>
 <tr>
-<td><a id="decryption-keys-resource"></a><a href="io.helidon.common.configurable.Resource.md"><code>decryption-keys.resource</code></a></td>
-<td><code>Resource</code></td>
-<td></td>
+<td>
+<a id="decryption-keys-resource"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>decryption-keys.resource</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Resource</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>A resource pointing to JWK with private keys used for JWE content key decryption</td>
 </tr>
 <tr>
-<td><code>server-type</code></td>
-<td><code>String</code></td>
-<td><code>@default</code></td>
+<td>
+<code>server-type</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">@default</code>
+</td>
 <td>Configure one of the supported types of identity servers</td>
 </tr>
 <tr>
-<td><code>check-audience</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
+<td>
+<code>check-audience</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
 <td>Configure audience claim check</td>
 </tr>
 <tr>
-<td><code>client-timeout-millis</code></td>
-<td><code>Duration</code></td>
-<td><code>30000</code></td>
+<td>
+<code>client-timeout-millis</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">30000</code>
+</td>
 <td>Timeout of calls using web client</td>
 </tr>
 <tr>
-<td><code>issuer</code></td>
-<td><code>String</code></td>
-<td></td>
+<td>
+<code>issuer</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Issuer of issued tokens</td>
 </tr>
 <tr>
-<td><code>authorization-endpoint-uri</code></td>
-<td><code>URI</code></td>
-<td></td>
+<td>
+<code>authorization-endpoint-uri</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">URI</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>URI of an authorization endpoint used to redirect users to for logging-in</td>
 </tr>
 <tr>
-<td><code>token-endpoint-uri</code></td>
-<td><code>URI</code></td>
-<td></td>
+<td>
+<code>token-endpoint-uri</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">URI</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>URI of a token endpoint used to obtain a JWT based on the authentication code</td>
 </tr>
 <tr>
-<td><code>validate-jwt-with-jwk</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
+<td>
+<code>validate-jwt-with-jwk</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
 <td>Use JWK (a set of keys to validate signatures of JWT) to validate tokens</td>
 </tr>
 <tr>
-<td><code>client-secret</code></td>
-<td><code>String</code></td>
-<td></td>
+<td>
+<code>client-secret</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Client secret as generated by OIDC server</td>
 </tr>
 <tr>
-<td><code>oidc-metadata-well-known</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
+<td>
+<code>oidc-metadata-well-known</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
 <td>If set to true, metadata will be loaded from default (well known) location, unless it is explicitly defined using oidc-metadata-resource</td>
 </tr>
 <tr>
-<td><code>scope-audience</code></td>
-<td><code>String</code></td>
-<td></td>
+<td>
+<code>scope-audience</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Audience of the scope required by this application</td>
 </tr>
 <tr>
-<td><code>client-id</code></td>
-<td><code>String</code></td>
-<td></td>
+<td>
+<code>client-id</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Client ID as generated by OIDC server</td>
 </tr>
 <tr>
-<td><a id="token-endpoint-auth"></a><a href="io.helidon.security.providers.oidc.common.OidcConfig.ClientAuthentication.md"><code>token-endpoint-auth</code></a></td>
-<td><code>ClientAuthentication</code></td>
-<td><code>CLIENT_SECRET_BASIC</code></td>
+<td>
+<a id="token-endpoint-auth"></a>
+<a href="io.helidon.security.providers.oidc.common.OidcConfig.ClientAuthentication.md">
+<code>token-endpoint-auth</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ClientAuthentication">ClientAuthentication</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="CLIENT_SECRET_BASIC">CLIENT_SECRET_BASIC</code>
+</td>
 <td>Type of authentication to use when invoking the token endpoint</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Dependent Types

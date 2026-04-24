@@ -10,22 +10,41 @@ Configuration for server.features.observe.observers.metrics.timers
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="json-units-default"></a><a href="java.util.concurrent.TimeUnit.md"><code>json-units-default</code></a></td>
-<td><code>TimeUnit</code></td>
+<td>
+<a id="json-units-default"></a>
+<a href="java.util.concurrent.TimeUnit.md">
+<code>json-units-default</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">TimeUnit</code>
+</td>
 <td>Default units for timer output in JSON if not specified on a given timer</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

@@ -2,7 +2,7 @@
 
 ## Description
 
-&lt;code&gt;Timeout&lt;/code&gt; configuration bean
+<code>Timeout</code> configuration bean
 
 ## Configuration options
 
@@ -10,35 +10,66 @@
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>current-thread</code></td>
-<td><code>Boolean</code></td>
-<td><code>false</code></td>
-<td>Flag to indicate that code must be executed in current thread instead of in an executor&#x27;s thread</td>
+<td>
+<code>current-thread</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Flag to indicate that code must be executed in current thread instead of in an executor's thread</td>
 </tr>
 <tr>
-<td><code>enable-metrics</code></td>
-<td><code>Boolean</code></td>
-<td><code>false</code></td>
+<td>
+<code>enable-metrics</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
 <td>Flag to enable metrics for this instance</td>
 </tr>
 <tr>
-<td><code>timeout</code></td>
-<td><code>Duration</code></td>
-<td><code>PT10S</code></td>
+<td>
+<code>timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">PT10S</code>
+</td>
 <td>Duration to wait before timing out</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

@@ -10,71 +10,134 @@ File system based static content handler configuration
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>cached-files</code></td>
-<td><code>List&lt;String&gt;</code></td>
-<td></td>
+<td>
+<code>cached-files</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>A set of files that are cached in memory at startup</td>
 </tr>
 <tr>
-<td><code>content-types</code></td>
-<td><code>Map&lt;String, BaseMethods&gt;</code></td>
-<td></td>
+<td>
+<code>content-types</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, BaseMethods&gt;">Map&lt;String, BaseMethods&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Maps a filename extension to the response content type</td>
 </tr>
 <tr>
-<td><a id="memory-cache"></a><a href="io.helidon.webserver.staticcontent.MemoryCache.md"><code>memory-cache</code></a></td>
-<td><code>MemoryCache</code></td>
-<td></td>
-<td>Handles will use memory cache configured on &lt;code&gt;StaticContentConfig#memoryCache()&lt;/code&gt; by default</td>
+<td>
+<a id="memory-cache"></a>
+<a href="io.helidon.webserver.staticcontent.MemoryCache.md">
+<code>memory-cache</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="MemoryCache">MemoryCache</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Handles will use memory cache configured on <code>StaticContentConfig#memoryCache()</code> by default</td>
 </tr>
 <tr>
-<td><code>context</code></td>
-<td><code>String</code></td>
-<td><code>/</code></td>
-<td>Context that will serve this handler&#x27;s static resources, defaults to &lt;code&gt;/&lt;/code&gt;</td>
+<td>
+<code>context</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">/</code>
+</td>
+<td>Context that will serve this handler's static resources, defaults to <code>/</code></td>
 </tr>
 <tr>
-<td><code>record-cache-capacity</code></td>
-<td><code>Integer</code></td>
-<td></td>
+<td>
+<code>record-cache-capacity</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Configure capacity of cache used for resources</td>
 </tr>
 <tr>
-<td><code>location</code></td>
-<td><code>Path</code></td>
-<td></td>
+<td>
+<code>location</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Path</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>The directory (or a single file) that contains the root of the static content</td>
 </tr>
 <tr>
-<td><code>sockets</code></td>
-<td><code>List&lt;String&gt;</code></td>
-<td></td>
+<td>
+<code>sockets</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Sockets names (listeners) that will host this static content handler, defaults to all configured sockets</td>
 </tr>
 <tr>
-<td><code>welcome</code></td>
-<td><code>String</code></td>
-<td></td>
+<td>
+<code>welcome</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Welcome-file name</td>
 </tr>
 <tr>
-<td><code>enabled</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
-<td>Whether this handle is enabled, defaults to &lt;code&gt;true&lt;/code&gt;</td>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether this handle is enabled, defaults to <code>true</code></td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

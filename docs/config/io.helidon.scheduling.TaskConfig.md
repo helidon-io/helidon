@@ -2,7 +2,7 @@
 
 ## Description
 
-&lt;code&gt;N/A&lt;/code&gt;
+<code>N/A</code>
 
 ## Configuration options
 
@@ -10,29 +10,53 @@
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>id</code></td>
-<td><code>String</code></td>
-<td></td>
+<td>
+<code>id</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Identification of the started task</td>
 </tr>
 <tr>
-<td><code>enabled</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
 <td>Whether the task is enabled</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Dependent Types

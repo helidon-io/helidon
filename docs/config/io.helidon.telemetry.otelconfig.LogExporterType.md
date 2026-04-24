@@ -22,15 +22,15 @@ This type is an enumeration.
 <tbody>
 <tr>
 <td><code>OTLP</code></td>
-<td>OpenTelemetry Protocol &lt;code&gt;io.opentelemetry.exporter.otlp.http.logs.OtlpHttpLogRecordExporter&lt;/code&gt; and &lt;code&gt;io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporterBuilder&lt;/code&gt;</td>
+<td>OpenTelemetry Protocol <code>io.opentelemetry.exporter.otlp.http.logs.OtlpHttpLogRecordExporter</code> and <code>io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporterBuilder</code></td>
 </tr>
 <tr>
 <td><code>CONSOLE</code></td>
-<td>Console &lt;code&gt;io.opentelemetry.exporter.logging.SystemOutLogRecordExporter&lt;/code&gt;</td>
+<td>Console <code>io.opentelemetry.exporter.logging.SystemOutLogRecordExporter</code></td>
 </tr>
 <tr>
 <td><code>LOGGING_OTLP</code></td>
-<td>Writes logs to a Logger in OTLP JSON format &lt;code&gt;io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingLogRecordExporter&lt;/code&gt;</td>
+<td>Writes logs to a Logger in OTLP JSON format <code>io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingLogRecordExporter</code></td>
 </tr>
 </tbody>
 </table>

@@ -2,7 +2,7 @@
 
 ## Description
 
-&lt;code&gt;javax.sql.DataSource&lt;/code&gt; configuration
+<code>javax.sql.DataSource</code> configuration
 
 ## Configuration options
 
@@ -10,35 +10,68 @@
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="provider"></a><a href="io.helidon.data.sql.datasource.ProviderConfig.md"><code>provider</code></a></td>
-<td><code>ProviderConfig</code></td>
-<td></td>
+<td>
+<a id="provider"></a>
+<a href="io.helidon.data.sql.datasource.ProviderConfig.md">
+<code>provider</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ProviderConfig">ProviderConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Configuration of the used provider, such as UCP</td>
 </tr>
 <tr>
-<td><code>name</code></td>
-<td><code>String</code></td>
-<td><code>@default</code></td>
-<td>&lt;code&gt;javax.sql.DataSource&lt;/code&gt; name</td>
+<td>
+<code>name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">@default</code>
+</td>
+<td><code>javax.sql.DataSource</code> name</td>
 </tr>
 <tr>
-<td><code>provider-discover-services</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
-<td>Whether to enable automatic service discovery for &lt;code&gt;provider&lt;/code&gt;</td>
+<td>
+<code>provider-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>provider</code></td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

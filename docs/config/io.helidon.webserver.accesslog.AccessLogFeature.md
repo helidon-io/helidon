@@ -10,47 +10,88 @@ Configuration of access log feature
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>format</code></td>
-<td><code>String</code></td>
-<td></td>
-<td>The format for log entries (similar to the Apache &lt;code&gt;LogFormat&lt;/code&gt;)</td>
+<td>
+<code>format</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>The format for log entries (similar to the Apache <code>LogFormat</code>)</td>
 </tr>
 <tr>
-<td><code>logger-name</code></td>
-<td><code>String</code></td>
-<td><code>io.helidon.webserver.AccessLog</code></td>
-<td>Name of the logger used to obtain access log logger from &lt;code&gt;System#getLogger(String)&lt;/code&gt;</td>
+<td>
+<code>logger-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="io.helidon.webserver.AccessLog">io.helidon.webserver.AccessLog</code>
+</td>
+<td>Name of the logger used to obtain access log logger from <code>System#getLogger(String)</code></td>
 </tr>
 <tr>
-<td><code>weight</code></td>
-<td><code>Double</code></td>
-<td><code>1000.0</code></td>
+<td>
+<code>weight</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">1000.0</code>
+</td>
 <td>Weight of the access log feature</td>
 </tr>
 <tr>
-<td><code>sockets</code></td>
-<td><code>List&lt;String&gt;</code></td>
-<td></td>
+<td>
+<code>sockets</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>List of sockets to register this feature on</td>
 </tr>
 <tr>
-<td><code>enabled</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
 <td>Whether this feature will be enabled</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

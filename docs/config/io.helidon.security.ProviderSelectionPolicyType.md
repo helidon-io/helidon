@@ -30,7 +30,7 @@ This type is an enumeration.
 </tr>
 <tr>
 <td><code>CLASS</code></td>
-<td>Explicit class for a custom &lt;code&gt;ProviderSelectionPolicyType&lt;/code&gt;</td>
+<td>Explicit class for a custom <code>ProviderSelectionPolicyType</code></td>
 </tr>
 </tbody>
 </table>

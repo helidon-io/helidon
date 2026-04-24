@@ -13,19 +13,26 @@ This type is a provider contract.
 </style>
 
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="io.helidon.security.providers.config.vault.ConfigVaultProvider.SecretConfig.md"><code>config-vault</code></a></td>
+<td>
+<a href="io.helidon.security.providers.config.vault.ConfigVaultProvider.SecretConfig.md">
+<code>config-vault</code>
+</a>
+</td>
 <td>Provider of secrets defined in configuration itself</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

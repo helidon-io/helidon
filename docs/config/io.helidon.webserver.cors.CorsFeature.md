@@ -10,53 +10,102 @@ Configuration of CORS feature
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="paths"></a><a href="io.helidon.webserver.cors.CorsPathConfig.md"><code>paths</code></a></td>
-<td><code>List&lt;CorsPathConfig&gt;</code></td>
-<td></td>
+<td>
+<a id="paths"></a>
+<a href="io.helidon.webserver.cors.CorsPathConfig.md">
+<code>paths</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;CorsPathConfig&gt;">List&lt;CorsPathConfig&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Per path configuration</td>
 </tr>
 <tr>
-<td><code>weight</code></td>
-<td><code>Double</code></td>
-<td><code>850.0</code></td>
+<td>
+<code>weight</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">850.0</code>
+</td>
 <td>Weight of the CORS feature</td>
 </tr>
 <tr>
-<td><code>add-defaults</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
-<td>Whether to add a default path configuration, that matches all paths, &lt;code&gt;GET, HEAD, POST&lt;/code&gt; methods, and allows all origins, methods, and headers</td>
+<td>
+<code>add-defaults</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to add a default path configuration, that matches all paths, <code>GET, HEAD, POST</code> methods, and allows all origins, methods, and headers</td>
 </tr>
 <tr>
-<td><code>sockets</code></td>
-<td><code>List&lt;String&gt;</code></td>
-<td></td>
+<td>
+<code>sockets</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>List of sockets to register this feature on</td>
 </tr>
 <tr>
-<td><code>enabled</code></td>
-<td><code>Boolean</code></td>
-<td></td>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>This feature can be disabled</td>
 </tr>
 <tr>
-<td><code>paths-discover-services</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
-<td>Whether to enable automatic service discovery for &lt;code&gt;paths&lt;/code&gt;</td>
+<td>
+<code>paths-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>paths</code></td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

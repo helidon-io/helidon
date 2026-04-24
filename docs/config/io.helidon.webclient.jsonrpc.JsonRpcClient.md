@@ -10,23 +10,45 @@ Configuration of a JSON-RPC client
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="protocol-config"></a><a href="io.helidon.webclient.jsonrpc.JsonRpcClientProtocolConfig.md"><code>protocol-config</code></a></td>
-<td><code>JsonRpcClientProtocolConfig</code></td>
-<td><code>create()</code></td>
+<td>
+<a id="protocol-config"></a>
+<a href="io.helidon.webclient.jsonrpc.JsonRpcClientProtocolConfig.md">
+<code>protocol-config</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="JsonRpcClientProtocolConfig">JsonRpcClientProtocolConfig</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">create()</code>
+</td>
 <td>JSON-RPC specific configuration</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ---

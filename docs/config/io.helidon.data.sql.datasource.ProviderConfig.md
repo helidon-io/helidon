@@ -13,27 +13,42 @@ This type is a provider contract.
 </style>
 
 
+
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="io.helidon.data.sql.datasource.hikari.HikariDataSourceConfig.md"><code>hikari</code></a></td>
-<td>Hikari connection pool specific configuration for &lt;code&gt;javax.sql.DataSource&lt;/code&gt;</td>
+<td>
+<a href="io.helidon.data.sql.datasource.hikari.HikariDataSourceConfig.md">
+<code>hikari</code>
+</a>
+</td>
+<td>Hikari connection pool specific configuration for <code>javax.sql.DataSource</code></td>
 </tr>
 <tr>
-<td><a href="io.helidon.data.sql.datasource.jdbc.JdbcDataSourceConfig.md"><code>jdbc</code></a></td>
+<td>
+<a href="io.helidon.data.sql.datasource.jdbc.JdbcDataSourceConfig.md">
+<code>jdbc</code>
+</a>
+</td>
 <td>JDBC Data source configuration</td>
 </tr>
 <tr>
-<td><a href="io.helidon.data.sql.datasource.ucp.UcpDataSourceConfig.md"><code>ucp</code></a></td>
-<td>UCP specific configuration for &lt;code&gt;javax.sql.DataSource&lt;/code&gt;</td>
+<td>
+<a href="io.helidon.data.sql.datasource.ucp.UcpDataSourceConfig.md">
+<code>ucp</code>
+</a>
+</td>
+<td>UCP specific configuration for <code>javax.sql.DataSource</code></td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

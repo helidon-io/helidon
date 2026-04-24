@@ -10,209 +10,389 @@ Configuration for LangChain4j model OllamaChatModel
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>mirostat-tau</code></td>
-<td><code>Double</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#mirostatTau(java.lang.Double)&lt;/code&gt;</td>
+<td>
+<code>mirostat-tau</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#mirostatTau(java.lang.Double)</code></td>
 </tr>
 <tr>
-<td><code>http-client-builder</code></td>
-<td><code>HttpClientBuilder</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#httpClientBuilder(dev.langchain4j.http.client.HttpClientBuilder)&lt;/code&gt;</td>
+<td>
+<code>http-client-builder</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="HttpClientBuilder">HttpClientBuilder</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#httpClientBuilder(dev.langchain4j.http.client.HttpClientBuilder)</code></td>
 </tr>
 <tr>
-<td><code>min-p</code></td>
-<td><code>Double</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#minP(java.lang.Double)&lt;/code&gt;</td>
+<td>
+<code>min-p</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#minP(java.lang.Double)</code></td>
 </tr>
 <tr>
-<td><code>mirostat</code></td>
-<td><code>Integer</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#mirostat(java.lang.Integer)&lt;/code&gt;</td>
+<td>
+<code>mirostat</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#mirostat(java.lang.Integer)</code></td>
 </tr>
 <tr>
-<td><code>seed</code></td>
-<td><code>Integer</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#seed(java.lang.Integer)&lt;/code&gt;</td>
+<td>
+<code>seed</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#seed(java.lang.Integer)</code></td>
 </tr>
 <tr>
-<td><code>default-request-parameters-discover-services</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
-<td>Whether to enable automatic service discovery for &lt;code&gt;default-request-parameters&lt;/code&gt;</td>
+<td>
+<code>default-request-parameters-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>default-request-parameters</code></td>
 </tr>
 <tr>
-<td><code>logger</code></td>
-<td><code>Logger</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#logger(org.slf4j.Logger)&lt;/code&gt;</td>
+<td>
+<code>logger</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Logger</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#logger(org.slf4j.Logger)</code></td>
 </tr>
 <tr>
-<td><code>max-retries</code></td>
-<td><code>Integer</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaChatModel.OllamaChatModelBuilder#maxRetries(java.lang.Integer)&lt;/code&gt;</td>
+<td>
+<code>max-retries</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaChatModel.OllamaChatModelBuilder#maxRetries(java.lang.Integer)</code></td>
 </tr>
 <tr>
-<td><code>num-ctx</code></td>
-<td><code>Integer</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#numCtx(java.lang.Integer)&lt;/code&gt;</td>
+<td>
+<code>num-ctx</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#numCtx(java.lang.Integer)</code></td>
 </tr>
 <tr>
-<td><code>enabled</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
-<td>If set to &lt;code&gt;false&lt;/code&gt;, OllamaChatModel will not be available even if configured</td>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>If set to <code>false</code>, OllamaChatModel will not be available even if configured</td>
 </tr>
 <tr>
-<td><code>timeout</code></td>
-<td><code>Duration</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#timeout(java.time.Duration)&lt;/code&gt;</td>
+<td>
+<code>timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#timeout(java.time.Duration)</code></td>
 </tr>
 <tr>
-<td><code>log-requests</code></td>
-<td><code>Boolean</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#logRequests(java.lang.Boolean)&lt;/code&gt;</td>
+<td>
+<code>log-requests</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#logRequests(java.lang.Boolean)</code></td>
 </tr>
 <tr>
-<td><code>repeat-last-n</code></td>
-<td><code>Integer</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#repeatLastN(java.lang.Integer)&lt;/code&gt;</td>
+<td>
+<code>repeat-last-n</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#repeatLastN(java.lang.Integer)</code></td>
 </tr>
 <tr>
-<td><a id="supported-capabilities"></a><a href="dev.langchain4j.model.chat.Capability.md"><code>supported-capabilities</code></a></td>
-<td><code>List&lt;Capability&gt;</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#supportedCapabilities(java.util.Set)&lt;/code&gt;</td>
+<td>
+<a id="supported-capabilities"></a>
+<a href="dev.langchain4j.model.chat.Capability.md">
+<code>supported-capabilities</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;Capability&gt;">List&lt;Capability&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#supportedCapabilities(java.util.Set)</code></td>
 </tr>
 <tr>
-<td><code>temperature</code></td>
-<td><code>Double</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#temperature(java.lang.Double)&lt;/code&gt;</td>
+<td>
+<code>temperature</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#temperature(java.lang.Double)</code></td>
 </tr>
 <tr>
-<td><code>model-name</code></td>
-<td><code>String</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#modelName(java.lang.String)&lt;/code&gt;</td>
+<td>
+<code>model-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#modelName(java.lang.String)</code></td>
 </tr>
 <tr>
-<td><code>num-predict</code></td>
-<td><code>Integer</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#numPredict(java.lang.Integer)&lt;/code&gt;</td>
+<td>
+<code>num-predict</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#numPredict(java.lang.Integer)</code></td>
 </tr>
 <tr>
-<td><code>return-thinking</code></td>
-<td><code>Boolean</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#returnThinking(java.lang.Boolean)&lt;/code&gt;</td>
+<td>
+<code>return-thinking</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#returnThinking(java.lang.Boolean)</code></td>
 </tr>
 <tr>
-<td><code>base-url</code></td>
-<td><code>String</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#baseUrl(java.lang.String)&lt;/code&gt;</td>
+<td>
+<code>base-url</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#baseUrl(java.lang.String)</code></td>
 </tr>
 <tr>
-<td><code>think</code></td>
-<td><code>Boolean</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#think(java.lang.Boolean)&lt;/code&gt;</td>
+<td>
+<code>think</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#think(java.lang.Boolean)</code></td>
 </tr>
 <tr>
-<td><code>default-request-parameters</code></td>
-<td><code>ChatRequestParameters</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#defaultRequestParameters(dev.langchain4j.model.chat.request.ChatRequestParameters)&lt;/code&gt;</td>
+<td>
+<code>default-request-parameters</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ChatRequestParameters">ChatRequestParameters</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#defaultRequestParameters(dev.langchain4j.model.chat.request.ChatRequestParameters)</code></td>
 </tr>
 <tr>
-<td><code>listeners</code></td>
-<td><code>List&lt;ChatModelListener&gt;</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#listeners(java.util.List)&lt;/code&gt;</td>
+<td>
+<code>listeners</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;ChatModelListener&gt;">List&lt;ChatModelListener&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#listeners(java.util.List)</code></td>
 </tr>
 <tr>
-<td><code>top-k</code></td>
-<td><code>Integer</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#topK(java.lang.Integer)&lt;/code&gt;</td>
+<td>
+<code>top-k</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#topK(java.lang.Integer)</code></td>
 </tr>
 <tr>
-<td><code>custom-headers</code></td>
-<td><code>Map&lt;String, String&gt;</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#customHeaders(java.util.Map)&lt;/code&gt;</td>
+<td>
+<code>custom-headers</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#customHeaders(java.util.Map)</code></td>
 </tr>
 <tr>
-<td><code>log-responses</code></td>
-<td><code>Boolean</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#logResponses(java.lang.Boolean)&lt;/code&gt;</td>
+<td>
+<code>log-responses</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#logResponses(java.lang.Boolean)</code></td>
 </tr>
 <tr>
-<td><code>response-format</code></td>
-<td><code>ResponseFormat</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#responseFormat(dev.langchain4j.model.chat.request.ResponseFormat)&lt;/code&gt;</td>
+<td>
+<code>response-format</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ResponseFormat">ResponseFormat</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#responseFormat(dev.langchain4j.model.chat.request.ResponseFormat)</code></td>
 </tr>
 <tr>
-<td><code>top-p</code></td>
-<td><code>Double</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#topP(java.lang.Double)&lt;/code&gt;</td>
+<td>
+<code>top-p</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#topP(java.lang.Double)</code></td>
 </tr>
 <tr>
-<td><code>http-client-builder-discover-services</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
-<td>Whether to enable automatic service discovery for &lt;code&gt;http-client-builder&lt;/code&gt;</td>
+<td>
+<code>http-client-builder-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>http-client-builder</code></td>
 </tr>
 <tr>
-<td><code>listeners-discover-services</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
-<td>Whether to enable automatic service discovery for &lt;code&gt;listeners&lt;/code&gt;</td>
+<td>
+<code>listeners-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>listeners</code></td>
 </tr>
 <tr>
-<td><code>stop</code></td>
-<td><code>List&lt;String&gt;</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#stop(java.util.List)&lt;/code&gt;</td>
+<td>
+<code>stop</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#stop(java.util.List)</code></td>
 </tr>
 <tr>
-<td><code>repeat-penalty</code></td>
-<td><code>Double</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#repeatPenalty(java.lang.Double)&lt;/code&gt;</td>
+<td>
+<code>repeat-penalty</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#repeatPenalty(java.lang.Double)</code></td>
 </tr>
 <tr>
-<td><code>mirostat-eta</code></td>
-<td><code>Double</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#mirostatEta(java.lang.Double)&lt;/code&gt;</td>
+<td>
+<code>mirostat-eta</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.ollama.OllamaBaseChatModel.Builder#mirostatEta(java.lang.Double)</code></td>
 </tr>
 </tbody>
 </table>
+
 
 
 ---

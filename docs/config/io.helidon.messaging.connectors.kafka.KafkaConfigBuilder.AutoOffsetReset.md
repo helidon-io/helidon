@@ -30,7 +30,7 @@ This type is an enumeration.
 </tr>
 <tr>
 <td><code>NONE</code></td>
-<td>Throw exception to the consumer if no previous offset is found for the consumer&#x27;s group</td>
+<td>Throw exception to the consumer if no previous offset is found for the consumer's group</td>
 </tr>
 </tbody>
 </table>

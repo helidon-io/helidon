@@ -10,33 +10,64 @@ PEM files based keys - accepts private key and certificate chain
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="cert-chain"></a><a href="io.helidon.clients.tls.privateKey.pem.CertChainConfig.md"><code>cert-chain</code></a></td>
+<td>
+<a id="cert-chain"></a>
+<a href="io.helidon.clients.tls.privateKey.pem.CertChainConfig.md">
+<code>cert-chain</code>
+</a>
+</td>
 <td>Configuration for cert-chain</td>
 </tr>
 <tr>
-<td><a id="certificates"></a><a href="io.helidon.clients.tls.privateKey.pem.CertificatesConfig.md"><code>certificates</code></a></td>
+<td>
+<a id="certificates"></a>
+<a href="io.helidon.clients.tls.privateKey.pem.CertificatesConfig.md">
+<code>certificates</code>
+</a>
+</td>
 <td>Configuration for certificates</td>
 </tr>
 <tr>
-<td><a id="key"></a><a href="io.helidon.clients.tls.privateKey.pem.KeyConfig.md"><code>key</code></a></td>
+<td>
+<a id="key"></a>
+<a href="io.helidon.clients.tls.privateKey.pem.KeyConfig.md">
+<code>key</code>
+</a>
+</td>
 <td>Configuration for key</td>
 </tr>
 <tr>
-<td><a id="public-key"></a><a href="io.helidon.clients.tls.privateKey.pem.PublicKeyConfig.md"><code>public-key</code></a></td>
+<td>
+<a id="public-key"></a>
+<a href="io.helidon.clients.tls.privateKey.pem.PublicKeyConfig.md">
+<code>public-key</code>
+</a>
+</td>
 <td>Configuration for public-key</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

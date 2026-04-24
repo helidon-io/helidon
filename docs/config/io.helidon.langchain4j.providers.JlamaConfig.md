@@ -10,83 +10,158 @@ Merged configuration for langchain4j.providers.jlama
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>auth-token</code></td>
-<td><code>String</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#authToken(java.lang.String)&lt;/code&gt;</td>
+<td>
+<code>auth-token</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#authToken(java.lang.String)</code></td>
 </tr>
 <tr>
-<td><code>enabled</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
-<td>If set to &lt;code&gt;false&lt;/code&gt;, JlamaChatModel will not be available even if configured</td>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>If set to <code>false</code>, JlamaChatModel will not be available even if configured</td>
 </tr>
 <tr>
-<td><code>max-tokens</code></td>
-<td><code>Integer</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#maxTokens(java.lang.Integer)&lt;/code&gt;</td>
+<td>
+<code>max-tokens</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#maxTokens(java.lang.Integer)</code></td>
 </tr>
 <tr>
-<td><code>model-cache-path</code></td>
-<td><code>Path</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#modelCachePath(java.nio.file.Path)&lt;/code&gt;</td>
+<td>
+<code>model-cache-path</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Path</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#modelCachePath(java.nio.file.Path)</code></td>
 </tr>
 <tr>
-<td><code>model-name</code></td>
-<td><code>String</code></td>
-<td></td>
+<td>
+<code>model-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Configure the model name</td>
 </tr>
 <tr>
-<td><a id="pooling-type"></a><a href="com.github.tjake.jlama.model.functions.Generator.PoolingType.md"><code>pooling-type</code></a></td>
-<td><code>PoolingType</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.jlama.JlamaEmbeddingModel.JlamaEmbeddingModelBuilder#poolingType(com.github.tjake.jlama.model.functions.Generator.PoolingType)&lt;/code&gt;</td>
+<td>
+<a id="pooling-type"></a>
+<a href="com.github.tjake.jlama.model.functions.Generator.PoolingType.md">
+<code>pooling-type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="PoolingType">PoolingType</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.jlama.JlamaEmbeddingModel.JlamaEmbeddingModelBuilder#poolingType(com.github.tjake.jlama.model.functions.Generator.PoolingType)</code></td>
 </tr>
 <tr>
-<td><code>quantize-model-at-runtime</code></td>
-<td><code>Boolean</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#quantizeModelAtRuntime(java.lang.Boolean)&lt;/code&gt;</td>
+<td>
+<code>quantize-model-at-runtime</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#quantizeModelAtRuntime(java.lang.Boolean)</code></td>
 </tr>
 <tr>
-<td><code>temperature</code></td>
-<td><code>Float</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#temperature(java.lang.Float)&lt;/code&gt;</td>
+<td>
+<code>temperature</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Float</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#temperature(java.lang.Float)</code></td>
 </tr>
 <tr>
-<td><code>thread-count</code></td>
-<td><code>Integer</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#threadCount(java.lang.Integer)&lt;/code&gt;</td>
+<td>
+<code>thread-count</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#threadCount(java.lang.Integer)</code></td>
 </tr>
 <tr>
-<td><code>working-directory</code></td>
-<td><code>Path</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#workingDirectory(java.nio.file.Path)&lt;/code&gt;</td>
+<td>
+<code>working-directory</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Path</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#workingDirectory(java.nio.file.Path)</code></td>
 </tr>
 <tr>
-<td><a id="working-quantized-type"></a><a href="com.github.tjake.jlama.safetensors.DType.md"><code>working-quantized-type</code></a></td>
-<td><code>DType</code></td>
-<td></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#workingQuantizedType(com.github.tjake.jlama.safetensors.DType)&lt;/code&gt;</td>
+<td>
+<a id="working-quantized-type"></a>
+<a href="com.github.tjake.jlama.safetensors.DType.md">
+<code>working-quantized-type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">DType</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.jlama.JlamaChatModel.JlamaChatModelBuilder#workingQuantizedType(com.github.tjake.jlama.safetensors.DType)</code></td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Merged Types

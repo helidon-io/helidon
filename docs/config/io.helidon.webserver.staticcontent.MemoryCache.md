@@ -10,29 +10,54 @@ Configuration of memory cache for static content
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>enabled</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
-<td>Whether the cache is enabled, defaults to &lt;code&gt;true&lt;/code&gt;</td>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether the cache is enabled, defaults to <code>true</code></td>
 </tr>
 <tr>
-<td><code>capacity</code></td>
-<td><code>Size</code></td>
-<td><code>50 mB</code></td>
+<td>
+<code>capacity</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Size</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">50 mB</code>
+</td>
 <td>Capacity of the cached bytes of file content</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

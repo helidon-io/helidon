@@ -10,65 +10,125 @@ Represents information about cross origin request sharing
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>allow-headers</code></td>
-<td><code>List&lt;String&gt;</code></td>
-<td><code>*</code></td>
+<td>
+<code>allow-headers</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">*</code>
+</td>
 <td>Sets the allow headers</td>
 </tr>
 <tr>
-<td><code>allow-credentials</code></td>
-<td><code>Boolean</code></td>
-<td><code>false</code></td>
+<td>
+<code>allow-credentials</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
 <td>Sets the allow credentials flag</td>
 </tr>
 <tr>
-<td><code>max-age-seconds</code></td>
-<td><code>Long</code></td>
-<td><code>3600</code></td>
+<td>
+<code>max-age-seconds</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Long</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">3600</code>
+</td>
 <td>Sets the maximum age</td>
 </tr>
 <tr>
-<td><code>allow-origins</code></td>
-<td><code>List&lt;String&gt;</code></td>
-<td><code>*</code></td>
+<td>
+<code>allow-origins</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">*</code>
+</td>
 <td>Sets the allowOrigins</td>
 </tr>
 <tr>
-<td><code>expose-headers</code></td>
-<td><code>List&lt;String&gt;</code></td>
-<td></td>
+<td>
+<code>expose-headers</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Sets the expose headers</td>
 </tr>
 <tr>
-<td><code>path-pattern</code></td>
-<td><code>String</code></td>
-<td><code>{+}</code></td>
+<td>
+<code>path-pattern</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">{+}</code>
+</td>
 <td>Updates the path prefix for this cross-origin config</td>
 </tr>
 <tr>
-<td><code>allow-methods</code></td>
-<td><code>List&lt;String&gt;</code></td>
-<td><code>*</code></td>
+<td>
+<code>allow-methods</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">*</code>
+</td>
 <td>Sets the allow methods</td>
 </tr>
 <tr>
-<td><code>enabled</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
 <td>Sets whether this config should be enabled or not</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

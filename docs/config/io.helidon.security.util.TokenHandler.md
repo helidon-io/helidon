@@ -10,37 +10,65 @@ Extracts a security token from request or updates headers with the token
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>regexp</code></td>
-<td><code>String</code></td>
+<td>
+<code>regexp</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
 <td>Set the token pattern (Regular expression) to extract the token</td>
 </tr>
 <tr>
-<td><code>prefix</code></td>
-<td><code>String</code></td>
+<td>
+<code>prefix</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
 <td>Set the prefix of header value to extract the token</td>
 </tr>
 <tr>
-<td><code>format</code></td>
-<td><code>String</code></td>
+<td>
+<code>format</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
 <td>Token format for creating outbound tokens</td>
 </tr>
 <tr>
-<td><code>header</code></td>
-<td><code>String</code></td>
+<td>
+<code>header</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
 <td>Set the name of header to look into to extract the token</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

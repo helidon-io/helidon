@@ -22,19 +22,19 @@ This type is an enumeration.
 <tbody>
 <tr>
 <td><code>OTLP</code></td>
-<td>OpenTelemetry Protocol &lt;code&gt;io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter&lt;/code&gt; and &lt;code&gt;io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter&lt;/code&gt;</td>
+<td>OpenTelemetry Protocol <code>io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter</code> and <code>io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter</code></td>
 </tr>
 <tr>
 <td><code>ZIPKIN</code></td>
-<td>Zipkin &lt;code&gt;io.opentelemetry.exporter.zipkin.ZipkinSpanExporter&lt;/code&gt;</td>
+<td>Zipkin <code>io.opentelemetry.exporter.zipkin.ZipkinSpanExporter</code></td>
 </tr>
 <tr>
 <td><code>CONSOLE</code></td>
-<td>Console (&lt;code&gt;io.opentelemetry.exporter.logging.LoggingSpanExporter&lt;/code&gt;</td>
+<td>Console (<code>io.opentelemetry.exporter.logging.LoggingSpanExporter</code></td>
 </tr>
 <tr>
 <td><code>LOGGING_OTLP</code></td>
-<td>JSON logging to console &lt;code&gt;io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter&lt;/code&gt;</td>
+<td>JSON logging to console <code>io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter</code></td>
 </tr>
 </tbody>
 </table>

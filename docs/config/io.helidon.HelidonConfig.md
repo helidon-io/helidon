@@ -10,21 +10,37 @@ Configuration for helidon
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="oci"></a><a href="io.helidon.integrations.oci.OciConfig.md"><code>oci</code></a></td>
+<td>
+<a id="oci"></a>
+<a href="io.helidon.integrations.oci.OciConfig.md">
+<code>oci</code>
+</a>
+</td>
 <td>Configuration for oci</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

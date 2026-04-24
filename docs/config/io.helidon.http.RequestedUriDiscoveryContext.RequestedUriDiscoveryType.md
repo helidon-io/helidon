@@ -22,15 +22,15 @@ This type is an enumeration.
 <tbody>
 <tr>
 <td><code>FORWARDED</code></td>
-<td>The &lt;code&gt;io.helidon.http.Header#FORWARDED&lt;/code&gt; header is used to discover the original requested URI</td>
+<td>The <code>io.helidon.http.Header#FORWARDED</code> header is used to discover the original requested URI</td>
 </tr>
 <tr>
 <td><code>X_FORWARDED</code></td>
-<td>The &lt;code&gt;io.helidon.http.Header#X_FORWARDED_PROTO&lt;/code&gt;, &lt;code&gt;io.helidon.http.Header#X_FORWARDED_HOST&lt;/code&gt;, &lt;code&gt;io.helidon.http.Header#X_FORWARDED_PORT&lt;/code&gt;, &lt;code&gt;io.helidon.http.Header#X_FORWARDED_PREFIX&lt;/code&gt; headers are used to discover the original requested URI</td>
+<td>The <code>io.helidon.http.Header#X_FORWARDED_PROTO</code>, <code>io.helidon.http.Header#X_FORWARDED_HOST</code>, <code>io.helidon.http.Header#X_FORWARDED_PORT</code>, <code>io.helidon.http.Header#X_FORWARDED_PREFIX</code> headers are used to discover the original requested URI</td>
 </tr>
 <tr>
 <td><code>HOST</code></td>
-<td>This is the default, only the &lt;code&gt;io.helidon.http.Header#HOST&lt;/code&gt; header is used to discover requested URI</td>
+<td>This is the default, only the <code>io.helidon.http.Header#HOST</code> header is used to discover requested URI</td>
 </tr>
 </tbody>
 </table>

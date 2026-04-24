@@ -10,47 +10,89 @@ Configuration of temporary storage for classpath based handlers
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>file-prefix</code></td>
-<td><code>String</code></td>
-<td><code>helidon-ws</code></td>
+<td>
+<code>file-prefix</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">helidon-ws</code>
+</td>
 <td>Prefix of the files in temporary storage</td>
 </tr>
 <tr>
-<td><code>delete-on-exit</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
+<td>
+<code>delete-on-exit</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
 <td>Whether temporary files should be deleted on JVM exit</td>
 </tr>
 <tr>
-<td><code>file-suffix</code></td>
-<td><code>String</code></td>
-<td><code>.je</code></td>
+<td>
+<code>file-suffix</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">.je</code>
+</td>
 <td>Suffix of the files in temporary storage</td>
 </tr>
 <tr>
-<td><code>directory</code></td>
-<td><code>Path</code></td>
-<td></td>
+<td>
+<code>directory</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Path</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Location of the temporary storage, defaults to temporary storage configured for the JVM</td>
 </tr>
 <tr>
-<td><code>enabled</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
-<td>Whether the temporary storage is enabled, defaults to &lt;code&gt;true&lt;/code&gt;</td>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether the temporary storage is enabled, defaults to <code>true</code></td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

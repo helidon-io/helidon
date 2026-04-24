@@ -26,7 +26,7 @@ This type is an enumeration.
 </tr>
 <tr>
 <td><code>AUTH</code></td>
-<td>QOP &quot;auth&quot; - stands for &quot;authentication&quot;</td>
+<td>QOP "auth" - stands for "authentication"</td>
 </tr>
 </tbody>
 </table>

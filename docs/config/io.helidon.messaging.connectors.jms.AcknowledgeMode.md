@@ -26,7 +26,7 @@ This type is an enumeration.
 </tr>
 <tr>
 <td><code>CLIENT_ACKNOWLEDGE</code></td>
-<td>Message is acknowledged when &lt;code&gt;org.eclipse.microprofile.reactive.messaging.Message#ack&lt;/code&gt; is invoked either manually or by &lt;code&gt;org.eclipse.microprofile.reactive.messaging.Acknowledgment&lt;/code&gt; policy</td>
+<td>Message is acknowledged when <code>org.eclipse.microprofile.reactive.messaging.Message#ack</code> is invoked either manually or by <code>org.eclipse.microprofile.reactive.messaging.Acknowledgment</code> policy</td>
 </tr>
 <tr>
 <td><code>DUPS_OK_ACKNOWLEDGE</code></td>

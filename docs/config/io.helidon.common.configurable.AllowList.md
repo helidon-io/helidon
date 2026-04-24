@@ -2,7 +2,7 @@
 
 ## Description
 
-&lt;code&gt;AllowList&lt;/code&gt; defines a list of allowed and/or denied matches and tests if a particular value conforms to the conditions
+<code>AllowList</code> defines a list of allowed and/or denied matches and tests if a particular value conforms to the conditions
 
 ## Configuration options
 
@@ -10,25 +10,46 @@
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="allow"></a><a href="io.helidon.server.protocols.http11.requestedUriDiscovery.trustedProxies.AllowConfig.md"><code>allow</code></a></td>
+<td>
+<a id="allow"></a>
+<a href="io.helidon.server.protocols.http11.requestedUriDiscovery.trustedProxies.AllowConfig.md">
+<code>allow</code>
+</a>
+</td>
 <td>Configuration for allow</td>
 </tr>
 <tr>
-<td><a id="deny"></a><a href="io.helidon.server.protocols.http11.requestedUriDiscovery.trustedProxies.DenyConfig.md"><code>deny</code></a></td>
+<td>
+<a id="deny"></a>
+<a href="io.helidon.server.protocols.http11.requestedUriDiscovery.trustedProxies.DenyConfig.md">
+<code>deny</code>
+</a>
+</td>
 <td>Configuration for deny</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

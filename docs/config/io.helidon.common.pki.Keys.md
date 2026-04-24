@@ -10,27 +10,53 @@ Configuration of keys
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="pem"></a><a href="io.helidon.common.pki.PemKeys.md"><code>pem</code></a></td>
-<td><code>PemKeys</code></td>
+<td>
+<a id="pem"></a>
+<a href="io.helidon.common.pki.PemKeys.md">
+<code>pem</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">PemKeys</code>
+</td>
 <td>Configure keys from pem file(s)</td>
 </tr>
 <tr>
-<td><a id="keystore"></a><a href="io.helidon.common.pki.KeystoreKeys.md"><code>keystore</code></a></td>
-<td><code>KeystoreKeys</code></td>
+<td>
+<a id="keystore"></a>
+<a href="io.helidon.common.pki.KeystoreKeys.md">
+<code>keystore</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="KeystoreKeys">KeystoreKeys</code>
+</td>
 <td>Configure keys from a keystore</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

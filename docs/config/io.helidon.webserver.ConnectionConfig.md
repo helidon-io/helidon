@@ -10,64 +10,119 @@ Configuration of a server connection (for each connection created by clients)
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>connect-timeout</code></td>
-<td><code>Duration</code></td>
-<td><code>PT10S</code></td>
+<td>
+<code>connect-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">PT10S</code>
+</td>
 <td>Connect timeout</td>
 </tr>
 <tr>
-<td><code>keep-alive</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
+<td>
+<code>keep-alive</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
 <td>Configure socket keep alive</td>
 </tr>
 <tr>
-<td><code>read-timeout</code></td>
-<td><code>Duration</code></td>
-<td><code>PT30S</code></td>
+<td>
+<code>read-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">PT30S</code>
+</td>
 <td>Read timeout</td>
 </tr>
 <tr>
-<td><code>receive-buffer-size</code></td>
-<td><code>Integer</code></td>
-<td><code>32768</code></td>
+<td>
+<code>receive-buffer-size</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">32768</code>
+</td>
 <td>Socket receive buffer size</td>
 </tr>
 <tr>
-<td><code>reuse-address</code></td>
-<td><code>Boolean</code></td>
-<td><code>true</code></td>
+<td>
+<code>reuse-address</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
 <td>Socket reuse address</td>
 </tr>
 <tr>
-<td><code>send-buffer-size</code></td>
-<td><code>Integer</code></td>
-<td><code>32768</code></td>
+<td>
+<code>send-buffer-size</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">32768</code>
+</td>
 <td>Socket send buffer size</td>
 </tr>
 <tr>
-<td><code>tcp-no-delay</code></td>
-<td><code>Boolean</code></td>
-<td><code>false</code></td>
-<td>Disable &lt;a href&#x3D;&quot;https://en.wikipedia.org/wiki/Nagle%27s_algorithm&quot;&gt;Nagle&#x27;s algorithm&lt;/a&gt; by setting TCP_NODELAY to true</td>
+<td>
+<code>tcp-no-delay</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Disable <a href="https://en.wikipedia.org/wiki/Nagle%27s_algorithm">Nagle's algorithm</a> by setting TCP_NODELAY to true</td>
 </tr>
 </tbody>
 </table>
 
 
+
 ## Usages
 
-- [`server.connection-config`](io.helidon.ServerConfig.md#connection-config)
+- [`server.connection-config`](io.helidon.webserver.WebServer.md#connection-config)
 - [`server.sockets.connection-config`](io.helidon.webserver.ListenerConfig.md#connection-config)
 
 ---

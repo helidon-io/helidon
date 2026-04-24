@@ -10,32 +10,56 @@ A user that is loaded from configuration
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>password</code></td>
-<td><code>String</code></td>
-<td>User&#x27;s password</td>
+<td>
+<code>password</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>User's password</td>
 </tr>
 <tr>
-<td><code>roles</code></td>
-<td><code>List&lt;String&gt;</code></td>
+<td>
+<code>roles</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
 <td>List of roles the user is in</td>
 </tr>
 <tr>
-<td><code>login</code></td>
-<td><code>String</code></td>
-<td>User&#x27;s login</td>
+<td>
+<code>login</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>User's login</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

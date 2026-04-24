@@ -2,7 +2,7 @@
 
 ## Description
 
-Configuration of the &lt;code&gt;JsonbSupport&lt;/code&gt;
+Configuration of the <code>JsonbSupport</code>
 
 ## Configuration options
 
@@ -10,32 +10,56 @@ Configuration of the &lt;code&gt;JsonbSupport&lt;/code&gt;
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>boolean-properties</code></td>
-<td><code>Map&lt;String, Boolean&gt;</code></td>
-<td>Jsonb &lt;code&gt;boolean&lt;/code&gt; configuration properties</td>
+<td>
+<code>boolean-properties</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, Boolean&gt;">Map&lt;String, Boolean&gt;</code>
+</td>
+<td>Jsonb <code>boolean</code> configuration properties</td>
 </tr>
 <tr>
-<td><code>class-properties</code></td>
-<td><code>Map&lt;String, Class&gt;</code></td>
-<td>Jsonb &lt;code&gt;Class&lt;/code&gt; configuration properties</td>
+<td>
+<code>class-properties</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, Class&gt;">Map&lt;String, Class&gt;</code>
+</td>
+<td>Jsonb <code>Class</code> configuration properties</td>
 </tr>
 <tr>
-<td><code>properties</code></td>
-<td><code>Map&lt;String, String&gt;</code></td>
-<td>Jsonb &lt;code&gt;String&lt;/code&gt; configuration properties</td>
+<td>
+<code>properties</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+</td>
+<td>Jsonb <code>String</code> configuration properties</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

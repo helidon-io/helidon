@@ -10,21 +10,37 @@ Configuration for data.sources
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="sql"></a><a href="io.helidon.data.sql.datasource.DataSourceConfig.md"><code>sql</code></a></td>
+<td>
+<a id="sql"></a>
+<a href="io.helidon.data.sql.datasource.DataSourceConfig.md">
+<code>sql</code>
+</a>
+</td>
 <td>Configuration for sql</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

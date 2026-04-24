@@ -10,22 +10,41 @@ Configuration of WebClient transport level propagation of context values
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a id="records"></a><a href="io.helidon.common.context.http.ContextRecordConfig.md"><code>records</code></a></td>
-<td><code>List&lt;ContextRecordConfig&gt;</code></td>
+<td>
+<a id="records"></a>
+<a href="io.helidon.common.context.http.ContextRecordConfig.md">
+<code>records</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;ContextRecordConfig&gt;">List&lt;ContextRecordConfig&gt;</code>
+</td>
 <td>List of propagation records</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ---

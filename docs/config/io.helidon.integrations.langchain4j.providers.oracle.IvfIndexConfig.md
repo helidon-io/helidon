@@ -2,7 +2,7 @@
 
 ## Description
 
-&lt;code&gt;N/A&lt;/code&gt;
+<code>N/A</code>
 
 ## Configuration options
 
@@ -10,52 +10,95 @@
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>degree-of-parallelism</code></td>
-<td><code>Integer</code></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.store.embedding.oracle.IVFIndexBuilder#degreeOfParallelism(int)&lt;/code&gt;</td>
+<td>
+<code>degree-of-parallelism</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IVFIndexBuilder#degreeOfParallelism(int)</code></td>
 </tr>
 <tr>
-<td><code>target-accuracy</code></td>
-<td><code>Integer</code></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.store.embedding.oracle.IVFIndexBuilder#targetAccuracy(int)&lt;/code&gt;</td>
+<td>
+<code>target-accuracy</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IVFIndexBuilder#targetAccuracy(int)</code></td>
 </tr>
 <tr>
-<td><a id="create-option"></a><a href="dev.langchain4j.store.embedding.oracle.CreateOption.md"><code>create-option</code></a></td>
-<td><code>CreateOption</code></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.store.embedding.oracle.IndexBuilder#createOption(dev.langchain4j.store.embedding.oracle.CreateOption)&lt;/code&gt;</td>
+<td>
+<a id="create-option"></a>
+<a href="dev.langchain4j.store.embedding.oracle.CreateOption.md">
+<code>create-option</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CreateOption">CreateOption</code>
+</td>
+<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IndexBuilder#createOption(dev.langchain4j.store.embedding.oracle.CreateOption)</code></td>
 </tr>
 <tr>
-<td><code>neighbor-partitions</code></td>
-<td><code>Integer</code></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.store.embedding.oracle.IVFIndexBuilder#neighborPartitions(int)&lt;/code&gt;</td>
+<td>
+<code>neighbor-partitions</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IVFIndexBuilder#neighborPartitions(int)</code></td>
 </tr>
 <tr>
-<td><code>min-vectors-per-partition</code></td>
-<td><code>Integer</code></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.store.embedding.oracle.IVFIndexBuilder#minVectorsPerPartition(int)&lt;/code&gt;</td>
+<td>
+<code>min-vectors-per-partition</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IVFIndexBuilder#minVectorsPerPartition(int)</code></td>
 </tr>
 <tr>
-<td><code>name</code></td>
-<td><code>String</code></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.store.embedding.oracle.IndexBuilder#name(java.lang.String)&lt;/code&gt;</td>
+<td>
+<code>name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IndexBuilder#name(java.lang.String)</code></td>
 </tr>
 <tr>
-<td><code>sample-per-partition</code></td>
-<td><code>Integer</code></td>
-<td>Generated from &lt;code&gt;dev.langchain4j.store.embedding.oracle.IVFIndexBuilder#samplePerPartition(int)&lt;/code&gt;</td>
+<td>
+<code>sample-per-partition</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IVFIndexBuilder#samplePerPartition(int)</code></td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

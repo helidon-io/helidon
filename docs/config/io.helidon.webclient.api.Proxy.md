@@ -10,59 +10,111 @@ A definition of a proxy server to use for outgoing requests
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>password</code></td>
-<td><code>List&lt;String&gt;</code></td>
-<td></td>
+<td>
+<code>password</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Sets a new password for the proxy</td>
 </tr>
 <tr>
-<td><code>port</code></td>
-<td><code>Integer</code></td>
-<td></td>
+<td>
+<code>port</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Sets a port value</td>
 </tr>
 <tr>
-<td><code>host</code></td>
-<td><code>String</code></td>
-<td></td>
+<td>
+<code>host</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Sets a new host value</td>
 </tr>
 <tr>
-<td><code>force-http-connect</code></td>
-<td><code>Boolean</code></td>
-<td></td>
+<td>
+<code>force-http-connect</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Forces HTTP CONNECT with the proxy server</td>
 </tr>
 <tr>
-<td><code>no-proxy</code></td>
-<td><code>List&lt;String&gt;</code></td>
-<td></td>
+<td>
+<code>no-proxy</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Configure a host pattern that is not going through a proxy</td>
 </tr>
 <tr>
-<td><a id="type"></a><a href="io.helidon.webclient.api.Proxy.ProxyType.md"><code>type</code></a></td>
-<td><code>ProxyType</code></td>
-<td><code>HTTP</code></td>
+<td>
+<a id="type"></a>
+<a href="io.helidon.webclient.api.Proxy.ProxyType.md">
+<code>type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">ProxyType</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">HTTP</code>
+</td>
 <td>Sets a new proxy type</td>
 </tr>
 <tr>
-<td><code>username</code></td>
-<td><code>String</code></td>
-<td></td>
+<td>
+<code>username</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Sets a new username for the proxy</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

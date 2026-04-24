@@ -2,7 +2,7 @@
 
 ## Description
 
-Configuration blueprint for &lt;code&gt;MockChatRule&lt;/code&gt;
+Configuration blueprint for <code>MockChatRule</code>
 
 ## Configuration options
 
@@ -10,32 +10,56 @@ Configuration blueprint for &lt;code&gt;MockChatRule&lt;/code&gt;
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>template</code></td>
-<td><code>String</code></td>
-<td>Response template (e.g., using placeholders ex.: &#x27;$1&#x27; for regex pattern group 1) used when the pattern matches</td>
+<td>
+<code>template</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>Response template (e.g., using placeholders ex.: '$1' for regex pattern group 1) used when the pattern matches</td>
 </tr>
 <tr>
-<td><code>response</code></td>
-<td><code>String</code></td>
+<td>
+<code>response</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
 <td>Static text response that will be returned when the pattern matches</td>
 </tr>
 <tr>
-<td><code>pattern</code></td>
-<td><code>Pattern</code></td>
+<td>
+<code>pattern</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Pattern</code>
+</td>
 <td>The regular expression pattern that this rule matches</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages

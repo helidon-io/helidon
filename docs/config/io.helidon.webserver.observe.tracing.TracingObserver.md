@@ -10,35 +10,65 @@ Configuration of Tracing observer
     code {
         white-space: nowrap !important;
     }
+
+    .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
 </style>
+
 
 <table>
 <thead>
 <tr>
-<th>Key</th><th>Type</th><th>Default Value</th><th>Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>wait-tracing-enabled</code></td>
-<td><code>Boolean</code></td>
-<td><code>false</code></td>
+<td>
+<code>wait-tracing-enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
 <td>Whether waiting due to concurrency limit constraints should be traced</td>
 </tr>
 <tr>
-<td><code>paths</code></td>
-<td><code>List&lt;PathTracingConfig&gt;</code></td>
-<td></td>
+<td>
+<code>paths</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;PathTracingConfig&gt;">List&lt;PathTracingConfig&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
 <td>Path specific configuration of tracing</td>
 </tr>
 <tr>
-<td><code>weight</code></td>
-<td><code>Double</code></td>
-<td><code>900.0</code></td>
+<td>
+<code>weight</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">900.0</code>
+</td>
 <td>Weight of the feature registered with WebServer</td>
 </tr>
 </tbody>
 </table>
+
 
 
 ## Usages
