@@ -22,11 +22,7 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 
 /**
  * Client metrics SPI provider implementation.
- *
- * @deprecated This class should only be used via {@link java.util.ServiceLoader}.
- *  Use {@link WebClientMetrics} instead
  */
-@Deprecated
 public class WebClientMetricsProvider implements WebClientServiceProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

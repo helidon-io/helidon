@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.declarative.codegen.faulttolerance;
 
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
@@ -31,11 +32,9 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
 public class FtExtensionProvider implements RegistryCodegenExtensionProvider {
 
     /**
-     * Default constructor.
-     *
-     * @deprecated required by Java {@link java.util.ServiceLoader}
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public FtExtensionProvider() {
     }
 

@@ -28,10 +28,7 @@ import io.helidon.webserver.observe.spi.Observer;
  *  so changing a log level for a logger may be temporary (in case a garbage collector runs and the reference is not kept
  *  anywhere).
  * In Helidon, most loggers are referenced for the duration of the application, so this should not impact Helidon components.
- *
- * @deprecated only for {@link java.util.ServiceLoader}
  */
-@Deprecated
 public class LogObserveProvider implements ObserveProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
