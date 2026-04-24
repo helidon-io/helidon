@@ -620,7 +620,7 @@ public final class JsonObject extends JsonValue {
          * @param value the list of JsonValue instances
          * @return this builder for method chaining
          */
-        public Builder setValues(String key, List<JsonValue> value) {
+        public Builder setValues(String key, List<? extends JsonValue> value) {
             Objects.requireNonNull(key, "key cannot be null");
             Objects.requireNonNull(value, "value cannot be null");
 
