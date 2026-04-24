@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,12 @@ final class MpMetaConfig {
     private static Optional<ConfigSource> findMetaConfig(String fileName) {
         // file system, then classpath
         return findFile(fileName)
-                .or(() -> findClasspath(MpMetaConfig.class.getClassLoader(), fileName));
+                .or(() -> findClasspath(metaConfigClassLoader(), fileName));
+    }
+
+    private static ClassLoader metaConfigClassLoader() {
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        return contextClassLoader == null ? MpMetaConfig.class.getClassLoader() : contextClassLoader;
     }
 
     private static Optional<ConfigSource> findFile(String name) {
