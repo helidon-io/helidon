@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package io.helidon.integrations.jta.weld;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import io.helidon.common.Api;
 
 import com.arjuna.ats.jta.common.JTAEnvironmentBean;
 import jakarta.enterprise.inject.Instance;
@@ -69,10 +71,9 @@ public final class NarayanaTransactionServices implements TransactionServices {
 
 
     /**
-     * Creates a new {@link NarayanaTransactionServices}.
-     * @deprecated Only intended for service loader, do not instantiate
+     * Creates a new {@link NarayanaTransactionServices} for service loader use only.
      */
-    @Deprecated
+    @Api.Internal
     public NarayanaTransactionServices() {
         super();
         final String cn = NarayanaTransactionServices.class.getName();

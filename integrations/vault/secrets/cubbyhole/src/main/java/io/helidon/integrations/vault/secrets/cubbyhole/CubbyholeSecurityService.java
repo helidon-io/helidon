@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.vault.secrets.cubbyhole;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.security.spi.SecurityProvider;
@@ -26,9 +27,9 @@ import io.helidon.security.spi.SecurityProviderService;
  */
 public class CubbyholeSecurityService implements SecurityProviderService {
     /**
-     * @deprecated Do not use this constructor, this is a service loader service!
+     * Required by this service loader service.
      */
-    @Deprecated
+    @Api.Internal
     public CubbyholeSecurityService() {
     }
 

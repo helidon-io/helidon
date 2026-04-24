@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.MeterRegistry;
@@ -31,10 +32,8 @@ public class MicrometerPrometheusFormatterProvider implements MeterRegistryForma
 
     /**
      * Constructs a new instance for service loading.
-     *
-     * @deprecated
      */
-    @Deprecated
+    @Api.Internal
     public MicrometerPrometheusFormatterProvider() {
     }
 

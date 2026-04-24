@@ -22,6 +22,8 @@ package io.helidon.tracing.exporter.jaeger;
 
 import java.time.Duration;
 
+import io.helidon.common.Api;
+
 import io.opentelemetry.sdk.autoconfigure.spi.ConfigProperties;
 import io.opentelemetry.sdk.autoconfigure.spi.traces.ConfigurableSpanExporterProvider;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
@@ -32,18 +34,13 @@ import io.opentelemetry.sdk.trace.export.SpanExporter;
  *
  * <p>This class is internal and is hence not for public use. Its APIs are unstable and can change
  * at any time.
- *
- * @deprecated Use {@code OtlpGrpcSpanExporter} or {@code OtlpHttpSpanExporter} from <a
- *     href="https://github.com/open-telemetry/opentelemetry-java/tree/main/exporters/otlp/all">opentelemetry-exporter-otlp</a>
- *     instead.
  */
-@Deprecated
 public class JaegerGrpcSpanExporterProvider implements ConfigurableSpanExporterProvider {
 
   /**
    * For service loading.
    */
-  @Deprecated
+  @Api.Internal
   public JaegerGrpcSpanExporterProvider() {
   }
 

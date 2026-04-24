@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import io.helidon.common.Api;
 import io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean.DataSourceProvider;
 import io.helidon.integrations.cdi.jpa.jaxb.Persistence;
 
@@ -261,11 +262,9 @@ public final class PersistenceExtension implements Extension {
 
 
     /**
-     * Creates a new {@link PersistenceExtension}.
-     *
-     * @deprecated For invocation by CDI only.
+     * Creates a new {@link PersistenceExtension} for invocation by CDI only.
      */
-    @Deprecated // For invocation by CDI only.
+    @Api.Internal
     public PersistenceExtension() {
         super();
         this.enabled =

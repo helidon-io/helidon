@@ -25,6 +25,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.config.encryption.ConfigEncryptionException;
@@ -79,9 +80,9 @@ public final class MpEncryptionFilter implements MpConfigFilter {
     private MpConfigFilter aliasFilter;
 
     /**
-     * This constructor is only for use by {@link io.helidon.config.mp.spi.MpConfigFilter} service loader.
+     * This constructor is only for use by the {@link io.helidon.config.mp.spi.MpConfigFilter} service loader.
      */
-    @Deprecated
+    @Api.Internal
     public MpEncryptionFilter() {
     }
 

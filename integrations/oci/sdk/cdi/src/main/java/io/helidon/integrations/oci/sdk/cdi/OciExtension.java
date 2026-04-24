@@ -38,6 +38,8 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
+
 import com.oracle.bmc.ConfigFileReader.ConfigFile;
 import com.oracle.bmc.Service;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
@@ -612,11 +614,9 @@ public final class OciExtension implements Extension {
 
 
     /**
-     * Creates a new {@link OciExtension}.
-     *
-     * @deprecated For {@link java.util.ServiceLoader} use only.
+     * Creates a new {@link OciExtension} for {@link java.util.ServiceLoader} use only.
      */
-    @Deprecated // for java.util.ServiceLoader use only
+    @Api.Internal
     public OciExtension() {
         super();
         this.lenientClassloading = true;

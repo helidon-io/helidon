@@ -91,6 +91,11 @@
             <artifactId>helidon-common-features-api</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+            <optional>true</optional>
+        </dependency>
         <!--
         The following dependencies are needed to provide an outbound client to supplant the okhttp one that OpenTelemetry
         normally depends on.

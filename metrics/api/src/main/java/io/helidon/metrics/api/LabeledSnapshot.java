@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,11 @@ import io.helidon.metrics.api.Sample.Derived;
 import io.helidon.metrics.api.Sample.Labeled;
 
 /**
- * Internal interface prescribing minimum behavior of a snapshot needed to produce output.
+ * Snapshot view of a metric's derived and labeled sample values.
+ * <p>
+ * Implementations expose summary values computed for the metric at a point in time, such as quantiles, max, mean,
+ * and observation count.
+ * </p>
  */
 public interface LabeledSnapshot {
     /**

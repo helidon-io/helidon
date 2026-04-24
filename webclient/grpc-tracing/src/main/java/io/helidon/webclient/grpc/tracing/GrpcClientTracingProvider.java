@@ -22,12 +22,8 @@ import io.helidon.webclient.grpc.spi.GrpcClientService;
 import io.helidon.webclient.grpc.spi.GrpcClientServiceProvider;
 
 /**
- * gRPC client tracing SPI provider implementation.
- *
- * @deprecated This class should only be used via {@link java.util.ServiceLoader}.
- *         Use {@link io.helidon.webclient.grpc.tracing.GrpcClientTracing} instead.
+ * gRPC client tracing SPI provider implementation for {@link java.util.ServiceLoader}.
  */
-@Deprecated
 public class GrpcClientTracingProvider implements GrpcClientServiceProvider {
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import io.helidon.common.Api;
 import io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean.DataSourceProvider;
 import io.helidon.integrations.cdi.jpa.jaxb.Persistence;
 import io.helidon.integrations.cdi.referencecountedcontext.ReferenceCounted;
@@ -120,7 +121,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  *
  * @deprecated Please use {@link PersistenceExtension} instead.
  */
-@Deprecated(since = "4.0")
+@Deprecated(since = "4.0.0", forRemoval = true)
 @SuppressWarnings("checkstyle:IllegalToken") // deprecated, to be removed
 public class JpaExtension implements Extension {
 
@@ -311,6 +312,7 @@ public class JpaExtension implements Extension {
      *
      * @see Extension
      */
+    @Api.Internal
     public JpaExtension() {
         super();
         String cn = JpaExtension.class.getName();

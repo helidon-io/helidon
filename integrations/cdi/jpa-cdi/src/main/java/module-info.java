@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ module io.helidon.integrations.cdi.jpa {
 
     requires microprofile.config.api;
 
+    requires static io.helidon.common;
     requires static io.helidon.common.features.api;
 
     // Static metamodel generation requires access to java.compiler at

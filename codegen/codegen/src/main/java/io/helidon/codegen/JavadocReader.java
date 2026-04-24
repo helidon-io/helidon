@@ -26,6 +26,7 @@ import io.helidon.codegen.JavadocTree.AttrValue;
 import io.helidon.codegen.JavadocTree.BlockTag;
 import io.helidon.codegen.JavadocTree.Document;
 import io.helidon.codegen.JavadocTree.Text;
+import io.helidon.common.Api;
 
 /**
  * Javadoc reader.
@@ -35,6 +36,7 @@ import io.helidon.codegen.JavadocTree.Text;
  * This code and its internal interfaces are subject to change or deletion without notice.</b>
  * </p>
  */
+@Api.Internal
 public final class JavadocReader {
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.integrations.datasource.ucp.cdi;
 import java.util.Properties;
 import java.util.regex.Matcher;
 
+import io.helidon.common.Api;
 import io.helidon.integrations.cdi.configurable.AbstractConfigurableExtension;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -89,11 +90,9 @@ import static io.helidon.integrations.datasource.ucp.cdi.UCPBackedDataSourceExte
 public class UniversalConnectionPoolExtension extends AbstractConfigurableExtension<UniversalConnectionPool> {
 
     /**
-     * Creates a new {@link UniversalConnectionPoolExtension}.
-     *
-     * @deprecated For use by CDI only.
+     * Creates a new {@link UniversalConnectionPoolExtension} for CDI use only.
      */
-    @Deprecated // For use by CDI only
+    @Api.Internal
     public UniversalConnectionPoolExtension() {
         super();
     }

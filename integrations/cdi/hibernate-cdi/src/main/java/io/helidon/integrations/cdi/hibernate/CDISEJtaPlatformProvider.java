@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package io.helidon.integrations.cdi.hibernate;
 
 import java.lang.System.Logger;
+
+import io.helidon.common.Api;
 
 import jakarta.enterprise.inject.spi.CDI;
 import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform;
@@ -54,11 +56,9 @@ public final class CDISEJtaPlatformProvider implements JtaPlatformProvider {
 
 
     /**
-     * Creates a new {@link CDISEJtaPlatformProvider}.
-     *
-     * @deprecated For Hibernate use only.
+     * Creates a new {@link CDISEJtaPlatformProvider} for Hibernate use only.
      */
-    @Deprecated
+    @Api.Internal
     public CDISEJtaPlatformProvider() {
         super();
     }

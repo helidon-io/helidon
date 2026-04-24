@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,8 +45,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * The extension automatically deletes the temporary files after all tests in
  * the test class have finished.
  *
+ * @deprecated Use JUnit 5 {@link org.junit.jupiter.api.io.TempDir @TempDir} support for temporary files and
+ *         directories instead.
  */
-@Deprecated
+@Deprecated(since = "4.5.0", forRemoval = true)
 public class TemporaryFolderExt implements BeforeEachCallback, AfterEachCallback {
 
     private Path root;

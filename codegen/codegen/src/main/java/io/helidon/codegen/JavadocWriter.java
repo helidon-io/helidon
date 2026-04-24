@@ -27,6 +27,7 @@ import io.helidon.codegen.JavadocTree.EltStart;
 import io.helidon.codegen.JavadocTree.Escape;
 import io.helidon.codegen.JavadocTree.InlineTag;
 import io.helidon.codegen.JavadocTree.Text;
+import io.helidon.common.Api;
 
 /**
  * A tool that renders Javadoc to simplified HTML.
@@ -51,6 +52,7 @@ import io.helidon.codegen.JavadocTree.Text;
  * This code and its internal interfaces are subject to change or deletion without notice.</b>
  * </p>
  */
+@Api.Internal
 public final class JavadocWriter {
 
     private final StringBuilder buf;

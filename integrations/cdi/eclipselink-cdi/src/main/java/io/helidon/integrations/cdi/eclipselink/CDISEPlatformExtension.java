@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ import java.lang.reflect.Field;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.Api;
+
 import jakarta.enterprise.inject.spi.Extension;
 import org.eclipse.persistence.platform.server.NoServerPlatform;
 import org.eclipse.persistence.platform.server.ServerPlatformUtils;
@@ -32,10 +34,7 @@ import org.eclipse.persistence.platform.server.ServerPlatformUtils;
  * whose versions are higher than 1.8.  There is no need for end users
  * to instantiate this class.  Any public APIs exposed by this class
  * are subject to change without prior notice.</p>
- *
- * @deprecated Only a CDI container should instantiate this class.
  */
-@Deprecated
 public final class CDISEPlatformExtension implements Extension {
 
 
@@ -45,11 +44,9 @@ public final class CDISEPlatformExtension implements Extension {
 
 
     /**
-     * Creates a new {@link CDISEPlatformExtension}.
-     *
-     * @deprecated Only a CDI container should invoke this constructor.
+     * Creates a new {@link CDISEPlatformExtension} for CDI container use only.
      */
-    @Deprecated
+    @Api.Internal
     public CDISEPlatformExtension() {
         super();
         final Object serverPlatformClassName = ServerPlatformUtils.detectServerPlatform(null);

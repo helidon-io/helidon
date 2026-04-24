@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.Main;
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.common.Weights;
 import io.helidon.common.types.ResolvedType;
@@ -98,11 +99,9 @@ public class ServiceRegistryExtension implements Extension {
     private static final ResolvedType TRACER = ResolvedType.create("io.helidon.tracing.Tracer");
 
     /**
-     * Creates a new {@link ServiceRegistryExtension}.
-     *
-     * @deprecated For CDI use only.
+     * Creates a new {@link ServiceRegistryExtension} for CDI use only.
      */
-    @Deprecated
+    @Api.Internal
     public ServiceRegistryExtension() {
         super();
     }
