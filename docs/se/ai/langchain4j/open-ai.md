@@ -8,7 +8,7 @@ This module adds support for selected Open AI models.
 
 In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.integrations.langchain4j.providers</groupId>
     <artifactId>helidon-integrations-langchain4j-providers-open-ai</artifactId>
@@ -21,7 +21,7 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 To automatically create and add `OpenAiChatModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     open-ai:
@@ -84,7 +84,7 @@ The framework attempts to resolve a tokenizer using the following strategy:
 
 To automatically create and add `OpenAiEmbeddingModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     open-ai:
@@ -135,7 +135,7 @@ The framework attempts to resolve a tokenizer using the following strategy:
 
 To automatically create and add `OpenAiImageModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     open-ai:
@@ -183,7 +183,7 @@ The framework attempts to resolve a proxy using the following strategy:
 
 To automatically create and add `OpenAiLanguageModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     open-ai:
@@ -233,7 +233,7 @@ The framework attempts to resolve a tokenizer using the following strategy:
 
 To automatically create and add `OpenAiModerationModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     open-ai:
@@ -274,7 +274,7 @@ The framework attempts to resolve a proxy using the following strategy:
 
 To automatically create and add `OpenAiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     open-ai:

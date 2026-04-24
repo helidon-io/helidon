@@ -8,7 +8,7 @@ The Helidon JSON-RPC client API is part of the WebClient API, and can be used to
 
 To enable WebClient/JSON-RPC, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient-jsonrpc</artifactId>
@@ -21,7 +21,7 @@ To enable WebClient/JSON-RPC, add the following dependency to your project’s `
 
 An instance of `JsonRpcClient` can be obtained from a configured `WebClient` instance as shown next:
 
-``` java
+```java
 WebClient webClient = WebClient.builder()
         .baseUri("http://localhost:8080/rpc")
         .build();
@@ -33,7 +33,7 @@ The `WebClient` instance is configured with a base URI and the `JsonRpcClient` i
 
 To create a request, simply pass the method name, the ID and some parameters using the fluent API provided. Parameters must be JSON values, but simple Java types such as `String` and `int` are supported and mapped to the corresponding JSON types automatically.
 
-``` java
+```java
 JsonRpcClientResponse res = client.rpcMethod("start")
         .rpcId(1)
         .param("when", "NOW")
@@ -44,7 +44,7 @@ JsonRpcClientResponse res = client.rpcMethod("start")
 
 A `JsonRpcClientResponse` is a subtype of `HttpClientResponse`, so any methods available in the latter apply to the former. Thus, we can easily verify the HTTP status and then inspect if any JSON-RPC result has been returned as follows:
 
-``` java
+```java
 if (res.status() == Status.OK_200 && res.result().isPresent()) {
     StartStopResult result = res.result().get().as(StartStopResult.class);
     if (result.status().equals("RUNNING")) {
@@ -64,7 +64,7 @@ The JSON-RPC client API also supports batching, whereby multiple method invocati
 
 Here is an example that constructs a batch request to start and then stop a machine:
 
-``` java
+```java
 JsonRpcClientBatchRequest batch = client.batch("/machine");
 
 batch.rpcMethod("start")
@@ -82,7 +82,7 @@ JsonRpcClientBatchResponse batchRes = batch.submit();
 
 The response of type `JsonClientBatchResponse` shall include an entry for each of the invocations in the request. In this example, we can test that the response returned HTTP status 200 and has a size of 2, and then verify the results by binding them to `StartStopResult` instances using JSON-B.
 
-``` java
+```java
 if (batchRes.status() == Status.OK_200 && batchRes.size() == 2) {
     Optional<JsonRpcResult> result0 = batchRes.get(0).result();
     if (result0.get().as(StartStopResult.class).status().equals("RUNNING")) {

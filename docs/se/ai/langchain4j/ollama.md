@@ -8,7 +8,7 @@ This module adds support for selected [Ollama](https://ollama.ai/) models.
 
 In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.integrations.langchain4j.providers</groupId>
     <artifactId>helidon-integrations-langchain4j-providers-ollama</artifactId>
@@ -21,7 +21,7 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 To automatically create and add `OllamaChatModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     ollama:
@@ -59,7 +59,7 @@ Full list of configuration properties:
 
 To automatically create and add `OllamaEmbeddingModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     ollama:
@@ -89,7 +89,7 @@ Full list of configuration properties:
 
 To automatically create and add `OllamaLanguageModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     ollama:
@@ -127,7 +127,7 @@ Full list of configuration properties:
 
 To automatically create and add `OllamaStreamingChatModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     ollama:

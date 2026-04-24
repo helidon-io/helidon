@@ -8,7 +8,7 @@ The Helidon GraphQL Server provides a framework for creating [GraphQL](https://g
 
 To enable GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
   <groupId>io.helidon.webserver</groupId>
   <artifactId>helidon-webserver-graphql</artifactId>
@@ -21,7 +21,7 @@ An instance of `GraphQlSupport` must be registered in the Helidon WebServer rout
 
 The following code fragment creates an instance of `GraphQlSupport` and registers it in the Helidon WebServer.
 
-``` java
+```java
 WebServer server = WebServer.builder()
         .routing(r -> r.register(GraphQlService.create(buildSchema())))
         .build();
@@ -29,7 +29,7 @@ WebServer server = WebServer.builder()
 
 By default, `GraphQlSupport` will reserve `/graphql` as the URI path to process queries. The `buildSchema` method creates the schema and defines 2 types of queries for this application:
 
-``` java
+```java
 static GraphQLSchema buildSchema() {
     String schema = 
             """ 

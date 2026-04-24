@@ -8,7 +8,7 @@ Connecting streams to Kafka with Reactive Messaging is easy to do. There is a st
 
 To enable Reactive Kafka Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.messaging.kafka</groupId>
     <artifactId>helidon-messaging-kafka</artifactId>
@@ -19,7 +19,7 @@ To enable Reactive Kafka Connector, add the following dependency to your project
 
 *Example of connector config:*
 
-``` yaml
+```yaml
 mp.messaging:
 
   incoming.from-kafka:
@@ -75,7 +75,7 @@ mp.messaging:
 
 *Example of consuming from Kafka:*
 
-``` java
+```java
 @Incoming("from-kafka")
 public void consumeKafka(String msg) {
     System.out.println("Kafka says: " + msg);
@@ -86,7 +86,7 @@ public void consumeKafka(String msg) {
 
 *Example of producing to Kafka:*
 
-``` java
+```java
 @Outgoing("to-kafka")
 public PublisherBuilder<String> produceToKafka() {
     return ReactiveStreams.of("test1", "test2");
@@ -114,7 +114,7 @@ Helidon can derive connection settings for DLQ topic automatically if the error 
 
 *Example of derived DLQ config:*
 
-``` yaml
+```yaml
 mp.messaging:
   incoming:
     my-channel:
@@ -125,7 +125,7 @@ If a custom connection is needed, then use the 'nack-dlq' key for all of the pro
 
 *Example of custom DLQ config:*
 
-``` yaml
+```yaml
 mp.messaging:
   incoming:
     my-channel:
@@ -142,7 +142,7 @@ Only logs nacked messages and throws them away, offset is committed and channel 
 
 *Example of log only enabled nack strategy*
 
-``` yaml
+```yaml
 mp.messaging:
   incoming:
     my-channel:

@@ -8,7 +8,7 @@ Neo4j is a graph database management system developed by Neo4j, Inc. It is an AC
 
 To enable Neo4j, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
    <groupId>io.helidon.integrations.neo4j</groupId>
    <artifactId>helidon-integrations-neo4j</artifactId>
@@ -24,7 +24,7 @@ The support for Neo4j is implemented in Neo4j driver level. Just add the depende
 
 First describe Neo4j connection properties:
 
-``` yaml
+```yaml
 neo4j:
  uri: bolt://localhost:7687
  authentication:
@@ -36,7 +36,7 @@ neo4j:
 
 Then just get the driver:
 
-``` java
+```java
 Neo4j neo4j = Neo4j.create(config.get("neo4j"));
 Driver neo4jDriver = neo4j.driver();
 ```
@@ -70,7 +70,7 @@ This example implements a simple Neo4j REST service using MicroProfile. For this
 
 Bring up a Neo4j instance via Docker
 
-``` bash
+```bash
 docker run --publish=7474:7474 --publish=7687:7687 -e 'NEO4J_AUTH=neo4j/secret'  neo4j:latest
 ```
 
@@ -78,7 +78,7 @@ Go to the Neo4j browser and play the first step of the movies graph: [`:play mov
 
 Now go to the `pom.xml` and add the following dependencies:
 
-``` xml
+```xml
 <dependencies>
     <dependency>
         <groupId>io.helidon.integrations.neo4j</groupId>
@@ -97,7 +97,7 @@ Now go to the `pom.xml` and add the following dependencies:
 
 Next add the connection configuration properties for Neo4j:
 
-``` yaml
+```yaml
 neo4j:
  uri: bolt://localhost:7687
  authentication:
@@ -111,7 +111,7 @@ This includes both connection information and enables Neo4j metrics propagation.
 
 Finally, we are able to use the `Neo4j` driver.
 
-``` java
+```java
 record MovieRepository(Driver driver) { 
 
     List<Movie> findAll() { 
@@ -152,7 +152,7 @@ record MovieRepository(Driver driver) {
 
 Movies can now be returned as JSON objects:
 
-``` java
+```java
 record MovieService(MovieRepository movieRepository) implements HttpService {
 
     @Override
@@ -168,7 +168,7 @@ record MovieService(MovieRepository movieRepository) implements HttpService {
 
 To use the service, as well as to add metrics and health support the following routing should be created:
 
-``` java
+```java
 Neo4j neo4j = Neo4j.create(config.get("neo4j"));
 Driver driver = neo4j.driver(); 
 
@@ -199,14 +199,14 @@ System.out.println("WEB server is up! http://localhost:" + server.port() + "/api
 
 Now build and run.
 
-``` bash
+```bash
 mvn package
 java -jar target/helidon-examples-integration-neo4j.jar
 ```
 
 Exercise the application:
 
-``` bash
+```bash
 curl -X GET http://localhost:8080/movies
 
 # Try health
@@ -227,7 +227,7 @@ Full example code is available in [Helidon Examples Repository](https://github.c
 
 Neo4j’s metrics can be propagated to the user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add:
 
-``` xml
+```xml
 <dependency>
    <groupId>io.helidon.integrations.neo4j</groupId>
    <artifactId>helidon-integrations-neo4j-metrics</artifactId>
@@ -239,14 +239,14 @@ Neo4j’s metrics can be propagated to the user as `MicroProfile` metrics. This 
 
 To enable metrics in Neo4j, add the following property to `application.yaml`:
 
-``` yaml
+```yaml
 pool:
    metricsEnabled: true
 ```
 
 Finally, to initialize metrics run:
 
-``` java
+```java
 Neo4jMetricsSupport.builder()
         .driver(driver)
         .build()
@@ -261,7 +261,7 @@ If your application is highly dependent on Neo4j database, health and liveness c
 
 `MicroProfile` Health checks for Neo4j are implemented in a separate Maven module:
 
-``` xml
+```xml
 <dependency>
    <groupId>io.helidon.integrations.neo4j</groupId>
    <artifactId>helidon-integrations-neo4j-health</artifactId>
@@ -273,7 +273,7 @@ If your application is highly dependent on Neo4j database, health and liveness c
 
 To enable health checks run the following code:
 
-``` java
+```java
 ObserveFeature observeFeature = ObserveFeature.builder()
         .addObserver(HealthObserver.builder()
                              .addCheck(Neo4jHealthCheck.create(driver))

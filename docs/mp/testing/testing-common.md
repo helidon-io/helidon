@@ -4,7 +4,7 @@
 
 *Basic usage*
 
-``` java
+```java
 @HelidonTest 
 class MyTest {
 }
@@ -44,7 +44,7 @@ CDI discovery can be disabled using [`@DisableDiscovery`](/apidocs/io.helidon.mi
 
 *Disable discovery*
 
-``` java
+```java
 @DisableDiscovery 
 @AddBean(MyBean.class) 
 @HelidonTest
@@ -61,7 +61,7 @@ JAXRS (Jersey) support can be added easily using [`@AddJaxRs`](/apidocs/io.helid
 
 *Add JAX-RS (Jersey)*
 
-``` java
+```java
 @DisableDiscovery
 @AddJaxRs 
 @AddBean(MyResource.class) 
@@ -92,7 +92,7 @@ However, test methods can also require a dedicated CDI container:
 
 *Reset the CDI container between methods*
 
-``` java
+```java
 @HelidonTest(resetPerTest = true)
 class MyTest {
 
@@ -111,7 +111,7 @@ class MyTest {
 
 *Customize the CDI container per method*
 
-``` java
+```java
 @HelidonTest
 class MyTest {
 
@@ -141,7 +141,7 @@ Use [`@Configuration`](/apidocs/io.helidon.microprofile.testing/io/helidon/micro
 
 *Switch to the existing configuration*
 
-``` java
+```java
 @Configuration(useExisting = true)
 @HelidonTest
 class MyTest {
@@ -166,7 +166,7 @@ The "synthetic" configuration can be expressed using the following annotations:
 
 *Add a key value pair*
 
-``` java
+```java
 @AddConfig(key = "foo", value = "bar")
 @HelidonTest
 class MyTest {
@@ -175,7 +175,7 @@ class MyTest {
 
 *Add a properties text block*
 
-``` java
+```java
 @AddConfigBlock("""
         foo=bar
         bob=alice
@@ -187,7 +187,7 @@ class MyTest {
 
 *Add a YAML text block*
 
-``` java
+```java
 @AddConfigBlock(type = "yaml", value = """
         my-test:
           foo: bar
@@ -200,7 +200,7 @@ class MyTest {
 
 *Add config programmatically*
 
-``` java
+```java
 @HelidonTest
 class MyTest {
 
@@ -215,7 +215,7 @@ class MyTest {
 
 *Add classpath resources*
 
-``` java
+```java
 @Configuration(configSources = {
         "my-test1.yaml",
         "my-test2.yaml"
@@ -231,7 +231,7 @@ The ordering of the test configuration can be controlled using the mechanism def
 
 *Add a properties text block with ordinal*
 
-``` java
+```java
 @AddConfigBlock(value = """
         config_ordinal=120
         foo=bar
@@ -267,7 +267,7 @@ Here are all the built-in types that can be injected:
 
 *Inject a JAX-RS client for the default socket*
 
-``` java
+```java
 @HelidonTest
 class MyTest {
 
@@ -280,7 +280,7 @@ Use [`@Socket`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile
 
 *Inject a JAX-RS client for the admin socket*
 
-``` java
+```java
 @HelidonTest
 class MyTest {
 
@@ -295,7 +295,7 @@ class MyTest {
 
 *Inject a URI for the default socket*
 
-``` java
+```java
 @HelidonTest
 class MyTest {
 
@@ -330,7 +330,7 @@ The following example demonstrates how to enable the use of [`@ConfigProperty`](
 
 *Config Injection Example*
 
-``` java
+```java
 @HelidonTest
 @DisableDiscovery 
 @AddBean(MyBean.class) 
@@ -371,7 +371,7 @@ The following example demonstrates how to use [`@RequestScoped`](https://jakarta
 
 *Request Scope Example*
 
-``` java
+```java
 @HelidonTest
 @DisableDiscovery 
 @AddJaxRs 
@@ -413,7 +413,7 @@ This can be done using CDI alternatives, however Helidon provides an annotation 
 
 To enable mock mupport add the following dependency to your project’s pom.xml.
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.testing</groupId>
     <artifactId>helidon-microprofile-testing-mocking</artifactId>
@@ -429,7 +429,7 @@ Use the [`@MockBean`](/apidocs/io.helidon.microprofile.testing.mocking/io/helido
 
 *Mocking using `@MockBean`*
 
-``` java
+```java
 @HelidonTest
 @AddBean(MyResource.class)
 @AddBean(MyService.class)
@@ -485,7 +485,7 @@ Pinning can in some cases negatively affect application performance.
 
 *Enable pinning detection*
 
-``` java
+```java
 @HelidonTest(pinningDetection = true)
 class MyTest {
 }
@@ -497,7 +497,7 @@ Pinning threshold can be changed with:
 
 *Configure pinning threshold*
 
-``` java
+```java
 @HelidonTest(pinningDetection = true, pinningThreshold = 50) 
 class MyTest {
 }

@@ -28,7 +28,7 @@ For this tutorial, you will need the following:
 
 *Verify Prerequisites*
 
-``` bash
+```bash
 java -version
 mvn --version
 docker --version
@@ -37,7 +37,7 @@ kubectl version
 
 *Setting JAVA_HOME*
 
-``` bash
+```bash
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -135,7 +135,7 @@ Use the project to build an application jar for the example. It saves all runtim
 
 *Build the Application*
 
-``` bash
+```bash
 mvn package
 ```
 
@@ -143,7 +143,7 @@ mvn package
 
 *Run the application*
 
-``` bash
+```bash
 java -jar server/target/myproject-server.jar
 ```
 
@@ -153,7 +153,7 @@ For example:
 
 *Try the Application*
 
-``` bash
+```bash
 curl -X GET http://localhost:8080/greet
 {"message":"Hello World!"}
 
@@ -246,7 +246,7 @@ Next, add the following dependency to your project’s `pom.xml`:
 
 *Adding the dependency for OCI Streaming*
 
-``` xml
+```xml
 <dependency>
   <groupId>io.helidon.microprofile.messaging</groupId>
   <artifactId>helidon-microprofile-messaging</artifactId>
@@ -261,7 +261,7 @@ Next, update `/server/src/main/resources/application.yaml` with streaming connec
 
 *Example of an application.yaml configured for OCI Streaming*
 
-``` yaml
+```yaml
 oci:
  tenant: helidon-app-example 
  user: email@domain.com 
@@ -282,7 +282,7 @@ Then, still in `/server/src/main/resources/application.yaml`, configure messagin
 
 *Example of a configuration for the helidon-kafka connector*
 
-``` yaml
+```yaml
 mp.messaging:
 
   incoming.from-stream:

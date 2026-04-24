@@ -8,7 +8,7 @@ The Helidon WebServer provides a framework for creating [JSON-RPC 2.0](https://w
 
 To enable WebServer/JSON-RPC, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-jsonrpc</artifactId>
@@ -23,7 +23,7 @@ JSON-RPC routing is multi-leveled: first-level routing is similar to HTTP using 
 
 Setting the Helidon WebServer to accept JSON-RPC requests starts by building a `JsonRpcRouting` instance that includes individual method routes or a group of routes aggregated by a *service*.
 
-``` java
+```java
 JsonRpcRouting jsonRpcRouting = JsonRpcRouting.builder()
         .service(new MachineService())
         .build();
@@ -38,7 +38,7 @@ WebServer.builder()
 
 In the example above, the `JsonRpcRouting` instance is created from a single JSON-RPC service `MachineService` and registered in the WebServer under the `/rpc` path. The `MachineService` class must extend `JsonRpcService` and override the `routing(JsonRpcRules)` method to add mappings for each of the JSON-RPC method names supported by the application. This is very similar to the way an `HttpService` is defined except for the multi-leveled mapping that includes paths and JSON-RPC method names as shown next.
 
-``` java
+```java
 class MachineService implements JsonRpcService {
 
     @Override
@@ -76,7 +76,7 @@ This JSON-RPC service registers handlers for method names `start` and `stop` und
 
 The logic for the two methods `start` and `stop` is very similar. First, they inspect parameters, then they decide to return either a result or an error, and finally they call `send()` on the response. Parameters, as well as results, can be either JSON-P instances or JSON-B objects. In this example, we defined some simple records to bind and serialize data using JSON-B.
 
-``` java
+```java
 public record StartStopParams(String when, Duration duration) {
 }
 

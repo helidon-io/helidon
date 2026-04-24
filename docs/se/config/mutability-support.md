@@ -14,7 +14,7 @@ An in-memory config tree, once loaded, is immutable, even though the data in the
 
 The config system records when it loads each configuration into memory. Your application can retrieve it by invoking the [timestamp method](/apidocs/io.helidon.config/io/helidon/config/Config.html#timestamp--) on any config node:
 
-``` java
+```java
 Instant loadTime = myConfig.timestamp();
 ```
 
@@ -57,7 +57,7 @@ This example builds a `Config` object from three sources, each set up with a dif
 
 *Build a `Config` with a different `PollingStrategy` for each config source*
 
-``` java
+```java
 Config config = Config.create(
         ConfigSources.file("conf/dev.properties")
                 .pollingStrategy(PollingStrategies.regular(Duration.ofSeconds(2))) 
@@ -85,7 +85,7 @@ You register a function that runs when a change occurs by using the [`Config.onC
 
 *Subscribe on `greeting` property changes via `onChange` method*
 
-``` java
+```java
 config.get("greeting") 
         .onChange(changedNode -> { 
             System.out.println("Node " + changedNode.key() + " has changed!");
@@ -103,7 +103,7 @@ Each `asXXX` method on the `Config` class has a companion `asXXXSupplier` method
 
 *Access `greeting` property as `Supplier<String>`*
 
-``` java
+```java
 // Construct a Config with the appropriate PollingStrategy on each config source.
 
 Supplier<String> greetingSupplier = config.get("greeting") 

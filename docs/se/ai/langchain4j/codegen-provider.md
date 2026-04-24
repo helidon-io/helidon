@@ -10,7 +10,7 @@ In addition to the [Helidon integration with LangChain4J core dependencies](lang
 
 Extra dependency for LangChain4j provider you want to generate binding for, here we are using Google AI Gemini LangChain4j provider as an example:
 
-``` xml
+```xml
 <dependency>
     <groupId>dev.langchain4j</groupId>
     <artifactId>langchain4j-google-ai-gemini</artifactId>
@@ -24,7 +24,7 @@ For instructing Helidon code generator what it should generate, you need to crea
 
 Example of custom generating LangChain4j GoogleAiGeminiChatModel integration:
 
-``` java
+```java
 import io.helidon.builder.api.Option;
 import io.helidon.integrations.langchain4j.AiProvider;
 
@@ -50,7 +50,7 @@ You may notice that the **safetySettings** property is manually configured in th
 
 LangChain4j provider config key is by default derived from the provider interface name, example: `NameOfTheProviderLc4jProvider` → `name-of-the-provider`.
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     google-ai-gemini: 
@@ -68,7 +68,7 @@ langchain4j:
 
 Injectable properties can be specified in the Lc4j Provider, when such property exists no properties with the same name are code generated. `@Option.RegistryService` annotation enables the property to be injectable. By default, beans of the same type are being looked up, when property has the type `java.util.List` all the beans of its generic type are injected.
 
-``` java
+```java
 @Option.Configured
 @Option.RegistryService
 List<GeminiSafetySetting> safetySettings();
@@ -76,7 +76,7 @@ List<GeminiSafetySetting> safetySettings();
 
 It is possible to configure named qualifiers for injected beans, config property `service-registry.named` prefixed with the key of desired property is used as named qualifier for lookup when such property exists.
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     google-ai-gemini:
@@ -94,7 +94,7 @@ langchain4j:
 
 Example of setting up a bean for injectable property `safety-settings`:
 
-``` java
+```java
 @Service.Singleton
 @Service.Named("custom-named-setting")
 public class CustomNamedSafetySettingFactory implements Supplier<GeminiSafetySetting> {

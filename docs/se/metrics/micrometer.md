@@ -17,7 +17,7 @@ In Helidon 4.4.0-SNAPSHOT, Micrometer support is separate from the Helidon SE me
 
 To enable {feature-name}, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.integrations.micrometer</groupId>
     <artifactId>helidon-integrations-micrometer</artifactId>
@@ -60,7 +60,7 @@ By default, Helidon Micrometer integration exposes the `/micrometer` endpoint. Y
 
 *Overriding the default Micrometer path*
 
-``` yaml
+```yaml
 micrometer:
   web-context: my-micrometer
 ```
@@ -78,7 +78,7 @@ The rest of this section takes you through the process of changing your applicat
 
 *Initialize Micrometer support*
 
-``` java
+```java
 MicrometerFeature micrometerFeature = MicrometerFeature.create(); 
 
 HttpRouting.builder()
@@ -95,7 +95,7 @@ HttpRouting.builder()
 
 *Define and use a `Counter`*
 
-``` java
+```java
 class MyService implements HttpService {
 
     final Counter requestCounter;
@@ -149,7 +149,7 @@ The builder lets you:
 
 *Overriding defaults for built-in meter registries using `MicrometerSupport.Builder`*
 
-``` java
+```java
 MeterRegistryFactory meterRegistryFactory = MeterRegistryFactory.builder()
         .enrollBuiltInRegistry(BuiltInRegistryType.PROMETHEUS, myPrometheusConfig) 
         .build();
@@ -166,7 +166,7 @@ To use configuration to control the selection and behavior of Helidon’s built-
 
 *Enroll Prometheus built-in meter registry using default configuration*
 
-``` yaml
+```yaml
 micrometer:
   builtin-registries:
     - type: prometheus
@@ -174,7 +174,7 @@ micrometer:
 
 *Enroll Prometheus built-in meter registry with non-default configuration*
 
-``` yaml
+```yaml
 micrometer:
   builtin-registries:
     - type: prometheus
@@ -205,7 +205,7 @@ To create additional types of registries and enroll them with `MicrometerSupport
 
     *Creating and enrolling your own Micrometer meter registry*
 
-``` java
+```java
     PrometheusMeterRegistry myRegistry = new PrometheusMeterRegistry(myPrometheusConfig); 
     MeterRegistryFactory meterRegistryFactory = MeterRegistryFactory.builder()
             .enrollRegistry(myRegistry, request -> {

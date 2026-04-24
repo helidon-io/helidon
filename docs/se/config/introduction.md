@@ -8,7 +8,7 @@ Helidon provides a very flexible and comprehensive configuration system, offerin
 
 To enable Config, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependencies>
     <dependency>
         <groupId>io.helidon.config</groupId>
@@ -65,19 +65,19 @@ Global configuration is a singleton instance of `Config` that is implicitly used
 
 To retrieve the global configuration, you fetch it directly from the service registry:
 
-``` java
+```java
 Config config = Services.get(Config.class);
 ```
 
 Or you can use the global configuration convenience method to retrieve it:
 
-``` java
+```java
 Config config = Config.global();
 ```
 
 If your application builds a custom configuration (from custom config sources for example) and you would like this configuration to be discovered and used by Helidon components then you should set this custom configuration instance as the global configuration. You do this by setting the configuration instance directly into the service registry (the old way of doing this via `Config.global(config)` is deprecated).
 
-``` java
+```java
 Services.set(Config.class, config);
 ```
 
@@ -103,20 +103,20 @@ Example of two config sources that can be used by `Config` with the same data tr
 
 A Properties source:
 
-``` properties
+```properties
 web.page-size=25
 ```
 
 A YAML source:
 
-``` yaml
+```yaml
 web:
   page-size: 25
 ```
 
 The configuration has the same internal representation in `Config`. Once created, the `Config` object provides many methods the application can use to retrieve config data as various Java types. See the [`Config`](/apidocs/io.helidon.config/io/helidon/config/Config.html) JavaDoc for complete details.
 
-``` java
+```java
 int pageSize = config.get("web.page-size")
         .asInt()
         .orElse(20);
@@ -124,7 +124,7 @@ int pageSize = config.get("web.page-size")
 
 Or using the tree node approach:
 
-``` java
+```java
 int pageSize = config
         .get("web")
         .get("page-size")
@@ -169,7 +169,7 @@ There is a built-in filter called `ValueResolvingFilter` (enabled by default, ca
 
 Example: Let’s consider the following example properties file
 
-``` properties
+```properties
 host=localhost
 first-service.host=${host}/firstservice
 second-service.host=${host}/secondservice

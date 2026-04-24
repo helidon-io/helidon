@@ -32,7 +32,7 @@ In LangChain4j, an MCP (Model Context Protocol) client acts as a bridge between 
 
 To add MCP Clients to your AI Service, use `@Ai.McpClients` annotation to reference configured clients:
 
-``` java
+```java
 @Ai.Service
 @Ai.ChatModel("expensive-model")
 @Ai.McpClients(value = {"foo-mcp-server", "bar-mcp-server"})
@@ -43,7 +43,7 @@ public interface ChatAiService {
 
 If you want to have your MCP clients created from the configuration, it should be placed under the `langchain4j.mcp-clients`.
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     open-ai:

@@ -35,7 +35,7 @@ Each config node (except the root) has a non-null key. Here is the formal defini
 
 *The ABNF syntax of config key*
 
-``` text
+```text
 config-key = *1( key-token *( "." key-token ) )
  key-token = *( unescaped / escaped )
  unescaped = %x00-2D / %x2F-7D / %x7F-10FFFF
@@ -53,7 +53,7 @@ The following example is in [HOCON](https://github.com/lightbend/config/blob/mas
 
 *HOCON `application.conf` file*
 
-``` text
+```text
 app {
     greeting = "Hello"
     page-size = 20
@@ -127,7 +127,7 @@ All the following lines retrieve the same `Config` node.
 
 *Equivalent Config Retrievals*
 
-``` java
+```java
 assert config.get("") == config;
 Config provName1 = config.get("data.providers.0.name"); 
 Config provName2 = config.get("data.providers.0").get("name"); 
@@ -206,7 +206,7 @@ Some applications might need to work with configuration without knowing its stru
 
 *List names of child nodes of an *object* node*
 
-``` java
+```java
 List<String> appNodeNames = config.get("app")
         .asNodeList() 
         .map(nodes -> { 
@@ -230,7 +230,7 @@ assert appNodeNames.get(2).equals("page-size");
 
 *List child nodes of a *list* node*
 
-``` java
+```java
 List<Config> providers = config.get("data.providers")
         .asNodeList().orElse(List.of()); 
 
@@ -245,7 +245,7 @@ The `traverse()` method returns a stream of the nodes in the subtree that is roo
 
 *Traverse subtree below a *list* node*
 
-``` java
+```java
 config.get("data.providers")
         .traverse() 
         .forEach(node -> System.out.println(node.type() + " \t" + node.key())); 
@@ -254,7 +254,7 @@ config.get("data.providers")
 - Visit the subtree rooted at the `data.providers` *list* node.
 - Prints out following list of nodes (type and key):
 
-``` text
+```text
 OBJECT   data.providers.0
 VALUE   data.providers.0.name
 VALUE   data.providers.0.class
@@ -267,7 +267,7 @@ The optional `Predicate<Config>` argument to the `traverse` methods allows the a
 
 *Traverse *root* (*object*) node, skipping the entire `data` subtree*
 
-``` java
+```java
 config.traverse(node -> !node.name().equals("data")) 
         .forEach(node -> System.out.println(node.type() + " \t" + node.key())); 
 ```
@@ -275,7 +275,7 @@ config.traverse(node -> !node.name().equals("data"))
 - Visit all *root* sub-nodes, excluding whole `data` tree structure but including others.
 - Prints out following list of nodes (type and key):
 
-``` text
+```text
 OBJECT    app
 VALUE   app.page-size
 VALUE   app.greeting
@@ -292,7 +292,7 @@ For example, the [`application.properties`](introduction.md#create-simple-config
 
 *Alternate Structure for Web Config*
 
-``` java
+```java
 server.web.page-size: 40
 server.web.debug = true
 server.web.ratio = 1.4
@@ -304,7 +304,7 @@ One easy way to do this is to *detach* a subtree from a larger config tree. When
 
 *Detaching a Subtree*
 
-``` java
+```java
 // originalRoot is from the original example `.conf` file
 // alternateRoot is from the alternate structure above
 

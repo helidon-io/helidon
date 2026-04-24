@@ -8,7 +8,7 @@ The Helidon gRPC client API is part of the WebClient API, but with specific supp
 
 To enable gRPC Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient-grpc</artifactId>
@@ -21,7 +21,7 @@ To enable gRPC Client, add the following dependency to your project’s `pom.xml
 
 A Helidon gRPC client can be configured from generated protobuf stubs. In what follows, we shall use the following proto file and the corresponding stubs generated using the `protoc` command:
 
-``` proto
+```proto
 syntax = "proto3";
 option java_package = "my.package";
 
@@ -37,7 +37,7 @@ message StringMessage {
 
 The gRPC protocol runs on top of HTTP/2, and as such requires TLS configuration to establish a connection. Thus, the first step is to configure TLS as shown next:
 
-``` java
+```java
 Tls clientTls = Tls.builder()
         .trust(trust -> trust
                 .keystore(store -> store
@@ -49,7 +49,7 @@ Tls clientTls = Tls.builder()
 
 After creating a `Tls` instance, a `WebClient` can be created as follows:
 
-``` java
+```java
 WebClient webClient = WebClient.builder()
         .tls(clientTls)
         .baseUri("https://localhost:8080")
@@ -58,7 +58,7 @@ WebClient webClient = WebClient.builder()
 
 So far, this is all the same as for accessing any protected REST endpoint; the next step is to obtain a gRPC client stub using our newly created client. This can be accomplished by *switching* the client protocol to gRPC, and using its channel to create a stub:
 
-``` java
+```java
 GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
 StringServiceGrpc.StringServiceBlockingStub service =
         StringServiceGrpc.newBlockingStub(grpcClient.channel());
@@ -66,7 +66,7 @@ StringServiceGrpc.StringServiceBlockingStub service =
 
 Once a stub is created, it can be used to invoke any of its declared methods, such as `upper` to uppercase a string:
 
-``` java
+```java
 Strings.StringMessage msg1 = newMessage("hello");
 Strings.StringMessage res1 = service.upper(msg1);
 String uppercased = res1.getText();
@@ -76,7 +76,7 @@ When it comes to invoking a method that can return more than one value, there ar
 
 Using an iterator as a result:
 
-``` java
+```java
 Strings.StringMessage msg2 = newMessage("hello world");
 Iterator<Strings.StringMessage> res2 = service.split(msg2);
 while (res2.hasNext()) {
@@ -86,7 +86,7 @@ while (res2.hasNext()) {
 
 Passing a stream observer and collecting all the messages into a `Future` that returns an iterator:
 
-``` java
+```java
 Strings.StringMessage msg3 = newMessage("hello world");
 CompletableFuture<Iterator<Strings.StringMessage>> future = new CompletableFuture<>();
 service.split(msg3, new StreamObserver<Strings.StringMessage>() {
@@ -115,7 +115,7 @@ Service descriptors are an alternative to using generated stubs and the `protoc`
 
 The following is a descriptor for a service that includes the methods called in the previous section using a stub:
 
-``` java
+```java
 GrpcServiceDescriptor serviceDescriptor = GrpcServiceDescriptor.builder()
         .serviceName("StringService")
         .putMethod("Upper",
@@ -133,7 +133,7 @@ GrpcServiceDescriptor serviceDescriptor = GrpcServiceDescriptor.builder()
 
 Configuring a `WebClient` with `Tls` is done in the same manner as shown above for the stub case. Once the gRPC client is created, a service descriptor can be provided, and a method invoked using the methods `unary`, `clientStream`, `serverStream` or `bidi`. For example,
 
-``` java
+```java
 Strings.StringMessage res = grpcClient.serviceClient(serviceDescriptor)
         .unary("Upper", newMessage("hello"));
 ```
@@ -146,7 +146,7 @@ A few common implementations are provided in `ClientUriSuppliers`. These include
 
 The following example configures a round-robin supplier using a collection of known servers:
 
-``` java
+```java
 GrpcClient grpcClient = GrpcClient.builder()
         .tls(clientTls)
         .clientUriSupplier(RoundRobinSupplier.create(myServers()))
@@ -159,7 +159,7 @@ If both a base URI and a client URI supplier are configured, the latter will tak
 
 The gRPC API supports the notion of an interceptor on a channel. Interceptors are useful to implement cross-cutting concerns that apply to many or all invocations. These may include security, logging, metrics, etc. They can be specified directly on the channel returned by a `GrpcClient`, effectively *wrapping* that channel with a list of interceptors to execute on every invocation.
 
-``` java
+```java
 Channel newChannel = grpcClient.channel(myInterceptors());
 ```
 
@@ -180,7 +180,7 @@ The value of the label `grpc.method` is the fully-qualified method name; the val
 
 As stated above, gRPC client metrics are disabled by default but can be enabled programmatically when building the client as shown next:
 
-``` java
+```java
 GrpcClient grpcClient = GrpcClient.builder()
         .tls(clientTls)
         .baseUri("https://localhost:8080")
@@ -197,7 +197,7 @@ For more information see [Helidon Metrics](../../se/metrics/metrics.md).
 
 Tracing in the gRPC client is implemented as a so-called gRPC client service. To enable tracing support, you need to list tracing as an available service either programmatically or via config, and include the following dependency in your project:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient-grpc-tracing</artifactId>
@@ -206,7 +206,7 @@ Tracing in the gRPC client is implemented as a so-called gRPC client service. To
 
 Tracing support is loaded via the gRPC client service SPI and made available to clients. Using config, we can list it as an available gRPC service as follows:
 
-``` yaml
+```yaml
 grpc-client:
   grpc-services:
     tracing:
@@ -214,7 +214,7 @@ grpc-client:
 
 At the time of writing, no additional configuration is necessary under the `tracing:` section. Finally, a gRPC client instance can be created that is configured with tracing support enabled as follows:
 
-``` java
+```java
 Config config = Config.create().get("grpc-client");
 GrpcClient grpcClient = GrpcClient.builder()
         .config(config)     // with tracing

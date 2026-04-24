@@ -6,7 +6,7 @@ To integrate [web server](../webserver/webserver.md), add the following dependen
 
 *Maven Dependency*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-security</artifactId>
@@ -22,7 +22,7 @@ There are two steps to configure security with WebServer:
 
 *Example using builders*
 
-``` java
+```java
 WebServer.builder()
         .addFeature(SecurityFeature.builder() 
                             .security(security)
@@ -38,7 +38,7 @@ WebServer.builder()
 
 *Example using configuration*
 
-``` java
+```java
 WebServer.builder()
         // This is step 1 - register security instance with web server processing
         // security - instance of security either from config or from a builder
@@ -54,7 +54,7 @@ WebServer.builder()
 
 *Example using configuration (YAML)*
 
-``` yaml
+```yaml
 security:
   web-server: 
       defaults:
@@ -92,7 +92,7 @@ The following shows an example we will explain in detail:
 
 *application.yaml*
 
-``` yaml
+```yaml
 security:
   providers:
     - abac: 
@@ -124,7 +124,7 @@ If you need to use a properties file, such as `microprofile-config.properties`, 
 
 *microprofile-config.properties*
 
-``` properties
+```properties
 security.providers.0.abac=
 security.providers.1.provider-key.optional=false
 security.web-server.defaults.authenticate=true

@@ -8,7 +8,7 @@ WebServer provides an API for creating HTTP servers. It uses virtual threads and
 
 To enable WebServer, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver</artifactId>
@@ -23,7 +23,7 @@ You can configure the WebServer either programmatically or by the Helidon config
 
 The easiest way to configure the WebServer is in your application code.
 
-``` java
+```java
 WebServer.builder()
         .port(8080)
         .build()
@@ -36,7 +36,7 @@ You can also define the configuration in a file.
 
 *WebServer configuration file `application.yaml`*
 
-``` yaml
+```yaml
 server:
   port: 8080
   host: "0.0.0.0"
@@ -46,7 +46,7 @@ Then, in your application code, load the configuration from that file.
 
 *WebServer initialization using the `application.yaml` file located on the classpath*
 
-``` java
+```java
 Config config = Config.create(); 
 WebServer.builder()
         .config(config.get("server")); 
@@ -63,7 +63,7 @@ Configure TLS either programmatically, or by the Helidon configuration framework
 
 To configure TLS in WebServer programmatically create your keystore configuration and pass it to the WebServer builder.
 
-``` java
+```java
 Tls tls = Tls.builder()
         .privateKey(pk -> pk
                 .keystore(keys -> keys.keystore(it -> it.resourcePath("private-key.p12"))
@@ -82,7 +82,7 @@ It is also possible to configure TLS via the config file.
 
 *WebServer TLS configuration file `application.yaml`*
 
-``` yaml
+```yaml
 server:
   tls:
     #Truststore setup
@@ -109,7 +109,7 @@ Then, in your application code, load the configuration from that file.
 
 *WebServer initialization using the `application.yaml` file located on the classpath*
 
-``` java
+```java
 Config config = Config.create(); 
 WebServer.builder()
         .config(config.get("server")); 
@@ -122,7 +122,7 @@ Or you can only create WebServerTls instance based on the config file.
 
 *WebServerTls instance based on `application.yaml` file located on the classpath*
 
-``` java
+```java
 Config config = Config.create();
 WebServer.builder()
         .tls(it -> it.config(config.get("server.tls")));
@@ -132,7 +132,7 @@ This can alternatively be configured with paths to PKCS#8 PEM files rather than 
 
 *WebServer TLS configuration file `application.yaml`*
 
-``` yaml
+```yaml
 server:
   tls:
     #Truststore setup
@@ -210,7 +210,7 @@ Configure HTTP request routing using `HttpRouting.Builder`.
 
 *Using HttpRouting.Builder to specify how HTTP requests are handled*
 
-``` java
+```java
 WebServer.builder()
         .routing(it -> it
                 .get("/hello", (req, res) -> res.send("Hello World!"))) 
@@ -241,7 +241,7 @@ WebServer.builder()
 
 You can combine HTTP method routing with request path matching.
 
-``` java
+```java
 routing.post("/some/path", (req, res) -> { /* handler */ });
 ```
 
@@ -271,7 +271,7 @@ For more precise setup of path, you can use factory methods on `io.helidon.http.
 
 To have more control over selecting which requests should be handled by a specific route, you can use the `io.helidon.webserver.http.HttpRoute` interface using its `Builder`.
 
-``` java
+```java
 routing.route(HttpRoute.builder()
                       .path("/hello")
                       .methods(Method.POST, Method.PUT) 
@@ -290,13 +290,13 @@ By implementing the `io.helidon.webserver.http.HttpService` interface you can or
 
 *Use `HttpRouting.Builder.register` to register your service*
 
-``` java
+```java
 routing.register("/hello", new HelloService());
 ```
 
 *Service implementation*
 
-``` java
+```java
 class HelloService implements HttpService {
     @Override
     public void routing(HttpRules rules) {
@@ -315,7 +315,7 @@ In Helidon 4 your `HttpService` can interpose on the server lifecycle by overrid
 
 *Helidon 4.x server lifecycle*
 
-``` java
+```java
 static class MyService implements HttpService {
     @Override
     public void beforeStart() {
@@ -359,7 +359,7 @@ You can register a `io.helidon.webserver.http.Filter` with HTTP routing to handl
 
 A simple filter example:
 
-``` java
+```java
 routing.addFilter((chain, req, res) -> {
     try {
         chain.proceed();
@@ -410,7 +410,7 @@ To complete the request handling, you must send a response by calling the `res.s
 > [!IMPORTANT]
 > one of the variants of `send` method MUST be invoked in the same thread the request is started in; as we run in Virtual Threads, you can simply wait for any asynchronous tasks that must complete before sending a response
 
-``` java
+```java
 rules.get("/hello", (req, res) -> { 
     // terminating logic
     res.status(Status.ACCEPTED_202)
@@ -427,7 +427,7 @@ Handling routes based on the protocol version is possible by registering specifi
 
 *Routing based on HTTP version*
 
-``` java
+```java
 rules.get("/any-version", (req, res) -> res.send("HTTP Version " + req.prologue().protocolVersion())) 
         .route(Http1Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/1.1 route"))) 
         .route(Http2Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/2 route"))); 
@@ -462,7 +462,7 @@ To set up requested URI discovery on the default socket for your server, use the
 
 *Requested URI set-up for the default server socket*
 
-``` java
+```java
 import io.helidon.common.configurable.AllowList;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -495,7 +495,7 @@ You can also use configuration to set up the requested URI discovery behavior. T
 
 *Configuring requested URI behavior*
 
-``` yaml
+```yaml
 server:
   port: 0
   requested-uri-discovery:
@@ -513,7 +513,7 @@ Your code obtains the requested URI information from the Helidon server request 
 
 *Retrieving Requested URI Information*
 
-``` java
+```java
 import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriInfo;
 
@@ -531,7 +531,7 @@ See the [`UriInfo`](/apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo
 
 You may register an error handler for a specific `Throwable` in a `HttpRouting.Builder` method.
 
-``` java
+```java
 routing.error(MyException.class, (req, res, ex) -> { 
     // handle the error, set the HTTP status code
     res.send(errorDescriptionObject); 
@@ -575,7 +575,7 @@ If no user-defined error handler is matched, or if the error handler of the exce
 
   *Reply with the `406` HTTP error code by throwing an exception*
 
-``` java
+```java
   rules.get((req, res) -> {
       throw new HttpException(
               "Amount of money must be greater than 0.",
@@ -595,7 +595,7 @@ The following example shows how to register a custom handler for a request that 
 
 *Register a direct handler for bad requests in the Webserver*
 
-``` java
+```java
 public static void main(String[] args) {
     WebServer server = WebServer.builder()
             .directHandlers(DirectHandlers.builder()
@@ -629,7 +629,7 @@ The default direct handler’s settings in the Webserver can be controlled via c
 
 *Configuring error handling on default port*
 
-``` yaml
+```yaml
 server:
   error-handling:
     include-entity: true
@@ -701,7 +701,7 @@ This feature will provide the same behavior as previous versions of Helidon. Sin
 
 To enable execution of routes within Context, add the following dependency to project’s `pom.xml`:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-context</artifactId>
@@ -739,7 +739,7 @@ Access logging is a Helidon WebServer `ServerFeature`. Access Log feature has a 
 
 To enable Access logging add the following dependency to project’s `pom.xml`:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-access-log</artifactId>
@@ -750,7 +750,7 @@ To enable Access logging add the following dependency to project’s `pom.xml`:
 
 `AccessLogFeature` is discovered automatically by default, and configured through `server.features.access-log`. You can also configure this feature in code by registering it with WebServer (which will replace the discovered feature).
 
-``` java
+```java
 WebServer.builder()
         .addFeature(AccessLogFeature.builder()
                             .commonLogFormat()
@@ -763,7 +763,7 @@ Access log can be configured as follows:
 
 *Access Log configuration file*
 
-``` yaml
+```yaml
 server:
   port: 8080
   features:
@@ -810,7 +810,7 @@ Helidon supports HTTP/2 upgrade from HTTP/1, HTTP/2 without prior knowledge, HTT
 
 To enable HTTP/2 support add the following dependency to your project’s `pom.xml`.
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-http2</artifactId>
@@ -828,7 +828,7 @@ Static content supports serving of files from classpath, or from any readable di
 
 To enable Static Content Support add the following dependency to your project’s `pom.xml`.
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-static-content</artifactId>
@@ -841,7 +841,7 @@ To register static content based on a file system (`/pictures`), and classpath (
 
 *server feature using `WebServerConfig.Builder`*
 
-``` java
+```java
 builder.addFeature(StaticContentFeature.builder() 
                            .addPath(p -> p.location(Paths.get("/some/WEB/pics")) 
                                    .context("/pictures")) 
@@ -864,7 +864,7 @@ If you use `Config` with your webserver setup, you can register the same static 
 
 *application.yaml*
 
-``` yaml
+```yaml
 server:
   features:
     static-content:
@@ -886,7 +886,7 @@ WebServer and WebClient share the HTTP media support of Helidon, and any support
 
 Customized media support for WebServer
 
-``` java
+```java
 WebServer.builder()
         .mediaContext(it -> it
                 .mediaSupportsDiscoverServices(false)
@@ -915,7 +915,7 @@ The WebServer supports JSON-P. When enabled, you can send and receive JSON-P obj
 
 To enable JSON Support add the following dependency to your project’s `pom.xml`.
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jsonp</artifactId>
@@ -926,7 +926,7 @@ To enable JSON Support add the following dependency to your project’s `pom.xml
 
 *Handler that receives and returns JSON objects*
 
-``` java
+```java
 static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of()); 
 
 rules.post("/hello", (req, res) -> {
@@ -948,14 +948,14 @@ rules.post("/hello", (req, res) -> {
 
 *Example of posting JSON to sayHello endpoint*
 
-``` bash
+```bash
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/sayhello -d '{"name":"Joe"}'
 ```
 
 *Response body*
 
-``` json
+```json
 {"message":"Hello Joe"}
 ```
 
@@ -967,7 +967,7 @@ The WebServer supports the [JSON-B specification](http://json-b.net/). When this
 
 To enable JSON-B Support add the following dependency to your project’s `pom.xml`.
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jsonb</artifactId>
@@ -990,7 +990,7 @@ It is possible to configure the Jsonb instance via programmatic or configuration
 
 *Example JSON-B configuration*
 
-``` yaml
+```yaml
 jsonb:
   boolean-properties:
     jsonb.null-values: true
@@ -1006,7 +1006,7 @@ Suppose you have a `Person` class that looks like this:
 
 *Hypothetical `Person` class*
 
-``` java
+```java
 public class Person {
 
     private String name;
@@ -1029,7 +1029,7 @@ Then you can set up a `Handler` like this:
 
 *A `Handler` that works with Java objects instead of raw JSON*
 
-``` java
+```java
 rules.post("/echo", (req, res) -> {
     res.send(req.content().as(Person.class)); 
 });
@@ -1039,7 +1039,7 @@ rules.post("/echo", (req, res) -> {
 
 *Example of posting JSON to the `/echo` endpoint*
 
-``` bash
+```bash
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/echo -d '{"name":"Joe"}'
 {"name":"Joe"}
@@ -1053,7 +1053,7 @@ The WebServer supports [Jackson](https://github.com/FasterXML/jackson#jackson-pr
 
 To enable Jackson Support add the following dependency to your project’s `pom.xml`.
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jackson</artifactId>
@@ -1074,7 +1074,7 @@ It is possible to configure the Jackson ObjectMapper instance via programmatic o
 
 *Example Jackson configuration*
 
-``` yaml
+```yaml
 jackson:
   properties:
     FAIL_ON_UNKNOWN_PROPERTIES: false
@@ -1088,7 +1088,7 @@ Suppose you have a `Person` class that looks like this:
 
 *Hypothetical `Person` class*
 
-``` java
+```java
 public class Person {
 
     private String name;
@@ -1111,7 +1111,7 @@ Then you can set up a `Handler` like this:
 
 *A `Handler` that works with Java objects instead of raw JSON*
 
-``` java
+```java
 rules.post("/echo", (req, res) -> {
     res.send(req.content().as(Person.class)); 
 });
@@ -1121,14 +1121,14 @@ rules.post("/echo", (req, res) -> {
 
 *Example of posting JSON to the `/echo` endpoint*
 
-``` bash
+```bash
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/echo -d '{"name":"Joe"}'
 ```
 
 *Response body*
 
-``` json
+```json
 {"name":"Joe"}
 ```
 
@@ -1140,7 +1140,7 @@ The WebServer supports [Gson](https://github.com/google/gson#gson). When this su
 
 To enable Gson Support add the following dependency to your project’s `pom.xml`.
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-gson</artifactId>
@@ -1161,7 +1161,7 @@ It is possible to configure the Gson instance via programmatic or configuration-
 
 *Example Gson configuration*
 
-``` yaml
+```yaml
 gson:
   properties:
     serialize-nulls: false
@@ -1175,7 +1175,7 @@ Suppose you have a `Person` class that looks like this:
 
 *Hypothetical `Person` class*
 
-``` java
+```java
 public class Person {
 
     private String name;
@@ -1198,7 +1198,7 @@ Then you can set up a `Handler` like this:
 
 *A `Handler` that works with Java objects instead of raw JSON*
 
-``` java
+```java
 rules.post("/echo", (req, res) -> {
     res.send(req.content().as(Person.class)); 
 });
@@ -1208,14 +1208,14 @@ rules.post("/echo", (req, res) -> {
 
 *Example of posting JSON to the `/echo` endpoint*
 
-``` bash
+```bash
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/echo -d '{"name":"Joe"}'
 ```
 
 *Response body*
 
-``` json
+```json
 {"name":"Joe"}
 ```
 
@@ -1236,7 +1236,7 @@ Encoding can be configured per socket.
 
 Disabling discovery and registering a Gzip encoding support:
 
-``` java
+```java
 WebServer.builder()
         .contentEncoding(it -> it
         .contentEncodingsDiscoverServices(false)
@@ -1274,14 +1274,14 @@ Proxy Protocol support is enabled via configuration, and can be done either decl
 
 Programmatically, support for the Proxy Protocol is enabled as follows:
 
-``` java
+```java
 WebServer.builder()
         .enableProxyProtocol(true);
 ```
 
 Declaratively, support for the Proxy Protocol is enabled as follows:
 
-``` yaml
+```yaml
 server:
   port: 8080
   host: 0.0.0.0
@@ -1292,7 +1292,7 @@ server:
 
 There are two ways in which the header data can be accessed in your application. One way is by obtaining the protocol data directly from a request as shown next:
 
-``` java
+```java
 rules.get("/", (req, res) -> {
     ProxyProtocolData data = req.proxyProtocolData().orElse(null);
     if (data != null
@@ -1318,7 +1318,7 @@ The binary (V2) version of the Proxy Protocol includes additional information be
 
 To access the V2 data, check whether the `ProxyProtocolData` object obtained from the request implements the `ProxyProtocolV2Data` interface:
 
-``` java
+```java
 rules.get("/", (req, res) -> {
     ProxyProtocolData data = req.proxyProtocolData().orElse(null);
     // The data object will be an instance of ProxyProtocolV2Data if V2 of the Proxy Protocol
@@ -1342,7 +1342,7 @@ rules.get("/", (req, res) -> {
 
 Here is the code for a minimalist web application that runs on a random free port:
 
-``` java
+```java
 public static void main(String[] args) {
     WebServer webServer = WebServer.builder()
             .routing(it -> it.any((req, res) -> res.send("It works!"))) 

@@ -8,7 +8,7 @@ Helidon uses Jersey as the Jakarta REST (JAX-RS) implementation. Jersey supports
 
 To enable Helidon Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
  <dependency>
      <groupId>io.helidon.jersey</groupId>
      <artifactId>helidon-jersey-connector</artifactId>
@@ -19,7 +19,7 @@ To enable Helidon Connector, add the following dependency to your project’s `p
 
 Enabling the Helidon connector is possible at creation time using Jersey’s `ClientConfig` instance as shown below:
 
-``` java
+```java
 ClientConfig clientConfig = new ClientConfig();
 clientConfig.connectorProvider(HelidonConnectorProvider.create());       // Helidon connector
 Client client = ClientBuilder.newClient(clientConfig);
@@ -33,13 +33,13 @@ The Helidon connector implementation is based on WebClient. Even though WebClien
 
 Assuming the root of the `WebClient` configuration is located at `my.webclient`, this can be done programmatically when building the `ClientConfig` instance in the Jakarta REST API:
 
-``` java
+```java
 clientConfig.property(HelidonProperties.CONFIG, config.get("my.webclient"));
 ```
 
 If not provided as the value of the `HelidonProperties.CONFIG` property as shown above, the connector will look for WebClient configuration rooted at `jersey.connector.webclient`. For example, the following YAML config file can be used to set some socket options and turn off 100-continue support for all WebClient instances created by the connector:
 
-``` yaml
+```yaml
 jersey:
   connector:
     webclient:
@@ -86,7 +86,7 @@ One clear advantage of using the Helidon connector, as opposed to the default on
 
 Without TLS, HTTP/2 negotiation is accomplished by setting a single property. In the example below, the property is set on the correspoding `WebTarget`, which indicates that it applies to all requests created from it.
 
-``` java
+```java
 ClientConfig clientConfig = new ClientConfig();
 clientConfig.connectorProvider(HelidonConnectorProvider.create());
 Client client = ClientBuilder.newClient(clientConfig);
@@ -107,7 +107,7 @@ The request invocation in the example above will include an HTTP/2 protocol upgr
 
 ALPN is a TLS extension that can be used for HTTP/2 negotiation. The Helidon connector accepts a `Tls` instance to enable protocol security and also to negotiate an HTTP/2 upgrade as shown below.
 
-``` java
+```java
 Tls tls = Tls.builder()
         .trustAll(true)
         .addApplicationProtocol(Http2Client.PROTOCOL_ID)        // HTTP/2 upgrade
@@ -131,7 +131,7 @@ The call to `addApplicationProtocol()` indicates the desire to negotiate a proto
 
 The last example shows how to enable HTTP/2 when prior knowledge of the server’s capabilities is known ahead of time. In order to force HTTP/2 for the initial request, we must provide an `Http2ClientProtocolConfig` instance that is properly configured for that purpose. Passing protocol configurations is a general mechanism supported by the connector; in this example, we take advantage of this mechanism to pre-configure the desired HTTP/2 support as shown next.
 
-``` java
+```java
 Tls tls = Tls.builder()
         .trustAll(true)
         .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)

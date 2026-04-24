@@ -10,7 +10,7 @@ If bean validation is required outside JAX-RS/Jersey use cases, it is also avail
 
 To enable Bean Validation, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>org.glassfish.jersey.ext</groupId>
     <artifactId>jersey-bean-validation</artifactId>
@@ -19,7 +19,7 @@ To enable Bean Validation, add the following dependency to your project’s `pom
 
 For general validation, please add to your `pom.xml`:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.bean-validation</groupId>
     <artifactId>helidon-microprofile-bean-validation</artifactId>

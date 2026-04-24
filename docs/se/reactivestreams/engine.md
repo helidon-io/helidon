@@ -8,7 +8,7 @@ Helidon has its own set of reactive operators that have no dependencies outside 
 
 To enable Reactive Engine, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.common</groupId>
     <artifactId>helidon-common-reactive</artifactId>
@@ -21,7 +21,7 @@ The stream processing operator chain can be easily constructed by `io.helidon.co
 
 *Example of Multi usage:*
 
-``` java
+```java
 AtomicInteger sum = new AtomicInteger();
 
 Multi.just("1", "2", "3", "4", "5")
@@ -36,7 +36,7 @@ System.out.println("Sum: " + sum.get());
 
 *Example of Single usage:*
 
-``` java
+```java
 Single.just("1")
         .map(Integer::parseInt)
         .map(i -> i + 5)
@@ -114,7 +114,7 @@ In the situations when part of the operator chain needs to be prepared in advanc
 
 *Combining operator chains:*
 
-``` java
+```java
 // Assembly of stream, nothing is streamed yet
 Multi<String> publisherStage =
         Multi.just("foo", "bar")

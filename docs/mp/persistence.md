@@ -167,7 +167,7 @@ All MicroProfile Config-compatible property names for Helidon MP’s named data 
 
 As an example, configuration to set an imaginary `foo.bar` property on the `test` data source’s associated connection pool or vendor-specific `DataSource` to `baz` looks like this in Java `.properties` format:
 
-``` properties
+```properties
 javax.sql.DataSource.test.foo.bar=baz
 ```
 
@@ -183,7 +183,7 @@ Here are some examples illustrating general named data source configuration patt
 
 Here is an example of some named data source configuration as might be found in a `src/main/resources/META-INF/microprofile-config.properties` configuration source:
 
-``` properties
+```properties
 javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataSource = itsValue
 javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAndDataSource = anotherValue
 ```
@@ -192,7 +192,7 @@ javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAnd
 
 Here is an example of some named data source configuration using system properties on the command line instead:
 
-``` bash
+```bash
 java \
   -Djavax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataSource=itsValue \
   -Djavax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAndDataSource=anotherValue \
@@ -203,7 +203,7 @@ java \
 
 Here is an example of some named data source configuration using environment variables as typed directly into a command line shell, relying on [MicroProfile Config’s mapping rules](https://download.eclipse.org/microprofile/microprofile-config-3.1/apidocs/org/eclipse/microprofile/config/spi/ConfigSource.html#default_config_sources), since many shells will not understand environment variable names with periods (.) in them:
 
-``` bash
+```bash
 JAVAX_SQL_DATASOURCE_YOURDATASOURCENAME_SOMEPROPERTYOFYOURCONNECTIONPOOLANDDATASOURCE=itsValue \
 JAVAX_SQL_DATASOURCE_YOURDATASOURCENAME_SOMEOTHERPROPERTYOFYOURCONNECTIONPOOLANDDATASOURCE=anotherValue \
 java # ...
@@ -213,7 +213,7 @@ java # ...
 
 Here is an example of some named data source configuration using environment variables as supplied via the [`env` shell command](https://www.gnu.org/software/coreutils/manual/html_node/env-invocation.html), thus removing the need for [MicroProfile Config’s mapping rules](https://download.eclipse.org/microprofile/microprofile-config-3.1/apidocs/org/eclipse/microprofile/config/spi/ConfigSource.html#default_config_sources):
 
-``` bash
+```bash
 env 'javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataSource=itsValue' \
   'javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAndDataSource=anotherValue' \
   java # ...
@@ -223,7 +223,7 @@ env 'javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAnd
 
 Here is an example of some named data source configuration as might be found in a `src/main/resources/application.yaml` classpath resource:
 
-``` yaml
+```yaml
 javax:
   sql:
     DataSource:
@@ -241,7 +241,7 @@ This example presumes you have:
 
 This example, in Java properties file format, configures an Oracle Universal Connection Pool-managed data source named `main` to [connect to an Oracle Database](https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/data-sources-and-URLs.html#GUID-C4F2CA86-0F68-400C-95DA-30171C9FB8F0) on `localhost` port `1521`, using the `oracle.jdbc.poolOracleDataSource` vendor-supplied `DataSource`, with a service name of `XE`, a `user` of `scott`, and a `password` of `tiger`:
 
-``` properties
+```properties
 javax.sql.DataSource.main.connectionFactoryClassName = oracle.jdbc.pool.OracleDataSource
 javax.sql.DataSource.main.URL = jdbc:oracle:thin:@//localhost:1521/XE
 javax.sql.DataSource.main.user = scott
@@ -267,7 +267,7 @@ This example presumes you have:
 
 This example, in Java properties file format, configures a HikariCP-managed data source named `test` to connect to an in-memory H2 database named `unit-testing` with a `user` of `sa` and an empty password:
 
-``` properties
+```properties
 javax.sql.DataSource.test.dataSourceClassName = org.h2.jdbcx.JdbcDataSource
 javax.sql.DataSource.test.dataSource.url = jdbc:h2:mem:unit-testing;DB_CLOSE_DELAY=-1
 javax.sql.DataSource.test.dataSource.user = sa
@@ -290,7 +290,7 @@ To use Helidon MP’s named data source integration in your application, once it
 
 Here is how to define such a field-backed injection point:
 
-``` java
+```java
 @Inject 
 @Named("test") 
 private DataSource ds; 
@@ -302,7 +302,7 @@ private DataSource ds;
 
 Here is how to define such a constructor parameter injection point:
 
-``` java
+```java
 private final DataSource ds; 
 
 @Inject 
@@ -361,7 +361,7 @@ Some common examples of Narayana configuration follow.
 
 Narayana features an object store directory which it uses to store information about transaction outcomes. To set its location, you may set the [`ObjectStoreEnvironmentBean.objectStoreDir`](https://www.narayana.io/docs/api/com/arjuna/ats/arjuna/common/ObjectStoreEnvironmentBean.html#setObjectStoreType-java.lang.String-) system property to the full path of a writeable directory:
 
-``` bash
+```bash
 java -DObjectStoreEnvironmentBean.objectStoreDir=/var/tmp # ...
 ```
 
@@ -371,7 +371,7 @@ See [Specifying the object store location](https://www.narayana.io/docs/project/
 
 To configure Narayana’s [default transaction manager timeout](https://www.narayana.io/docs/api/com/arjuna/ats/arjuna/common/CoordinatorEnvironmentBean.html#setDefaultTimeout-int-), set the `com.arjuna.ats.arjuna.coordinator.defaultTimeout` system property to an integral value in seconds:
 
-``` bash
+```bash
 java -Dcom.arjuna.ats.arjuna.coordinator.defaultTimeout=60 # ...
 ```
 
@@ -381,7 +381,7 @@ For more on configuring Narayana, see [Setting Properties](https://www.narayana.
 
 To use Helidon MP’s Jakarta Transactions integration, annotate a method with the [`jakarta.transaction.Transactional`](https://jakarta.ee/specifications/transactions/2.0/apidocs/jakarta/transaction/transactional) annotation:
 
-``` java
+```java
 @Transactional 
 public void setGreeting(Integer id) {
     // Do something transactional.
@@ -476,7 +476,7 @@ These `<dependency>` elements do not set up a JPA provider. See details below fo
 
 To generate and compile the Jakarta Persistence static metamodel for your application, regardless of whether you are using Hibernate ORM or Eclipselink, [ensure your dependencies are managed](../about/managing-dependencies.md), and then make sure the `<plugin>` element in the following code snippet is present as a child element of the `<pluginManagement><plugins>` element sequence as shown below:
 
-``` xml
+```xml
 <pluginManagement>
     <plugins>
 
@@ -538,7 +538,7 @@ Hibernate ORM can alter your classes' bytecode at build time to keep track of ch
 
 To set up this required static weaving for Hibernate ORM, ensure that the following `<plugin>` element is present as a child element of your project’s `pom.xml` file’s `<plugins>` element:
 
-``` xml
+```xml
 <plugin>
     <groupId>org.hibernate.orm.tooling</groupId>
     <artifactId>hibernate-enhance-maven-plugin</artifactId>
@@ -599,7 +599,7 @@ Eclipselink can alter your classes' bytecode at build time to keep track of chan
 
 To set up this required static weaving for Eclipselink, ensure that the following `<plugin>` element is present as a child element of your project’s `pom.xml` file’s `<plugins>` element:
 
-``` xml
+```xml
 <plugin>
     <groupId>org.codehaus.mojo</groupId>
     <artifactId>exec-maven-plugin</artifactId>
@@ -656,7 +656,7 @@ Your `META-INF/persistence.xml` file must begin (and end) with the following XML
 
 *`META-INF/persistence.xml`*
 
-``` xml
+```xml
 <persistence xmlns="https://jakarta.ee/xml/ns/persistence"
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
@@ -681,7 +681,7 @@ Here is a partial example of a persistence unit named `test` with a helpful desc
 
 *`META-INF/persistence.xml`*
 
-``` xml
+```xml
 <!-- ... -->
 
 <persistence-unit name="test" transaction-type="JTA"> 
@@ -715,7 +715,7 @@ Here is a partial example of a persistence unit named `test`, with a helpful des
 
 *`META-INF/persistence.xml`*
 
-``` xml
+```xml
 <!-- ... -->
 
 <persistence-unit name="test" transaction-type="JTA">
@@ -752,7 +752,7 @@ Here is a partial example of a persistence unit named `test`, with a helpful des
 
 *`META-INF/persistence.xml`*
 
-``` xml
+```xml
 <!-- ... -->
 
 <persistence-unit name="test" transaction-type="JTA">
@@ -784,7 +784,7 @@ Here is a partial exmaple of a persistence unit named `test`, with a helpful des
 
 *`META-INF/persistence.xml`*
 
-``` xml
+```xml
 <!-- ... -->
 
 <persistence-unit name="test" transaction-type="JTA">

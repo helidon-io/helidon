@@ -12,7 +12,7 @@ To enable OCI Integration, add the following dependency to your projectâ€™s `pom
 
 *Adding the Helidon OCI SDK Extension dependency*
 
-``` xml
+```xml
 <dependency>
      <groupId>io.helidon.integrations.oci.sdk</groupId>
      <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
@@ -31,7 +31,7 @@ The `oci.auth-strategies` property specifies the OCI client authentication mecha
 
 *oci.auth-strategies example*
 
-``` properties
+```properties
 oci.auth-strategies=config-file,instance_principals,resource_principal
 ```
 
@@ -66,7 +66,7 @@ To enable OCI Object Storage integration, add the following dependency to your p
 
 *Adding the dependency for OCI Object Storage*
 
-``` xml
+```xml
 <dependency>
     <groupId>com.oracle.oci.sdk</groupId>
     <artifactId>oci-java-sdk-objectstorage</artifactId>
@@ -79,14 +79,14 @@ Now you can inject OCI SDK Clients for Object Storage.
 
 *Field-injection example*
 
-``` java
+```java
 @Inject
 private ObjectStorage client;
 ```
 
 *Constructor-injection example*
 
-``` java
+```java
 public class MyClass {
 
     private final ObjectStorage client;
@@ -110,7 +110,7 @@ To enable OCI Vault integration, add the following dependencies to your projectâ
 
 *Adding the dependency for OCI Vault*
 
-``` xml
+```xml
 <dependency>
     <groupId>com.oracle.oci.sdk</groupId>
     <artifactId>oci-java-sdk-keymanagement</artifactId>
@@ -129,7 +129,7 @@ To enable OCI Vault integration, add the following dependencies to your projectâ
 
 Now you can inject OCI SDK Clients for OCI Vault.
 
-``` java
+```java
 import com.oracle.bmc.keymanagement.KmsCrypto;
 import com.oracle.bmc.secrets.Secrets;
 import com.oracle.bmc.vault.Vaults;

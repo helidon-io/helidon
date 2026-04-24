@@ -49,7 +49,7 @@ Testing support moved to a new Maven artifact and Java package.
 
 In Helidon 3.x, it was:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.tests</groupId>
     <artifactId>helidon-microprofile-tests-junit5</artifactId>
@@ -59,7 +59,7 @@ In Helidon 3.x, it was:
 
 In Helidon 4.x, it is now:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.testing</groupId>
     <artifactId>helidon-microprofile-testing-junit5</artifactId>
@@ -77,7 +77,7 @@ The Helidon console handler changed from `io.helidon.common.HelidonConsoleHandle
 
 If you use this handler in your `logging.properties` file, you must update it and add the following dependency:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.logging</groupId>
     <artifactId>helidon-logging-jul</artifactId>

@@ -8,7 +8,7 @@ Helidon MicroProfile Config is an implementation of [Eclipse MicroProfile Config
 
 To enable MicroProfile Config, either add a dependency on the [helidon-microprofile bundle](../../mp/introduction/microprofile.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.config</groupId>
     <artifactId>helidon-microprofile-config</artifactId>
@@ -39,14 +39,14 @@ You can use MicroProfile Config API to get configuration properties by using a `
 
 *Using `Config`*
 
-``` java
+```java
 Config config = ConfigProvider.getConfig();
 config.getOptionalValue("app.greeting", String.class).orElse("Hello");
 ```
 
 *Injecting configured properties into a constructor*
 
-``` java
+```java
 @Inject
 public GreetingProvider(
         @ConfigProperty(name = "app.greeting",
@@ -74,7 +74,7 @@ This helps to customize the configuration of Config Sources using external Confi
 
 The example below shows how the MicroProfile configuration file `microprofile-config.properties` can be used to modify the server listen port property.
 
-``` properties
+```properties
 # Application properties. This is the default greeting
 app.greeting=Hello
 
@@ -117,7 +117,7 @@ You can use `${reference}` to reference another configuration key in a key value
 
 *Example*
 
-``` yaml
+```yaml
 uri: "http://localhost:8080"
 service-1: "${uri}/service1"
 service-2: "${uri}/service2"
@@ -164,7 +164,7 @@ You can encrypt secrets using a master password and store them in a configuratio
 
 *Example of encrypted secrets*
 
-``` properties
+```properties
 # Password encrypted using a master password
 client_secret=${GCM=mYRkg+4Q4hua1kvpCCI2hg==}
 # Password encrypted using public key (there are length limits when using RSA)

@@ -18,7 +18,7 @@ Updated versions of thin T3 clients that are compatible with modern Jakarta runt
 
 To enable WebLogic JMS connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.messaging.wls-jms</groupId>
     <artifactId>helidon-messaging-wls-jms</artifactId>
@@ -58,7 +58,7 @@ Configuration is straight forward. Use JNDI for localizing and configuring of JM
 
 *Example config:*
 
-``` yaml
+```yaml
 mp:
   messaging:
     connector:
@@ -100,7 +100,7 @@ Destination for UDD doesn’t have `./` prefix, because distributed destinations
 
 *Consuming one by one unwrapped value:*
 
-``` java
+```java
 @Incoming("from-wls")
 public void consumeWls(String msg) {
     System.out.println("WebLogic says: " + msg);
@@ -109,7 +109,7 @@ public void consumeWls(String msg) {
 
 *Consuming one by one, manual ack:*
 
-``` java
+```java
 @Incoming("from-wls")
 @Acknowledgment(Acknowledgment.Strategy.MANUAL)
 public CompletionStage<Void> consumewls(JmsMessage<String> msg) {
@@ -122,7 +122,7 @@ public CompletionStage<Void> consumewls(JmsMessage<String> msg) {
 
 *Producing to WebLogic JMS:*
 
-``` java
+```java
 @Outgoing("to-wls")
 public PublisherBuilder<String> produceToWls() {
     return ReactiveStreams.of("test1", "test2");
@@ -131,7 +131,7 @@ public PublisherBuilder<String> produceToWls() {
 
 *Example of more advanced producing to WebLogic JMS:*
 
-``` java
+```java
 @Outgoing("to-wls")
 public PublisherBuilder<Message<String>> produceToJms() {
     return ReactiveStreams.of("test1", "test2")
@@ -148,7 +148,7 @@ public PublisherBuilder<Message<String>> produceToJms() {
 
 *Example of even more advanced producing to WebLogic JMS with custom mapper:*
 
-``` java
+```java
 @Outgoing("to-wls")
 public PublisherBuilder<Message<String>> produceToJms() {
     return ReactiveStreams.of("test1", "test2")
@@ -169,7 +169,7 @@ For initiating SSL secured t3 connection, trust keystore with WLS public certifi
 
 *Example config:*
 
-``` yaml
+```yaml
 mp:
   messaging:
     connector:
@@ -184,7 +184,7 @@ Helidon application needs to be aware about our WLS SSL public certificate.
 
 *Running example with WLS truststore*
 
-``` bash
+```bash
 java --add-opens=java.base/java.io=ALL-UNNAMED \
     -Djavax.net.ssl.trustStore=DemoTrust.jks \
     -Djavax.net.ssl.trustStorePassword=DemoTrustKeyStorePassPhrase \

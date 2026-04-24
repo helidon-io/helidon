@@ -10,7 +10,7 @@ Building gRPC services with Helidon gRPC MP is straightforward, allowing develop
 
 To enable gRPC MicroProfile Server, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.grpc</groupId>
     <artifactId>helidon-microprofile-grpc-server</artifactId>
@@ -42,7 +42,7 @@ The traditional approach to building Java gRPC services is to write Protobuf fil
 
 For example:
 
-``` java
+```java
 @ApplicationScoped
 @Grpc.GrpcService
 public class StringService {
@@ -57,7 +57,7 @@ public class StringService {
 
 Note that the message types in `Strings` are generated from a Protobuf file, but the class itself is just a POJO that uses the Helidon MP annotations described above. In addition, `@Grpc.Unary` overrides the Java method name to match that in the Protobuf file, as shown next:
 
-``` protobuf
+```protobuf
 syntax = "proto3";
 
 service StringService {
@@ -75,7 +75,7 @@ When using Maven, Protobuf files should be placed under the `src/main/proto` dir
 
 Even though it is recommended to use Protobuf message types, it is not mandatory. Traditional Java types can be used as long as custom marshalers are provided. For instance, in the example above we can use a `String` type instead of the generated type `StringMessage`, if we create a marshaler for it. For example,
 
-``` java
+```java
 @ApplicationScoped
 @Grpc.GrpcService
 @Grpc.GrpcMarshaller("string")
@@ -90,7 +90,7 @@ public class StringService {
 
 In this example, the marshaler is provided using the name `"string"` and its supplier must be discoverable via CDI. The following is an example of a marshaler and its supplier for the `String` type:
 
-``` java
+```java
 @Dependent
 @Named("string")
 public class StringSupplier implements MarshallerSupplier {
@@ -129,7 +129,7 @@ When unable to annotate a service class —for example when the code is built by
 
 For example, assuming that there is a gRPC service class called `StringService` that needs to be deployed, a gRPC server extension class might look like this:
 
-``` java
+```java
 public class MyExtension implements GrpcMpExtension {
 
     @Override
@@ -150,7 +150,7 @@ When a gRPC client interacts with a server, it needs to have access to the Proto
 
 Helidon includes a gRPC reflection service that can be queried by client tools to learn about the available services —similar to OpenAPI for REST services. The reflection service is implemented as a *feature* and can be enabled programmatically by adding the feature, or via config as follows:
 
-``` yaml
+```yaml
   features:
     grpc-reflection:
       enabled: true
@@ -160,7 +160,7 @@ For more information see [gRPC Server Configuration](../../se/grpc/server.md#_co
 
 In Helidon MP, annotated services must provide access to the underlying Protobuf description to use the reflection service. Here is a modified version of `StringService` that adds an annotated method returning the descriptor:
 
-``` java
+```java
 @ApplicationScoped
 @Grpc.GrpcService
 public class StringService {

@@ -8,7 +8,7 @@ Scheduling is an essential feature for the Enterprise. Helidon has its own imple
 
 To enable Scheduling, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.scheduling</groupId>
     <artifactId>helidon-microprofile-scheduling</artifactId>
@@ -23,7 +23,7 @@ For scheduling tasks in Helidon you can choose from `@Scheduling.Cron` or `@Sche
 
 For simple fixed rate invocation interval, the `@Scheduling.FixedRate` is the easiest way to schedule task invocation.
 
-``` java
+```java
 @Scheduling.FixedRate(delayBy = "PT5M", value = "PT10M")
 ```
 
@@ -33,7 +33,7 @@ Metadata like human-readable interval description or configured values are avail
 
 For more complicated interval definition, cron expression can be leveraged with `@Scheduling.Cron` annotation.
 
-``` java
+```java
 @Scheduling.Cron(value = "0 15 8 ? * *", concurrent = false)
 public void methodName() { /* ... */ }
 ```
@@ -42,7 +42,7 @@ public void methodName() { /* ... */ }
 
 *Cron expression format*
 
-``` text
+```text
 <seconds> <minutes> <hours> <day-of-month> <month> <day-of-week> <year>
 ```
 
@@ -83,7 +83,7 @@ Examples
 
 Metadata like human-readable interval description or configured values are available through *CronInvocation* injected as method parameter.
 
-``` java
+```java
 @Scheduling.Cron("0 15 8 ? * *")
 public void methodName(CronInvocation inv) {
     { /* ... */ }
@@ -110,7 +110,7 @@ The Fixed rate annotation can have the delay by and value overridden using confi
 
 *Annotation that allows config overrides*
 
-``` java
+```java
 @Scheduling.FixedRate(delayBy = "${app.schedule.cache.delay-by:PT5M}", value = "${app.schedule.cache.interval:PT10M}")
 ```
 
@@ -118,7 +118,7 @@ The default values are 5 minutes for delay-by, and 10 minutes for interval, and 
 
 *Overriding annotated values from config*
 
-``` yaml
+```yaml
 app:
   schedule:
     cache:
@@ -134,7 +134,7 @@ The Cron annotation can have the value overridden using config.
 
 *Annotation that allows config overrides*
 
-``` java
+```java
 @Scheduling.Cron("${app.schedule.cache.cron:0 15 8 ? * *}")
 ```
 
@@ -142,7 +142,7 @@ The default value is an expression of `0 15 8 ? * *`.
 
 *Overriding annotated values from config*
 
-``` yaml
+```yaml
 app:
   schedule:
     cache:
@@ -157,7 +157,7 @@ The configured values would be executing every 1 second.
 
 *Example of scheduling with fixed rate*
 
-``` java
+```java
 @Scheduling.FixedRate(delayBy = "PT5M", value = "PT10M")
 public void methodName() {
     System.out.println("Every 10 minutes, first invocation 5 minutes after start");
@@ -168,7 +168,7 @@ public void methodName() {
 
 *Example with invocation metadata*
 
-``` java
+```java
 @Scheduling.FixedRate(delayBy = "PT5M", value = "PT10M")
 public void methodName(FixedRateInvocation inv) {
     System.out.println("Method invoked " + inv.description());
@@ -179,7 +179,7 @@ public void methodName(FixedRateInvocation inv) {
 
 *Example of scheduling with cron expression*
 
-``` java
+```java
 @Scheduling.Cron(value = "0 15 8 ? * *", concurrent = false)
 public void methodName() {
     System.out.println("Executer every day at 8:15");
@@ -190,7 +190,7 @@ public void methodName() {
 
 *Example with invocation metadata*
 
-``` java
+```java
 @Scheduling.Cron("0 15 8 ? * *")
 public void methodName(CronInvocation inv) {
     System.out.println("Method invoked " + inv.description());

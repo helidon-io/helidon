@@ -17,7 +17,7 @@ Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
 *Verify Prerequisites*
 
-``` bash
+```bash
 java -version
 mvn --version
 docker --version
@@ -26,7 +26,7 @@ kubectl version
 
 *Setting JAVA_HOME*
 
-``` bash
+```bash
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -41,7 +41,7 @@ To start using this feature, add the following dependencies to the testing modul
 
 *Maven dependencies*
 
-``` xml
+```xml
 <dependencies>
    <dependency>
       <groupId>io.helidon.microprofile.testing</groupId>
@@ -67,7 +67,7 @@ First you’ll need to create a test class with an empty test method, and annota
 
 *Test Class*
 
-``` java
+```java
 @HelidonTest
 class GreetTest {
     @Test
@@ -80,7 +80,7 @@ The `@HelidonTest` annotation will cause the test extension to start a Helidon M
 
 You can see this in the test output:
 
-``` text
+```text
 INFO io.helidon.microprofile.server.ServerCdiExtension: Server started on http://localhost:56293 (and all other host addresses) in 1893 milliseconds (since JVM startup).
 ```
 
@@ -93,7 +93,7 @@ The test is only useful if it invokes the server and verifies the result. To sup
 
 *Updated Class with webTarget*
 
-``` java
+```java
 @HelidonTest
 class GreetTest {
     @Inject
@@ -127,7 +127,7 @@ Optional Extension Annotations
 
 Here’s an example showing how these approaches are used to execute the same endpoint with different configuration:
 
-``` java
+```java
 @HelidonTest(resetPerTest = true)
 class GreetTest {
     @Test
@@ -181,7 +181,7 @@ class AddConfigBlockTest {
 
 If you prefer to use only beans for testing, and want to add a different bean for each test, then you must use the `@AddBean` annotation. This cannot be achieved by CDI discovery because if we place `META-INF/beans.xml` on the classpath, then all of our beans would be added.
 
-``` java
+```java
 @AddBean(TestBean.class)
 class GreetTest {
 }
@@ -189,7 +189,7 @@ class GreetTest {
 
 By default, the bean is added to the container with scope set to `ApplicationScoped`. You can customize scope either by annotating the bean class with another scope or through the annotation:
 
-``` java
+```java
 @AddBean(value = TestBean.class, scope = Dependent.class)
 class GreetTest {
 }
@@ -204,7 +204,7 @@ When a custom bean is not enough, you may want to extend the CDI with a test-onl
 
 For this purpose, we provide the following annotation which adds the extension to the container and allows you to modify its behavior as a usual CDI Portable Extension:
 
-``` java
+```java
 @AddExtension(TestExtension.class)
 class GreetTest {
 }
@@ -214,7 +214,7 @@ class GreetTest {
 
 If you want to disable discovery and only add custom extensions and beans, then use the following annotation:
 
-``` java
+```java
 @DisableDiscovery
 class GreetTest {
 }
@@ -227,7 +227,7 @@ class GreetTest {
 
 If you want just the basic test features enabled, then you only have to add a few required extensions and classes to your test. The following example uses only those extensions and classes required to run a bean that injects configuration value:
 
-``` java
+```java
 @HelidonTest
 @DisableDiscovery
 @AddExtension(ConfigCdiExtension.class)

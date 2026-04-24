@@ -20,7 +20,7 @@ Http/2 needed to be explicitly enabled by configuration in Helidon 2:
 
 *Enabling Http/2 support in Helidon 2*
 
-``` yaml
+```yaml
 server:
   port: 8080
   host: 0.0.0.0
@@ -33,7 +33,7 @@ In Helidon 3 Http/2 is automatically enabled when artifact with Http/2 support i
 
 *Enabling Http/2 support in Helidon 3 by adding dependency*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-http2</artifactId>
@@ -46,7 +46,7 @@ In Helidon 2, max content length was configurable with `server.experimental.http
 
 *Max upgrade content length in Helidon 3*
 
-``` yaml
+```yaml
 server:
   port: 8080
   host: 0.0.0.0
@@ -61,7 +61,7 @@ Helidon SE support is now based on the `WebSocketRouting` class which enables He
 
 *Helidon 2 WebSocket support dependency*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-tyrus</artifactId>
@@ -70,7 +70,7 @@ Helidon SE support is now based on the `WebSocketRouting` class which enables He
 
 *Helidon 3 WebSocket support dependency*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-websocket</artifactId>
@@ -81,7 +81,7 @@ In Helidon 2, WebSocket routing is defined by registering `TyrusSupport` as addi
 
 *Helidon 2 WebSocket route registering*
 
-``` java
+```java
 WebServer.builder(Routing.builder()
                           .register("/rest", new SomeRestService()) 
                           .register("/websocket", TyrusSupport.builder() 
@@ -102,7 +102,7 @@ In Helidon 3, WebSocket routing is defined by adding another routing:
 
 *Helidon 3 WebSocket route registering*
 
-``` java
+```java
 WebServer.builder()
         .routing(r -> r
                 .register("/rest", new SomeRestService()) 

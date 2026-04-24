@@ -8,7 +8,7 @@ Helidon implements [MicroProfile Reactive Streams Operators](https://download.ec
 
 To enable Reactive Streams, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
    <groupId>io.helidon.microprofile.reactive-streams</groupId>
    <artifactId>helidon-microprofile-reactive-streams</artifactId>
@@ -21,7 +21,7 @@ The MicroProfile Reactive Streams Operators specification provides a set of oper
 
 *Example of simple closed graph usage:*
 
-``` java
+```java
 AtomicInteger sum = new AtomicInteger();
 
 ReactiveStreams.of("1", "2", "3", "4", "5")
@@ -82,7 +82,7 @@ Operators(Stages) {#terms}
 
 *Combining the graphs and running the stream:*
 
-``` java
+```java
 // Assembly of stream, nothing is streamed yet
 PublisherBuilder<String> publisherStage =
         ReactiveStreams.of("foo", "bar")

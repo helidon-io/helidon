@@ -30,7 +30,7 @@ Some methods that act as getters of type `T` have been modified to return `Optio
 
 *Helidon 1.x Code*
 
-``` java
+```java
 Span myNewSpan = GlobalTracer.get()
         .buildSpan("my-operation")
         .asChildOf(serverRequest.spanContext())
@@ -41,7 +41,7 @@ you will need to change it to something like:
 
 *Helidon 2.x Code*
 
-``` java
+```java
 Tracer.SpanBuilder spanBuilder = serverRequest.tracer()
         .buildSpan("my-operation");
 serverRequest.spanContext().ifPresent(spanBuilder::asChildOf);
@@ -61,7 +61,7 @@ Note the use of `ifPresent()` on the returned `Optional<SpanContext>`.
 
 Example of advanced configuration of config:
 
-``` java
+```java
 Config.builder()
         // system properties with a polling strategy of 10 seconds
         .addSource(ConfigSources.systemProperties()
@@ -91,7 +91,7 @@ The configuration approach to `Resource` class was using prefixes which was not 
 
 In Helidon 1.x support for JSON and other media types was configured when constructing `webserver.Routing` using the `register` method. In Helidon 2 Media Support has been refactored so that it can be shared between the Helidon `WebServer` and `WebClient`. You now specify media support as part of the WebServer build:
 
-``` java
+```java
 WebServer.builder()
         .addMediaSupport(JsonpSupport.create()) //registers reader and writer for Json-P
         .build();
@@ -131,7 +131,7 @@ The configuration has been updated to have a nicer tree structure:
 
 Example of a public key from keystore:
 
-``` yaml
+```yaml
 keystore:
    cert.alias: "service_cert"
    resource.path: "/conf/keystore.p12"
@@ -141,7 +141,7 @@ keystore:
 
 Example of a private key from keystore:
 
-``` yaml
+```yaml
 keystore:
   key:
     alias: "myPrivateKey"
@@ -152,7 +152,7 @@ keystore:
 
 Example of a pem resource with private key and certificate chain:
 
-``` yaml
+```yaml
 pem:
   key:
     passphrase: "password"
@@ -177,7 +177,7 @@ There is a new class `io.helidon.webserver.WebServerTls` that can be used to con
 
 The class uses a `Builder` pattern:
 
-``` java
+```java
 WebServerTls.builder()
         .privateKey(KeyConfig.keystoreBuilder()
                             .keystore(Resource.create("certificate.p12"))
@@ -186,7 +186,7 @@ WebServerTls.builder()
 
 The builder or built instance can be registered with a socket configuration builder including the `WebServer.Builder` itself:
 
-``` java
+```java
 WebServer.builder(routing())
         .tls(webServerTls)
         .build();
@@ -198,7 +198,7 @@ Additional socket configuration has changed both in config and in API.
 
 The configuration now accepts following structure:
 
-``` yaml
+```yaml
 server:
    port: 8000
    sockets:
@@ -215,7 +215,7 @@ We have added the `enabled` flag to support disabling sockets through configurat
 
 To add socket using a builder, you can use:
 
-``` java
+```java
 WebServer.builder()
         .addSocket(SocketConfigurationBuilder.builder()
                            .port(8001)
@@ -232,7 +232,7 @@ Most methods from this class have been moved to `WebServer.Builder` or deprecate
 
 Example of a simple WebServer setup:
 
-``` java
+```java
 WebServer.builder()
         .port(8001)
         .host("localhost")

@@ -34,7 +34,7 @@ When you use a Helidon Application POM as your project’s parent pom, you inher
 
 *Import Helidon Dependency Management*
 
-``` xml
+```xml
 <dependencyManagement>
     <dependencies>
         <dependency>
@@ -52,7 +52,7 @@ You then declare dependencies on Helidon (and other) components without specifyi
 
 *Component dependency*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-yaml</artifactId>
@@ -78,7 +78,7 @@ If you use the Helidon application parent POM you will have this plugin configur
 
 You can override many of the plugin attributes by passing a system property to the `mvn` command:
 
-``` bash
+```bash
 mvn -Djlink.image.addClassDataSharingArchive=false package
 ```
 
@@ -86,7 +86,7 @@ mvn -Djlink.image.addClassDataSharingArchive=false package
 
 Or you can set the properties in your project’s pom.xml:
 
-``` xml
+```xml
 <properties>
     <jlink.image.addClassDataSharingArchive>false</jlink.image.addClassDataSharingArchive>
     <native.image.reportExceptionStackTraces>true</native.image.reportExceptionStackTraces>
@@ -99,7 +99,7 @@ For full control you can override the plugin’s configuration using `pluginMana
 
 *Turn off generation of the CDS Archive when generating a custom Java runtime image*
 
-``` xml
+```xml
 <build>
   <pluginManagement>
       <plugins>

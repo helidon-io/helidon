@@ -22,7 +22,7 @@ For this 10 minute tutorial, you will need the following:
 
 *Verify Prerequisites*
 
-``` bash
+```bash
 java -version
 mvn --version
 docker --version
@@ -31,7 +31,7 @@ kubectl version
 
 *Setting JAVA_HOME*
 
-``` bash
+```bash
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -44,14 +44,14 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 After [downloading and installing](https://www.graalvm.org/jdk21//docs/getting-started/) GraalVM, set the `GRAALVM_HOME` environment variable to point at your GraalVM installation, or use the GraalVM installation as your Java home.
 
-``` bash
+```bash
 # Your path might be different
 export GRAALVM_HOME=/usr/local/graalvm-jdk-21+35.1/Contents/Home/
 ```
 
 Then verify:
 
-``` bash
+```bash
 $GRAALVM_HOME/bin/java -version
 $GRAALVM_HOME/bin/native-image --version
 ```
@@ -60,7 +60,7 @@ $GRAALVM_HOME/bin/native-image --version
 
 Generate the project using the Helidon MP Quickstart Maven archetype.
 
-``` bash
+```bash
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -72,20 +72,20 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 The archetype generates a Maven project in your current directory (for example, `helidon-quickstart-mp`). Change into this directory and build.
 
-``` bash
+```bash
 cd helidon-quickstart-mp
 mvn package
 ```
 
 At this point you can run the application using the JVM:
 
-``` bash
+```bash
 java -jar target/helidon-quickstart-mp.jar
 ```
 
 In another shell test an endpoint:
 
-``` bash
+```bash
 curl -X GET http://localhost:8080/greet
 ```
 
@@ -106,13 +106,13 @@ You can build a native executable in 2 different ways:
 
 Make sure you have GraalVM locally installed:
 
-``` bash
+```bash
 $GRAALVM_HOME/bin/native-image --version
 ```
 
 Build the native image using the native image profile:
 
-``` bash
+```bash
 mvn package -Pnative-image
 ```
 
@@ -121,7 +121,7 @@ mvn package -Pnative-image
 
 Once it completes start the application using the native executable (no JVM!):
 
-``` bash
+```bash
 ./target/helidon-quickstart-mp
 ```
 
@@ -131,7 +131,7 @@ Yep, it starts fast. You can exercise the application’s endpoints as before.
 
 Build the "native" Docker image
 
-``` bash
+```bash
 docker build -t helidon-quickstart-mp-native -f Dockerfile.native .
 ```
 
@@ -140,7 +140,7 @@ docker build -t helidon-quickstart-mp-native -f Dockerfile.native .
 
 Start the application:
 
-``` bash
+```bash
 docker run --rm -p 8080:8080 helidon-quickstart-mp-native:latest
 ```
 

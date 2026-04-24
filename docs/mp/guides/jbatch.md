@@ -17,7 +17,7 @@ Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
 *Verify Prerequisites*
 
-``` bash
+```bash
 java -version
 mvn --version
 docker --version
@@ -26,7 +26,7 @@ kubectl version
 
 *Setting JAVA_HOME*
 
-``` bash
+```bash
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -44,7 +44,7 @@ For this example, add the IBM JBatch implementation and the `derby` embedded DB 
 
 *Maven dependencies*
 
-``` xml
+```xml
 <dependencies>
     <dependency>
         <groupId>com.ibm.jbatch</groupId>
@@ -71,7 +71,7 @@ Finally, you will create `MyBatchlet` to demonstrate all possible usages of JBat
 
 *MyInputRecord*
 
-``` java
+```java
 public class MyInputRecord {
     private int id;
 
@@ -98,7 +98,7 @@ public class MyInputRecord {
 
 *MyOutputRecord*
 
-``` java
+```java
 public class MyOutputRecord {
 
     private int id;
@@ -128,7 +128,7 @@ public class MyOutputRecord {
 
 *MyItemReader*
 
-``` java
+```java
 public class MyItemReader extends AbstractItemReader {
 
     private final StringTokenizer tokens;
@@ -158,7 +158,7 @@ The `MyItemProcessor` will perform some simple operations:
 
 *MyItemProcessor*
 
-``` java
+```java
 public class MyItemProcessor implements ItemProcessor {
 
     @Override
@@ -176,7 +176,7 @@ public class MyItemProcessor implements ItemProcessor {
 
 *MyItemWriter*
 
-``` java
+```java
 public class MyItemWriter extends AbstractItemWriter {
 
     @Override
@@ -192,7 +192,7 @@ public class MyItemWriter extends AbstractItemWriter {
 
 *MyBatchlet*
 
-``` java
+```java
 public class MyBatchlet extends AbstractBatchlet {
 
     @Override
@@ -211,7 +211,7 @@ Add this code to your job descriptor.xml file:
 
 *Updated descriptor file*
 
-``` xml
+```xml
 <job id="myJob" xmlns="https://jakarta.ee/xml/ns/jakartaee"
                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                 xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/jobXML_2_0.xsd"
@@ -241,7 +241,7 @@ Create a small endpoint to activate the job:
 
 *new endpoint*
 
-``` java
+```java
 @Path("/batch")
 @ApplicationScoped
 public class BatchResource {
@@ -288,7 +288,7 @@ Helidon specifies to JBatch that it should run in Standalone (SE) mode. It will 
 
 *HelidonExecutorServiceProvider*
 
-``` java
+```java
 public class HelidonExecutorServiceProvider implements ExecutorServiceProvider {
     @Override
     public ExecutorService getExecutorService() {
@@ -299,20 +299,20 @@ public class HelidonExecutorServiceProvider implements ExecutorServiceProvider {
 
 ## Run the Code
 
-``` bash
+```bash
 mvn package
 java -jar target/helidon-jbatch-example.jar
 ```
 
 ## Call the Endpoint
 
-``` bash
+```bash
 curl -X GET http://localhost:8080/batch
 ```
 
 You should receive the following log:
 
-``` bash
+```bash
 processItem: MyInputRecord: 1
 processItem: MyInputRecord: 2
 processItem: MyInputRecord: 3
@@ -331,7 +331,7 @@ Running inside a batchlet
 
 and the following result:
 
-``` bash
+```bash
 {"Started a job with Execution ID: ":1}
 ```
 
@@ -339,7 +339,7 @@ This indicates that the batch job was called and executed successfully.
 
 ### Check the Status
 
-``` bash
+```bash
 curl -X GET http://localhost:8080/batch/status/1
 ```
 
@@ -348,7 +348,7 @@ curl -X GET http://localhost:8080/batch/status/1
 
 The results should look something like this:
 
-``` bash
+```bash
 {"Steps executed":"[step1, step2]","Status":"COMPLETED"}
 ```
 

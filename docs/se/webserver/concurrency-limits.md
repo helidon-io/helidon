@@ -14,7 +14,7 @@ Concurrency limits can be configured directly on the Webserver or as a *feature*
 
 The following example uses a fixed concurrency strategy established at the Webserver level —impacting only the *default* socket— that limits the number of concurrent requests to 1000, a queue of 200 requests to accommodate potential request bursts and a queue timeout of 1 second:
 
-``` yaml
+```yaml
 server:
   concurrency-limit:
     fixed:
@@ -27,7 +27,7 @@ With this configuration, after all 1000 permits are consumed, subsequent request
 
 The same use case but defined as a feature will look as follows:
 
-``` yaml
+```yaml
 server:
   features:
     limits:
@@ -42,7 +42,7 @@ As described above, when configured as a feature, the limits will only apply to 
 
 Instead of fixing the number of permits to a given value, the AIMD strategy allows the set of permits to grow arithmetically and shrink multiplicatively as needed, based on the actual time that it takes to process requests. AIMD can dynamically adjust the number of available permits to ensure a certain *quality of service*, possibly for a subset of all the requests received. It is generally preferred to serve a subset of clients efficiently than all clients inefficiently, and this type of trade-off can be defined using an AIMD strategy. For example,
 
-``` yaml
+```yaml
 server:
   concurrency-limit:
     aimd:
@@ -57,7 +57,7 @@ With this configuration, the initial number of permits starts at 500 and can var
 
 AIMD also supports queueing and queueing timeouts, so if the maximum size is reached, it is still possible to accept (enqueue) a request as long as it is processed within the queueing timeout period. Here is a variation of the example above, but with a queue of size 300 and a queue timeout of 1 second:
 
-``` yaml
+```yaml
 server:
   concurrency-limit:
     aimd:
@@ -75,7 +75,7 @@ server:
 
 The following example uses a throughput concurrency strategy established at the Webserver level —impacting only the *default* socket— that limits the throughput to 1000 requests over a duration of 5 seconds, a queue of 200 requests to accommodate potential request bursts and a queue timeout of 1 second:
 
-``` yaml
+```yaml
 server:
   concurrency-limit:
     throughput:
@@ -89,7 +89,7 @@ With this configuration, a total of 1000 requests can be processed over a durati
 
 Here is the same example showing the configuration of the `FIXED_RATE` rate limiting algorithm:
 
-``` yaml
+```yaml
 server:
   concurrency-limit:
     throughput:
@@ -112,7 +112,7 @@ For more information about configuring these Concurrency Limit strategies see:
 
 The Concurrency Limit module also has built-in support for metrics in order to monitor the chosen strategy. These metrics are disabled by default, but can be enabled as follows:
 
-``` yaml
+```yaml
 server:
   concurrency-limit:
     fixed:
@@ -151,7 +151,7 @@ For more information regarding metrics support in Helidon and the dependencies t
 
 The Concurrency Limit component supports tracing for the webserver. If you enable tracing for waiting time, any time Helidon queues a request waiting for an available worker thread it creates a span representing the request’s waiting time. Concurrency limit tracing is disabled by default. Enable it using configuration:
 
-``` yaml
+```yaml
 server:
   features:
     observe:

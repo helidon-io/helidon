@@ -8,7 +8,7 @@ Connecting streams to Oracle AQ with Reactive Messaging couldn’t be easier. Th
 
 To enable AQ Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.messaging.aq</groupId>
     <artifactId>helidon-messaging-aq</artifactId>
@@ -48,7 +48,7 @@ The simplest possible usage is leaving construction of `AQjmsConnectionFactory` 
 
 *Example of connector config:*
 
-``` yaml
+```yaml
 mp:
   messaging:
 
@@ -75,7 +75,7 @@ Its also possible and preferable to refer to [configured datasource](../persiste
 
 *Example of connector config with Oracle UCP datasource:*
 
-``` yaml
+```yaml
 javax:
   sql:
     DataSource:
@@ -108,7 +108,7 @@ If you need more advanced configurations, connector can work with injected `AQjm
 
 *Inject:*
 
-``` java
+```java
 @Produces
 @ApplicationScoped
 @Named("aq-orderdb-factory")
@@ -123,7 +123,7 @@ public AQjmsConnectionFactory connectionFactory() throws JMSException {
 
 *Config:*
 
-``` yaml
+```yaml
 jdbc:
   url: jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(Host=192.168.0.123)(Port=1521))(CONNECT_DATA=(SID=TESTSID)))
   user: gandalf
@@ -154,7 +154,7 @@ mp:
 
 *Consuming one by one unwrapped value:*
 
-``` java
+```java
 @Incoming("from-aq")
 public void consumeAq(String msg) {
     System.out.println("Oracle AQ says: " + msg);
@@ -163,7 +163,7 @@ public void consumeAq(String msg) {
 
 *Consuming one by one, manual ack:*
 
-``` java
+```java
 @Incoming("from-aq")
 @Acknowledgment(Acknowledgment.Strategy.MANUAL)
 public CompletionStage<Void> consumeAq(AqMessage<String> msg) {
@@ -179,7 +179,7 @@ public CompletionStage<Void> consumeAq(AqMessage<String> msg) {
 
 *Producing to AQ:*
 
-``` java
+```java
 @Outgoing("to-aq")
 public PublisherBuilder<String> produceToAq() {
     return ReactiveStreams.of("test1", "test2");

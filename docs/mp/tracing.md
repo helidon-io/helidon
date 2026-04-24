@@ -11,7 +11,7 @@ Distributed tracing is a critical feature of micro-service based applications, s
 
 To enable MicroProfile Tracing, either add a dependency on the [helidon-microprofile bundle](../mp/introduction/microprofile.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.tracing</groupId>
     <artifactId>helidon-microprofile-tracing</artifactId>
@@ -92,14 +92,14 @@ You can configure a custom service name using the `tracing.service` configuratio
 
 To disable Helidon tracing for web server and security:
 
-``` properties
+```properties
 tracing.components.web-server.enabled=false
 tracing.components.security.enabled=false
 ```
 
 To disables MP Tracing as by specification:
 
-``` properties
+```properties
 mp.opentracing.server.skip-pattern=.*
 ```
 
@@ -107,7 +107,7 @@ Tracing configuration can be defined in `application.yaml` file.
 
 *Tracing configuration example*
 
-``` yaml
+```yaml
 tracing:
   paths:
     - path: "/favicon.ico"
@@ -139,7 +139,7 @@ Example:
 
 *Configuration properties*
 
-``` properties
+```properties
 tracing.components.web-server.spans.0.name="HTTP Request"
 tracing.components.web-server.spans.0.new-name: "HTTP %1$s %2$s"
 ```
@@ -162,7 +162,7 @@ First, you need to run the Jaeger tracer. Helidon will communicate with this tra
 
 *Run Jaeger within a docker container, then check the Jaeger server working:*
 
-``` bash
+```bash
 docker run -d --name jaeger \                  
   -e COLLECTOR_OTLP_ENABLED=true \
   -p 6831:6831/udp \
@@ -182,7 +182,7 @@ docker run -d --name jaeger \
 
 *Check the Jaeger server by opening in browser:*
 
-``` bash
+```bash
 http://localhost:16686/search
 ```
 
@@ -196,7 +196,7 @@ To demonstrate distributed tracing, you will need to create a second project, wh
 
 *Run the Maven archetype:*
 
-``` bash
+```bash
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -208,13 +208,13 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 *The project will be built and run from the `helidon-quickstart-mp` directory:*
 
-``` bash
+```bash
 cd helidon-quickstart-mp-2
 ```
 
 *Add the following dependency to `pom.xml`:*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-jaeger</artifactId>
@@ -223,7 +223,7 @@ cd helidon-quickstart-mp-2
 
 *Replace `META-INF/microprofile-config.properties` with the following:*
 
-``` properties
+```properties
 app.greeting=Hello From MP-2
 tracing.service=helidon-mp-2
 
@@ -233,20 +233,20 @@ server.port=8081
 
 *Build the application, skipping unit tests, then run it:*
 
-``` bash
+```bash
 mvn package -DskipTests=true
 java -jar target/helidon-quickstart-mp-2.jar
 ```
 
 *Run the curl command in a new terminal window and check the response (**notice the port is 8081**) :*
 
-``` bash
+```bash
 curl http://localhost:8081/greet
 ```
 
 *Response body*
 
-``` json
+```json
 {
   "message": "Hello From MP-2 World!"
 }
@@ -258,7 +258,7 @@ Once you have validated that the second service is running correctly, you need t
 
 *Replace the `GreetResource` class with the following code:*
 
-``` java
+```java
 @Path("/greet")
 @RequestScoped
 public class GreetResource {
@@ -299,7 +299,7 @@ public class GreetResource {
 
 *Build and run the application, then invoke the endpoint and check the response:*
 
-``` bash
+```bash
 curl -i http://localhost:8080/greet/outbound 
 ```
 
@@ -307,7 +307,7 @@ curl -i http://localhost:8080/greet/outbound
 
 *Response body*
 
-``` json
+```json
 {
   "message": "Hello From MP-2 World!" 
 }
@@ -332,14 +332,14 @@ The following example demonstrates how to use Jaeger from a Helidon application 
 
 *Update `application.yaml`:*
 
-``` bash
+```bash
 tracing:
   host: "jaeger"
 ```
 
 *Stop the application and build the docker image for your application:*
 
-``` bash
+```bash
 docker build -t helidon-tracing-mp .
 ```
 
@@ -347,7 +347,7 @@ docker build -t helidon-tracing-mp .
 
 *Create the Kubernetes YAML specification, named `jaeger.yaml`, with the following contents:*
 
-``` yaml
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -376,13 +376,13 @@ spec:
 
 *Create the Jaeger pod and ClusterIP service:*
 
-``` bash
+```bash
 kubectl apply -f ./jaeger.yaml
 ```
 
 *Create a Jaeger external server and expose it on port 9142:*
 
-``` bash
+```bash
 kubectl expose pod jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer 
 ```
 
@@ -394,7 +394,7 @@ Navigate to <http://localhost:16687/search> to validate that you can access Jaeg
 
 *Create the Kubernetes YAML specification, named `tracing.yaml`, with the following contents:*
 
-``` yaml
+```yaml
 kind: Service
 apiVersion: v1
 metadata:
@@ -438,7 +438,7 @@ spec:
 
 *Create and deploy the application into Kubernetes:*
 
-``` bash
+```bash
 kubectl apply -f ./tracing.yaml
 ```
 
@@ -446,11 +446,11 @@ kubectl apply -f ./tracing.yaml
 
 *Get the application service information:*
 
-``` bash
+```bash
 kubectl get service/helidon-tracing
 ```
 
-``` bash
+```bash
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
 helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s 
 ```
@@ -459,11 +459,11 @@ helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s
 
 *Verify the tracing endpoint using port `31143`, your port will likely be different:*
 
-``` bash
+```bash
 curl http://localhost:31143/greet
 ```
 
-``` json
+```json
 {
   "message": "Hello World!"
 }
@@ -477,7 +477,7 @@ You can now delete the Kubernetes resources that were just created during this e
 
 *Delete the Kubernetes resources:*
 
-``` bash
+```bash
 kubectl delete -f ./jaeger.yaml
 kubectl delete -f ./tracing.yaml
 kubectl delete service jaeger-external
@@ -504,7 +504,7 @@ You can either configure the span context as the active span, or explicitly defi
 
 *Tracing propagation with Jersey client*
 
-``` java
+```java
 Response response = client.target(serviceEndpoint)
         .request()
         // tracer should be provided unless available as GlobalTracer
@@ -517,7 +517,7 @@ Response response = client.target(serviceEndpoint)
 
 ### Jaeger Tracing
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing</groupId>
     <artifactId>helidon-tracing-providers-jaeger</artifactId>
@@ -544,7 +544,7 @@ Response response = client.target(serviceEndpoint)
 
 The following is an example of a Jaeger configuration, specified in the YAML format.
 
-``` yaml
+```yaml
 tracing:
     service: "helidon-full-http"
     protocol: "https"
@@ -558,7 +558,7 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 
 ### Zipkin Tracing
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-zipkin</artifactId>
@@ -575,7 +575,7 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 
 The following is an example of a Zipkin configuration, specified in the YAML format.
 
-``` yaml
+```yaml
 tracing:
   zipkin:
     service: "helidon-service"
@@ -613,7 +613,7 @@ Avoid using both the OpenTelemetry tracing support described here and support fo
 
 *Dependency for OpenTelemetry support using tracing*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-opentelemetry</artifactId>

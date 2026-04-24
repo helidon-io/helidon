@@ -4,7 +4,7 @@
 
 In addition to the [LangChain4j integration core dependencies](langchain4j.md#maven-coordinates), add:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.integrations.langchain4j.providers</groupId>
     <artifactId>helidon-integrations-langchain4j-providers-lc4j-in-process</artifactId>
@@ -41,7 +41,7 @@ LangChain4j in-process embedding models run ONNX embedding inference locally in 
 
 In Helidon, a named entry under `langchain4j.models` with `provider: lc4j-in-process` is created as a named singleton declarative service bean in the Helidon service registry. This is how `foo-bar-embedding-model` becomes available for content retrievers and direct injection.
 
-``` yaml
+```yaml
 langchain4j:
 
   models:
@@ -62,7 +62,7 @@ langchain4j:
 
 For `type: custom`, configure model and tokenizer paths and pooling mode:
 
-``` yaml
+```yaml
 langchain4j:
   models:
     foo-bar-content-retriever:
@@ -80,7 +80,7 @@ langchain4j:
 
 If `type: custom` is selected but any of `path-to-model`, `path-to-tokenizer`, or `pooling-mode` is missing, Helidon fails startup with a configuration exception.
 
-``` java
+```java
 @Service.Singleton
 public class EmbeddingModelConsumer {
     EmbeddingModelConsumer(@Service.Named("foo-bar-embedding-model") EmbeddingModel embeddingModel) { 

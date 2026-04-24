@@ -40,7 +40,7 @@ You can configure a custom extension in two ways:
 
 The following example shows configuration of all possible extensions with `Config` (all custom extension have a name prefix `My`):
 
-``` java
+```java
 Config config = Config.builder()
         .addSource(FileConfigSource.builder()
                            .changeWatcher(MyChangeWatcher.create())
@@ -62,7 +62,7 @@ The following extensions are loaded using a service loader for any configuration
 
 Other extensions are only used from Java service loader when you use config profiles. Mapping is done through the type configured in config profile, and the type defined by the extension provider interface. For example for config sources, the interface defines the following methods (only subset shown):
 
-``` java
+```java
 boolean supports(String type);
 
 ConfigSource create(String type, Config metaConfig);
@@ -70,7 +70,7 @@ ConfigSource create(String type, Config metaConfig);
 
 Considering the following meta configuration (or config profile):
 
-``` yaml
+```yaml
 sources:
   - type: "my-type"
     properties:
@@ -131,7 +131,7 @@ The application can register parsers for a builder by invoking `Config.Builder#a
 
 Example custom parser implementation listed in `META-INF/services/io.helidon.config.spi.ConfigParser`
 
-``` text
+```text
 my.module.MyConfigParser
 ```
 
@@ -236,7 +236,7 @@ A mapper provider can specify [`@Weight`](/apidocs/io.helidon.common/io/helidon/
 
 Reference custom mapper provider implementation in `META-INF/services/io.helidon.config.spi.ConfigMapperProvider`
 
-``` text
+```text
 my.module.MyConfigMapperProvider
 ```
 

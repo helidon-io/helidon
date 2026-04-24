@@ -8,7 +8,7 @@ The Helidon SE DB Client provides a unified API for working with databases.
 
 To enable DB Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.dbclient</groupId>
     <artifactId>helidon-dbclient</artifactId>
@@ -17,7 +17,7 @@ To enable DB Client, add the following dependency to your project’s `pom.xml` 
 
 To use with a JDBC client also add the following dependency:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.dbclient</groupId>
     <artifactId>helidon-dbclient-jdbc</artifactId>
@@ -26,7 +26,7 @@ To use with a JDBC client also add the following dependency:
 
 Or to use with MongoDB client add the following dependency:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.dbclient</groupId>
     <artifactId>helidon-dbclient-mongodb</artifactId>
@@ -63,7 +63,7 @@ Before you begin you must add the DB Client dependencies and configure the clien
 
 For the DB Client using JDBC implementation and H2 database, you must include the following dependencies in your project:
 
-``` xml
+```xml
 <dependencies>
      <dependency>
          <groupId>io.helidon.dbclient</groupId> 
@@ -88,7 +88,7 @@ For the DB Client using JDBC implementation and H2 database, you must include th
 
 The DB Client must be configured before you begin. In the example below we’ll use Helidon Config to set up JDBC-based client:
 
-``` yaml
+```yaml
 db:
   source: "jdbc" 
   connection:
@@ -139,7 +139,7 @@ Note that `get` statements are query statements that allow zero to one results.
 
 Ordered parameters are written down as `?` in the statement text:
 
-``` sql
+```sql
 SELECT name FROM Pokemons WHERE id = ?
 ```
 
@@ -156,13 +156,13 @@ Methods to set ordered parameters are:
 
 Named parameters are written down as `:<name>` in the JDBC statements
 
-``` sql
+```sql
 SELECT name FROM Pokemons WHERE id = :id
 ```
 
 or as `$<name>` in the MongoDB statement:
 
-``` json
+```json
 {
     "collection": "pokemons",
     "operation": "update",
@@ -187,7 +187,7 @@ Statements are executed by calling execute() method after statement parameters a
 
 JDBC query with ordered parameters and query that does not run in the transaction:
 
-``` java
+```java
 dbClient.execute()
         .createQuery("SELECT name FROM Pokemons WHERE id = ?")
         .params(1)
@@ -196,7 +196,7 @@ dbClient.execute()
 
 JDBC query with named parameters and the query runs in transaction:
 
-``` java
+```java
 dbClient.transaction()
         .createQuery("SELECT name FROM Pokemons WHERE id = :id")
         .addParam("id", 1)
@@ -207,7 +207,7 @@ Both examples will return `Multi<DbRow>` with rows returned by the query.
 
 This example shows a MongoDB update statement with named parameters and the query does not run in transaction:
 
-``` java
+```java
 dbClient.execute()
         .createUpdate("""
                       {
@@ -229,7 +229,7 @@ Execution of DML statements will always return a `long` with the number of modif
 
 In following example, the number of modified records is printed to standard output:
 
-``` java
+```java
 long count = dbClient.execute()
         .insert("INSERT INTO Pokemons (id, name) VALUES(?, ?)",
                 1, "Pikachu");

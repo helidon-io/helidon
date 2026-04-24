@@ -8,7 +8,7 @@ Asynchronous messaging is a commonly used form of communication in the world of 
 
 To enable Reactive Messaging, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.messaging</groupId>
     <artifactId>helidon-messaging</artifactId>
@@ -29,7 +29,7 @@ A channel is a named pair of `Publisher` and `Subscriber`. Channels can be conne
 
 *Example of simple channel:*
 
-``` java
+```java
 Channel<String> channel1 = Channel.create("channel1");
 Messaging.builder()
         .publisher(channel1, Multi.just("message 1", "message 2")
@@ -45,7 +45,7 @@ Processor is a typical reactive processor acting as a `Subscriber` to upstream a
 
 *Example of processor usage:*
 
-``` java
+```java
 Channel<String> firstChannel = Channel.create("first-channel");
 Channel<String> secondChannel = Channel.create("second-channel");
 
@@ -89,7 +89,7 @@ A connector for Reactive Messaging is a factory that produces Publishers and Sub
 
 *Example connector `example-connector`:*
 
-``` java
+```java
 @Connector("example-connector")
 public class ExampleConnector implements IncomingConnectorFactory, OutgoingConnectorFactory {
 
@@ -110,14 +110,14 @@ public class ExampleConnector implements IncomingConnectorFactory, OutgoingConne
 
 *Example of channel to connector mapping config:*
 
-``` yaml
+```yaml
 mp.messaging.outgoing.to-connector-channel.connector: example-connector
 mp.messaging.incoming.from-connector-channel.connector: example-connector
 ```
 
 *Example producing to connector:*
 
-``` java
+```java
 Messaging.builder()
         .config(config)
         .connector(new ExampleConnector())
@@ -133,7 +133,7 @@ Messaging.builder()
 
 *Example consuming from connector:*
 
-``` java
+```java
 Messaging.builder()
         .config(config)
         .connector(new ExampleConnector())
@@ -160,7 +160,7 @@ Configuration that is supplied to connector by the Messaging implementation must
 
 *Example connector accessing configuration:*
 
-``` java
+```java
 @Connector("example-connector")
 public class ExampleConnector implements IncomingConnectorFactory {
 
@@ -184,7 +184,7 @@ An explicit config for channel’s publisher is possible with `Channel.Builder#p
 
 *Example consuming from Kafka connector with explicit config:*
 
-``` java
+```java
 String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
 String topic = config.get("app.kafka.topic").asString().get();
 
@@ -222,7 +222,7 @@ Implicit config without any hard-coding is possible with [Helidon Config](config
 
 *Example of channel to connector mapping config with custom properties:*
 
-``` yaml
+```yaml
 mp.messaging.incoming.from-connector-channel.connector: example-connector
 mp.messaging.incoming.from-connector-channel.first-test-prop: foo
 mp.messaging.connector.example-connector.second-test-prop: bar
@@ -234,7 +234,7 @@ mp.messaging.connector.example-connector.second-test-prop: bar
 
 *Example consuming from connector:*
 
-``` java
+```java
 Messaging.builder()
         .config(config)
         .connector(new ExampleConnector())
@@ -257,7 +257,7 @@ For specific information about creating messaging connectors for Helidon MP visi
 
 *Maven dependency*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.messaging.kafka</groupId>
     <artifactId>helidon-messaging-kafka</artifactId>
@@ -272,7 +272,7 @@ Connecting streams to Kafka with Reactive Messaging couldn’t be easier.
 
 *Example of consuming from Kafka:*
 
-``` java
+```java
 String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
 String topic = config.get("app.kafka.topic").asString().get();
 
@@ -305,7 +305,7 @@ Messaging messaging = Messaging.builder()
 
 *Example of producing to Kafka:*
 
-``` java
+```java
 String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
 String topic = config.get("app.kafka.topic").asString().get();
 
@@ -335,7 +335,7 @@ Messaging messaging = Messaging.builder()
 
 *Example of connector config:*
 
-``` yaml
+```yaml
 mp.messaging:
 
   incoming.from-kafka:
@@ -363,7 +363,7 @@ mp.messaging:
 
 *Example of consuming from Kafka:*
 
-``` java
+```java
 Channel<String> fromKafka = Channel.create("from-kafka");
 
 KafkaConnector kafkaConnector = KafkaConnector.create(); 
@@ -382,7 +382,7 @@ Messaging messaging = Messaging.builder()
 
 *Example of producing to Kafka:*
 
-``` java
+```java
 Channel<String> toKafka = Channel.create("to-kafka");
 
 KafkaConnector kafkaConnector = KafkaConnector.create(); 
@@ -405,7 +405,7 @@ Don’t forget to check out the examples with pre-configured Kafka docker image,
 
 *Maven dependency*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.messaging.jms</groupId>
     <artifactId>helidon-messaging-jms</artifactId>
@@ -420,7 +420,7 @@ Connecting streams to JMS with Reactive Messaging couldn’t be easier.
 
 *Example of consuming from JMS:*
 
-``` java
+```java
 Channel<String> fromJms = Channel.<String>builder() 
         .name("from-jms")
         .publisherConfig(JmsConnector.configBuilder()
@@ -448,7 +448,7 @@ Messaging messaging = Messaging.builder()
 
 *Example of producing to JMS:*
 
-``` java
+```java
 Channel<String> toJms = Channel.<String>builder()  
         .subscriberConfig(JmsConnector.configBuilder()
                                   .jndiInitialFactory(ActiveMQInitialContextFactory.class)
@@ -475,7 +475,7 @@ Messaging messaging = Messaging.builder()
 
 *Example of connector config:*
 
-``` yaml
+```yaml
 mp.messaging:
 
   incoming.from-jms:
@@ -500,7 +500,7 @@ mp.messaging:
 
 *Example of consuming from JMS:*
 
-``` java
+```java
 Channel<String> fromJms = Channel.create("from-jms");
 
 JmsConnector jmsConnector = JmsConnector.create(); 
@@ -519,7 +519,7 @@ Messaging messaging = Messaging.builder()
 
 *Example of producing to JMS:*
 
-``` java
+```java
 Channel<String> toJms = Channel.create("to-jms");
 
 JmsConnector jmsConnector = JmsConnector.create(); 
@@ -542,7 +542,7 @@ Don’t forget to check out the examples with pre-configured ActiveMQ docker ima
 
 *Maven dependency*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.messaging.aq</groupId>
     <artifactId>helidon-messaging-aq</artifactId>
@@ -555,7 +555,7 @@ Don’t forget to check out the examples with pre-configured ActiveMQ docker ima
 
 *Example of producing to and consuming from Oracle AQ:*
 
-``` java
+```java
 PoolDataSource pds = PoolDataSourceFactory.getPoolDataSource(); 
 pds.setConnectionFactoryClassName("oracle.jdbc.pool.OracleDataSource");
 pds.setURL(jdbcUrl);

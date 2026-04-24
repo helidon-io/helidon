@@ -12,7 +12,7 @@ Helidon’s Eureka Server Service Instance Registration Integration provides a [
 
 To enable Eureka Server Service Instance Registration Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.integrations.eureka</groupId>
     <artifactId>helidon-integrations-eureka</artifactId>
@@ -30,7 +30,7 @@ You need to specify at an absolute minimum the URI to the available Netflix Eure
 
 *`application.yaml`*
 
-``` yaml
+```yaml
 server:
   features:
     eureka: 
@@ -47,7 +47,7 @@ All other configuration values can be (and ordinarily are) defaulted, but some a
 
 *`application.yaml`*
 
-``` yaml
+```yaml
 server:
   features:
     eureka:

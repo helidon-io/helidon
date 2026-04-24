@@ -8,7 +8,7 @@ Microservices expose their health status primarily so external tools (for exampl
 
 To enable MicroProfile Health add the [helidon-microprofile bundle](introduction/microprofile.md) dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.bundles</groupId>
     <artifactId>helidon-microprofile</artifactId>
@@ -19,14 +19,14 @@ MicroProfile Health is already included in the bundle.
 
 If full control over the dependencies is required, and you want to minimize the quantity of the dependencies - `Helidon MicroProfile Core budnle` should be used. In this case the following dependencies should be included in your project’s `pom.xml`:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.bundles</groupId>
     <artifactId>helidon-microprofile-core</artifactId>
 </dependency>
 ```
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.health</groupId>
     <artifactId>helidon-microprofile-health</artifactId>
@@ -35,7 +35,7 @@ If full control over the dependencies is required, and you want to minimize the 
 
 To enable built-in health checks add the following dependency (or use the [helidon-microprofile bundle](introduction/microprofile.md) )
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.health</groupId>
     <artifactId>helidon-health-checks</artifactId>
@@ -89,7 +89,7 @@ For example, you can specify a custom port and root context for the root health 
 
 *Create a file named `microprofile-config.properties` in the `resources/META-INF` directory with the following contents:*
 
-``` properties
+```properties
 health.endpoint=/myhealth  
 ```
 
@@ -169,7 +169,7 @@ The following example will demonstrate how to use the built-in health checks. Th
 
 *Include the built-in health checks dependency in your `pom.xml`:*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.health</groupId>
     <artifactId>helidon-health-checks</artifactId>
@@ -178,20 +178,20 @@ The following example will demonstrate how to use the built-in health checks. Th
 
 *Build the application, then run it:*
 
-``` bash
+```bash
 mvn package
 java -jar target/helidon-quickstart-mp.jar
 ```
 
 *Verify the health endpoint in a new terminal window:*
 
-``` bash
+```bash
 curl http://localhost:8080/health
 ```
 
 *JSON response:*
 
-``` json
+```json
 {
   "status": "UP",
   "checks": [
@@ -233,7 +233,7 @@ You can create application-specific custom health checks and integrate them with
 
 *Create a new `GreetLivenessCheck` class with the following content:*
 
-``` java
+```java
 @Liveness 
 @ApplicationScoped 
 public class GreetLivenessCheck implements HealthCheck {
@@ -254,13 +254,13 @@ public class GreetLivenessCheck implements HealthCheck {
 
 *Build and run the application, then verify the custom liveness health endpoint:*
 
-``` bash
+```bash
 curl http://localhost:8080/health/live
 ```
 
 *JSON response:*
 
-``` json
+```json
 {
   "status": "UP",
   "checks": [
@@ -281,7 +281,7 @@ You can add a readiness check to indicate that the application is ready to be us
 
 *Create a new `GreetReadinessCheck` class with the following content:*
 
-``` java
+```java
 @Readiness 
 @ApplicationScoped
 public class GreetReadinessCheck implements HealthCheck {
@@ -313,7 +313,7 @@ public class GreetReadinessCheck implements HealthCheck {
 
 *Build and run the application. Issue the curl command with -v within five seconds and you will see that the application is not ready:*
 
-``` bash
+```bash
 curl -v  http://localhost:8080/health/ready
 ```
 
@@ -325,7 +325,7 @@ curl -v  http://localhost:8080/health/ready
 
 *JSON response:*
 
-``` json
+```json
 {
   "status": "DOWN",
   "checks": [
@@ -342,7 +342,7 @@ curl -v  http://localhost:8080/health/ready
 
 *After five seconds you will see the application is ready:*
 
-``` bash
+```bash
 curl -v http://localhost:8080/health/ready
 ```
 
@@ -354,7 +354,7 @@ curl -v http://localhost:8080/health/ready
 
 *JSON response:*
 
-``` json
+```json
 {
   "status": "UP",
   "checks": [
@@ -377,7 +377,7 @@ You can add a startup check to indicate whether or not the application has initi
 
 *Create a new `GreetStartedCheck` class with the following content:*
 
-``` java
+```java
 @Startup 
 @ApplicationScoped
 public class GreetStartedCheck implements HealthCheck {
@@ -409,7 +409,7 @@ public class GreetStartedCheck implements HealthCheck {
 
 *Build and run the application. Issue the curl command with -v within five seconds and you will see that the application has not yet started:*
 
-``` bash
+```bash
 curl -v  http://localhost:8080/health/started
 ```
 
@@ -421,7 +421,7 @@ curl -v  http://localhost:8080/health/started
 
 *JSON response:*
 
-``` json
+```json
 {
   "status": "DOWN",
   "checks": [
@@ -438,7 +438,7 @@ curl -v  http://localhost:8080/health/started
 
 *After eight seconds you will see the application has started:*
 
-``` bash
+```bash
 curl -v http://localhost:8080/health/started
 ```
 
@@ -450,7 +450,7 @@ curl -v http://localhost:8080/health/started
 
 *JSON response:*
 
-``` json
+```json
 {
   "status": "UP",
   "checks": [
@@ -474,13 +474,13 @@ When using the health check URLs, you can get the following health check data:
 
 *Get all the health check data, including custom data:*
 
-``` bash
+```bash
 curl http://localhost:8080/health
 ```
 
 *JSON response:*
 
-``` json
+```json
 {
   "status": "UP",
   "checks": [

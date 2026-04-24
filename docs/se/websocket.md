@@ -12,7 +12,7 @@ Helidon SE support is based on the `WebSocketRouting` class which enables Helido
 
 To enable WebSocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-websocket</artifactId>
@@ -25,7 +25,7 @@ This section describes the implementation of a simple application that uses a RE
 
 The complete Helidon SE example is available [here](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/websocket). Let us start by looking at `MessageQueueService`:
 
-``` java
+```java
 record MessageQueueService(Queue<String> messageQueue) implements HttpService {
     @Override
     public void routing(HttpRules routingRules) {
@@ -41,7 +41,7 @@ This class exposes a REST resource where messages can be posted. Upon receiving 
 
 Messages pushed into the queue can be obtained by opening a WebSocket connection served by `MessageBoardEndpoint`:
 
-``` java
+```java
 record MessageBoardEndpoint(Queue<String> messageQueue) implements WsListener {
     @Override
     public void onMessage(WsSession session, String text, boolean last) {
@@ -59,7 +59,7 @@ This is an example of a programmatic endpoint that extends `WsListener`. The met
 
 In Helidon SE, REST and WebSocket classes need to be manually registered into the web server. This is accomplished via a `Routing` builder:
 
-``` java
+```java
 StaticContentService staticContent = StaticContentService.builder("/WEB")
         .welcomeFileName("index.html")
         .build();

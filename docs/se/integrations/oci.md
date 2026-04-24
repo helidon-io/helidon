@@ -18,7 +18,7 @@ To enable OCI Integration, add the following dependency to your project’s `pom
 
 *Adding the Helidon OCI SDK Integration dependency for Config, Config File and Session Token*
 
-``` xml
+```xml
 <dependency>
      <groupId>io.helidon.integrations.oci</groupId>
      <artifactId>helidon-integrations-oci</artifactId>
@@ -27,7 +27,7 @@ To enable OCI Integration, add the following dependency to your project’s `pom
 
 *Adding the Helidon OCI SDK Integration dependency for Resource Principal*
 
-``` xml
+```xml
 <dependency>
      <groupId>io.helidon.integrations.oci.authentication</groupId>
      <artifactId>helidon-integrations-oci-authentication-resource</artifactId>
@@ -36,7 +36,7 @@ To enable OCI Integration, add the following dependency to your project’s `pom
 
 *Adding the Helidon OCI SDK Integration dependency for Instance Principal*
 
-``` xml
+```xml
 <dependency>
      <groupId>io.helidon.integrations.oci.authentication</groupId>
      <artifactId>helidon-integrations-oci-authentication-instance</artifactId>
@@ -45,7 +45,7 @@ To enable OCI Integration, add the following dependency to your project’s `pom
 
 *Adding the Helidon OCI SDK Integration dependency for OKE Workload*
 
-``` xml
+```xml
 <dependency>
      <groupId>io.helidon.integrations.oci.authentication</groupId>
      <artifactId>helidon-integrations-oci-authentication-oke-workload</artifactId>
@@ -75,7 +75,7 @@ To configure authentication, add the `helidon.oci.authentication-method` propert
 
 *oci-config.yaml helidon.oci.authentication-method example*
 
-``` yaml
+```yaml
 helidon.oci:
   authentication-method: "auto"
   allowed-authentication-methods: ["config", "config-file", "session-token", "resource-principal", "instance-principal", "oke-workload-identity"]
@@ -86,7 +86,7 @@ helidon.oci:
 
 If your environment is already set up to work with the OCI SDK or the OCI CLI, then it is likely you do not need to perform any additional configuration for this integration. When the provider is added as a dependency, it will self-configure.
 
-``` java
+```java
 ServiceRegistryManager registryManager = ServiceRegistryManager.create();
 ServiceRegistry registry = registryManager.registry();
 BasicAuthenticationDetailsProvider authProvider = registry.get(BasicAuthenticationDetailsProvider.class);
@@ -108,7 +108,7 @@ To enable the OCI Object Storage integration, add the following dependency to yo
 
 *Adding the dependency for OCI Object Storage*
 
-``` xml
+```xml
 <dependency>
     <groupId>com.oracle.oci.sdk</groupId>
     <artifactId>oci-java-sdk-objectstorage</artifactId>
@@ -119,7 +119,7 @@ To enable the OCI Object Storage integration, add the following dependency to yo
 
 Now you can create OCI SDK clients for Object Storage.
 
-``` java
+```java
 BasicAuthenticationDetailsProvider authProvider = Services.get(BasicAuthenticationDetailsProvider.class);
 ObjectStorage objectStorageClient = ObjectStorageClient.builder().build(authProvider);
 ```
@@ -164,7 +164,7 @@ The following information is made available from IMDS in `io.helidon.integration
 
 *oci-config.yaml auth config*
 
-``` yaml
+```yaml
 helidon.oci:
   authentication-method: "auto" # can select a specific authentication method to use, defaults to auto to choose from allowed.
   allowed-authentication-methods: ["config", "config-file", "session-token", "resource-principal", "instance-principal", "oke-workload-identity"] # limit the list of authentication methods to try with auto

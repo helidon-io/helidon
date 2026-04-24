@@ -48,7 +48,7 @@ You can create Microprofile Config Source from a map.
 
 *Create MicroProfile Config Source based on Environment Variables and Custom Map*
 
-``` java
+```java
 ConfigProviderResolver resolver = ConfigProviderResolver.instance();
 
 Config config = resolver.getBuilder() 
@@ -71,7 +71,7 @@ You can create YAML Microprofile Config Source from a path or a URL. When you cr
 
 *Create YamlMPConfigSource from a path*
 
-``` java
+```java
 ConfigProviderResolver.instance().getBuilder()
         .withSources(YamlMpConfigSource.create(path))
         .build();
@@ -90,7 +90,7 @@ The interface `org.eclipse.microprofile.config.spi.ConfigSource` requires implem
 
 ### Example of a Custom Config Source
 
-``` java
+```java
 public class CustomConfigSource implements ConfigSource {
     private static final String NAME = "MyConfigSource";
     private static final int ORDINAL = 200; // Default for MP is 100
@@ -140,7 +140,7 @@ If a file named `mp-meta-config.yaml`, or `mp-meta-config.properties` is in the 
 
 *Example of a YAML meta configuration file:*
 
-``` yaml
+```yaml
 add-discovered-sources: true 
 add-discovered-converters: false 
 add-default-sources: false 
@@ -178,7 +178,7 @@ sources:
 
 **Important Note:** To enable support for `HOCON` and `JSON` types, add the following dependency to your project’s pom.xml.
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-hocon-mp</artifactId>
@@ -196,7 +196,7 @@ The interface `io.helidon.config.mp.spi.MpMetaConfigProvider` requires implement
 
 ### Example of a Meta-Config Custom Type
 
-``` java
+```java
 public class CustomMpMetaConfigProvider implements MpMetaConfigProvider {
 
     @Override
@@ -260,7 +260,7 @@ public class CustomMpMetaConfigProvider implements MpMetaConfigProvider {
 
 To use the Helidon SE features in Helidon MP, create MicroProfile Config Source from Helidon SE Config Source. The Config Source is immutable regardless of configured polling strategy or change watchers.
 
-``` java
+```java
 Config config = ConfigProviderResolver.instance()
         .getBuilder()
         .withSources(MpConfigSources.create(helidonConfigSource)) 
@@ -273,7 +273,7 @@ Config config = ConfigProviderResolver.instance()
 
 To use advanced Helidon SE features in Helidon MP, create MicroProfile Config Source from Helidon SE Config. The Config Source is mutable if the config uses either polling strategy and change watchers, or polling strategy or change watchers. The latest config version is queried each time `org.eclipse.microprofile.config.spi.ConfigSource#getValue(String)` is called.
 
-``` java
+```java
 io.helidon.config.Config helidonConfig = io.helidon.config.Config.builder()
         .addSource(ConfigSources.create(Map.of("key", "value"))) 
         .build();

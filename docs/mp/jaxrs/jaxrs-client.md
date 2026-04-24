@@ -8,7 +8,7 @@ The Jakarta REST Client defines a programmatic API to access REST resources. Thi
 
 To enable Jakarta REST Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
  <dependency>
      <groupId>io.helidon.jersey</groupId>
      <artifactId>helidon-jersey-client</artifactId>
@@ -19,7 +19,7 @@ To enable Jakarta REST Client, add the following dependency to your project’s 
 
 Bootstrapping the API is done by obtaining an instance of `Client`. A single instance of this class can be used to create multiple service requests that share the same basic configuration, e.g., the same set of *providers*. More precisely, from a `Client` we can create multiple `WebTarget` s, and in turn, from each `WebTarget` we can create multiple `Invocation` s.
 
-``` java
+```java
 Client client = ClientBuilder.newClient();
 Response res = client
         .target("http://localhost:8080/greet")
@@ -31,7 +31,7 @@ In the snippet above, the call to `target` returns a `WebTarget`, and the call t
 
 Given that this API is fully integrated with message body readers and writers, it is possible to request the response body be provided after conversion to a Java type — such as a `String` in the example below.
 
-``` java
+```java
 Client client = ClientBuilder.newClient();
 String res = client
         .target("http://localhost:8080/greet")
@@ -43,7 +43,7 @@ Alternatively, there are also methods in `Response` that can trigger similar con
 
 Configuration can be specified at the `Client` or `WebTarget` level, as both types implement `Configurable<T>`. This enables common configuration to be inherited by a `WebTarget` created from a `Client` instance. In either case, several `register` methods can be used to configure providers such as filters and exception mappers.
 
-``` java
+```java
 Client client = ClientBuilder.newClient();
 client.register(GreetFilter.class);
 String res = client
@@ -59,7 +59,7 @@ The Jakarta REST Client API has support for asynchronous invocations. Accessing 
 
 Using `Future`:
 
-``` java
+```java
 Client client = ClientBuilder.newClient();
 Future<String> res = client
         .target("http://localhost:8080/greet")
@@ -70,7 +70,7 @@ Future<String> res = client
 
 Or using a more modern, reactive style:
 
-``` java
+```java
 Client client = ClientBuilder.newClient();
 CompletionStage<String> res = client
         .target("http://localhost:8080/greet")

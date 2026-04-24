@@ -38,7 +38,7 @@ To use the OpenAPI generator plug-in to generate or regenerate files during your
 
 *Declaring the OpenAPI Generator Plug-in*
 
-``` xml
+```xml
 <properties>
     <openapi-generator-version>7.6.0</openapi-generator-version>
 </properties>
@@ -421,7 +421,7 @@ The following example uses the Helidon server generator to create a project or r
 
 *Creating or updating a server project using the OpenAPI generator CLI*
 
-``` bash
+```bash
 java -jar ${path-to-generator}/openapi-generator-cli.jar \
   generate \
   -i src/main/resources/petstore.yaml \
@@ -439,7 +439,7 @@ The next example runs the Helidon client generator using the same input file.
 
 *Creating or updating a client project using the OpenAPI generator CLI*
 
-``` bash
+```bash
 java -jar ${path-to-generator}/openapi-generator-cli.jar \
   generate \
   -i src/main/resources/petstore.yaml \
@@ -474,7 +474,7 @@ The plug-in execution in the following example is equivalent to the CLI example 
 
 *Creating or updating a client project using the OpenAPI Maven plug-in*
 
-``` xml
+```xml
 <plugin>
     <groupId>org.openapitools</groupId>
     <artifactId>openapi-generator-maven-plugin</artifactId>
@@ -543,7 +543,7 @@ In the following example, `ExampleResource` (itself running in a server) invokes
 
 *Using the generated `PetApi` returned from a separate service*
 
-``` java
+```java
 @Path("/exampleServiceCallingService") 
 public class ExampleOpenApiGenClientResource {
     @Inject 

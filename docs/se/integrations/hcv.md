@@ -8,7 +8,7 @@ HashiCorp Vault is a commonly used Vault in many microservices. The APIs are RES
 
 To enable HashiCorp Vault, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.integrations.vault</groupId>
     <artifactId>helidon-integrations-vault</artifactId>
@@ -17,7 +17,7 @@ To enable HashiCorp Vault, add the following dependency to your project’s `pom
 
 The following is a list of maven coordinates of all Vault modules available:
 
-``` xml
+```xml
 <dependencies>
     <dependency>
         <groupId>io.helidon.integrations.vault.auths</groupId>
@@ -68,7 +68,7 @@ Vault integration supports the following:
 
 Each of these features is implemented as a separate module, with the Vault class binding them together. Code to set up Vault and obtain a specific secret engine:
 
-``` java
+```java
 Vault vault = Vault.builder()
         .config(config.get("vault"))
         .build();
@@ -117,7 +117,7 @@ In addition to these features, Vault itself can be authenticated as follows:
 
 Code to get the Sys operations of Vault:
 
-``` java
+```java
 Sys sys = vault.sys(Sys.API);
 ```
 
@@ -127,7 +127,7 @@ New secret engines and authentication methods can be implemented quite easily, a
 
 See the following SPIs:
 
-``` text
+```text
 io.helidon.integrations.vault.spi.AuthMethodProvider
 io.helidon.integrations.vault.spi.SecretsEngineProvider
 io.helidon.integrations.vault.spi.SysProvider
@@ -143,7 +143,7 @@ The following example shows usage of Vault to encrypt a secret.
 
 Configure the `Vault` object using token base configuration:
 
-``` java
+```java
 Vault tokenVault = Vault.builder()
         .config(config.get("vault.token"))
         .updateWebClient(it -> it
@@ -154,7 +154,7 @@ Vault tokenVault = Vault.builder()
 
 Then `WebServer` has to be configured with endpoints routing registered:
 
-``` java
+```java
 Sys sys = tokenVault.sys(Sys.API);
 WebServer webServer = WebServer.builder()
         .config(config.get("server"))
@@ -173,7 +173,7 @@ AppRole-based and Kubernetes authentications are available.
 
 Cubbyhole secrets engine operations:
 
-``` java
+```java
 @Override
 public void routing(HttpRules rules) {
     rules.get("/create", this::createSecrets)
@@ -205,7 +205,7 @@ void getSecret(ServerRequest req, ServerResponse res) {
 
 Key/Value version 1 secrets engine operations:
 
-``` java
+```java
 @Override
 public void routing(HttpRules rules) {
     rules.get("/enable", this::enableEngine)
@@ -260,7 +260,7 @@ void getSecret(ServerRequest req, ServerResponse res) {
 
 Key/Value version 2 secrets engine operations:
 
-``` java
+```java
 @Override
 public void routing(HttpRules rules) {
     rules.get("/create", this::createSecrets)
@@ -302,7 +302,7 @@ void getSecret(ServerRequest req, ServerResponse res) {
 
 Transit secrets engine operations:
 
-``` java
+```java
 @Override
 public void routing(HttpRules rules) {
     rules.get("/enable", this::enableEngine)
@@ -425,7 +425,7 @@ void verify(ServerRequest req, ServerResponse res) {
 
 In order to use Kubernetes authentication:
 
-``` java
+```java
 class K8sExample {
     private static final String SECRET_PATH = "k8s/example/secret";
     private static final String POLICY_NAME = "k8s_policy";
@@ -506,7 +506,7 @@ class K8sExample {
 
 Vault is available as a docker image, so to test locally, you can simply:
 
-``` bash
+```bash
 docker run -e VAULT_DEV_ROOT_TOKEN_ID=my-token -d --name=vault -p8200:8200 vault
 ```
 

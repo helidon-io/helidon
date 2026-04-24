@@ -12,7 +12,7 @@ Helidon MP supports a new `@ExecuteOn` annotation to give developers full contro
 
 To enable ExecuteOn, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile</groupId>
     <artifactId>helidon-microprofile-cdi</artifactId>
@@ -38,7 +38,7 @@ The API consists of a single `@ExecuteOn` annotation (with a few parameters) tha
 
 The implementation of the `@ExecuteOn` annotation takes advantage of Helidon’s `ThreadPoolSupplier` to (lazily) create a pool of platform threads. The default configuration for this thread pool can be overridden using the (root) config key `execute-on.platform` as shown in the example below.
 
-``` yaml
+```yaml
 execute-on:
   platform:
     thread-name-prefix: "my-platform-thread"
@@ -49,7 +49,7 @@ execute-on:
 
 For more information see the Javadoc for [io.helidon.common.configurable.ThreadPoolSupplier](/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolSupplier.html). For virtual threads, only the thread name prefix can be overridden as follows:
 
-``` yaml
+```yaml
 execute-on:
   virtual:
     thread-name-prefix: "my-virtual-thread"

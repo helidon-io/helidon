@@ -8,7 +8,7 @@ This module adds support for selected Oracle Cloud Infrastructure GenAI models.
 
 In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.integrations.langchain4j.providers</groupId>
     <artifactId>helidon-integrations-langchain4j-providers-oci-genai</artifactId>
@@ -19,7 +19,7 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 Integration uses OCI SDK authentication provider bean from the service registry. The simplest way to configure it is by adding [Helidon OCI integration](https://github.com/helidon-io/helidon/tree/main/integrations/oci/oci):
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.integrations.oci</groupId>
     <artifactId>helidon-integrations-oci</artifactId>
@@ -36,7 +36,7 @@ Helidon OCI integration makes OCI Authentication provider available as a Helidon
 
 Example of OCI specific configuration file `oci-config.yaml`:
 
-``` yaml
+```yaml
 helidon.oci:
   # "config-file" value can instruct integration to
   # load values from `~/.oci/config` file
@@ -53,7 +53,7 @@ helidon.oci:
 
 More authentication methods are available like `oke-workload-identity` or `resource-principal`, for example, authentication method `config-file` can instruct integration to use `~/.oci/config` file:
 
-``` yaml
+```yaml
 helidon.oci:
   authentication-method: "config-file"
 ```
@@ -68,7 +68,7 @@ More general information about Helidon OCI authentication integration can be fou
 
 To automatically create and add `OciGenAiChatModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     oci-gen-ai:
@@ -112,7 +112,7 @@ Full list of configuration properties:
 
 To automatically create and add `OciGenAiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     oci-gen-ai:
@@ -244,7 +244,7 @@ Full list of configuration properties:
 
 To automatically create and add `OciGenAiChatModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     oci-gen-ai-cohere:
@@ -390,7 +390,7 @@ Full list of configuration properties:
 
 To automatically create and add `OciGenAiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     oci-gen-ai-cohere:

@@ -40,7 +40,7 @@ The application path, also known as context root, is the base URI used to serve 
 
 When an `Application` subclass is provided, use the `@ApplicationPath`:
 
-``` java
+```java
 @ApplicationPath("/my-application")
 public class MyApplication extends Application {
 
@@ -51,7 +51,7 @@ The served resources can be reached through `/my-application/{myResources}` endp
 
 Example of custom application path using `.yaml` file:
 
-``` yaml
+```yaml
 io.helidon.examples.MyApplication:
   routing-path:
     path: "/my-application"
@@ -59,13 +59,13 @@ io.helidon.examples.MyApplication:
 
 The same configuration works for `.properties` file:
 
-``` properties
+```properties
 io.helidon.examples.MyApplication.routing-path.path=/my-application
 ```
 
 If an `Application` is not provided, a *synthetic* subclass is created and can be configured using this property:
 
-``` properties
+```properties
 jakarta.ws.rs.core.Application.routing-path.path=/my-application
 ```
 
@@ -73,7 +73,7 @@ jakarta.ws.rs.core.Application.routing-path.path=/my-application
 
 Jakarta REST provides access to the `Application` subclass instance via injection using `@Context`. This form of access is still supported in Helidon but this is not enough if two or more subclasses are present. Given that support for two or more `Application` subclasses is a Helidon extension, a new mechanism is provided via the `ServerRequest` 's context object as shown next.
 
-``` java
+```java
 @Path("myresource")
 public class MyResource {
 

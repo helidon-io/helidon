@@ -10,7 +10,7 @@ The JSON Binding module (`helidon-json-binding`) provides high-level object seri
 
 ### Maven Coordinates
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.json</groupId>
     <artifactId>helidon-json-binding</artifactId>
@@ -42,7 +42,7 @@ Alternatively, you can use the `helidon-bundles-apt` dependency which includes t
 
 *Annotation processor configuration with bundles*
 
-``` xml
+```xml
 <build>
     <plugins>
         <plugin>
@@ -68,7 +68,7 @@ Configure the annotation processors in your Maven build:
 
 *Annotation processor configuration*
 
-``` xml
+```xml
 <build>
     <plugins>
         <plugin>
@@ -107,7 +107,7 @@ The [`JsonBinding`](/apidocs/io.helidon.json.binding/io/helidon/json/binding/Jso
 
 *JsonBinding usage*
 
-``` java
+```java
 JsonBinding binding = JsonBinding.create();
 
 // Deserialize JSON string to object
@@ -129,7 +129,7 @@ This annotation also lets you control how the binder discovers properties using 
 
 *Using @Json.Entity*
 
-``` java
+```java
 @Json.Entity
 class Person {
     private String name;
@@ -147,7 +147,7 @@ Customizes the JSON property name for a field or method. This affects how fields
 
 *Basic property name customization*
 
-``` java
+```java
 @Json.Entity
 class Person {
     private String firstName;
@@ -161,13 +161,13 @@ class Person {
 
 This produces the following JSON output:
 
-``` json
+```json
 {"firstName":"John","last_name":"Doe"}
 ```
 
 *Method-level property naming*
 
-``` java
+```java
 @Json.Entity
 class Person {
     private String firstName;
@@ -184,7 +184,7 @@ class Person {
 
 This produces the following JSON output:
 
-``` json
+```json
 {"firstName":"John","lastName":"Doe","fullName":"John Doe"}
 ```
 
@@ -196,7 +196,7 @@ Excludes fields or methods from serialization/deserialization. Fields marked as 
 
 *Basic field exclusion*
 
-``` java
+```java
 @Json.Entity
 class Person {
     private String name;
@@ -211,13 +211,13 @@ class Person {
 
 This produces the following JSON output:
 
-``` json
+```json
 {"name":"John","age":30}
 ```
 
 *Automatic transient field exclusion*
 
-``` java
+```java
 @Json.Entity
 class Person {
     private String name;
@@ -230,13 +230,13 @@ class Person {
 
 This produces the following JSON output:
 
-``` json
+```json
 {"name":"John","data":"value"}
 ```
 
 *Method-level exclusion*
 
-``` java
+```java
 @Json.Entity
 class Person {
     private String firstName;
@@ -253,7 +253,7 @@ class Person {
 
 This produces the following JSON output:
 
-``` json
+```json
 {"lastName":"Doe"}
 ```
 
@@ -265,7 +265,7 @@ Marks properties as required during deserialization.
 
 *Using @Json.Required*
 
-``` java
+```java
 @Json.Entity
 class Person {
     @Json.Required
@@ -285,7 +285,7 @@ Controls whether null values are included in JSON output. Null values are omitte
 
 *Default behavior - nulls omitted*
 
-``` java
+```java
 @Json.Entity
 class PersonDefault {
     private String name;
@@ -297,13 +297,13 @@ class PersonDefault {
 
 This produces the following JSON output:
 
-``` json
+```json
 {"name":"John"}
 ```
 
 *Class-level null serialization*
 
-``` java
+```java
 @Json.Entity
 @Json.SerializeNulls
 class PersonWithNulls {
@@ -316,13 +316,13 @@ class PersonWithNulls {
 
 This produces the following JSON output:
 
-``` json
+```json
 {"name":"John","age":null}
 ```
 
 *Field-level null serialization*
 
-``` java
+```java
 @Json.Entity
 class PersonSelective {
     private String name;
@@ -336,13 +336,13 @@ class PersonSelective {
 
 This produces the following JSON output:
 
-``` json
+```json
 {"name":"John","city":null}
 ```
 
 *Mixed scenarios - different null handling*
 
-``` java
+```java
 @Json.Entity
 @Json.SerializeNulls
 class PersonMixed {
@@ -357,7 +357,7 @@ class PersonMixed {
 
 This produces the following JSON output:
 
-``` json
+```json
 {"name":"John"}
 ```
 
@@ -369,7 +369,7 @@ Marks constructors or factory methods for object creation during deserialization
 
 *Using @Json.Creator constructor*
 
-``` java
+```java
 @Json.Entity
 class Person {
     private final String name;
@@ -387,7 +387,7 @@ class Person {
 
 *Using @Json.Creator factory method*
 
-``` java
+```java
 @Json.Entity
 static class PersonWithCreator {
     private final String name;
@@ -411,7 +411,7 @@ Controls the order of properties in JSON output. By default, the order is undefi
 
 *Undefined/Any declaration order (default)*
 
-``` java
+```java
 @Json.Entity
 class PersonDefault {
     private String zebra;
@@ -422,13 +422,13 @@ class PersonDefault {
 
 This produces the following JSON output:
 
-``` json
+```json
 {"zebra":"value","alpha":"value","beta":"value"}
 ```
 
 *Alphabetical ordering*
 
-``` java
+```java
 @Json.Entity
 @Json.PropertyOrder(Order.ALPHABETICAL)
 class PersonAlphabetical {
@@ -440,13 +440,13 @@ class PersonAlphabetical {
 
 This produces the following JSON output:
 
-``` json
+```json
 {"alpha":"value","beta":"value","zebra":"value"}
 ```
 
 *Reverse alphabetical ordering*
 
-``` java
+```java
 @Json.Entity
 @Json.PropertyOrder(Order.REVERSE_ALPHABETICAL)
 class PersonReverse {
@@ -458,7 +458,7 @@ class PersonReverse {
 
 This produces the following JSON output:
 
-``` json
+```json
 {"zebra":"value","beta":"value","alpha":"value"}
 ```
 
@@ -470,7 +470,7 @@ Specify custom serialization/deserialization logic using `JsonSerializer` and `J
 
 *Using @Json.Deserializer*
 
-``` java
+```java
 record MyType() { }
 
 class CustomDeserializer implements JsonDeserializer<MyType> {
@@ -504,7 +504,7 @@ Provides information about a builder class for object construction.
 
 *Using @Json.BuilderInfo*
 
-``` java
+```java
 class PersonBuilder {
     private String name;
     private int age;
@@ -547,7 +547,7 @@ Controls behavior when unknown properties are encountered during deserialization
 
 *Using @Json.FailOnUnknown*
 
-``` java
+```java
 @Json.Entity
 @Json.FailOnUnknown
 class StrictPerson {
@@ -569,7 +569,7 @@ By default, empty Optional fields are omitted from JSON output. When `@Json.Seri
 
 *Default behavior - empty optionals omitted*
 
-``` java
+```java
 @Json.Entity
 class PersonDefault {
     private String name;
@@ -581,13 +581,13 @@ class PersonDefault {
 
 This produces the following JSON output:
 
-``` json
+```json
 {"name":"John"}
 ```
 
 *With @Json.SerializeNulls - empty optionals included as null*
 
-``` java
+```java
 @Json.Entity
 @Json.SerializeNulls
 class PersonWithNulls {
@@ -600,7 +600,7 @@ class PersonWithNulls {
 
 This produces the following JSON output:
 
-``` json
+```json
 {"name":"John","middleName":null}
 ```
 
@@ -647,7 +647,7 @@ The JSON module (`helidon-json`) provides fundamental JSON parsing and generatio
 
 ### Maven Coordinates
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.json</groupId>
     <artifactId>helidon-json</artifactId>
@@ -676,7 +676,7 @@ The JSON module (`helidon-json`) provides fundamental JSON parsing and generatio
 
 *Creating and using JsonParser*
 
-``` java
+```java
 JsonParser parser = JsonParser.create("{\"name\":\"John\",\"age\":30}");
 
 JsonObject object = parser.readJsonObject();
@@ -689,7 +689,7 @@ For more control, JsonParser also supports manual token-by-token parsing:
 
 *Manual token-by-token parsing with JsonParser*
 
-``` java
+```java
 JsonParser parser = JsonParser.create("{\"name\":\"John\",\"age\":30,\"active\":true}");
 
 // Manual parsing - check for object start
@@ -760,7 +760,7 @@ This approach provides fine-grained control over parsing, allowing you to handle
 
 *Basic JSON generation*
 
-``` java
+```java
 JsonGenerator generator = JsonGenerator.create(outputStream);
 
 generator.writeObjectStart();
@@ -771,13 +771,13 @@ generator.writeObjectEnd();
 
 This generates the following JSON output:
 
-``` json
+```json
 {"name":"John","age":30}
 ```
 
 *Complex JSON structure generation*
 
-``` java
+```java
 JsonGenerator generator = JsonGenerator.create(outputStream);
 
 generator.writeObjectStart();
@@ -797,7 +797,7 @@ generator.writeObjectEnd();
 
 This generates the following JSON output:
 
-``` json
+```json
 {
   "person": {
     "name": "John",
@@ -817,7 +817,7 @@ This generates the following JSON output:
 
 *Using JsonObject*
 
-``` java
+```java
 JsonObject person = JsonObject.builder()
     .set("name", "John")
     .set("age", 30)
@@ -846,7 +846,7 @@ JsonObject personWithAddress = JsonObject.builder()
 
 *Using JsonArray*
 
-``` java
+```java
 JsonArray hobbies = JsonArray.createStrings(List.of("reading", "coding", "gaming"));
 JsonArray numbers = JsonArray.createNumbers(List.of(
         new BigDecimal("1"), new BigDecimal("2"), new BigDecimal("3")));
@@ -863,7 +863,7 @@ List<JsonValue> numberValues = numbers.values();
 
 *Using JsonString*
 
-``` java
+```java
 JsonString name = JsonString.create("John Doe");
 String value = name.value(); // "John Doe"
 
@@ -878,7 +878,7 @@ JsonString greeting = parser.readJsonString();
 
 *Using JsonNumber*
 
-``` java
+```java
 JsonNumber age = JsonNumber.create(new BigDecimal("30"));
 int intValue = age.intValue();
 double doubleValue = age.doubleValue();
@@ -895,7 +895,7 @@ JsonNumber number = parser.readJsonNumber();
 
 *Using JsonBoolean*
 
-``` java
+```java
 JsonBoolean active = JsonBoolean.create(true);
 boolean value = active.value(); // true
 
@@ -908,7 +908,7 @@ JsonBoolean inactive = JsonBoolean.FALSE; // Predefined constants
 
 *Using JsonNull*
 
-``` java
+```java
 JsonNull nullValue = JsonNull.instance();
 
 // In collections

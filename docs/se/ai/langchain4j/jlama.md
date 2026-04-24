@@ -8,7 +8,7 @@ This module adds support for selected [Jlama](https://github.com/tjake/Jlama) mo
 
 In addition to the [Helidon integration with LangChain4J core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.integrations.langchain4j.providers</groupId>
     <artifactId>helidon-integrations-langchain4j-providers-jlama</artifactId>
@@ -21,7 +21,7 @@ In addition to the [Helidon integration with LangChain4J core dependencies](lang
 
 To automatically create and add `JlamaChatModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     jlama:
@@ -54,7 +54,7 @@ Full list of configuration properties:
 
 To automatically create and add `JlamaEmbeddingModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     jlama:
@@ -84,7 +84,7 @@ Full list of configuration properties:
 
 To automatically create and add `JlamaLanguageModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     jlama:
@@ -117,7 +117,7 @@ Full list of configuration properties:
 
 To automatically create and add `JlamaStreamingChatModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     jlama:

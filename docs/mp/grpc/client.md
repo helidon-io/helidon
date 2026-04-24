@@ -8,7 +8,7 @@ Building Java-based gRPC clients using the Helidon MP gRPC API is very simple an
 
 To enable gRPC MicroProfile Clients, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.grpc</groupId>
     <artifactId>helidon-microprofile-grpc-client</artifactId>
@@ -27,7 +27,7 @@ The following annotations are used to work with Helidon MP gRPC clients:
 
 For a gRPC client to connect to a server, it requires a channel. Channels are configured in the `grpc` section of the Helidon application configuration. The examples below use an `application.yaml` file but there are many other ways to to configure Helidon. See [Configuration in Helidon](../../mp/config/introduction.md) for more information.
 
-``` yaml
+```yaml
 grpc:
   client:
     channels:  
@@ -47,7 +47,7 @@ While most client applications only connect to a single server, it is possible t
 
 gRPC runs on top of HTTP/2 which prefers secure TLS connections. Most gRPC channels will also include a section to configure TLS. Here is a sample of that configuration for the `string-channel`:
 
-``` yaml
+```yaml
 grpc:
   client:
     channels:
@@ -71,7 +71,7 @@ TLS in the gRPC MP client section is configured in the same way as in other Heli
 
 Given that TLS is enabled by default in gRPC, it must be explicitly turned off by setting the `enabled` flag to `false` when connecting to an unsecure endpoint. For example, to turn off TLS for the `string-channel` above use:
 
-``` yaml
+```yaml
 grpc:
   client:
     channels:
@@ -90,7 +90,7 @@ grpc:
 
 The next step is to produce an interface with the service methods that the client requires. For example, suppose we have a simple service that has a unary method to convert a string to uppercase. To write a client for this service, all that is required is an interface as shown next:
 
-``` java
+```java
 @ApplicationScoped
 @Grpc.GrpcService("StringService")  
 @Grpc.GrpcChannel("string-channel")  
@@ -108,7 +108,7 @@ There is no need to write any code to implement the client. The Helidon MP gRPC 
 
 The interface in the example above uses the same method signature as the server, but this does not need to be the case. For example, it can use a `StreamObserver<String>` as a second parameter to return the result:
 
-``` java
+```java
 @ApplicationScoped
 @Grpc.GrpcService("StringService")
 @Grpc.GrpcChannel("string-channel")
@@ -123,7 +123,7 @@ interface StringServiceClient {
 
 Now that there is a client interface and a channel configuration, we can then use these in the client application. We can declare a field of the same type as the client service interface in the application class that requires the client. The field is then annotated so that CDI will inject the client proxy into the field.
 
-``` java
+```java
 @ApplicationScoped
 public class MyAppBean {
 
@@ -146,7 +146,7 @@ Channels can also be directly injected into application bean instances. The Heli
 
 For example, a class might have an injectable `io.grpc.Channel` field as follows:
 
-``` java
+```java
     @Inject  
     @Grpc.GrpcChannel("string-channel")  
     private Channel channel;

@@ -17,7 +17,7 @@ Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
 *Verify Prerequisites*
 
-``` bash
+```bash
 java -version
 mvn --version
 docker --version
@@ -26,7 +26,7 @@ kubectl version
 
 *Setting JAVA_HOME*
 
-``` bash
+```bash
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -49,7 +49,7 @@ To install Keycloak with Docker, open a terminal and make sure the port 8080 is 
 
 *Enter the following command*
 
-``` bash
+```bash
 docker run -p 8080:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:24.0.5 start-dev
 ```
 
@@ -69,7 +69,7 @@ Open keycloak folder to make it your current directory.
 
 *Run this command from command prompt to open the directory:*
 
-``` bash
+```bash
 cd keycloak-24.0.5
 ```
 
@@ -79,13 +79,13 @@ To start keycloak and have it ready for further steps, run the following command
 
 *On Linux run:*
 
-``` bash
+```bash
 bin/kc.sh start-dev
 ```
 
 *On Windows run:*
 
-``` bash
+```bash
 bin\kc.bat start-dev
 ```
 
@@ -192,7 +192,7 @@ Use the Helidon MP Maven archetype to create a simple project. It will be used a
 
 *Run the Maven archetype*
 
-``` bash
+```bash
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -204,7 +204,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 *The project will be built and run from the helidon-quickstart-mp directory:*
 
-``` bash
+```bash
 cd helidon-quickstart-mp
 ```
 
@@ -214,7 +214,7 @@ Update the pom.xml file and add the following Helidon dependency to the `<depend
 
 *Add the following dependencies to `pom.xml`:*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile</groupId>
     <artifactId>helidon-microprofile-security</artifactId>
@@ -231,7 +231,7 @@ The OIDC security provider configuration can be joined to helidon configuration 
 
 *Create application.yaml file and add the following line*
 
-``` yaml
+```yaml
 security:
   providers:
     - abac:
@@ -257,7 +257,7 @@ Make sure keycloak and the application are not running on the same port. The app
 
 *Change these properties to configure the server host and port*
 
-``` properties
+```properties
 server.port=7987
 server.host=localhost
 ```
@@ -266,13 +266,13 @@ If the port 7987 is already used, check what port is free on your machine.
 
 *Replace the old port into microprofile-config.properties*
 
-``` properties
+```properties
 server.port="{Your-new-port}"
 ```
 
 *Replace the old port into application.yaml*
 
-``` yaml
+```yaml
 frontend-uri: "http://localhost:{Your-new-port}"
 ```
 
@@ -282,7 +282,7 @@ The `GreetResource` class is a JAX-RS resource available at the endpoint `/greet
 
 *Add `@Authenticated` to secure `getDefaultMessage`*
 
-``` java
+```java
 @Authenticated
 @GET
 @Produces(MediaType.APPLICATION_JSON)
@@ -299,7 +299,7 @@ Helidon and Keycloak are now correctly configured and your application is safe.
 
 *Build the application, skipping unit tests, then run it:*
 
-``` bash
+```bash
 mvn package -DskipTests
 java -jar target/helidon-quickstart-mp.jar
 ```
@@ -330,7 +330,7 @@ In the test folder `helidon-quickstart-mp/src/test`:
 
 *Create a new directory with configuration file*
 
-``` bash
+```bash
 mkdir resources
 cd resources
 touch application.yaml
@@ -340,7 +340,7 @@ Open the application.yaml file you just created.
 
 *Copy these properties into the new application.yaml*
 
-``` yaml
+```yaml
 security:
   providers:
     - type: oidc
@@ -363,7 +363,7 @@ Firstly, create new test method `testHelloWorld`
 
 *Add this method to the test class*
 
-``` java
+```java
 @Test
 void testHelloWorld() {
 }
@@ -373,7 +373,7 @@ Now we can add the first test:
 
 *Add this code into `testHelloWorld` method:*
 
-``` java
+```java
 try (Response r = target
         .path("greet")
         .request()
@@ -388,7 +388,7 @@ Only `jack` user has access to this part of the application.
 
 *Change the testHelloWorld method:*
 
-``` java
+```java
 String encoding = Base64.getEncoder().encodeToString("jack:changeit".getBytes());
 Message jsonMessage = target
         .path("greet")
@@ -405,7 +405,7 @@ Now, the project can be built without skipping test.
 
 *Build the project*
 
-``` bash
+```bash
 mvn clean install
 ```
 
@@ -431,7 +431,7 @@ In order to achieve the third step, we can use Postman to exchange the authoriza
 
 *Enter the key:value*
 
-``` json
+```json
 [
     {"key":"grant_type","value":"authorization_code"},
     {"key":"client_id","value":"myClientID"},
@@ -448,7 +448,7 @@ The Direct Access Grants flow is used by REST clients that want to request token
 
 *Enter the following information:*
 
-``` json
+```json
 [
     {"key":"Header Prefix","value":"bearer"},
     {"key":"Grant type","value":"Password  Credentials"},
@@ -472,7 +472,7 @@ Navigate to the GreetResource and find the `getDefaultMessage` with @Authenticat
 
 *Add the @RolesAllowed annotation:*
 
-``` java
+```java
 @RolesAllowed("admin")
 class GreetResource {
 }
@@ -484,7 +484,7 @@ Then, add a user and roles to the `helidon-quickstart-mp/src/test/resources/appl
 
 *Add jack roles and create a new user named john:*
 
-``` yaml
+```yaml
 - http-basic-auth:
     users:
       - login: "jack"
@@ -501,7 +501,7 @@ The user `john` has only the `user` role so when accessing protected endpoint, a
 
 *Check that john does not have access*
 
-``` java
+```java
 String encoding = Base64.getEncoder().encodeToString("john:changeit".getBytes());
 
 try (Response r = target
@@ -515,7 +515,7 @@ try (Response r = target
 
 *Build the project*
 
-``` bash
+```bash
 mvn clean install
 ```
 

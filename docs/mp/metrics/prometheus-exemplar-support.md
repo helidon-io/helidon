@@ -21,7 +21,7 @@ Exemplar support in Helidon relies on the exemplar support provided by the under
 
 To enable OpenMetrics exemplar support, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.metrics</groupId>
     <artifactId>helidon-metrics-trace-exemplar</artifactId>
@@ -31,7 +31,7 @@ To enable OpenMetrics exemplar support, add the following dependency to your pro
 
 Also, include the Helidon integration module for a tracing implementation (such as [Helidon Zipkin](../../mp/tracing.md#zipkin-tracing))
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-zipkin</artifactId>
@@ -40,7 +40,7 @@ Also, include the Helidon integration module for a tracing implementation (such 
 
 Add the Helidon tracing component itself:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.tracing</groupId>
     <artifactId>helidon-microprofile-tracing</artifactId>

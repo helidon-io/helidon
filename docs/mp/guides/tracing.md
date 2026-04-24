@@ -17,7 +17,7 @@ Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
 *Verify Prerequisites*
 
-``` bash
+```bash
 java -version
 mvn --version
 docker --version
@@ -26,7 +26,7 @@ kubectl version
 
 *Setting JAVA_HOME*
 
-``` bash
+```bash
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -57,7 +57,7 @@ Use the Helidon MP Maven archetype to create a simple project that can be used f
 
 *Run the Maven archetype:*
 
-``` bash
+```bash
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -69,7 +69,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 *The project will be built and run from the `helidon-quickstart-mp` directory:*
 
-``` bash
+```bash
 cd helidon-quickstart-mp
 ```
 
@@ -79,7 +79,7 @@ First, you need to run the Jaeger tracer. Helidon will communicate with this tra
 
 *Run Jaeger within a docker container, then check the Jaeger server working:*
 
-``` bash
+```bash
 docker run -d --name jaeger \                  
   -e COLLECTOR_OTLP_ENABLED=true \
   -p 6831:6831/udp \
@@ -99,7 +99,7 @@ docker run -d --name jaeger \
 
 *Check the Jaeger server by opening in browser:*
 
-``` bash
+```bash
 http://localhost:16686/search
 ```
 
@@ -109,7 +109,7 @@ Update the pom.xml file and add the following Jaeger dependency to the `<depende
 
 *Add the following dependency to `pom.xml`:*
 
-``` xml
+```xml
 <dependencies>
     <dependency>
         <groupId>io.helidon.microprofile.tracing</groupId>
@@ -126,26 +126,26 @@ All spans sent by Helidon to Jaeger need to be associated with a service. Specif
 
 *Add the following line to `META-INF/microprofile-config.properties`:*
 
-``` properties
+```properties
 tracing.service=helidon-mp-1
 ```
 
 *Build the application, skipping unit tests, then run it:*
 
-``` bash
+```bash
 mvn package -DskipTests=true
 java -jar target/helidon-quickstart-mp.jar
 ```
 
 *Run the curl command in a new terminal window and check the response:*
 
-``` bash
+```bash
 curl http://localhost:8080/greet
 ```
 
 *JSON response:*
 
-``` json
+```json
 {
   "message": "Hello World!"
 }
@@ -191,7 +191,7 @@ To trace at the method level, you just annotate a method with @Traced.
 
 *Add the @Traced annotation to the `getMessage` method:*
 
-``` java
+```java
 class GreetingProvider {
     @Traced 
     String getMessage() {
@@ -204,7 +204,7 @@ class GreetingProvider {
 
 *Build and run the application, then invoke the endpoints and check the response:*
 
-``` bash
+```bash
 curl http://localhost:8080/greet
 ```
 
@@ -216,7 +216,7 @@ To trace at the class level, annotate the class with @Traced. This will enable t
 
 *Add @Traced to the `GreetingProvider` class and remove @Traced from the `getMessage` method:*
 
-``` java
+```java
 @Traced 
 @ApplicationScoped
 public class GreetingProvider {
@@ -232,7 +232,7 @@ public class GreetingProvider {
 
 *Build and run the application, then invoke the endpoints and check the response:*
 
-``` bash
+```bash
 curl http://localhost:8080/greet
 ```
 
@@ -243,7 +243,7 @@ You can refresh the UI view and drill down the trace to see the new spans.
 
 *Update the `GreetingProvider` class with the following code:*
 
-``` java
+```java
 @ApplicationScoped
 public class GreetingProvider {
     private final AtomicReference<String> message = new AtomicReference<>();
@@ -274,7 +274,7 @@ public class GreetingProvider {
 
 *Build and run the application, then invoke the endpoints:*
 
-``` bash
+```bash
 curl http://localhost:8080/greet
 ```
 
@@ -290,7 +290,7 @@ To demonstrate distributed tracing, you will need to create a second project, wh
 
 *Run the Maven archetype:*
 
-``` bash
+```bash
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -302,13 +302,13 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 *The project will be built and run from the `helidon-quickstart-mp` directory:*
 
-``` bash
+```bash
 cd helidon-quickstart-mp-2
 ```
 
 *Add the following dependency to `pom.xml`:*
 
-``` xml
+```xml
 <dependency>
   <groupId>io.helidon.tracing.providers</groupId>
   <artifactId>helidon-tracing-providers-jaeger</artifactId>
@@ -317,7 +317,7 @@ cd helidon-quickstart-mp-2
 
 *Replace `META-INF/microprofile-config.properties` with the following:*
 
-``` properties
+```properties
 app.greeting=Hello From MP-2
 tracing.service=helidon-mp-2
 
@@ -328,20 +328,20 @@ server.host=0.0.0.0
 
 *Build the application, skipping unit tests, then run it:*
 
-``` bash
+```bash
 mvn package -DskipTests=true
 java -jar target/helidon-quickstart-mp-2.jar
 ```
 
 *Run the curl command in a new terminal window and check the response (**notice the port is 8081**) :*
 
-``` bash
+```bash
 curl http://localhost:8081/greet
 ```
 
 *JSON response:*
 
-``` json
+```json
 {
   "message": "Hello From MP-2 World!"
 }
@@ -353,7 +353,7 @@ Once you have validated that the second service is running correctly, you need t
 
 *Replace the `GreetResource` class with the following code:*
 
-``` java
+```java
 @Path("/greet")
 @RequestScoped
 public class GreetResource {
@@ -394,13 +394,13 @@ public class GreetResource {
 
 *Build and run the application, then invoke the endpoint and check the response:*
 
-``` bash
+```bash
 curl -i http://localhost:8080/greet/outbound 
 ```
 
 - The request went to the service on `8080`, which then invoked the service at `8081` to get the greeting.
 
-``` json
+```json
 {
   "message": "Hello From MP-2 World!" 
 }
@@ -425,13 +425,13 @@ The following example demonstrate how to use Jaeger from a Helidon application r
 
 *Add the following line to `META-INF/microprofile-config.properties`:*
 
-``` properties
+```properties
 tracing.host=jaeger
 ```
 
 *Stop the application and build the docker image for your application:*
 
-``` bash
+```bash
 docker build -t helidon-tracing-mp .
 ```
 
@@ -439,7 +439,7 @@ docker build -t helidon-tracing-mp .
 
 *Create the Kubernetes YAML specification, named `jaeger.yaml`, with the following contents:*
 
-``` yaml
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -468,13 +468,13 @@ spec:
 
 *Create the Jaeger pod and ClusterIP service:*
 
-``` bash
+```bash
 kubectl apply -f ./jaeger.yaml
 ```
 
 *Create a Jaeger external server and expose it on port 9142:*
 
-``` bash
+```bash
 kubectl expose pod jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer 
 ```
 
@@ -486,7 +486,7 @@ Navigate to <http://localhost:16687/search> to validate that you can access Jaeg
 
 *Create the Kubernetes YAML specification, named `tracing.yaml`, with the following contents:*
 
-``` yaml
+```yaml
 kind: Service
 apiVersion: v1
 metadata:
@@ -530,7 +530,7 @@ spec:
 
 *Create and deploy the application into Kubernetes:*
 
-``` bash
+```bash
 kubectl apply -f ./tracing.yaml
 ```
 
@@ -538,11 +538,11 @@ kubectl apply -f ./tracing.yaml
 
 *Get the application service information:*
 
-``` bash
+```bash
 kubectl get service/helidon-tracing
 ```
 
-``` bash
+```bash
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
 helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s 
 ```
@@ -551,13 +551,13 @@ helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s
 
 *Verify the tracing endpoint using port `31143`, your port will likely be different:*
 
-``` bash
+```bash
 curl http://localhost:31143/greet
 ```
 
 *JSON response:*
 
-``` json
+```json
 {
   "message": "Hello World!"
 }
@@ -571,7 +571,7 @@ You can now delete the Kubernetes resources that were just created during this e
 
 *Delete the Kubernetes resources:*
 
-``` bash
+```bash
 kubectl delete -f ./jaeger.yaml
 kubectl delete -f ./tracing.yaml
 kubectl delete service jaeger-external

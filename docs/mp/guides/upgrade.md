@@ -87,7 +87,7 @@ In case you declared a dependency on a javax module, you should change it to a j
 
 Example:
 
-``` xml
+```xml
 <dependency>
     <groupId>javax.activation</groupId>
     <artifactId>javax.activation-api</artifactId>
@@ -96,7 +96,7 @@ Example:
 
 should be changed to
 
-``` xml
+```xml
 <dependency>
     <groupId>jakarta.activation</groupId>
     <artifactId>jakarta.activation-api</artifactId>

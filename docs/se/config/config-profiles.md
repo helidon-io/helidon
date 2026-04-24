@@ -60,7 +60,7 @@ An example development profile using "inlined" configuration:
 
 *Config profile `config-profile-dev.yaml`*
 
-``` yaml
+```yaml
 sources:
   - type: "inlined"
     properties:
@@ -71,7 +71,7 @@ An example of a profile using environment variables, system properties, classpat
 
 *Config profile `config-profile-prod.yaml`*
 
-``` yaml
+```yaml
 sources:
   - type: "environment-variables"
   - type: "system-properties"
@@ -165,7 +165,7 @@ Here is an example profile in YAML format. Note how the `properties` sections ar
 
 *Profile `config-profile.yaml` illustrating all built-in sources available on the classpath*
 
-``` yaml
+```yaml
 caching.enabled: false
 sources:
   - type: "system-properties"
@@ -216,7 +216,7 @@ Profiles can be used to set up custom config sources as well as the built-in one
 
 Implement the `ConfigSourceProvider`
 
-``` java
+```java
 public class MyConfigSourceProvider implements ConfigSourceProvider {
     private static final String TYPE = "my-type";
 
@@ -242,13 +242,13 @@ Register it as a java service loader service
 
 *File `META-INF/services/io.helidon.config.spi.ConfigSourceProvider`*
 
-``` text
+```text
 io.helidon.examples.MyConfigSourceProvider
 ```
 
 Now you can use the following profile:
 
-``` yaml
+```yaml
 sources:
   - type: "system-properties"
   - type: "environment-variables"
@@ -353,7 +353,7 @@ Create your configuration tree as needed in your custom config source.
 
 Example of such a config source:
 
-``` java
+```java
 @Service.Singleton
 @Service.Named(MyProfiledConfigSource.MY_TYPE)
 public class MyProfiledConfigSource implements NodeConfigSource {

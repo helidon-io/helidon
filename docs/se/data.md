@@ -12,7 +12,7 @@ The Helidon Data Repository supports Jakarta Persistence and major providers suc
 
 To enable Data Repository, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.data</groupId>
     <artifactId>helidon-data</artifactId>
@@ -25,7 +25,7 @@ To enable Data Repository, add the following dependency to your project’s `pom
 
 The Jakarta Persistence provider, such as EclipseLink, and the JDBC driver, such as MySQL, are required at runtime:
 
-``` xml
+```xml
 <dependency>
     <groupId>org.eclipse.persistence</groupId>
     <artifactId>org.eclipse.persistence.jpa</artifactId>
@@ -47,7 +47,7 @@ The Jakarta Persistence provider, such as EclipseLink, and the JDBC driver, such
 
 Both the entity model and data repository interfaces require a specific annotation-processor configuration:
 
-``` xml
+```xml
 <annotationProcessorPaths>
     <path>
         <groupId>io.helidon.bundles</groupId>
@@ -70,13 +70,13 @@ There are two ways in which such a query can be defined:
 
 - using the method name as the query definition
 
-``` java
+```java
 Optional<Pet> findByName(String name);
 ```
 
 - using a method annotated with `@Data.Query`
 
-``` java
+```java
 @Data.Query("SELECT p FROM Pet p WHERE p.category.name = :categoryName")
 List<Pet> selectPetsByCategory(String categoryName);
 ```
@@ -87,7 +87,7 @@ You must configure the data repository before using it.
 
 In the example below, Helidon Config sets up the data repository using the EclipseLink provider and a MySQL database as a custom connection:
 
-``` yaml
+```yaml
 data:
   persistence-units:
     jakarta:
@@ -105,7 +105,7 @@ data:
 
 In the next example, Helidon Config sets up the data repository using the Hibernate provider and a MySQL database as a Hikari `DataSource`:
 
-``` yaml
+```yaml
 data:
   sources:
     sql:
@@ -129,7 +129,7 @@ data:
 
 The runtime initialization of the data repository is managed by the service registry. You can obtain repository interface instances using the service registry API:
 
-``` java
+```java
 private final KeeperRepository repository = Services.get(KeeperRepository.class);
 ```
 
@@ -158,7 +158,7 @@ A repository interface may contain three kinds of methods:
 
 The following `PetRepository` interface contains all of these: inherited methods from `CrudRepository`, the methods `findByName` and `listNameOrderByName` defined by method name, and `selectPetsByCategory` defined by the `@Data.Query` annotation:
 
-``` java
+```java
 @Data.Repository
 public interface PetRepository extends Data.CrudRepository<Pet, Integer> {
 
@@ -188,7 +188,7 @@ All parts of the pattern are optional except the return type keyword, such as `g
 
 A method can have a user-defined prefix. The prefix is a sequence of letters and digits that does not match any return type keyword. This prefix has no influence on the query and can be used to distinguish between methods that have the same query but different return types. If a prefix is used, the following query return type keyword must start with a capital letter.
 
-``` java
+```java
 Optional<Keeper> findByName(String name);
 Number countByName(String name);
 long longCountByName(String name);
@@ -224,7 +224,7 @@ The projection part is optional and follows directly after the return-type keywo
 
 The `property` part is the entity property name and it can contain underscores. An underscore is interpreted as a dot, which means navigation to a related entity attribute. For example, `Keeper_Name` on the `Pet` entity translates to the JPQL query `SELECT p.keeper.name FROM Pet p`.
 
-``` java
+```java
 @Entity
 public class Pet {
     Keeper keeper;
@@ -283,7 +283,7 @@ Supported condition keywords:
 
 An example repository method with criteria:
 
-``` java
+```java
 // Returns Keeper entity with keepr.name matching provided name
 // or throws an exception when no such entity exists
 Keeper getByName(String name);
@@ -303,7 +303,7 @@ Logical operators:
 
 An example repository method with criteria and logical operator:
 
-``` java
+```java
 Optional<Keeper> findByNameAndAge(String name, int age);
 ```
 
@@ -325,7 +325,7 @@ The default direction is ascending when the keyword is omitted after the `proper
 
 An example repository method with ordering:
 
-``` java
+```java
 List<Keeper> listAllOrderByAgeAscName();
 ```
 
@@ -333,7 +333,7 @@ List<Keeper> listAllOrderByAgeAscName();
 
 The formal grammar for method names is as follows:
 
-``` text
+```text
         method-name  :: <query> | <delete>
 
         query        :: <action> [ <projection> ] [ "By" <criteria>  [ "OrderBy" <order> ] ]
@@ -374,14 +374,14 @@ This method type must be annotated with `@Data.Query`. The annotation takes a si
 
 - For named parameters, each named parameter in the query must correspond to a method argument with the same name. Order does not matter.
 
-``` java
+```java
 @Data.Query("SELECT p FROM Pet p WHERE p.category.name = :categoryName")
 List<Pet> selectPetsByCategory(String categoryName);
 ```
 
 - For indexed parameters, each argument must appear in the same order as in the query. Indexing starts at `1`.
 
-``` java
+```java
 @Data.Query("SELECT p.keeper FROM Pet p WHERE k.name = $1 AND p.category.name = $2")
 Optional<Keeper> selectKeeper(String name, String category);
 ```
@@ -405,7 +405,7 @@ Returned page content types:
 
 An example repository method with pagination:
 
-``` java
+```java
 Slice<Keeper> listAll(PageRequest pageRequest);
 ```
 
@@ -415,13 +415,13 @@ The ordering part of the method name defines a static ordering rule that cannot 
 
 An example repository method with dynamic ordering:
 
-``` java
+```java
 List<Keeper> listByAgeBetween(int min, int max, Sort sort);
 ```
 
 Static ordering rules from the method name are always applied first, and dynamic rules are added after them:
 
-``` java
+```java
 List<Keeper> listByAgeBetweenOrderByAge(int min, int max, Sort sort);
 ```
 
@@ -431,7 +431,7 @@ The caller can access the persistence provider session to implement more complex
 
 The generic argument `S` is the persistence session type, for example `EntityManager`. The `Data.SessionRepository` interface provides methods that supply a session managed by the data repository framework, so there is no need to handle the session instance lifecycle.
 
-``` java
+```java
 @Data.Repository
 public interface KeeperRepository
         extends Data.GenericRepository<Keeper, Integer>, Data.SessionRepository<EntityManager> {
@@ -440,7 +440,7 @@ public interface KeeperRepository
 
 The session instance is available through the `Data.SessionRepository<S>` interface methods `run` and `call`:
 
-``` java
+```java
 public class PetService {
 
     private final KeeperRepository repository = Services.get(KeeperRepository.class);
@@ -472,7 +472,7 @@ Transaction handling is available through Helidon Transaction API.
 
 To enable Helidon Transaction API, add the following dependency to your project’s `pom.xml`:
 
-``` xml
+```xml
 <dependency>
     <groupId>jakarta.transaction</groupId>
     <artifactId>jakarta.transaction-api</artifactId>
@@ -481,7 +481,7 @@ To enable Helidon Transaction API, add the following dependency to your project�
 
 Helidon JTA Transaction support, such as Narayana, may be provided at runtime to enable `JTA` transaction type:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.transaction</groupId>
     <artifactId>helidon-transaction-narayana</artifactId>
@@ -521,7 +521,7 @@ The `Tx.Type` enum is used to control the transactional behavior of methods. By 
 
 In this example, the `doSomething()` method is annotated with `@Tx.Required`, ensuring that it is always executed within a transaction. The `doSomethingElse()` method is annotated with `@Tx.Never`, ensuring that it is never executed within a transaction:
 
-``` java
+```java
 @Service.Singleton
 public class PetService {
     @Tx.Required
@@ -540,7 +540,7 @@ public class PetService {
 
 In this example, lambda expression in the `doSomething()` method is executed using `Tx.transaction` method with `Tx.Type.REQUIRED` argument, ensuring that it is always executed within a transaction. Lambda expression in the `doSomethingElse()` method is executed using `Tx.transaction` method with `Tx.Type.NEVER` argument, ensuring that it is never executed within a transaction:
 
-``` java
+```java
 public class KeeperService {
     public void doSomething() {
         Tx.transaction(Tx.Type.REQUIRED,

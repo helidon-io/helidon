@@ -29,7 +29,7 @@ To construct the model, Helidon gathers information about the service API from w
 
 To enable MicroProfile OpenAPI, either add a dependency on the [helidon-microprofile bundle](../../mp/introduction/microprofile.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.openapi</groupId>
     <artifactId>helidon-microprofile-openapi</artifactId>
@@ -39,7 +39,7 @@ To enable MicroProfile OpenAPI, either add a dependency on the [helidon-micropro
 
 If you do not use the `helidon-microprofile-bundle` also add the following dependency which defines the MicroProfile OpenAPI annotations so you can use them in your code:
 
-``` xml
+```xml
 <dependency>
     <groupId>org.eclipse.microprofile.openapi</groupId>
     <artifactId>microprofile-openapi-api</artifactId>
@@ -69,7 +69,7 @@ You can add MicroProfile OpenAPI annotations to the endpoints in your source cod
 
 Here is one of the endpoints, annotated for OpenAPI, from the example mentioned earlier:
 
-``` java
+```java
 @GET
 @Operation(summary = "Returns a generic greeting", 
            description = "Greets the user generically")
@@ -161,7 +161,7 @@ Helidon MP includes a [complete OpenAPI example](https://github.com/helidon-io/h
 
 This example shows a simple greeting application, similar to the one from the Helidon MP QuickStart, enhanced with OpenAPI support.
 
-``` java
+```java
 @Path("/greeting")
 @PUT
 @Operation(summary = "Set the greeting prefix",
@@ -192,7 +192,7 @@ The OASFilter interface allows application developers to receive callbacks for v
 
 The following example filter prevents information about a given path from appearing in the OpenAPI document.
 
-``` java
+```java
 public class SimpleAPIFilter implements OASFilter {
 
     @Override
@@ -212,7 +212,7 @@ You can implement a model reader to provide all or part of the in-memory `OpenAP
 
 The example model reader below creates an `OpenAPI` object describing two paths. It turns out that the filter described earlier will suppress one of the paths, but the model reader does not know or care.
 
-``` java
+```java
 /**
  * Defines two paths using the OpenAPI model reader mechanism, one that should
  * be suppressed by the filter class and one that should appear in the published
@@ -268,21 +268,21 @@ public class SimpleAPIModelReader implements OASModelReader {
 
 Having written the filter and model reader classes, identify them by adding configuration to `META-INF/microprofile-config.properties` as the following example shows.
 
-``` properties
+```properties
 mp.openapi.filter=io.helidon.microprofile.examples.openapi.internal.SimpleAPIFilter
 mp.openapi.model.reader=io.helidon.microprofile.examples.openapi.internal.SimpleAPIModelReader
 ```
 
 Now just build and run:
 
-``` bash
+```bash
 mvn package
 java -jar target/helidon-examples-microprofile-openapi.jar
 ```
 
 Try the endpoints:
 
-``` bash
+```bash
 curl -X GET http://localhost:8080/greet
 {"message":"Hello World!"}
 
@@ -304,7 +304,7 @@ A Jandex index stores information about the classes and methods in your app and 
 
 Add an invocation of the [Jandex maven plug-in](https://github.com/smallrye/jandex/tree/main/maven-plugin) to the `<build><plugins>` section of your `pom.xml` if it is not already there:
 
-``` xml
+```xml
 <plugin>
     <groupId>io.smallrye</groupId>
     <artifactId>jandex-maven-plugin</artifactId>
@@ -326,7 +326,7 @@ But if the signatures of your resource methods refer to types from dependencies 
 
 The example below tailors the Jandex plug-in configuration to scan not only the current project but another dependency and to index a specific type from it.
 
-``` xml
+```xml
 <execution>
     <id>make-index</id>
     <configuration> 

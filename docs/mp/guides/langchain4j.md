@@ -26,7 +26,7 @@ Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
 *Verify Prerequisites*
 
-``` bash
+```bash
 java -version
 mvn --version
 docker --version
@@ -35,7 +35,7 @@ kubectl version
 
 *Setting JAVA_HOME*
 
-``` bash
+```bash
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -50,7 +50,7 @@ Generate the project using the Helidon MP Quickstart Maven archetype.
 
 *Run the Maven archetype:*
 
-``` bash
+```bash
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -62,7 +62,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 The archetype generates a Maven project in your current directory, (for example, `helidon-quickstart-lc4j-mp`). Change into this directory and build.
 
-``` bash
+```bash
 cd helidon-quickstart-lc4j-mp
 ```
 
@@ -70,7 +70,7 @@ cd helidon-quickstart-lc4j-mp
 
 Add necessary dependencies for LangChain4j integration and OpenAI provider in the project POM.
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.integrations.langchain4j</groupId>
     <artifactId>helidon-integrations-langchain4j</artifactId>
@@ -85,7 +85,7 @@ You will also need extra annotation processors as LangChain4j AI services are ha
 
 Include the following annotation processor in the `<build><plugins>` section of `pom.xml`:
 
-``` xml
+```xml
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-compiler-plugin</artifactId>
@@ -107,7 +107,7 @@ Add to the configuration file `./src/main/resources/META-INF/microprofile-config
 
 Model configured under `langchain4j.models` has arbitrary name `pirate-chat-model`, it uses `open-ai` provider defined under `langchain4j.providers`. With a single configured chat model, default auto-discovery resolves it automatically. If you configure multiple chat models, use `@Ai.ChatModel("pirate-chat-model")` to select one explicitly.
 
-``` properties
+```properties
 langchain4j.providers.open-ai.base-url=http://langchain4j.dev/demo/openai/v1
 # Lc4j demo api key needs to be routed over lc4j proxy
 langchain4j.providers.open-ai.api-key=demo
@@ -119,7 +119,7 @@ langchain4j.models.pirate-chat-model.model-name=gpt-4o-mini
 
 Next we need to create LangChain4j [Ai service](https://docs.langchain4j.dev/tutorials/ai-services) and annotate it with `@Ai.Service` so Helidon can make a superfast build time bean from it.
 
-``` java
+```java
 @Ai.Service
 public interface PirateService {
 
@@ -132,7 +132,7 @@ public interface PirateService {
 
 Next step is to add new Http POST JAX-RS resource, create new public class `PirateResource` like following example shows.
 
-``` java
+```java
 @Path("/chat")
 public class PirateResource {
 
@@ -160,7 +160,7 @@ We can test our pirate service with curl:
 
 Ofcourse all the features from LangChain4j Ai services are going to work, let’s try to expand the example with [template arguments](https://docs.langchain4j.dev/tutorials/ai-services#usermessage).
 
-``` java
+```java
 @Ai.Service
 public interface PirateService {
 
@@ -175,7 +175,7 @@ public interface PirateService {
 
 Remember to fix the code calling the service.
 
-``` java
+```java
 @Path("/chat")
 public class PirateResource {
 
@@ -202,7 +202,7 @@ We can test our pirate service with curl:
 
 We can also extend the pirate example with [conversation memory](https://docs.langchain4j.dev/tutorials/chat-memory). First, we need to create a memory provider so our memory works per conversation ID.
 
-``` java
+```java
 @Service.Singleton
 @Service.Named(PirateMemoryProvider.NAME)
 public class PirateMemoryProvider implements Supplier<ChatMemoryProvider> {
@@ -221,7 +221,7 @@ public class PirateMemoryProvider implements Supplier<ChatMemoryProvider> {
 
 Now we can extend Ai service with an extra argument so we can supply identifier of our conversation with the pirate.
 
-``` java
+```java
 @Ai.Service
 @Ai.ChatMemoryProvider(PirateMemoryProvider.NAME)
 public interface PirateService {
@@ -238,7 +238,7 @@ public interface PirateService {
 
 We will expect conversation id as a header on the webserver.
 
-``` java
+```java
 @Path("/chat")
 public class PirateResource {
 

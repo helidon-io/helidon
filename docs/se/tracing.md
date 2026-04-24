@@ -11,7 +11,7 @@ Distributed tracing is a critical feature of microservice based applications, si
 
 To enable Helidon Tracing, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependencies>
     <dependency>
         <groupId>io.helidon.tracing</groupId>
@@ -31,7 +31,7 @@ To transmit tracing data from your service to a backend, you need to add a traci
 
 For Jaeger:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-jaeger</artifactId>
@@ -41,7 +41,7 @@ For Jaeger:
 
 For Zipkin:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-zipkin</artifactId>
@@ -51,7 +51,7 @@ For Zipkin:
 
 For OpenTelemetry:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
@@ -61,7 +61,7 @@ For OpenTelemetry:
 
 For OpenTracing (deprecated):
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-opentracing</artifactId>
@@ -87,7 +87,7 @@ Support for specific tracers is abstracted. Your application can depend on the H
 
 *Configuring `Tracer`*
 
-``` java
+```java
 Tracer tracer = TracerBuilder.create("helidon") 
         .build();
 
@@ -106,7 +106,7 @@ WebServer.builder()
 
 To create a custom span from tracer:
 
-``` java
+```java
 Span span = tracer.spanBuilder("name") 
         .tag("key", "value")
         .start();
@@ -264,7 +264,7 @@ An OpenTelemetry object returned from a method on a callback-enabled object is i
 
 Each callback-enabled object is a new instance of a *Helidon* object which implements both the indicated OpenTelemetry interface and the Helidon [`Wrapper`](/apidocs/io.helidon.tracing/io/helidon/tracing/Wrapper.html) interface. These Helidon objects *do not* themselves implement other OpenTelemetry interfaces. To do type checks and casts on callback-enabled objects, invoke the `unwrap(Class<?>)` on a callback-enabled object as shown in the following example.
 
-``` java
+```java
 // Note that callbackEnabledSpan implements OpenTelemetry Span.
 io.opentelemetry.api.trace.Span nativeOtelSpan = callbackEnabledSpan.unwrap(io.opentelemetry.api.trace.Span.class);
 if (nativeOtelSpan instanceof io.opentelemetry.sdk.trace.ReadableSpan readableSpan) {
@@ -355,7 +355,7 @@ Builder approach, example that disables a single span log event:
 
 *Configure tracing using a builder*
 
-``` java
+```java
 TracingConfig.builder()
         .addComponent(ComponentTracingConfig.builder("web-server")
                               .addSpan(SpanTracingConfig.builder("HTTP Request")
@@ -373,7 +373,7 @@ Tracing configuration can be defined in a config file.
 
 *Tracing configuration*
 
-``` yaml
+```yaml
 tracing:
     components:
       web-server:
@@ -386,7 +386,7 @@ tracing:
 
 *Use the configuration in web server*
 
-``` java
+```java
 Tracer tracer = TracerBuilder.create(config.get("tracing")).build(); 
 server.addFeature(ObserveFeature.builder()
                           .addObserver(TracingObserver.create(tracer)) 
@@ -404,7 +404,7 @@ Configuration of path can use any path string supported by the WebServer. The co
 
 *Configuration in YAML*
 
-``` yaml
+```yaml
 tracing:
   paths:
     - path: "/favicon.ico"
@@ -430,7 +430,7 @@ Example:
 
 *Configuration in YAML*
 
-``` yaml
+```yaml
 tracing:
   components:
     web-server:
@@ -453,7 +453,7 @@ Parameters provided:
 
 Span propagation is supported with Helidon WebClient. Tracing propagation is automatic as long as the current span context is available in Helidon Context (which is automatic when running within a WebServer request).
 
-``` xml
+```xml
 <dependencies>
     <dependency>
         <groupId>io.helidon.webclient</groupId>
@@ -468,7 +468,7 @@ Span propagation is supported with Helidon WebClient. Tracing propagation is aut
 
 *Tracing propagation with Helidon WebClient*
 
-``` java
+```java
 WebClient client = WebClient.builder()
         .addService(WebClientTracing.create())
         .build();
@@ -480,7 +480,7 @@ String response = client.get()
 
 ### Jaeger Tracing
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing</groupId>
     <artifactId>helidon-tracing-providers-jaeger</artifactId>
@@ -507,7 +507,7 @@ String response = client.get()
 
 The following is an example of a Jaeger configuration, specified in the YAML format.
 
-``` yaml
+```yaml
 tracing:
     service: "helidon-full-http"
     protocol: "https"
@@ -521,7 +521,7 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 
 ### Zipkin Tracing
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-zipkin</artifactId>
@@ -538,7 +538,7 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 
 The following is an example of a Zipkin configuration, specified in the YAML format.
 
-``` yaml
+```yaml
 tracing:
   zipkin:
     service: "helidon-service"
@@ -578,7 +578,7 @@ The [telemetry doc page](../se/telemetry/open-telemetry.md) describes how to use
 
 *Dependency for OpenTelemetry support using tracing*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
@@ -596,7 +596,7 @@ The [telemetry doc page](../se/telemetry/open-telemetry.md) describes how to use
 
 *Example Helidon configuration for OpenTelemetry tracing*
 
-``` yaml
+```yaml
 tracing:
   service: helidon-otel-tracing-example 
   global: false      

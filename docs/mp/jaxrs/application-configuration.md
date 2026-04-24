@@ -8,7 +8,7 @@ You can inject values that the application can access from both MicroProfile Con
 
 *Jakarta REST - inject a single config property*
 
-``` java
+```java
 @Inject
 public MyResource(@ConfigProperty(name = "app.name") String appName) {
     this.applicationName = appName;
@@ -19,7 +19,7 @@ You can also inject the whole configuration instance, either `io.helidon.config.
 
 *Jakarta REST - inject config*
 
-``` java
+```java
 @Inject
 public MyResource(Config config) {
     this.config = config;

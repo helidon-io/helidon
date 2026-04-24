@@ -12,7 +12,7 @@ The methods which support Java primitive types and their related classes follow 
 
 Assume a local variable has been assigned something like
 
-``` java
+```java
 Config configNode = config.get("someKey");
 ConfigValue<Boolean> value = configNode.asBoolean(); 
 ConfigValue<Boolean> value2 = configNode.as(Boolean.class); 
@@ -74,7 +74,7 @@ The numerous conversions defined on the `Config` class for other types (integers
 
 For additional type mapping, you can use these methods defined on `Config`:
 
-``` java
+```java
 T as(Class<? extends T> type);
 
 T as(Function<Config, T> mapper);
@@ -86,13 +86,13 @@ which maps the current node to a type.
 
 The next example, and later ones below showing complex type mapping, use the example [`application.properties`](introduction.md#built-in-formats) configuration from the config introduction. Part of that example includes this line:
 
-``` properties
+```properties
 bl.initial-id = 10000000000
 ```
 
 Your application can use `Config.as` to interpret the value as a `BigDecimal`:
 
-``` java
+```java
 BigDecimal initialId = config.get("bl.initial-id").as(BigDecimal.class);
 ```
 
@@ -115,7 +115,7 @@ The conversion applies the following algorithm to match config values to `enum` 
 
 The following example illustrates how to use the built-in `enum` conversion feature. The example code builds a simple `Config` tree itself which contains simple test data; normally your application would load the config from a file or some other location.
 
-``` java
+```java
 enum Color {RED, YELLOW, BLUE_GREEN}
 
 Config config = Config.just(ConfigSources.create(Map.of(
@@ -189,7 +189,7 @@ Here are two approaches that will always work without requiring changes to the t
 
 Any time your application has a `Config` instance to map to the target class it invokes `Config.as` passing an instance of the corresponding conversion function:
 
-``` java
+```java
 Config configNode = config.get("web");
 ConfigValue<WebConfig> web = configNode.as(WebConfigMapper::map);
 ```
@@ -215,7 +215,7 @@ The following examples build on the example configuration from the [`application
 
 *Java POJO to Hold `web` Properties Config*
 
-``` java
+```java
 public class WebConfig {
     private boolean debug;
     private int pageSize;
@@ -243,7 +243,7 @@ public class WebConfig {
 
 *Custom Mapper Class*
 
-``` java
+```java
 public class WebConfigMapper implements Function<Config, WebConfig> {
 
     @Override
@@ -259,7 +259,7 @@ public class WebConfigMapper implements Function<Config, WebConfig> {
 
 *Explicitly Using the Mapper*
 
-``` java
+```java
 Config config = Config.create(classpath("application.properties"));
 
 WebConfig web = config.get("web")
@@ -269,7 +269,7 @@ WebConfig web = config.get("web")
 
 *Registering and Implicitly Using the Mapper*
 
-``` java
+```java
 Config config = Config.builder(classpath("application.properties"))
         .addMapper(WebConfig.class, new WebConfigMapper())
         .build();
@@ -291,7 +291,7 @@ This feature is available in Object mapping module, and is added through Java `S
 
 *Config object mapping Dependency in `pom.xml`*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-object-mapping</artifactId>
@@ -327,7 +327,7 @@ Constructors Supporting Auto-mapping
 
 If the config system finds any of these methods or constructors when the application invokes
 
-``` java
+```java
 WebConfig wc = config.as(WebConfig.class).get();
 ```
 
@@ -337,7 +337,7 @@ it will invoke the one it found to map the config data to a new instance of the 
 
 You can limit the changes to the POJO class by adding a single `builder` method to the POJO which returns a builder class for the POJO:
 
-``` java
+```java
 public class WebConfig {
     static WebConfigBuilder builder() {
         return new WebConfigBuilder();
@@ -370,7 +370,7 @@ This feature is available in Object mapping module, and is added through Java `S
 
 *Config object mapping Dependency in `pom.xml`*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-object-mapping</artifactId>
@@ -401,7 +401,7 @@ Here is an example using the `app` portion of the example configuration from the
 
 *Java bean to load `app` properties into via setters*
 
-``` java
+```java
 public class AppConfig {
     private Instant timestamp;
     private String greeting;
@@ -471,7 +471,7 @@ Here is an example of code loading config and mapping part of it to the `AppConf
 
 *Map `app` config node into `AppConfig` class*
 
-``` java
+```java
 Config config = Config.create(classpath("application.conf"));
 
 AppConfig app = config.get("app")
@@ -504,7 +504,7 @@ You can augment the target class with the public static `builder()` method:
 
 *JavaBean for `app` properties, via a `Builder`*
 
-``` java
+```java
 public static class Builder { 
 
     private String greeting;
@@ -551,7 +551,7 @@ Another option is to annotate the parameters to a *factory method* or to a const
 
 *Target Class with Factory Method `from`*
 
-``` java
+```java
 public static AppConfig from(
         @Value(key = "greeting") String greeting, 
         @Value(key = "page-size", withDefault = "10") int pageSize, 
@@ -567,7 +567,7 @@ Alternatively, you can use an annotated constructor instead of a static factory 
 
 *Target Class with Annotated Public Constructor*
 
-``` java
+```java
 public AppConfig( 
                   @Value(key = "greeting") 
                   String greeting,

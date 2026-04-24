@@ -8,7 +8,7 @@ Mock connector is a simple application scoped bean that can be used for emitting
 
 To enable Mock Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.messaging.mock</groupId>
     <artifactId>helidon-messaging-mock</artifactId>
@@ -22,7 +22,7 @@ To enable Mock Connector, add the following dependency to your project’s `pom.
 
 For injecting Mock Connector use `@TestConnector` qualifier:
 
-``` java
+```java
 @Inject
 @TestConnector
 MockConnector mockConnector;
@@ -32,7 +32,7 @@ MockConnector mockConnector;
 
 *Emitting String values `a`, `b`, `c`*
 
-``` java
+```java
 mockConnector.incoming("my-incoming-channel", String.class) 
         .emit("a", "b", "c");
 ```
@@ -43,7 +43,7 @@ mockConnector.incoming("my-incoming-channel", String.class)
 
 *Awaiting and asserting payloads with custom mapper*
 
-``` java
+```java
 mockConnector
         .outgoing("my-outgoing-channel", String.class) 
         .awaitData(TIMEOUT, Message::getPayload, "a", "b", "c"); 
@@ -66,7 +66,7 @@ Mock connector works great with built-in Helidon test support for [JUnit 5](/../
 
 As Helidon test support makes a bean out of your test, you can inject MockConnector directly into it.
 
-``` java
+```java
 @HelidonTest
 @DisableDiscovery 
 @AddBean(MockConnector.class) 

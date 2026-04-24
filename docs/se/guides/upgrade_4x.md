@@ -32,14 +32,14 @@ Here is an example of the differences between Helidon SE 3.x and Helidon SE 4.x:
 
 *Use Helidon 3.x to extract a JSON body from an HTTP request and do something*
 
-``` java
+```java
 request.content().as(JsonObject.class)
         .thenAccept(jo -> doSomething(jo, response));
 ```
 
 *Use Helidon 4.x to extract a JSON body from an HTTP request and do something*
 
-``` java
+```java
 doSomething(request.content().as(JsonObject.class), response);
 ```
 
@@ -53,7 +53,7 @@ In previous versions of Helidon, the server was started asynchronously and furth
 
 *Start Helidon SE 3.x server*
 
-``` java
+```java
 static Single<WebServer> startServer() {
     Config config = Config.create();
 
@@ -85,7 +85,7 @@ In Helidon 4.x, you can create and configure a server and then wait for it to st
 
 *Start Helidon SE 4.x server*
 
-``` java
+```java
 public static void main(String[] args) {
 
     Config config = Config.global();
@@ -110,7 +110,7 @@ In Helidon 3.x, if you provided code to run after WebServer startup and after We
 
 *Helidon 3.x server lifecycle*
 
-``` java
+```java
 Single<WebServer> webserver = server.start();
 
 webserver.thenAccept(ws -> {
@@ -127,7 +127,7 @@ In Helidon 4.x, no special API is needed for post-server startup tasks since the
 
 *Helidon 4.x server lifecycle*
 
-``` java
+```java
 static class MyService implements HttpService {
     @Override
     public void beforeStart() {
@@ -159,7 +159,7 @@ In previous Helidon versions, the routing was configured as follows: services we
 
 *Routing in Helidon SE 3.x server*
 
-``` java
+```java
 private static Routing createRouting(Config config) {
 
     MetricsSupport metrics = MetricsSupport.create(); 
@@ -186,7 +186,7 @@ In Helidon 4.x, the Metrics and Health features are automatically discovered and
 
 *Routing in Helidon SE 4.x server*
 
-``` java
+```java
 static void routing(HttpRouting.Builder routing) {
     routing.register("/greet", new GreetService()); 
 }
@@ -206,7 +206,7 @@ So, for example, if you used the following in Helidon 3.x:
 
 *Helidon 3.x using `RequestPredicate`*
 
-``` java
+```java
 public abstract class RoutingHandlerResource<I, R> implements HttpService {
 
         protected Handler requestHandler(HttpRules rules, Method method, Handler applyHandler) {
@@ -226,7 +226,7 @@ Then, you would now use the following in Helidon 4.x:
 
 *Routing without RequestPredicate in Helidon 4.x*
 
-``` java
+```java
 public abstract class RoutingHandlerResource<I, R> implements HttpService {
 
     protected Handler requestHandler(HttpRules rules, Method method, Handler applyHandler) {
@@ -262,7 +262,7 @@ In previous versions, a service looked like this:
 
 *Helidon SE 3.x Service*
 
-``` java
+```java
 public class GreetService implements Service {
 
     @Override
@@ -288,7 +288,7 @@ In Helidon 4.x, the same service looks like this:
 
 *Helidon SE 4.x Service*
 
-``` java
+```java
 public class GreetService implements HttpService { 
 
     @Override
@@ -326,7 +326,7 @@ The following sections describe changes between Helidon 3.x and Helidon 4.x that
 
 Media support moved from the `io.helidon.media` Java package to `io.helidon.http.media` and has the following new dependency coordinates:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jsonp</artifactId>
@@ -342,7 +342,7 @@ In Helidon 4.x, media support is discovered by default, so you only need to add 
 
 However, media support no longer transitively brings the Jakarta EE API dependencies, so you will need to add those dependencies explicitly. For example:
 
-``` xml
+```xml
 <dependency>
     <groupId>jakarta.json</groupId>
     <artifactId>jakarta.json-api</artifactId>
@@ -353,7 +353,7 @@ However, media support no longer transitively brings the Jakarta EE API dependen
 
 Helidon 4.x adds a new testing framework for Helidon SE.
 
-``` xml
+```xml
 <dependency>
      <groupId>io.helidon.webserver.testing.junit5</groupId>
      <artifactId>helidon-webserver-testing-junit5</artifactId>
@@ -367,7 +367,7 @@ For more information, see [Helidon SE Testing](../testing.md).
 
 Observability features moved to different packages. For `Health` and `Metrics`, you should now use:
 
-``` xml
+```xml
 <dependencies>
     <dependency>
         <groupId>io.helidon.webserver.observe</groupId>
@@ -384,7 +384,7 @@ Observability has new endpoints. See them at [hObservability](../observability.m
 
 For System Metrics, you should now use:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.metrics</groupId>
     <artifactId>helidon-metrics-system-meters</artifactId>
@@ -393,7 +393,7 @@ For System Metrics, you should now use:
 
 By default, Observability features are discovered automatically if you add the above dependencies. If you choose to add them programmatically (using `addFeature`), you must add the following dependency:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe</artifactId>
@@ -419,7 +419,7 @@ Metrics has changed significantly in Helidon 4.x. For more information, see [Hel
 
 Helidon 4.x adds global configuration, a singleton instance of the `Config` class, which is implicitly employed by certain Helidon components. Furthermore, it offers a handy approach for your application to access configuration information from any part of your code.
 
-``` java
+```java
 Config config = Config.global();
 ```
 
@@ -433,7 +433,7 @@ The Helidon console handler changed from `io.helidon.common.HelidonConsoleHandle
 
 If you use this handler in your `logging.properties` file, you will need to update it and add the following dependency:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.logging</groupId>
     <artifactId>helidon-logging-jul</artifactId>

@@ -8,7 +8,7 @@ HashiCorp Vault is a commonly used Vault in many microservices. The APIs are RES
 
 To enable HashiCorp Vault, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.integrations.vault</groupId>
     <artifactId>helidon-integrations-vault-cdi</artifactId>
@@ -17,7 +17,7 @@ To enable HashiCorp Vault, add the following dependency to your project’s `pom
 
 The following is a list of maven coordinates of all Vault modules available:
 
-``` xml
+```xml
 <dependencies>
     <dependency>
         <groupId>io.helidon.integrations.vault.auths</groupId>
@@ -111,7 +111,7 @@ New secret engines and authentication methods can be implemented quite easily, a
 
 See the following SPIs:
 
-``` java
+```java
 io.helidon.integrations.vault.spi.AuthMethodProvider
 io.helidon.integrations.vault.spi.SecretsEngineProvider
 io.helidon.integrations.vault.spi.SysProvider
@@ -123,7 +123,7 @@ io.helidon.integrations.vault.spi.InjectionProvider
 
 The following example shows usage of Vault to encrypt a secret using the default Vault configuration (in a JAX-RS resource):
 
-``` java
+```java
 @Path("/transit")
 class TransitResource {
     private final TransitSecrets secrets;
@@ -149,7 +149,7 @@ class TransitResource {
 
 Cubbyhole example:
 
-``` java
+```java
 @Path("/cubbyhole")
 public class CubbyholeResource {
     private final CubbyholeSecrets secrets;
@@ -210,7 +210,7 @@ public class CubbyholeResource {
 
 Key/Value version 1 secrets engine operations:
 
-``` java
+```java
 @Path("/kv1")
 public class Kv1Resource {
     private final Sys sys;
@@ -296,7 +296,7 @@ public class Kv1Resource {
 
 Key/Value version 2 secrets engine operations:
 
-``` java
+```java
 @Path("/kv2")
 public class Kv2Resource {
     private final Kv2Secrets secrets;
@@ -360,7 +360,7 @@ public class Kv2Resource {
 
 Transit secrets engine operations:
 
-``` java
+```java
 @Path("/transit")
 public class TransitResource {
     private static final String ENCRYPTION_KEY = "encryption-key";
@@ -512,7 +512,7 @@ public class TransitResource {
 
 Vault is available as a docker image, so to test locally, you can simply:
 
-``` bash
+```bash
 docker run -e VAULT_DEV_ROOT_TOKEN_ID=my-token -d --name=vault -p8200:8200 vault
 ```
 

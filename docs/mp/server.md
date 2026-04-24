@@ -18,7 +18,7 @@ Helidon provides a MicroProfile server implementation (`io.helidon.microprofile.
 
 To enable MicroProfile Server add the helidon-microprofile-core bundle dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.bundles</groupId>
     <artifactId>helidon-microprofile-core</artifactId>
@@ -29,7 +29,7 @@ MicroProfile Server is already included in the bundle.
 
 If full control over the dependencies is required, and you want to minimize the quantity of the dependencies - `Helidon MicroProfile Server` should be used. In this case the following dependencies should be included in your project’s `pom.xml`:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.server</groupId>
     <artifactId>helidon-microprofile-server</artifactId>
@@ -135,7 +135,7 @@ Access logging in Helidon is done by a dedicated module that can be added to Mav
 
 To enable Access logging add the following dependency to project’s `pom.xml`:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile</groupId>
     <artifactId>helidon-microprofile-access-log</artifactId>
@@ -148,7 +148,7 @@ Access log can be configured as follows:
 
 *Access Log configuration file*
 
-``` properties
+```properties
 server.port=8080
 server.host=0.0.0.0
 server.features.access-log.format=helidon
@@ -189,7 +189,7 @@ You can set the following properties:
 
 *META-INF/microprofile-config.properties - Server configuration*
 
-``` properties
+```properties
 #Truststore setup
 server.tls.trust.keystore.resource.resource-path=server.p12
 server.tls.trust.keystore.passphrase=password
@@ -204,7 +204,7 @@ Or the same configuration done in application.yaml file.
 
 *application.yaml - Server configuration*
 
-``` yaml
+```yaml
 server:
   tls:
     #Truststore setup
@@ -242,7 +242,7 @@ You can set the configuration in either `application.yaml` or `META-INF/micropro
 
 *Server configuration using `application.yaml`*
 
-``` yaml
+```yaml
 server:
   port: 7011
   host: "localhost"
@@ -257,7 +257,7 @@ server:
 
 *Server configuration using `META-INF/microprofile-config.properties`*
 
-``` properties
+```properties
 server.port=7011
 server.host=localhost
 server.sockets.0.name=admin
@@ -297,7 +297,7 @@ The annotation has two attributes: - `value` that defines the routing name - `re
 
 *`@RoutingName` example*
 
-``` java
+```java
 @ApplicationScoped
 @RoutingName(value = "admin", required = true)
 @RoutingPath("/admin")
@@ -317,7 +317,7 @@ For each service bean you can define the routing name and its required flag by s
 
 Example (YAML) configuration for a service bean `io.helidon.examples.AdminService` that changes the routing name to `management` and its required flag to `false`:
 
-``` yaml
+```yaml
 io.helidon.examples.AdminService:
   routing-name:
     name: "management"
@@ -340,7 +340,7 @@ For each HTTP service class you can define the routing path by specifying a conf
 
 Example (YAML) configuration for a class `io.helidon.example.AdminService` that changes the routing path to `/management`:
 
-``` yaml
+```yaml
 io.helidon.examples.AdminService:
   routing-path:
     path: "/management"
@@ -350,7 +350,7 @@ io.helidon.examples.AdminService:
 
 *META-INF/microprofile-config.properties - File system static content*
 
-``` properties
+```properties
 # Location of content on file system
 server.features.static-content.path.0.location=/var/www/html
 # default is index.html (only in Helidon MicroProfile)
@@ -361,7 +361,7 @@ server.features.static-content.path.0.welcome=resource.html
 
 *META-INF/microprofile-config.properties - Classpath static content*
 
-``` properties
+```properties
 # src/main/resources/WEB in your source tree
 server.features.static-content.classpath.0.location=/WEB
 # default is index.html
@@ -374,7 +374,7 @@ It is usually easier to configure list-based options using `application.yaml` in
 
 *application.yaml - Static content*
 
-``` yaml
+```yaml
 server:
   features:
     static-content:
@@ -393,7 +393,7 @@ See [Static Content Feature Configuration Reference](../config/io_helidon_webser
 
 To redirect requests for the root path (`/`) to another path you can use the `server.base-path` property:
 
-``` yaml
+```yaml
 server:
   base-path: /static/index.html
 ```
@@ -406,7 +406,7 @@ Note that this feature is not for setting a context root for applications. To co
 
 A full configuration example (YAML):
 
-``` yaml
+```yaml
 server:
   port: 8080
   sockets:
@@ -444,7 +444,7 @@ You can use configuration to set up the requested URI discovery behavior.
 
 *Configuring Request URI Discovery (properties format)*
 
-``` properties
+```properties
 server.port=8080
 server.requested-uri-discovery.types=FORWARDED,X_FORWARDED
 server.requested-uri-discovery.trusted-proxies.allow.pattern=lb.*\\.mycorp\\.com
@@ -459,7 +459,7 @@ Helidon makes the requested URI information available as a property in the reque
 
 *Retrieving Requested URI Information*
 
-``` java
+```java
 public class MyFilter implements ContainerRequestFilter {
 
     @Override

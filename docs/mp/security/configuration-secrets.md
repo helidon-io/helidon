@@ -12,7 +12,7 @@ In Helidon SE, you may add support for this filter with dependency (loaded throu
 
 *Maven Dependency*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-encryption</artifactId>
@@ -48,7 +48,7 @@ The config encryption filter provides a Main class `io.helidon.config.encryption
 
 *Encrypt secret `secretToEncrypt` using shared secret `masterPassword`*
 
-``` bash
+```bash
 java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar aes masterPassword secretToEncrypt
 ```
 
@@ -75,7 +75,7 @@ The config encryption filter provides a Main class `io.helidon.config.encryption
 
 *Encrypt secret `secretToEncrypt` using public certificate in a keystore*
 
-``` bash
+```bash
 java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar rsa /path/to/keystore.p12 keystorePassword publicCertAlias secretToEncrypt
 ```
 
@@ -104,7 +104,7 @@ RSA Configuration Options: PEM (PKCS#8) private key
 
 *Example yaml configuration*
 
-``` yaml
+```yaml
 security.config:
   # Set to true for production - if set to true, clear text passwords will cause failure
   require-encryption: false

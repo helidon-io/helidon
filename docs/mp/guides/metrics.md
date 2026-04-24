@@ -16,7 +16,7 @@ For this 30 minute tutorial, you will need the following:
 
 *Verify Prerequisites*
 
-``` bash
+```bash
 java -version
 mvn --version
 docker --version
@@ -25,7 +25,7 @@ kubectl version
 
 *Setting JAVA_HOME*
 
-``` bash
+```bash
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -40,7 +40,7 @@ Use the Helidon MP Maven archetype to create a simple project that can be used f
 
 *Run the Maven archetype*
 
-``` bash
+```bash
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -74,7 +74,7 @@ The following example demonstrates how to use the other built-in metrics. All ex
 
 *Build the application and then run it:*
 
-``` bash
+```bash
 mvn package
 java -jar target/helidon-quickstart-mp.jar
 ```
@@ -84,13 +84,13 @@ java -jar target/helidon-quickstart-mp.jar
 
 *Verify the metrics endpoint in a new terminal window:*
 
-``` bash
+```bash
 curl http://localhost:8080/metrics
 ```
 
 *Text response (partial):*
 
-``` text
+```text
 # HELP classloader_loadedClasses_count Displays the number of classes that are currently loaded in the Java virtual machine.
 # TYPE classloader_loadedClasses_count gauge
 classloader_loadedClasses_count{mp_scope="base",} 4878.0
@@ -112,13 +112,13 @@ You can get the same data in JSON format.
 
 *Verify the metrics endpoint with an HTTP accept header:*
 
-``` bash
+```bash
 curl -H "Accept: application/json"  http://localhost:8080/metrics
 ```
 
 *JSON response (partial):*
 
-``` json
+```json
 {
   "application": {
     "personalizedGets": 0,
@@ -149,13 +149,13 @@ You can get a single metric by specifying the scope and name as query parameters
 
 *Get the Helidon `requests.count` metric:*
 
-``` bash
+```bash
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=vendor&name=requests.count'
 ```
 
 *JSON response:*
 
-``` json
+```json
 {
   "requests.count": 6
 }
@@ -180,7 +180,7 @@ You can disable the metrics subsystem entirely using configuration:
 
 *Configuration properties file disabling metrics*
 
-``` properties
+```properties
 metrics.enabled=false
 ```
 
@@ -201,7 +201,7 @@ You can enable and control these metrics using configuration:
 
 *Configuration properties file controlling extended KPI metrics*
 
-``` properties
+```properties
 metrics.key-performance-indicators.extended = true
 metrics.key-performance-indicators.long-running.threshold-ms = 2000
 ```
@@ -234,7 +234,7 @@ To enable the metrics describing virtual threads include a config setting as sho
 
 *Enabling virtual thread metrics*
 
-``` properties
+```properties
 metrics.virtual-threads.enabled = true
 ```
 
@@ -244,7 +244,7 @@ Helidon measures pinned virtual threads only when the thread is pinned for a len
 
 *Setting virtual thread pinning threshold to 100 ms*
 
-``` properties
+```properties
 metrics.virtual-threads.pinned.threshold=PT0.100S
 ```
 
@@ -270,13 +270,13 @@ You can get the metadata for any scope, such as `/metrics?scope=base`, as shown 
 
 *Get the metrics metadata using HTTP OPTIONS method:*
 
-``` bash
+```bash
  curl -X OPTIONS -H "Accept: application/json"  'http://localhost:8080/metrics?scope=base'
 ```
 
 *JSON response (truncated):*
 
-``` json
+```json
 {
    "classloader.loadedClasses.count": {
       "type": "gauge",
@@ -312,7 +312,7 @@ The following example will demonstrate how to use the `@Counted` annotation to t
 
 *Create a new class `GreetingCards` with the following code:*
 
-``` java
+```java
 @Path("/cards") 
 @RequestScoped 
 public class GreetingCards {
@@ -338,7 +338,7 @@ public class GreetingCards {
 
 *Build and run the application, then invoke the application endpoints below:*
 
-``` bash
+```bash
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
@@ -346,7 +346,7 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 
 *JSON response (partial):*
 
-``` json
+```json
 {
   "io.helidon.examples.quickstart.mp.GreetingCards.any-card":2 
 }
@@ -365,7 +365,7 @@ Note that when using multiple annotations on a method, you **must** give the met
 
 *Replace the `GreetingCards` class with the following code:*
 
-``` java
+```java
 @Path("/cards")
 @RequestScoped
 public class GreetingCards {
@@ -391,7 +391,7 @@ public class GreetingCards {
 
 *Build and run the application, then invoke the application endpoints below:*
 
-``` bash
+```bash
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
@@ -399,7 +399,7 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 
 *JSON response (partial):*
 
-``` json
+```json
 {
   "cardTimer": {
     "count": 2,
@@ -423,7 +423,7 @@ You can share a metric across multiple endpoints simply by specifying the same m
 
 *Replace the `GreetingCards` class with the following code:*
 
-``` java
+```java
 @Path("/cards")
 @RequestScoped
 public class GreetingCards {
@@ -464,7 +464,7 @@ public class GreetingCards {
 
 *Build and run the application, then invoke the following endpoints:*
 
-``` bash
+```bash
 curl  http://localhost:8080/cards/wedding
 curl  http://localhost:8080/cards/birthday
 curl  http://localhost:8080/cards
@@ -473,7 +473,7 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 
 *JSON response (partial):*
 
-``` json
+```json
 {
   "anyCard": 1,
   "specialEventCard": 2 
@@ -488,7 +488,7 @@ You can collect metrics at the class-level to aggregate data from all methods in
 
 *Replace the `GreetingCards` class with the following code:*
 
-``` java
+```java
 @Path("/cards")
 @RequestScoped
 @Counted(name = "totalCards") 
@@ -523,7 +523,7 @@ public class GreetingCards {
 
 *Build and run the application, then invoke the following endpoints:*
 
-``` bash
+```bash
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards/birthday
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
@@ -531,7 +531,7 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 
 *JSON response (partial):*
 
-``` json
+```json
 {
   "anyCard": 1,
   "birthdayCard": 1,
@@ -549,7 +549,7 @@ The following example shows how to use a field-level `Counter` metric to track c
 
 *Replace the `GreetingCards` class with the following code:*
 
-``` java
+```java
 @Path("/cards")
 @RequestScoped
 @Counted(name = "totalCards")
@@ -597,7 +597,7 @@ public class GreetingCards {
 
 *Build and run the application, then invoke the following endpoints:*
 
-``` bash
+```bash
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards/birthday
@@ -608,7 +608,7 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 
 *JSON response (partial):*
 
-``` json
+```json
 {
   "anyCard": 2,
   "birthdayCard": 3,
@@ -627,7 +627,7 @@ The following example demonstrates how to use a `Gauge` to track application up-
 
 *Create a new `GreetingCardsAppMetrics` class with the following code:*
 
-``` java
+```java
 @ApplicationScoped 
 public class GreetingCardsAppMetrics {
 
@@ -651,7 +651,7 @@ public class GreetingCardsAppMetrics {
 
 *Update the `GreetingCards` class with the following code to simplify the metrics output:*
 
-``` java
+```java
 @Path("/cards")
 @RequestScoped
 public class GreetingCards {
@@ -673,13 +673,13 @@ public class GreetingCards {
 
 *Build and run the application, then invoke the application metrics endpoint:*
 
-``` bash
+```bash
 curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 ```
 
 *JSON response from `/metrics/application`:*
 
-``` json
+```json
 {
   "cardCount": 0,
   "io.helidon.examples.quickstart.mp.GreetingCardsAppMetrics.appUpTimeSeconds": 6 
@@ -696,13 +696,13 @@ The following example shows how to integrate the Helidon MP application with Kub
 
 *Stop the application and build the docker image:*
 
-``` bash
+```bash
 docker build -t helidon-metrics-mp .
 ```
 
 *Create the Kubernetes YAML specification, named `metrics.yaml`, with the following content:*
 
-``` yaml
+```yaml
 kind: Service
 apiVersion: v1
 metadata:
@@ -749,17 +749,17 @@ spec:
 
 *Create and deploy the application into Kubernetes:*
 
-``` bash
+```bash
 kubectl apply -f ./metrics.yaml
 ```
 
 *Get the service information:*
 
-``` bash
+```bash
 kubectl get service/helidon-metrics
 ```
 
-``` bash
+```bash
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
 helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s 
 ```
@@ -768,7 +768,7 @@ helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s
 
 *Verify the metrics endpoint using port `30116`, your port will likely be different:*
 
-``` bash
+```bash
 curl http://localhost:31143/metrics
 ```
 
@@ -781,7 +781,7 @@ The metrics service that you just deployed into Kubernetes is already annotated 
 
 *Install Prometheus and wait until the pod is ready:*
 
-``` bash
+```bash
 helm install stable/prometheus --name metrics
 export POD_NAME=$(kubectl get pods --namespace default -l "app=prometheus,component=server" -o jsonpath="{.items[0].metadata.name}")
 kubectl get pod $POD_NAME
@@ -789,13 +789,13 @@ kubectl get pod $POD_NAME
 
 You will see output similar to the following. Repeat the `kubectl get pod` command until you see `2/2` and `Running`. This may take up to one minute.
 
-``` bash
+```bash
 metrics-prometheus-server-5fc5dc86cb-79lk4   2/2     Running   0          46s
 ```
 
 *Create a port-forward, so you can access the server URL:*
 
-``` bash
+```bash
 kubectl --namespace default port-forward $POD_NAME 7090:9090
 ```
 
@@ -807,13 +807,13 @@ You can now delete the Kubernetes resources that were just created during this e
 
 *Delete the Prometheus Kubernetes resources:*
 
-``` bash
+```bash
 helm delete --purge metrics
 ```
 
 *Delete the application Kubernetes resources:*
 
-``` bash
+```bash
 kubectl delete -f ./metrics.yaml
 ```
 

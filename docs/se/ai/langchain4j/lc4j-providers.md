@@ -19,7 +19,7 @@ In a typical RAG setup (see [RAG](rag.md)), a named retriever references:
 
 Each entry under `langchain4j.content-retrievers` becomes a named singleton declarative service bean in the Helidon service registry. You can attach it to AI services or agents using `@Ai.ContentRetriever("name")`, or inject it directly by name.
 
-``` yaml
+```yaml
 langchain4j:
   content-retrievers:
     foo-bar-content-retriever:
@@ -36,7 +36,7 @@ langchain4j:
 - Names the embedding store bean used for similarity search.
 - Sets the embedding model used to convert incoming query text to vectors.
 
-``` java
+```java
 @Ai.Service
 @Ai.ChatModel("foo-bar-chat-model")
 @Ai.ContentRetriever("foo-bar-content-retriever") 
@@ -47,7 +47,7 @@ public interface FooBarExpert {
 
 - Binds this AI service to the named content retriever bean from configuration.
 
-``` java
+```java
 @Service.Singleton
 public class RetrieverConsumer {
     RetrieverConsumer(@Service.Named("foo-bar-content-retriever") ContentRetriever retriever) { 
@@ -83,7 +83,7 @@ Each entry becomes a named singleton declarative service bean in the Helidon ser
 
 If `from-file` is configured, Helidon initializes the store by loading previously persisted embeddings and segments using LangChain4j `InMemoryEmbeddingStore.fromFile(…​)`. If `from-file` is not configured, the store starts empty.
 
-``` yaml
+```yaml
 langchain4j:
   embedding-stores:
     foo-bar-inmemory-embedding-store:
@@ -102,7 +102,7 @@ langchain4j:
 - Loads previously persisted embeddings and text segments during startup.
 - Connects the retriever to the named in-memory embedding store bean.
 
-``` java
+```java
 @Service.Singleton
 public class EmbeddingStoreLifecycle {
     private final InMemoryEmbeddingStore<TextSegment> store;

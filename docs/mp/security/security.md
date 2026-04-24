@@ -6,7 +6,7 @@ To add security, such as protecting resource methods with authentication, to a M
 
 To enable Security, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile</groupId>
     <artifactId>helidon-microprofile-security</artifactId>
@@ -19,7 +19,7 @@ For JAX-RS resources, declare security by adding annotations to a resource class
 
 *Protected resource method*
 
-``` java
+```java
 @GET
 @io.helidon.security.annotations.Authenticated
 @io.helidon.security.annotations.Authorized
@@ -53,7 +53,7 @@ The following shows an example we will explain in detail:
 
 *application.yaml*
 
-``` yaml
+```yaml
 security:
   providers:
     - abac: 
@@ -85,7 +85,7 @@ If you need to use a properties file, such as `microprofile-config.properties`, 
 
 *microprofile-config.properties*
 
-``` properties
+```properties
 security.providers.0.abac=
 security.providers.1.provider-key.optional=false
 security.web-server.defaults.authenticate=true

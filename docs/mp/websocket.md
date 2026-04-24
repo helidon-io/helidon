@@ -8,7 +8,7 @@ Helidon integrates with [Tyrus](https://projects.eclipse.org/projects/ee4j.tyrus
 
 To enable Jakarta Websocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.websocket</groupId>
     <artifactId>helidon-microprofile-websocket</artifactId>
@@ -42,7 +42,7 @@ The Helidon MP application shown here takes full advantage of CDI and class scan
 
 The REST endpoint is implemented as a JAX-RS resource, and the shared queue (in application scope) is directly injected:
 
-``` java
+```java
 @Path("rest")
 public class MessageQueueResource {
 
@@ -59,7 +59,7 @@ public class MessageQueueResource {
 
 Here we opt for the use of an annotated WebSocket endpoint decorated by `@ServerEndpoint` that provides all the meta-data necessary for Helidon to create the endpoint.
 
-``` java
+```java
 @ServerEndpoint(
         value = "/websocket",
         encoders = {
@@ -92,7 +92,7 @@ By default, both JAX-RS resources and WebSocket endpoints will be available unde
 
 For instance, if in our example we include the following class:
 
-``` java
+```java
 @ApplicationScoped
 @RoutingPath("/web")
 public class MessageBoardApplication implements ServerApplicationConfig {
@@ -124,7 +124,7 @@ The Helidon WebServer can listen on multiple ports or sockets. This can be usefu
 
 We can modify the `MessageBoardApplication` above and bind it to a non-default socket as follows:
 
-``` java
+```java
 @ApplicationScoped
 @RoutingPath("/web")
 @RoutingName(value = "admin", required = true)

@@ -19,7 +19,7 @@ The following `application.yaml` snippet shows some configuration options that c
 
 *application.yaml snippet*
 
-``` yaml
+```yaml
 server:
   # These are used to prevent unbounded resource consumption of the server
   idle-connection-period: PT2M  # Check idle connections every 2 minutes

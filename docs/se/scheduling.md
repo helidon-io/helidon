@@ -8,7 +8,7 @@ Scheduling is an essential feature for the Enterprise. Helidon has its own imple
 
 To enable Scheduling, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.scheduling</groupId>
     <artifactId>helidon-scheduling</artifactId>
@@ -23,7 +23,7 @@ For scheduling periodic tasks, it is possible to choose a fixed rate or a Cron e
 
 *Scheduling with fixed rate using `Scheduling.fixedRate()` builder.*
 
-``` java
+```java
 FixedRate.builder()
         .delay(10)
         .initialDelay(5)
@@ -36,7 +36,7 @@ Metadata like human-readable interval description or configured values are avail
 
 *Invocation metadata*
 
-``` java
+```java
 FixedRate.builder()
         .delay(10)
         .task(inv -> System.out.println("Method invoked " + inv.description()))
@@ -67,7 +67,7 @@ For more complicated interval definition, Cron expression can be leveraged with 
 
 *Scheduling with Cron expression*
 
-``` java
+```java
 Cron.builder()
         .expression("0 15 8 ? * *")
         .task(inv -> System.out.println("Executer every day at 8:15"))
@@ -80,7 +80,7 @@ By default, Cron expressions are evaluated using the system’s default timezone
 
 *Scheduling with custom timezone*
 
-``` java
+```java
 Cron.builder()
         .expression("0 0 9 * * ?")
         .zone(ZoneId.of("America/New_York"))
@@ -155,7 +155,7 @@ Scheduling is configurable with [Helidon Config](../se/config/introduction.md).
 
 *Example of configuring*
 
-``` java
+```java
 FixedRate.builder()
         .config(Config.create(() -> ConfigSources.create(
                 """
@@ -183,7 +183,7 @@ For simple fixed rate invocation use .
 
 *Example of scheduling with fixed rate using `FixedRate.builder()` builder.*
 
-``` java
+```java
 FixedRate.builder()
         .delay(10)
         .initialDelay(5)
@@ -196,7 +196,7 @@ Metadata like human-readable interval description or configured values are avail
 
 *Example with invocation metadata*
 
-``` java
+```java
 FixedRate.builder()
         .delay(10)
         .task(inv -> System.out.println("Method invoked " + inv.description()))

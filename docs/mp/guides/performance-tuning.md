@@ -8,7 +8,7 @@ In this guide you fill find basic advice for performance tuning of your Helidon 
 
 Use `helidon-microprofile-core` dependency (and not the `helidon-microprofile` dependency) and add only what you use. For example:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.bundles</groupId>
     <artifactId>helidon-microprofile-core</artifactId>
@@ -38,7 +38,7 @@ The following `application.yaml` snippet shows some configuration options that c
 
 *application.yaml snippet*
 
-``` yaml
+```yaml
 server:
   # These are used to prevent unbounded resource consumption of the server
   idle-connection-period: PT2M  # Check idle connections every 2 minutes

@@ -14,7 +14,7 @@ For more information, see [Fault Tolerance API Javadocs](/apidocs/io.helidon.fau
 
 To enable Fault Tolerance, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.fault-tolerance</groupId>
     <artifactId>helidon-fault-tolerance</artifactId>
@@ -31,7 +31,7 @@ In the sections that follow, we shall briefly explore each of the constructs pro
 
 Temporal networking problems can sometimes be mitigated by simply retrying a certain task. A `Retry` handler is created using a `RetryPolicy` that indicates the number of retries, delay between retries, etc.
 
-``` java
+```java
 Retry retry = Retry.builder()
         .retryPolicy(Retry.JitterRetryPolicy.builder()
                              .calls(3)
@@ -54,7 +54,7 @@ A request to a service that is inaccessible or simply unavailable should be boun
 
 The following is an example of using `Timeout`:
 
-``` java
+```java
 T result = Timeout.create(Duration.ofMillis(10))
         .invoke(this::mayTakeVeryLong);
 ```
@@ -70,7 +70,7 @@ A fallback to a *known* result can sometimes be an alternative to reporting an e
 
 A `Fallback` instance is created by providing a function that takes a `Throwable` and produces some `T` to be used when the intended method failed to return a value:
 
-``` java
+```java
 T result = Fallback.createFromMethod(throwable -> lastKnownValue)
         .invoke(this::mayFail);
 ```
@@ -88,7 +88,7 @@ Circuit breakers start in a *closed* state, letting calls to proceed normally; a
 
 Consider the following example in which `this::mayFail` is monitored by a circuit breaker:
 
-``` java
+```java
 CircuitBreaker breaker = CircuitBreaker.builder()
         .volume(10)
         .errorRatio(30)
@@ -115,7 +115,7 @@ Concurrent access to certain components may need to be limited to avoid excessiv
 
 A waiting queue can be associated with a bulkhead to handle tasks that are submitted when the bulkhead is already at full capacity.
 
-``` java
+```java
 Bulkhead bulkhead = Bulkhead.builder()
         .limit(3)
         .queueLength(5)
@@ -129,7 +129,7 @@ This example creates a bulkhead that limits concurrent execution to `this:usesRe
 
 Asynchronous tasks can be created or forked by using an `Async` instance. A supplier of type `T` is provided as the argument when invoking this handler. For example:
 
-``` java
+```java
 CompletableFuture<Thread> cf = Async.create().invoke(Thread::currentThread);
 cf.thenAccept(t -> System.out.println("Async task executed in thread " + t));
 ```
@@ -144,7 +144,7 @@ Method invocations can be guarded by any combination of the handlers presented a
 
 The easiest way to achieve handler composition is by using a builder in the `FaultTolerance` class as shown in the following example:
 
-``` java
+```java
 FaultTolerance.TypedBuilder<T> builder = FaultTolerance.typedBuilder();
 
 Timeout timeout = Timeout.create(Duration.ofMillis(10));
@@ -215,7 +215,7 @@ Metrics can be enabled programmatically either globally or, if disabled globally
 
 If metrics are not enabled globally, they can be enabled programmatically on each command instance using the `enableMetrics(boolean)` method on its corresponding builder. For example, the following snippet shows how to create a `Retry` instance of name `my-retry` with metrics support enabled.
 
-``` java
+```java
 Retry retry = Retry.builder()
         .name("my-retry")
         .enableMetrics(true)

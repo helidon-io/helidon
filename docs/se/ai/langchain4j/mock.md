@@ -8,7 +8,7 @@ The mock chat model enables deterministic testing of LangChain4j features such a
 
 In addition to the [Helidon integration with LangChain4J core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.integrations.langchain4j.providers</groupId>
     <artifactId>helidon-integrations-langchain4j-providers-mock</artifactId>
@@ -21,7 +21,7 @@ In addition to the [Helidon integration with LangChain4J core dependencies](lang
 
 To automatically create and add `MockChatModel` to the service registry add the following lines to `application.yaml`:
 
-``` java
+```java
 @Ai.Service("food-service") 
 @Ai.ChatModel("production-chatgpt-model") 
 public interface FoodExpertAiService {
@@ -36,7 +36,7 @@ public interface FoodExpertAiService {
 
 To configure `MockChatModel` to be used, for example, in a test scenario you define your model in `application.yaml` and override a chat model name configured by `@Ai.ChatModel` annotation in FoodExpertAiService:
 
-``` yaml
+```yaml
 langchain4j:
   services:
     food-service:
@@ -59,7 +59,7 @@ langchain4j:
 
 The final unit test would look like the following snippet.
 
-``` java
+```java
 @Testing.Test
 class FoodExpertTest {
     @Test
@@ -72,7 +72,7 @@ class FoodExpertTest {
 
 It is possible to inject a mock model and amend the rule programmatically.
 
-``` java
+```java
 @Testing.Test
 class FoodExpertTest {
     @Test

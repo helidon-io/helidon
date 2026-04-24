@@ -14,7 +14,7 @@ Helidon Builder is an API designed for generating immutable objects using the bu
 
 Here’s a simple example of a blueprint:
 
-``` java
+```java
 @Prototype.Blueprint
 interface ServiceConfigBlueprint {
     String name();
@@ -24,7 +24,7 @@ interface ServiceConfigBlueprint {
 
 The generated prototype can be used as follows:
 
-``` java
+```java
 ServiceConfig serviceConfig = ServiceConfig.builder()
     .name("My Service")
     .pageSize(10)
@@ -54,7 +54,7 @@ ServiceConfig serviceConfig = ServiceConfig.builder()
 
 To enable Builder, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.builder</groupId>
     <artifactId>helidon-builder-api</artifactId>
@@ -63,7 +63,7 @@ To enable Builder, add the following dependency to your project’s `pom.xml` (s
 
 You also need to add the annotation processor configuration:
 
-``` xml
+```xml
 <build>
     <plugins>
         <plugin>
@@ -109,7 +109,7 @@ This use case demonstrates generating an immutable class with a builder from a b
 
 This example demonstrates generating a prototype from the blueprint below.
 
-``` java
+```java
 @Prototype.Blueprint                   
 interface ServiceConfigBlueprint {     
     String name();                     
@@ -125,7 +125,7 @@ After building the project, a prototype `ServiceConfig` will be generated.
 
 Example of the generated prototype:
 
-``` java
+```java
 @Generated(value = "io.helidon.builder.codegen.BuilderCodegen",
            trigger = "com.example.ServiceConfigBlueprint")                           
 public interface ServiceConfig extends ServiceConfigBlueprint, Prototype.Api {       
@@ -153,7 +153,7 @@ public interface ServiceConfig extends ServiceConfigBlueprint, Prototype.Api {
 
 The generated `ServiceConfig` can be used as follows:
 
-``` java
+```java
 ServiceConfig serviceConfig = ServiceConfig.builder()
     .name("My Service")
     .pageSize(10)
@@ -181,7 +181,7 @@ The following example demonstrates how to configure a `ServiceConfig` object usi
 
 Blueprint Definition:
 
-``` java
+```java
 @Prototype.Blueprint
 @Prototype.Configured("service")      
 interface ServiceConfigBlueprint {
@@ -200,20 +200,20 @@ interface ServiceConfigBlueprint {
 
 The generated prototype includes a `create` method that accepts a `Config` instance:
 
-``` java
+```java
 static ServiceConfig create(Config config);
 ```
 
 Usage:
 
-``` java
+```java
 Config config = Config.create();
 ServiceConfig serviceConfig = ServiceConfig.create(config);
 ```
 
 Example configuration in `application.properties` file:
 
-``` properties
+```properties
 service.name=My Service
 service.page-size=10
 ```
@@ -268,7 +268,7 @@ The following example demonstrates creating a `Service` runtime type from a `Ser
 
 Runtime type implementation:
 
-``` java
+```java
 public class Service implements RuntimeType.Api<ServiceConfig> {             
     public static ServiceConfig.Builder builder() {                          
         return ServiceConfig.builder();
@@ -291,7 +291,7 @@ public class Service implements RuntimeType.Api<ServiceConfig> {
 
 Blueprint definition:
 
-``` java
+```java
 @Prototype.Blueprint
 @Prototype.Configured("service")
 interface ServiceConfigBlueprint extends Prototype.Factory<Service> { 

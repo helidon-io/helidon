@@ -60,7 +60,7 @@ In most cases, an application that prepares OpenTelemetry programmatically shoul
 
 *Setting the global `OpenTelemetry` and `Tracer` instances in Helidon*
 
-``` java
+```java
 import java.util.Map;
 import io.helidon.telemetry.otelconfig.HelidonOpenTelemetry;
 
@@ -103,7 +103,7 @@ Helidon offers an implementation of its [ neutral tracing API](../../se/tracing.
 
 *Dependency to use the Helidon OpenTelemetry implementation of Helidon tracing*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
@@ -117,7 +117,7 @@ To allow deployers and end users to set up Helidon configuration to control Open
 
 *Dependency to add Helidon OpenTelemetry config and programmatic builder support*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.telemetry</groupId>
     <artifactId>helidon-telemetry-opentelemetry-config</artifactId>
@@ -133,7 +133,7 @@ Helidon’s tracing observability support automatically creates a new tracing sp
 
 *Dependency for automatic HTTP request tracing*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-tracing</artifactId>
@@ -147,7 +147,7 @@ OpenTelemetry prescribes its own [semantic conventions](https://github.com/open-
 
 *Dependency for Helidon support of the OpenTelemetry tracing semantic conventions*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-telemetry-tracing</artifactId>
@@ -161,7 +161,7 @@ Helidon’s metrics observability support automatically registers and updates on
 
 *Dependency for automatic HTTP request measurements*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-metrics</artifactId>
@@ -173,7 +173,7 @@ OpenTelemetry prescribes its own [semantic conventions](https://github.com/open-
 
 *Dependency for Helidon support of the OpenTelemetry metrics semantic conventions for incoming HTTP requests*
 
-``` xml
+```xml
 <dependency>
   <groupId>io.helidon.webserver.observe</groupId>
   <artifactId>helidon-webserver-observe-telemetry-metrics</artifactId>
@@ -248,7 +248,7 @@ The following example shows attribute settings for the tracing signal.
 
 *Example attribute settings*
 
-``` yaml
+```yaml
 telemetry:
   service: my-helidon-service
   tracing:
@@ -490,7 +490,7 @@ This scenario includes no configuration at all for either processors or exporter
 
 OpenTelemetry uses its default processor (`batch`) with its default exporter (`otlp` using `grpc`). \|
 
-``` yaml
+```yaml
 telemetry:
   service: "inventory"
   tracing:
@@ -505,7 +505,7 @@ The single processor uses the single exporter.
 
 No exporter name is declared or referenced.
 
-``` yaml
+```yaml
 telemetry:
   service: "inventory"
   tracing:
@@ -524,7 +524,7 @@ The user configures possibly multiple processors and possibly multiple named exp
 
 The first processor (type `batch`) uses both exporters because it does not specify any exporter names. The second processor uses only the `alternate-otlp` exporter.\|
 
-``` yaml
+```yaml
 telemetry:
   service: "inventory"
   tracing:
@@ -662,7 +662,7 @@ The following example illustrates some of the ways you can configure OpenTelemet
 
 *Example OpenTelemetry Metrics Configuration*
 
-``` yaml
+```yaml
 telemetry:
   service: "test-telemetry"
   signals:
@@ -876,7 +876,7 @@ The following example illustrates some of the ways you can configure OpenTelemet
 
 *Example OpenTelemetry Logger Configuration*
 
-``` yaml
+```yaml
 telemetry:
   service: test-tel-logging
   global: false

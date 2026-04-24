@@ -8,7 +8,7 @@ In Helidon 4 all observability features were moved to one logical module: `obser
 
 To enable Helidon Observability, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe</artifactId>
@@ -17,7 +17,7 @@ To enable Helidon Observability, add the following dependency to your project’
 
 For Health Observability features:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-health</artifactId>
@@ -26,7 +26,7 @@ For Health Observability features:
 
 For Metrics Observability features:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-metrics</artifactId>
@@ -35,7 +35,7 @@ For Metrics Observability features:
 
 For Info Observability features:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-info</artifactId>
@@ -44,7 +44,7 @@ For Info Observability features:
 
 For Logging Observability features:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-log</artifactId>
@@ -53,7 +53,7 @@ For Logging Observability features:
 
 For Configuration Observability features:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-config</artifactId>
@@ -80,7 +80,7 @@ One way to avoid this is to assign a weight from 101 to 200 to the observe featu
 
 *Configuration in `application.yaml` Assigning Feature Weight to Control Routing*
 
-``` yaml
+```yaml
 server:
   features:
     observe:

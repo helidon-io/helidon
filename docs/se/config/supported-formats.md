@@ -23,7 +23,7 @@ Add the following dependency in your project:
 
 *Config YAML Dependency in `pom.xml`*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-yaml</artifactId>
@@ -38,7 +38,7 @@ The YAML parser handles the following media type:
 
 *Automatic selection*
 
-``` java
+```java
 void snippet_1() {
     Config config = Config.create(classpath("application.yaml")); 
 ```
@@ -47,7 +47,7 @@ void snippet_1() {
 
 *YAML parser specified - no file type on source*
 
-``` java
+```java
 Config config = Config.create(classpath("my-config") 
                                       .parser(YamlConfigParser.create())); 
 ```
@@ -57,7 +57,7 @@ Config config = Config.create(classpath("my-config")
 
 *Media type specified*
 
-``` java
+```java
 Config config = Config.create(classpath("my-config") 
                                       .mediaType(MediaTypes.APPLICATION_X_YAML)); 
 ```
@@ -67,7 +67,7 @@ Config config = Config.create(classpath("my-config")
 
 *YAML parser specified because parser services disabled*
 
-``` java
+```java
 Config config = Config.builder(classpath("application.yaml"))
         .disableParserServices() 
         .addParser(YamlConfigParser.create()) 
@@ -87,7 +87,7 @@ Add the following dependency in your project:
 
 *Config HOCON Dependency in `pom.xml`*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-hocon</artifactId>
@@ -103,7 +103,7 @@ The parser handles the following media types:
 
 *Automatic selection*
 
-``` java
+```java
 Config config = Config.create(classpath("application.conf")); 
 ```
 
@@ -113,7 +113,7 @@ The same module and parser supports file type `.json` and the media type `applic
 
 *HOCON parser specified - no file type on source*
 
-``` java
+```java
 Config config = Config.create(classpath("my-config") 
                                       .parser(HoconConfigParser.create())); 
 ```
@@ -123,7 +123,7 @@ Config config = Config.create(classpath("my-config")
 
 *Media type specified*
 
-``` java
+```java
 Config config = Config.create(classpath("my-config") 
                                       .mediaType(MediaTypes.APPLICATION_HOCON)); 
 ```
@@ -133,7 +133,7 @@ Config config = Config.create(classpath("my-config")
 
 *HOCON parser specified because parser services disabled*
 
-``` java
+```java
 Config config = Config.builder(classpath("application.conf"))
         .disableParserServices() 
         .addParser(HoconConfigParser.create()) 
@@ -145,7 +145,7 @@ Config config = Config.builder(classpath("application.conf"))
 
 *Customized HOCON parser*
 
-``` java
+```java
 Config config = Config.builder(classpath("application.conf"))
         .disableParserServices()
         .addParser(HoconConfigParser.builder() 
@@ -172,7 +172,7 @@ Add the following dependency to your project:
 
 *Config Etcd Dependency in `pom.xml`*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-etcd</artifactId>
@@ -185,7 +185,7 @@ To read configuration from an Etcd source, your application uses the [`EtcdConfi
 
 *Use Etcd config source*
 
-``` java
+```java
 Config config = Config.create(
         EtcdConfigSource 
                 .create(URI.create("http://my-etcd:2379"), 
@@ -208,7 +208,7 @@ The Etcd support includes a change watcher strategy designed for an etcd config 
 
 *Use Etcd config source*
 
-``` java
+```java
 Config config = Config.create(
         EtcdConfigSource
                 .builder()
@@ -233,13 +233,13 @@ Other optional `properties` are inherited from `AbstractConfigSourceBuilder`. (s
 
 *Load Config from meta-configuration*
 
-``` java
+```java
 Config config = Config.create(classpath("config-meta-etcd.yaml"));
 ```
 
 *Meta-config `config-meta-etcd.yaml` for the etcd source*
 
-``` YAML
+```YAML
 sources:
     - type: "etcd"                                                 
       properties:
@@ -264,7 +264,7 @@ Add the following dependency to your project:
 
 *Config git Dependency in `pom.xml`*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-git</artifactId>
@@ -277,7 +277,7 @@ To read configuration from a git source, your application uses the [`GitConfigSo
 
 *Use git config source*
 
-``` java
+```java
 Config config = Config.create(
         GitConfigSource
                 .builder() 
@@ -301,7 +301,7 @@ Your application can monitor changes to a configuration loaded from a git source
 
 *Use of git config source with polling strategy*
 
-``` java
+```java
 Config config = Config.create(
         GitConfigSource.builder()
                 .uri(URI.create("https://github.com/okosatka/test-config.git"))
@@ -327,13 +327,13 @@ The meta-configuration must set the `path` and one of `uri` or `directory`. Othe
 
 *Load Config from meta-configuration*
 
-``` java
+```java
 Config config = Config.create(classpath("config-meta-git.yaml"));
 ```
 
 *Meta-config `config-meta-git.yaml` for the git source*
 
-``` YAML
+```YAML
 sources:
     - type: "git" 
       properties:

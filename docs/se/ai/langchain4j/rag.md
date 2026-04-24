@@ -15,7 +15,7 @@ To use RAG with LangChai4j in Helidon, we are going to work with several compone
 
 RAG-capable AI Service or Agent needs to have content retriever configured, `@Ai.ContentRetriever` annotation can be used for that like in the following example:
 
-``` java
+```java
 @Ai.Service
 @Ai.ChatModel("foo-bar-chat-model")
 @Ai.ContentRetriever("foo-bar-content-retriever")
@@ -28,7 +28,7 @@ To use the `foo-bar-content-retriever` content retriever from the preceding exam
 
 See the complete configuration example below, which uses OpenAI models and the in-memory embedding store:
 
-``` yaml
+```yaml
 langchain4j:
 
   providers:

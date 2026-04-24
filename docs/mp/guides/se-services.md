@@ -17,7 +17,7 @@ Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
 *Verify Prerequisites*
 
-``` bash
+```bash
 java -version
 mvn --version
 docker --version
@@ -26,7 +26,7 @@ kubectl version
 
 *Setting JAVA_HOME*
 
-``` bash
+```bash
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -39,7 +39,7 @@ Helidon MP supports [WebServer routing](../server.md) which brings possibility f
 
 Let’s define simple Helidon SE Service for adding special header to every REST response:
 
-``` java
+```java
 public class CoolingService implements HttpService, Handler {
 
     public static final HeaderName COOL_HEADER_NAME = HeaderNames.create("Cool-Header");
@@ -60,7 +60,7 @@ public class CoolingService implements HttpService, Handler {
 
 It’s easy to use it with Helidon SE:
 
-``` java
+```java
 WebServer.builder()
         .routing(it -> it
                 .register("/cool", new CoolingService())) 
@@ -75,7 +75,7 @@ WebServer.builder()
 
 And not much harder to use it with Helidon MP:
 
-``` java
+```java
 @ApplicationScoped
 public class MyBean {
 

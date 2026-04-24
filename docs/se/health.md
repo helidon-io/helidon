@@ -15,7 +15,7 @@ A typical health check combines the statuses of all the dependencies that affect
 
 To enable Health Checks, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-health</artifactId>
@@ -24,7 +24,7 @@ To enable Health Checks, add the following dependency to your project’s `pom.x
 
 Optional dependency to use built-in health checks:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.health</groupId>
     <artifactId>helidon-health-checks</artifactId>
@@ -63,7 +63,7 @@ If you gather the logic for computing the health check response into a method, t
 
 *Declaring a health check response supplier method*
 
-``` java
+```java
 static HealthCheckResponse slowStartLivenessResponse() {
     long now = System.currentTimeMillis();
     return HealthCheckResponse.builder()
@@ -75,7 +75,7 @@ static HealthCheckResponse slowStartLivenessResponse() {
 
 *Registering a health check using a method reference*
 
-``` java
+```java
 ObserveFeature observe = ObserveFeature.builder()
         .config(config.get("server.features.observe")) 
         .addObserver(HealthObserver.builder() 
@@ -100,7 +100,7 @@ If the logic for computing the health check response is fairly simple, express i
 
 *Registering a health check using an in-line lambda expression*
 
-``` java
+```java
 ObserveFeature observe = ObserveFeature.builder()
         .config(config.get("server.features.observe"))
         .addObserver(HealthObserver.builder() 
@@ -133,7 +133,7 @@ This example *is not* complicated in that way, but it’s useful to illustrate t
 
 *Declaring a concrete `HealthCheck` implementation*
 
-``` java
+```java
 /**
  * A custom readiness health check that reports UP 8 seconds after server start-up.
  */
@@ -162,7 +162,7 @@ class SlowStartHealthCheck implements HealthCheck {
 
 *Registering a `HealthCheck` instance*
 
-``` java
+```java
 ObserveFeature observe = ObserveFeature.builder()
         .config(config.get("server.features.observe"))
         .addObserver(HealthObserver.builder() 
@@ -180,7 +180,7 @@ The code examples above prepare the `observe` feature instance using the built-i
 
 *Register the observe feature with the server and start it*
 
-``` java
+```java
 WebServer server = WebServer.builder()
         .featuresDiscoverServices(false)
         .addFeature(observe) 
@@ -212,7 +212,7 @@ Below are parts of health responses which include the custom health check added 
 
 *Response within 8 seconds: HTTP status 503 (not healthy)*
 
-``` json
+```json
 {
   "status": "DOWN",
   "checks": [
@@ -231,7 +231,7 @@ The next response shows the health output once the server has been running for a
 
 *Response after 8 seconds: HTTP status 200*
 
-``` json
+```json
 {
   "status": "UP",
   "checks": [
@@ -317,7 +317,7 @@ The following code adds only selected built-in health checks to your application
 
 *Adding selected built-in health checks*
 
-``` java
+```java
 WebServer server = WebServer.builder()
         .config(config.get("server"))
         .addFeature(ObserveFeature.create(HealthObserver.builder()
@@ -407,7 +407,7 @@ Failed probes are recorded as events associated with their corresponding pods. T
 
 *Get the events of a single pod:*
 
-``` bash
+```bash
 POD_NAME=$(kubectl get pod -l app=acme -o jsonpath='{.items[0].metadata.name}') 
 kubectl get event --field-selector involvedObject.name=${POD_NAME} 
 ```
@@ -432,7 +432,7 @@ Accessing the Helidon-provided `/observe/health` endpoint reports the health of 
 
 *JSON response:*
 
-``` json
+```json
 {
     "status": "UP",
     "checks": [
@@ -474,7 +474,7 @@ This example shows the usage of the Helidon health API in an application that im
 
 *Application code:*
 
-``` java
+```java
 ObserveFeature observeFeature = ObserveFeature.builder()
         .addObserver(HealthObserver.builder()
                              .useSystemServices(false)
@@ -514,7 +514,7 @@ WebServer server = WebServer.builder()
 
 *Kubernetes descriptor:*
 
-``` yaml
+```yaml
 kind: Service
 apiVersion: v1
 metadata:

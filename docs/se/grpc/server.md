@@ -14,7 +14,7 @@ Using the Helidon gRPC framework to implement your services offers several advan
 
 To enable gRPC Server, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-grpc</artifactId>
@@ -31,7 +31,7 @@ Additional dependencies may be required depending on your application needs. See
 
 Unlike the HTTP server—which routes requests based on path expressions and HTTP verbs—the gRPC server routes requests by service and method names. This simplifies routing configuration: all you need to do is register your services.
 
-``` java
+```java
 private static GrpcRouting.Builder createRouting(Config config) {
     return GrpcRouting.builder()
             .service(new GreetService(config)) 
@@ -67,7 +67,7 @@ To implement Protobuf-based services, you can follow the official [instructions]
 
 For this example, we will re-implement the `EchoService` above as a Protobuf service in `echo.proto` file.
 
-``` proto
+```proto
 syntax = "proto3";
 option java_package = "org.example.services.echo";
 
@@ -92,7 +92,7 @@ The Protobuf compiler generates message classes (EchoRequest and EchoResponse), 
 
 The service implementation will be very similar to our original implementation:
 
-``` java
+```java
 class EchoService implements GrpcService {
     @Override
     public Descriptors.FileDescriptor proto() {
@@ -134,7 +134,7 @@ gRPC supports the concept of *server interceptors*, which are useful for impleme
 
 Server interceptors are registered during route creation and will intercept all subsequent gRPC method calls. Because of this, registration order is important to ensure that interceptor chains are constructed correctly to achieve the desired behavior. For example, consider the following routing definition:
 
-``` java
+```java
 GrpcRouting.builder()
         .service(new GreetService(config))
         .intercept(new Interceptor1())
@@ -166,7 +166,7 @@ At the time of writing, Helidon only tracks successful method calls, so the valu
 
 As stated above, gRPC metrics are disabled by default but can be enabled by configuring the gRPC protocol in the Webserver. This can be accomplished either programmatically or directly in your server config file as follows:
 
-``` yaml
+```yaml
 server:
   port: 8080
   host: 0.0.0.0
@@ -187,7 +187,7 @@ Currently, we do not have any custom configuration options for the gRPC protocol
 
 To register a routing with Helidon WebServer, simply add the routing to the listener (WebServer configuration is itself the default listener configuration)
 
-``` java
+```java
 WebServer.builder()
         .port(8080)
         .routing(httpRouting -> httpRouting.get("/greet", (req, res) -> res.send("Hi!"))) 
@@ -209,7 +209,7 @@ When a gRPC client interacts with a server, it must have access to the correspon
 
 However, during development—especially when testing a new service—it can be useful to use tools such as `grpcurl` to invoke service methods directly. In such cases, one option is to provide the `.proto` file as a command-line argument, as shown below:
 
-``` bash
+```bash
 >> grpcurl -proto strings.proto -d '{ "text": "hello world" }' localhost:8080 StringService.Split
 ```
 
@@ -217,7 +217,7 @@ The parameter `-proto` is used by `grpcurl` to learn about the methods and messa
 
 Helidon includes a gRPC reflection service that can be queried by tools such as `grpcurl` to learn about the available services—​similar to OpenAPI for REST services. The reflection service is implemented as a *feature* and can be enabled programmatically when adding the feature, or via config as follows:
 
-``` yaml
+```yaml
   features:
     grpc-reflection:
       enabled: true
@@ -229,7 +229,7 @@ The feature accepts a list of sockets, or if omitted as seen above, it would ena
 
 gRPC compression is typically driven by client requests and can be asymmetric—that is, the server may use a different compression type than the client. In certain scenarios, such as debugging or performance testing, it may be useful to disable compression on the server side. As with most Helidon features, this can be configured either programmatically or through configuration.
 
-``` yaml
+```yaml
 server:
   port: 8080
   host: 0.0.0.0

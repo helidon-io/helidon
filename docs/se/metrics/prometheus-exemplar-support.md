@@ -21,7 +21,7 @@ Exemplar support in Helidon relies on the exemplar support provided by the under
 
 To enable OpenMetrics exemplar support, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.metrics</groupId>
     <artifactId>helidon-metrics-trace-exemplar</artifactId>
@@ -31,7 +31,7 @@ To enable OpenMetrics exemplar support, add the following dependency to your pro
 
 Also, include the Helidon integration module for a tracing implementation (such as [Helidon Zipkin](../../se/tracing.md#zipkin-tracing))
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-zipkin</artifactId>
@@ -40,7 +40,7 @@ Also, include the Helidon integration module for a tracing implementation (such 
 
 Add the Helidon tracing component itself:
 
-``` xml
+```xml
 <dependencies>
     <dependency>
         <groupId>io.helidon.tracing</groupId>
@@ -60,7 +60,7 @@ To transmit tracing data from your service to a backend, you need to add a traci
 
 For Jaeger:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-jaeger</artifactId>
@@ -70,7 +70,7 @@ For Jaeger:
 
 For Zipkin:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-zipkin</artifactId>
@@ -80,7 +80,7 @@ For Zipkin:
 
 For OpenTelemetry:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
@@ -90,7 +90,7 @@ For OpenTelemetry:
 
 For OpenTracing (deprecated):
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-opentracing</artifactId>

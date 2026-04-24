@@ -8,7 +8,7 @@ This module adds support for selected Cohere models.
 
 In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.integrations.langchain4j.providers</groupId>
     <artifactId>helidon-integrations-langchain4j-providers-cohere</artifactId>
@@ -21,7 +21,7 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 To automatically create and add `CohereEmbeddingModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     cohere:
@@ -54,7 +54,7 @@ Full list of configuration properties:
 
 To automatically create and add `CohereScoringModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     cohere:

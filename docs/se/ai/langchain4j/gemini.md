@@ -8,7 +8,7 @@ This module adds support for selected [Google Gemini](https://ai.google.dev/gemi
 
 In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.integrations.langchain4j.providers</groupId>
     <artifactId>helidon-integrations-langchain4j-providers-google-gemini</artifactId>
@@ -21,7 +21,7 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 To automatically create and add `GoogleAiGeminiChatModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     google-gemini:
@@ -86,7 +86,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 To automatically create and add `GoogleAiGeminiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
 
-``` yaml
+```yaml
 langchain4j:
   providers:
     google-gemini:

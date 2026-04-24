@@ -4,7 +4,7 @@
 
 To enable MicroProfile Telemetry, either add a dependency on the [helidon-microprofile bundle](../mp/introduction/microprofile.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.telemetry</groupId>
     <artifactId>helidon-microprofile-telemetry</artifactId>
@@ -17,7 +17,7 @@ Microprofile Telemetry mandates that implementations such as Helidon use OpenTel
 
 *Example dependency for the OpenTelemetry OTLP exporter*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.opentelemetry</groupId>
     <artifactId>opentelemetry-exporter-otlp</artifactId>
@@ -83,7 +83,7 @@ Accessing and using these objects can be done as follows. For span:
 
 *Span sample*
 
-``` java
+```java
 @ApplicationScoped
 class HelidonBean {
 
@@ -108,7 +108,7 @@ You can inject OpenTelemetry `Tracer` using the regular `@Inject` annotation and
 
 *SpanBuilder usage*
 
-``` java
+```java
 @Path("/")
 public class HelidonEndpoint {
 
@@ -137,7 +137,7 @@ Helidon Microprofile Telemetry is integrated with [Helidon Tracing API](tracing.
 
 *Inject Helidon Tracer*
 
-``` java
+```java
 private io.helidon.tracing.Tracer helidonTracerInjected;
 
 @Inject
@@ -169,7 +169,7 @@ Another option is to use the Global Tracer:
 
 *Obtain the Global tracer*
 
-``` java
+```java
 @GET
 @Path("mixed")
 @Produces(MediaType.APPLICATION_JSON)
@@ -197,7 +197,7 @@ To obtain the current span, it can be injected by CDI. The current span can also
 
 *Inject the current span*
 
-``` java
+```java
 @Path("/")
 public class HelidonEndpoint {
     @Inject
@@ -227,7 +227,7 @@ The same functionality is available for the `Baggage` API:
 
 *Inject the current baggage*
 
-``` java
+```java
 @Path("/")
 public class HelidonEndpoint {
     @Inject
@@ -267,7 +267,7 @@ Helidon MP applications which inject an OpenTelemetry `Tracer` or `Span` can eas
 
 *Using `@CallbackEnabled`*
 
-``` java
+```java
 @Inject
 @CallbackEnabled
 private Tracer otelTracer;
@@ -291,7 +291,7 @@ Your implementation of `HelidonTelemetryContainerFilterHelper` must have a CDI b
 
 *Example container helper for the Helidon MP Greeting app*
 
-``` java
+```java
 @ApplicationScoped
 public class CustomRestRequestFilterHelper implements HelidonTelemetryContainerFilterHelper {
 
@@ -317,7 +317,7 @@ Your implementation of `HelidonTelemetryClientFilterHelper` must have a CDI bean
 
 *Example Client Helper for the Helidon MP Greeting App*
 
-``` java
+```java
 @ApplicationScoped
 public class CustomRestClientRequestFilterHelper implements HelidonTelemetryClientFilterHelper {
 
@@ -363,7 +363,7 @@ For example, the Jaeger backend gathers the tracing information.
 
 *Run the Jaeger backend in a docker container*
 
-``` bash
+```bash
 docker run -d --name jaeger \
   -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
   -e COLLECTOR_OTLP_ENABLED=true \
@@ -386,7 +386,7 @@ All the tracing information gathered from the examples runs is accessible from t
 
 Together with Helidon Telemetry dependency, an OpenTelemetry Exporter dependency should be added to project’s pom.xml file.
 
-``` xml
+```xml
 <dependencies>
     <dependency>
         <groupId>io.helidon.microprofile.telemetry</groupId>
@@ -406,7 +406,7 @@ Add these lines to `META-INF/microprofile-config.properties`:
 
 *MicroProfile Telemetry properties*
 
-``` properties
+```properties
 otel.sdk.disabled=false     
 otel.traces.exporter=jaeger 
 otel.service.name=greeting-service 
@@ -430,7 +430,7 @@ Here we enable MicroProfile Telemetry, set tracer to "jaeger" and give a name, w
 
 To create simple services, use `@WithSpan` and `Tracer` to create span and let MicroProfile OpenTelemetry handle them.
 
-``` java
+```java
 @Path("/greet")
 public class GreetResource {
 
@@ -446,7 +446,7 @@ public class GreetResource {
 
 Now let’s call the Greeting endpoint:
 
-``` bash
+```bash
 curl localhost:8080/greet
 Hello World
 ```
@@ -459,7 +459,7 @@ Next, launch the Jaeger UI at <http://localhost:16686/>. The expected output is:
 
 *Custom method*
 
-``` java
+```java
 @Inject
 private Tracer tracer; 
 
@@ -487,7 +487,7 @@ public JsonObject useCustomSpan() {
 
 Let us call the custom endpoint:
 
-``` bash
+```bash
 curl localhost:8080/greeting/custom
 ```
 
@@ -501,7 +501,7 @@ Now let us use multiple services calls. In the example below our main service wi
 
 *Outbound method*
 
-``` java
+```java
 @Uri("http://localhost:8081/secondary")
 private WebTarget target; 
 
@@ -521,7 +521,7 @@ The secondary service is basic; it has only one method, which is also annotated 
 
 *Secondary service*
 
-``` java
+```java
 @GET
 @WithSpan 
 public String getSecondaryMessage() {
@@ -534,7 +534,7 @@ public String getSecondaryMessage() {
 
 Let us call the *Outbound* endpoint:
 
-``` bash
+```bash
 curl localhost:8080/greet/outbound
 Secondary
 ```

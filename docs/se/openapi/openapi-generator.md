@@ -38,7 +38,7 @@ To use the OpenAPI generator plug-in to generate or regenerate files during your
 
 *Declaring the OpenAPI Generator Plug-in*
 
-``` xml
+```xml
 <properties>
     <openapi-generator-version>7.6.0</openapi-generator-version>
 </properties>
@@ -428,7 +428,7 @@ The following example uses the Helidon server generator to create a project or r
 
 *Creating or updating a server project using the OpenAPI generator CLI*
 
-``` bash
+```bash
 java -jar ${path-to-generator}/openapi-generator-cli.jar \
   generate \
   -i src/main/resources/petstore.yaml \
@@ -446,7 +446,7 @@ The next example runs the Helidon client generator using the same input file.
 
 *Creating or updating a client project using the OpenAPI generator CLI*
 
-``` bash
+```bash
 java -jar ${path-to-generator}/openapi-generator-cli.jar \
   generate \
   -i src/main/resources/petstore.yaml \
@@ -481,7 +481,7 @@ The plug-in execution in the following example is equivalent to the CLI example 
 
 *Creating or updating a client project using the OpenAPI Maven plug-in*
 
-``` xml
+```xml
 <plugin>
     <groupId>org.openapitools</groupId>
     <artifactId>openapi-generator-maven-plugin</artifactId>
@@ -546,7 +546,7 @@ The generator creates an implementation class as well as the abstract class for 
 
 *The generated `handleAddPet` method in the `PetApiImpl` class*
 
-``` java
+```java
 public class PetServiceImpl extends PetService {
     @Override
     protected void handleAddPet(ServerRequest request, ServerResponse response,
@@ -560,7 +560,7 @@ Customize the class to manage the pets and revise the method to save the new pet
 
 *The customized `handleAddPet` method in the `PetApiImpl` class*
 
-``` java
+```java
 public class PetServiceImpl extends PetService {
 
     private final Map<Long, Pet> pets = new HashMap<>(); 
@@ -586,7 +586,7 @@ If a response has any *required* response parameters you would pass them as para
 
 *The customized `findPetsByTags` method in the `PetApiImpl` class*
 
-``` java
+```java
 public class PetServiceImpl extends PetService {
 
     private final Map<Long, Pet> pets = new HashMap<>(); 
@@ -644,7 +644,7 @@ For each operation in an API the generator creates an inner class and, for each 
 
     *Customized `AddPetOp` class*
 
-``` java
+```java
     public class AddPetOpCustom extends PetService.AddPetOp {
         @Override
         protected Pet pet(ServerRequest request, ValidatorUtils.Validator validator) {
@@ -669,7 +669,7 @@ For each operation in an API the generator creates an inner class and, for each 
 
     *Providing your custom implementation of `AddPet`*
 
-``` java
+```java
     public class PetServiceImpl extends PetService {
         @Override
         protected AddPetOp createAddPetOp() {
@@ -712,7 +712,7 @@ In the simplest case, your code can get an `ApiClient` instance directly.
 
 *Creating an `ApiClient` instance - simple case*
 
-``` java
+```java
 public class ExampleClient {
 
     private ApiClient apiClient; 
@@ -736,7 +736,7 @@ Your code does not need to know how the object mapper setting is conveyed to the
 
 *Creating an `ApiClient` instance - influencing the `ApiClient.Builder`*
 
-``` java
+```java
 public class ExampleClient {
 
     private ApiClient apiClient; 
@@ -760,7 +760,7 @@ In more complicated situations, your code can adjust the settings of the `WebCli
 
 *Creating an `ApiClient` instance - adjusting the `WebClientConfig.Builder`*
 
-``` java
+```java
 public class ExampleClient {
 
     private ApiClient apiClient; 
@@ -791,7 +791,7 @@ Lastly, you can construct the `WebClientConfig.Builder` entirely yourself and ha
 
 *Creating an `ApiClient` instance - using a custom `WebClientConfig.Builder`*
 
-``` java
+```java
 public class ExampleClient {
 
     private ApiClient apiClient; 
@@ -826,7 +826,7 @@ To invoke an operation defined on the `PetApi` interface, your code instantiates
 
 *Preparing the PetStore Client API*
 
-``` java
+```java
 public class ExampleClient {
 
     private ApiClient apiClient; 
@@ -870,7 +870,7 @@ You can adopt different styles of retrieving the results, depending on the speci
 
 *Access with only result access*
 
-``` java
+```java
 void findAvailablePets() {
     ApiResponse<List<Pet>> apiResponse =
             petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value())); 
@@ -890,7 +890,7 @@ The next example shows how your code can use the `HTTPClientResponse`.
 
 *Access with status checking*
 
-``` java
+```java
 void findAvailablePets() {
     ApiResponse<List<Pet>> apiResponse =
             petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value())); 

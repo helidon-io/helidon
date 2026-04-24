@@ -14,7 +14,7 @@ Once you know the type of sharing you want to allow for each of your resourcesâ€
 
 To enable CORS, add the following dependency to your projectâ€™s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile</groupId>
     <artifactId>helidon-microprofile-cors</artifactId>
@@ -68,7 +68,7 @@ For each resource you want to configure, add a section to `META-INF/microprofile
 
 *General form of CORS configuration*
 
-``` properties
+```properties
 cors.enabled= 
 
 cors.paths.i.path-pattern= 
@@ -127,7 +127,7 @@ The discussion below describes the changes in the application which:
 
 *Using annotations to declare CORS behavior*
 
-``` java
+```java
 @Path("/greet")
 public class GreetResource { 
 
@@ -170,7 +170,7 @@ You could use the following configuration in place of using annotations to set u
 
 *Using configuration to set up the same CORS behavior*
 
-``` properties
+```properties
 cors.paths.0.path-pattern=/greet 
 
 cors.paths.1.path-pattern=/greet/greeting 
@@ -185,7 +185,7 @@ Or, alternatively, the following configuration example augments the settings fro
 
 *Using configuration to augment or override declared CORS behavior*
 
-``` properties
+```properties
 cors.paths.0.path-pattern=/greet 
 cors.paths.0.allow-methods=GET
 cors.paths.0.allow-origins=https://here.com,https://foo.com,https://there.com
@@ -221,7 +221,7 @@ The following example restricts sharing of
 
 *Configuration which restricts sharing of the health and metrics resources*
 
-``` properties
+```properties
 cors.paths.0.path-pattern=/health
 cors.paths.0.allow-origins=https://there.com
 cors.paths.1.path-pattern=/metrics
@@ -236,7 +236,7 @@ If you have edited the Helidon MP QuickStart application as described in the pre
 
 Build and run the QuickStart application as usual.
 
-``` bash
+```bash
 mvn package
 java -jar target/helidon-quickstart-mp.jar
 ```
@@ -251,13 +251,13 @@ java -jar target/helidon-quickstart-mp.jar
 
 The metrics service rejects attempts to access metrics on behalf of a disallowed origin.
 
-``` bash
+```bash
 curl -i -H "Origin: https://other.com" http://localhost:8080/metrics
 ```
 
 *Curl output*
 
-``` text
+```text
 HTTP/1.1 403 Forbidden
 Date: Mon, 11 May 2020 11:08:09 -0500
 transfer-encoding: chunked
@@ -266,13 +266,13 @@ connection: keep-alive
 
 But accesses from `foo.com` succeed.
 
-``` bash
+```bash
 curl -i -H "Origin: https://foo.com" http://localhost:8080/metrics
 ```
 
 *Curl output*
 
-``` text
+```text
 HTTP/1.1 200 OK
 Access-Control-Allow-Origin: https://foo.com
 Content-Type: text/plain
@@ -290,11 +290,11 @@ base_classloader_loadedClasses_count 3568
 
 The health service rejects requests from origins not specifically approved.
 
-``` bash
+```bash
 curl -i -H "Origin: https://foo.com" http://localhost:8080/health
 ```
 
-``` text
+```text
 HTTP/1.1 403 Forbidden
 Date: Mon, 11 May 2020 12:06:55 -0500
 transfer-encoding: chunked
@@ -303,11 +303,11 @@ connection: keep-alive
 
 And responds successfully only to cross-origin requests from `https://there.com`.
 
-``` bash
+```bash
 curl -i -H "Origin: https://there.com" http://localhost:8080/health
 ```
 
-``` text
+```text
 HTTP/1.1 200 OK
 Access-Control-Allow-Origin: https://there.com
 Content-Type: application/json

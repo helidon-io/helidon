@@ -19,7 +19,7 @@ To construct the model, Helidon gathers information about the service API from a
 
 To enable OpenAPI, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.openapi</groupId>
     <artifactId>helidon-openapi</artifactId>
@@ -96,7 +96,7 @@ The following example shows how to use configuration to customize how OpenAPI wo
 
 *Configure OpenAPI behavior*
 
-``` yaml
+```yaml
 server:
   port: 8080                  
   host: 0.0.0.0
@@ -115,7 +115,7 @@ Most Helidon SE applications need only add the dependency as explained above; He
 
 *Java Code to Create and Register `OpenApiFeature`*
 
-``` java
+```java
 WebServer server = WebServer.builder()
         .config(config.get("server"))
         .addFeature(OpenApiFeature.create(config.get("openapi"))) 

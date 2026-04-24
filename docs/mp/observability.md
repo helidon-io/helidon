@@ -12,7 +12,7 @@ To include other observability features in your Helidon MP application, add one 
 
 For Info Observability features:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-info</artifactId>
@@ -21,7 +21,7 @@ For Info Observability features:
 
 For Logging Observability features:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-log</artifactId>
@@ -30,7 +30,7 @@ For Logging Observability features:
 
 For Configuration Observability features:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-config</artifactId>
@@ -55,7 +55,7 @@ One way to avoid this is to assign a weight from 101 to 200 to the observe featu
 
 *Configuration in `META-INF/microprofile-config.properties` Assigning Feature Weight to Control Routing*
 
-``` properties
+```properties
 server.features.observe.weight = 120
 ```
 

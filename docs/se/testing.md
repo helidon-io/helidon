@@ -8,7 +8,7 @@ Helidon provides built-in test support for Helidon testing with JUnit 5.
 
 To enable Helidon Testing Framework, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
      <groupId>io.helidon.webserver.testing.junit5</groupId>
      <artifactId>helidon-webserver-testing-junit5</artifactId>
@@ -79,7 +79,7 @@ You can create the following test to validate that the server returns the correc
 
 *Basic Helidon test framework usage.*
 
-``` java
+```java
 @ServerTest 
 class MyServerTest {
 
@@ -126,7 +126,7 @@ If there is no need to set up and run a server, a `DirectClient` client can be u
 
 *Routing test using `@RoutingTest` and `DirectClient`.*
 
-``` java
+```java
 @RoutingTest 
 class MyRoutingTest {
 
@@ -172,7 +172,7 @@ Helidon tests are able to detect Virtual Threads pinning. A situation when carri
 
 *Enable pinning detection*
 
-``` java
+```java
 @ServerTest(pinningDetection = true)
 ```
 
@@ -182,7 +182,7 @@ Pinning threshold can be changed with:
 
 *Configure pinning threshold*
 
-``` java
+```java
 @ServerTest(pinningDetection = true, pinningThreshold = 50)
 ```
 
@@ -198,7 +198,7 @@ The JUnit5 testing module ensures that a global service registry is created that
 
 Required dependency:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.testing</groupId>
     <artifactId>helidon-testing-junit5</artifactId>
@@ -216,7 +216,7 @@ You can also use `@Service.Named` qualifier on such parameters to only inject th
 
 If WebSocket testing is required, there is an additional module for it. It is necessary to include the following Maven dependency to the Project’s pom file:
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.testing.junit5</groupId>
     <artifactId>helidon-testing-junit5-websocket</artifactId>
@@ -230,7 +230,7 @@ The WebSocket Testing extension adds support for routing configuration and injec
 
 *WebSocket sample test.*
 
-``` java
+```java
 @ServerTest
 class WsSocketTest {
 
@@ -263,7 +263,7 @@ class WsSocketTest {
 
 *`ClientSideListener` helper class.*
 
-``` java
+```java
 static class ClientSideListener implements WsListener {
     volatile String message;
     volatile Throwable error;
@@ -294,7 +294,7 @@ The WebSocket `ClientSideListener` is also a helper class that implements `WsLis
 
 *`ServerSideListener` helper class.*
 
-``` java
+```java
 static class ServerSideListener implements WsListener {
     volatile String message;
 

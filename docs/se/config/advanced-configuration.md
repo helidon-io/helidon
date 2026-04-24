@@ -36,13 +36,13 @@ If the directory `conf/secrets` contains these two files
 
 File `secrets/username`
 
-``` text
+```text
 jose
 ```
 
 File `secrets/password`
 
-``` text
+```text
 ^ery$ecretP&ssword
 ```
 
@@ -50,7 +50,7 @@ your application can load this as configuration as follows:
 
 Using `directory` config source
 
-``` java
+```java
 Config secrets = Config.builder(
                 ConfigSources.directory("conf/secrets")) // (1)
         .disableEnvironmentVariablesSource() // (2)
@@ -80,7 +80,7 @@ The config system provides several ways to create a `Config` tree from data alre
 
 #### Subtree of Another `Config`
 
-``` java
+```java
 Config anotherConfig = Config.create(classpath("application.conf"));
 
 Config config = Config.create(
@@ -89,21 +89,21 @@ Config config = Config.create(
 
 #### `Properties` Object
 
-``` java
+```java
 Config config = Config.create(
         ConfigSources.create(System.getProperties()).build()); // (1)
 ```
 
 #### `String` of a Given Media Type
 
-``` java
+```java
 Config config = Config.create();
 ConfigSources.create("app.greeting = Hi", MediaTypes.create("text", "x-java-properties"));
 ```
 
 #### `Map`
 
-``` java
+```java
 Config config = Config.create(
         ConfigSources.create(Map.of("app.page-size", "20"))
                 .build()); // (1)
@@ -111,7 +111,7 @@ Config config = Config.create(
 
 #### *ad hoc* Config Nodes
 
-``` java
+```java
 Config config = Config.create(
         ConfigSources.create(ObjectNode.builder()
                                      .addList("app.basic-range", ListNode.builder()
@@ -137,7 +137,7 @@ The config system lets you assign a prefix to all keys from a given source using
 
 File `app.conf`
 
-``` properties
+```properties
 greeting = "Hello"
 page-size = 20
 basic-range = [ -20, 20 ]
@@ -145,7 +145,7 @@ basic-range = [ -20, 20 ]
 
 File `data.conf`
 
-``` yaml
+```yaml
 providers: [
     {
         name = "Provider1"
@@ -160,7 +160,7 @@ providers: [
 
 Using `prefixed` config source
 
-``` java
+```java
 Config config = Config.create(
         ConfigSources.prefixed("app", // (1)
                                classpath("app.conf")), // (2)
@@ -195,7 +195,7 @@ The config system provides the `FallbackMergingStrategy` which implements the de
 
 Composite config source example
 
-``` java
+```java
 Config config = Config.builder()
         .addSource(file("config-file.properties"))
         .addSource(classpath("application.yaml"))
@@ -230,7 +230,7 @@ Your application can specify what media type to use in interpreting a config sou
 
 Specify `mediaType` for config source
 
-``` java
+```java
 Config config = Config.create(classpath("props") // (1)
                                       .mediaType(MediaTypes.TEXT_PROPERTIES)); // (2)
 ```
@@ -258,7 +258,7 @@ Generally try to rely on media-type matching rather than specifying a given pars
 
 Specify `parser` for config source
 
-``` java
+```java
 Config config = Config.create(classpath("props") // (1)
                                       .parser(ConfigParsers.properties())); // (2)
 ```
@@ -274,7 +274,7 @@ In this example, a YAML document contains a JSON document as a leaf.
 
 YAML file with included JSON formatted property
 
-``` yaml
+```yaml
 secrets:
     username: "jose"
     password: "^ery$ecretP&ssword"
@@ -293,7 +293,7 @@ app: > # (1)
 
 Specify JSON as media type for node
 
-``` java
+```java
 Config config = Config.create(
         classpath("application.yaml")
                 .mediaTypeMapping(key -> { // (1)
@@ -334,7 +334,7 @@ Alternatively, your application could map config keys to the specific parsers yo
 
 Specify JSON formatted property' parser instance
 
-``` java
+```java
 Config config = Config.create(
         classpath("application.yaml")
                 .parserMapping(key -> { // (1)
@@ -360,7 +360,7 @@ For example, the following configuration file contains two object nodes with nam
 
 Example `application.json` with dot character in key
 
-``` json
+```json
 {
     "oracle" : {
         "com" : true,
@@ -374,7 +374,7 @@ Example `application.json` with dot character in key
 
 Working with configuration with dot character in node name
 
-``` java
+```java
 Config config = Config.create(classpath("application.json"));
 
 // node `oracle`
@@ -436,7 +436,7 @@ As an example use case, you can use token references to declare the default valu
 
 Initialize `Config` with Override Definition from `overrides.properties` file
 
-``` java
+```java
 Config config = Config.builder()
         .overrides(OverrideSources.file("conf/overrides.properties")) // (1)
         .sources(file("conf/env.yaml"), // (2)
@@ -452,7 +452,7 @@ You can disable key and value token replacement separately as the following exam
 
 Disabling Key and Value Token Replacement
 
-``` java
+```java
 Config config = Config.builder()
         .disableKeyResolving()
         .disableValueResolving()
@@ -479,7 +479,7 @@ The following example shares the same executor for two different polling strateg
 
 Customize polling strategy executors
 
-``` java
+```java
 ScheduledExecutorService executor = Executors.newScheduledThreadPool(2); // (1)
 
 Config config = Config.create(
@@ -506,7 +506,7 @@ Your application can invoke the system watcher builder’s `executor` method to 
 
 Customize config and override sources' executors
 
-``` java
+```java
 ScheduledExecutorService executor = Executors.newScheduledThreadPool(2); // (1)
 
 Config config = Config.builder()
@@ -532,7 +532,7 @@ You can control which executor a retry policy should use for its work. The `Retr
 
 Customize retry policy executors
 
-``` java
+```java
 ScheduledExecutorService executor = Executors.newScheduledThreadPool(2, myThreadFactory); // (1)
 
 Config config = Config.create(

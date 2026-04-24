@@ -14,7 +14,7 @@ The Server API is available as a loadable service in the Helidon WebServer. The 
 
 ### Maven Coordinates
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-sse</artifactId>
@@ -25,7 +25,7 @@ The Server API is available as a loadable service in the Helidon WebServer. The 
 
 Sending events is accomplished by obtaining an `SseSink` instance from a `ServerResponse` using the `SseSink.TYPE` constant. The following example converts the response into an `SseSink`, emits two string messages and then closes the connection.
 
-``` java
+```java
 try (SseSink sseSink = res.sink(SseSink.TYPE)) {
     sseSink.emit(SseEvent.create("hello"))
             .emit(SseEvent.create("world"));
@@ -40,7 +40,7 @@ Events can be created using any of the static `create` methods in `SseEvent` as 
 
 It is possible to serialize event data using the media support. For example, if JSON-P is available in your class path, you can create an SSE event from a `JsonObject` and Helidon will find the appropriate media converter and serialize the event data on your behalf.
 
-``` java
+```java
 JsonObject json = Json.createObjectBuilder()
         .add("hello", "world")
         .build();
@@ -51,7 +51,7 @@ try (SseSink sseSink = res.sink(SseSink.TYPE)) {
 
 Similarly, if JSON-B support is available in your class path, an event can be created from an arbitrary Java class and serialized as shown next:
 
-``` java
+```java
 class HelloWorld {
 
     private String hello;
@@ -82,7 +82,7 @@ The Client API is available as a loadable service in the Helidon WebClient. The 
 
 ### Maven Coordinates
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient-sse</artifactId>
@@ -93,7 +93,7 @@ The Client API is available as a loadable service in the Helidon WebClient. The 
 
 Receiving events is accomplished by providing an `SseSource` handler using the source type `SseSource.TYPE`. An `SseSource` is a functional interface defined for the purpose of processing events. The following example, obtains an `Http1ClientResponse` from a request and registers an `SseSource` to process a single event.
 
-``` java
+```java
 try (Http1ClientResponse r = client.get("/sseJson")
         .header(ACCEPT_EVENT_STREAM)
         .request()) {
@@ -107,7 +107,7 @@ try (Http1ClientResponse r = client.get("/sseJson")
 
 The `SseSource` type defines other methods such as `onOpen`, `onClose` and `onError`. The following example waits for zero or more string events until the connection is closed. A `CountDownLatch` is a convenient way to asynchronously wait until all the events are received.
 
-``` java
+```java
 try (Http1ClientResponse r = client.get("/sseString")
         .header(ACCEPT_EVENT_STREAM)
         .request()) {
@@ -132,7 +132,7 @@ The Client API is also integrated with media type support. The data received as 
 
 For example, to convert an event into a Java instance using JSON-B, the `application/json` media type is required as a second parameter --the first parameter `HelloWorld.class` simply does not convey sufficient information to select the appropriate converter for the event’s data in this case.
 
-``` java
+```java
 try (Http1ClientResponse r = client.get("/sseJson")
         .header(ACCEPT_EVENT_STREAM)
         .request()) {

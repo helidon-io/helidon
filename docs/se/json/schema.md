@@ -15,7 +15,7 @@ Helidon currently supports only schema generation.
 
 To enable JSON Schema, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.json.schema</groupId>
     <artifactId>helidon-json-schema</artifactId>
@@ -28,7 +28,7 @@ To enable JSON Schema, add the following dependency to your project’s `pom.xml
 
 The entry point for each runtime JSON schema creation is a [`Schema`](/apidocs/io.helidon.json.schema/io/helidon/json/schema/Schema.html) class. The imperative approach gives you full programmatic control over JSON Schema creation. Using the fluent Schema builder API, you can construct schemas step by step, configure properties, and apply constraints directly in code. This is useful when schemas need to be generated dynamically or when fine-grained customization is required.
 
-``` java
+```java
 Schema.builder()
         .rootObject(builder -> builder.description("Example JSON Schema")
                 .addIntegerProperty("exampleProperty", intBuilder -> intBuilder.minimum(0)))
@@ -37,7 +37,7 @@ Schema.builder()
 
 Once the [`Schema`](/apidocs/io.helidon.json.schema/io/helidon/json/schema/Schema.html) object is created, you can generate the JSON Schema as a String. The result looks like this:
 
-``` json
+```json
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "description": "Example JSON Schema",
@@ -55,7 +55,7 @@ Once the [`Schema`](/apidocs/io.helidon.json.schema/io/helidon/json/schema/Schem
 
 The declarative approach lets you define JSON Schema through annotations in a [`JsonSchema`](/apidocs/io.helidon.json.schema/io/helidon/json/schema/JsonSchema.html) class. At compile time, the `helidon-json-schema-codegen` generator processes these annotations and produces a class containing the schema definition. This approach keeps your schema definitions close to your data model and ensures schemas are generated automatically without manual coding.
 
-``` java
+```java
 @JsonSchema.Schema 
 @JsonSchema.Description("Example JSON Schema")
 public record ExampleSchema(@JsonSchema.Integer.Minimum(0) int exampleProperty) {
@@ -66,7 +66,7 @@ public record ExampleSchema(@JsonSchema.Integer.Minimum(0) int exampleProperty) 
 
 In addition, the following section must be added to the `build` of the Maven `pom.xml` to enable annotation processors that generate the necessary code:
 
-``` xml
+```xml
 <plugins>
     <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -86,7 +86,7 @@ In addition, the following section must be added to the `build` of the Maven `po
 
 Once compiled, the class with the following name will be generated `ExampleSchema__JsonSchema`. This class contains the String format of the schema and is automatically discovered via ServiceRegistry. Because of that, it is possible to inject the [`Schema`](/apidocs/io.helidon.json.schema/io/helidon/json/schema/Schema.html) with the [`@Service.Named`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Named.html) and desired class (such as `ExampleSchema.class`) as a value.
 
-``` java
+```java
 public void myMethod(@Service.Named(ExampleSchema.class) Schema schema) {
     //...
 }
@@ -94,6 +94,6 @@ public void myMethod(@Service.Named(ExampleSchema.class) Schema schema) {
 
 Or obtain it over the static `find` method on the [`Schema`](/apidocs/io.helidon.json.schema/io/helidon/json/schema/Schema.html) class. This methods searches the ServiceRegistry for a Schema bound to the provided class over the parameter.
 
-``` java
+```java
 Schema.find(MyClass.class);
 ```

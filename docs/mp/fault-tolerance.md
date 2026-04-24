@@ -8,7 +8,7 @@ Fault Tolerance is part of the MicroProfile set of specifications. This API defi
 
 To enable MicroProfile Fault Tolerance, either add a dependency on the [helidon-microprofile bundle](../mp/introduction/microprofile.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
  <dependency>
      <groupId>io.helidon.microprofile</groupId>
      <artifactId>helidon-microprofile-fault-tolerance</artifactId>
@@ -93,7 +93,7 @@ The following table provides a brief description of each of these annotations, i
 
 Helidon’s implementation uses two types of thread pools: normal and scheduled. The default core size of these executors is 20; however, that can be configured using an `application.yaml` file as follows:
 
-``` yaml
+```yaml
 executor:
   core-pool-size: 32
 

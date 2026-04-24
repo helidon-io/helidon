@@ -14,7 +14,7 @@ You can also use metrics annotations on your Rest Client methods as described in
 
 To enable MicroProfile Rest Client, either add a dependency on the [helidon-microprofile bundle](../../mp/introduction/microprofile.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.rest-client</groupId>
     <artifactId>helidon-microprofile-rest-client</artifactId>
@@ -40,7 +40,7 @@ The builder provides methods to specify the client interface to be proxied as we
 
 *Example*
 
-``` java
+```java
 GreetRestClient greetResource = RestClientBuilder.newBuilder()
         .baseUri(URI.create("http://localhost:8080/greet"))
         .build(GreetRestClient.class);
@@ -51,7 +51,7 @@ The `RestClientBuilder` interface extends the `Configurable` interface from Jaka
 
 *Example*
 
-``` java
+```java
 GreetRestClient greetResource = RestClientBuilder.newBuilder()
         .baseUri(URI.create("http://localhost:8080"))
         .register(GreetClientRequestFilter.class)
@@ -66,7 +66,7 @@ A client interface can be annotated with `@RegisterRestClient` to automatically 
 
 *Example*
 
-``` java
+```java
 @Path("/greet")
 @RegisterRestClient(baseUri = "http://localhost:8080")
 public interface GreetRestClient {
@@ -78,7 +78,7 @@ Any Jakarta REST (JAX-RS) providers for a client can be registered using the (re
 
 *Example*
 
-``` java
+```java
 @Path("/greet")
 @RegisterRestClient(baseUri = "http://localhost:8080")
 @RegisterProvider(GreetClientRequestFilter.class)
@@ -94,7 +94,7 @@ All properties in annotation `RegisterRestClient` can be overridden via configur
 
 *Example*
 
-``` java
+```java
 public class MyBean {
     @Inject
     @RestClient
@@ -156,7 +156,7 @@ To be able to run and test this example, use the [Helidon MP examples/quickstart
 
 *client interface*
 
-``` java
+```java
 @Path("/greet")
 interface GreetRestClient {
 

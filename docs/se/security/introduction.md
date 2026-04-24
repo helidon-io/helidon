@@ -19,7 +19,7 @@ Security module is quite HTTP centric (as most common use cases are related to H
 
 To enable Security, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.security</groupId>
     <artifactId>helidon-security</artifactId>
@@ -38,7 +38,7 @@ Once a security instance is built, it can be used to initialize an [integration 
 
 *Security direct usage*
 
-``` java
+```java
 SecurityContext context = security.contextBuilder(UUID.randomUUID().toString()) 
         .env(SecurityEnvironment.builder()
                      .method("get")
@@ -64,7 +64,7 @@ if (response.status().isSuccess()) {
 
 *Security through a builder*
 
-``` java
+```java
 Security security = Security.builder()
         .addProvider(HttpBasicAuthProvider.builder()) 
         .build();
@@ -78,7 +78,7 @@ See [Secure config](tools.md) for details about encrypting passwords in configur
 
 *Security from configuration*
 
-``` java
+```java
 Security security = Security.create(config); 
 ```
 
@@ -90,7 +90,7 @@ A key `enabled` can be used for each provider to provide fine control of which p
 
 *Security from configuration - application.yaml*
 
-``` yaml
+```yaml
 # Uses config encryption filter to encrypt passwords
 security:
   providers:
@@ -112,7 +112,7 @@ When a configuration needs to be overridden, we may have problems with the list 
 
 Example:
 
-``` properties
+```properties
 security.providers.1.type=header-atn
 security.providers.1.header-atn.authenticate=false
 ```
@@ -123,7 +123,7 @@ Would explicitly override the second provider (`http-basic-auth` in example abov
 
 *Security from configuration and builder*
 
-``` java
+```java
 Security security1 = Security.builder(config) 
         .addProvider(HttpBasicAuthProvider.builder())
         .build();

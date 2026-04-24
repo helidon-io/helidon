@@ -10,7 +10,7 @@ JSON Web Token defines a compact and self-contained way for securely transmittin
 
 To enable JWT Authentication, either add a dependency on the [helidon-microprofile bundle](../mp/introduction/microprofile.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.jwt</groupId>
     <artifactId>helidon-microprofile-jwt-auth</artifactId>
@@ -23,7 +23,7 @@ The main configuration point for JWT Auth is a JAX-RS Application class. As this
 
 Minimal required setup is done using `@LoginConfig(authMethod = "MP-JWT")`:
 
-``` java
+```java
 @LoginConfig(authMethod = "MP-JWT")
 @ApplicationScoped
 public class ProtectedApplication extends Application {
@@ -69,14 +69,14 @@ The following interfaces and annotations are used to work with JWT in Helidon MP
 
 A configuration example in `microprofile-config.properties`:
 
-``` properties
+```properties
 mp.jwt.verify.issuer=https://{PublicIssuerDomain}/oauth2/default
 mp.jwt.verify.publickey.location=${mp.jwt.verify.issuer}/v1/keys
 ```
 
 ## Examples
 
-``` java
+```java
 @Path("/hello")
 public class HelloResource {
 
@@ -91,7 +91,7 @@ public class HelloResource {
 
 Do not forget to annotate the `HelloApplication` class to enable JWT:
 
-``` java
+```java
 @LoginConfig(authMethod = "MP-JWT")
 @ApplicationScoped
 public class HelloApplication extends Application {
@@ -105,26 +105,26 @@ public class HelloApplication extends Application {
 
 Add the following configuration in `microprofile-config.properties`:
 
-``` properties
+```properties
 mp.jwt.verify.issuer=https://{IssuerPublicDomain}/oauth2/default
 mp.jwt.verify.publickey.location=${mp.jwt.verify.issuer}/v1/keys
 ```
 
 Obtain the Security Token from external issuer:
 
-``` bash
+```bash
 TOKEN=sdf4dDSWFcswdsffDSasEgv...
 ```
 
 Run the application and execute an http request against it:
 
-``` bash
+```bash
 curl -X GET -I -H "Authorization: Bearer $TOKEN" http://localhost:8080/hello
 ```
 
 *Curl output*
 
-``` bash
+```bash
 HTTP/1.1 200 OK
 Date: 08.06.2022 10:33:47 EEST
 connection: keep-alive

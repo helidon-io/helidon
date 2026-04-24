@@ -28,7 +28,7 @@ To enable metrics, add the following dependency to your project’s `pom.xml` (s
 
 *Packaging the metrics API*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.metrics</groupId>
     <artifactId>helidon-metrics-api</artifactId>
@@ -45,7 +45,7 @@ To include the full-featured metrics implementation and support for the metrics 
 
 *Packaging the metrics endpoint support and a full-featured metrics implementation*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-metrics</artifactId>
@@ -60,7 +60,7 @@ Helidon provides several built-in meters in a separate artifact. To include the 
 
 *Packaging the built-in meters*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.metrics</groupId>
     <artifactId>helidon-metrics-system-meters</artifactId>
@@ -164,7 +164,7 @@ The following example sets up an OTLP publisher to transmit metrics data every 3
 
 *Example OTLP publisher settings*
 
-``` yaml
+```yaml
 metrics:
   publishers:         
     otlp:  
@@ -201,7 +201,7 @@ You can configure other publishers and still have Helidon use the default one by
 
 *Using an OLTP publisher **and** the default Prometheus publisher*
 
-``` yaml
+```yaml
 metrics:
   publishers:
     prometheus:
@@ -225,7 +225,7 @@ Refer to your publisher in configuration using the config key you set up in the 
 
 *Example config using a hypothetical Datadog publisher*
 
-``` yaml
+```yaml
 metrics:
   publishers:
     micrometer-datadog:
@@ -256,11 +256,11 @@ Further, clients can narrow down to a specific metric name by adding the name as
 
 *Example Reporting: Prometheus format*
 
-``` bash
+```bash
 curl -s -H 'Accept: text/plain' -X GET http://localhost:8080/observe/metrics
 ```
 
-``` text
+```text
 # HELP classloader_loadedClasses_count Displays the number of classes that are currently loaded in the Java virtual machine.
 # TYPE classloader_loadedClasses_count gauge
 classloader_loadedClasses_count{scope="base",} 5297.0
@@ -270,13 +270,13 @@ See the summary of the [OpenMetrics and Prometheus Format](#openmetrics-and-prom
 
 *Example Reporting: JSON format*
 
-``` bash
+```bash
 curl -s -H 'Accept: application/json' -X GET http://localhost:8080/observe/metrics
 ```
 
 *JSON response:*
 
-``` json
+```json
 {
    "base" : {
       "memory.maxHeap" : 3817865216,
@@ -401,7 +401,7 @@ Helidon groups meters in the same scope together in JSON output as shown in the 
 
 *JSON metrics output structured by scope (partial)*
 
-``` json
+```json
 {
   "application": {  
     "getTimer": {
@@ -435,7 +435,7 @@ If an HTTP request [selects by scope](#scope-specific-retrieval), the output omi
 
 *JSON metrics output for the `base` scope (partial)*
 
-``` json
+```json
 {
   "cpu.systemLoadAverage": {
     "type": "gauge",
@@ -454,13 +454,13 @@ The Helidon JSON format expresses each meter as either a single value (for examp
 
 *JSON output for a single-valued meter (for example, `Counter`)*
 
-``` json
+```json
 "requests.count": 5
 ```
 
 *JSON output for a multi-valued meter (for example, `Timer`)*
 
-``` json
+```json
 "getTimer": {
   "count": 3,
   "max": 0.0030455,
@@ -483,7 +483,7 @@ Access the metrics endpoint with an HTTP `OPTIONS` request and the `Accept: appl
 
 *Example `Counter` metadata*
 
-``` json
+```json
 "requests.count": {
   "type": "counter",
   "description": "Each request (regardless of HTTP method) will increase this counter"
@@ -492,7 +492,7 @@ Access the metrics endpoint with an HTTP `OPTIONS` request and the `Accept: appl
 
 *Example `Timer` metadata*
 
-``` json
+```json
 "getTimer": {
   "type": "timer",
   "unit": "seconds",
@@ -512,7 +512,7 @@ You can change this using configuration:
 
 *Setting default timer units for JSON in `application.yaml`*
 
-``` yaml
+```yaml
 metrics:
   timers:
     json-units-default: units 
@@ -537,7 +537,7 @@ If you disable auto-discovery, you can add the metrics observer explicitly.
 2.  Include the `MetricsObserver` instance in your application’s `ObserveFeature`.
 3.  Register your `ObserveFeature` with your `WebServer`.
 
-``` java
+```java
 ObserveFeature observe = ObserveFeature.builder()
         .config(config.get("server.features.observe"))
         .addObserver(MetricsObserver.create())
@@ -748,7 +748,7 @@ The `auto-http-metrics.sockets` setting controls which sockets are included in t
 
 *Including and Excluding Endpoints from Automatic Measurement*
 
-``` yaml
+```yaml
 server:
   features:
     observe:
@@ -784,7 +784,7 @@ The following example, based on the Helidon SE QuickStart application, shows how
 
 *Define and use a `Counter`*
 
-``` java
+```java
 public class GreetService implements HttpService {
 
     private final Counter accessCtr = Metrics.globalRegistry() 
@@ -833,20 +833,20 @@ Perform the following steps to see the new counter in action.
 
 *Build and run the application*
 
-``` bash
+```bash
 mvn package
 java -jar target/helidon-quickstart-se.jar
 ```
 
 *Retrieve `application` metrics*
 
-``` bash
+```bash
 curl 'http://localhost:8080/observe/metrics?scope=application' 
 ```
 
 *Response*
 
-``` text
+```text
 # HELP accessctr_total
 # TYPE accessctr_total counter
 accessctr_total{scope="application",} 0.0 
@@ -857,25 +857,25 @@ accessctr_total{scope="application",} 0.0
 
 *Access a service endpoint to retrieve a greeting*
 
-``` bash
+```bash
 curl http://localhost:8080/greet
 ```
 
 *JSON response:*
 
-``` json
+```json
 {"message":"Hello World"}
 ```
 
 *Retrieve `application` metrics again*
 
-``` bash
+```bash
 curl 'http://localhost:8080/observe/metrics?scope=application'
 ```
 
 *Response*
 
-``` text
+```text
 # HELP accessctr_total
 # TYPE accessctr_total counter
 accessctr_total{scope="application",} 1.0 
@@ -895,7 +895,7 @@ Metrics configuration is quite extensive and powerful and, therefore, a bit comp
 
 *Disabling metrics entirely*
 
-``` yaml
+```yaml
 server:
   features:
     observe:
@@ -916,7 +916,7 @@ To enable the meters describing virtual threads include a config setting as show
 
 *Enabling virtual thread meters*
 
-``` yaml
+```yaml
 metrics:
   virtual-threads:
     enabled: true
@@ -928,7 +928,7 @@ Helidon measures pinned virtual threads only when the thread is pinned for a len
 
 *Setting virtual thread pinning threshold to 100 ms*
 
-``` yaml
+```yaml
 metrics:
   virtual-threads:
     pinned:
@@ -952,7 +952,7 @@ You can enable and control these meters using configuration:
 
 *Controlling extended KPI meters*
 
-``` yaml
+```yaml
 server:
   features:
     observe:
@@ -991,7 +991,7 @@ To use it, your service registers Prometheus support with your routing set-up. Y
 
 *Dependency for Helidon Prometheus API support*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.metrics</groupId>
     <artifactId>helidon-metrics-prometheus</artifactId>
@@ -1006,7 +1006,7 @@ Your application code uses the Prometheus API to manage metrics. To expose those
 
 Your code creates a [`PrometheusSupport`](/apidocs/io.helidon.metrics.prometheus/io/helidon/metrics/prometheus/PrometheusSupport.html) object either using a static factory method (shown in the following example) or by using its [`Builder`](/apidocs/io.helidon.metrics.prometheus/io/helidon/metrics/prometheus/PrometheusSupport.Builder.html).
 
-``` java
+```java
 routing
         .addFeature(PrometheusSupport.create())
         .register("/myapp", new MyService());

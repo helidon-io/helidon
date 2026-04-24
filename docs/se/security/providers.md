@@ -29,7 +29,7 @@ Open ID Connect security provider.
 
 Maven dependency
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-oidc</artifactId>
@@ -42,7 +42,7 @@ In Helidon SE, we need to register the redirection support with routing (in addi
 
 Adding support for OIDC redirects
 
-``` java
+```java
 WebServer.builder()
         .addFeature(SecurityFeature.builder()
                             .config(config.get("security"))
@@ -411,7 +411,7 @@ See the [example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.
 
 Configuration example
 
-``` yaml
+```yaml
 security:
   providers:
   - oidc:
@@ -462,7 +462,7 @@ The OIDC provider also supports multiple tenants. To enable this feature, it is 
 2.  Specify the desired way to provide the tenant name. This step is done over adding the `tenant-id-style` configuration option. For more information, see the table below
 3.  Add the tenants section to the OIDC provider configuration
 
-``` yaml
+```yaml
 tenants:
    - name: "example-tenant"
      # ... tenant configuration options
@@ -566,7 +566,7 @@ HTTP Basic authentication support
 
 Maven dependency
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-http-auth</artifactId>
@@ -591,7 +591,7 @@ See the [example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.
 
 Configuration example
 
-``` yaml
+```yaml
 security:
   providers:
   - http-basic-auth:
@@ -657,7 +657,7 @@ HTTP Digest authentication support
 
 Maven dependency
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-http-auth</artifactId>
@@ -683,7 +683,7 @@ Maven dependency
 
 Configuration example
 
-``` yaml
+```yaml
 security:
   providers:
   - http-digest-auth:
@@ -726,7 +726,7 @@ Asserts user or service identity based on a value of a header.
 
 Maven dependency
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-header</artifactId>
@@ -751,7 +751,7 @@ Maven dependency
 
 Configuration example
 
-``` yaml
+```yaml
 security:
   providers:
     header-atn:
@@ -793,7 +793,7 @@ Support for HTTP Signatures.
 
 Maven dependency
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-http-sign</artifactId>
@@ -820,7 +820,7 @@ See the [example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.
 
 Configuration example
 
-``` yaml
+```yaml
 security:
   providers:
     - http-signatures:
@@ -874,7 +874,7 @@ A role mapper to retrieve roles from Oracle IDCS.
 
 Maven dependency
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-idcs-mapper</artifactId>
@@ -911,7 +911,7 @@ See the [example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.
 
 Configuration example
 
-``` yaml
+```yaml
 security:
   providers:
     - idcs-role-mapper:
@@ -934,7 +934,7 @@ Attribute based access control authorization provider.
 
 Maven dependency
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-abac</artifactId>
@@ -956,7 +956,7 @@ See the [example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.
 
 Configuration example
 
-``` yaml
+```yaml
 security:
   providers:
     - abac:
@@ -994,7 +994,7 @@ ABAC provider also allows an object to be used in authorization process, such as
 
 Example of using an object
 
-``` java
+```java
 @Authenticated
 @Path("/abac")
 public class AbacResource {
@@ -1034,7 +1034,7 @@ Annotations: `@RolesAllowed`, `@RoleValidator.Roles`
 
 Configuration example for `WebServer`
 
-``` yaml
+```yaml
 security:
   web-server.paths:
     - path: "/user/*"
@@ -1043,7 +1043,7 @@ security:
 
 JAX-RS example
 
-``` java
+```java
 @RolesAllowed("user")
 @RoleValidator.Roles(value = "service_role", subjectType = SubjectType.SERVICE)
 @Authenticated
@@ -1072,7 +1072,7 @@ Annotations: `@Scope`
 
 Configuration example for `WebServer`
 
-``` yaml
+```yaml
 security:
   web-server.paths:
     - path: "/user/*"
@@ -1082,7 +1082,7 @@ security:
 
 JAX-RS example
 
-``` java
+```java
 @Scope("calendar_read")
 @Scope("calendar_edit")
 @Authenticated
@@ -1103,7 +1103,7 @@ Example of a policy statement: `${env.time.year >= 2017}`
 
 Configuration example for `WebServer`
 
-``` yaml
+```yaml
 security:
   web-server.paths:
     - path: "/user/*"
@@ -1113,7 +1113,7 @@ security:
 
 JAX-RS example
 
-``` java
+```java
 @PolicyStatement("${env.time.year >= 2017}")
 @Authenticated
 @Path("/abac")
@@ -1123,7 +1123,7 @@ public class AbacResource {
 
 Configuration example for `JAX-RS` over the configuration
 
-``` yaml
+```yaml
 server:
   features:
     security:
@@ -1143,7 +1143,7 @@ This provider is deprecated and will be removed in a future version of Helidon. 
 
 Maven dependency
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-google-login</artifactId>
@@ -1170,7 +1170,7 @@ See the [example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.
 
 Configuration example
 
-``` yaml
+```yaml
 security:
   providers:
     - provider:
@@ -1208,7 +1208,7 @@ JWT token authentication and outbound security provider.
 
 Maven dependency
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-jwt</artifactId>
@@ -1242,7 +1242,7 @@ See the [example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.
 
 Configuration example
 
-``` yaml
+```yaml
 security:
   providers:
     - provider:

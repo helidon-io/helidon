@@ -17,7 +17,7 @@ Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
 *Verify Prerequisites*
 
-``` bash
+```bash
 java -version
 mvn --version
 docker --version
@@ -26,7 +26,7 @@ kubectl version
 
 *Setting JAVA_HOME*
 
-``` bash
+```bash
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -59,7 +59,7 @@ Create a new file in `helidon-quickstart-se` named `Dockerfile.h2`. It will be u
 
 *Write the following content into the new file created*
 
-``` dockerfile
+```dockerfile
 FROM openjdk:11-jre-slim
 
 ENV H2_VERSION "1.4.199"
@@ -83,7 +83,7 @@ Create a new file `h2.server.properties` in the current directory.
 
 *Copy the properties into the properties file.*
 
-``` properties
+```properties
 webSSL=false
 webAllowOthers=true
 webPort=8082
@@ -92,13 +92,13 @@ webPort=8082
 
 *Build the H2 docker image*
 
-``` bash
+```bash
 docker build -f Dockerfile.h2 . -t h2db
 ```
 
 *Run the H2 docker image*
 
-``` bash
+```bash
 docker run --rm -p 8082:8082 -p 9092:9092 --name=h2 -it h2db
 ```
 
@@ -114,7 +114,7 @@ A database stores the books from the library. H2 is a java SQL database that is 
 
 *Replace `{latest-version}` with your current H2 version:*
 
-``` bash
+```bash
 java -cp h2-{latest-version}.jar org.h2.tools.Shell -url dbc:h2:~/test -user sa -password "" -sql "" 
 java -jar h2-{latest-version}.jar -webAllowOthers -tcpAllowOthers -web -tcp 
 ```
@@ -139,7 +139,7 @@ Generate the project sources using the Helidon SE Maven archetype. The result is
 
 *Run the Maven archetype:*
 
-``` bash
+```bash
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
@@ -153,7 +153,7 @@ A new directory named `helidon-quickstart-se` is created.
 
 *Enter into this directory:*
 
-``` bash
+```bash
 cd helidon-quickstart-se
 ```
 
@@ -163,7 +163,7 @@ Navigate to the `helidon-quickstart-se` directory and open the `pom.xml` file to
 
 *Copy these dependencies to pom.xml:*
 
-``` xml
+```xml
 <dependencies>
     <!-- ... -->
     <dependency>
@@ -220,7 +220,7 @@ To configure the application, Helidon uses the `application.yaml`. The DB Client
 
 *Copy these properties into application.yaml*
 
-``` yaml
+```yaml
 db:
   source: jdbc 
   connection: 
@@ -249,7 +249,7 @@ db:
 
 *Copy these properties into application-test.yaml*
 
-``` yaml
+```yaml
 db:
   connection:
     url: "jdbc:h2:mem:test" 
@@ -261,7 +261,7 @@ db:
 
 *Update `Main#main`:*
 
-``` java
+```java
 public static void main(String[] args) {
 
     // load logging configuration
@@ -306,7 +306,7 @@ Create LibraryService class into `io.helidon.examples.quickstart.se` package.
 
 *LibraryService class looks like this:*
 
-``` java
+```java
 public class LibraryService implements HttpService {
 
     private final DbClient dbClient;    
@@ -338,7 +338,7 @@ As the LibraryService implements `io.helidon.webserver.HttpService`, the `routin
 
 *Add update method to LibraryService*
 
-``` java
+```java
 @Override
 public void routing(HttpRules rules) {
     rules
@@ -358,7 +358,7 @@ To summarize, there is one endpoint that can manipulate books. The number of end
 
 *Add getBook to the LibraryService:*
 
-``` java
+```java
 private void getBook(ServerRequest request,
                      ServerResponse response) {
 
@@ -388,7 +388,7 @@ And builders without `Named` keyword, they use a statement passed as an argument
 
 *Add getJsonBook to the LibraryService:*
 
-``` java
+```java
 private void getJsonBook(ServerRequest request,
                          ServerResponse response) {
 
@@ -409,7 +409,7 @@ Instead of sending the `INFO` content of the targeted book, the `getJsonBook` me
 
 *Add addBook to the LibraryService:*
 
-``` java
+```java
 private void addBook(ServerRequest request,
                      ServerResponse response) {
 
@@ -434,7 +434,7 @@ When a user adds a new book, it uses HTTP PUT method where the book name is in t
 
 *Add deleteBook to LibraryService:*
 
-``` java
+```java
 private void deleteBook(ServerRequest request,
                         ServerResponse response) {
 
@@ -456,7 +456,7 @@ To remove a book from the library, use the "delete-book" script in the way than 
 
 *Modify the `routing` method in `Main.java`:*
 
-``` java
+```java
 static void routing(HttpRouting.Builder routing) {
     routing
             .register("/greet", new GreetService())
@@ -475,7 +475,7 @@ The application is ready to be built and run.
 
 *Run the following to build the application:*
 
-``` bash
+```bash
 mvn package
 ```
 
@@ -483,7 +483,7 @@ Note that the tests are passing as the `GreetFeature` process was not modified. 
 
 *Run the application*
 
-``` bash
+```bash
 java -jar target/helidon-quickstart-se.jar
 ```
 
@@ -493,13 +493,13 @@ Use `curl` to send request to the application:
 
 *Get a book from the library*
 
-``` bash
+```bash
 curl -i http://localhost:8080/library/SomeBook
 ```
 
 *HTTP response*
 
-``` text
+```text
 HTTP/1.1 404 Not Found
 Date: Tue, 12 Jan 2021 14:00:48 +0100
 transfer-encoding: chunked
@@ -510,13 +510,13 @@ There is currently no book inside the library, so the application returns a 404.
 
 *Add a book from the library*
 
-``` bash
+```bash
 curl -i -X PUT -d "Fantasy" http://localhost:8080/library/HarryPotter
 ```
 
 *HTTP response*
 
-``` text
+```text
 HTTP/1.1 201 Created
 Date: Tue, 12 Jan 2021 14:01:08 +0100
 transfer-encoding: chunked
@@ -527,13 +527,13 @@ This command creates an HTTP PUT request with the genre `Fantasy` content at the
 
 *Get Harry Potter from the library*
 
-``` bash
+```bash
 curl -i http://localhost:8080/library/HarryPotter
 ```
 
 *HTTP response*
 
-``` text
+```text
 HTTP/1.1 200 OK
 Content-Type: text/plain
 Date: Tue, 12 Jan 2021 14:01:14 +0100
@@ -547,13 +547,13 @@ The application accepted the request and returned an HTTP 200 OK with the book g
 
 *Get Harry Potter from the library in Json*
 
-``` bash
+```bash
 curl -i http://localhost:8080/library/json/HarryPotter
 ```
 
 *HTTP response*
 
-``` text
+```text
 HTTP/1.1 200 OK
 Content-Type: text/plain
 Date: Tue, 12 Jan 2021 14:01:14 +0100
@@ -567,13 +567,13 @@ It returns the database row in a Json format for the Harry Potter book. Harry Po
 
 *Remove Harry Potter from the library*
 
-``` bash
+```bash
 curl -i -X DELETE http://localhost:8080/library/HarryPotter
 ```
 
 *HTTP response*
 
-``` text
+```text
 HTTP/1.1 204 No Content
 Date: Tue, 12 Jan 2021 14:01:22 +0100
 connection: keep-alive
@@ -583,13 +583,13 @@ The book had been removed from the library and confirmed by the 204 HTTP status.
 
 *Get Harry Potter from the library*
 
-``` bash
+```bash
 curl -i http://localhost:8080/library/HarryPotter
 ```
 
 *HTTP response*
 
-``` text
+```text
 HTTP/1.1 404 Not Found
 Date: Tue, 12 Jan 2021 14:00:48 +0100
 transfer-encoding: chunked
@@ -600,13 +600,13 @@ The book is not found. We quickly checked, thanks to this suite of command, the 
 
 *Check the health of your application:*
 
-``` bash
+```bash
 curl http://localhost:8080/observe/health
 ```
 
 *Response body*
 
-``` json
+```json
 {
   "status": "UP",
   "checks": [
@@ -622,13 +622,13 @@ It confirms that the database is UP.
 
 *Check the metrics of your application:*
 
-``` bash
+```bash
 curl -H "Accept: application/json" http://localhost:8080/observe/metrics/application
 ```
 
 *Response body*
 
-``` json
+```json
 {
   "db.counter.select-book" : 4
 }

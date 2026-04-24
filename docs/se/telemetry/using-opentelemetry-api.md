@@ -52,7 +52,7 @@ If you use a parent POM other than the Helidon SE application parent, include th
 
 *Including the OpenTelemetry BOM*
 
-``` xml
+```xml
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -72,7 +72,7 @@ Add the dependencies below. (You might be able to get away with fewer if you are
 
 *Dependencies for the OpenTelemetry API and Autoconfiguration*
 
-``` xml
+```xml
 <!-- OpenTelemetrySdkBuilder -->
 <dependency>
     <groupId>io.opentelemetry</groupId>
@@ -141,7 +141,7 @@ Now for a bit of confusing terminology. In OpenTelemetry, a *meter* acts as a fa
 
 *Creating a the global `OpenTelemetry` object using autoconfigure*
 
-``` java
+```java
 OpenTelemetry otel = AutoConfiguredOpenTelemetrySdk.builder()
         .setResultAsGlobal()
         .build()
@@ -150,7 +150,7 @@ OpenTelemetry otel = AutoConfiguredOpenTelemetrySdk.builder()
 
 Your other code could use either the `otel` variable or invoke
 
-``` java
+```java
 var globalOtel = GlobalOpenTelemetry.get();
 ```
 
@@ -158,7 +158,7 @@ to retrieve the previously-established global instance from anywhere in the appl
 
 ### Creating a Meter and a Tracer
 
-``` java
+```java
 var meter = otel.getMeter("helidon-otel-example-app");
 var tracer = otel.getTracer("helidon-otel-example-app");
 ```
@@ -167,7 +167,7 @@ The parameter to both is the *instrumentation scope*. Typical practice is for ea
 
 ### Registering and Updating Metrics
 
-``` java
+```java
 var myCounter = meter.counterBuilder("my-counter")
         .setDescription("An example counter")
         .build();
@@ -179,7 +179,7 @@ Often one part of the code will register a metric and save a reference to it, th
 
 ### Creating and Managing Spans
 
-``` java
+```java
 var mySpan = tracer.spanBuilder("my-span")
         .setSpanKind(SpanKind.SERVER)
         .startSpan();

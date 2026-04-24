@@ -8,7 +8,7 @@ Helidon MP implements the [MicroProfile GraphQL specification](https://download.
 
 To enable MicroProfile GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
 
-``` xml
+```xml
 <dependency>
     <groupId>io.helidon.microprofile.graphql</groupId>
     <artifactId>helidon-microprofile-graphql-server</artifactId>
@@ -27,7 +27,7 @@ For example, the following defines a GraphQL endpoint with a number of queries a
 
 *Simple ContactGraphQLApi*
 
-``` java
+```java
 @ApplicationScoped
 @GraphQLApi
 public class ContactGraphQLApi {
@@ -77,7 +77,7 @@ The example above would generate a GraphQL schema as shown below:
 
 *Sample GraphQL schema*
 
-``` graphql
+```graphql
 type Query {
    findAllCustomers: [Customer]
    findCustomer(customerId: Int!): Customer
@@ -103,7 +103,7 @@ As part of building your application, you must create a Jandex index using the `
 
 *Generate Jandex index*
 
-``` xml
+```xml
 <plugin>
     <groupId>io.smallrye</groupId>
     <artifactId>jandex-maven-plugin</artifactId>

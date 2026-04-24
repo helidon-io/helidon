@@ -12,7 +12,7 @@ The [Managing Dependencies](../../about/managing-dependencies.md) page describes
 
 *Maven Dependency for full MicroProfile*
 
-``` xml
+```xml
 <dependency>
   <groupId>io.helidon.microprofile.bundles</groupId>
   <artifactId>helidon-microprofile</artifactId>
@@ -23,7 +23,7 @@ The above dependency adds all the features available in MicroProfile. If you wan
 
 *Maven Dependency for MicroProfile core features only*
 
-``` xml
+```xml
 <dependency>
   <groupId>io.helidon.microprofile.bundles</groupId>
   <artifactId>helidon-microprofile-core</artifactId>
@@ -36,7 +36,7 @@ Create a JAX-RS Resource class with at least one resource method.
 
 *Sample JAX-RS Resource Class*
 
-``` java
+```java
 @Path("/")
 @RequestScoped
 public class HelloWorldResource {
@@ -52,7 +52,7 @@ And create a JAX-RS application.
 
 *Sample JAX-RS Application*
 
-``` java
+```java
 @ApplicationScoped
 @ApplicationPath("/")
 public class HelloWorldApplication extends Application {
@@ -69,7 +69,7 @@ Add `beans.xml` in `src/main/resources/META-INF` so the CDI implementation can p
 
 *beans.xml*
 
-``` xml
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <beans/>
 ```
@@ -78,7 +78,7 @@ As a last step, add a main method to your application (or a dedicated Main class
 
 *Sample JAX-RS Application*
 
-``` java
+```java
 public static void main(String[] args) {
     io.helidon.microprofile.cdi.Main.main(args);
 }
@@ -94,7 +94,7 @@ To use Jandex, configure a Maven plugin that adds the index to your JAR file and
 
 *jandex dependency*
 
-``` xml
+```xml
 <dependency>
     <groupId>io.smallrye</groupId>
     <artifactId>jandex</artifactId>
@@ -104,7 +104,7 @@ To use Jandex, configure a Maven plugin that adds the index to your JAR file and
 
 *jandex plugin configuration*
 
-``` xml
+```xml
 <build>
     <plugins>
         <plugin>
