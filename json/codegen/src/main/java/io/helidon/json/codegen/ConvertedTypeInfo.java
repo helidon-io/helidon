@@ -532,13 +532,14 @@ record ConvertedTypeInfo(TypeName converterType,
         for (TypedElementInfo parameter : creator.parameterArguments()) {
             String parameterName = parameter.elementName();
             parameterNames.add(parameterName);
-            properties.computeIfAbsent(parameterName, name -> JsonProperty.builder())
+            JsonProperty.Builder builder = properties.computeIfAbsent(parameterName, name -> JsonProperty.builder())
                     .usedInCreator(true)
-                    .deserializationName(parameterName)
+                    .deserializationNameIfNotSet(parameterName)
                     .deserializationType(resolveGenerics(parameter.typeName(), typeInfo, resolvedGenerics))
                     .deserializationName(obtainStringFromAnnotation(parameter, JsonTypes.JSON_PROPERTY))
                     .deserializer(obtainTypeNameFromAnnotation(parameter, JsonTypes.JSON_CONVERTER))
                     .deserializer(obtainTypeNameFromAnnotation(parameter, JsonTypes.JSON_DESERIALIZER));
+            obtainBooleanFromAnnotation(parameter, JsonTypes.JSON_IGNORE).ifPresent(builder::fieldIgnored);
         }
         return new CreatorInfo(creatorKind, creatorMethod, parameterNames);
     }

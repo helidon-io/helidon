@@ -121,14 +121,14 @@ public final class Json {
     }
 
     /**
-     * Excludes fields or methods from JSON serialization/deserialization.
+     * Excludes fields, methods, or creator parameters from JSON serialization/deserialization.
      */
     @Retention(RetentionPolicy.CLASS)
-    @Target({ElementType.FIELD, ElementType.METHOD})
+    @Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
     public @interface Ignore {
 
         /**
-         * Whether to ignore this field/method.
+         * Whether to ignore this field/method/parameter.
          *
          * @return true to ignore, false to include
          */

@@ -796,11 +796,7 @@ class JsonConverterGenerator {
                 method.addContent(originalType).addContent(" instance = new ")
                         .addContent(originalType).addContent("(");
             }
-            String properties = jsonProperties.stream()
-                    .filter(JsonProperty::usedInCreator)
-                    .map(property -> property.deserializationName().orElseThrow() + PROPERTY_NAME_SUFFIX)
-                    .collect(Collectors.joining(", "));
-            method.addContent(properties).addContentLine(");");
+            method.addContent(creatorArguments(converterInfo, creatorInfo)).addContentLine(");");
             for (JsonProperty property : jsonProperties) {
                 if (!property.usedInCreator()) {
                     if (property.directFieldWrite()) {
@@ -1010,11 +1006,7 @@ class JsonConverterGenerator {
             } else {
                 method.addContent("new ").addContent(originalType).addContent("(");
             }
-            String properties = jsonProperties.stream()
-                    .filter(JsonProperty::usedInCreator)
-                    .map(property -> property.deserializationName().orElseThrow() + PROPERTY_NAME_SUFFIX)
-                    .collect(Collectors.joining(", "));
-            method.addContent(properties).addContentLine(");");
+            method.addContent(creatorArguments(converterInfo, creatorInfo)).addContentLine(");");
         } else if (hasBuilder) {
             BuilderInfo builderInfo = converterInfo.builderInfo().get();
             method.addContent("return builder.").addContent(builderInfo.buildMethodName()).addContentLine("();");
@@ -1036,12 +1028,13 @@ class JsonConverterGenerator {
                 .map(JsonConverterGenerator::convertToMissingName)
                 .forEach(name -> method.addContent(boolean.class).addContentLine(" " + name + " = true;"));
         if (hasCreator) {
-            for (JsonProperty jsonProperty : jsonProperties) {
-                TypeName type = jsonProperty.deserializationType().orElseThrow();
-                method.addContent(type)
-                        .addContent(" " + jsonProperty.deserializationName().orElseThrow() + PROPERTY_NAME_SUFFIX + " = ")
-                        .addContentLine(DEFAULT_TYPE_VALUES.getOrDefault(type.genericTypeName(), DEFAULT_TYPE_VALUE).get() + ";");
-            }
+            creatorInfo.parameters()
+                    .stream()
+                    .map(parameterName -> creatorProperty(converterInfo, parameterName))
+                    .forEach(jsonProperty -> addPropertyVariable(method, jsonProperty));
+            jsonProperties.stream()
+                    .filter(not(JsonProperty::usedInCreator))
+                    .forEach(jsonProperty -> addPropertyVariable(method, jsonProperty));
         } else if (creatorKind == ElementKind.METHOD) {
             TypeName originalType = converterInfo.objectsGenerics();
             method.addContent(originalType).addContent(" instance = ")
@@ -1057,15 +1050,11 @@ class JsonConverterGenerator {
                 method.addContent("new ").addContent(builder).addContentLine("();");
             }
             for (JsonProperty jsonProperty : jsonProperties) {
-                String deserializationName = jsonProperty.deserializationName().orElseThrow();
                 if (jsonProperty.usedInBuilder()) {
                     //This property is handled by the builder
                     continue;
                 }
-                TypeName type = jsonProperty.deserializationType().orElseThrow();
-                method.addContent(type)
-                        .addContent(" " + deserializationName + PROPERTY_NAME_SUFFIX + " = ")
-                        .addContentLine(DEFAULT_TYPE_VALUES.getOrDefault(type.genericTypeName(), DEFAULT_TYPE_VALUE).get() + ";");
+                addPropertyVariable(method, jsonProperty);
             }
         } else {
             TypeName originalType = converterInfo.objectsGenerics();
@@ -1078,6 +1067,29 @@ class JsonConverterGenerator {
         return jsonProperty.deserializationName()
                 .map(it -> it + MISSING_SUFFIX)
                 .orElseThrow();
+    }
+
+    private static String creatorArguments(ConvertedTypeInfo converterInfo, CreatorInfo creatorInfo) {
+        return creatorInfo.parameters()
+                .stream()
+                .map(parameterName -> creatorProperty(converterInfo, parameterName).deserializationName().orElseThrow()
+                        + PROPERTY_NAME_SUFFIX)
+                .collect(Collectors.joining(", "));
+    }
+
+    private static JsonProperty creatorProperty(ConvertedTypeInfo converterInfo, String parameterName) {
+        JsonProperty property = converterInfo.jsonProperties().get(parameterName);
+        if (property == null) {
+            throw new IllegalStateException("Could not find JSON property for creator parameter: " + parameterName);
+        }
+        return property;
+    }
+
+    private static void addPropertyVariable(Method.Builder method, JsonProperty jsonProperty) {
+        TypeName type = jsonProperty.deserializationType().orElseThrow();
+        method.addContent(type)
+                .addContent(" " + jsonProperty.deserializationName().orElseThrow() + PROPERTY_NAME_SUFFIX + " = ")
+                .addContentLine(DEFAULT_TYPE_VALUES.getOrDefault(type.genericTypeName(), DEFAULT_TYPE_VALUE).get() + ";");
     }
 
     private static String constantName(String propertyName) {

@@ -85,6 +85,23 @@ public class IgnoreRequiredTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    public void testIgnoreRecordComponentParameterized(BindingMethod bindingMethod) {
+        IgnoreRecordComponent entity = new IgnoreRecordComponent("included", "ignored", "mapped");
+        String json = bindingMethod.serialize(jsonBinding, entity);
+        assertThat(json, is("{\"key\":\"included\",\"mapped\":\"mapped\"}"));
+
+        IgnoreRecordComponent deserialized = bindingMethod.deserialize(jsonBinding,
+                                                                      "{\"key\":\"test\","
+                                                                              + "\"ignored\":\"should_be_ignored\","
+                                                                              + "\"mapped\":\"mapped_test\"}",
+                                                                      IgnoreRecordComponent.class);
+        assertThat(deserialized.key(), is("test"));
+        assertThat(deserialized.ignored(), nullValue());
+        assertThat(deserialized.random(), is("mapped_test"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     public void testRequiredFieldPresentParameterized(BindingMethod bindingMethod) {
         String json = "{\"requiredField\":\"value\",\"optionalField\":\"optional\"}";
         RequiredField entity = bindingMethod.deserialize(jsonBinding, json, RequiredField.class);
@@ -256,6 +273,11 @@ public class IgnoreRequiredTest {
         public void setIgnoredField(String ignoredField) {
             this.ignoredField = ignoredField;
         }
+    }
+
+    @Json.Entity
+    record IgnoreRecordComponent(String key, @Json.Ignore String ignored, @Json.Property("mapped") String random) {
+        static final String TYPE = "record";
     }
 
     @Json.Entity
