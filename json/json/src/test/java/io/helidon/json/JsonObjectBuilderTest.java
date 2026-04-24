@@ -16,6 +16,8 @@
 
 package io.helidon.json;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -23,6 +25,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JsonObjectBuilderTest {
+
+    @Test
+    void shouldAcceptSubtypeListsForArrayValues() {
+        List<JsonString> values = List.of(JsonString.create("Ada"), JsonString.create("Bob"));
+
+        JsonObject result = JsonObject.builder()
+                .setValues("names", values)
+                .build();
+
+        assertThat(result.toString(), is("{\"names\":[\"Ada\",\"Bob\"]}"));
+    }
 
     @Test
     void shouldCopyValuesFromExistingObject() {
