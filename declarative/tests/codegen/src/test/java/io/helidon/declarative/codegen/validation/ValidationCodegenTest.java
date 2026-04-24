@@ -31,13 +31,12 @@ import io.helidon.validation.Validation;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.codegen.testing.CodegenMatchers.matches;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class ValidationCodegenTest {
+class ValidationCodegenTest {
     private static final List<Class<?>> CLASSPATH = List.of(
             Generated.class,
             Validation.Constraint.class,
@@ -47,69 +46,245 @@ public class ValidationCodegenTest {
     );
 
     @Test
-    void testFieldValidation() throws IOException {
-        var result = TestCompiler.builder()
-                .currentRelease()
-                .addClasspath(CLASSPATH)
-                .addProcessor(AptProcessor::new)
-                .addSource("Foo.java", """
-                        package com.example;
-                        
-                        import io.helidon.validation.Validation;
-                        
-                        @Validation.Validated
-                        public class Foo {
-                            @Validation.Integer.Min(1)
-                            Integer id;
-                        }
-                        """)
-                .build()
-                .compile();
+    void testSupportedClassElements() throws IOException {
+        var result = compile("""
+                package com.example;
 
-        assertThat(result.success(), is(true));
-        var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
-        assertThat(Files.exists(validator), is(true));
+                import io.helidon.validation.Validation;
 
-        var content = Files.readString(validator, StandardCharsets.UTF_8);
-        assertThat(content, matches("""
-                                            //...
-                                            class Foo__Validated implements TypeValidator<Foo> {
-                                            //...
-                                                        case "id" -> checkId(ctx, (Integer) value);
-                                            //...
-                                            }
-                                            """));
-        String diags = String.join("\n", result.diagnostics());
-        assertThat(diags, not(containsString("warning:")));
+                @Validation.Validated
+                public class Foo {
+                    @Validation.Integer.Min(1)
+                    Integer id;
+
+                    @Validation.Integer.Min(1)
+                    public Integer getAge() {
+                        return 42;
+                    }
+
+                    @Validation.Integer.Min(1)
+                    Integer size() {
+                        return 1;
+                    }
+                }
+                """);
+
+        assertGeneratedAndContainsCases(result, "Foo", "id", "age", "size");
     }
 
     @Test
-    void testPrivateFieldValidation() throws IOException {
-        var result = TestCompiler.builder()
+    void testSupportedRecordElements() throws IOException {
+        var result = compile("""
+                package com.example;
+
+                import io.helidon.validation.Validation;
+
+                @Validation.Validated
+                public record Foo(@Validation.Integer.Min(1) Integer id,
+                                  @Validation.Integer.Min(1) Integer age) {
+                }
+                """);
+
+        assertGeneratedAndContainsCases(result, "Foo", "id", "age");
+    }
+
+    @Test
+    void testSupportedInterfaceElements() throws IOException {
+        var result = compile("""
+                package com.example;
+
+                import io.helidon.validation.Validation;
+
+                @Validation.Validated
+                public interface Foo {
+                    @Validation.Integer.Min(1)
+                    Integer getId();
+
+                    @Validation.Integer.Min(1)
+                    Integer size();
+                }
+                """);
+
+        assertGeneratedAndContainsCases(result, "Foo", "id", "size");
+    }
+
+    @Test
+    void testUnsupportedClassElements() {
+        for (UnsupportedCase unsupportedCase : unsupportedClassElements()) {
+            var result = compile(unsupportedCase.source());
+
+            assertCompilationFails(result,
+                                   "Only non-private fields and getter methods are supported",
+                                   unsupportedCase.expectedElement());
+            var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
+            assertThat("The Foo__Validated.java should not be generated (" + unsupportedCase.name() + ")",
+                       Files.exists(validator),
+                       is(false));
+        }
+    }
+
+    @Test
+    void testUnsupportedValidatedTypeKind() {
+        var result = compile("""
+                package com.example;
+
+                import io.helidon.validation.Validation;
+
+                @Validation.Validated
+                enum Foo {
+                    INSTANCE
+                }
+                """);
+
+        assertCompilationFails(result, "Only record, class, or interface are currently supported");
+        var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
+        assertThat("The Foo__Validated.java should not be generated", Files.exists(validator), is(false));
+    }
+
+    private static List<UnsupportedCase> unsupportedClassElements() {
+        return List.of(
+                new UnsupportedCase("private field",
+                                    """
+                                     package com.example;
+
+                                     import io.helidon.validation.Validation;
+
+                                     @Validation.Validated
+                                     public class Foo {
+                                         @Validation.Integer.Min(1)
+                                         private Integer id;
+                                     }
+                                     """,
+                                    "private Integer id"),
+                new UnsupportedCase("static field",
+                                    """
+                                     package com.example;
+
+                                     import io.helidon.validation.Validation;
+
+                                     @Validation.Validated
+                                     public class Foo {
+                                         @Validation.Integer.Min(1)
+                                         static Integer id;
+                                     }
+                                     """,
+                                    "static Integer id"),
+                new UnsupportedCase("private method",
+                                    """
+                                     package com.example;
+
+                                     import io.helidon.validation.Validation;
+
+                                     @Validation.Validated
+                                     public class Foo {
+                                         @Validation.Valid
+                                         private Integer id() {
+                                             return 1;
+                                         }
+                                     }
+                                     """,
+                                    "private Integer id()"),
+                new UnsupportedCase("static method",
+                                    """
+                                     package com.example;
+
+                                     import io.helidon.validation.Validation;
+
+                                     @Validation.Validated
+                                     public class Foo {
+                                         @Validation.Valid
+                                         static Integer id() {
+                                             return 1;
+                                         }
+                                     }
+                                     """,
+                                    "static Integer id()"),
+                new UnsupportedCase("method with arguments",
+                                    """
+                                     package com.example;
+
+                                     import io.helidon.validation.Validation;
+
+                                     @Validation.Validated
+                                     public class Foo {
+                                         @Validation.Valid
+                                         Integer id(Integer value) {
+                                             return value;
+                                         }
+                                     }
+                                     """,
+                                    "Integer id(Integer value)"),
+                new UnsupportedCase("void method",
+                                    """
+                                     package com.example;
+
+                                     import io.helidon.validation.Validation;
+
+                                     @Validation.Validated
+                                     public class Foo {
+                                         @Validation.Valid
+                                         void ping() {
+                                         }
+                                     }
+                                     """,
+                                    "void ping()"),
+                new UnsupportedCase("constructor",
+                                    """
+                                     package com.example;
+
+                                     import io.helidon.validation.Validation;
+
+                                     @Validation.Validated
+                                     public class Foo {
+                                         @Validation.Valid
+                                         Foo() {
+                                         }
+                                     }
+                                     """,
+                                    "Foo()")
+        );
+    }
+
+    private TestCompiler.Result compile(String source) {
+        return TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
                 .addProcessor(AptProcessor::new)
-                .addSource("Foo.java", """
-                        package com.example;
-                        
-                        import io.helidon.validation.Validation;
-                        
-                        @Validation.Validated
-                        public class Foo {
-                            @Validation.Integer.Min(1)
-                            private Integer id;
-                        }
-                        """)
+                .addSource("Foo.java", source)
                 .build()
                 .compile();
+    }
 
-        assertThat("Build should fail, as we do not support constraints on private fields", result.success(), is(false));
-        var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
-        assertThat("The Foo__Validator.java should not be generated", Files.exists(validator), is(false));
-
+    private void assertGeneratedAndContainsCases(TestCompiler.Result result,
+                                                 String typeName,
+                                                 String... propertyNames) throws IOException {
         String diagnostics = String.join("\n", result.diagnostics());
+        assertThat("Compilation diagnostics: " + diagnostics, result.success(), is(true));
+        assertThat(diagnostics, not(containsString("warning:")));
+
+        var validator = result.sourceOutput().resolve("com/example/" + typeName + "__Validated.java");
+        assertThat(Files.exists(validator), is(true));
+
+        var content = Files.readString(validator, StandardCharsets.UTF_8);
+        for (String propertyName : propertyNames) {
+            assertThat(content, containsString("case \"" + propertyName + "\" -> check"
+                                                       + capitalize(propertyName) + "(ctx, (Integer) value);"));
+        }
+    }
+
+    private void assertCompilationFails(TestCompiler.Result result, String... diagnosticParts) {
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat("Build should fail", result.success(), is(false));
         assertThat(diagnostics, containsString("error:"));
-        assertThat(diagnostics, containsString("private Integer id"));
-        assertThat(diagnostics, containsString("Only non-private fields and getter methods are supported"));
+        for (String diagnosticPart : diagnosticParts) {
+            assertThat(diagnostics, containsString(diagnosticPart));
+        }
+    }
+
+    private static String capitalize(String name) {
+        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
+    }
+
+    private record UnsupportedCase(String name, String source, String expectedElement) {
     }
 }
