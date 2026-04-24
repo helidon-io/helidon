@@ -165,6 +165,12 @@ class ClientWsConnectionTest {
         }
 
         @Override
+        @SuppressWarnings("removal")
+        public int read(BufferData buffer) {
+            return 0;
+        }
+
+        @Override
         public void write(BufferData buffer) {
         }
 
