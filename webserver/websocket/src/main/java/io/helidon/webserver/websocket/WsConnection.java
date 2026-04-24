@@ -22,6 +22,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -60,10 +63,11 @@ public class WsConnection implements ServerConnection, WsSession {
 
     private final BufferData sendBuffer = BufferData.growing(1024);
     private final DataReader dataReader;
+    private final Lock sendLock = new ReentrantLock();
 
     private ContinuationType recvContinuation = ContinuationType.NONE;
     private boolean sendContinuation;
-    private boolean closeSent;
+    private final AtomicBoolean closeSent = new AtomicBoolean();
 
     private volatile Thread myThread;
     private volatile boolean canRun = true;
@@ -172,33 +176,61 @@ public class WsConnection implements ServerConnection, WsSession {
 
     @Override
     public WsSession send(String text, boolean last) {
-        return send(ServerWsFrame.data(text, last));
+        sendLock.lock();
+        try {
+            return sendLocked(ServerWsFrame.data(text, last));
+        } finally {
+            sendLock.unlock();
+        }
     }
 
     @Override
     public WsSession send(BufferData bufferData, boolean last) {
-        return send(ServerWsFrame.data(bufferData, last));
+        sendLock.lock();
+        try {
+            return sendLocked(ServerWsFrame.data(bufferData, last));
+        } finally {
+            sendLock.unlock();
+        }
     }
 
     @Override
     public WsSession ping(BufferData bufferData) {
-        return send(ServerWsFrame.control(WsOpCode.PING, bufferData));
+        sendLock.lock();
+        try {
+            return sendLocked(ServerWsFrame.control(WsOpCode.PING, bufferData));
+        } finally {
+            sendLock.unlock();
+        }
     }
 
     @Override
     public WsSession pong(BufferData bufferData) {
-        return send(ServerWsFrame.control(WsOpCode.PONG, bufferData));
+        sendLock.lock();
+        try {
+            return sendLocked(ServerWsFrame.control(WsOpCode.PONG, bufferData));
+        } finally {
+            sendLock.unlock();
+        }
     }
 
     @Override
     public WsSession close(int code, String reason) {
-        closeSent = true;
-        byte[] reasonBytes = reason.getBytes(StandardCharsets.UTF_8);
-        BufferData bufferData = BufferData.create(2 + reasonBytes.length);
-        bufferData.writeInt16(code);
-        bufferData.write(reasonBytes);
+        if (!closeSent.compareAndSet(false, true)) {
+            return this;
+        }
 
-        return send(ServerWsFrame.control(WsOpCode.CLOSE, bufferData));
+        sendLock.lock();
+        try {
+            byte[] reasonBytes = reason.getBytes(StandardCharsets.UTF_8);
+            BufferData bufferData = BufferData.create(2 + reasonBytes.length);
+            bufferData.writeInt16(code);
+            bufferData.write(reasonBytes);
+
+            return sendLocked(ServerWsFrame.control(WsOpCode.CLOSE, bufferData));
+        } finally {
+            sendLock.unlock();
+        }
     }
 
     @Override
@@ -280,7 +312,7 @@ public class WsConnection implements ServerConnection, WsSession {
                 }
             }
             listener.onClose(this, status, reason);
-            if (!closeSent) {
+            if (!closeSent.get()) {
                 close(WsCloseCodes.NORMAL_CLOSE, "normal");
             }
             return false;
@@ -303,7 +335,7 @@ public class WsConnection implements ServerConnection, WsSession {
         }
     }
 
-    private WsSession send(ServerWsFrame frame) {
+    private WsSession sendLocked(ServerWsFrame frame) {
         WsOpCode usedCode = frame.opCode();
         if (frame.isPayload()) {
             // check if continuation or set continuation
