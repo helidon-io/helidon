@@ -41,7 +41,7 @@ import static java.util.Objects.requireNonNull;
  *     href="https://github.com/open-telemetry/opentelemetry-java/tree/main/exporters/otlp/all">opentelemetry-exporter-otlp</a>
  *     instead.
  */
-@Deprecated
+@Deprecated(since = "4.5.0", forRemoval = true)
 public final class JaegerGrpcSpanExporterBuilder {
 
   private static final String GRPC_SERVICE_NAME = "jaeger.api_v2.CollectorService";
