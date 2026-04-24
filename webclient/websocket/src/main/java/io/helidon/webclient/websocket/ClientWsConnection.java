@@ -18,6 +18,7 @@ package io.helidon.webclient.websocket;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -50,7 +51,7 @@ public class ClientWsConnection implements WsSession, Runnable {
 
     private ContinuationType recvContinuation = ContinuationType.NONE;
     private boolean sendContinuation;
-    private volatile boolean closeSent;
+    private final AtomicBoolean closeSent = new AtomicBoolean();
     private boolean terminated;
 
     ClientWsConnection(ClientConnection connection,
@@ -165,10 +166,12 @@ public class ClientWsConnection implements WsSession, Runnable {
      */
     @Override
     public WsSession close(int code, String reason) {
+        if (!closeSent.compareAndSet(false, true)) {
+            return this;
+        }
+
         sendLock.lock();
         try {
-            closeSent = true;
-
             // send empty close (no code or reason) if code is negative
             if (code < 0) {
                 sendLocked(ClientWsFrame.control(WsOpCode.CLOSE, BufferData.empty()));
@@ -258,7 +261,7 @@ public class ClientWsConnection implements WsSession, Runnable {
             } catch (DataReader.InsufficientDataAvailableException e) {
                 return;
             } catch (WsCloseException e) {
-                if (!closeSent) {
+                if (!closeSent.get()) {
                     try {
                         close(e.closeCode(), e.getMessage());
                     } catch (Exception ex) {

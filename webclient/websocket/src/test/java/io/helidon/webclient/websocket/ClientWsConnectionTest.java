@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.websocket;
+package io.helidon.webclient.websocket;
 
-import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
-import java.net.SocketException;
-import java.util.List;
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,63 +26,45 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
-import io.helidon.http.Headers;
-import io.helidon.http.HttpPrologue;
-import io.helidon.webserver.ConnectionContext;
-import io.helidon.webserver.ListenerConfig;
-import io.helidon.webserver.ListenerContext;
-import io.helidon.webserver.ServerConnectionException;
+import io.helidon.common.socket.HelidonSocket;
+import io.helidon.common.socket.PeerInfo;
+import io.helidon.webclient.api.ClientConnection;
 import io.helidon.websocket.WsCloseCodes;
 import io.helidon.websocket.WsListener;
+import io.helidon.websocket.WsSession;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-class WsConnectionTest {
+class ClientWsConnectionTest {
     private static final long TEST_TIMEOUT_SECONDS = 5;
-
-    @Test
-    void sendWrapsUncheckedIOException() {
-        DataWriter dataWriter = mock(DataWriter.class);
-        doThrow(new UncheckedIOException(new SocketException("Broken pipe")))
-                .when(dataWriter)
-                .writeNow(any(BufferData.class));
-
-        WsConnection connection = createConnection(dataWriter);
-
-        ServerConnectionException exception = assertThrows(ServerConnectionException.class,
-                                                           () -> connection.send("hello", true));
-
-        assertAll(
-                () -> assertThat(exception.getCause(), instanceOf(UncheckedIOException.class)),
-                () -> assertThat(exception.getCause().getCause(), instanceOf(SocketException.class))
-        );
-    }
 
     @Test
     void closePublishesStateBeforeWaitingForSendLock() throws Exception {
         BlockingDataWriter dataWriter = new BlockingDataWriter();
-        WsConnection connection = createConnection(dataWriter);
+        ClientWsConnection connection = ClientWsConnection.create(new TestClientConnection(dataWriter),
+                                                                  new WsListener() {
+                                                                      @Override
+                                                                      public void onMessage(WsSession session,
+                                                                                            String text,
+                                                                                            boolean last) {
+                                                                      }
+                                                                  });
 
         AtomicReference<Throwable> sendFailure = new AtomicReference<>();
-        Thread sendThread = new Thread(() -> invoke(() -> connection.send("hello", true), sendFailure), "ws-send");
+        Thread sendThread = new Thread(() -> invoke(() -> connection.send("hello", true), sendFailure), "client-ws-send");
         sendThread.start();
         dataWriter.awaitFirstWrite();
 
         AtomicReference<Throwable> closeFailure = new AtomicReference<>();
-        Thread closeThread = new Thread(() -> invoke(() -> connection.close(WsCloseCodes.NORMAL_CLOSE, "done"), closeFailure),
-                                        "ws-close");
+        Thread closeThread = new Thread(() -> invoke(() -> connection.close(WsCloseCodes.NORMAL_CLOSE, "done"),
+                                                     closeFailure),
+                                        "client-ws-close");
         closeThread.start();
 
         assertThat("close flag was not published while send lock was held",
@@ -103,27 +83,9 @@ class WsConnectionTest {
         );
     }
 
-    private static WsConnection createConnection(DataWriter dataWriter) {
-        ListenerConfig listenerConfig = mock(ListenerConfig.class);
-        when(listenerConfig.protocols()).thenReturn(List.of(WsConfig.builder().build()));
-
-        ListenerContext listenerContext = mock(ListenerContext.class);
-        when(listenerContext.config()).thenReturn(listenerConfig);
-
-        ConnectionContext ctx = mock(ConnectionContext.class);
-        when(ctx.listenerContext()).thenReturn(listenerContext);
-        when(ctx.dataReader()).thenReturn(mock(DataReader.class));
-        when(ctx.dataWriter()).thenReturn(dataWriter);
-
-        return WsConnection.create(ctx,
-                                   mock(HttpPrologue.class),
-                                   mock(Headers.class),
-                                   "key",
-                                   mock(WsListener.class));
-    }
-
-    private static boolean awaitCloseSent(WsConnection connection) throws ReflectiveOperationException, InterruptedException {
-        Field field = WsConnection.class.getDeclaredField("closeSent");
+    private static boolean awaitCloseSent(ClientWsConnection connection)
+            throws ReflectiveOperationException, InterruptedException {
+        Field field = ClientWsConnection.class.getDeclaredField("closeSent");
         field.setAccessible(true);
         AtomicBoolean closeSent = (AtomicBoolean) field.get(connection);
 
@@ -149,6 +111,92 @@ class WsConnectionTest {
     @FunctionalInterface
     private interface ThrowingRunnable {
         void run() throws Exception;
+    }
+
+    private static final class TestClientConnection implements ClientConnection {
+        private final DataWriter dataWriter;
+        private final HelidonSocket socket = new TestHelidonSocket();
+
+        private TestClientConnection(DataWriter dataWriter) {
+            this.dataWriter = dataWriter;
+        }
+
+        @Override
+        public DataReader reader() {
+            return null;
+        }
+
+        @Override
+        public DataWriter writer() {
+            return dataWriter;
+        }
+
+        @Override
+        public String channelId() {
+            return "test";
+        }
+
+        @Override
+        public HelidonSocket helidonSocket() {
+            return socket;
+        }
+
+        @Override
+        public void readTimeout(Duration readTimeout) {
+        }
+
+        @Override
+        public void closeResource() {
+        }
+    }
+
+    private static final class TestHelidonSocket implements HelidonSocket {
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public void idle() {
+        }
+
+        @Override
+        public boolean isConnected() {
+            return true;
+        }
+
+        @Override
+        public void write(BufferData buffer) {
+        }
+
+        @Override
+        public PeerInfo remotePeer() {
+            return null;
+        }
+
+        @Override
+        public PeerInfo localPeer() {
+            return null;
+        }
+
+        @Override
+        public boolean isSecure() {
+            return false;
+        }
+
+        @Override
+        public String socketId() {
+            return "test";
+        }
+
+        @Override
+        public String childSocketId() {
+            return "test";
+        }
+
+        @Override
+        public byte[] get() {
+            return new byte[0];
+        }
     }
 
     private static final class BlockingDataWriter implements DataWriter {

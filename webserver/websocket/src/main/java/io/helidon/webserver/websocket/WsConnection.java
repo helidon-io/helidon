@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -66,7 +67,7 @@ public class WsConnection implements ServerConnection, WsSession {
 
     private ContinuationType recvContinuation = ContinuationType.NONE;
     private boolean sendContinuation;
-    private volatile boolean closeSent;
+    private final AtomicBoolean closeSent = new AtomicBoolean();
 
     private volatile Thread myThread;
     private volatile boolean canRun = true;
@@ -215,9 +216,12 @@ public class WsConnection implements ServerConnection, WsSession {
 
     @Override
     public WsSession close(int code, String reason) {
+        if (!closeSent.compareAndSet(false, true)) {
+            return this;
+        }
+
         sendLock.lock();
         try {
-            closeSent = true;
             byte[] reasonBytes = reason.getBytes(StandardCharsets.UTF_8);
             BufferData bufferData = BufferData.create(2 + reasonBytes.length);
             bufferData.writeInt16(code);
@@ -308,7 +312,7 @@ public class WsConnection implements ServerConnection, WsSession {
                 }
             }
             listener.onClose(this, status, reason);
-            if (!closeSent) {
+            if (!closeSent.get()) {
                 close(WsCloseCodes.NORMAL_CLOSE, "normal");
             }
             return false;
