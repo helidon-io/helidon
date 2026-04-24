@@ -18,6 +18,7 @@ package io.helidon.declarative.codegen.websocket.client;
 
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
@@ -34,11 +35,9 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
 public class WebSocketClientExtensionProvider implements RegistryCodegenExtensionProvider {
 
     /**
-     * Default constructor.
-     *
-     * @deprecated required by Java {@link java.util.ServiceLoader}
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public WebSocketClientExtensionProvider() {
     }
 
