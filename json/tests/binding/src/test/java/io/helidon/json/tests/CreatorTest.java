@@ -126,6 +126,33 @@ public class CreatorTest {
         assertThat(result.secondParam, nullValue());
     }
 
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testIgnoredCreatorParametersParameterized(BindingMethod bindingMethod) {
+        String json = "{\"included\":\"value\",\"ignored\":\"should_be_ignored\",\"ignoredFlag\":true}";
+        IgnoredCreatorParameters result = bindingMethod.deserialize(jsonBinding, json, IgnoredCreatorParameters.class);
+        assertThat(result.included, is("value"));
+        assertThat(result.ignored, nullValue());
+        assertThat(result.ignoredFlag, is(false));
+
+        String serialized = bindingMethod.serialize(jsonBinding, new IgnoredCreatorParameters("value", "ignored", true));
+        assertThat(serialized, is("{\"included\":\"value\"}"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testIgnoredFactoryCreatorParameterParameterized(BindingMethod bindingMethod) {
+        String json = "{\"included\":\"value\",\"ignoredCount\":42}";
+        IgnoredFactoryCreatorParameter result = bindingMethod.deserialize(jsonBinding,
+                                                                          json,
+                                                                          IgnoredFactoryCreatorParameter.class);
+        assertThat(result.included, is("value"));
+        assertThat(result.ignoredCount, is(0));
+
+        String serialized = bindingMethod.serialize(jsonBinding, IgnoredFactoryCreatorParameter.create("value", 42));
+        assertThat(serialized, is("{\"included\":\"value\"}"));
+    }
+
     @Json.Entity
     static final class CreatorConstructorPojo {
 
@@ -228,6 +255,38 @@ public class CreatorTest {
         public ParameterNameTester(String string, String someParam) {
             this.name = string;
             this.secondParam = someParam;
+        }
+    }
+
+    @Json.Entity
+    static final class IgnoredCreatorParameters {
+
+        public final String included;
+        public final String ignored;
+        public final boolean ignoredFlag;
+
+        @Json.Creator
+        public IgnoredCreatorParameters(String included, @Json.Ignore String ignored, @Json.Ignore boolean ignoredFlag) {
+            this.included = included;
+            this.ignored = ignored;
+            this.ignoredFlag = ignoredFlag;
+        }
+    }
+
+    @Json.Entity
+    static final class IgnoredFactoryCreatorParameter {
+
+        public final String included;
+        public final int ignoredCount;
+
+        private IgnoredFactoryCreatorParameter(String included, int ignoredCount) {
+            this.included = included;
+            this.ignoredCount = ignoredCount;
+        }
+
+        @Json.Creator
+        static IgnoredFactoryCreatorParameter create(String included, @Json.Ignore int ignoredCount) {
+            return new IgnoredFactoryCreatorParameter(included, ignoredCount);
         }
     }
 }
