@@ -45,7 +45,7 @@ You must have Java and Maven installed on your system to use Helidon.
 
 *Verify System Requirements*
 
-``` bash
+```bash
 java -version
 mvn --version
 ```
@@ -55,21 +55,21 @@ Make sure you set the `JAVA_HOME` environment variable.
 
 *Set `JAVA_HOME` on Linux*
 
-``` bash
+```bash
 # Enter the appropriate path to your JDK
 export JAVA_HOME=/usr/lib/jvm/jdk-25
 ```
 
 *Set `JAVA_HOME` on macOS*
 
-``` bash
+```bash
 # Enter the appropriate path to your JDK
 export JAVA_HOME=`/usr/libexec/java_home -v 25`
 ```
 
 *Set `JAVA_HOME` on Windows*
 
-``` cmd
+```cmd
 # Enter the appropriate path to your JDK
 setx JAVA_HOME=C:\\PROGRA~1\\Java\\jdk-25
 ```

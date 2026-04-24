@@ -17,7 +17,7 @@ The Helidon CLI is a standalone executable for Linux, macOS, and Windows systems
 
 Make sure `java` and `mvn` are in your PATH:
 
-``` bash
+```bash
 java -version
 mvn --version
 ```

@@ -50,7 +50,7 @@ Compare the following code examples to see the differences in how you would impl
 
 *Helidon SE sample*
 
-``` java
+```java
 WebServer.builder()
         .addRouting(HttpRouting.builder()
                             .get("/greet", (req, res)
@@ -61,7 +61,7 @@ WebServer.builder()
 
 *Helidon MP sample*
 
-``` java
+```java
 @Path("hello")
 public class HelloWorld {
     @GET
