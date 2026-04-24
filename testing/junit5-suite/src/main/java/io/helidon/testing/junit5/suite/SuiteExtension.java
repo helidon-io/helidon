@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.testing.junit5.suite;
 import java.util.HashSet;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 
@@ -30,12 +31,9 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
 
 /**
- * Suite junit 5 extension.
- *
- * @deprecated this is a feature in progress of development, there may be backward incompatible changes done to it, so please
- *         use with care
+ * Internal JUnit 5 extension backing the test suite annotations.
  */
-@Deprecated
+@Api.Internal
 public class SuiteExtension
         implements BeforeAllCallback, ExtensionContext.Store.CloseableResource, ParameterResolver {
 

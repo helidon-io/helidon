@@ -41,6 +41,11 @@
             <artifactId>helidon-common-buffers</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.websocket</groupId>
             <artifactId>helidon-websocket</artifactId>
         </dependency>
@@ -135,4 +140,3 @@
         </plugins>
     </build>
 </project>
-
