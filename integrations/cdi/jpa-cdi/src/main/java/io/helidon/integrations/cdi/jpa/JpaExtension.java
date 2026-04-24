@@ -45,6 +45,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import io.helidon.common.Api;
 import io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean.DataSourceProvider;
 import io.helidon.integrations.cdi.jpa.jaxb.Persistence;
 import io.helidon.integrations.cdi.referencecountedcontext.ReferenceCounted;
@@ -311,6 +312,7 @@ public class JpaExtension implements Extension {
      *
      * @see Extension
      */
+    @Api.Internal
     public JpaExtension() {
         super();
         String cn = JpaExtension.class.getName();
