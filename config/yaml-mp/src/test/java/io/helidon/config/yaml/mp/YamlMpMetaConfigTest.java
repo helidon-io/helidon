@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,12 @@
 
 package io.helidon.config.yaml.mp;
 
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import io.helidon.config.ConfigException;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -25,6 +31,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -118,11 +125,53 @@ class YamlMpMetaConfigTest {
     }
 
     @Test
+    void testDefaultMetaConfigUsesContextClassLoader(@TempDir Path tempDir) throws IOException {
+        writeYaml(tempDir.resolve("mp-meta-config.yaml"), """
+                add-discovered-sources: false
+                add-discovered-converters: false
+
+                sources:
+                  - type: "yaml"
+                    classpath: "context-application.yaml"
+                    optional: false
+                """);
+        writeYaml(tempDir.resolve("context-application.yaml"), """
+                string: Context String
+                number: 321
+                array:
+                  - Alpha
+                  - Beta
+                  - Gamma
+                boolean: false
+                """);
+
+        ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
+        try (URLClassLoader contextClassLoader = new URLClassLoader(new URL[]{tempDir.toUri().toURL()},
+                                                                    originalClassLoader)) {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+            config = ConfigProvider.getConfig();
+        } finally {
+            Thread.currentThread().setContextClassLoader(originalClassLoader);
+        }
+
+        assertThat(config.getValue("string", String.class), is("Context String"));
+        assertThat(config.getValue("number", String.class), is("321"));
+        assertThat(config.getValue("array.0", String.class), is("Alpha"));
+        assertThat(config.getValue("array.1", String.class), is("Beta"));
+        assertThat(config.getValue("array.2", String.class), is("Gamma"));
+        assertThat(config.getValue("boolean", String.class), is("false"));
+    }
+
+    @Test
     void testMetaNonExistentNotOptional() {
         System.setProperty(META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-path-not-optional.yaml");
         try {
             config = ConfigProvider.getConfig();
             Assertions.fail("Expecting meta-config to fail due to not optional non-existent config source");
         } catch (ConfigException e) {}
+    }
+
+    private static void writeYaml(Path path, String content) throws IOException {
+        Files.writeString(path, content);
     }
 }
