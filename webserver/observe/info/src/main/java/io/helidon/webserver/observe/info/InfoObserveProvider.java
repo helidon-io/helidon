@@ -23,10 +23,7 @@ import io.helidon.webserver.observe.spi.Observer;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for application information observe provider.
- *
- * @deprecated only for {@link java.util.ServiceLoader}
  */
-@Deprecated
 public class InfoObserveProvider implements ObserveProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

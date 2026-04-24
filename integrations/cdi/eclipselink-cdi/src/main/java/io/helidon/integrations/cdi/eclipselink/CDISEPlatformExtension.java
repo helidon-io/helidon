@@ -34,10 +34,7 @@ import org.eclipse.persistence.platform.server.ServerPlatformUtils;
  * whose versions are higher than 1.8.  There is no need for end users
  * to instantiate this class.  Any public APIs exposed by this class
  * are subject to change without prior notice.</p>
- *
- * @deprecated Only a CDI container should instantiate this class.
  */
-@Deprecated
 public final class CDISEPlatformExtension implements Extension {
 
 

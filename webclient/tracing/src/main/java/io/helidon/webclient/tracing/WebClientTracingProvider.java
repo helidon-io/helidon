@@ -28,11 +28,7 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
  *
  * Weight must exceed that of WebClientSecurityProvider because WebClientSecurity depends on span information having already
  * been added to the request context by WebClientTracing.
- *
- * @deprecated This class should only be used via {@link java.util.ServiceLoader}.
- *  Use {@link WebClientTracing} instead
  */
-@Deprecated
 @Weight(Weighted.DEFAULT_WEIGHT + 100)
 public class WebClientTracingProvider implements WebClientServiceProvider {
     /**

@@ -21,12 +21,8 @@ import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webclient.spi.WebClientServiceProvider;
 
 /**
- * Client security SPI provider.
- *
- * @deprecated This class should only be used via {@link java.util.ServiceLoader}.
- *  Use {@link WebClientSecurity} instead
+ * Client security SPI provider for {@link java.util.ServiceLoader}.
  */
-@Deprecated
 public class WebClientSecurityProvider implements WebClientServiceProvider {
 
     /**
