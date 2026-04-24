@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import javax.net.ssl.SSLContext;
 import javax.sql.DataSource;
 
+import io.helidon.common.Api;
 import io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -98,11 +99,9 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
     private final Map<String, Boolean> xa;
 
     /**
-     * Creates a new {@link UCPBackedDataSourceExtension}.
-     *
-     * @deprecated For use by CDI only.
+     * Creates a new {@link UCPBackedDataSourceExtension} for CDI use only.
      */
-    @Deprecated // For use by CDI only
+    @Api.Internal
     public UCPBackedDataSourceExtension() {
         super();
         this.xa = new HashMap<>();

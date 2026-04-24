@@ -32,6 +32,8 @@ module io.helidon.integrations.oci.sdk.cdi {
     requires oci.java.sdk.common;
     requires oci.java.sdk.addons.oke.workload.identity;
 
+    requires static io.helidon.common;
+
     exports io.helidon.integrations.oci.sdk.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension

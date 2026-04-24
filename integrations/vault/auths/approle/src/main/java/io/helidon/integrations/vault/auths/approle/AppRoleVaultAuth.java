@@ -19,6 +19,7 @@ package io.helidon.integrations.vault.auths.approle;
 import java.lang.System.Logger.Level;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
@@ -42,11 +43,9 @@ public class AppRoleVaultAuth implements VaultAuth {
     private final String methodPath;
 
     /**
-     * Constructor required for Java Service Loader.
-     *
-     * @deprecated please use {@link #builder()}
+     * Constructor required for Java Service Loader. Use {@link #builder()} for application code.
      */
-    @Deprecated
+    @Api.Internal
     public AppRoleVaultAuth() {
         this.appRoleId = null;
         this.secretId = null;

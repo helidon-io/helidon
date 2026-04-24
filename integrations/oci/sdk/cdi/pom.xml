@@ -40,6 +40,11 @@
     <dependencies>
 
         <!-- Compile-scoped dependencies. -->
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+            <optional>true</optional>
+        </dependency>
 
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>

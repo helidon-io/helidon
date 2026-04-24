@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
@@ -47,11 +48,9 @@ public class K8sVaultAuth implements VaultAuth {
     private final String methodPath;
 
     /**
-     * Constructor required for Java Service Loader.
-     *
-     * @deprecated please use {@link #builder()}
+     * Constructor required for Java Service Loader. Use {@link #builder()} for application code.
      */
-    @Deprecated
+    @Api.Internal
     public K8sVaultAuth() {
         this.serviceAccountToken = null;
         this.tokenRole = null;

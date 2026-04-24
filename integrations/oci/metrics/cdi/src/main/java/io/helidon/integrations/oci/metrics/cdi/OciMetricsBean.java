@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.integrations.oci.metrics.cdi;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.integrations.oci.metrics.OciMetricsSupport;
 import io.helidon.integrations.oci.metrics.OciMetricsSupportFactory;
@@ -46,7 +47,7 @@ public class OciMetricsBean extends OciMetricsSupportFactory {
     /**
      * For CDI use only.
      */
-    @Deprecated
+    @Api.Internal
     public OciMetricsBean() {
     }
 

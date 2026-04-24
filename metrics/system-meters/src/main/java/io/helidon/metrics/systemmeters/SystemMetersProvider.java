@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.metrics.api.BuiltInMeterNameFormat;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsFactory;
@@ -162,10 +163,8 @@ public class SystemMetersProvider implements MetersProvider {
 
     /**
      * Constructs a new instance for service loading.
-     *
-     * @deprecated
      */
-    @Deprecated
+    @Api.Internal
     public SystemMetersProvider() {
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ module io.helidon.metrics.systemmeters {
     requires io.helidon.metrics.api;
     requires java.management;
     requires jdk.jfr;
+    requires static io.helidon.common;
 
     // we must see these classes, as they are used in generated ApplicationBinding
     exports io.helidon.metrics.systemmeters;

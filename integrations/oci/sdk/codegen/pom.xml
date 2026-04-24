@@ -43,6 +43,11 @@
             <artifactId>helidon-codegen-class-model</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.service</groupId>
              <artifactId>helidon-service-codegen</artifactId>
         </dependency>

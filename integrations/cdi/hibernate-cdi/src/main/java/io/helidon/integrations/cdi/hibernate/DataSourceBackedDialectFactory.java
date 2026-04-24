@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.sql.SQLException;
 import java.util.Map;
 
 import javax.sql.DataSource;
+
+import io.helidon.common.Api;
 
 import org.hibernate.boot.registry.StandardServiceInitiator;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
@@ -120,11 +122,9 @@ public final class DataSourceBackedDialectFactory
 
 
     /**
-     * Creates a new {@link DataSourceBackedDialectFactory}.
-     *
-     * @deprecated For use by {@link java.util.ServiceLoader} instances only.
+     * Creates a new {@link DataSourceBackedDialectFactory} for {@link java.util.ServiceLoader} use only.
      */
-    @Deprecated
+    @Api.Internal
     public DataSourceBackedDialectFactory() {
         super();
     }

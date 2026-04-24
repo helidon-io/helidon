@@ -19,6 +19,7 @@ package io.helidon.integrations.vault.secrets.cubbyhole;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Engine;
@@ -44,9 +45,9 @@ public class CubbyholeEngineProvider implements SecretsEngineProvider<CubbyholeS
     }
 
     /**
-     * @deprecated Do not use this constructor, this is a service loader service!
+     * Required by this service loader service.
      */
-    @Deprecated
+    @Api.Internal
     public CubbyholeEngineProvider() {
     }
 
