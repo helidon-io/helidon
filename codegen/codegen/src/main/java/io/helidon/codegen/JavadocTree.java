@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.common.Api;
 import io.helidon.codegen.JavadocReader.BlockTagImpl;
 import io.helidon.codegen.JavadocReader.CdataImpl;
 import io.helidon.codegen.JavadocReader.CommentImpl;
@@ -37,6 +38,7 @@ import io.helidon.codegen.JavadocReader.TextImpl;
  * This code and its internal interfaces are subject to change or deletion without notice.</b>
  * </p>
  */
+@Api.Internal
 public sealed interface JavadocTree permits JavadocTree.EltStart,
                                             JavadocTree.InlineTag,
                                             JavadocTree.BlockTag,

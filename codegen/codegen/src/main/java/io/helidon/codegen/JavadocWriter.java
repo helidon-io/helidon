@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import io.helidon.common.Api;
 import io.helidon.codegen.JavadocTree.AttrValue;
 import io.helidon.codegen.JavadocTree.AttrValue.Kind;
 import io.helidon.codegen.JavadocTree.EltClose;
@@ -51,6 +52,7 @@ import io.helidon.codegen.JavadocTree.Text;
  * This code and its internal interfaces are subject to change or deletion without notice.</b>
  * </p>
  */
+@Api.Internal
 public final class JavadocWriter {
 
     private final StringBuilder buf;
