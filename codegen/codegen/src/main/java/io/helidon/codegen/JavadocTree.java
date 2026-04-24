@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.common.Api;
 import io.helidon.codegen.JavadocReader.BlockTagImpl;
 import io.helidon.codegen.JavadocReader.CdataImpl;
 import io.helidon.codegen.JavadocReader.CommentImpl;
@@ -29,6 +28,7 @@ import io.helidon.codegen.JavadocReader.EltStartImpl;
 import io.helidon.codegen.JavadocReader.EscapeImpl;
 import io.helidon.codegen.JavadocReader.InlineTagImpl;
 import io.helidon.codegen.JavadocReader.TextImpl;
+import io.helidon.common.Api;
 
 /**
  * Javadoc tree node.

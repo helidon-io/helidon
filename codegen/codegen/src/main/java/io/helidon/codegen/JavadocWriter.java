@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import io.helidon.common.Api;
 import io.helidon.codegen.JavadocTree.AttrValue;
 import io.helidon.codegen.JavadocTree.AttrValue.Kind;
 import io.helidon.codegen.JavadocTree.EltClose;
@@ -28,6 +27,7 @@ import io.helidon.codegen.JavadocTree.EltStart;
 import io.helidon.codegen.JavadocTree.Escape;
 import io.helidon.codegen.JavadocTree.InlineTag;
 import io.helidon.codegen.JavadocTree.Text;
+import io.helidon.common.Api;
 
 /**
  * A tool that renders Javadoc to simplified HTML.

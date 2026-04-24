@@ -21,12 +21,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.common.Api;
 import io.helidon.codegen.JavadocParser.Event;
 import io.helidon.codegen.JavadocTree.AttrValue;
 import io.helidon.codegen.JavadocTree.BlockTag;
 import io.helidon.codegen.JavadocTree.Document;
 import io.helidon.codegen.JavadocTree.Text;
+import io.helidon.common.Api;
 
 /**
  * Javadoc reader.
