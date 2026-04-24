@@ -74,8 +74,9 @@ public final class Se1Main {
                         .build())
                 .build();
 
+        Config observeConfig = config.get("server").get("features").get("observe");
         ObserveFeature observe = ObserveFeature.builder()
-                .config(config)
+                .config(observeConfig)
                 .addObserver(health)
                 .build();
 
