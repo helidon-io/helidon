@@ -66,6 +66,7 @@ import io.grpc.Compressor;
 import io.grpc.CompressorRegistry;
 import io.grpc.Decompressor;
 import io.grpc.DecompressorRegistry;
+import io.grpc.Drainable;
 import io.grpc.KnownLength;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
@@ -591,7 +592,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
      * knowledge for optimizations. It can also copy a byte array directly on a
      * single read.
      */
-    static class BufferDataInputStream extends InputStream implements KnownLength {
+    static class BufferDataInputStream extends InputStream implements KnownLength, Drainable {
         private final BufferData bufferData;
 
         BufferDataInputStream(BufferData bufferData) {
@@ -619,6 +620,27 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         @Override
         public int available() {
             return bufferData.available();
+        }
+
+        @Override
+        public int drainTo(OutputStream target) {
+            int count = bufferData.available();
+            bufferData.writeTo(target);
+            return count;
+        }
+
+        @Override
+        public long skip(long n) {
+            // advance readPosition directly; avoids the default read()-in-a-loop
+            int toSkip = (int) Math.min(bufferData.available(), n);
+            bufferData.skip(toSkip);
+            return toSkip;
+        }
+
+        @Override
+        public byte[] readAllBytes() {
+            // single exact-size allocation; avoids the default growing-array loop
+            return bufferData.readBytes();
         }
     }
 }
