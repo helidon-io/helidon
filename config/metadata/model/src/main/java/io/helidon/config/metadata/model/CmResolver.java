@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.config.metadata.model.CmModel.CmEnum;
 import io.helidon.config.metadata.model.CmModel.CmType;
 
@@ -31,6 +32,7 @@ import io.helidon.config.metadata.model.CmModel.CmType;
  * This code and its internal interfaces are subject to change or deletion without notice.</b>
  * </p>
  */
+@Api.Internal
 public interface CmResolver {
 
     /**

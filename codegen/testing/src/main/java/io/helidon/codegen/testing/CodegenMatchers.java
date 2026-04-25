@@ -18,6 +18,8 @@ package io.helidon.codegen.testing;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
+
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -31,6 +33,7 @@ import org.intellij.lang.annotations.Language;
  * This code and its internal interfaces are subject to change or deletion without notice.</b>
  * </p>
  */
+@Api.Internal
 public final class CodegenMatchers {
 
     private CodegenMatchers() {

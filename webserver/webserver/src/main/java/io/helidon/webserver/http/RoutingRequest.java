@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http;
 
+import io.helidon.common.Api;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.RoutedPath;
 
@@ -29,6 +30,7 @@ public interface RoutingRequest extends ServerRequest {
      * @param routedPath routed path, that provides matched path parameters from path pattern
      * @return this instance
      */
+    @Api.Internal
     RoutingRequest path(RoutedPath routedPath);
 
     /**
@@ -37,15 +39,17 @@ public interface RoutingRequest extends ServerRequest {
      * @param newPrologue new prologue to use (on rerouting)
      * @return this instance
      */
+    @Api.Internal
     RoutingRequest prologue(HttpPrologue newPrologue);
 
     /**
      * Update the pattern used to match this request. Such as "/foo/{bar}".
-     *  For internal use only to Helidon.
+     * For internal use only to Helidon.
      *
      * @param matchingPattern the matching pattern
      * @return this instance
      */
+    @Api.Internal
     default RoutingRequest matchingPattern(String matchingPattern) {
         return this;
     }

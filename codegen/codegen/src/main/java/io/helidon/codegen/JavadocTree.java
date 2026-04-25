@@ -28,6 +28,7 @@ import io.helidon.codegen.JavadocReader.EltStartImpl;
 import io.helidon.codegen.JavadocReader.EscapeImpl;
 import io.helidon.codegen.JavadocReader.InlineTagImpl;
 import io.helidon.codegen.JavadocReader.TextImpl;
+import io.helidon.common.Api;
 
 /**
  * Javadoc tree node.
@@ -37,6 +38,7 @@ import io.helidon.codegen.JavadocReader.TextImpl;
  * This code and its internal interfaces are subject to change or deletion without notice.</b>
  * </p>
  */
+@Api.Internal
 public sealed interface JavadocTree permits JavadocTree.EltStart,
                                             JavadocTree.InlineTag,
                                             JavadocTree.BlockTag,
