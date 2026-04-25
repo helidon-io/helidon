@@ -81,6 +81,19 @@ class ConfigurationValueFactoryTest {
     }
 
     @Test
+    void wholeExpressionUsesInlineDefaultWhenConfigIsMissingForPrimitiveTarget() {
+        ConfigurationValueFactory factory = factory(Map.of());
+
+        List<Service.QualifiedInstance<Object>> values = factory.list(Qualifier.create(Configuration.Value.class,
+                                                                                      "${declarative.ignore-incubating:false}"),
+                                                                      Lookup.create(boolean.class),
+                                                                      asObjectType(GenericType.create(boolean.class)));
+
+        assertThat(values, hasSize(1));
+        assertThat(values.getFirst().get(), is(false));
+    }
+
+    @Test
     void wholeExpressionFallsBackToDefaultAnnotation() {
         ConfigurationValueFactory factory = factory(Map.of());
 
