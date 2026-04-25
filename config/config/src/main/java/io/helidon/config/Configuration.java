@@ -28,10 +28,10 @@ import io.helidon.service.registry.Service;
 /**
  * Container class for annotations related to Helidon Configuration when using declarative programming model.
  * <p>
- * NOTE: this API is part of incubating features of Helidon. This API may change including backward incompatible changes
- *               and full removal. We welcome feedback for incubating features.
+ * NOTE: this API is part of preview features of Helidon. This API may still change between minor releases,
+ *               but it is intended for supported external use.
  */
-@Api.Incubating
+@Api.Preview
 public final class Configuration {
     private Configuration() {
     }
