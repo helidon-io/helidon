@@ -7,11 +7,11 @@ Generic configuration for a processor such as a <code>io.opentelemetry.sdk.trace
 ## Configuration options
 
 <style>
-    code {
+    table.cm-table code {
         white-space: nowrap !important;
     }
 
-    .cm-truncate-value {
+    table.cm-table .cm-truncate-value {
         display: inline-block;
         max-width: 10ch;
         overflow: hidden;
@@ -21,7 +21,7 @@ Generic configuration for a processor such as a <code>io.opentelemetry.sdk.trace
 </style>
 
 
-<table>
+<table class="cm-table">
 <thead>
 <tr>
 <th>Key</th>

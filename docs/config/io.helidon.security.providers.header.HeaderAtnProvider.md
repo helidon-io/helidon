@@ -7,11 +7,11 @@ Security provider that extracts a username (or service name) from a header
 ## Configuration options
 
 <style>
-    code {
+    table.cm-table code {
         white-space: nowrap !important;
     }
 
-    .cm-truncate-value {
+    table.cm-table .cm-truncate-value {
         display: inline-block;
         max-width: 10ch;
         overflow: hidden;
@@ -21,7 +21,7 @@ Security provider that extracts a username (or service name) from a header
 </style>
 
 
-<table>
+<table class="cm-table">
 <thead>
 <tr>
 <th>Key</th>

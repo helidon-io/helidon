@@ -7,11 +7,11 @@ Scheduling periodically executed task with specified fixed rate
 ## Configuration options
 
 <style>
-    code {
+    table.cm-table code {
         white-space: nowrap !important;
     }
 
-    .cm-truncate-value {
+    table.cm-table .cm-truncate-value {
         display: inline-block;
         max-width: 10ch;
         overflow: hidden;
@@ -21,7 +21,7 @@ Scheduling periodically executed task with specified fixed rate
 </style>
 
 
-<table>
+<table class="cm-table">
 <thead>
 <tr>
 <th>Key</th>
@@ -99,7 +99,7 @@ Scheduling periodically executed task with specified fixed rate
 ### Deprecated Options
 
 
-<table>
+<table class="cm-table">
 <thead>
 <tr>
 <th>Key</th>

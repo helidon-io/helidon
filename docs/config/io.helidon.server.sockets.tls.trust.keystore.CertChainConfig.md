@@ -7,11 +7,11 @@ Configuration for server.sockets.tls.trust.keystore.cert-chain
 ## Configuration options
 
 <style>
-    code {
+    table.cm-table code {
         white-space: nowrap !important;
     }
 
-    .cm-truncate-value {
+    table.cm-table .cm-truncate-value {
         display: inline-block;
         max-width: 10ch;
         overflow: hidden;
@@ -21,7 +21,7 @@ Configuration for server.sockets.tls.trust.keystore.cert-chain
 </style>
 
 
-<table>
+<table class="cm-table">
 <thead>
 <tr>
 <th>Key</th>

@@ -7,7 +7,7 @@ This type is a provider contract.
 ## Implementations
 
 <style>
-    code {
+    table.cm-table code {
         white-space: nowrap !important;
     }
 </style>

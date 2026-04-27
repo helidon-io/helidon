@@ -7,11 +7,11 @@ Configuration for security.providers.idcs-role-mapper.oidc-config.tenants.decryp
 ## Configuration options
 
 <style>
-    code {
+    table.cm-table code {
         white-space: nowrap !important;
     }
 
-    .cm-truncate-value {
+    table.cm-table .cm-truncate-value {
         display: inline-block;
         max-width: 10ch;
         overflow: hidden;
@@ -21,7 +21,7 @@ Configuration for security.providers.idcs-role-mapper.oidc-config.tenants.decryp
 </style>
 
 
-<table>
+<table class="cm-table">
 <thead>
 <tr>
 <th>Key</th>

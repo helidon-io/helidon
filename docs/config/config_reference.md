@@ -3,13 +3,13 @@
 ## Config Roots
 
 <style>
-    code {
+    table.cm-table code {
         white-space: nowrap !important;
     }
 </style>
 
 
-<table>
+<table class="cm-table">
 <thead>
 <tr>
 <th>Key</th>

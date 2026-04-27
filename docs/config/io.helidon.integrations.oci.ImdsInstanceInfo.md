@@ -7,11 +7,11 @@ Information about the instance retrieved from Imds
 ## Configuration options
 
 <style>
-    code {
+    table.cm-table code {
         white-space: nowrap !important;
     }
 
-    .cm-truncate-value {
+    table.cm-table .cm-truncate-value {
         display: inline-block;
         max-width: 10ch;
         overflow: hidden;
@@ -21,7 +21,7 @@ Information about the instance retrieved from Imds
 </style>
 
 
-<table>
+<table class="cm-table">
 <thead>
 <tr>
 <th>Key</th>
@@ -118,7 +118,7 @@ Information about the instance retrieved from Imds
 ### Deprecated Options
 
 
-<table>
+<table class="cm-table">
 <thead>
 <tr>
 <th>Key</th>
