@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package io.helidon.webclient.websocket;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -44,10 +47,11 @@ public class ClientWsConnection implements WsSession, Runnable {
     private final BufferData sendBuffer = BufferData.growing(1024);
     private final ClientConnection connection;
     private final HelidonSocket helidonSocket;
+    private final Lock sendLock = new ReentrantLock();
 
     private ContinuationType recvContinuation = ContinuationType.NONE;
     private boolean sendContinuation;
-    private boolean closeSent;
+    private final AtomicBoolean closeSent = new AtomicBoolean();
     private boolean terminated;
 
     ClientWsConnection(ClientConnection connection,
@@ -113,22 +117,42 @@ public class ClientWsConnection implements WsSession, Runnable {
 
     @Override
     public WsSession send(String text, boolean last) {
-        return send(ClientWsFrame.data(text, last));
+        sendLock.lock();
+        try {
+            return sendLocked(ClientWsFrame.data(text, last));
+        } finally {
+            sendLock.unlock();
+        }
     }
 
     @Override
     public WsSession send(BufferData bufferData, boolean last) {
-        return send(ClientWsFrame.data(bufferData, last));
+        sendLock.lock();
+        try {
+            return sendLocked(ClientWsFrame.data(bufferData, last));
+        } finally {
+            sendLock.unlock();
+        }
     }
 
     @Override
     public WsSession ping(BufferData bufferData) {
-        return send(ClientWsFrame.control(WsOpCode.PING, bufferData));
+        sendLock.lock();
+        try {
+            return sendLocked(ClientWsFrame.control(WsOpCode.PING, bufferData));
+        } finally {
+            sendLock.unlock();
+        }
     }
 
     @Override
     public WsSession pong(BufferData bufferData) {
-        return send(ClientWsFrame.control(WsOpCode.PONG, bufferData));
+        sendLock.lock();
+        try {
+            return sendLocked(ClientWsFrame.control(WsOpCode.PONG, bufferData));
+        } finally {
+            sendLock.unlock();
+        }
     }
 
     /**
@@ -142,17 +166,24 @@ public class ClientWsConnection implements WsSession, Runnable {
      */
     @Override
     public WsSession close(int code, String reason) {
-        closeSent = true;
+        if (!closeSent.compareAndSet(false, true)) {
+            return this;
+        }
 
-        // send empty close (no code or reason) if code is negative
-        if (code < 0) {
-            send(ClientWsFrame.control(WsOpCode.CLOSE, BufferData.empty()));
-        } else {
-            byte[] reasonBytes = reason.getBytes(StandardCharsets.UTF_8);
-            BufferData bufferData = BufferData.create(2 + reasonBytes.length);
-            bufferData.writeInt16(code);
-            bufferData.write(reasonBytes);
-            send(ClientWsFrame.control(WsOpCode.CLOSE, bufferData));
+        sendLock.lock();
+        try {
+            // send empty close (no code or reason) if code is negative
+            if (code < 0) {
+                sendLocked(ClientWsFrame.control(WsOpCode.CLOSE, BufferData.empty()));
+            } else {
+                byte[] reasonBytes = reason.getBytes(StandardCharsets.UTF_8);
+                BufferData bufferData = BufferData.create(2 + reasonBytes.length);
+                bufferData.writeInt16(code);
+                bufferData.write(reasonBytes);
+                sendLocked(ClientWsFrame.control(WsOpCode.CLOSE, bufferData));
+            }
+        } finally {
+            sendLock.unlock();
         }
         return this;
     }
@@ -175,7 +206,7 @@ public class ClientWsConnection implements WsSession, Runnable {
         return helidonSocket;
     }
 
-    private ClientWsConnection send(ClientWsFrame frame) {
+    private ClientWsConnection sendLocked(ClientWsFrame frame) {
         WsOpCode opCode = frame.opCode();
         if (opCode == WsOpCode.TEXT || opCode == WsOpCode.BINARY) {
             if (sendContinuation) {
@@ -230,7 +261,7 @@ public class ClientWsConnection implements WsSession, Runnable {
             } catch (DataReader.InsufficientDataAvailableException e) {
                 return;
             } catch (WsCloseException e) {
-                if (!closeSent) {
+                if (!closeSent.get()) {
                     try {
                         close(e.closeCode(), e.getMessage());
                     } catch (Exception ex) {
