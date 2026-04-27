@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,9 @@
 
 package io.helidon.webserver;
 
-import io.helidon.common.Default;
 import io.helidon.config.Configuration;
 import io.helidon.service.registry.Service;
 
-@SuppressWarnings("deprecation")
 @Service.Singleton
 @Service.RunLevel(Service.RunLevel.SERVER)
 class WebServerStarterService {
@@ -30,7 +28,7 @@ class WebServerStarterService {
     private final boolean ignoreIncubating;
 
     WebServerStarterService(LoomServer server,
-                            @Default.Boolean(false) @Configuration.Value("declarative.ignore-incubating")
+                            @Configuration.Value("${declarative.ignore-incubating:false}")
                             boolean ignoreIncubating) {
         this.server = server;
         this.ignoreIncubating = ignoreIncubating;

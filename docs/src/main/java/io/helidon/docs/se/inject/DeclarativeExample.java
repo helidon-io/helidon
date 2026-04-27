@@ -18,9 +18,7 @@ package io.helidon.docs.se.inject;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.Default;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
@@ -28,9 +26,7 @@ import io.helidon.config.Configuration;
 import io.helidon.faulttolerance.Ft;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
-import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
-import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.scheduling.Scheduling;
@@ -48,7 +44,6 @@ import io.helidon.webclient.api.RestClient;
 import io.helidon.webclient.websocket.WebSocketClient;
 import io.helidon.webserver.cors.Cors;
 import io.helidon.webserver.http.RestServer;
-import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.websocket.WebSocketServer;
 import io.helidon.websocket.WebSocket;
 import io.helidon.websocket.WsSession;
@@ -57,7 +52,6 @@ import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 
-@SuppressWarnings("deprecation")
 public class DeclarativeExample {
     private DeclarativeExample() {
     }
@@ -94,7 +88,7 @@ public class DeclarativeExample {
         private final String greeting;
 
         // inject app.greeting configuration value, use "Hello" if not configured
-        GreetEndpoint(@Configuration.Value("app.greeting") @Default.Value("Hello") String greeting) {
+        GreetEndpoint(@Configuration.Value("${app.greeting:Hello}") String greeting) {
             this.greeting = greeting;
         }
 
