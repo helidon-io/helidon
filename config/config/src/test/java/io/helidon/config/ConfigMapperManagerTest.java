@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,12 @@ public class ConfigMapperManagerTest {
     public void testBuiltInMappers() {
         Integer builtIn = managerWithServices.map(managerWithServices.simpleConfig("builtIn", "49"), Integer.class);
         assertThat(builtIn, is(49));
+    }
+
+    @Test
+    void testPrimitiveGenericTypeBuiltInMapper() {
+        Boolean builtIn = managerWithServices.map("true", GenericType.create(boolean.class), "flag");
+        assertThat(builtIn, is(true));
     }
 
     @Test
