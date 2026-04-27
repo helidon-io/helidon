@@ -47,240 +47,284 @@ class ValidationCodegenTest {
             Prototype.class
     );
 
-    // ------ Supported kind/type tests ---------------//
-
     @Test
     void testSupportedClassElements() throws IOException {
-        var result = compile("""
-                package com.example;
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("Foo.java", """
+                        package com.example;
 
-                import io.helidon.validation.Validation;
+                        import io.helidon.validation.Validation;
 
-                @Validation.Validated
-                public class Foo {
-                    @Validation.Integer.Min(1)
-                    Integer id;
+                        @Validation.Validated
+                        public class Foo {
+                            @Validation.Integer.Min(1)
+                            Integer id;
 
-                    @Validation.Integer.Min(1)
-                    public Integer getAge() {
-                        return 42;
-                    }
+                            @Validation.Integer.Min(1)
+                            public Integer getAge() {
+                                return 42;
+                            }
 
-                    @Validation.Integer.Min(1)
-                    Integer size() {
-                        return 1;
-                    }
-                }
-                """);
+                            @Validation.Integer.Min(1)
+                            Integer size() {
+                                return 1;
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
 
         assertGeneratedAndContainsCases(result, "Foo", "id", "age", "size");
     }
 
     @Test
     void testSupportedRecordElements() throws IOException {
-        var result = compile("""
-                package com.example;
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("Foo.java", """
+                        package com.example;
 
-                import io.helidon.validation.Validation;
+                        import io.helidon.validation.Validation;
 
-                @Validation.Validated
-                public record Foo(@Validation.Integer.Min(1) Integer id,
-                                  @Validation.Integer.Min(1) Integer age) {
-                }
-                """);
+                        @Validation.Validated
+                        public record Foo(@Validation.Integer.Min(1) Integer id,
+                                          @Validation.Integer.Min(1) Integer age) {
+                        }
+                        """)
+                .build()
+                .compile();
 
         assertGeneratedAndContainsCases(result, "Foo", "id", "age");
     }
 
     @Test
     void testSupportedInterfaceElements() throws IOException {
-        var result = compile("""
-                package com.example;
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("Foo.java", """
+                        package com.example;
 
-                import io.helidon.validation.Validation;
+                        import io.helidon.validation.Validation;
 
-                @Validation.Validated
-                public interface Foo {
-                    @Validation.Integer.Min(1)
-                    Integer getId();
+                        @Validation.Validated
+                        public interface Foo {
+                            @Validation.Integer.Min(1)
+                            Integer getId();
 
-                    @Validation.Integer.Min(1)
-                    Integer size();
-                }
-                """);
+                            @Validation.Integer.Min(1)
+                            Integer size();
+                        }
+                        """)
+                .build()
+                .compile();
 
         assertGeneratedAndContainsCases(result, "Foo", "id", "size");
     }
 
-    // ------ Unsupported kind/type tests ---------------//
-
     @Test
     void testUnsupportedPrivateField() {
-        UnsupportedCase unsupported = new UnsupportedCase("private field",
-                                                  """
-                                                   package com.example;
-              
-                                                   import io.helidon.validation.Validation;
-              
-                                                   @Validation.Validated
-                                                   public class Foo {
-                                                       @Validation.Integer.Min(1)
-                                                       private Integer id;
-                                                   }
-                                                   """,
-                                                  "private Integer id");
-        var result = compile(unsupported.source());
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("Foo.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        @Validation.Validated
+                        public class Foo {
+                            @Validation.Integer.Min(1)
+                            private Integer id;
+                        }
+                        """)
+                .build()
+                .compile();
 
         assertCompilationFails(result,
                                "Only non-private fields and getter methods are supported",
-                               unsupported.expectedElement());
-        assertFileNotGenerated(result, unsupported);
+                               "private Integer id");
+        var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
+        assertThat("The Foo__Validated.java should not be generated (private field)", Files.exists(validator), is(false));
     }
 
     @Test
     void testUnsupportedStaticField() {
-        UnsupportedCase unsupported = new UnsupportedCase("static field",
-                                                      """
-                                                       package com.example;
-                  
-                                                       import io.helidon.validation.Validation;
-                  
-                                                       @Validation.Validated
-                                                       public class Foo {
-                                                           @Validation.Integer.Min(1)
-                                                           static Integer id;
-                                                       }
-                                                       """,
-                                                      "static Integer id");
-        var result = compile(unsupported.source());
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("Foo.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        @Validation.Validated
+                        public class Foo {
+                            @Validation.Integer.Min(1)
+                            static Integer id;
+                        }
+                        """)
+                .build()
+                .compile();
 
         assertCompilationFails(result,
                                "Only non-private fields and getter methods are supported",
-                               unsupported.expectedElement());
-        assertFileNotGenerated(result, unsupported);
+                               "static Integer id");
+        var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
+        assertThat("The Foo__Validated.java should not be generated (static field)", Files.exists(validator), is(false));
     }
 
     @Test
     void testUnsupportedPrivateMethod() {
-        UnsupportedCase unsupported = new UnsupportedCase("private method",
-                                                      """
-                                                       package com.example;
-                  
-                                                       import io.helidon.validation.Validation;
-                  
-                                                       @Validation.Validated
-                                                       public class Foo {
-                                                           @Validation.Valid
-                                                           private Integer id() {
-                                                               return 1;
-                                                           }
-                                                       }
-                                                       """,
-                                                      "private Integer id()");
-        var result = compile(unsupported.source());
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("Foo.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        @Validation.Validated
+                        public class Foo {
+                            @Validation.Valid
+                            private Integer id() {
+                                return 1;
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
 
         assertCompilationFails(result,
                                "Only non-private fields and getter methods are supported",
-                               unsupported.expectedElement());
-        assertFileNotGenerated(result, unsupported);
+                               "private Integer id()");
+        var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
+        assertThat("The Foo__Validated.java should not be generated (private method)", Files.exists(validator), is(false));
     }
 
     @Test
     void testUnsupportedStaticMethod() {
-        UnsupportedCase unsupported = new UnsupportedCase("static method",
-                                                      """
-                                                       package com.example;
-                  
-                                                       import io.helidon.validation.Validation;
-                  
-                                                       @Validation.Validated
-                                                       public class Foo {
-                                                           @Validation.Valid
-                                                           static Integer id() {
-                                                               return 1;
-                                                           }
-                                                       }
-                                                       """,
-                                                      "static Integer id()");
-        var result = compile(unsupported.source());
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("Foo.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        @Validation.Validated
+                        public class Foo {
+                            @Validation.Valid
+                            static Integer id() {
+                                return 1;
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
 
         assertCompilationFails(result,
                                "Only non-private fields and getter methods are supported",
-                               unsupported.expectedElement());
-        assertFileNotGenerated(result, unsupported);
+                               "static Integer id()");
+        var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
+        assertThat("The Foo__Validated.java should not be generated (static method)", Files.exists(validator), is(false));
     }
 
     @Test
     void testUnsupportedMethodWithArguments() {
-        UnsupportedCase unsupported = new UnsupportedCase("method with arguments",
-                                                      """
-                                                       package com.example;
-                  
-                                                       import io.helidon.validation.Validation;
-                  
-                                                       @Validation.Validated
-                                                       public class Foo {
-                                                           @Validation.Valid
-                                                           Integer id(Integer value) {
-                                                               return value;
-                                                           }
-                                                       }
-                                                       """,
-                                                      "Integer id(Integer value)");
-        var result = compile(unsupported.source());
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("Foo.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        @Validation.Validated
+                        public class Foo {
+                            @Validation.Valid
+                            Integer id(Integer value) {
+                                return value;
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
 
         assertCompilationFails(result,
                                "Only non-private fields and getter methods are supported",
-                               unsupported.expectedElement());
-        assertFileNotGenerated(result, unsupported);
+                               "Integer id(Integer value)");
+        var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
+        assertThat("The Foo__Validated.java should not be generated (method with arguments)",
+                   Files.exists(validator),
+                   is(false));
     }
 
     @Test
     void testUnsupportedVoidMethod() {
-        UnsupportedCase unsupported = new UnsupportedCase("void method",
-                                                      """
-                                                       package com.example;
-                  
-                                                       import io.helidon.validation.Validation;
-                  
-                                                       @Validation.Validated
-                                                       public class Foo {
-                                                           @Validation.Valid
-                                                           void ping() {
-                                                           }
-                                                       }
-                                                       """,
-                                                      "void ping()");
-        var result = compile(unsupported.source());
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("Foo.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        @Validation.Validated
+                        public class Foo {
+                            @Validation.Valid
+                            void ping() {
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
 
         assertCompilationFails(result,
                                "Only non-private fields and getter methods are supported",
-                               unsupported.expectedElement());
-        assertFileNotGenerated(result, unsupported);
+                               "void ping()");
+        var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
+        assertThat("The Foo__Validated.java should not be generated (void method)", Files.exists(validator), is(false));
     }
 
     @Test
     void testUnsupportedConstructor() {
-        UnsupportedCase unsupported = new UnsupportedCase("constructor",
-                                                      """
-                                                       package com.example;
-                  
-                                                       import io.helidon.validation.Validation;
-                  
-                                                       @Validation.Validated
-                                                       public class Foo {
-                                                           @Validation.Valid
-                                                           Foo() {
-                                                           }
-                                                       }
-                                                       """,
-                                                      "Foo()");
-        var result = compile(unsupported.source());
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("Foo.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        @Validation.Validated
+                        public class Foo {
+                            @Validation.Valid
+                            Foo() {
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
 
         assertCompilationFails(result,
                                "Only non-private fields and getter methods are supported",
-                               unsupported.expectedElement());
-        assertFileNotGenerated(result, unsupported);
+                               "Foo()");
+        var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
+        assertThat("The Foo__Validated.java should not be generated (constructor)", Files.exists(validator), is(false));
     }
 
     @Test
@@ -318,35 +362,32 @@ class ValidationCodegenTest {
 
     @Test
     void testInterfaceStaticAnnotatedMethodFailsCompilation() {
-        UnsupportedCase unsupported = new UnsupportedCase("interface static method",
-                                                          """
-                                                          package com.example;
-
-                                                          import io.helidon.validation.Validation;
-
-                                                          @Validation.Validated
-                                                          public interface Foo {
-                                                              @Validation.Integer.Min(1)
-                                                              static Integer id() {
-                                                                  return 1;
-                                                              }
-                                                          }
-                                                          """,
-                                                          "id");
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
                 .addProcessor(AptProcessor::new)
-                .addSource("Foo.java", unsupported.source())
+                .addSource("Foo.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        @Validation.Validated
+                        public interface Foo {
+                            @Validation.Integer.Min(1)
+                            static Integer id() {
+                                return 1;
+                            }
+                        }
+                        """)
                 .build()
                 .compile();
 
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat("Build should fail", result.success(), is(false));
         assertThat(diagnostics, containsString("error:"));
-        assertThat(diagnostics, containsString(unsupported.expectedElement()));
+        assertThat(diagnostics, containsString("id"));
         var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
-        assertThat("The Foo__Validated.java should be generated (" + unsupported.name() + ")",
+        assertThat("The Foo__Validated.java should be generated (interface static method)",
                    Files.exists(validator),
                    is(true));
     }
@@ -447,61 +488,50 @@ class ValidationCodegenTest {
 
     @Test
     void testUnsupportedEnumType() {
-        UnsupportedCase unsupported = new UnsupportedCase("enum",
-                                                      """
-                                                      package com.example;
-
-                                                      import io.helidon.validation.Validation;
-
-                                                      @Validation.Validated
-                                                      enum Foo {
-                                                         INSTANCE
-                                                      }
-                                                      """,
-                                                      "Foo");
-
-        var result = compile(unsupported.source());
-        assertCompilationFails(result, "Only record, class, or interface are currently supported");
-        assertFileNotGenerated(result, unsupported);
-    }
-
-    @Test
-    void testUnsupportedAnnotationType() {
-        UnsupportedCase unsupported = new UnsupportedCase("annotation type",
-                                                          """
-                                                          package com.example;
-
-                                                          import io.helidon.validation.Validation;
-
-                                                          @Validation.Validated
-                                                          public @interface Foo {
-                                                              @Validation.Integer.Min(1)
-                                                              int value();
-                                                          }
-                                                          """,
-                                                          "Foo");
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
                 .addProcessor(AptProcessor::new)
-                .addSource("Foo.java", unsupported.source())
+                .addSource("Foo.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        @Validation.Validated
+                        enum Foo {
+                            INSTANCE
+                        }
+                        """)
+                .build()
+                .compile();
+        assertCompilationFails(result, "Only record, class, or interface are currently supported");
+        var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
+        assertThat("The Foo__Validated.java should not be generated (enum)", Files.exists(validator), is(false));
+    }
+
+    @Test
+    void testUnsupportedAnnotationType() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("Foo.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        @Validation.Validated
+                        public @interface Foo {
+                            @Validation.Integer.Min(1)
+                            int value();
+                        }
+                        """)
                 .build()
                 .compile();
 
         assertCompilationFails(result, "Only record, class, or interface are currently supported");
-        assertFileNotGenerated(result, unsupported);
-    }
-
-    // --------- Helper Methods ----------------//
-
-    private TestCompiler.Result compile(String source) {
-        return TestCompiler.builder()
-                .currentRelease()
-                .addClasspath(CLASSPATH)
-                .addProcessor(AptProcessor::new)
-                .addSource("Foo.java", source)
-                .build()
-                .compile();
+        var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
+        assertThat("The Foo__Validated.java should not be generated (annotation type)", Files.exists(validator), is(false));
     }
 
     private void assertGeneratedAndContainsCases(TestCompiler.Result result,
@@ -530,13 +560,4 @@ class ValidationCodegenTest {
         }
     }
 
-    private void assertFileNotGenerated(TestCompiler.Result result, UnsupportedCase unsupportedCase) {
-        var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
-        assertThat("The Foo__Validated.java should not be generated (" + unsupportedCase.name() + ")",
-                   Files.exists(validator),
-                   is(false));
-    }
-
-    private record UnsupportedCase(String name, String source, String expectedElement) {
-    }
 }
