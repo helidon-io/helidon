@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,16 @@
  */
 package io.helidon.testing.junit5.suite.spi;
 
+import io.helidon.common.Api;
+
 /**
- * Integration tests suite provider.
- * Any {@link io.helidon.testing.junit5.suite.TestSuite} class must implement this interface.
+ * Internal contract implemented by providers used with {@link io.helidon.testing.junit5.suite.TestSuite.Suite}.
  * <p>
- * A Suite may provide methods annotated with {@link io.helidon.testing.junit5.suite.TestSuite.BeforeSuite} and/or
+ * A provider may define methods annotated with {@link io.helidon.testing.junit5.suite.TestSuite.BeforeSuite} and/or
  * {@link io.helidon.testing.junit5.suite.TestSuite.AfterSuite}.
- * Currently supported parameter is the {@link io.helidon.testing.junit5.suite.SuiteStorage}.
- *
- * @deprecated this is a feature in progress of development, there may be backward incompatible changes done to it, so please
- *         use with care
+ * Providers that also implement {@link io.helidon.testing.junit5.suite.SuiteStorage} receive
+ * {@link io.helidon.testing.junit5.suite.Storage} in those callbacks.
  */
-@Deprecated
+@Api.Internal
 public interface SuiteProvider {
 }

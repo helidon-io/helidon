@@ -32,6 +32,8 @@ import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
+import io.helidon.common.Api;
+
 import org.intellij.lang.annotations.Language;
 
 /**
@@ -42,6 +44,7 @@ import org.intellij.lang.annotations.Language;
  * This code and its internal interfaces are subject to change or deletion without notice.</b>
  * </p>
  */
+@Api.Internal
 public final class TestCompiler {
 
     private final List<Supplier<Processor>> processors;

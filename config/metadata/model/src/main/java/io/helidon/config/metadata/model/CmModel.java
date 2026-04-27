@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.config.metadata.model.CmModelImpl.CmAllowedValueImpl;
 import io.helidon.config.metadata.model.CmModelImpl.CmEnumImpl;
 import io.helidon.config.metadata.model.CmModelImpl.CmModuleImpl;
@@ -39,6 +40,7 @@ import io.helidon.metadata.hson.Hson;
  * This code and its internal interfaces are subject to change or deletion without notice.</b>
  * </p>
  */
+@Api.Internal
 public sealed interface CmModel permits CmModelImpl {
 
     /**

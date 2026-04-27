@@ -19,6 +19,7 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.config.metadata.model.CmModel.CmOption;
 import io.helidon.config.metadata.model.CmModel.CmType;
 import io.helidon.config.metadata.model.CmNodeImpl.CmOptionNodeImpl;
@@ -32,6 +33,7 @@ import io.helidon.config.metadata.model.CmNodeImpl.CmPathNodeImpl;
  * This code and its internal interfaces are subject to change or deletion without notice.</b>
  * </p>
  */
+@Api.Internal
 public sealed interface CmNode extends Comparable<CmNode> permits CmNode.CmOptionNode,
                                                                   CmNode.CmPathNode,
                                                                   CmNodeImpl {
