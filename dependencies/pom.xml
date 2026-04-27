@@ -83,7 +83,7 @@
         <version.lib.kafka>3.9.2</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
-        <version.lib.log4j>2.25.3</version.lib.log4j>
+        <version.lib.log4j>2.25.4</version.lib.log4j>
         <version.lib.micrometer>1.15.2</version.lib.micrometer>
         <version.lib.micrometer-prometheus>1.15.2</version.lib.micrometer-prometheus>
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
