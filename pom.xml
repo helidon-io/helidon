@@ -1564,7 +1564,7 @@
             <id>release</id>
             <modules>
                 <module>archetypes</module>
-                <module>docs</module>
+                <module>javadocs</module>
             </modules>
             <build>
                 <plugins>
