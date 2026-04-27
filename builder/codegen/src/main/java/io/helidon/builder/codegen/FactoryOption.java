@@ -884,15 +884,69 @@ final class FactoryOption {
                 .build();
     }
 
-    // if no package, assume same package as blueprint (generated as part of this annotation round)
+    // Blank-package names are either same-round generated types or type variables.
+    // Keep the latter unqualified and recursively repair the former.
     static TypeName fixEmptyPackage(TypeName typeName, String packageName) {
-        if (typeName.packageName().isBlank()) {
-            // if not package, assume same package as blueprint (generated as part of this annotation round)
-            return TypeName.builder(typeName)
-                    .packageName(packageName)
-                    .build();
+        boolean changed = false;
+        var builder = TypeName.builder(typeName);
+
+        if (typeName.packageName().isBlank() && !preserveEmptyPackage(typeName)) {
+            builder.packageName(packageName);
+            changed = true;
         }
-        return typeName;
+
+        List<TypeName> typeArguments = fixEmptyPackage(typeName.typeArguments(), packageName);
+        if (!typeArguments.equals(typeName.typeArguments())) {
+            builder.typeArguments(typeArguments);
+            changed = true;
+        }
+
+        List<TypeName> lowerBounds = fixEmptyPackage(typeName.lowerBounds(), packageName);
+        if (!lowerBounds.equals(typeName.lowerBounds())) {
+            builder.lowerBounds(lowerBounds);
+            changed = true;
+        }
+
+        List<TypeName> upperBounds = fixEmptyPackage(typeName.upperBounds(), packageName);
+        if (!upperBounds.equals(typeName.upperBounds())) {
+            builder.upperBounds(upperBounds);
+            changed = true;
+        }
+
+        if (typeName.componentType().isPresent()) {
+            TypeName componentType = typeName.componentType().orElseThrow();
+            TypeName fixedComponentType = fixEmptyPackage(componentType, packageName);
+            if (!fixedComponentType.equals(componentType)) {
+                builder.componentType(fixedComponentType);
+                changed = true;
+            }
+        }
+
+        return changed ? builder.build() : typeName;
+    }
+
+    private static List<TypeName> fixEmptyPackage(List<TypeName> typeNames, String packageName) {
+        return typeNames.stream()
+                .map(it -> fixEmptyPackage(it, packageName))
+                .toList();
+    }
+
+    private static boolean preserveEmptyPackage(TypeName typeName) {
+        if (typeName.wildcard()) {
+            return true;
+        }
+        if (!typeName.packageName().isBlank()
+                || !typeName.enclosingNames().isEmpty()
+                || !typeName.typeArguments().isEmpty()) {
+            return false;
+        }
+        if (typeName.generic()) {
+            return true;
+        }
+
+        return typeName.className()
+                .chars()
+                .allMatch(it -> Character.isUpperCase(it) || Character.isDigit(it) || it == '_');
     }
 
     private static TypeName propertyTypeName(PrototypeInfo prototypeInfo, TypedElementInfo element) {
@@ -902,33 +956,7 @@ final class FactoryOption {
                 .flatMap(Annotation::value)
                 .map(TypeName::create)
                 .orElseGet(element::typeName);
-        typeName = fixEmptyPackage(typeName, blueprintPackage);
-
-        if (typeName.typeArguments().size() == 1) {
-            // we may have an Optional, List, Set of the same
-            if (typeName.typeArguments().getFirst().packageName().isBlank()) {
-                return TypeName.builder(typeName)
-                        .typeArguments(List.of(TypeName.builder(typeName.typeArguments().getFirst())
-                                                       .packageName(blueprintPackage)
-                                                       .build()))
-                        .build();
-            }
-            return typeName;
-        }
-        if (typeName.typeArguments().size() == 2) {
-            // and finally a map
-            // we may have an Optional, List, Set of the same
-            if (typeName.typeArguments().get(1).packageName().isBlank()) {
-                return TypeName.builder(typeName)
-                        .typeArguments(List.of(typeName.typeArguments().get(0),
-                                               TypeName.builder(typeName.typeArguments().get(1))
-                                                       .packageName(blueprintPackage)
-                                                       .build()))
-                        .build();
-            }
-            return typeName;
-        }
-        return typeName;
+        return fixEmptyPackage(typeName, blueprintPackage);
     }
 
     private static String setterName(String name, boolean recordStyle) {
