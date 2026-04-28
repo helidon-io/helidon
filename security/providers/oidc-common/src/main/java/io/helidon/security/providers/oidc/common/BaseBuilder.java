@@ -271,6 +271,9 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
 
     /**
      * Type of authentication to use when invoking the token endpoint.
+     * With {@link io.helidon.security.providers.oidc.common.OidcConfig.ClientAuthentication#CLIENT_SECRET_BASIC},
+     * credentials are sent only to POST requests on the resolved token endpoint scheme, host, and path and, when
+     * JWT introspection is used, to POST requests on the resolved introspection endpoint scheme, host, and path.
      * Current supported options:
      * <ul>
      *     <li>{@link io.helidon.security.providers.oidc.common.OidcConfig.ClientAuthentication#CLIENT_SECRET_BASIC}</li>
@@ -281,7 +284,12 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
      * @param tokenEndpointAuthentication authentication type
      * @return updated builder
      */
-    @ConfiguredOption(key = "token-endpoint-auth", value = "CLIENT_SECRET_BASIC")
+    @ConfiguredOption(key = "token-endpoint-auth",
+                      value = "CLIENT_SECRET_BASIC",
+                      description = "Type of authentication to use when invoking the token endpoint. With "
+                              + "CLIENT_SECRET_BASIC, credentials are sent only to POST requests on the resolved token "
+                              + "endpoint scheme, host, and path and, when JWT introspection is used, to POST requests "
+                              + "on the resolved introspection endpoint scheme, host, and path.")
     public B tokenEndpointAuthentication(OidcConfig.ClientAuthentication tokenEndpointAuthentication) {
 
         switch (tokenEndpointAuthentication) {
