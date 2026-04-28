@@ -50,6 +50,7 @@ import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exemplars.DefaultExemplarSampler;
@@ -116,9 +117,11 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     @Override
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
-        return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
+        var result = save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
                             .metricsConfig(metricsConfig)
                             .build());
+        addMeterRegistriesForPublishers(Metrics.globalRegistry, metricsConfig);
+        return result;
     }
 
     @SuppressWarnings("unchecked")
@@ -126,12 +129,14 @@ class MicrometerMetricsFactory implements MetricsFactory {
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig,
                                              Consumer<Meter> onAddListener,
                                              Consumer<Meter> onRemoveListener) {
-        return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry,
+        var result = save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry,
                                            this)
                             .metricsConfig(metricsConfig)
                             .onMeterAdded(onAddListener)
                             .onMeterRemoved(onRemoveListener)
                             .build());
+        addMeterRegistriesForPublishers(Metrics.globalRegistry, metricsConfig);
+        return result;
     }
 
     @SuppressWarnings("unchecked")
@@ -141,21 +146,25 @@ class MicrometerMetricsFactory implements MetricsFactory {
                                              Consumer<Meter> onAddListener,
                                              Consumer<Meter> onRemoveListener) {
 
-        return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry,
+        var result = save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry,
                                            this)
                             .metricsConfig(metricsConfig)
                             .clock(clock)
                             .onMeterAdded(onAddListener)
                             .onMeterRemoved(onRemoveListener)
                             .build());
+        addMeterRegistriesForPublishers(Metrics.globalRegistry, metricsConfig);
+        return result;
     }
 
     @Override
     public MeterRegistry createMeterRegistry(Clock clock, MetricsConfig metricsConfig) {
-        return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
+        var result = save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
                             .clock(clock)
                             .metricsConfig(metricsConfig)
                             .build());
+        addMeterRegistriesForPublishers(Metrics.globalRegistry, metricsConfig);
+        return result;
     }
 
     @Override
@@ -181,11 +190,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
                 meterRegistries.remove(globalMeterRegistry);
             }
 
-            var meterRegistries = prepareMeterRegistries(metricsConfig);
-            meterRegistries.forEach(Metrics.globalRegistry::add);
-            Contexts.globalContext().register(MetricsFactory.PULL_PUBLISHERS_PRESENT,
-                                              meterRegistries.stream()
-                                                      .anyMatch(r -> r instanceof PrometheusMeterRegistry));
+            addMeterRegistriesForPublishers(Metrics.globalRegistry, metricsConfig);
 
             globalMeterRegistry = save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
                                                .metricsConfig(metricsConfig)
@@ -357,6 +362,15 @@ class MicrometerMetricsFactory implements MetricsFactory {
                 .forEach(b -> registry.getOrCreate((B) b));
 
         return registry;
+    }
+
+    private void addMeterRegistriesForPublishers(CompositeMeterRegistry meterRegistry, MetricsConfig metricsConfig) {
+        var meterRegistries = prepareMeterRegistries(metricsConfig);
+        meterRegistries.forEach(meterRegistry::add);
+        Contexts.globalContext().register(MetricsFactory.PULL_PUBLISHERS_PRESENT,
+                                          meterRegistries.stream()
+                                                  .anyMatch(r -> r instanceof PrometheusMeterRegistry));
+
     }
 
     private MMeterRegistry save(MetricsConfig metricsConfig, MMeterRegistry meterRegistry) {
