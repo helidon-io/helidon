@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,19 @@ import java.util.Set;
 
 import io.helidon.lra.coordinator.client.Participant;
 
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.CookieParam;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.Encoded;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.MatrixParam;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.UriBuilder;
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.Compensate;
@@ -45,6 +52,7 @@ import org.eclipse.microprofile.lra.annotation.Forget;
 import org.eclipse.microprofile.lra.annotation.Status;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 import org.eclipse.microprofile.lra.annotation.ws.rs.Leave;
+import org.glassfish.jersey.model.AnnotatedMethod;
 
 class ParticipantImpl implements Participant {
 
@@ -61,16 +69,34 @@ class ParticipantImpl implements Participant {
                     Leave.class
             );
 
-    static final Set<Class<? extends Annotation>> JAX_RS_ANNOTATIONS =
+    static final Set<Class<? extends Annotation>> JAX_RS_METHOD_ANNOTATIONS =
             Set.of(
                     Path.class,
-                    GET.class,
-                    PUT.class,
-                    POST.class,
-                    DELETE.class,
+                    Consumes.class,
                     Produces.class
             );
 
+    static final Set<Class<? extends Annotation>> JAX_RS_PARAMETER_ANNOTATIONS =
+            Set.of(
+                    Context.class,
+                    Encoded.class,
+                    DefaultValue.class,
+                    MatrixParam.class,
+                    QueryParam.class,
+                    CookieParam.class,
+                    HeaderParam.class,
+                    PathParam.class,
+                    FormParam.class
+            );
+
+    static final Map<String, Class<? extends Annotation>> NON_JAX_RS_PARTICIPANT_CALLBACKS =
+            Map.of(
+                    callbackPath(Compensate.class), Compensate.class,
+                    callbackPath(Complete.class), Complete.class,
+                    callbackPath(Forget.class), Forget.class,
+                    callbackPath(Status.class), Status.class,
+                    callbackPath(AfterLRA.class), AfterLRA.class
+            );
 
     private final Map<Class<? extends Annotation>, URI> compensatorLinks = new HashMap<>();
     private final Map<Class<? extends Annotation>, Set<Method>> methodMap;
@@ -91,14 +117,11 @@ class ParticipantImpl implements Participant {
                         );
                     }
 
-                    if (Arrays.stream(method
-                            .getDeclaredAnnotations())
-                            .map(Annotation::annotationType)
-                            .noneMatch(JAX_RS_ANNOTATIONS::contains)) {
+                    if (isNonJaxRsParticipantMethod(resourceClazz, method)) {
                         //no jax-rs method
                         URI uri = UriBuilder.fromUri(baseUri)
                                 .path(contextPath) //Auxiliary non Jax-Rs resource
-                                .path(e.getKey().getSimpleName().toLowerCase())//@Complete -> /complete
+                                .path(callbackPath(e.getKey()))//@Complete -> /complete
                                 .path(resourceClazz.getName())
                                 .path(method.getName())
                                 .build();
@@ -109,9 +132,10 @@ class ParticipantImpl implements Participant {
                     UriBuilder builder = UriBuilder.fromUri(baseUri)
                             .path(resourceClazz);
 
-                    if (method.getAnnotation(Path.class) != null) {
-                        builder.path(resourceClazz, method.getName());
-                    }
+                    jaxRsMethod(resourceClazz, method)
+                            .map(m -> m.getAnnotation(Path.class))
+                            .map(Path::value)
+                            .ifPresent(builder::path);
 
                     URI uri = builder.build();
                     compensatorLinks.put(e.getKey(), uri);
@@ -120,6 +144,50 @@ class ParticipantImpl implements Participant {
 
     boolean isLraMethod(Method m) {
         return methodMap.values().stream().flatMap(Collection::stream).anyMatch(m::equals);
+    }
+
+    static boolean isNonJaxRsParticipantMethod(Class<?> resourceClass, Method method) {
+        return jaxRsMethod(resourceClass, method).isEmpty();
+    }
+
+    private static boolean hasJaxRsAnnotation(AnnotatedMethod method) {
+        return Arrays.stream(method.getAnnotations())
+                .map(Annotation::annotationType)
+                .anyMatch(annotationType -> JAX_RS_METHOD_ANNOTATIONS.contains(annotationType)
+                        || annotationType.isAnnotationPresent(HttpMethod.class))
+                || Arrays.stream(method.getParameterAnnotations())
+                        .flatMap(Arrays::stream)
+                        .map(Annotation::annotationType)
+                        .anyMatch(JAX_RS_PARAMETER_ANNOTATIONS::contains);
+    }
+
+    private static boolean canBeJaxRsCallback(AnnotatedMethod method) {
+        return method.isAnnotationPresent(Path.class)
+                || Arrays.stream(method.getAnnotations())
+                        .map(Annotation::annotationType)
+                        .anyMatch(annotationType -> annotationType.isAnnotationPresent(HttpMethod.class));
+    }
+
+    private static Optional<AnnotatedMethod> jaxRsMethod(Class<?> resourceClass, Method method) {
+        Method callbackMethod = method;
+        try {
+            callbackMethod = resourceClass.getMethod(method.getName(), method.getParameterTypes());
+        } catch (NoSuchMethodException e) {
+            // Use the scanned LRA method.
+        }
+
+        AnnotatedMethod annotatedMethod = new AnnotatedMethod(callbackMethod);
+        if (!hasJaxRsAnnotation(annotatedMethod)) {
+            return Optional.empty();
+        }
+
+        return canBeJaxRsCallback(annotatedMethod)
+                ? Optional.of(annotatedMethod)
+                : Optional.empty();
+    }
+
+    static String callbackPath(Class<? extends Annotation> annotationType) {
+        return annotationType.getSimpleName().toLowerCase();
     }
 
     public Optional<URI> compensate() {

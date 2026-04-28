@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.microprofile.lra;
 
 import java.lang.System.Logger.Level;
+import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
@@ -35,9 +36,11 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.inject.Inject;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.lra.LRAResponse;
+import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
@@ -128,20 +131,25 @@ class NonJaxRsResource {
                                URI lraId,
                                URI parentId,
                                PropagatedHeaders propagatedHeaders) {
-        switch (type) {
-        case "compensate", "complete", "forget" -> {
-            Optional<?> result = participantService.invoke(fqdn, method, lraId, parentId, propagatedHeaders);
+        Optional<Class<? extends Annotation>> callbackAnnotation =
+                Optional.ofNullable(ParticipantImpl.NON_JAX_RS_PARTICIPANT_CALLBACKS.get(type));
+        if (callbackAnnotation.isEmpty()) {
+            LOGGER.log(Level.ERROR, "Unexpected non Jax-Rs LRA compensation type "
+                    + type + ": " + req.path().absolute().path());
+            res.status(Status.NOT_FOUND_404).send();
+            return;
+        }
+
+        Class<? extends Annotation> annotation = callbackAnnotation.get();
+        Optional<?> result;
+        if (annotation == AfterLRA.class) {
+            LRAStatus status = LRAStatus.valueOf(req.content().as(String.class));
+            result = participantService.invoke(fqdn, method, annotation, lraId, status, propagatedHeaders);
             result.ifPresentOrElse(r -> sendResult(res, r),
                                    res::send);
-        }
-        case "afterlra" -> {
-            LRAStatus status = LRAStatus.valueOf(req.content().as(String.class));
-            Optional<?> result = participantService.invoke(fqdn, method, lraId, status, propagatedHeaders);
-            result.ifPresentOrElse(r -> sendResult(res, r),
-                                         res::send);
-        }
-        case "status" -> {
-            Optional<?> result = participantService.invoke(fqdn, method, lraId, null, propagatedHeaders);
+            return;
+        } else if (annotation == org.eclipse.microprofile.lra.annotation.Status.class) {
+            result = participantService.invoke(fqdn, method, annotation, lraId, null, propagatedHeaders);
             result.ifPresentOrElse(
                     r -> sendResult(res, r),
                     // If the participant has already responded successfully
@@ -149,13 +157,12 @@ class NonJaxRsResource {
                     // then it MAY report 410 Gone HTTP status code
                     // or in the case of non-JAX-RS method returning ParticipantStatus null.
                     () -> res.status(Status.GONE_410).send());
+            return;
         }
-        default -> {
-            LOGGER.log(Level.ERROR, "Unexpected non Jax-Rs LRA compensation type "
-                    + type + ": " + req.path().absolute().path());
-            res.status(Status.NOT_FOUND_404).send();
-        }
-        }
+
+        result = participantService.invoke(fqdn, method, annotation, lraId, parentId, propagatedHeaders);
+        result.ifPresentOrElse(r -> sendResult(res, r),
+                               res::send);
     }
 
     private void sendError(URI lraId, ServerRequest req, ServerResponse res, Throwable t) {
@@ -166,7 +173,11 @@ class NonJaxRsResource {
                                + "LRA id: " + lraId,
                        t);
         }
-        res.send(t);
+        if (t instanceof WebApplicationException wae) {
+            sendResponse(res, wae.getResponse());
+        } else {
+            res.send(t);
+        }
     }
 
     private void sendResult(ServerResponse res, Object result) {

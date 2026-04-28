@@ -93,10 +93,9 @@ public class LraCdiExtension implements Extension {
             AfterLRA.class,
             Complete.class,
             Compensate.class,
-            Forget.class
+            Forget.class,
+            Status.class
     );
-
-    private static final Set<Class<? extends Annotation>> EXCLUDED_ANNOTATIONS = Set.of(PUT.class, Path.class);
 
     private final Set<Class<?>> beanTypesWithCdiLRAMethods = new HashSet<>();
     private final Map<Class<?>, Bean<?>> lraCdiBeanReferences = new HashMap<>();
@@ -173,9 +172,8 @@ public class LraCdiExtension implements Extension {
                 .filter(m -> m.getAnnotations().stream()
                         .map(Annotation::annotationType)
                         .anyMatch(EXPECTED_ANNOTATIONS::contains))
-                .filter(m -> m.getAnnotations().stream()
-                        .map(Annotation::annotationType)
-                        .noneMatch(EXCLUDED_ANNOTATIONS::contains))
+                .filter(m -> ParticipantImpl.isNonJaxRsParticipantMethod(annotatedType.getJavaClass(),
+                                                                         m.getJavaMember()))
                 .forEach(m -> {
                     List<? extends AnnotatedParameter<?>> parameters = m.getParameters();
                     if (parameters.size() > 2) {
