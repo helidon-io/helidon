@@ -20,7 +20,9 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.net.UnixDomainSocketAddress;
+import java.util.LinkedHashSet;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.HelidonServiceLoader;
@@ -29,6 +31,7 @@ import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
@@ -149,6 +152,17 @@ class HttpClientConfigSupport {
         }
 
         /**
+         * Add a header name to strip on cross-origin redirects.
+         *
+         * @param builder builder to update
+         * @param headerName header name to add
+         */
+        @Prototype.BuilderMethod
+        static void addRedirectSensitiveHeader(HttpClientConfig.BuilderBase<?, ?> builder, String headerName) {
+            builder.addRedirectSensitiveHeader(HeaderNames.create(headerName));
+        }
+
+        /**
          * Config method to get {@link io.helidon.webclient.api.ClientUri}.
          *
          * @param config configuration instance
@@ -157,6 +171,19 @@ class HttpClientConfigSupport {
         @Prototype.ConfigFactoryMethod("baseUri")
         static ClientUri createBaseUri(Config config) {
             return config.as(URI.class).map(ClientUri::create).orElseThrow();
+        }
+
+        /**
+         * Config method to get redirect-sensitive header names.
+         *
+         * @param config configuration instance
+         * @return header name configured on the config node
+         */
+        @Prototype.ConfigFactoryMethod("redirectSensitiveHeaders")
+        static HeaderName createRedirectSensitiveHeader(Config config) {
+            return config.asString()
+                    .map(HeaderNames::create)
+                    .orElseThrow(() -> new IllegalStateException("Config node did not contain a header name"));
         }
 
         @Prototype.ConfigFactoryMethod("baseAddress")
@@ -210,6 +237,10 @@ class HttpClientConfigSupport {
             target.defaultHeadersMap()
                     .forEach(target::addHeader);
 
+            if (!target.redirectSensitiveHeaders().contains(HeaderNames.AUTHORIZATION)) {
+                target.redirectSensitiveHeaders(withAuthorizationRedirectSensitiveHeader(target.redirectSensitiveHeaders()));
+            }
+
             if (!target.mediaSupports().isEmpty()) {
                 target.mediaContext(MediaContext.builder()
                                             .update(it -> target.mediaSupports().forEach(it::addMediaSupport))
@@ -228,6 +259,13 @@ class HttpClientConfigSupport {
             if (target.proxy().isEmpty()) {
                 target.proxy(Proxy.create());
             }
+        }
+
+        private static Set<HeaderName> withAuthorizationRedirectSensitiveHeader(Set<HeaderName> headerNames) {
+            Set<HeaderName> effectiveHeaderNames = new LinkedHashSet<>(headerNames.size() + 1);
+            effectiveHeaderNames.add(HeaderNames.AUTHORIZATION);
+            effectiveHeaderNames.addAll(headerNames);
+            return Set.copyOf(effectiveHeaderNames);
         }
     }
 }

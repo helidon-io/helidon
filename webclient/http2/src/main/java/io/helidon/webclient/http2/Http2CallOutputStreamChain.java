@@ -109,6 +109,8 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                                                         Method.GET,
                                                                         redirectUri,
                                                                         outputStream.lastRequest.properties());
+            request.outputStreamRedirect(false);
+            request.readTimeout(outputStream.originalRequest.readTimeout());
             int numberOfRedirects = outputStream.numberOfRedirects;
             Http2ClientResponseImpl clientResponse = RedirectionProcessor.invokeWithFollowRedirects(request,
                                                                                                     numberOfRedirects,
@@ -307,10 +309,12 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 }
                 lastUri = redirectUri;
                 stream.close();
-                Http2ClientRequestImpl clientRequest = new Http2ClientRequestImpl(originalRequest,
+                Http2ClientRequestImpl clientRequest = new Http2ClientRequestImpl(lastRequest,
                                                                                   method,
                                                                                   redirectUri,
-                                                                                  originalRequest.properties());
+                                                                                  lastRequest.properties());
+                clientRequest.followRedirects(false);
+                clientRequest.readTimeout(originalRequest.readTimeout());
                 try {
                     Http2ClientResponseImpl response;
                     if (sendEntity) {
