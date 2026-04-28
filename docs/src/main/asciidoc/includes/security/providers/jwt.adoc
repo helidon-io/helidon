@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -52,6 +52,7 @@ security:
     - provider:
         atn-token:
           jwk.resource.resource-path: "verifying-jwk.json"
+          jwt-issuer: "http://trusted.issuer"
           jwt-audience: "http://my.service"
         sign-token:
           jwk.resource.resource-path: "signing-jwk.json"
@@ -74,5 +75,4 @@ of the JWT subject claim.
 
 For outbound, we support either token propagation (e.g. the token from request is propagated further) or
 support for generating a brand new token based on configuration of this provider.
-
 
