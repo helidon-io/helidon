@@ -16,18 +16,24 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import java.net.InetAddress;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
+import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webserver.WebServer;
 
 import jakarta.json.Json;
@@ -267,6 +273,157 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
     }
 
     @Test
+    void testClientCredentialsSentOnlyToConfiguredHost() {
+        AtomicReference<String> expectedHostAuthorization = new AtomicReference<>();
+        AtomicReference<String> introspectHostAuthorization = new AtomicReference<>();
+        AtomicReference<String> otherHostAuthorization = new AtomicReference<>();
+        WebServer expectedServer = null;
+        WebServer introspectServer = null;
+        WebServer otherServer = null;
+
+        try {
+            expectedServer = authCapturingServer(expectedHostAuthorization);
+            introspectServer = authCapturingServer(introspectHostAuthorization);
+            otherServer = authCapturingServer(otherHostAuthorization);
+
+            String expectedBaseUri = "http://identity.example.test:" + expectedServer.port();
+            String introspectBaseUri = "http://introspect.example.test:" + introspectServer.port();
+            String otherBaseUri = "http://other.example.test:" + otherServer.port();
+
+            OidcConfig config = OidcConfig.builder()
+                    .identityUri(URI.create(expectedBaseUri + "/identity"))
+                    .clientSecret("client-secret")
+                    .clientId("client-id")
+                    .oidcMetadataWellKnown(false)
+                    .validateJwtWithJwk(false)
+                    .tokenEndpointUri(URI.create(expectedBaseUri + "/tokens.v1"))
+                    .authorizationEndpointUri(URI.create(expectedBaseUri + "/authorization"))
+                    .introspectEndpointUri(URI.create(introspectBaseUri + "/introspect.v1"))
+                    .serverType("idcs")
+                    .webclient(it -> it.dnsResolver((hostname, dnsAddressLookup) -> InetAddress.getLoopbackAddress()))
+                    .build();
+
+            post(config, URI.create(expectedBaseUri + "/tokens.v1"));
+            post(config, URI.create(introspectBaseUri + "/introspect.v1"));
+            post(config, URI.create(otherBaseUri + "/tokens"));
+
+            String expectedAuthorization = "Basic " + Base64.getEncoder()
+                    .encodeToString("client-id:client-secret".getBytes(StandardCharsets.UTF_8));
+
+            assertThat(expectedHostAuthorization.get(), is(expectedAuthorization));
+            assertThat(introspectHostAuthorization.get(), is(expectedAuthorization));
+            assertThat(otherHostAuthorization.get(), nullValue());
+
+            expectedHostAuthorization.set(null);
+            introspectHostAuthorization.set(null);
+
+            post(config, URI.create(expectedBaseUri + "/tokensXv1"));
+            post(config, URI.create(expectedBaseUri + "/introspect.v1"));
+            post(config, URI.create(expectedBaseUri + "/other"));
+            post(config, URI.create(introspectBaseUri + "/introspectXv1"));
+            post(config, URI.create(introspectBaseUri + "/tokens"));
+
+            assertThat(expectedHostAuthorization.get(), nullValue());
+            assertThat(introspectHostAuthorization.get(), nullValue());
+
+            OidcConfig httpsTokenConfig = OidcConfig.builder()
+                    .identityUri(URI.create("https://identity.example.test:" + expectedServer.port() + "/identity"))
+                    .clientSecret("client-secret")
+                    .clientId("client-id")
+                    .oidcMetadataWellKnown(false)
+                    .tokenEndpointUri(URI.create("https://identity.example.test:" + expectedServer.port() + "/tokens"))
+                    .authorizationEndpointUri(URI.create("https://identity.example.test:" + expectedServer.port()
+                                                                 + "/authorization"))
+                    .serverType("idcs")
+                    .webclient(it -> it.dnsResolver((hostname, dnsAddressLookup) -> InetAddress.getLoopbackAddress()))
+                    .build();
+
+            expectedHostAuthorization.set(null);
+
+            post(httpsTokenConfig, URI.create(expectedBaseUri + "/tokens"));
+
+            assertThat(expectedHostAuthorization.get(), nullValue());
+        } finally {
+            stop(expectedServer);
+            stop(introspectServer);
+            stop(otherServer);
+        }
+    }
+
+    @Test
+    void testClientCredentialsSentToMetadataIntrospectionHost() {
+        AtomicReference<String> tokenHostAuthorization = new AtomicReference<>();
+        AtomicReference<String> introspectHostAuthorization = new AtomicReference<>();
+        AtomicReference<String> otherHostAuthorization = new AtomicReference<>();
+        JsonObject[] metadataHolder = new JsonObject[1];
+        WebServer tokenServer = null;
+        WebServer introspectServer = null;
+        WebServer otherServer = null;
+        WebServer metadataServer = null;
+
+        try {
+            tokenServer = authCapturingServer(tokenHostAuthorization);
+            introspectServer = authCapturingServer(introspectHostAuthorization);
+            otherServer = authCapturingServer(otherHostAuthorization);
+            metadataServer = WebServer.builder()
+                    .host(InetAddress.getLoopbackAddress().getHostAddress())
+                    .routing(routing -> routing
+                            .get("/.well-known/openid-configuration", (req, res) -> res.send(metadataHolder[0])))
+                    .build()
+                    .start();
+
+            String metadataBaseUri = "http://metadata.example.test:" + metadataServer.port();
+            String tokenBaseUri = "http://token.example.test:" + tokenServer.port();
+            String introspectBaseUri = "http://introspect.example.test:" + introspectServer.port();
+            String otherBaseUri = "http://other.example.test:" + otherServer.port();
+
+            metadataHolder[0] = JsonParser.create("{"
+                                                          + "\"token_endpoint\":\"" + tokenBaseUri + "/tokens\","
+                                                          + "\"authorization_endpoint\":\"" + tokenBaseUri + "/authorization\","
+                                                          + "\"end_session_endpoint\":\"" + tokenBaseUri + "/logout\","
+                                                          + "\"issuer\":\"" + tokenBaseUri + "\","
+                                                          + "\"introspection_endpoint\":\"" + introspectBaseUri
+                                                          + "/introspect\""
+                                                          + "}")
+                    .readJsonObject();
+
+            OidcConfig config = OidcConfig.builder()
+                    .identityUri(URI.create(metadataBaseUri))
+                    .clientSecret("client-secret")
+                    .clientId("client-id")
+                    .validateJwtWithJwk(false)
+                    .serverType("idcs")
+                    .webclient(it -> it.dnsResolver((hostname, dnsAddressLookup) -> InetAddress.getLoopbackAddress()))
+                    .build();
+
+            post(config, URI.create(tokenBaseUri + "/tokens"));
+            post(config, URI.create(introspectBaseUri + "/introspect"));
+            post(config, URI.create(otherBaseUri + "/tokens"));
+
+            String expectedAuthorization = "Basic " + Base64.getEncoder()
+                    .encodeToString("client-id:client-secret".getBytes(StandardCharsets.UTF_8));
+
+            assertThat(tokenHostAuthorization.get(), is(expectedAuthorization));
+            assertThat(introspectHostAuthorization.get(), is(expectedAuthorization));
+            assertThat(otherHostAuthorization.get(), nullValue());
+
+            tokenHostAuthorization.set(null);
+            introspectHostAuthorization.set(null);
+
+            post(config, URI.create(tokenBaseUri + "/introspect"));
+            post(config, URI.create(introspectBaseUri + "/tokens"));
+
+            assertThat(tokenHostAuthorization.get(), nullValue());
+            assertThat(introspectHostAuthorization.get(), nullValue());
+        } finally {
+            stop(metadataServer);
+            stop(tokenServer);
+            stop(introspectServer);
+            stop(otherServer);
+        }
+    }
+
+    @Test
     @SuppressWarnings("removal")
     void testJsonpMetadataExposedAsHelidonJson() {
         OidcConfig config = OidcConfig.builder()
@@ -317,6 +474,35 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                   () -> assertThat(config.oidcMetadataJsonObject(), is(metadata)),
                   () -> assertThat(config.oidcMetadata(), notNullValue()),
                   () -> assertThat(config.oidcMetadata().getString("issuer"), is("https://identity.oracle.com")));
+    }
+
+    private static WebServer authCapturingServer(AtomicReference<String> authorization) {
+        return WebServer.builder()
+                .host(InetAddress.getLoopbackAddress().getHostAddress())
+                .routing(routing -> routing
+                        .any((req, res) -> {
+                            authorization.set(req.headers()
+                                                      .first(HeaderNames.AUTHORIZATION)
+                                                      .orElse(null));
+                            res.send("{}");
+                        }))
+                .build()
+                .start();
+    }
+
+    private static void stop(WebServer server) {
+        if (server != null) {
+            server.stop();
+        }
+    }
+
+    private static void post(OidcConfig config, URI uri) {
+        try (HttpClientResponse response = config.appWebClient()
+                .post()
+                .uri(uri)
+                .submit("")) {
+            response.as(String.class);
+        }
     }
 
     @Test

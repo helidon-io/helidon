@@ -39,6 +39,7 @@ import io.helidon.http.Status;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonObject;
 import io.helidon.security.AuthenticationResponse;
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
@@ -402,11 +403,23 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         private final WebClient webClient;
         private final URI tokenEndpointUri;
         private final Duration tokenRefreshSkew;
+        private final String clientId;
+        private final String clientSecret;
 
         protected AppToken(WebClient webClient, URI tokenEndpointUri, Duration tokenRefreshSkew) {
+            this(webClient, tokenEndpointUri, tokenRefreshSkew, null, null);
+        }
+
+        protected AppToken(WebClient webClient,
+                           URI tokenEndpointUri,
+                           Duration tokenRefreshSkew,
+                           String clientId,
+                           String clientSecret) {
             this.webClient = webClient;
             this.tokenEndpointUri = tokenEndpointUri;
             this.tokenRefreshSkew = tokenRefreshSkew;
+            this.clientId = clientId;
+            this.clientSecret = clientSecret;
         }
 
         protected Optional<String> getToken(RoleMapTracing tracing) {
@@ -467,6 +480,11 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
             HttpClientRequest request = webClient.post()
                     .uri(tokenEndpointUri)
                     .header(HeaderValues.ACCEPT_JSON);
+
+            if (clientId != null && clientSecret != null) {
+                request.property(EndpointConfig.PROPERTY_OUTBOUND_ID, clientId)
+                        .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, clientSecret);
+            }
 
             try (HttpClientResponse response = request.submit(params)) {
                 if (response.status().family() == Status.Family.SUCCESSFUL) {
