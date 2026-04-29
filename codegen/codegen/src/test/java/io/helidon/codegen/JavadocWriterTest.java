@@ -107,6 +107,60 @@ class JavadocWriterTest {
         assertThat(actual, is("Start &#x0FA; end"));
     }
 
+    @Test
+    void testUnclosedElement() {
+        var actual = html("<p>Text");
+        assertThat(actual, is("<p>Text</p>"));
+    }
+
+    @Test
+    void testUnclosedNestedElements() {
+        var actual = html("<ul><li>One");
+        assertThat(actual, is("<ul><li>One</li></ul>"));
+    }
+
+    @Test
+    void testOptionalListItemClose() {
+        var actual = html("<ul><li>One<li>Two");
+        assertThat(actual, is("<ul><li>One</li><li>Two</li></ul>"));
+    }
+
+    @Test
+    void testOptionalParagraphCloseBeforeBlock() {
+        var actual = html("<p>Intro<ul><li>One");
+        assertThat(actual, is("<p>Intro</p><ul><li>One</li></ul>"));
+    }
+
+    @Test
+    void testOptionalTableElementClose() {
+        var actual = html("<table><tr><td>A<td>B<tr><td>C");
+        assertThat(actual, is("<table><tr><td>A</td><td>B</td></tr><tr><td>C</td></tr></table>"));
+    }
+
+    @Test
+    void testVoidElement() {
+        var actual = html("Break<br>after");
+        assertThat(actual, is("Break<br>after"));
+    }
+
+    @Test
+    void testBalancedElements() {
+        var actual = html("<b><i>x</i></b>");
+        assertThat(actual, is("<b><i>x</i></b>"));
+    }
+
+    @Test
+    void testMisorderedCloseElement() {
+        var actual = html("<b><i>x</b></i>");
+        assertThat(actual, is("<b><i>x</i></b>"));
+    }
+
+    @Test
+    void testUnmatchedCloseElement() {
+        var actual = html("Text</p>");
+        assertThat(actual, is("Text"));
+    }
+
     static String html(String javadoc) {
         var reader = JavadocReader.create(javadoc);
         var document = reader.read();

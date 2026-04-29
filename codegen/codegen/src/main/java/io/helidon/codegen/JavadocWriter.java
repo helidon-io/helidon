@@ -16,6 +16,8 @@
 
 package io.helidon.codegen;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -56,6 +58,7 @@ import io.helidon.common.Api;
 public final class JavadocWriter {
 
     private final StringBuilder buf;
+    private final Deque<String> stack = new ArrayDeque<>();
 
     private JavadocWriter(StringBuilder buf) {
         this.buf = buf;
@@ -85,6 +88,7 @@ public final class JavadocWriter {
         for (var e : elements) {
             write(e);
         }
+        closeElements();
     }
 
     /**
@@ -125,6 +129,7 @@ public final class JavadocWriter {
     }
 
     private void writeStartElement(String tag, boolean selfClosing, Map<String, AttrValue> attrs) {
+        closeElements(tag);
         buf.append("<");
         buf.append(tag);
         attrs.forEach(this::writeAttribute);
@@ -132,6 +137,9 @@ public final class JavadocWriter {
             buf.append("/");
         }
         buf.append(">");
+        if (!selfClosing && !isVoidElement(tag)) {
+            stack.push(tag);
+        }
     }
 
     private void writeAttribute(String name, AttrValue value) {
@@ -159,8 +167,39 @@ public final class JavadocWriter {
     }
 
     private void writeEndElement(String tag) {
+        if (hasOpenElement(tag)) {
+            while (!tag.equalsIgnoreCase(stack.peek())) {
+                writeRawEndElement(stack.pop());
+            }
+            stack.pop();
+            writeRawEndElement(tag);
+        }
+    }
+
+    private void closeElements(String startTag) {
+        while (!stack.isEmpty() && isClosedBy(stack.peek(), startTag)) {
+            writeRawEndElement(stack.pop());
+        }
+    }
+
+    private void closeElements() {
+        while (!stack.isEmpty()) {
+            writeRawEndElement(stack.pop());
+        }
+    }
+
+    private boolean hasOpenElement(String tag) {
+        for (var elt : stack) {
+            if (elt.equalsIgnoreCase(tag)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void writeRawEndElement(String tag) {
         buf.append("</");
-        buf.append(tag);
+        buf.append(tag.toLowerCase());
         buf.append(">");
     }
 
@@ -222,5 +261,41 @@ public final class JavadocWriter {
 
     private static boolean isValidHexChar(char c) {
         return Character.digit(c, 16) != -1;
+    }
+
+    private static boolean isVoidElement(String elt) {
+        return isElement(elt,
+                "area", "base", "br", "col", "command",
+                "embed", "hr", "img", "input", "keygen", "link", "meta",
+                "param", "source", "track", "wbr");
+    }
+
+    private static boolean isClosedBy(String openTag, String startTag) {
+        return switch (openTag) {
+            case "li" -> isElement(startTag, "li");
+            case "optgroup" -> isElement(startTag, "optgroup");
+            case "tfoot" -> isElement(startTag, "tbody");
+            case "colgroup" -> !isElement(startTag, "col");
+            case "dt", "dd" -> isElement(startTag, "dt", "dd");
+            case "p" -> isElement(startTag, "address", "article", "aside", "blockquote", "dir", "div", "dl",
+                    "fieldset", "footer", "form", "h1", "h2", "h3", "h4", "h5",
+                    "h6", "header", "hgroup", "hr", "menu", "nav", "ol", "p",
+                    "pre", "section", "table", "ul");
+            case "rt", "rp" -> isElement(startTag, "rt", "rp");
+            case "option" -> isElement(startTag, "option", "optgroup");
+            case "thead", "tbody" -> isElement(startTag, "tbody", "tfoot");
+            case "tr" -> isElement(startTag, "tr", "tbody", "tfoot");
+            case "td", "th" -> isElement(startTag, "td", "th", "tr", "tobdy", "tfoot");
+            default -> false;
+        };
+    }
+
+    private static boolean isElement(String elt, String... elements) {
+        for (var e : elements) {
+            if (e.equalsIgnoreCase(elt)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
