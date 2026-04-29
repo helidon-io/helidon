@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -255,7 +256,7 @@ public interface Headers extends Iterable<Header> {
      */
     @Deprecated
     default Map<String, List<String>> toMap() {
-        Map<String, List<String>> headers = new HashMap<>();
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         forEach(it -> headers.put(it.name(), it.allValues()));
 

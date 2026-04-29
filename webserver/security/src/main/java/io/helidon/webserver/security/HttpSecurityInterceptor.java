@@ -108,19 +108,24 @@ class HttpSecurityInterceptor implements HttpEntryPoint.Interceptor {
 
         SecurityTracing tracing = SecurityTracing.get(req.context());
         UriInfo requestedUri = req.requestedUri();
+        var prologue = req.prologue();
         SecurityContext securityContext = req.context()
                 .get(SecurityContext.class)
                 .orElseThrow(() -> new IllegalStateException("No security context in request context. "
                                                                      + "Make sure the ContextFeature is added to WebServer"));
+        SecurityEnvironment currentEnvironment = securityContext.env();
 
         String resourceType = ctx.serviceInfo().serviceType().fqName();
         var securityEnvironment = SecurityEnvironment.builder(security.serverTime())
                 .transport(requestedUri.scheme())
                 .path(requestedUri.path().path())
                 .targetUri(requestedUri.toUri())
-                .method(req.prologue().method().text())
+                .method(prologue.method().text())
+                .requestedMethod(currentEnvironment.requestedMethod())
+                .requestedPath(currentEnvironment.requestedPath())
+                .requestedQuery(currentEnvironment.requestedQuery())
                 .queryParams(req.query())
-                .headers(req.headers().toMap())
+                .headers(SecurityContextFilter.headers(req))
                 .addAttribute("resourceType", resourceType)
                 .addAttribute("userIp", req.remotePeer().host())
                 .addAttribute("userPort", req.remotePeer().port())

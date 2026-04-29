@@ -350,25 +350,18 @@ public class Http2Headers {
         if (!pseudoHeaders.hasMethod()) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :method pseudo header");
         }
-        if (pseudoHeaders.hasAuthority()) {
-            validateHostAuthority();
+        List<String> hostValues = headers.all(HeaderNames.HOST, List::of);
+        if (hostValues.size() > 1) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Repeated Host header");
         }
-    }
-
-    private void validateHostAuthority() {
-        List<String> hostHeaders = headers.all(HeaderNames.HOST, List::of);
-        if (hostHeaders.isEmpty()) {
-            return;
+        boolean hasHost = hostValues.size() == 1 && !hostValues.get(0).isEmpty();
+        boolean hasAuthority = pseudoHeaders.hasAuthority() && !pseudoHeaders.authority().isEmpty();
+        if (!hasAuthority && !hasHost) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :authority pseudo header or Host header");
         }
-        if (hostHeaders.size() > 1) {
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Only a single Host header is allowed");
-        }
-        try {
-            if (!UriAuthority.create(pseudoHeaders.authority()).equals(UriAuthority.create(hostHeaders.getFirst()))) {
-                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Host header must match :authority");
-            }
-        } catch (IllegalArgumentException e) {
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid Host or :authority header", e);
+        if (pseudoHeaders.hasAuthority() && !hostValues.isEmpty()
+                && !authoritiesMatch(pseudoHeaders.scheme(), pseudoHeaders.authority(), hostValues.get(0))) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Host header does not match :authority pseudo header");
         }
     }
 
@@ -507,6 +500,26 @@ public class Http2Headers {
 
     private static Http2Headers create(ServerRequestHeaders httpHeaders, PseudoHeaders pseudoHeaders) {
         return new Http2Headers(httpHeaders, pseudoHeaders);
+    }
+
+    private static boolean authoritiesMatch(String scheme, String authority, String host) {
+        try {
+            int defaultPort = defaultPort(scheme);
+            UriAuthority authorityValue = UriAuthority.create(authority);
+            UriAuthority hostValue = UriAuthority.create(host);
+            return authorityValue.host().equals(hostValue.host())
+                    && authorityValue.portOrDefault(defaultPort) == hostValue.portOrDefault(defaultPort);
+        } catch (IllegalArgumentException e) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid Host or :authority header", e);
+        }
+    }
+
+    private static int defaultPort(String scheme) {
+        return switch (scheme.toLowerCase(Locale.ROOT)) {
+        case HTTP -> 80;
+        case HTTPS -> 443;
+        default -> -1;
+        };
     }
 
     private static boolean readHeader(WritableHeaders<?> headers,

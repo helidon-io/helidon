@@ -116,6 +116,23 @@ class UpgradeSettingsTest {
     }
 
     @Test
+    void upgradePreservesEmptyQueryDelimiter() {
+        HttpPrologue emptyQueryPrologue = HttpPrologue.create("http/1.1",
+                                                              "http",
+                                                              "1.1",
+                                                              Method.GET,
+                                                              "/resource.txt?",
+                                                              false);
+        WritableHeaders<?> headers = WritableHeaders.create()
+                .add(HeaderValues.create("HTTP2-Settings", "AAEAABAAAAIAAAAB"));
+        Http2Upgrader http2Upgrader = Http2Upgrader.create(Http2Config.create());
+        Http2Connection connection = (Http2Connection) http2Upgrader.upgrade(ctx, emptyQueryPrologue, headers);
+
+        assertThat(connection.upgradePrologue().hasQuery(), is(true));
+        assertThat(connection.upgradePrologue().query().rawValue(), is(""));
+    }
+
+    @Test
     void invalidMaxFrameSizeDoesNotReplaceLastValidSettings() {
         Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
 

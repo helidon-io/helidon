@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,7 +141,12 @@ public class WebClientSecurity implements WebClientService {
             outboundEnv.method(request.method().text())
                     .path(request.uri().path().path())
                     .targetUri(request.uri().toUri())
-                    .queryParams(request.uri().query());
+                    .queryParams(request.uri().query())
+                    .requestedMethod(request.method().text())
+                    .requestedPath(request.uri().path())
+                    .requestedQuery(request.uri().query().rawValue().isEmpty()
+                                            ? Optional.empty()
+                                            : Optional.of(request.uri().query()));
 
             request.headers()
                     .stream()

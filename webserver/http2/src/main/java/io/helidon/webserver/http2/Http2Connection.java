@@ -253,6 +253,11 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         this.upgradeHeaders = headers;
     }
 
+    // Test seam for HTTP/1.1 upgrade request reconstruction.
+    HttpPrologue upgradePrologue() {
+        return upgradePrologue;
+    }
+
     /**
      * Expect connection preface (prior knowledge).
      */

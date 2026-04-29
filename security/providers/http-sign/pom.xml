@@ -47,6 +47,14 @@
             <artifactId>helidon-common-key-util</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-uri</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http</groupId>
+            <artifactId>helidon-http</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.security</groupId>
             <artifactId>helidon-security-util</artifactId>
         </dependency>

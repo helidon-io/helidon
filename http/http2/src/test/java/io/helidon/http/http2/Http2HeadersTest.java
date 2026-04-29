@@ -16,7 +16,6 @@
 
 package io.helidon.http.http2;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 
@@ -35,7 +34,6 @@ import org.mockito.Mockito;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http2HeadersTest {
@@ -187,6 +185,59 @@ class Http2HeadersTest {
         assertThat(actual, is(expected));
     }
 
+    @Test
+    void testRequestRejectsHostAuthorityMismatch() {
+        String hexEncoded = requestHeaders("signed.example", "attacker.example");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
+    void testRequestAcceptsMatchingHostAuthority() {
+        String hexEncoded = requestHeaders("signed.example", "signed.example");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        http2Headers.validateRequest();
+
+        assertThat(http2Headers.httpHeaders().get(HeaderNames.HOST).get(), is("signed.example"));
+    }
+
+    @Test
+    void testRequestAcceptsNormalizedHostAuthority() {
+        String hexEncoded = requestHeaders("Signed.Example:80", "signed.example");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        http2Headers.validateRequest();
+    }
+
+    @Test
+    void testRequestRejectsMissingHostAndAuthority() {
+        String hexEncoded = "82 86 84";
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
+    void testRequestRejectsRepeatedHostWithAuthority() {
+        String hexEncoded = requestHeaders("signed.example", "signed.example", "signed.example");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
     /*
     https://www.rfc-editor.org/rfc/rfc7541.html#appendix-C.4
     */
@@ -266,14 +317,18 @@ class Http2HeadersTest {
 
     @Test
     void validatesRegularHostMatchesAuthority() {
-        Http2Headers http2Headers = parsedHeadersWithAuthorityAndHost("api.example.com", "Api.Example.COM");
+        String hexEncoded = requestHeaders("api.example.com", "Api.Example.COM");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
 
-        assertDoesNotThrow(http2Headers::validateRequest);
+        http2Headers.validateRequest();
     }
 
     @Test
     void rejectsRegularHostDifferentFromAuthority() {
-        Http2Headers http2Headers = parsedHeadersWithAuthorityAndHost("api.example.com", "admin.example.com");
+        String hexEncoded = requestHeaders("api.example.com", "admin.example.com");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
 
         Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
 
@@ -295,46 +350,26 @@ class Http2HeadersTest {
                                    new Http2FrameData(header, data));
     }
 
-    private Http2Headers parsedHeadersWithAuthorityAndHost(String authority, String host) {
-        ByteArrayOutputStream headerBlock = new ByteArrayOutputStream();
-        headerBlock.write(0x82); // :method: GET
-        headerBlock.write(0x87); // :scheme: https
-        headerBlock.write(0x84); // :path: /
-        writeLiteralWithoutIndex(headerBlock, 1, authority); // :authority
-        writeLiteralWithoutIndex(headerBlock, 38, host); // host
-
-        BufferData data = BufferData.create(headerBlock.toByteArray());
-        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
-                                                          Http2FrameTypes.HEADERS,
-                                                          Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                                          1);
-        Http2Stream stream = Mockito.mock(Http2Stream.class);
-        return Http2Headers.create(stream,
-                                   DynamicTable.create(Http2Settings.create()),
-                                   Http2HuffmanDecoder.create(),
-                                   new Http2FrameData(header, data));
+    private static String requestHeaders(String authority, String... hostValues) {
+        StringBuilder headers = new StringBuilder("82 86 84 ");
+        headers.append(literalWithIndexedName(1, authority));
+        for (String hostValue : hostValues) {
+            headers.append(' ')
+                    .append(literalWithNewName("host", hostValue));
+        }
+        return headers.toString();
     }
 
-    private static void writeLiteralWithoutIndex(ByteArrayOutputStream headerBlock, int nameIndex, String value) {
-        writeHpackInt(headerBlock, 0, 4, nameIndex);
+    private static String literalWithIndexedName(int index, String value) {
+        return "4" + index + " " + lengthAndValue(value);
+    }
+
+    private static String literalWithNewName(String name, String value) {
+        return "40 " + lengthAndValue(name) + " " + lengthAndValue(value);
+    }
+
+    private static String lengthAndValue(String value) {
         byte[] bytes = value.getBytes(StandardCharsets.US_ASCII);
-        writeHpackInt(headerBlock, 0, 7, bytes.length);
-        headerBlock.writeBytes(bytes);
-    }
-
-    private static void writeHpackInt(ByteArrayOutputStream headerBlock, int firstByteBits, int prefixBits, int value) {
-        int maxPrefixValue = (1 << prefixBits) - 1;
-        if (value < maxPrefixValue) {
-            headerBlock.write(firstByteBits | value);
-            return;
-        }
-
-        headerBlock.write(firstByteBits | maxPrefixValue);
-        value -= maxPrefixValue;
-        while (value >= 128) {
-            headerBlock.write((value & 0x7F) | 0x80);
-            value >>>= 7;
-        }
-        headerBlock.write(value);
+        return String.format("%02x %s", bytes.length, HexFormat.of().formatHex(bytes));
     }
 }

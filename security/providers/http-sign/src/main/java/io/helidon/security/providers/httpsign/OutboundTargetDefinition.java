@@ -142,7 +142,7 @@ public final class OutboundTargetDefinition {
      * <ul>
      * <li>date - if not present and required, will be added to request</li>
      * <li>host - if not present and required, will be added to request from target URI</li>
-     * <li>(request-target) - as per spec, calculated from method and path</li>
+     * <li>(request-target) - as per spec, calculated from method and request target, including query when present</li>
      * <li>authorization - if {@link #header()} returns {@link HttpSignHeader#AUTHORIZATION} it is ignored</li>
      * </ul>
      *
@@ -185,7 +185,7 @@ public final class OutboundTargetDefinition {
         private Keys keyConfig;
         private HttpSignHeader header = HttpSignHeader.SIGNATURE;
         private byte[] hmacSharedSecret;
-        private SignedHeadersConfig signedHeadersConfig = HttpSignProvider.DEFAULT_REQUIRED_HEADERS;
+        private SignedHeadersConfig signedHeadersConfig = HttpSignProvider.DEFAULT_OUTBOUND_REQUIRED_HEADERS;
         private TokenHandler tokenHandler;
         private boolean backwardCompatibleEol = false;
 

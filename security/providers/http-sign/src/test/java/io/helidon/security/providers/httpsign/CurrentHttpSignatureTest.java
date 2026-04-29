@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,24 @@
 package io.helidon.security.providers.httpsign;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQuery;
+import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.security.SecurityEnvironment;
 
 import org.junit.jupiter.api.Assertions;
@@ -180,6 +189,78 @@ class CurrentHttpSignatureTest {
     }
 
     @Test
+    void testSignedStringUsesRawQueryParams() {
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        headers.put("DATE", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("Authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+        headers.put("host", List.of("example.org"));
+        SecurityEnvironment env = SecurityEnvironment.builder()
+                .path("/my/resource")
+                .queryParams(UriQuery.create("b=2&a=1&a=3&encoded=a%2Fb&admin"))
+                .headers(headers)
+                .build();
+
+        HttpSignature signature = new HttpSignature("myServiceKeyId",
+                                                    "hmac-sha256",
+                                                    List.of("date",
+                                                            "host",
+                                                            "(request-target)",
+                                                            "authorization"),
+                                                    false);
+
+        assertThat(signature.getSignedString(null, env),
+                   is("date: Thu, 08 Jun 2014 18:32:30 GMT\n"
+                              + "host: example.org\n"
+                              + "(request-target): get /my/resource?b=2&a=1&a=3&encoded=a%2Fb&admin\n"
+                              + "authorization: basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+    }
+
+    @Test
+    void testInboundValidationUsesRequestedTargetSnapshot() throws Exception {
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        headers.put("DATE", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("Authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+        headers.put("host", List.of("example.org"));
+
+        String signedString = "date: Thu, 08 Jun 2014 18:32:30 GMT\n"
+                + "host: example.org\n"
+                + "(request-target): get /my%2Fresource?\n"
+                + "authorization: basic dXNlcm5hbWU6cGFzc3dvcmQ=";
+        String algorithm = "HmacSHA256";
+        Mac mac = Mac.getInstance(algorithm);
+        mac.init(new SecretKeySpec("MyPasswordForHmac".getBytes(StandardCharsets.UTF_8), algorithm));
+        HttpSignature signature = HttpSignature.fromHeader(
+                "keyId=\"myServiceKeyId\",algorithm=\"hmac-sha256\",headers=\"date host (request-target) authorization\","
+                        + "signature=\""
+                        + Base64.getEncoder().encodeToString(mac.doFinal(signedString.getBytes(StandardCharsets.UTF_8)))
+                        + "\"", false);
+        signature.validate().ifPresent(Assertions::fail);
+
+        UriQueryWriteable queryParams = UriQueryWriteable.create();
+        queryParams.fromQueryString("added=true");
+        SecurityEnvironment env = SecurityEnvironment.builder()
+                .path("/my/resource")
+                .queryParams(queryParams)
+                .requestedPath(UriPath.create("/my%2Fresource"))
+                .requestedQuery(Optional.of(UriQuery.empty()))
+                .headers(headers)
+                .build();
+        queryParams.clear();
+        queryParams.fromQueryString("changed=true");
+
+        InboundClientDefinition inboundClientDef = InboundClientDefinition.builder("myServiceKeyId")
+                .principalName("theService")
+                .hmacSecret("MyPasswordForHmac")
+                .build();
+
+        signature.validate(env,
+                           inboundClientDef,
+                           List.of("date"),
+                           Duration.ZERO)
+                .ifPresent(Assertions::fail);
+    }
+
+    @Test
     void testSignHmacAddHeaders() {
         SecurityEnvironment env = SecurityEnvironment.builder()
                 .targetUri(URI.create("http://localhost/test/path"))
@@ -197,6 +278,35 @@ class CurrentHttpSignatureTest {
 
         // just make sure this does not throw an exception for missing headers
         HttpSignature.sign(env, outboundDef, new HashMap<>(), false);
+    }
+
+    @Test
+    void testSignHmacAddsHostWithoutUndefinedPort() {
+        SecurityEnvironment env = SecurityEnvironment.builder()
+                .targetUri(URI.create("http://example.org/test/path"))
+                .build();
+        Map<String, List<String>> newHeaders = new HashMap<>();
+
+        OutboundTargetDefinition outboundDef = OutboundTargetDefinition.builder("myServiceKeyId")
+                .hmacSecret("MyPasswordForHmac")
+                .signedHeaders(SignedHeadersConfig.builder()
+                                       .defaultConfig(SignedHeadersConfig
+                                                              .HeadersConfig
+                                                              .create(List.of("date",
+                                                                              "host")))
+                                       .build())
+                .build();
+
+        HttpSignature.sign(env, outboundDef, newHeaders, false);
+
+        assertThat(newHeaders.get("host"), is(List.of("example.org")));
+    }
+
+    @Test
+    void testSignHmacAddsHostWithExplicitPortsAndIpv6Literals() {
+        assertAddedHost("http://example.org:8080/test/path", "example.org:8080");
+        assertAddedHost("http://[::1]:8080/test/path", "[::1]:8080");
+        assertAddedHost("http://[::1]/test/path", "[::1]");
     }
 
     @Test
@@ -232,7 +342,8 @@ class CurrentHttpSignatureTest {
 
         signature.validate(buildSecurityEnv("/my/resource", headers),
                            inboundClientDef,
-                           List.of("date"))
+                           List.of("date"),
+                           Duration.ZERO)
                 .ifPresent(Assertions::fail);
     }
 
@@ -257,7 +368,8 @@ class CurrentHttpSignatureTest {
 
         signature.validate(env,
                            inboundClientDef,
-                           List.of("date"))
+                           List.of("date"),
+                           Duration.ZERO)
                 .ifPresent(Assertions::fail);
     }
 
@@ -266,6 +378,27 @@ class CurrentHttpSignatureTest {
                 .path(path)
                 .headers(headers)
                 .build();
+    }
+
+    private void assertAddedHost(String uri, String expectedHost) {
+        SecurityEnvironment env = SecurityEnvironment.builder()
+                .targetUri(URI.create(uri))
+                .build();
+        Map<String, List<String>> newHeaders = new HashMap<>();
+
+        OutboundTargetDefinition outboundDef = OutboundTargetDefinition.builder("myServiceKeyId")
+                .hmacSecret("MyPasswordForHmac")
+                .signedHeaders(SignedHeadersConfig.builder()
+                                       .defaultConfig(SignedHeadersConfig
+                                                              .HeadersConfig
+                                                              .create(List.of("date",
+                                                                              "host")))
+                                       .build())
+                .build();
+
+        HttpSignature.sign(env, outboundDef, newHeaders, false);
+
+        assertThat(newHeaders.get("host"), is(List.of(expectedHost)));
     }
 
     private void testValid(String validSignature) {
