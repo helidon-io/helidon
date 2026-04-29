@@ -32,6 +32,7 @@ import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
@@ -122,6 +123,31 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      */
     @Option.Singular
     Set<Header> headers();
+
+    /**
+     * Whether headers sensitive to cross-origin redirects should be filtered before the redirected request is sent.
+     * <p>
+     * When enabled, header names from {@link #redirectSensitiveHeaders()} are stripped on cross-origin redirects.
+     *
+     * @return whether redirect header filtering is enabled
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean filterRedirectHeaders();
+
+    /**
+     * Request header names to strip on cross-origin redirects.
+     * <p>
+     * Header names are matched case-insensitively.
+     * The returned set always contains {@value io.helidon.http.HeaderNames#AUTHORIZATION_NAME},
+     * even if it was not explicitly configured.
+     *
+     * @return sensitive redirect headers
+     */
+    @Option.Configured
+    @Option.Singular
+    @Option.DefaultCode("new @java.util.LinkedHashSet@<>(@java.util.Set@.of(@io.helidon.http.HeaderNames@.AUTHORIZATION))")
+    Set<HeaderName> redirectSensitiveHeaders();
 
     /**
      * Default headers as a headers object. Creates a new instance for each call, so the returned value
