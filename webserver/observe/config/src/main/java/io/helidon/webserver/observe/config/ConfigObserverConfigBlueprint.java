@@ -54,6 +54,7 @@ interface ConfigObserverConfigBlueprint extends ObserverConfigBase, Prototype.Fa
     /**
      * Secret patterns (regular expressions) to exclude from output.
      * Any pattern that matches a key will cause the output to be obfuscated and not contain the value.
+     * Patterns are matched case-insensitively.
      * <p>
      * Patterns always added:
      * <ul>

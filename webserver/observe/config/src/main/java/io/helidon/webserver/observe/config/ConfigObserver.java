@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public class ConfigObserver implements Observer, RuntimeType.Api<ConfigObserverC
     public static ConfigObserver create(ConfigObserverConfig config) {
         List<Pattern> patterns = config.secrets()
                 .stream()
-                .map(Pattern::compile)
+                .map(it -> Pattern.compile(it, Pattern.CASE_INSENSITIVE))
                 .toList();
         return new ConfigObserver(config, patterns);
     }
