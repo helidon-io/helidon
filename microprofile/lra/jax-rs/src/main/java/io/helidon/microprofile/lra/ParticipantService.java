@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,13 @@
  */
 package io.helidon.microprofile.lra;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
@@ -40,6 +39,7 @@ import io.helidon.lra.coordinator.client.PropagatedHeaders;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -88,27 +88,31 @@ class ParticipantService {
     }
 
     /**
-     * Participant ID is expected to be classFqdn#methodName.
+     * Invokes a registered non-JAX-RS participant callback method with the expected LRA annotation.
      */
     Single<Optional<?>> invoke(String classFqdn,
                                String methodName,
+                               Class<? extends Annotation> expectedAnnotation,
                                URI lraId,
                                Object secondParam,
                                PropagatedHeaders propagatedHeaders) {
-        Class<?> clazz;
         try {
-            clazz = Class.forName(classFqdn);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Cant locate participant method: " + classFqdn + "#" + methodName, e);
-        }
-
-        try {
-            Bean<?> bean = lraCdiExtension.lraCdiBeanReferences().get(clazz);
-            Objects.requireNonNull(bean, () -> "Missing bean reference for participant method: " + classFqdn + "#" + methodName);
-            Method method = Arrays.stream(clazz.getDeclaredMethods())
-                    .filter(m -> m.getName().equals(methodName))
+            Map.Entry<Class<?>, Bean<?>> participant = lraCdiExtension.lraCdiBeanReferences()
+                    .entrySet()
+                    .stream()
+                    .filter(entry -> entry.getKey().getName().equals(classFqdn))
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Cant find participant method " + methodName
+                    .orElseThrow(() -> new NotFoundException("Missing participant method: "
+                                                                      + classFqdn + "#" + methodName));
+            Class<?> clazz = participant.getKey();
+            Bean<?> bean = participant.getValue();
+            Method method = ParticipantImpl.scanForLRAMethods(clazz)
+                    .getOrDefault(expectedAnnotation, Set.of())
+                    .stream()
+                    .filter(m -> m.getName().equals(methodName))
+                    .filter(m -> ParticipantImpl.isNonJaxRsParticipantMethod(clazz, m))
+                    .findFirst()
+                    .orElseThrow(() -> new NotFoundException("Cant find participant method " + methodName
                             + " with participant method: " + classFqdn + "#" + methodName));
 
             int paramCount = method.getParameters().length;
@@ -126,9 +130,13 @@ class ParticipantService {
         } catch (InvocationTargetException e) {
             if (e.getTargetException() instanceof WebApplicationException) {
                 return Single.just(Optional.ofNullable(((WebApplicationException) e.getTargetException()).getResponse()));
+            } else if (e.getTargetException() instanceof RuntimeException) {
+                return Single.error((RuntimeException) e.getTargetException());
             } else {
                 return Single.error(e.getTargetException());
             }
+        } catch (WebApplicationException e) {
+            return Single.error(e);
         } catch (Throwable t) {
             LOGGER.log(Level.SEVERE, t, () -> "Un-caught exception in non-jax-rs LRA method "
                     + classFqdn + "#" + methodName

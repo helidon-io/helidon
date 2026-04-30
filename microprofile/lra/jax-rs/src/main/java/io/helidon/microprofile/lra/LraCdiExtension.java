@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package io.helidon.microprofile.lra;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,8 +41,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.spi.AnnotatedParameter;
-import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
@@ -87,12 +85,10 @@ public class LraCdiExtension implements Extension {
             AfterLRA.class,
             Complete.class,
             Compensate.class,
-            Forget.class
+            Forget.class,
+            Status.class
     );
 
-    private static final Set<Class<? extends Annotation>> EXCLUDED_ANNOTATIONS = Set.of(PUT.class, Path.class);
-
-    private final Set<Class<?>> beanTypesWithCdiLRAMethods = new HashSet<>();
     private final Map<Class<?>, Bean<?>> lraCdiBeanReferences = new HashMap<>();
     private final Indexer indexer;
     private final ClassLoader classLoader;
@@ -157,52 +153,49 @@ public class LraCdiExtension implements Extension {
                 );
     }
 
-    private void validateCdiLRASignatures(@Observes
-                                          @WithAnnotations(
-                                                  {
-                                                          Complete.class,
-                                                          Compensate.class,
-                                                          Forget.class,
-                                                          AfterLRA.class,
-                                                          Status.class
-                                                  })
-                                                  ProcessAnnotatedType<?> pat) {
-        AnnotatedType<?> annotatedType = pat.getAnnotatedType();
-        beanTypesWithCdiLRAMethods.add(annotatedType.getJavaClass());
-        annotatedType.getMethods().stream()
-                .filter(m -> m.getAnnotations().stream()
-                        .map(Annotation::annotationType)
-                        .anyMatch(EXPECTED_ANNOTATIONS::contains))
-                .filter(m -> m.getAnnotations().stream()
-                        .map(Annotation::annotationType)
-                        .noneMatch(EXCLUDED_ANNOTATIONS::contains))
-                .forEach(m -> {
-                    List<? extends AnnotatedParameter<?>> parameters = m.getParameters();
-                    if (parameters.size() > 2) {
-                        throw new DeploymentException("Too many arguments on compensate method "
-                                + m.getJavaMember());
-                    }
-                    if (parameters.size() == 1 && !parameters.get(0).getBaseType().equals(URI.class)) {
-                        throw new DeploymentException("First argument of LRA method "
-                                + m.getJavaMember() + " must be of type URI");
-                    }
-                    if (parameters.size() == 2) {
-                        if (!parameters.get(0).getBaseType().equals(URI.class)) {
-                            throw new DeploymentException("First argument of LRA method "
-                                    + m.getJavaMember() + " must be of type URI");
-                        }
-                        if (!Set.of(URI.class, LRAStatus.class).contains(parameters.get(1).getBaseType())) {
-                            throw new DeploymentException("Second argument of LRA method "
-                                    + m.getJavaMember() + " must be of type URI or LRAStatus");
-                        }
-                    }
-                });
-    }
-
     private void cdiLRABeanReferences(@Observes ProcessManagedBean<?> event) {
-        if (beanTypesWithCdiLRAMethods.contains(event.getBean().getBeanClass())) {
-            lraCdiBeanReferences.put(event.getBean().getBeanClass(), event.getBean());
+        Class<?> javaClass = event.getBean().getBeanClass();
+        Map<Class<? extends Annotation>, Set<Method>> lraMethods = ParticipantImpl.scanForLRAMethods(javaClass);
+        if (lraMethods.keySet().stream().noneMatch(EXPECTED_ANNOTATIONS::contains)) {
+            return;
         }
+        lraMethods.entrySet()
+                .stream()
+                .filter(e -> EXPECTED_ANNOTATIONS.contains(e.getKey()))
+                .forEach(entry -> entry.getValue()
+                        .stream()
+                        .filter(method -> ParticipantImpl.isNonJaxRsParticipantMethod(javaClass, method))
+                        .forEach(method -> {
+                            Class<?>[] parameters = method.getParameterTypes();
+                            if (parameters.length > 2) {
+                                throw new DeploymentException("Too many arguments on compensate method "
+                                        + method);
+                            }
+                            if (parameters.length == 1 && !parameters[0].equals(URI.class)) {
+                                throw new DeploymentException("First argument of LRA method "
+                                        + method + " must be of type URI");
+                            }
+                            if (parameters.length == 2 && !parameters[0].equals(URI.class)) {
+                                throw new DeploymentException("First argument of LRA method "
+                                        + method + " must be of type URI");
+                            }
+                            if (parameters.length == 2 && entry.getKey() == AfterLRA.class
+                                    && !parameters[1].equals(LRAStatus.class)) {
+                                throw new DeploymentException("Second argument of LRA method "
+                                        + method + " must be of type LRAStatus");
+                            }
+                            if (parameters.length == 2 && Set.of(Complete.class, Compensate.class, Forget.class)
+                                    .contains(entry.getKey()) && !parameters[1].equals(URI.class)) {
+                                throw new DeploymentException("Second argument of LRA method "
+                                        + method + " must be of type URI");
+                            }
+                            if (parameters.length == 2 && entry.getKey() == Status.class
+                                    && !parameters[1].equals(URI.class)) {
+                                throw new DeploymentException("Second argument of LRA method "
+                                        + method + " must be of type URI");
+                            }
+                        }));
+        lraCdiBeanReferences.put(javaClass, event.getBean());
     }
 
     private void beforeServerStart(

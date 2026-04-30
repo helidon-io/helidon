@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -219,9 +219,11 @@ class InspectionService {
         // add only those not already present(overriding)
         MethodInfo method = classInfo.method(methodName, parameters);
         if (method == null) return;
-        method.asMethod()
-                .annotations()
-                .forEach(a -> annotations.putIfAbsent(a.name().toString(), a));
+        List<AnnotationInstance> methodAnnotations = method.asMethod().annotations();
+        methodAnnotations.forEach(a -> annotations.putIfAbsent(a.name().toString(), a));
+        if (methodAnnotations.stream().map(AnnotationInstance::name).anyMatch(LRA_ANNOTATIONS::contains)) {
+            return;
+        }
         // extends
         deepScanLraMethod(index.getClassByName(classInfo.superName()), annotations, methodName, parameters);
         // implements

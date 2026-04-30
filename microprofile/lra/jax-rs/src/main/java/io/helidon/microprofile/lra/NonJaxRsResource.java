@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,12 @@
  */
 package io.helidon.microprofile.lra;
 
+import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -38,9 +41,11 @@ import io.helidon.webserver.Service;
 
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.lra.LRAResponse;
+import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 
@@ -81,7 +86,7 @@ class NonJaxRsResource {
                              defaultValue = CONTEXT_PATH_DEFAULT) String contextPath,
                      Config config) {
         this.participantService = participantService;
-        this.contextPath = contextPath;
+        this.contextPath = contextPath.startsWith("/") ? contextPath : "/" + contextPath;
         exec = ThreadPoolSupplier.builder()
                 .name(LRA_PARTICIPANT)
                 .config(config.get(CONFIG_CONTEXT_KEY))
@@ -115,58 +120,56 @@ class NonJaxRsResource {
                     String method = path.param("methodName");
                     String type = path.param("type");
 
-                    switch (type) {
-                        case "compensate":
-                        case "complete":
-                            Single.<Optional<?>>empty()
-                                    .observeOn(exec)
-                                    .onCompleteResumeWithSingle(o ->
-                                            participantService.invoke(fqdn, method, lraId, parentId, propagatedHeaders))
-                                    .forSingle(result -> result.ifPresentOrElse(
-                                            r -> sendResult(res, r),
-                                            res::send
-                                            )
-                                    ).exceptionallyAccept(t -> sendError(lraId, req, res, t));
-                            break;
-                        case "afterlra":
-                            req.content()
-                                    .as(String.class)
-                                    .map(LRAStatus::valueOf)
-                                    .observeOn(exec)
-                                    .flatMapSingle(s -> Single.defer(() ->
-                                            participantService.invoke(fqdn, method, lraId, s, propagatedHeaders)))
-                                    .onComplete(res::send)
-                                    .onError(t -> sendError(lraId, req, res, t))
-                                    .ignoreElement();
-                            break;
-                        case "status":
-                            Single.<Optional<?>>empty()
-                                    .observeOn(exec)
-                                    .onCompleteResumeWithSingle(o ->
-                                            participantService.invoke(fqdn, method, lraId, null, propagatedHeaders))
-                                    .forSingle(result -> result.ifPresentOrElse(
-                                            r -> sendResult(res, r),
-                                            // If the participant has already responded successfully
-                                            // to a @Compensate or @Complete method invocation
-                                            // then it MAY report 410 Gone HTTP status code
-                                            // or in the case of non-JAX-RS method returning ParticipantStatus null.
-                                            () -> res.status(Response.Status.GONE.getStatusCode()).send()))
-                                    .exceptionallyAccept(t -> sendError(lraId, req, res, t));
-                            break;
-                        case "forget":
-                            Single.<Optional<?>>empty()
-                                    .observeOn(exec)
-                                    .onCompleteResumeWithSingle(o ->
-                                            participantService.invoke(fqdn, method, lraId, parentId, propagatedHeaders))
-                                    .onComplete(res::send)
-                                    .onError(t -> sendError(lraId, req, res, t))
-                                    .ignoreElement();
-                            break;
-                        default:
-                            LOGGER.severe(() -> "Unexpected non Jax-Rs LRA compensation type "
-                                    + type + ": " + req.absoluteUri());
-                            res.status(404).send();
-                            break;
+                    Optional<Class<? extends Annotation>> callbackAnnotation =
+                            Optional.ofNullable(ParticipantImpl.NON_JAX_RS_PARTICIPANT_CALLBACKS.get(type));
+                    if (callbackAnnotation.isEmpty()) {
+                        LOGGER.severe(() -> "Unexpected non Jax-Rs LRA compensation type "
+                                + type + ": " + req.absoluteUri());
+                        res.status(Response.Status.NOT_FOUND.getStatusCode()).send();
+                        return;
+                    }
+
+                    Class<? extends Annotation> annotation = callbackAnnotation.get();
+                    if (annotation == AfterLRA.class) {
+                        req.content()
+                                .as(String.class)
+                                .map(LRAStatus::valueOf)
+                                .observeOn(exec)
+                                .flatMapSingle(s -> Single.defer(() ->
+                                        participantService.invoke(fqdn, method, annotation, lraId, s, propagatedHeaders)))
+                                .onComplete(res::send)
+                                .onError(t -> sendError(lraId, req, res, t))
+                                .ignoreElement();
+                    } else if (annotation == org.eclipse.microprofile.lra.annotation.Status.class) {
+                        Single.<Optional<?>>empty()
+                                .observeOn(exec)
+                                .onCompleteResumeWithSingle(o ->
+                                        participantService.invoke(fqdn, method, annotation, lraId, parentId, propagatedHeaders))
+                                .forSingle(result -> result.ifPresentOrElse(
+                                        r -> sendResult(res, r),
+                                        // If the participant has already responded successfully
+                                        // to a @Compensate or @Complete method invocation
+                                        // then it MAY report 410 Gone HTTP status code
+                                        // or in the case of non-JAX-RS method returning ParticipantStatus null.
+                                        () -> res.status(Response.Status.GONE.getStatusCode()).send()))
+                                .exceptionallyAccept(t -> sendError(lraId, req, res, t));
+                    } else if (annotation == org.eclipse.microprofile.lra.annotation.Forget.class) {
+                        Single.<Optional<?>>empty()
+                                .observeOn(exec)
+                                .onCompleteResumeWithSingle(o ->
+                                        participantService.invoke(fqdn, method, annotation, lraId, parentId, propagatedHeaders))
+                                .onComplete(res::send)
+                                .onError(t -> sendError(lraId, req, res, t))
+                                .ignoreElement();
+                    } else {
+                        Single.<Optional<?>>empty()
+                                .observeOn(exec)
+                                .onCompleteResumeWithSingle(o ->
+                                        participantService.invoke(fqdn, method, annotation, lraId, parentId, propagatedHeaders))
+                                .forSingle(result -> result.ifPresentOrElse(
+                                        r -> sendResult(res, r),
+                                        res::send))
+                                .exceptionallyAccept(t -> sendError(lraId, req, res, t));
                     }
                 });
     }
@@ -176,7 +179,16 @@ class NonJaxRsResource {
                 + req.absoluteUri()
                 + " responds with error."
                 + "LRA id: " + lraId);
-        res.send(t);
+        Throwable responseError = t;
+        while ((responseError instanceof CompletionException || responseError instanceof ExecutionException)
+                && responseError.getCause() != null) {
+            responseError = responseError.getCause();
+        }
+        if (responseError instanceof WebApplicationException) {
+            sendResponse(res, ((WebApplicationException) responseError).getResponse());
+        } else {
+            res.send(responseError);
+        }
     }
 
     private void sendResult(ServerResponse res, Object result) {

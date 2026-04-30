@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -93,6 +94,14 @@ class HandlerService {
     private List<AnnotationHandler> createHandlers(Method m) {
         Set<AnnotationInstance> lraAnnotations = inspectionService.lookUpLraAnnotations(m);
         if (lraAnnotations.isEmpty()) {
+            Optional<Class<?>> inheritedAnnotation = ParticipantImpl.getLRAAnnotation(m)
+                    .map(annotation -> annotation.annotationType());
+            if (inheritedAnnotation.map(Class::getName).filter(Leave.class.getName()::equals).isPresent()) {
+                return List.of(new LeaveAnnotationHandler(coordinatorClient, participantService));
+            }
+            if (inheritedAnnotation.map(Class::getName).filter(STAND_ALONE_ANNOTATIONS::contains).isPresent()) {
+                return List.of(new NoopAnnotationHandler(participantService));
+            }
             return List.of(new NonLraAnnotationHandler(propagate, participantService));
         }
 
