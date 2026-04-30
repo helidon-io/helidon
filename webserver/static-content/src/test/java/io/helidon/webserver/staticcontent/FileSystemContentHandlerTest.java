@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Tests {@link io.helidon.webserver.staticcontent.FileSystemContentHandler}.
@@ -163,5 +164,72 @@ class FileSystemContentHandlerTest {
                 .path("/some/css/.%00/not.exists")
                 .get();
         assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+    }
+
+    @Test
+    void symlinkOutsideStaticRootNotServed() throws Exception {
+        Path staticRoot = folder.newFolder("public").toPath();
+        Path outsideRoot = folder.newFolder("outside").toPath();
+        Path secret = outsideRoot.resolve("secret.txt");
+        Files.writeString(secret, "Secret");
+        Path symlink = staticRoot.resolve("secret.txt");
+
+        createSymbolicLink(symlink, secret);
+
+        Routing routing = Routing.builder()
+                .register("/some", StaticContentSupport.create(staticRoot))
+                .build();
+        TestResponse response = TestClient.create(routing)
+                .path("/some/secret.txt")
+                .get();
+
+        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+    }
+
+    @Test
+    void welcomeFileSymlinkOutsideStaticRootNotServed() throws Exception {
+        Path staticRoot = folder.newFolder("public").toPath();
+        Path dir = Files.createDirectory(staticRoot.resolve("dir"));
+        Path outsideRoot = folder.newFolder("outside").toPath();
+        Path secret = outsideRoot.resolve("index.html");
+        Files.writeString(secret, "Secret");
+        createSymbolicLink(dir.resolve("index.html"), secret);
+
+        Routing routing = Routing.builder()
+                .register("/some", StaticContentSupport.builder(staticRoot)
+                        .welcomeFileName("index.html")
+                        .build())
+                .build();
+        TestResponse response = TestClient.create(routing)
+                .path("/some/dir/")
+                .get();
+
+        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+    }
+
+    @Test
+    void symlinkInsideStaticRootServed() throws Exception {
+        Path staticRoot = folder.newFolder("public").toPath();
+        Path content = staticRoot.resolve("content.txt");
+        Files.writeString(content, "Content");
+        createSymbolicLink(staticRoot.resolve("link.txt"), content);
+
+        Routing routing = Routing.builder()
+                .register("/some", StaticContentSupport.create(staticRoot))
+                .build();
+        TestResponse response = TestClient.create(routing)
+                .path("/some/link.txt")
+                .get();
+
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(responseToString(response), is("Content"));
+    }
+
+    private static void createSymbolicLink(Path link, Path target) {
+        try {
+            Files.createSymbolicLink(link, target);
+        } catch (UnsupportedOperationException | IOException | SecurityException e) {
+            assumeTrue(false, "Symbolic links are not available in this environment");
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
+import io.helidon.webserver.HttpException;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 /**
@@ -32,11 +33,19 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     private static final Logger LOGGER = Logger.getLogger(FileSystemContentHandler.class.getName());
 
     private final Path root;
+    private final Path realRoot;
 
     FileSystemContentHandler(StaticContentSupport.FileSystemBuilder builder) {
         super(builder);
 
         this.root = builder.root();
+        try {
+            this.realRoot = this.root.toRealPath();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Cannot create file system static content, path "
+                                                       + this.root
+                                                       + " cannot be resolved", e);
+        }
     }
 
     @Override
@@ -58,6 +67,19 @@ class FileSystemContentHandler extends FileBasedContentHandler {
         }
 
         return doHandle(method, resolved, request, response);
+    }
+
+    @Override
+    Path resolveFilePath(Path path) {
+        try {
+            Path realPath = path.toRealPath();
+            if (realPath.startsWith(realRoot)) {
+                return realPath;
+            }
+        } catch (IOException | SecurityException e) {
+            LOGGER.finest(() -> "Requested file cannot be resolved: " + path.toAbsolutePath());
+        }
+        throw new HttpException("File not found", Http.Status.NOT_FOUND_404);
     }
 
     boolean doHandle(Http.RequestMethod method, Path path, ServerRequest request, ServerResponse response) throws IOException {

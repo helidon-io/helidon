@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,7 +136,9 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
 
         LOGGER.fine(() -> "Sending static content from file: " + pathParam);
 
-        Path path = pathParam;
+        Path fileNamePath = pathParam;
+        Path path = resolveFilePath(pathParam);
+
         // we know the file exists, though it may be a directory
         //First doHandle a directory case
         if (Files.isDirectory(path)) {
@@ -144,6 +146,8 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
             if (rawFullPath.endsWith("/")) {
                 // Try to found welcome file
                 path = resolveWelcomeFile(path, welcomePage);
+                fileNamePath = path;
+                path = resolveFilePath(path);
             } else {
                 // Or redirect to slash ended
                 redirect(request, response, rawFullPath + "/");
@@ -165,7 +169,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
             // Cannot get mod time or size - well, we cannot tell if it was modified or not. Don't support cache headers
         }
 
-        processContentType(fileName(path), request.headers(), response.headers());
+        processContentType(fileName(fileNamePath), request.headers(), response.headers());
         if (method == Http.Method.HEAD) {
             response.send();
         } else {
@@ -177,5 +181,8 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         response.send(PATH_WRITER.marshall(path));
     }
 
+    Path resolveFilePath(Path path) {
+        return path;
+    }
 
 }
