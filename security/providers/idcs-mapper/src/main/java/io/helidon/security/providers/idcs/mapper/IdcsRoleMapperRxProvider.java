@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,15 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
         this.asserterUri = oidcConfig.identityUri() + "/admin/v1/Asserter";
         this.tokenEndpointUri = oidcConfig.tokenEndpointUri();
 
-        this.appToken = new AppTokenRx(oidcConfig.appWebClient(), tokenEndpointUri, oidcConfig.tokenRefreshSkew());
+        if (oidcConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC) {
+            this.appToken = new AppTokenRx(oidcConfig.appWebClient(),
+                                           tokenEndpointUri,
+                                           oidcConfig.tokenRefreshSkew(),
+                                           oidcConfig.clientId(),
+                                           oidcConfig.clientSecret());
+        } else {
+            this.appToken = new AppTokenRx(oidcConfig.appWebClient(), tokenEndpointUri, oidcConfig.tokenRefreshSkew());
+        }
     }
 
     /**

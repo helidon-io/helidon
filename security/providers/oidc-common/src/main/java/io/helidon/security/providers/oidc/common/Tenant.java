@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,29 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Objects;
 
 import io.helidon.common.Errors;
-import io.helidon.security.Security;
+import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
-import io.helidon.security.providers.common.OutboundTarget;
-import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
-import io.helidon.security.providers.httpauth.HttpBasicOutboundConfig;
 import io.helidon.webclient.WebClient;
-import io.helidon.webclient.security.WebClientSecurity;
 
 import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.ClientRequestFilter;
 import jakarta.ws.rs.client.WebTarget;
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
 /**
  * Holder of the tenant configuration resolved at runtime. Used for OIDC lazy loading.
  */
 public class Tenant {
+    private static final String SKIP_CLIENT_CREDENTIALS_PROPERTY =
+            "io.helidon.security.providers.oidc.common.skip-client-secret-basic";
 
     private final TenantConfig tenantConfig;
     private final URI tokenEndpointUri;
@@ -111,29 +113,41 @@ public class Tenant {
                 .or(() -> oidcMetadata.getString("issuer"))
                 .orElse(null);
 
+        URI introspectUri = tenantConfig.tenantIntrospectUri().orElse(null);
+        if (!tenantConfig.validateJwtWithJwk()) {
+            introspectUri = oidcMetadata.getOidcEndpoint(collector,
+                                                         introspectUri,
+                                                         "introspection_endpoint",
+                                                         "/oauth2/v1/introspect");
+        }
+
         collector.collect().checkValid();
         WebClient.Builder webClientBuilder = oidcConfig.webClientBuilderSupplier().get();
         ClientBuilder clientBuilder = oidcConfig.jaxrsClientBuilderSupplier().get();
 
         if (tenantConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC) {
-            HttpAuthenticationFeature basicAuth = HttpAuthenticationFeature.basicBuilder()
-                    .credentials(tenantConfig.clientId(), tenantConfig.clientSecret())
-                    .build();
-            clientBuilder.register(basicAuth);
+            URI finalIntrospectUri = introspectUri;
+            String basicAuthorization = "Basic " + Base64.getEncoder()
+                    .encodeToString((tenantConfig.clientId() + ":" + tenantConfig.clientSecret())
+                                            .getBytes(StandardCharsets.UTF_8));
 
-            HttpBasicAuthProvider httpBasicAuth = HttpBasicAuthProvider.builder()
-                    .addOutboundTarget(OutboundTarget.builder("oidc")
-                                               .addHost("*")
-                                               .customObject(HttpBasicOutboundConfig.class,
-                                                             HttpBasicOutboundConfig.create(tenantConfig.clientId(),
-                                                                                            tenantConfig.clientSecret()))
-                                               .build())
-                    .build();
-            Security tokenOutboundSecurity = Security.builder()
-                    .addOutboundSecurityProvider(httpBasicAuth)
-                    .build();
+            clientBuilder.register((ClientRequestFilter) requestContext -> {
+                if (!Boolean.TRUE.equals(requestContext.getProperty(SKIP_CLIENT_CREDENTIALS_PROPERTY))
+                        && matchesEndpoint(requestContext.getMethod(),
+                                           requestContext.getUri(),
+                                           tokenEndpointUri,
+                                           finalIntrospectUri)) {
+                    requestContext.getHeaders().putSingle(Http.Header.AUTHORIZATION, basicAuthorization);
+                }
+            });
 
-            webClientBuilder.addService(WebClientSecurity.create(tokenOutboundSecurity));
+            webClientBuilder.addService(request -> {
+                if (matchesEndpoint(request.method().name(), request.uri(), tokenEndpointUri, finalIntrospectUri)) {
+                    request.headers().unsetHeader(Http.Header.AUTHORIZATION);
+                    request.headers().add(Http.Header.AUTHORIZATION, basicAuthorization);
+                }
+                return Single.just(request);
+            });
         }
 
         Client appClient = clientBuilder.build();
@@ -166,13 +180,6 @@ public class Tenant {
             }
             return JwkKeys.builder().build();
         });
-        URI introspectUri = tenantConfig.tenantIntrospectUri().orElse(null);
-        if (!tenantConfig.validateJwtWithJwk()) {
-            introspectUri = oidcMetadata.getOidcEndpoint(collector,
-                                                         introspectUri,
-                                                         "introspection_endpoint",
-                                                         "/oauth2/v1/introspect");
-        }
         return new Tenant(tenantConfig,
                           tokenEndpointUri,
                           authorizationEndpointUri,
@@ -183,6 +190,40 @@ public class Tenant {
                           tokenEndpoint,
                           signJwk,
                           introspectUri);
+    }
+
+    private static boolean matchesEndpoint(String method, URI requestUri, URI tokenEndpointUri, URI introspectUri) {
+        return "POST".equalsIgnoreCase(method)
+                && (matchesEndpoint(tokenEndpointUri, requestUri)
+                || (introspectUri != null && matchesEndpoint(introspectUri, requestUri)));
+    }
+
+    private static boolean matchesEndpoint(URI endpointUri, URI requestUri) {
+        String endpointScheme = endpointUri.getScheme();
+        String endpointHost = endpointUri.getHost();
+        String requestScheme = requestUri.getScheme();
+        String requestHost = requestUri.getHost();
+
+        if (endpointScheme == null || endpointHost == null || requestScheme == null || requestHost == null) {
+            return false;
+        }
+
+        String endpointPath = endpointUri.getRawPath();
+        String requestPath = requestUri.getRawPath();
+        return endpointScheme.equalsIgnoreCase(requestScheme)
+                && endpointHost.equalsIgnoreCase(requestHost)
+                && port(endpointUri) == port(requestUri)
+                && (endpointPath == null || endpointPath.isEmpty() ? "/" : endpointPath)
+                        .equals(requestPath == null || requestPath.isEmpty() ? "/" : requestPath)
+                && Objects.equals(endpointUri.getRawQuery(), requestUri.getRawQuery());
+    }
+
+    private static int port(URI uri) {
+        int port = uri.getPort();
+        if (port != -1) {
+            return port;
+        }
+        return "https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80;
     }
 
     /**
@@ -232,6 +273,9 @@ public class Tenant {
 
     /**
      * Client with configured proxy and security.
+     * When token endpoint authentication is {@link OidcConfig.ClientAuthentication#CLIENT_SECRET_BASIC},
+     * client credentials are scoped to POST requests on the token endpoint scheme, host, port, path, and query and, when
+     * JWT introspection is used, to POST requests on the introspection endpoint scheme, host, port, path, and query.
      *
      * @return client for communicating with OIDC identity server
      */

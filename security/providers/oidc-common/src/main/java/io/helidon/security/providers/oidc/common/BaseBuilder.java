@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -255,6 +255,10 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
 
     /**
      * Type of authentication to use when invoking the token endpoint.
+     * With {@link io.helidon.security.providers.oidc.common.OidcConfig.ClientAuthentication#CLIENT_SECRET_BASIC},
+     * credentials are sent only to POST requests on the resolved token endpoint scheme, host, port, path, and query
+     * and, when JWT introspection is used, to POST requests on the resolved introspection endpoint scheme, host,
+     * port, path, and query.
      * Current supported options:
      * <ul>
      *     <li>{@link io.helidon.security.providers.oidc.common.OidcConfig.ClientAuthentication#CLIENT_SECRET_BASIC}</li>
@@ -265,7 +269,13 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
      * @param tokenEndpointAuthentication authentication type
      * @return updated builder
      */
-    @ConfiguredOption(key = "token-endpoint-auth", value = "CLIENT_SECRET_BASIC")
+    @ConfiguredOption(key = "token-endpoint-auth",
+                      value = "CLIENT_SECRET_BASIC",
+                      description = "Type of authentication to use when invoking the token endpoint. With "
+                              + "CLIENT_SECRET_BASIC, credentials are sent only to POST requests on the resolved token "
+                              + "endpoint scheme, host, port, path, and query and, when JWT introspection is used, "
+                              + "to POST requests on the resolved introspection endpoint scheme, host, port, path, "
+                              + "and query.")
     public B tokenEndpointAuthentication(OidcConfig.ClientAuthentication tokenEndpointAuthentication) {
 
         switch (tokenEndpointAuthentication) {

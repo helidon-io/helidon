@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 package io.helidon.security.providers.idcs.mapper;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -387,11 +389,24 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
         private final WebClient webClient;
         private final URI tokenEndpointUri;
         private final Duration tokenRefreshSkew;
+        private final String basicAuthorization;
 
         protected AppTokenRx(WebClient webClient, URI tokenEndpointUri, Duration tokenRefreshSkew) {
+            this(webClient, tokenEndpointUri, tokenRefreshSkew, null, null);
+        }
+
+        protected AppTokenRx(WebClient webClient,
+                             URI tokenEndpointUri,
+                             Duration tokenRefreshSkew,
+                             String clientId,
+                             String clientSecret) {
             this.webClient = webClient;
             this.tokenEndpointUri = tokenEndpointUri;
             this.tokenRefreshSkew = tokenRefreshSkew;
+            this.basicAuthorization = clientId == null || clientSecret == null
+                    ? null
+                    : "Basic " + Base64.getEncoder()
+                            .encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
         }
 
         protected Single<Optional<String>> getToken(RoleMapTracing tracing) {
@@ -455,6 +470,10 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
                     .uri(tokenEndpointUri)
                     .context(childContext)
                     .accept(io.helidon.common.http.MediaType.APPLICATION_JSON);
+
+            if (basicAuthorization != null) {
+                request.addHeader(Http.Header.AUTHORIZATION, basicAuthorization);
+            }
 
             postJsonResponse(request,
                              params,

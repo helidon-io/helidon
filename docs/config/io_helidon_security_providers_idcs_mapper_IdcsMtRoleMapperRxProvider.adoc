@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ include::{rootdir}/includes/attributes.adoc[]
 
 // tag::config[]
 
-Multitenant IDCS role mapping provider
+Multitenant IDCS role mapping provider. With default endpoint resolution, the first identity URI host label and extracted tenant IDs must be single DNS labels: 1 to 63 alphanumeric or hyphen characters, with no leading or trailing hyphen.
 
 
 Type: link:{javadoc-base-url}/io.helidon.security.providers.idcs.mapper/io/helidon/security/providers/idcs/mapper/IdcsMtRoleMapperRxProvider.html[io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperRxProvider]
@@ -63,6 +63,7 @@ This type provides the following service implementations:
  By default the header `IdcsMtRoleMapperRxProvider#IDCS_APP_HEADER` is used.
 |`idcs-tenant-handler` |xref:{rootdir}/config/io_helidon_security_util_TokenHandler.adoc[TokenHandler] |{nbsp} |Configure token handler for IDCS Tenant ID.
  By default the header `IdcsMtRoleMapperRxProvider#IDCS_TENANT_HEADER` is used.
+ With default endpoint resolution, the extracted tenant ID must be a single DNS label: 1 to 63 alphanumeric or hyphen characters, with no leading or trailing hyphen.
 |`oidc-config` |xref:{rootdir}/config/io_helidon_security_providers_oidc_common_OidcConfig.adoc[OidcConfig] |{nbsp} |Use explicit io.helidon.security.providers.oidc.common.OidcConfig instance, e.g. when using it also for OIDC
  provider.
 |`subject-types` |SubjectType[&#93; (USER, SERVICE) |`USER` |Add a supported subject type.

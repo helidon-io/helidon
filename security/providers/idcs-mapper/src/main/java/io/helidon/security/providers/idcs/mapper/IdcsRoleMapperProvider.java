@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,11 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
         this.assertEndpoint = oidcConfig.generalClient().target(oidcConfig.identityUri() + "/admin/v1/Asserter");
         WebTarget tokenEndpoint = oidcConfig.tokenEndpoint();
 
-        appToken = new IdcsMtRoleMapperProvider.AppToken(tokenEndpoint);
+        if (oidcConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC) {
+            appToken = new AppToken(tokenEndpoint, oidcConfig.clientId(), oidcConfig.clientSecret());
+        } else {
+            appToken = new AppToken(tokenEndpoint);
+        }
     }
 
     /**

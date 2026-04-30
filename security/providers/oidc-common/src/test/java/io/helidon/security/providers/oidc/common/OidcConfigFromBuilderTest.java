@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,25 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
+
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -27,11 +42,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
-
-import java.net.URI;
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.Map;
 
 /**
  * Unit test for {@link OidcConfig}.
@@ -175,6 +185,200 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
             assertThat(cookieEncryptionPasswordValue, is(passwordValue));
             // reset the value
             cookieEncryptionPasswordValue = null;
+        }
+    }
+
+    @Test
+    void testClientCredentialsSentOnlyToConfiguredTargets() {
+        AtomicReference<String> authorization = new AtomicReference<>();
+        WebServer server = authCapturingServer(authorization);
+        AtomicReference<String> otherAuthorization = new AtomicReference<>();
+        WebServer otherServer = authCapturingServer(otherAuthorization);
+        String baseUri = "http://127.0.0.1:" + server.port();
+        String otherBaseUri = "http://127.0.0.1:" + otherServer.port();
+
+        try {
+            OidcConfig config = OidcConfig.builder()
+                    .identityUri(URI.create(baseUri + "/identity"))
+                    .clientSecret("client-secret")
+                    .clientId("client-id")
+                    .oidcMetadataWellKnown(false)
+                    .validateJwtWithJwk(false)
+                    .tokenEndpointUri(URI.create(baseUri + "/tokens.v1"))
+                    .authorizationEndpointUri(URI.create(baseUri + "/authorization"))
+                    .introspectEndpointUri(URI.create(baseUri + "/introspect.v1"))
+                    .serverType("idcs")
+                    .build();
+
+            String expectedAuthorization = "Basic " + Base64.getEncoder()
+                    .encodeToString("client-id:client-secret".getBytes(StandardCharsets.UTF_8));
+
+            post(config, URI.create(baseUri + "/tokens.v1"));
+            assertThat(authorization.get(), is(expectedAuthorization));
+
+            authorization.set(null);
+            post(config, URI.create(baseUri + "/introspect.v1"));
+            assertThat(authorization.get(), is(expectedAuthorization));
+
+            authorization.set(null);
+            post(config, URI.create(baseUri + "/other"));
+            assertThat(authorization.get(), nullValue());
+
+            authorization.set(null);
+            get(config, URI.create(baseUri + "/tokens.v1"));
+            assertThat(authorization.get(), nullValue());
+
+            authorization.set(null);
+            post(config, URI.create(baseUri + "/tokens.v1?other=true"));
+            assertThat(authorization.get(), nullValue());
+
+            authorization.set(null);
+            post(config, URI.create(baseUri + "/introspect.v1?other=true"));
+            assertThat(authorization.get(), nullValue());
+
+            post(config, URI.create(otherBaseUri + "/tokens.v1"));
+            assertThat(otherAuthorization.get(), nullValue());
+
+            authorization.set(null);
+            jaxRsPost(config, URI.create(baseUri + "/tokens.v1"));
+            assertThat(authorization.get(), is(expectedAuthorization));
+
+            authorization.set(null);
+            jaxRsPost(config, URI.create(baseUri + "/introspect.v1"));
+            assertThat(authorization.get(), is(expectedAuthorization));
+
+            authorization.set(null);
+            jaxRsPost(config, URI.create(baseUri + "/other"));
+            assertThat(authorization.get(), nullValue());
+
+            authorization.set(null);
+            jaxRsGet(config, URI.create(baseUri + "/tokens.v1"));
+            assertThat(authorization.get(), nullValue());
+
+            authorization.set(null);
+            jaxRsPost(config, URI.create(baseUri + "/tokens.v1?other=true"));
+            assertThat(authorization.get(), nullValue());
+
+            authorization.set(null);
+            jaxRsPost(config, URI.create(baseUri + "/introspect.v1?other=true"));
+            assertThat(authorization.get(), nullValue());
+
+            otherAuthorization.set(null);
+            jaxRsPost(config, URI.create(otherBaseUri + "/tokens.v1"));
+            assertThat(otherAuthorization.get(), nullValue());
+
+            OidcConfig httpsTokenConfig = OidcConfig.builder()
+                    .identityUri(URI.create("https://127.0.0.1:" + server.port() + "/identity"))
+                    .clientSecret("client-secret")
+                    .clientId("client-id")
+                    .oidcMetadataWellKnown(false)
+                    .tokenEndpointUri(URI.create("https://127.0.0.1:" + server.port() + "/tokens.v1"))
+                    .authorizationEndpointUri(URI.create("https://127.0.0.1:" + server.port() + "/authorization"))
+                    .serverType("idcs")
+                    .build();
+
+            authorization.set(null);
+            post(httpsTokenConfig, URI.create(baseUri + "/tokens.v1"));
+            assertThat(authorization.get(), nullValue());
+
+            authorization.set(null);
+            jaxRsPost(httpsTokenConfig, URI.create(baseUri + "/tokens.v1"));
+            assertThat(authorization.get(), nullValue());
+        } finally {
+            otherServer.shutdown().await(Duration.ofSeconds(10));
+            server.shutdown().await(Duration.ofSeconds(10));
+        }
+    }
+
+    @Test
+    void testClientCredentialsCompareRawEndpointPath() {
+        AtomicReference<String> authorization = new AtomicReference<>();
+        WebServer server = authCapturingServer(authorization);
+        String baseUri = "http://127.0.0.1:" + server.port();
+
+        try {
+            OidcConfig config = OidcConfig.builder()
+                    .identityUri(URI.create(baseUri + "/identity"))
+                    .clientSecret("client-secret")
+                    .clientId("client-id")
+                    .oidcMetadataWellKnown(false)
+                    .validateJwtWithJwk(false)
+                    .tokenEndpointUri(URI.create(baseUri + "/tokens%2Fv1"))
+                    .authorizationEndpointUri(URI.create(baseUri + "/authorization"))
+                    .introspectEndpointUri(URI.create(baseUri + "/introspect.v1"))
+                    .serverType("idcs")
+                    .build();
+
+            String expectedAuthorization = "Basic " + Base64.getEncoder()
+                    .encodeToString("client-id:client-secret".getBytes(StandardCharsets.UTF_8));
+
+            post(config, URI.create(baseUri + "/tokens%2Fv1"));
+            assertThat(authorization.get(), is(expectedAuthorization));
+
+            authorization.set(null);
+            post(config, URI.create(baseUri + "/tokens/v1"));
+            assertThat(authorization.get(), nullValue());
+
+            authorization.set(null);
+            jaxRsPost(config, URI.create(baseUri + "/tokens%2Fv1"));
+            assertThat(authorization.get(), is(expectedAuthorization));
+
+            authorization.set(null);
+            jaxRsPost(config, URI.create(baseUri + "/tokens/v1"));
+            assertThat(authorization.get(), nullValue());
+        } finally {
+            server.shutdown().await(Duration.ofSeconds(10));
+        }
+    }
+
+    private static WebServer authCapturingServer(AtomicReference<String> authorization) {
+        WebServer server = WebServer.builder()
+                .host("127.0.0.1")
+                .routing(Routing.builder()
+                                 .any((req, res) -> {
+                                     authorization.set(req.headers()
+                                                               .first(Http.Header.AUTHORIZATION)
+                                                               .orElse(null));
+                                     res.headers().contentType(MediaType.APPLICATION_JSON);
+                                     res.send("{}");
+                                 }))
+                .build();
+        server.start().await(Duration.ofSeconds(10));
+        return server;
+    }
+
+    private static void post(OidcConfig config, URI uri) {
+        WebClientResponse response = config.appWebClient()
+                .post()
+                .uri(uri)
+                .submit("")
+                .await(10, TimeUnit.SECONDS);
+        response.content().as(String.class).await(10, TimeUnit.SECONDS);
+    }
+
+    private static void get(OidcConfig config, URI uri) {
+        config.appWebClient()
+                .get()
+                .uri(uri)
+                .request(String.class)
+                .await(10, TimeUnit.SECONDS);
+    }
+
+    private static void jaxRsPost(OidcConfig config, URI uri) {
+        try (Response response = config.appClient()
+                .target(uri)
+                .request()
+                .post(Entity.text(""))) {
+            response.readEntity(String.class);
+        }
+    }
+
+    private static void jaxRsGet(OidcConfig config, URI uri) {
+        try (Response response = config.appClient()
+                .target(uri)
+                .request()
+                .get()) {
+            response.readEntity(String.class);
         }
     }
 

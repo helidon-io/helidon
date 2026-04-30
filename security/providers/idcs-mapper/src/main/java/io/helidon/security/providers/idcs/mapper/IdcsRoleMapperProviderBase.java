@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
  */
 package io.helidon.security.providers.idcs.mapper;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -69,6 +71,8 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
     public static final String IDCS_SUBJECT_TYPE_CLIENT = "client";
 
     private static final Logger LOGGER = Logger.getLogger(IdcsRoleMapperProviderBase.class.getName());
+    private static final String SKIP_OIDC_CLIENT_CREDENTIALS_PROPERTY =
+            "io.helidon.security.providers.oidc.common.skip-client-secret-basic";
 
     /**
      * Json key for group roles to be retrieved from IDCS response.
@@ -389,6 +393,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
      */
     protected static class AppToken {
         private final WebTarget tokenEndpoint;
+        private final String basicAuthorization;
         // caching application token (as that can be re-used for group requests)
         private Optional<String> tokenContent = Optional.empty();
         private Jwt appJwt;
@@ -399,7 +404,22 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
          * @param tokenEndpoint used to get a new token from IDCS
          */
         protected AppToken(WebTarget tokenEndpoint) {
+            this(tokenEndpoint, null, null);
+        }
+
+        /**
+         * Create a new token with a token endpoint.
+         *
+         * @param tokenEndpoint used to get a new token from IDCS
+         * @param clientId client id to use for basic authentication
+         * @param clientSecret client secret to use for basic authentication
+         */
+        protected AppToken(WebTarget tokenEndpoint, String clientId, String clientSecret) {
             this.tokenEndpoint = tokenEndpoint;
+            this.basicAuthorization = clientId == null || clientSecret == null
+                    ? null
+                    : "Basic " + Base64.getEncoder()
+                            .encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
         }
 
         /**
@@ -423,10 +443,15 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
             formData.putSingle("grant_type", "client_credentials");
             formData.putSingle("scope", "urn:opc:idm:__myscopes__");
 
-            Invocation.Builder reqBuilder = tokenEndpoint.request();
+            Invocation.Builder reqBuilder = tokenEndpoint.request()
+                    .property(SKIP_OIDC_CLIENT_CREDENTIALS_PROPERTY, Boolean.TRUE);
 
             tracing.findParent()
                     .ifPresent(spanContext -> reqBuilder.property(PARENT_CONTEXT_CLIENT_PROPERTY, spanContext));
+
+            if (basicAuthorization != null) {
+                reqBuilder.header("Authorization", basicAuthorization);
+            }
 
             Response tokenResponse = reqBuilder
                     .accept(MediaType.APPLICATION_JSON_TYPE)
