@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
 
         // try to find the resource on classpath (cannot use root URL and then resolve, as root and sub-resource
         // may be from different jar files/directories
-        URL url = classLoader.getResource(resource);
+        URL url = classLoader.getResource(requestedResource);
 
         String welcomeFileName = welcomePageName();
         if (null != welcomeFileName) {

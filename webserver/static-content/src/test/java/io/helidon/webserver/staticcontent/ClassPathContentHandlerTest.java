@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,12 @@
 
 package io.helidon.webserver.staticcontent;
 
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.concurrent.ExecutionException;
@@ -26,11 +30,16 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.webserver.RequestHeaders;
+import io.helidon.webserver.ResponseHeaders;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.testsupport.TestClient;
 import io.helidon.webserver.testsupport.TestResponse;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -103,6 +112,39 @@ public class ClassPathContentHandlerTest {
                 .path("/some/bar/not.exist")
                 .get();
         assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+    }
+
+    @Test
+    public void usesNormalizedResourceForClasspathLookup() throws Exception {
+        URL rootResource = Objects.requireNonNull(ClassPathContentHandlerTest.class.getClassLoader()
+                                                     .getResource("content/root-a.txt"));
+        CapturingClassLoader classLoader = new CapturingClassLoader(rootResource);
+        RecordingClassPathContentHandler handler = new RecordingClassPathContentHandler(
+                StaticContentSupport.builder("content", classLoader));
+        ServerRequest request = Mockito.mock(ServerRequest.class);
+        ServerResponse response = Mockito.mock(ServerResponse.class);
+        RequestHeaders requestHeaders = Mockito.mock(RequestHeaders.class);
+        ResponseHeaders responseHeaders = Mockito.mock(ResponseHeaders.class);
+        Mockito.doReturn(requestHeaders).when(request).headers();
+        Mockito.doReturn(responseHeaders).when(response).headers();
+        Mockito.doReturn(true).when(requestHeaders).isAccepted(Mockito.any(MediaType.class));
+
+        boolean handled = handler.doHandle(Http.Method.GET, "bar/../root-a.txt", request, response);
+
+        assertThat(handled, is(true));
+        assertThat(classLoader.requestedResource, is("content/root-a.txt"));
+        assertThat(handler.sentPath, is(Paths.get(rootResource.toURI())));
+    }
+
+    @Test
+    public void doesNotLookupResourceOutsideClasspathRoot() throws Exception {
+        CapturingClassLoader classLoader = new CapturingClassLoader(null);
+        ClassPathContentHandler handler = new ClassPathContentHandler(StaticContentSupport.builder("content", classLoader));
+
+        boolean handled = handler.doHandle(Http.Method.GET, "bar/../../s-internal/example-a.txt", null, null);
+
+        assertThat(handled, is(false));
+        assertThat(classLoader.requestedResource, is((String) null));
     }
 
     @Test
@@ -200,5 +242,33 @@ public class ClassPathContentHandlerTest {
                 .path("/a/")
                 .get();
         assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+    }
+
+    private static class CapturingClassLoader extends ClassLoader {
+        private final URL resource;
+        private String requestedResource;
+
+        CapturingClassLoader(URL resource) {
+            this.resource = resource;
+        }
+
+        @Override
+        public URL getResource(String name) {
+            requestedResource = name;
+            return resource;
+        }
+    }
+
+    private static class RecordingClassPathContentHandler extends ClassPathContentHandler {
+        private Path sentPath;
+
+        RecordingClassPathContentHandler(StaticContentSupport.ClassPathBuilder builder) {
+            super(builder);
+        }
+
+        @Override
+        void send(ServerResponse response, Path path) {
+            sentPath = path;
+        }
     }
 }
