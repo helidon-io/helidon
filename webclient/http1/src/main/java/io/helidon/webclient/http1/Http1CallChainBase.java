@@ -185,9 +185,9 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             // https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html which states: "The absoluteURI form is REQUIRED when the
             // request is being made to a proxy."
             String absoluteUri = uri.scheme() + "://" + uri.host() + ":" + uri.port();
-            InetSocketAddress uriAddress = new InetSocketAddress(uri.host(), uri.port());
             String requestUri = proxy == Proxy.noProxy()
-                    || (proxy.type() == Proxy.ProxyType.HTTP && proxy.isNoHosts(uriAddress))
+                    || (proxy.type() == Proxy.ProxyType.HTTP
+                            && proxy.isNoHosts(new InetSocketAddress(uri.host(), uri.port())))
                     || (proxy.type() == Proxy.ProxyType.SYSTEM && !proxy.isUsingSystemProxy(absoluteUri))
                     || clientConfig.relativeUris()
                     ? "" // don't set host details, so it becomes relative URI
