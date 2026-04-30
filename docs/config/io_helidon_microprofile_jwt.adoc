@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ MicroProfile configuration options:
 |`mp.jwt.verify.publickey` |string |{nbsp} |The property allows the Public Verification Key text itself to be supplied as a string.
 |`mp.jwt.verify.publickey.location` |string |{nbsp} | The property allows for an external or internal location of Public Verification Key to be specified. The value may be a relative path or a URL.
 |`mp.jwt.verify.publickey.algorithm` |string |{nbsp} |The  configuration property allows for specifying which Public Key Signature Algorithm is supported by the MP JWT endpoint. This property can be set to either `RS256` or `ES256`. Default value is `RS256`. Support for the other asymmetric signature algorithms such as `RS512`, `ES512` and others is optional.
+|`mp.jwt.verify.issuer` |string |{nbsp} |Expected issuer of incoming tokens. This property must be configured when MP JWT authentication is enabled.
 
 |===
 

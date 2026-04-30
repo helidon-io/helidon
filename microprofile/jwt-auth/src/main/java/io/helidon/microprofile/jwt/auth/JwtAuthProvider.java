@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -289,7 +289,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                         if (validate.isValid()) {
                             return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
                         } else {
-                            return AuthenticationResponse.failed(errors.toString());
+                            return AuthenticationResponse.failed(validate.toString());
                         }
                     } else {
                         return AuthenticationResponse.failed(errors.toString());
@@ -626,6 +626,12 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         private Builder() {
         }
 
+        /**
+         * Build the MP JWT authentication provider.
+         *
+         * @return configured provider
+         * @throws DeploymentException if authentication is enabled and expected issuer is not configured
+         */
         @Override
         public JwtAuthProvider build() {
             if (verifyKeys == null) {
@@ -675,6 +681,11 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             } else {
                 decryptionKeys = LazyValue.create(() -> null);
                 defaultDecryptionJwk = LazyValue.create(() -> null);
+            }
+
+            if (authenticate && expectedIssuer == null) {
+                throw new DeploymentException("Expected JWT issuer (" + CONFIG_EXPECTED_ISSUER
+                                                      + ") must be configured for authentication");
             }
 
             if (loadOnStartup) {
@@ -1154,7 +1165,9 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         /**
-         * Expected issuer in incoming requests.
+         * Expected issuer in incoming requests. This or {@value JwtAuthProvider#CONFIG_EXPECTED_ISSUER}
+         * through {@link #config(Config)} must be configured unless {@link #authenticate(boolean)}
+         * is set to {@code false}.
          *
          * @param issuer name of issuer
          * @return updated builder instance

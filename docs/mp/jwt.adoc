@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 The main configuration point for JWT Auth is a JAX-RS Application class.
 As this class is discovered using CDI, it must have a bean defining annotation.
 
-Minimal required setup is done using `@LoginConfig(authMethod = "MP-JWT")`:
+Enable MP JWT authentication using `@LoginConfig(authMethod = "MP-JWT")`:
 
 [source,java]
 ----
@@ -67,6 +67,9 @@ Minimal required setup is done using `@LoginConfig(authMethod = "MP-JWT")`:
 public class ProtectedApplication extends Application{
 }
 ----
+
+Authenticated applications must also configure `mp.jwt.verify.issuer` so
+incoming tokens are accepted only from the expected issuer.
 
 == API
 
@@ -164,4 +167,3 @@ link:{microprofile-jwt-base-url}#_introduction[Eclipse MicroProfile Interoperabl
 
 * {microprofile-jwt-spec-url}[MicroProfile JWT Auth Spec]
 * https://github.com/eclipse/microprofile-jwt-auth[MicroProfile JWT Auth GitHub Repository]
-
