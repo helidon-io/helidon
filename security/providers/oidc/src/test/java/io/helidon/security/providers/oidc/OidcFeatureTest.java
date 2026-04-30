@@ -241,6 +241,47 @@ class OidcFeatureTest {
     }
 
     @Test
+    void testPostLoginRedirectFallsBackForNonLocalOriginalUri() {
+        OidcConfig queryParamConfig = OidcConfig.builder()
+                .clientId("id")
+                .clientSecret("secret")
+                .identityUri(URI.create("http://localhost:7774/identity"))
+                .tokenEndpointUri(URI.create("http://localhost:7774/token"))
+                .authorizationEndpointUri(URI.create("http://localhost:7774/authorize"))
+                .signJwk(JwkKeys.builder().build())
+                .oidcMetadataWellKnown(false)
+                .useParam(true)
+                .build();
+        OidcFeature queryParamFeature = OidcFeature.create(queryParamConfig);
+        JsonObject stateCookie = JsonObject.builder()
+                .set("originalUri", "https://example.com/test")
+                .build();
+
+        String redirectUri = queryParamFeature.postLoginRedirectUri(stateCookie,
+                                                                    Optional.of("id-token"),
+                                                                    "access-token",
+                                                                    DEFAULT_TENANT_ID);
+        redirectUri = queryParamFeature.updateRedirectCounter(request(), ServerResponseHeaders.create(), redirectUri);
+
+        assertThat(redirectUri, is("/index.html?accessToken=access-token&id_token=id-token&h_ra=1"));
+    }
+
+    @Test
+    void testPostLoginRedirectPreservesLocalOriginalUri() {
+        JsonObject stateCookie = JsonObject.builder()
+                .set("originalUri", "/raw%2Fpath?return=https%3A%2F%2Fexample.com%2Ftest")
+                .build();
+
+        String redirectUri = oidcFeature.postLoginRedirectUri(stateCookie,
+                                                              Optional.empty(),
+                                                              "access-token",
+                                                              DEFAULT_TENANT_ID);
+        redirectUri = oidcFeature.updateRedirectCounter(request(), ServerResponseHeaders.create(), redirectUri);
+
+        assertThat(redirectUri, is("/raw%2Fpath?return=https%3A%2F%2Fexample.com%2Ftest&h_ra=1"));
+    }
+
+    @Test
     void testOutbound() {
         String tokenContent = "huhahihohyhe";
         TokenCredential tokenCredential = TokenCredential.builder()

@@ -517,19 +517,9 @@ public final class OidcFeature implements HttpFeature {
         }
 
         //redirect to "originalUri"
-        String originalUri = stateCookie.stringValue("originalUri", DEFAULT_REDIRECT);
         ServerResponseHeaders headers = res.headers();
+        String originalUri = postLoginRedirectUri(stateCookie, idToken, accessToken, tenantName);
         res.status(Status.TEMPORARY_REDIRECT_307);
-        if (oidcConfig.useParam()) {
-            originalUri += (originalUri.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + accessToken;
-            if (idToken.isPresent()) {
-                originalUri += "&" + encode(oidcConfig.idTokenParamName()) + "=" + idToken.get();
-            }
-            if (!DEFAULT_TENANT_ID.equals(tenantName)) {
-                originalUri += "&" + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
-            }
-        }
-
         originalUri = updateRedirectCounter(req, headers, tenantName, originalUri);
         headers.add(HeaderNames.LOCATION, originalUri);
 
@@ -560,6 +550,38 @@ public final class OidcFeature implements HttpFeature {
         }
 
         return "done";
+    }
+
+    // Package-private test seam for validating the post-login Location value without invoking the token endpoint.
+    String postLoginRedirectUri(JsonObject stateCookie,
+                                Optional<String> idToken,
+                                String accessToken,
+                                String tenantName) {
+        String originalUri = OidcUtil.localRedirectUri(
+                stateCookie.stringValue("originalUri", DEFAULT_REDIRECT))
+                .orElse(DEFAULT_REDIRECT);
+        if (oidcConfig.useParam()) {
+            StringBuilder redirectUri = new StringBuilder(originalUri)
+                    .append(originalUri.contains("?") ? '&' : '?')
+                    .append(encode(oidcConfig.paramName()))
+                    .append('=')
+                    .append(accessToken);
+            if (idToken.isPresent()) {
+                redirectUri.append('&')
+                        .append(encode(oidcConfig.idTokenParamName()))
+                        .append('=')
+                        .append(idToken.get());
+            }
+            if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+                redirectUri.append('&')
+                        .append(encode(oidcConfig.tenantParamName()))
+                        .append('=')
+                        .append(encode(tenantName));
+            }
+            originalUri = redirectUri.toString();
+        }
+
+        return originalUri;
     }
 
     private String encode(String toEncode) {

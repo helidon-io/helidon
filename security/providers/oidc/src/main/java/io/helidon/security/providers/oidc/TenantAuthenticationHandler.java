@@ -584,18 +584,21 @@ class TenantAuthenticationHandler {
         List<String> origUri = providerRequest.env().headers()
                 .getOrDefault(Security.HEADER_ORIG_URI, List.of());
 
-        if (origUri.isEmpty()) {
-            URI targetUri = providerRequest.env().targetUri();
-            String query = targetUri.getQuery();
-            String path = targetUri.getPath();
-            if (query == null || query.isEmpty()) {
-                return path;
-            } else {
-                return path + "?" + query;
+        if (!origUri.isEmpty()) {
+            Optional<String> localUri = OidcUtil.localRedirectUri(origUri.getFirst());
+            if (localUri.isPresent()) {
+                return localUri.get();
             }
         }
 
-        return origUri.getFirst();
+        URI targetUri = providerRequest.env().targetUri();
+        String query = targetUri.getRawQuery();
+        String path = targetUri.getRawPath();
+        if (query == null || query.isEmpty()) {
+            return path;
+        } else {
+            return path + "?" + query;
+        }
     }
 
     private String encode(String state) {
