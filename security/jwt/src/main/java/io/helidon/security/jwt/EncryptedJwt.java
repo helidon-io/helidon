@@ -358,6 +358,9 @@ public final class EncryptedJwt {
         if (alg != null) {
             try {
                 supportedAlgorithm = SupportedAlgorithm.getValue(alg);
+                if (supportedAlgorithm == SupportedAlgorithm.RSA1_5) {
+                    errors.fatal("Value of the claim alg not supported. alg: " + alg);
+                }
             } catch (IllegalArgumentException e) {
                 errors.fatal("Value of the claim alg not supported. alg: " + alg);
             }
@@ -558,6 +561,9 @@ public final class EncryptedJwt {
 
         @Override
         public EncryptedJwt build() {
+            if (algorithm == SupportedAlgorithm.RSA1_5) {
+                throw new JwtException("JWE key encryption algorithm is not supported: " + algorithm);
+            }
             headersBuilder.algorithm(algorithm.toString());
             headersBuilder.encryption(encryption.toString());
             headersBuilder.contentType("JWT");
@@ -627,7 +633,10 @@ public final class EncryptedJwt {
                      new OAEPParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT)),
         /**
          * RSA1_5 declares that RSA/ECB/PKCS1Padding cipher will be used for content key encryption.
+         *
+         * @deprecated RSA1_5 is no longer supported for JWE key management.
          */
+        @Deprecated(since = "27.0.0", forRemoval = true)
         RSA1_5("RSA1_5", "RSA/ECB/PKCS1Padding", null);
 
         private final String algorithmName;
