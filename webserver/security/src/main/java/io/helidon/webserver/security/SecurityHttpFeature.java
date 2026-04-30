@@ -228,16 +228,12 @@ public final class SecurityHttpFeature implements HttpSecurity, HttpFeature, Wei
             }
             return true;
         }
-        if (!ctx.isAuthorized()) {
-            for (String role : roleHint) {
-                if (ctx.isUserInRole(role)) {
-                    return true;
-                }
+        for (String role : roleHint) {
+            if (ctx.isUserInRole(role)) {
+                return true;
             }
-            throw new ForbiddenException("This endpoint is restricted");
         }
-        // authorized through security already
-        return true;
+        throw new ForbiddenException("This endpoint is restricted");
     }
 
     @Override

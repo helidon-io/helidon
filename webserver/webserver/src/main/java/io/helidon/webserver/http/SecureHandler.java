@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,8 @@ public final class SecureHandler implements Handler {
     /**
      * Create a security handler that enforces authorization.
      *
-     * @param roleHint optional hint for role names the user is expected to be in
+     * @param roleHint optional role names; when specified, the built-in security feature requires the user to be in
+     *                 at least one of these roles
      * @return a new handler that requires authorization
      */
     public static SecureHandler authorize(String... roleHint) {
@@ -68,7 +69,8 @@ public final class SecureHandler implements Handler {
     /**
      * Add authorization requirement and create a new handler with combined setup.
      *
-     * @param roleHint optional hint for role names the user is expected to be in
+     * @param roleHint optional role names; when specified, the built-in security feature requires the user to be in
+     *                 at least one of these roles
      * @return a new handler that combines the existing authentication requirements and adds authorization requirement
      */
     public SecureHandler andAuthorize(String... roleHint) {
@@ -106,8 +108,8 @@ public final class SecureHandler implements Handler {
         }
 
         if (authorize) {
-            if (!securityContext.map(SecurityContext::isAuthorized).orElse(false)) {
-                // not authorized in a security provider
+            if (roleHint.length != 0 || !securityContext.map(SecurityContext::isAuthorized).orElse(false)) {
+                // not authorized in a security provider, or route roles still need to be validated
                 if (!req.security().authorize(req, res, roleHint)) {
                     return false;
                 }
