@@ -15,6 +15,7 @@
 #
 
 mp.jwt.verify.publickey.location: "verify-jwk.json"
+mp.jwt.verify.issuer: "jwt.example.com"
 
 security:
   jersey.analyzers:

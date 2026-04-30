@@ -22,11 +22,14 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.mp.MpConfigSources;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
@@ -45,16 +48,20 @@ import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.jwt.jwk.JwkOctet;
 import io.helidon.security.jwt.jwk.JwkRSA;
 
+import jakarta.enterprise.inject.spi.DeploymentException;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.jwt.Claims;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -188,6 +195,87 @@ public class JwtAuthProviderTest {
         when(atnRequest.endpointConfig()).thenReturn(ec);
 
         AuthenticationResponse authenticationResponse = provider.authenticate(atnRequest);
+
+        assertThat(authenticationResponse.service(), is(Optional.empty()));
+        assertThat(authenticationResponse.user(), is(Optional.empty()));
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+    }
+
+    @Test
+    public void testMissingExpectedIssuerFailsFast() {
+        DeploymentException exception = assertThrows(DeploymentException.class, () -> JwtAuthProvider.builder()
+                .verifyJwk(Resource.create("verify-jwk.json"))
+                .defaultKeyId("verify-rsa")
+                .addExpectedAudience("audience.application.id")
+                .build());
+
+        assertThat(exception.getMessage(), containsString(JwtAuthProvider.CONFIG_EXPECTED_ISSUER));
+    }
+
+    @Test
+    public void testMissingExpectedIssuerFailsFastFromConfig() {
+        ConfigProviderResolver resolver = ConfigProviderResolver.instance();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        org.eclipse.microprofile.config.Config originalConfig = resolver.getConfig(classLoader);
+        org.eclipse.microprofile.config.Config mpConfig = resolver.getBuilder()
+                .withSources(MpConfigSources.create(Map.of("mp.jwt.verify.publickey.location", "verify-jwk.json")))
+                .build();
+        Config providerConfig = Config.builder()
+                .sources(ConfigSources.create(Map.of(
+                        "mp-jwt-auth.atn-token.jwt-audience", "audience.application.id",
+                        "mp-jwt-auth.atn-token.default-key-id", "verify-rsa")))
+                .build()
+                .get("mp-jwt-auth");
+
+        try {
+            resolver.registerConfig(mpConfig, classLoader);
+
+            DeploymentException exception = assertThrows(DeploymentException.class, () -> JwtAuthProvider.create(providerConfig));
+
+            assertThat(exception.getMessage(), containsString(JwtAuthProvider.CONFIG_EXPECTED_ISSUER));
+        } finally {
+            resolver.registerConfig(originalConfig, classLoader);
+        }
+    }
+
+    @Test
+    public void testMissingExpectedIssuerAllowedWhenAuthenticationDisabled() {
+        JwtAuthProvider provider = JwtAuthProvider.builder()
+                .authenticate(false)
+                .verifyJwk(Resource.create("verify-jwk.json"))
+                .defaultKeyId("verify-rsa")
+                .addExpectedAudience("audience.application.id")
+                .build();
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(mock(ProviderRequest.class));
+
+        assertThat(authenticationResponse.service(), is(Optional.empty()));
+        assertThat(authenticationResponse.user(), is(Optional.empty()));
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
+    }
+
+    @Test
+    public void testRejectsUnexpectedIssuer() {
+        JwtAuthProvider provider = JwtAuthProvider.create(Config.create().get("security.providers.0.mp-jwt-auth"));
+        JwkKeys signKeys = JwkKeys.builder()
+                .resource(Resource.create("sign-jwk.json"))
+                .build();
+        Instant now = Instant.now();
+        Jwt jwt = Jwt.builder()
+                .subject("user1-id")
+                .preferredUsername("user1")
+                .issuer("unexpected.example.com")
+                .algorithm(JwkRSA.ALG_RS256)
+                .keyId("verify-rsa")
+                .issueTime(now)
+                .expirationTime(now.plus(1, ChronoUnit.HOURS))
+                .addAudience("audience.application.id")
+                .build();
+
+        SignedJwt signedJwt = SignedJwt.sign(jwt, signKeys.forKeyId("sign-rsa").orElseThrow());
+        signedJwt.verifySignature(verifyKeys).checkValid();
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(mockRequest(signedJwt.tokenContent()));
 
         assertThat(authenticationResponse.service(), is(Optional.empty()));
         assertThat(authenticationResponse.user(), is(Optional.empty()));

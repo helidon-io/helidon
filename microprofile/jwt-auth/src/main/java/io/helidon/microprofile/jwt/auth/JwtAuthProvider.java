@@ -786,6 +786,11 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
                 defaultDecryptionJwk = LazyValue.create(() -> null);
             }
 
+            if (authenticate && expectedIssuer == null) {
+                throw new DeploymentException("Expected JWT issuer (" + CONFIG_EXPECTED_ISSUER
+                                                      + ") must be configured for authentication");
+            }
+
             if (loadOnStartup) {
                 defaultJwk.get();
                 defaultDecryptionJwk.get();
