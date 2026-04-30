@@ -152,6 +152,14 @@ class TenantAuthenticationHandlerTest {
         when(providerRequest.env()).thenReturn(securityEnvironment);
 
         assertThat(authenticationHandler.origUri(providerRequest), is("/noQuery"));
+
+        securityEnvironment = SecurityEnvironment.builder()
+                .targetUri(URI.create("http://localhost:1234/raw%2Fpath?return=https%3A%2F%2Fexample.com%2Ftest"))
+                .build();
+        when(providerRequest.env()).thenReturn(securityEnvironment);
+
+        assertThat(authenticationHandler.origUri(providerRequest),
+                   is("/raw%2Fpath?return=https%3A%2F%2Fexample.com%2Ftest"));
     }
 
     @Test
@@ -180,6 +188,52 @@ class TenantAuthenticationHandlerTest {
         when(providerRequest.env()).thenReturn(securityEnvironment);
 
         assertThat(authenticationHandler.origUri(providerRequest), is("/noQuery"));
+    }
+
+    @Test
+    public void testOriginalUriIgnoresNonLocalHeader() {
+        OidcConfig oidcConfig = OidcConfig.builder()
+                .clientId("test")
+                .clientSecret("123")
+                .identityUri(URI.create("http://localhost:1234"))
+                .build();
+
+        Tenant tenant = mock(Tenant.class);
+        when(tenant.tenantConfig()).thenReturn(oidcConfig);
+
+        TenantAuthenticationHandler authenticationHandler = new TenantAuthenticationHandler(oidcConfig, tenant, false, true);
+        ProviderRequest providerRequest = mock(ProviderRequest.class);
+        SecurityEnvironment securityEnvironment = SecurityEnvironment.builder()
+                .header(Security.HEADER_ORIG_URI, "https://example.com/test")
+                .targetUri(URI.create("http://localhost:1234/test?someUri=value"))
+                .build();
+        when(providerRequest.env()).thenReturn(securityEnvironment);
+
+        assertThat(authenticationHandler.origUri(providerRequest), is("/test?someUri=value"));
+
+        securityEnvironment = SecurityEnvironment.builder()
+                .header(Security.HEADER_ORIG_URI, "//example.com/test")
+                .targetUri(URI.create("http://localhost:1234/noQuery"))
+                .build();
+        when(providerRequest.env()).thenReturn(securityEnvironment);
+
+        assertThat(authenticationHandler.origUri(providerRequest), is("/noQuery"));
+
+        securityEnvironment = SecurityEnvironment.builder()
+                .header(Security.HEADER_ORIG_URI, "/\\example.com/test")
+                .targetUri(URI.create("http://localhost:1234/backslash"))
+                .build();
+        when(providerRequest.env()).thenReturn(securityEnvironment);
+
+        assertThat(authenticationHandler.origUri(providerRequest), is("/backslash"));
+
+        securityEnvironment = SecurityEnvironment.builder()
+                .header(Security.HEADER_ORIG_URI, "/%2f%2fexample.com/test")
+                .targetUri(URI.create("http://localhost:1234/encodedSlash"))
+                .build();
+        when(providerRequest.env()).thenReturn(securityEnvironment);
+
+        assertThat(authenticationHandler.origUri(providerRequest), is("/encodedSlash"));
     }
 
     @Test

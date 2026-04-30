@@ -529,17 +529,30 @@ public final class OidcFeature implements HttpFeature {
         }
 
         //redirect to "originalUri"
-        String originalUri = stateCookie.stringValue("originalUri", DEFAULT_REDIRECT);
+        String originalUri = OidcUtil.localRedirectUri(
+                stateCookie.stringValue("originalUri", DEFAULT_REDIRECT))
+                .orElse(DEFAULT_REDIRECT);
         ServerResponseHeaders headers = res.headers();
         res.status(Status.TEMPORARY_REDIRECT_307);
         if (oidcConfig.useParam()) {
-            originalUri += (originalUri.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + accessToken;
+            StringBuilder redirectUri = new StringBuilder(originalUri)
+                    .append(originalUri.contains("?") ? '&' : '?')
+                    .append(encode(oidcConfig.paramName()))
+                    .append('=')
+                    .append(accessToken);
             if (idToken.isPresent()) {
-                originalUri += "&" + encode(oidcConfig.idTokenParamName()) + "=" + idToken.get();
+                redirectUri.append('&')
+                        .append(encode(oidcConfig.idTokenParamName()))
+                        .append('=')
+                        .append(idToken.get());
             }
             if (!DEFAULT_TENANT_ID.equals(tenantName)) {
-                originalUri += "&" + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
+                redirectUri.append('&')
+                        .append(encode(oidcConfig.tenantParamName()))
+                        .append('=')
+                        .append(encode(tenantName));
             }
+            originalUri = redirectUri.toString();
         }
 
         originalUri = updateRedirectCounter(req, headers, tenantName, originalUri);

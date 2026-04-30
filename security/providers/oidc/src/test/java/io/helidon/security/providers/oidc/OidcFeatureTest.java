@@ -17,16 +17,23 @@
 package io.helidon.security.providers.oidc;
 
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
@@ -77,6 +84,7 @@ class OidcFeatureTest {
             .authorizationEndpointUri(URI.create("http://localhost:7774/authorize"))
             .signJwk(JwkKeys.builder().build())
             .oidcMetadataWellKnown(false)
+            .useCookie(false)
             .build();
     private final OidcConfig oidcConfigCustomParam = OidcConfig.builder()
             .clientId("id")
@@ -241,6 +249,29 @@ class OidcFeatureTest {
     }
 
     @Test
+    void testPostLoginRedirectFallsBackForNonLocalOriginalUri() throws Exception {
+        String location = callbackLocation(true, "https://example.com/test", DEFAULT_TENANT_ID);
+
+        assertThat(location, is("/index.html?accessToken=access-token&h_ra=1"));
+    }
+
+    @Test
+    void testPostLoginRedirectFallsBackForNonLocalOriginalUriWithTenant() throws Exception {
+        String location = callbackLocation(true, "https://example.com/test", "tenant-one");
+
+        assertThat(location, is("/index.html?accessToken=access-token&h_tenant=tenant-one&h_ra=1"));
+    }
+
+    @Test
+    void testPostLoginRedirectPreservesLocalOriginalUri() throws Exception {
+        String location = callbackLocation(false,
+                                           "/raw%2Fpath?return=https%3A%2F%2Fexample.com%2Ftest",
+                                           DEFAULT_TENANT_ID);
+
+        assertThat(location, is("/raw%2Fpath?return=https%3A%2F%2Fexample.com%2Ftest&h_ra=1"));
+    }
+
+    @Test
     void testOutbound() {
         String tokenContent = "huhahihohyhe";
         TokenCredential tokenCredential = TokenCredential.builder()
@@ -345,5 +376,87 @@ class OidcFeatureTest {
                 .createCookie(encoded)
                 .build()
                 .toString();
+    }
+
+    private static String callbackLocation(boolean useParam, String originalUri, String tenantName) throws Exception {
+        AtomicInteger tokenRequestCount = new AtomicInteger();
+        AtomicReference<Parameters> tokenRequestParameters = new AtomicReference<>();
+        WebServer tokenServer = WebServer.builder()
+                .host("localhost")
+                .routing(routing -> routing.post("/token",
+                                                 (req, res) -> {
+                                                     tokenRequestCount.incrementAndGet();
+                                                     tokenRequestParameters.set(req.content().as(Parameters.class));
+                                                     res.header(HeaderValues.CONTENT_TYPE_JSON)
+                                                             .send("{\"access_token\":\"access-token\"}");
+                                                 }))
+                .build()
+                .start();
+
+        try {
+            OidcConfig config = OidcConfig.builder()
+                    .clientId("id")
+                    .clientSecret("secret")
+                    .identityUri(URI.create("http://localhost:" + tokenServer.port() + "/identity"))
+                    .tokenEndpointUri(URI.create("http://localhost:" + tokenServer.port() + "/token"))
+                    .authorizationEndpointUri(URI.create("http://localhost:" + tokenServer.port() + "/authorize"))
+                    .signJwk(JwkKeys.builder().build())
+                    .oidcMetadataWellKnown(false)
+                    .useParam(useParam)
+                    .useCookie(false)
+                    .build();
+            WebServer callbackServer = WebServer.builder()
+                    .host("localhost")
+                    .routing(routing -> OidcFeature.create(config).setup(routing))
+                    .build()
+                    .start();
+            try {
+                String state = "state-one";
+                String stateJson = JsonObject.builder()
+                        .set("state", state)
+                        .set("originalUri", originalUri)
+                        .build()
+                        .toString();
+                String encodedState = Base64.getEncoder()
+                        .encodeToString(stateJson.getBytes(StandardCharsets.UTF_8));
+                String stateCookie = config.stateCookieHandler().createCookie(encodedState).build().toString();
+                int cookieOptions = stateCookie.indexOf(';');
+                if (cookieOptions > 0) {
+                    stateCookie = stateCookie.substring(0, cookieOptions);
+                }
+
+                String callbackUri = "http://localhost:" + callbackServer.port()
+                        + config.redirectUri()
+                        + "?code=code&state=" + state;
+                if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+                    callbackUri += "&" + config.tenantParamName() + "=" + tenantName;
+                }
+                String expectedRedirectUri = "http://localhost:" + callbackServer.port() + config.redirectUri();
+                if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+                    expectedRedirectUri += "?" + config.tenantParamName() + "=" + tenantName;
+                }
+
+                HttpRequest request = HttpRequest.newBuilder(URI.create(callbackUri))
+                        .header(HeaderNames.COOKIE.defaultCase(), stateCookie)
+                        .GET()
+                        .build();
+                HttpResponse<Void> response = HttpClient.newHttpClient()
+                        .send(request, HttpResponse.BodyHandlers.discarding());
+
+                assertThat(response.statusCode(), is(Status.TEMPORARY_REDIRECT_307.code()));
+                Parameters tokenParams = tokenRequestParameters.get();
+                assertThat(tokenRequestCount.get(), is(1));
+                assertThat(tokenParams.first("grant_type").orElseThrow(), is("authorization_code"));
+                assertThat(tokenParams.first("code").orElseThrow(), is("code"));
+                assertThat(tokenParams.first("redirect_uri").orElseThrow(), is(expectedRedirectUri));
+                return response.headers()
+                        .firstValue(HeaderNames.LOCATION.defaultCase())
+                        .orElseThrow();
+            } finally {
+                callbackServer.stop();
+            }
+        } finally {
+            tokenServer.stop();
+        }
     }
 }
