@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -291,7 +291,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
         private HttpDigest.Algorithm digestAlgorithm = HttpDigest.Algorithm.MD5;
         private boolean noDigestQop = false;
         private long digestNonceTimeoutMillis = DEFAULT_DIGEST_NONCE_TIMEOUT;
-        private char[] digestServerSecret = randomSecret();
+        private char[] digestServerSecret;
 
         private Builder() {
         }
@@ -328,7 +328,7 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
         }
 
         private static char[] randomSecret() {
-            Random random = new Random();
+            SecureRandom random = new SecureRandom();
             String pwd = new BigInteger(130, random).toString(32);
 
             return pwd.toCharArray();
@@ -341,6 +341,9 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
             }
 
             Objects.requireNonNull(userStore, "User store must be configured");
+            if (digestServerSecret == null) {
+                digestServerSecret = randomSecret();
+            }
 
             return new HttpDigestAuthProvider(this);
         }
