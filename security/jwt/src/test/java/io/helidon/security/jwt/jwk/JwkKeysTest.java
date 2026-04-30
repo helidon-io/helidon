@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.security.jwt.jwk;
 import java.nio.charset.StandardCharsets;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -245,6 +246,14 @@ public class JwkKeysTest {
             assertThat(sig.length, not(0));
 
             assertThat(key.verifySignature(bytes, sig), is(true));
+
+            byte[] corruptedSig = sig.clone();
+            corruptedSig[corruptedSig.length - 1] ^= 1;
+            assertThat(key.verifySignature(bytes, corruptedSig), is(false));
+
+            byte[] oversizedSig = Arrays.copyOf(sig, sig.length + 1);
+            oversizedSig[oversizedSig.length - 1] = 1;
+            assertThat(key.verifySignature(bytes, oversizedSig), is(false));
         }, () -> fail("Octet Key with kid \"" + keyId + "\" should be present in "
                               + "jwk_data.json file"));
     }
@@ -275,6 +284,14 @@ public class JwkKeysTest {
             assertThat(sig.length, not(0));
 
             assertThat(key.verifySignature(bytes, sig), is(true));
+
+            byte[] corruptedSig = sig.clone();
+            corruptedSig[corruptedSig.length - 1] ^= 1;
+            assertThat(key.verifySignature(bytes, corruptedSig), is(false));
+
+            byte[] oversizedSig = Arrays.copyOf(sig, sig.length + 1);
+            oversizedSig[oversizedSig.length - 1] = 1;
+            assertThat(key.verifySignature(bytes, oversizedSig), is(false));
         }, () -> fail("Octet Key with kid \"" + keyId + "\" should be present in "
                               + "jwk_data.json file"));
     }
