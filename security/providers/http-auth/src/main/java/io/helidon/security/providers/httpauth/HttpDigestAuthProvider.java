@@ -319,7 +319,7 @@ public final class HttpDigestAuthProvider implements AuthenticationProvider {
         private HttpDigest.Algorithm digestAlgorithm = HttpDigest.Algorithm.MD5;
         private boolean noDigestQop = false;
         private long digestNonceTimeoutMillis = DEFAULT_DIGEST_NONCE_TIMEOUT;
-        private char[] digestServerSecret = randomSecret();
+        private char[] digestServerSecret;
 
         private Builder() {
         }
@@ -369,7 +369,7 @@ public final class HttpDigestAuthProvider implements AuthenticationProvider {
         }
 
         private static char[] randomSecret() {
-            Random random = new Random();
+            SecureRandom random = new SecureRandom();
             String pwd = new BigInteger(130, random).toString(32);
 
             return pwd.toCharArray();
@@ -382,6 +382,9 @@ public final class HttpDigestAuthProvider implements AuthenticationProvider {
             }
 
             Objects.requireNonNull(userStore, "User store must be configured");
+            if (digestServerSecret == null) {
+                digestServerSecret = randomSecret();
+            }
 
             return new HttpDigestAuthProvider(this);
         }

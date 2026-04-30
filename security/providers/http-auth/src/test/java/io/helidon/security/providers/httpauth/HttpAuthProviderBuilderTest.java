@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,10 @@ public class HttpAuthProviderBuilderTest {
                 .addAuthenticationProvider(basicAuthProvider(true, us), "basic_optional")
                 .addAuthenticationProvider(digestAuthProvider(false, false, us), "digest")
                 .addAuthenticationProvider(digestAuthProvider(false, true, us), "digest_optional")
+                .addAuthenticationProvider(HttpDigestAuthProvider.builder()
+                                                   .realm("mic")
+                                                   .userStore(us),
+                                           "digest_default")
                 .addAuthenticationProvider(digestAuthProvider(true, false, us), "digest_old")
                 .build();
     }
@@ -272,6 +276,38 @@ public class HttpAuthProviderBuilderTest {
         assertThat(authHeader, notNullValue());
         assertThat(authHeader.toLowerCase(), startsWith("digest realm=\"mic\""));
         assertThat(authHeader.toLowerCase(), containsString("qop="));
+    }
+
+    @Test
+    public void defaultDigestServerSecretAuthenticatesChallengeNonce() {
+        AuthenticationResponse response = context.atnClientBuilder()
+                .explicitProvider("digest_default")
+                .buildAndGet();
+
+        assertThat(response.status().isSuccess(), is(false));
+        assertThat(response.statusCode().orElse(200), is(401));
+
+        String authHeader = response.responseHeaders().get(HttpBasicAuthProvider.HEADER_AUTHENTICATION_REQUIRED).get(0);
+        assertThat(authHeader, notNullValue());
+        assertThat(authHeader.toLowerCase(), startsWith("digest realm=\"mic\""));
+
+        String noncePrefix = "nonce=" + QUOTE;
+        assertThat(authHeader, containsString(noncePrefix));
+        String nonce = authHeader.substring(authHeader.indexOf(noncePrefix) + noncePrefix.length());
+        nonce = nonce.substring(0, nonce.indexOf(QUOTE));
+
+        setHeader(context,
+                  HttpBasicAuthProvider.HEADER_AUTHENTICATION,
+                  buildDigest(HttpDigest.Qop.AUTH, "jack", "jackIsGreat", nonce, "mic"));
+        response = context.atnClientBuilder()
+                .explicitProvider("digest_default")
+                .buildAndGet();
+
+        assertThat(response.description().orElse("No description"),
+                   response.status(),
+                   is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(response.statusCode().orElse(200), is(200));
+        assertThat(getUsername(context), is("jack"));
     }
 
     @Test
