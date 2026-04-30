@@ -205,6 +205,16 @@ class ObserveTest {
     }
 
     @Test
+    void testConfigObserverUppercaseSecret(WebClient client) {
+        ClientResponseTyped<String> response = client.get("/observe/myConfig/values/app.DB_PASSWORD")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        String entity = response.entity();
+        assertThat("Entity: " + entity, entity, not(containsString("should not be seen")));
+    }
+
+    @Test
     void testConfigObserverValue(WebClient client) {
         ClientResponseTyped<String> response = client.get("/observe/myConfig/values/app.text")
                 .request(String.class);
