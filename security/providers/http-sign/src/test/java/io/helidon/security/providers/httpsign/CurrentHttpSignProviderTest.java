@@ -432,6 +432,38 @@ abstract class CurrentHttpSignProviderTest {
     }
 
     @Test
+    void testInboundAuthorizationSignatureRejectsCommaDelimitedQuotedAuthorizationValue() {
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+        headers.put("host", List.of("example.org"));
+        headers.put("date", List.of(INBOUND_DATE));
+
+        SecurityEnvironment signingEnv = SecurityEnvironment.builder(inboundTime())
+                .path("/my/resource")
+                .headers(headers)
+                .build();
+        String signatureHeader = signatureHeader(signingEnv,
+                                                 OutboundTargetDefinition.builder("myServiceKeyId")
+                                                         .hmacSecret("MyPasswordForHmac")
+                                                         .signedHeaders(signedHeadersNoAuthorization())
+                                                         .build(),
+                                                 false);
+        headers.put("Authorization", List.of("Signature " + signatureHeader + ", Digest username=\"u\""));
+
+        ProviderRequest request = mock(ProviderRequest.class);
+        when(request.env()).thenReturn(SecurityEnvironment.builder(inboundTime())
+                                      .path("/my/resource")
+                                      .headers(headers)
+                                      .build());
+
+        AuthenticationResponse atnResponse = getProvider().authenticate(request);
+
+        assertThat(atnResponse.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(atnResponse.description().orElse("Unknown problem"),
+                   containsString("Unexpected data after signature parameters"));
+    }
+
+    @Test
     void testInboundAuthorizationSignatureRejectsStaleDate() {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 

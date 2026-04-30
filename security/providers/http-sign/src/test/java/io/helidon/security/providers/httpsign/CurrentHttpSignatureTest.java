@@ -216,6 +216,35 @@ class CurrentHttpSignatureTest {
     }
 
     @Test
+    void testOutboundSigningUsesRequestedEmptyQuery() {
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        headers.put("DATE", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("Authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+        headers.put("host", List.of("example.org"));
+        SecurityEnvironment env = SecurityEnvironment.builder()
+                .path("/my/resource")
+                .queryParams(UriQuery.create("changed=true"))
+                .requestedPath(UriPath.create("/my%2Fresource"))
+                .requestedQuery(Optional.of(UriQuery.empty()))
+                .headers(headers)
+                .build();
+
+        HttpSignature signature = new HttpSignature("myServiceKeyId",
+                                                    "hmac-sha256",
+                                                    List.of("date",
+                                                            "host",
+                                                            "(request-target)",
+                                                            "authorization"),
+                                                    false);
+
+        assertThat(signature.getSignedString(null, env),
+                   is("date: Thu, 08 Jun 2014 18:32:30 GMT\n"
+                              + "host: example.org\n"
+                              + "(request-target): get /my%2Fresource?\n"
+                              + "authorization: basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+    }
+
+    @Test
     void testInboundValidationUsesRequestedTargetSnapshot() throws Exception {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         headers.put("DATE", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
@@ -345,6 +374,42 @@ class CurrentHttpSignatureTest {
                            List.of("date"),
                            Duration.ZERO)
                 .ifPresent(Assertions::fail);
+    }
+
+    @Test
+    void testVerifyRsaMissingSignedHeaderFailsValidation() {
+        HttpSignature signature = HttpSignature.fromHeader("keyId=\"rsa-key-12345\",algorithm=\"rsa-sha256\",headers=\"date "
+                                                                   + "host (request-target) authorization\","
+                                                                   + "signature=\"ptxE46kM/gV8L6Q0jcrY5Sxet7vy"
+                                                                   + "/rqldwxJfWT5ncbALbwvr4puc3/M0q8pT/srI"
+                                                                   + "/bLvtPPZxQN9flaWyHo2ieypRSRZe5/2FrcME"
+                                                                   + "+XuGNOu9BVJlCrALgLwi2VGJ3i2BIH2EvpLqF4TmM7AHIn"
+                                                                   + "/E6trWf30Kr90sTrk1ewx7kJ0bPVfY6Pv1mJpuA4MVr++BvvXMuGooMI"
+                                                                   + "+nepToPlseGgtnYMJPuTRwZJbTLo02yN1rKnRZauCxCCd0bgi9zhJRlX"
+                                                                   + "FuoLzthCgqHElCXVXrW+ZGACUaRDC+XawXg6eyMWp6GVegS/NVRnaqEk"
+                                                                   + "Bsl0hn7X/dmEXDDERyK66qn0WA==\"",
+                                                           false);
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        headers.put("DATE", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("host", List.of("example.org"));
+
+        InboundClientDefinition inboundClientDef = InboundClientDefinition.builder("rsa-key-12345")
+                .principalName("theService")
+                .publicKeyConfig(Keys.builder()
+                                         .keystore(keystore ->
+                                                           keystore.keystore(Resource.create(Paths.get(
+                                                                           "src/test/resources/keystore.p12")))
+                                                                   .passphrase("password")
+                                                                   .certAlias("service_cert"))
+                                         .build())
+                .build();
+
+        Optional<String> validation = signature.validate(buildSecurityEnv("/my/resource", headers),
+                                                         inboundClientDef,
+                                                         List.of("date"),
+                                                         Duration.ZERO);
+
+        assertThat(validation.orElse(""), containsString("Header authorization is required for signature"));
     }
 
     @Test

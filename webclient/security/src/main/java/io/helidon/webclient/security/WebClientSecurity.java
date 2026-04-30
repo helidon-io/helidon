@@ -144,9 +144,9 @@ public class WebClientSecurity implements WebClientService {
                     .queryParams(request.uri().query())
                     .requestedMethod(request.method().text())
                     .requestedPath(request.uri().path())
-                    .requestedQuery(request.uri().query().rawValue().isEmpty()
-                                            ? Optional.empty()
-                                            : Optional.of(request.uri().query()));
+                    .requestedQuery(request.uri().hasQuery()
+                                            ? Optional.of(request.uri().query())
+                                            : Optional.empty());
 
             request.headers()
                     .stream()

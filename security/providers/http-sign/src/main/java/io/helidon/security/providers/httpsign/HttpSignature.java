@@ -173,6 +173,14 @@ class HttpSignature {
                 headers = Arrays.asList(unquotedValue.split(" "));
                 break;
             default:
+                if (strict) {
+                    return new HttpSignature(keyId,
+                                             algorithm,
+                                             headers,
+                                             signature,
+                                             backwardCompatibleEol,
+                                             "Unexpected data after signature parameters");
+                }
                 LOGGER.log(Level.TRACE, () -> "Invalid signature header field: " + name + ": \"" + unquotedValue + "\"");
                 break;
 
@@ -405,6 +413,9 @@ class HttpSignature {
         } catch (SignatureException e) {
             LOGGER.log(Level.TRACE, "Signature exception", e);
             return Optional.of("SignatureException: " + e.getMessage());
+        } catch (SecurityException e) {
+            LOGGER.log(Level.TRACE, "Failed to validate rsa-sha256", e);
+            return Optional.of("Failed to validate rsa-sha256: " + e.getMessage());
         }
     }
 
@@ -445,7 +456,7 @@ class HttpSignature {
     }
 
     private byte[] getBytesToSign(SecurityEnvironment env, Map<String, List<String>> newHeaders) {
-        return getSignedString(newHeaders, env).getBytes(StandardCharsets.UTF_8);
+        return getSignedString(newHeaders, env, true).getBytes(StandardCharsets.UTF_8);
     }
 
     private byte[] getBytesToValidate(SecurityEnvironment env, Map<String, List<String>> newHeaders) {
@@ -453,7 +464,7 @@ class HttpSignature {
     }
 
     String getSignedString(Map<String, List<String>> newHeaders, SecurityEnvironment env) {
-        return getSignedString(newHeaders, env, false);
+        return getSignedString(newHeaders, env, true);
     }
 
     private String getSignedString(Map<String, List<String>> newHeaders,
