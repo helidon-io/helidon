@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,8 @@ final class GenerateBuilder {
                     })
                     .addMethod(method -> {
                         method.name("buildPrototype")
+                                .description("Create an instance of the prototype. Calling this method may update this builder"
+                                                     + " from providers and decorators, so repeated calls may have side effects.")
                                 .returnType(prototype)
                                 .addAnnotation(Annotations.OVERRIDE)
                                 .addContentLine("preBuildPrototype();")
@@ -94,6 +96,8 @@ final class GenerateBuilder {
             } else {
                 // build method returns the same as buildPrototype method
                 builder.addMethod(method -> method.name("build")
+                        .description("Create an instance from this builder. Calling this method may update this builder"
+                                             + " from providers and decorators, so repeated calls may have side effects.")
                         .addAnnotation(Annotations.OVERRIDE)
                         .returnType(runtimeType)
                         .addContentLine("return buildPrototype();"));

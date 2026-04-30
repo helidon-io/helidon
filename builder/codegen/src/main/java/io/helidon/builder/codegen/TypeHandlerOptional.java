@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.builder.codegen;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -64,7 +66,61 @@ class TypeHandlerOptional extends TypeHandlerBasic {
     }
 
     @Override
+    GeneratedMethod prepareBuilderSetter(Javadoc getterJavadoc) {
+        if (!optionalCollection()) {
+            return super.prepareBuilderSetter(getterJavadoc);
+        }
+
+        TypeName returnType = Utils.builderReturnType();
+        String name = option().name();
+
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(returnType)
+                .elementName(option().setterName())
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+
+        method.addParameterArgument(param -> param
+                .kind(ElementKind.PARAMETER)
+                .typeName(collectionParameterType())
+                .elementName(name)
+        );
+
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(" + name + ");");
+            option().decorator()
+                    .ifPresent(decorator -> {
+                        it.addContent("new ")
+                                .addContent(decorator)
+                                .addContent("().decorate(this, ");
+                        optionalDecoratorValue(it);
+                        it.addContentLine(");");
+                    });
+
+            it.addContent("this.")
+                    .addContent(name)
+                    .addContent(" = ");
+            mutableCollection(it, name);
+            it.addContentLine(";")
+                    .addContentLine("return self();");
+        };
+
+        return GeneratedMethod.builder()
+                .method(method.build())
+                .javadoc(setterJavadoc(getterJavadoc, name, ""))
+                .contentBuilder(contentConsumer)
+                .build();
+    }
+
+    @Override
     Optional<GeneratedMethod> prepareBuilderSetterDeclared(Javadoc getterJavadoc) {
+        if (optionalCollection()) {
+            return prepareOptionalCollectionSetterDeclared(getterJavadoc);
+        }
+
         TypeName typeName = asTypeArgument(TypeNames.OPTIONAL);
         TypeName returnType = Utils.builderReturnType();
 
@@ -116,6 +172,59 @@ class TypeHandlerOptional extends TypeHandlerBasic {
     }
 
     @Override
+    Optional<GeneratedMethod> prepareBuilderAddCollection(Javadoc getterJavadoc) {
+        if (!optionalCollection()) {
+            return Optional.empty();
+        }
+
+        TypeName returnType = Utils.builderReturnType();
+        String name = option().name();
+
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(returnType)
+                .elementName("add" + capitalize(option().name()))
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+
+        method.addParameterArgument(param -> param
+                .kind(ElementKind.PARAMETER)
+                .typeName(collectionParameterType())
+                .elementName(name)
+        );
+
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(" + name + ");");
+            option().decorator()
+                    .ifPresent(decorator -> {
+                        it.addContent("new ")
+                                .addContent(decorator)
+                                .addContent("().decorate(this, ");
+                        optionalDecoratorValue(it);
+                        it.addContentLine(");");
+                    });
+
+            it.addContentLine("if (this." + name + " == null) {")
+                    .addContent("this.")
+                    .addContent(name)
+                    .addContent(" = ");
+            emptyMutableCollection(it);
+            it.addContentLine(";")
+                    .addContentLine("}")
+                    .addContentLine("this." + name + ".addAll(" + name + ");")
+                    .addContentLine("return self();");
+        };
+
+        return Optional.of(GeneratedMethod.builder()
+                                   .method(method.build())
+                                   .javadoc(setterJavadoc(getterJavadoc, name, "add values to "))
+                                   .contentBuilder(contentConsumer)
+                                   .build());
+    }
+
+    @Override
     Optional<GeneratedMethod> prepareBuilderClear(Javadoc getterJavadoc) {
         TypeName returnType = Utils.builderReturnType();
 
@@ -159,5 +268,95 @@ class TypeHandlerOptional extends TypeHandlerBasic {
                 .addContent(".of(")
                 .addContent(optionName)
                 .addContent(")");
+    }
+
+    private Optional<GeneratedMethod> prepareOptionalCollectionSetterDeclared(Javadoc getterJavadoc) {
+        TypeName typeName = asTypeArgument(TypeNames.OPTIONAL);
+        TypeName returnType = Utils.builderReturnType();
+
+        String name = option().name();
+
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .typeName(returnType)
+                .elementName(option().setterName())
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+
+        method.addParameterArgument(param -> param
+                .kind(ElementKind.PARAMETER)
+                .typeName(typeName)
+                .elementName(name)
+        );
+
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(" + name + ");")
+                    .addContent(name)
+                    .addContent(".ifPresent(it -> this.")
+                    .addContent(name)
+                    .addContent(" = ");
+            mutableCollection(it, "it");
+            it.addContentLine(");")
+                    .addContentLine("return self();");
+        };
+
+        return Optional.of(GeneratedMethod.builder()
+                                   .method(method.build())
+                                   .javadoc(setterJavadoc(getterJavadoc, name, ""))
+                                   .contentBuilder(contentConsumer)
+                                   .build());
+    }
+
+    private boolean optionalCollection() {
+        return type().isList() || type().isSet();
+    }
+
+    private TypeName collectionParameterType() {
+        return TypeName.builder(collectionType())
+                .addTypeArgument(Utils.toWildcard(type().typeArguments().getFirst()))
+                .build();
+    }
+
+    private TypeName collectionType() {
+        return type().isList() ? TypeNames.LIST : TypeNames.SET;
+    }
+
+    private void optionalDecoratorValue(ContentBuilder<?> content) {
+        content.addContent(Optional.class)
+                .addContent(".of(")
+                .addContent(collectionType())
+                .addContent(".copyOf(")
+                .addContent(option().name())
+                .addContent("))");
+    }
+
+    private void mutableCollection(ContentBuilder<?> content, String source) {
+        if (type().isList()) {
+            content.addContent("new ")
+                    .addContent(ArrayList.class)
+                    .addContent("<>(")
+                    .addContent(source)
+                    .addContent(")");
+        } else {
+            content.addContent("new ")
+                    .addContent(LinkedHashSet.class)
+                    .addContent("<>(")
+                    .addContent(source)
+                    .addContent(")");
+        }
+    }
+
+    private void emptyMutableCollection(ContentBuilder<?> content) {
+        if (type().isList()) {
+            content.addContent("new ")
+                    .addContent(ArrayList.class)
+                    .addContent("<>()");
+        } else {
+            content.addContent("new ")
+                    .addContent(LinkedHashSet.class)
+                    .addContent("<>()");
+        }
     }
 }

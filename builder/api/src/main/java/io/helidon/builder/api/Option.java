@@ -95,17 +95,29 @@ public final class Option {
     }
 
     /**
-     * Mark option as sourced from a {@link java.util.ServiceLoader}.
+     * Mark option as sourced from services discovered by a {@link java.util.ServiceLoader}, or by Helidon Service
+     * Registry when {@link io.helidon.builder.api.Prototype.RegistrySupport} is enabled.
      * Use if the configuration may be provided by another module not known to us.
      * <p>
-     * To control whether to discover services or not, you can specify a key {@code config-key-discover-services}
-     * on the same level as the section for the provider based property. This is aligned with the generated methods on the
-     * builder, and allows for the shallowest possible configuration tree (this would  override {@link #discoverServices()}
-     * defined on this annotation).
+     * When the option is also {@link io.helidon.builder.api.Option.Configured}, discovered configured providers are
+     * used to create services from configuration.
      * <p>
-     * Also there is no difference regardless whether we return a single value, or a list of values.
-     * If the method returns a list, the provider configuration must be under config key {@code providers} under
-     * the configured option. On the same level as {@code providers}, there can be {@code discover-services} boolean
+     * A configured provider option uses the option's configured key as the provider configuration node. For example,
+     * if the provider option key is {@code my-providers}, provider entries are read from {@code my-providers}. There
+     * is no extra nested {@code providers} key unless the option itself is configured with that key.
+     * <p>
+     * To control whether to discover services or not for a configured provider option, you can specify a sibling
+     * boolean key named {@code <option-config-key>-discover-services}, such as
+     * {@code my-providers-discover-services}. This is aligned with the generated methods on the builder and overrides
+     * {@link #discoverServices()} defined on this annotation.
+     * <p>
+     * The configuration key rules are the same regardless whether the method returns a single value, a single
+     * {@link java.util.Optional} value, a list of values, or an optional list of values. A single value or optional
+     * value must have at most one configured provider entry.
+     * <p>
+     * When using an optional list, an absent configuration node does not by itself set the optional value; the value
+     * stays empty unless builder values or service discovery provide entries. An explicitly empty list or object
+     * configuration node produces {@code Optional.of(List.of())}.
      * <p>
      * Option called {@code myProvider} that returns a single provider, or an {@link java.util.Optional} provider example
      * in configuration:
@@ -134,20 +146,24 @@ public final class Option {
     @Retention(RetentionPolicy.CLASS)
     public @interface Provider {
         /**
-         * The service provider interface that is used to discover
-         * implementations. The type of the property is the service provided by that provider.
+         * The service provider interface, or service contract for a non-configured option, that is used to discover
+         * implementations. For configured provider options, the type of the property is the service provided by that
+         * provider.
          *
          * @return type of the provider
          */
         Class<?> value();
 
         /**
-         * Whether to discover all services using a service loader by default.
-         * When set to {@code true}, all services discovered by the service loader will be added (even if no configuration
-         * node exists for them). When set to {@code false}, only services that have a configuration node will be added.
-         * This can be overridden by {@code discover-services} configuration option under this option's key.
-         * In case the option is not {@link io.helidon.builder.api.Option.Configured}, this is always considered true,
-         * as otherwise this annotation would not make any sense (i.e. it would never provide a value).
+         * Whether to discover services by default.
+         * When set to {@code true}, services discovered by the service loader, or by Helidon Service Registry if
+         * {@link io.helidon.builder.api.Prototype.RegistrySupport} is enabled, are used even if no configuration node
+         * exists for them. When set to {@code false}, configured provider options use only services that have a
+         * configuration node, and non-configured options ignore automatic discovery.
+         * For configured provider options, this can be overridden by a sibling configuration option named
+         * {@code <option-config-key>-discover-services}.
+         * In case the option is not {@link io.helidon.builder.api.Option.Configured}, this value initializes the
+         * generated discovery flag, which can still be changed using the generated builder method.
          *
          * @return whether to discover services by default for a provider
          */

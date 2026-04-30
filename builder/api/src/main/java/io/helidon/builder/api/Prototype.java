@@ -52,6 +52,9 @@ public final class Prototype {
         /**
          * Create an instance of the {@link Prototype}. This method is available on
          * all generated builders for {@link Prototype.Blueprint}.
+         * <p>
+         * Calling this method may update the builder from providers and decorators, so repeated calls may have side
+         * effects such as repeated provider discovery.
          *
          * @return an instance of the setup object created from this builder
          */
