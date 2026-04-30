@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,11 +31,14 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.microprofile.testing.AddConfigBlock;
+import io.helidon.microprofile.testing.AddConfigBlocks;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.AddExtension;
 import io.helidon.microprofile.testing.junit5.DisableDiscovery;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
+import io.helidon.service.registry.Services;
 
 import com.oracle.bmc.monitoring.Monitoring;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
@@ -54,6 +57,7 @@ import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
 import jakarta.enterprise.inject.spi.configurator.BeanConfigurator;
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -86,6 +90,11 @@ class OciMetricsCdiExtensionTest {
     private static CountDownLatch countDownLatch = new CountDownLatch(1);
     private static PostMetricDataDetails postMetricDataDetails;
     private static boolean activateOciMetricsSupportIsInvoked;
+
+    @BeforeAll
+    static void beforeAll() {
+        Services.set(Monitoring.class, MockOciMonitoringExtension.getMockedMonitoring());
+    }
 
     @AfterEach
     void resetState() {
@@ -179,7 +188,7 @@ class OciMetricsCdiExtensionTest {
             }
         }
 
-        Monitoring getMockedMonitoring() {
+        static Monitoring getMockedMonitoring() {
             // Use Proxy to mock only getEndPoint() and postMetricDataDetails() methods of the Monitoring interface,
             // as those are the only ones needed by the test
             return
@@ -212,16 +221,16 @@ class OciMetricsCdiExtensionTest {
         }
 
         void afterBeanDiscovery(@Observes AfterBeanDiscovery event) {
-            if (monitoringFound) {
-                BeanConfigurator<Object> beanConfigurator = event.addBean()
-                        .types(Monitoring.class)
-                        .scope(ApplicationScoped.class)
-                        .addQualifiers(monitoringQualifiers);
-                beanConfigurator = monitoringQualifiers != null ? beanConfigurator.addQualifiers(monitoringQualifiers) :
-                        beanConfigurator.addQualifier(Default.Literal.INSTANCE);
-                // Add the mocked Monitoring as a bean
-                beanConfigurator.produceWith(obj -> getMockedMonitoring());
-            } else {
+            if (!monitoringFound) {
+//                Services.set(Monitoring.class, getMockedMonitoring());
+//                BeanConfigurator<Object> beanConfigurator = event.addBean()
+//                        .types(Monitoring.class)
+//                        .scope(ApplicationScoped.class)
+//                        .addQualifiers(monitoringQualifiers);
+//                beanConfigurator = monitoringQualifiers != null ? beanConfigurator.addQualifiers(monitoringQualifiers) :
+//                        beanConfigurator.addQualifier(Default.Literal.INSTANCE);
+//                // Add the mocked Monitoring as a bean
+//                beanConfigurator.produceWith(obj -> getMockedMonitoring());
                 throw new IllegalStateException("Monitoring was never injected. Check if OciMetricsBean.registerOciMetrics() "
                                                             + "has changed and does not inject Monitoring anymore.");
             }
