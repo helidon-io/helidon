@@ -544,7 +544,7 @@ public class JaxRsService implements HttpService {
             String prefix = (req.isSecure() ? "https" : "http") + "://" + req.authority();
             String serverBasePath = prefix + processedBasePath;
             String requestPath = prefix + rawPath;
-            if (!req.query().isEmpty()) {
+            if (req.prologue().hasQuery()) {
                 requestPath = requestPath + "?" + req.query().rawValue();
             }
             return new BaseUriRequestUri(URI.create(serverBasePath), URI.create(requestPath));

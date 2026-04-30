@@ -16,6 +16,7 @@
 
 package io.helidon.http.http2;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 
 import io.helidon.common.buffers.BufferData;
@@ -33,6 +34,7 @@ import org.mockito.Mockito;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http2HeadersTest {
     private static final HeaderName CUSTOM_HEADER_NAME = HeaderNames.create("custom-key");
@@ -183,6 +185,59 @@ class Http2HeadersTest {
         assertThat(actual, is(expected));
     }
 
+    @Test
+    void testRequestRejectsHostAuthorityMismatch() {
+        String hexEncoded = requestHeaders("signed.example", "attacker.example");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
+    void testRequestAcceptsMatchingHostAuthority() {
+        String hexEncoded = requestHeaders("signed.example", "signed.example");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        http2Headers.validateRequest();
+
+        assertThat(http2Headers.httpHeaders().get(HeaderNames.HOST).get(), is("signed.example"));
+    }
+
+    @Test
+    void testRequestAcceptsNormalizedHostAuthority() {
+        String hexEncoded = requestHeaders("Signed.Example:80", "signed.example");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        http2Headers.validateRequest();
+    }
+
+    @Test
+    void testRequestRejectsMissingHostAndAuthority() {
+        String hexEncoded = "82 86 84";
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
+    void testRequestRejectsRepeatedHostWithAuthority() {
+        String hexEncoded = requestHeaders("signed.example", "signed.example", "signed.example");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
     /*
     https://www.rfc-editor.org/rfc/rfc7541.html#appendix-C.4
     */
@@ -273,5 +328,28 @@ class Http2HeadersTest {
                                    dynamicTable,
                                    Http2HuffmanDecoder.create(),
                                    new Http2FrameData(header, data));
+    }
+
+    private static String requestHeaders(String authority, String... hostValues) {
+        StringBuilder headers = new StringBuilder("82 86 84 ");
+        headers.append(literalWithIndexedName(1, authority));
+        for (String hostValue : hostValues) {
+            headers.append(' ')
+                    .append(literalWithNewName("host", hostValue));
+        }
+        return headers.toString();
+    }
+
+    private static String literalWithIndexedName(int index, String value) {
+        return "4" + index + " " + lengthAndValue(value);
+    }
+
+    private static String literalWithNewName(String name, String value) {
+        return "40 " + lengthAndValue(name) + " " + lengthAndValue(value);
+    }
+
+    private static String lengthAndValue(String value) {
+        byte[] bytes = value.getBytes(StandardCharsets.US_ASCII);
+        return String.format("%02x %s", bytes.length, HexFormat.of().formatHex(bytes));
     }
 }

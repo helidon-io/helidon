@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,27 @@
 
 package io.helidon.microprofile.security;
 
+import java.net.URI;
+import java.util.List;
+import java.util.Optional;
+
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityClientBuilder;
 import io.helidon.security.SecurityContext;
+import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.integration.common.SecurityTracing;
 
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.server.ContainerRequest;
+import org.glassfish.jersey.server.ExtendedUriInfo;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -170,5 +180,91 @@ class SecurityFilterTest {
 
         assertThat(response.getStatus(), is(403));
         assertThat(message, is("Unit-test"));
+    }
+
+    @Test
+    void testBoundaryRequestTargetValues() {
+        SecurityContext securityContext = security.createContext("testBoundaryRequestTarget");
+        SecurityFilterCommon filter = new TestSecurityFilter(security);
+        ContainerRequest request = mock(ContainerRequest.class);
+        ExtendedUriInfo uriInfo = mock(ExtendedUriInfo.class);
+        URI requestUri = URI.create("http://example.org/raw%2Fresource?");
+        MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
+
+        headers.put("Host", List.of("example.org"));
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getUriInfo()).thenReturn(uriInfo);
+        when(request.getHeaders()).thenReturn(headers);
+        when(uriInfo.getRequestUri()).thenReturn(requestUri);
+
+        filter.doFilter(request, securityContext);
+
+        SecurityEnvironment env = securityContext.env();
+        assertThat(env.requestedMethod(), is("POST"));
+        assertThat(env.requestedPath().rawPath(), is("/raw%2Fresource"));
+        assertThat(env.requestedQuery().isPresent(), is(true));
+        assertThat(env.requestedQuery().orElseThrow().rawValue(), is(""));
+    }
+
+    @Test
+    void testExistingBoundaryRequestTargetValuesArePreserved() {
+        SecurityContext securityContext = security.createContext("testExistingBoundaryRequestTarget");
+        securityContext.env(SecurityEnvironment.builder()
+                                    .targetUri(URI.create("http://example.org/raw%2Fresource?"))
+                                    .method("POST")
+                                    .path("/raw/resource")
+                                    .requestedMethod("POST")
+                                    .requestedPath(UriPath.create("/raw%2Fresource"))
+                                    .requestedQuery(Optional.of(UriQuery.empty()))
+                                    .build());
+        SecurityFilterCommon filter = new TestSecurityFilter(security);
+        ContainerRequest request = mock(ContainerRequest.class);
+        ExtendedUriInfo uriInfo = mock(ExtendedUriInfo.class);
+        URI requestUri = URI.create("http://example.org/raw/resource");
+        MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
+
+        headers.put("Host", List.of("example.org"));
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getUriInfo()).thenReturn(uriInfo);
+        when(request.getHeaders()).thenReturn(headers);
+        when(uriInfo.getRequestUri()).thenReturn(requestUri);
+
+        filter.doFilter(request, securityContext);
+
+        SecurityEnvironment env = securityContext.env();
+        assertThat(env.requestedMethod(), is("POST"));
+        assertThat(env.requestedPath().rawPath(), is("/raw%2Fresource"));
+        assertThat(env.requestedQuery().isPresent(), is(true));
+        assertThat(env.requestedQuery().orElseThrow().rawValue(), is(""));
+    }
+
+    private static final class TestSecurityFilter extends SecurityFilterCommon {
+        private static final System.Logger LOGGER = System.getLogger(TestSecurityFilter.class.getName());
+
+        private TestSecurityFilter(Security security) {
+            super(security, new FeatureConfig());
+        }
+
+        @Override
+        protected System.Logger logger() {
+            return LOGGER;
+        }
+
+        @Override
+        protected void processSecurity(ContainerRequestContext request,
+                                       SecurityFilterContext context,
+                                       SecurityTracing tracing,
+                                       SecurityContext securityContext) {
+        }
+
+        @Override
+        protected SecurityFilterContext initRequestFiltering(ContainerRequestContext requestContext) {
+            SecurityFilterContext context = new SecurityFilterContext();
+            SecurityDefinition methodDef = new SecurityDefinition(false, false);
+
+            context.methodSecurity(methodDef);
+            context.resourceName("jax-rs");
+            return configureContext(context, requestContext, requestContext.getUriInfo());
+        }
     }
 }

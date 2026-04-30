@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,21 @@ public final class DateTime {
      */
     public static ZonedDateTime parse(String text) {
         return DateTimeHelper.parse(text);
+    }
+
+    /**
+     * Parse provided text to {@link java.time.ZonedDateTime} using any possible date / time format specified
+     * by <a href="https://tools.ietf.org/html/rfc2616">RFC2616 Hypertext Transfer Protocol</a>.
+     * <p>
+     * The reference time is used only for the obsolete RFC850 two-digit year window.
+     *
+     * @param text a text to parse.
+     * @param referenceTime time used to resolve obsolete two-digit years
+     * @return parsed date time.
+     * @throws java.time.format.DateTimeParseException if not in any of supported formats.
+     */
+    public static ZonedDateTime parse(String text, ZonedDateTime referenceTime) {
+        return DateTimeHelper.parse(text, referenceTime);
     }
 
     /**

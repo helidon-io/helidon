@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -132,12 +133,31 @@ abstract class SecurityFilterCommon {
         Map<String, List<String>> allHeaders = new HashMap<>(filterContext.headers());
         allHeaders.put(Security.HEADER_ORIG_URI, List.of(origRequest));
 
+        SecurityEnvironment currentEnvironment = securityContext.env();
+        boolean hasBoundaryEnvironment = currentEnvironment.targetUri() != null;
+        String requestedMethod = filterContext.method();
+        UriPath requestedPath = requestUri.getRawPath() == null || requestUri.getRawPath().isEmpty()
+                ? UriPath.root()
+                : UriPath.create(requestUri.getRawPath());
+        Optional<UriQuery> requestedQuery = requestUri.getRawQuery() == null
+                ? Optional.empty()
+                : Optional.of(UriQuery.create(requestUri.getRawQuery()));
+
+        if (hasBoundaryEnvironment) {
+            requestedMethod = currentEnvironment.requestedMethod();
+            requestedPath = currentEnvironment.requestedPath();
+            requestedQuery = currentEnvironment.requestedQuery();
+        }
+
         SecurityEnvironment.Builder envBuilder = SecurityEnvironment.builder(security.serverTime())
                 .transport(requestUri.getScheme())
                 .path(filterContext.resourcePath())
                 .targetUri(filterContext.targetUri())
                 .method(filterContext.method())
                 .queryParams(filterContext.queryParams())
+                .requestedMethod(requestedMethod)
+                .requestedPath(requestedPath)
+                .requestedQuery(requestedQuery)
                 .headers(allHeaders)
                 .addAttribute("resourceType", filterContext.resourceName());
 

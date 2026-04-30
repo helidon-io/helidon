@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ public class ClientUri implements UriInfo {
 
     private UriInfo.Builder uriBuilder;
     private boolean skipUriEncoding = false;
+    private boolean emptyQueryDelimiter;
 
     private ClientUri() {
         this.base = null;
@@ -45,6 +46,7 @@ public class ClientUri implements UriInfo {
         this.uriBuilder = UriInfo.builder(base);
         this.skipUriEncoding = baseUri.skipUriEncoding;
         this.query = UriQueryWriteable.create().from(baseUri.query());
+        this.emptyQueryDelimiter = baseUri.emptyQueryDelimiter;
     }
 
     private ClientUri(UriInfo baseUri) {
@@ -179,6 +181,7 @@ public class ClientUri implements UriInfo {
         if (uri.isAbsolute()) {
             this.uriBuilder = UriInfo.builder();
             this.query.clear();
+            this.emptyQueryDelimiter = false;
         }
 
         if (uri.getScheme() != null) {
@@ -196,7 +199,10 @@ public class ClientUri implements UriInfo {
         String queryString = uri.getRawQuery();
         if (queryString != null) {
             // class URI does not decode +'s, so we do it here
-            query.fromQueryString(queryString.replaceAll("\\+", "%20"));
+            if (!queryString.isEmpty()) {
+                query.fromQueryString(queryString.replaceAll("\\+", "%20"));
+            }
+            emptyQueryDelimiter = queryString.isEmpty();
         }
 
         if (uri.getRawFragment() != null) {
@@ -225,6 +231,9 @@ public class ClientUri implements UriInfo {
      */
     public ClientUri resolve(ClientUri uri) {
         this.uriBuilder.from(uri);
+        this.query.clear();
+        this.query.from(uri.query());
+        this.emptyQueryDelimiter = uri.emptyQueryDelimiter;
         return this;
     }
 
@@ -241,6 +250,15 @@ public class ClientUri implements UriInfo {
     @Override
     public UriQuery query() {
         return query;
+    }
+
+    /**
+     * Whether this URI has a query delimiter.
+     *
+     * @return whether query delimiter is present
+     */
+    public boolean hasQuery() {
+        return emptyQueryDelimiter || !query.rawValue().isEmpty();
     }
 
     @Override
@@ -305,13 +323,11 @@ public class ClientUri implements UriInfo {
         String queryString = skipUriEncoding ? info.query().value() : info.query().rawValue();
         String path = skipUriEncoding ? info.path().path() : info.path().rawPath();
 
-        boolean hasQuery = !queryString.isEmpty();
-
         if (path.isEmpty()) {
             path = "/";
         }
 
-        if (hasQuery) {
+        if (hasQuery()) {
             path = path + '?' + queryString;
         }
 
@@ -328,7 +344,10 @@ public class ClientUri implements UriInfo {
             int i = path.indexOf('?');
             if (i > -1) {
                 String queryString = path.substring(i + 1);
-                query.fromQueryString(queryString);
+                if (!queryString.isEmpty()) {
+                    query.fromQueryString(queryString);
+                }
+                emptyQueryDelimiter = queryString.isEmpty();
                 path = path.substring(0, i);
             }
         }

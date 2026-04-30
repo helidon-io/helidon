@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 
+import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.security.util.AbacSupport;
@@ -42,6 +44,9 @@ import io.helidon.security.util.AbacSupport;
  * <li>uri: target URI that was requested</li>
  * <li>path: path that was requested</li>
  * <li>method: method of the request</li>
+ * <li>requestedMethod: operation name observed at the request boundary</li>
+ * <li>requestedPath: resource path component observed at the request boundary, expressed as a URI path</li>
+ * <li>requestedQuery: optional resource query component observed at the request boundary, expressed as a URI query</li>
  * <li>transport: transport of the request (e.g. http)</li>
  * <li>headers: transport headers of the request (map)</li>
  * </ul>
@@ -56,6 +61,9 @@ public class SecurityEnvironment implements AbacSupport {
     private final Optional<String> path;
     private final Map<String, List<String>> headers;
     private final UriQuery queryParams;
+    private final String requestedMethod;
+    private final UriPath requestedPath;
+    private final Optional<UriQuery> requestedQuery;
 
     private SecurityEnvironment(Builder builder) {
         BasicAttributes basicAttributes = BasicAttributes.create(builder.attributes);
@@ -68,12 +76,30 @@ public class SecurityEnvironment implements AbacSupport {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         headers.putAll(builder.headers);
         this.headers = Collections.unmodifiableMap(headers);
-        this.queryParams = builder.queryParams;
+        this.queryParams = copy(builder.queryParams);
+        this.requestedMethod = builder.requestedMethod == null ? method : builder.requestedMethod;
+        if (builder.requestedPath == null) {
+            String requestedPath = path.orElse(null);
+            this.requestedPath = requestedPath == null || requestedPath.isEmpty()
+                    ? UriPath.root()
+                    : UriPath.create(requestedPath);
+        } else {
+            this.requestedPath = builder.requestedPath;
+        }
+        if (builder.requestedQuery == null) {
+            String rawQuery = this.queryParams.rawValue();
+            this.requestedQuery = rawQuery.isEmpty() ? Optional.empty() : Optional.of(UriQuery.create(rawQuery));
+        } else {
+            this.requestedQuery = builder.requestedQuery;
+        }
 
         basicAttributes.put("time", time);
         basicAttributes.put("uri", targetUri);
         basicAttributes.put("path", path);
         basicAttributes.put("method", method);
+        basicAttributes.put("requestedMethod", requestedMethod);
+        basicAttributes.put("requestedPath", requestedPath);
+        basicAttributes.put("requestedQuery", requestedQuery);
         basicAttributes.put("transport", transport);
         basicAttributes.put("headers", headers);
         this.properties = basicAttributes;
@@ -167,6 +193,43 @@ public class SecurityEnvironment implements AbacSupport {
     }
 
     /**
+     * Operation name as observed by the integration at the request boundary.
+     * <p>
+     * This is a boundary snapshot and does not track later changes to {@link #method()}.
+     * For request protocols with method semantics, this is the method value received from or sent to the peer.
+     *
+     * @return requested operation name, defaults to {@link #method()}
+     */
+    public String requestedMethod() {
+        return requestedMethod;
+    }
+
+    /**
+     * Resource path component as observed by the integration at the request boundary, expressed as a URI path.
+     * <p>
+     * This is a boundary snapshot and does not track later changes to {@link #path()}.
+     * Integrations for protocols without native URI paths may map their resource selector to URI path semantics.
+     *
+     * @return requested resource path component
+     */
+    public UriPath requestedPath() {
+        return requestedPath;
+    }
+
+    /**
+     * Resource query component as observed by the integration at the request boundary, expressed as a URI query.
+     * <p>
+     * This is a boundary snapshot and does not track later changes to {@link #queryParams()}.
+     * An empty optional means no query delimiter was present; an optional empty query means the delimiter was present
+     * with no query content.
+     *
+     * @return requested resource query component
+     */
+    public Optional<UriQuery> requestedQuery() {
+        return requestedQuery;
+    }
+
+    /**
      * Return type of transport (such as http, https, jms etc.).
      * Transport should be case insensitive, yet I recommend using all lower case.
      * For the purpose of this method, http and https are two separate transports!
@@ -183,7 +246,7 @@ public class SecurityEnvironment implements AbacSupport {
      * @return builder to build a new environment overriding only needed values with a new timestamp
      */
     public Builder derive() {
-        return builder(timeProvider)
+        Builder builder = builder(timeProvider)
                 .attributes(properties)
                 .targetUri(targetUri)
                 .method(method)
@@ -191,6 +254,12 @@ public class SecurityEnvironment implements AbacSupport {
                 .path(path.orElse(null))
                 .headers(headers)
                 .queryParams(queryParams);
+
+        builder.requestedMethod = requestedMethod;
+        builder.requestedPath = requestedPath;
+        builder.requestedQuery = requestedQuery;
+
+        return builder;
     }
 
     /**
@@ -219,6 +288,10 @@ public class SecurityEnvironment implements AbacSupport {
         return queryParams;
     }
 
+    private static UriQuery copy(UriQuery query) {
+        return UriQuery.create(query.rawValue());
+    }
+
     /**
      * A fluent API builder for {@link SecurityEnvironment}.
      */
@@ -233,7 +306,7 @@ public class SecurityEnvironment implements AbacSupport {
         public static final String DEFAULT_METHOD = "GET";
 
         private final Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        private UriQueryWriteable queryParams = UriQueryWriteable.create();
+        private UriQuery queryParams = UriQueryWriteable.create();
         private SecurityTime timeProvider;
         private ZonedDateTime time;
         private BasicAttributes attributes = BasicAttributes.create();
@@ -241,6 +314,12 @@ public class SecurityEnvironment implements AbacSupport {
         private String path;
         private String method = DEFAULT_METHOD;
         private String transport = DEFAULT_TRANSPORT;
+        private String requestedMethod;
+        private UriPath requestedPath;
+        private Optional<UriQuery> requestedQuery;
+        private boolean requestedMethodExplicit;
+        private boolean requestedPathExplicit;
+        private boolean requestedQueryExplicit;
 
         private Builder(SecurityTime timeProvider) {
             this.timeProvider = timeProvider;
@@ -339,6 +418,9 @@ public class SecurityEnvironment implements AbacSupport {
          */
         public Builder path(String path) {
             this.path = path;
+            if (!requestedPathExplicit) {
+                this.requestedPath = null;
+            }
             return this;
         }
 
@@ -351,6 +433,55 @@ public class SecurityEnvironment implements AbacSupport {
          */
         public Builder method(String method) {
             this.method = method;
+            if (!requestedMethodExplicit) {
+                this.requestedMethod = null;
+            }
+            return this;
+        }
+
+        /**
+         * Configure the operation name as observed at the request boundary.
+         * <p>
+         * This is a boundary snapshot and will not be recomputed from later changes to {@link #method(String)}.
+         *
+         * @param requestedMethod boundary operation name
+         * @return this instance
+         */
+        public Builder requestedMethod(String requestedMethod) {
+            this.requestedMethod = Objects.requireNonNull(requestedMethod);
+            this.requestedMethodExplicit = true;
+            return this;
+        }
+
+        /**
+         * Configure the resource path component as observed at the request boundary, expressed as a URI path.
+         * <p>
+         * This is a boundary snapshot and will not be recomputed from later changes to {@link #path(String)}.
+         * Integrations for protocols without native URI paths may map their resource selector to URI path semantics.
+         *
+         * @param requestedPath boundary resource path
+         * @return this instance
+         */
+        public Builder requestedPath(UriPath requestedPath) {
+            this.requestedPath = Objects.requireNonNull(requestedPath);
+            this.requestedPathExplicit = true;
+            return this;
+        }
+
+        /**
+         * Configure the resource query component as observed at the request boundary, expressed as a URI query.
+         * <p>
+         * This is a boundary snapshot and will not be recomputed from later changes to {@link #queryParams(UriQuery)}.
+         * An empty optional means no query delimiter was present; an optional empty query means the delimiter was present
+         * with no query content.
+         *
+         * @param requestedQuery boundary resource query
+         * @return this instance
+         */
+        public Builder requestedQuery(Optional<UriQuery> requestedQuery) {
+            Objects.requireNonNull(requestedQuery);
+            this.requestedQuery = requestedQuery.map(SecurityEnvironment::copy);
+            this.requestedQueryExplicit = true;
             return this;
         }
 
@@ -386,7 +517,10 @@ public class SecurityEnvironment implements AbacSupport {
          * @return this instance
          */
         public Builder queryParam(String paramName, String value) {
-            this.queryParams.set(paramName, value);
+            writableQueryParams().set(paramName, value);
+            if (!requestedQueryExplicit) {
+                this.requestedQuery = null;
+            }
             return this;
         }
 
@@ -399,7 +533,10 @@ public class SecurityEnvironment implements AbacSupport {
          * @return this instance
          */
         public Builder queryParam(String paramName, List<String> values) {
-            this.queryParams.set(paramName, values.toArray(new String[0]));
+            writableQueryParams().set(paramName, values.toArray(new String[0]));
+            if (!requestedQueryExplicit) {
+                this.requestedQuery = null;
+            }
             return this;
         }
 
@@ -410,7 +547,10 @@ public class SecurityEnvironment implements AbacSupport {
          * @return this instance
          */
         public Builder queryParams(UriQuery queryParams) {
-            queryParams.toMap().forEach(this::queryParam);
+            this.queryParams = Objects.requireNonNull(queryParams);
+            if (!requestedQueryExplicit) {
+                this.requestedQuery = null;
+            }
             return this;
         }
 
@@ -421,7 +561,21 @@ public class SecurityEnvironment implements AbacSupport {
          */
         public Builder clearQueryParams() {
             this.queryParams = UriQueryWriteable.create();
+            if (!requestedQueryExplicit) {
+                this.requestedQuery = null;
+            }
             return this;
+        }
+
+        private UriQueryWriteable writableQueryParams() {
+            if (queryParams instanceof UriQueryWriteable writeable) {
+                return writeable;
+            }
+
+            UriQueryWriteable writeable = UriQueryWriteable.create();
+            writeable.from(queryParams);
+            this.queryParams = writeable;
+            return writeable;
         }
     }
 }

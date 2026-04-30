@@ -50,7 +50,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  */
 public final class SignedHeadersConfig {
     /**
-     * Special header {@value} is used for method and path combination.
+     * Special header {@value} is used for method and request target, including query when present.
      */
     public static final String REQUEST_TARGET = "(request-target)";
 

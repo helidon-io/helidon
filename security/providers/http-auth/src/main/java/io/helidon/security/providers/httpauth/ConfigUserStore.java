@@ -90,9 +90,25 @@ public class ConfigUserStore implements SecureUserStore {
      */
     @Configured
     public static class ConfigUser implements User {
-        private final Set<String> roles = new LinkedHashSet<>();
-        private String login;
-        private char[] password;
+        private final Set<String> roles;
+        private final String login;
+        private final char[] password;
+
+        /**
+         * Create a new empty user.
+         *
+         * @deprecated use {@link #create(Config)} instead
+         */
+        @Deprecated(since = "4.5.0", forRemoval = true)
+        public ConfigUser() {
+            this("", new char[0], List.of());
+        }
+
+        private ConfigUser(String login, char[] password, List<String> roles) {
+            this.login = login;
+            this.password = password;
+            this.roles = new LinkedHashSet<>(roles);
+        }
 
         /**
          * Create a new user from configuration.
@@ -109,13 +125,11 @@ public class ConfigUserStore implements SecureUserStore {
                           description = "List of roles the user is in")
         // method must be public so the annotation processor sees it
         public static ConfigUser create(Config config) {
-            ConfigUser cu = new ConfigUser();
+            String login = config.get("login").asString().get();
+            char[] password = config.get("password").asString().orElse("").toCharArray();
+            List<String> roles = config.get("roles").asList(String.class).orElse(List.of());
 
-            cu.login = config.get("login").asString().get();
-            cu.password = config.get("password").asString().orElse("").toCharArray();
-            cu.roles.addAll(config.get("roles").asList(String.class).orElse(List.of()));
-
-            return cu;
+            return new ConfigUser(login, password, roles);
         }
 
         @Override

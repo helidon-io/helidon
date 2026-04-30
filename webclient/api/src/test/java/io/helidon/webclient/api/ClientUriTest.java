@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,6 +81,37 @@ class ClientUriTest {
         assertThat(helper.query().get("p2"), is("v2"));
         assertThat(helper.query().get("p3"), is("//v3//"));
         assertThat(helper.query().getRaw("p3"), is("%2F%2Fv3%2F%2F"));
+    }
+
+    @Test
+    void testEmptyQueryDelimiter() {
+        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom/quick?"));
+
+        assertThat(helper.hasQuery(), is(true));
+        assertThat(helper.query().rawValue(), is(""));
+        assertThat(helper.pathWithQueryAndFragment(), is("/loom/quick?"));
+        assertThat(helper.toUri(), is(URI.create("http://localhost:8080/loom/quick?")));
+    }
+
+    @Test
+    void testNoQueryDelimiter() {
+        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom/quick"));
+
+        assertThat(helper.hasQuery(), is(false));
+        assertThat(helper.query().rawValue(), is(""));
+        assertThat(helper.pathWithQueryAndFragment(), is("/loom/quick"));
+        assertThat(helper.toUri(), is(URI.create("http://localhost:8080/loom/quick")));
+    }
+
+    @Test
+    void testClearingNonEmptyQueryRemovesDelimiter() {
+        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom/quick?p1=v1"));
+
+        helper.writeableQuery().clear();
+
+        assertThat(helper.hasQuery(), is(false));
+        assertThat(helper.pathWithQueryAndFragment(), is("/loom/quick"));
+        assertThat(helper.toUri(), is(URI.create("http://localhost:8080/loom/quick")));
     }
 
     @Test

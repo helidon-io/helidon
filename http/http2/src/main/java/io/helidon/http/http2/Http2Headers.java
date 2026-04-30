@@ -16,6 +16,8 @@
 
 package io.helidon.http.http2;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -349,6 +351,19 @@ public class Http2Headers {
         if (!pseudoHeaders.hasMethod()) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :method pseudo header");
         }
+        List<String> hostValues = headers.all(HeaderNames.HOST, List::of);
+        if (hostValues.size() > 1) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Repeated Host header");
+        }
+        boolean hasHost = hostValues.size() == 1 && !hostValues.get(0).isEmpty();
+        boolean hasAuthority = pseudoHeaders.hasAuthority() && !pseudoHeaders.authority().isEmpty();
+        if (!hasAuthority && !hasHost) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :authority pseudo header or Host header");
+        }
+        if (pseudoHeaders.hasAuthority() && !hostValues.isEmpty()
+                && !authoritiesMatch(pseudoHeaders.scheme(), pseudoHeaders.authority(), hostValues.get(0))) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Host header does not match :authority pseudo header");
+        }
     }
 
     @Override
@@ -486,6 +501,47 @@ public class Http2Headers {
 
     private static Http2Headers create(ServerRequestHeaders httpHeaders, PseudoHeaders pseudoHeaders) {
         return new Http2Headers(httpHeaders, pseudoHeaders);
+    }
+
+    private static boolean authoritiesMatch(String scheme, String authority, String host) {
+        return normalizeAuthority(scheme, authority).equals(normalizeAuthority(scheme, host));
+    }
+
+    private static String normalizeAuthority(String scheme, String authority) {
+        try {
+            URI uri = new URI(scheme, authority, null, null, null);
+            String host = uri.getHost();
+            if (host == null) {
+                return authority.toLowerCase(Locale.ROOT);
+            }
+
+            int port = uri.getPort();
+            int defaultPort = defaultPort(scheme);
+            StringBuilder result = new StringBuilder();
+            String userInfo = uri.getUserInfo();
+            if (userInfo != null) {
+                result.append(userInfo).append('@');
+            }
+            if (host.indexOf(':') >= 0 && !host.startsWith("[")) {
+                result.append('[').append(host.toLowerCase(Locale.ROOT)).append(']');
+            } else {
+                result.append(host.toLowerCase(Locale.ROOT));
+            }
+            if (port != -1 && port != defaultPort) {
+                result.append(':').append(port);
+            }
+            return result.toString();
+        } catch (URISyntaxException e) {
+            return authority.toLowerCase(Locale.ROOT);
+        }
+    }
+
+    private static int defaultPort(String scheme) {
+        return switch (scheme.toLowerCase(Locale.ROOT)) {
+        case HTTP -> 80;
+        case HTTPS -> 443;
+        default -> -1;
+        };
     }
 
     private static boolean readHeader(WritableHeaders<?> headers,
