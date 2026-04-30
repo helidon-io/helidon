@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
@@ -37,8 +38,16 @@ import static io.helidon.webserver.staticcontent.StaticContentHandler.processMod
 record CachedHandlerPath(Path path,
                          MediaType mediaType,
                          IoFunction<Path, Optional<Instant>> lastModified,
-                         BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader) implements CachedHandler {
+                         BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
+                         Function<Path, Optional<Path>> pathResolver) implements CachedHandler {
     private static final System.Logger LOGGER = System.getLogger(CachedHandlerPath.class.getName());
+
+    CachedHandlerPath(Path path,
+                      MediaType mediaType,
+                      IoFunction<Path, Optional<Instant>> lastModified,
+                      BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader) {
+        this(path, mediaType, lastModified, setLastModifiedHeader, Optional::of);
+    }
 
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,
@@ -51,15 +60,26 @@ record CachedHandlerPath(Path path,
             LOGGER.log(System.Logger.Level.TRACE, "Sending static content from path: " + path);
         }
 
+        Optional<Path> resolved = pathResolver.apply(path);
+        if (resolved.isEmpty()) {
+            cache.remove(requestedResource);
+            return false;
+        }
+        Path resolvedPath = resolved.get();
+
         // now it exists and is a file
-        if (!Files.exists(path) || !Files.isRegularFile(path) || !Files.isReadable(path) || Files.isHidden(path)) {
+        if (!Files.exists(resolvedPath)
+                || !Files.isRegularFile(resolvedPath)
+                || !Files.isReadable(resolvedPath)
+                || Files.isHidden(path)
+                || Files.isHidden(resolvedPath)) {
             // check if file still exists (the tmp may have been removed, file may have been removed
             // there is still a race change, but we do not want to keep cached records for invalid files
             cache.remove(requestedResource);
             throw new ForbiddenException("File is not accessible");
         }
 
-        Instant lastModified = lastModified().apply(path).orElse(null);
+        Instant lastModified = lastModified().apply(resolvedPath).orElse(null);
 
         // etag etc.
         if (lastModified != null) {
@@ -70,9 +90,9 @@ record CachedHandlerPath(Path path,
         response.headers().contentType(mediaType);
 
         if (method == Method.GET) {
-            FileBasedContentHandler.send(request, response, path);
+            FileBasedContentHandler.send(request, response, resolvedPath);
         } else {
-            FileBasedContentHandler.processContentLength(path, response.headers());
+            FileBasedContentHandler.processContentLength(resolvedPath, response.headers());
             response.send();
         }
 

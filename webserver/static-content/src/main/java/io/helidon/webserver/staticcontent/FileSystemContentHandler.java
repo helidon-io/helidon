@@ -121,6 +121,9 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             // not caching 404
             return false;
         }
+        if (contentPath(path).isEmpty()) {
+            return false;
+        }
 
         // we know the file exists, though it may be a directory
         // First doHandle a directory case
@@ -158,7 +161,8 @@ class FileSystemContentHandler extends FileBasedContentHandler {
         CachedHandler handler = new CachedHandlerPath(path,
                                                       detectType(fileName(path)),
                                                       FileBasedContentHandler::lastModified,
-                                                      ServerResponseHeaders::lastModified);
+                                                      ServerResponseHeaders::lastModified,
+                                                      this::contentPath);
         cacheHandler(requestedResource, handler);
         return handler.handle(handlerCache(), method, req, res, requestedResource);
     }
@@ -169,17 +173,12 @@ class FileSystemContentHandler extends FileBasedContentHandler {
           - content size
           - media type
           - last modified timestamp
-          - content
+         - content
          */
         Path path = requestedPath(resource);
-        if (!path.startsWith(root)) {
-            LOGGER.log(Level.WARNING, "File " + resource + " cannot be added to in memory cache, as it is not within"
-                    + " the root directory.");
-            return;
-        }
-
-        if (!Files.exists(path)) {
-            LOGGER.log(Level.WARNING, "File " + resource + " cannot be added to in memory cache, as it does not exist");
+        if (contentPath(path).isEmpty()) {
+            LOGGER.log(Level.WARNING, "File " + resource + " cannot be added to in memory cache, as it does not exist"
+                    + " or is not within the root directory.");
             return;
         }
 
@@ -190,7 +189,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                         // we need to use forward slash even on Windows
                         String childResource = root.relativize(child).toString().replace('\\', '/');
                         try {
-                            addToInMemoryCache(childResource, child);
+                            addToInMemoryCache(childResource);
                         } catch (IOException e) {
                             LOGGER.log(Level.WARNING, "File " + child + " cannot be added to in memory cache", e);
                         }
@@ -203,8 +202,20 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     }
 
     private void addToInMemoryCache(String resource, Path path) throws IOException {
-        byte[] fileBytes = Files.readAllBytes(path);
-        cacheInMemory(resource, detectType(fileName(path)), fileBytes, lastModified(path));
+        Optional<Path> realPath = contentPath(path);
+        if (realPath.isEmpty()) {
+            LOGGER.log(Level.WARNING, "File " + resource + " cannot be added to in memory cache, as it does not exist"
+                    + " or is not within the root directory.");
+            return;
+        }
+        Path resolvedPath = realPath.get();
+        if (!path.equals(resolvedPath)) {
+            LOGGER.log(Level.WARNING, "File " + resource + " cannot be added to in memory cache, as it uses a"
+                    + " symbolic link.");
+            return;
+        }
+        byte[] fileBytes = Files.readAllBytes(resolvedPath);
+        cacheInMemory(resource, detectType(fileName(path)), fileBytes, lastModified(resolvedPath));
     }
 
     private Path requestedPath(String requestedPath) {
@@ -212,5 +223,22 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             return root;
         }
         return root.resolve(requestedPath).toAbsolutePath().normalize();
+    }
+
+    private Optional<Path> contentPath(Path path) {
+        if (!path.startsWith(root) || !Files.exists(path)) {
+            return Optional.empty();
+        }
+
+        try {
+            Path realRoot = root.toRealPath();
+            Path realPath = path.toRealPath();
+            if (realPath.startsWith(realRoot)) {
+                return Optional.of(realPath);
+            }
+            return Optional.empty();
+        } catch (IOException e) {
+            return Optional.empty();
+        }
     }
 }

@@ -36,6 +36,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.http.ForbiddenException;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -48,8 +49,10 @@ import io.helidon.webserver.http.ServerResponse;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static java.lang.System.Logger.Level.TRACE;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -57,6 +60,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -194,6 +199,96 @@ class CachedHandlerTest {
         assertThat("Content length", cached.contentLength(), is(14));
         assertThat("Last modified", cached.lastModified(), notNullValue());
         assertThat("Media type", cached.mediaType(), is(MediaTypes.TEXT_PLAIN));
+    }
+
+    @Test
+    void testFsInMemoryCacheSkipsSymlinkOutsideRoot(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Path externalDir = tempDir.resolve("external");
+        Files.createDirectories(root);
+        Files.createDirectories(externalDir);
+        Files.writeString(externalDir.resolve("resource.txt"), "External content");
+
+        Path link = root.resolve("resource.txt");
+        createSymbolicLink(link, externalDir.resolve("resource.txt"));
+
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(root)
+                        .cachedFiles(Set.of("resource.txt"))
+                        .build());
+        handler.beforeStart();
+
+        assertThat("Out-of-root symlink should not be cached in memory",
+                   handler.cacheInMemory("resource.txt"),
+                   optionalEmpty());
+    }
+
+    @Test
+    void testFsInMemoryCacheSkipsSymlinkInsideRoot(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Files.createDirectories(root);
+        Files.writeString(root.resolve("target.txt"), "Content");
+
+        Path link = root.resolve("resource.txt");
+        createSymbolicLink(link, root.resolve("target.txt"));
+
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(root)
+                        .cachedFiles(Set.of("resource.txt"))
+                        .build());
+        handler.beforeStart();
+
+        assertThat("In-root symlink should not be cached in memory",
+                   handler.cacheInMemory("resource.txt"),
+                   optionalEmpty());
+    }
+
+    @Test
+    void testFsInMemoryCacheSkipsSymlinkRoot(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Path linkRoot = tempDir.resolve("link-root");
+        Files.createDirectories(root);
+        Files.writeString(root.resolve("resource.txt"), "Content");
+        createSymbolicLink(linkRoot, root);
+
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(linkRoot)
+                        .cachedFiles(Set.of("resource.txt"))
+                        .build());
+        handler.beforeStart();
+
+        assertThat("Resource under symlink root should not be cached in memory",
+                   handler.cacheInMemory("resource.txt"),
+                   optionalEmpty());
+    }
+
+    @Test
+    void testFsHiddenSymlinkIsForbidden(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Files.createDirectories(root);
+        Files.writeString(root.resolve("resource.txt"), "Content");
+
+        Path link = root.resolve(".link");
+        createSymbolicLink(link, root.resolve("resource.txt"));
+        assumeTrue(Files.isHidden(link), "Hidden symbolic links are not supported on this file system");
+
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(root)
+                        .build());
+
+        ServerRequest req = mock(ServerRequest.class);
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Method.GET, "/.link", false));
+
+        ServerResponse res = mock(ServerResponse.class);
+
+        assertThrows(ForbiddenException.class, () -> handler.doHandle(Method.GET, ".link", req, res, false));
+        assertThat("Hidden symlink should not remain cached",
+                   handler.cacheHandler(".link"),
+                   optionalEmpty());
     }
 
     @Test
@@ -353,5 +448,15 @@ class CachedHandlerTest {
             zipOut.write(bytes, 0, bytes.length);
         }
         return jarFile;
+    }
+
+    private static void createSymbolicLink(Path link, Path target) throws IOException {
+        try {
+            Files.createSymbolicLink(link, target);
+        } catch (UnsupportedOperationException e) {
+            assumeTrue(false, "Symbolic links are not supported");
+        } catch (IOException e) {
+            assumeTrue(false, "Symbolic links cannot be created: " + e.getMessage());
+        }
     }
 }
