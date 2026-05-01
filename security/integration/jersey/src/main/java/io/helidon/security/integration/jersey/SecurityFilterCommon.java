@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,12 +83,14 @@ abstract class SecurityFilterCommon {
         }
 
         URI requestUri = request.getUriInfo().getRequestUri();
-        String query = requestUri.getQuery();
+        String query = requestUri.getRawQuery();
+        String path = requestUri.getRawPath();
+        path = path == null || path.isEmpty() ? "/" : path;
         String origRequest;
         if ((null == query) || query.isEmpty()) {
-            origRequest = requestUri.getPath();
+            origRequest = path;
         } else {
-            origRequest = requestUri.getPath() + "?" + query;
+            origRequest = path + "?" + query;
         }
         Map<String, List<String>> allHeaders = new HashMap<>(filterContext.getHeaders());
         allHeaders.put(Security.HEADER_ORIG_URI, List.of(origRequest));

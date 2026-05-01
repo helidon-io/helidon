@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,28 +17,42 @@
 package io.helidon.security.providers.oidc;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.http.FormParams;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.ProviderRequest;
+import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.Subject;
+import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -160,6 +174,82 @@ class OidcSupportTest {
     }
 
     @Test
+    void testPostLoginRedirectFallsBackForNonLocalState() throws Exception {
+        CallbackResult result = callbackResult(true, false, "https://example.com/test", DEFAULT_TENANT_ID);
+
+        assertThat(result.location, is("/index.html?accessToken=access-token&h_ra=1"));
+    }
+
+    @Test
+    void testPostLoginRedirectFallsBackForNonLocalStateWithTenant() throws Exception {
+        CallbackResult result = callbackResult(true, false, "https://example.com/test", "tenant-one");
+
+        assertThat(result.location, is("/index.html?accessToken=access-token&h_tenant=tenant-one&h_ra=1"));
+    }
+
+    @Test
+    void testPostLoginRedirectFallsBackForNonLocalStateWithDefaultCookies() throws Exception {
+        CallbackResult result = callbackResult(false, true, "https://example.com/test", DEFAULT_TENANT_ID);
+
+        assertThat(result.location, is("/index.html?h_ra=1"));
+        assertThat(result.setCookies.stream().anyMatch(it -> it.startsWith("JSESSIONID=")), is(true));
+        assertThat(result.setCookies.stream().anyMatch(it -> it.startsWith("HELIDON_TENANT=")), is(true));
+    }
+
+    @Test
+    void testPostLoginRedirectFallsBackForNonLocalStateVariants() throws Exception {
+        for (String state : List.of("//example.com/test",
+                                    "/\\example.com/test",
+                                    "/%2f%2fexample.com/test",
+                                    "/%5cexample.com/test",
+                                    "/test\nset-cookie: test=value")) {
+            CallbackResult result = callbackResult(true, false, state, DEFAULT_TENANT_ID);
+
+            assertThat(result.location, is("/index.html?accessToken=access-token&h_ra=1"));
+        }
+    }
+
+    @Test
+    void testOriginalUriHeaderUsesRawRequestPathAndQuery() throws Exception {
+        Routing.Builder routing = Routing.builder();
+        OidcSupport.create(oidcConfig).update(routing);
+        routing.get("/raw*", (req, res) -> {
+            @SuppressWarnings("unchecked")
+            Map<String, List<String>> addedHeaders = req.context()
+                    .get(WebSecurity.CONTEXT_ADD_HEADERS, Map.class)
+                    .map(map -> (Map<String, List<String>>) map)
+                    .orElseThrow();
+            res.send(addedHeaders.get(Security.HEADER_ORIG_URI).get(0));
+        });
+        WebServer server = WebServer.builder()
+                .defaultSocket(socket -> socket.host("localhost"))
+                .addRouting(routing.build())
+                .build();
+        server.start().await(Duration.ofSeconds(10));
+
+        try {
+            WebClientResponse response = WebClient.builder()
+                    .build()
+                    .get()
+                    .uri("http://localhost:" + server.port()
+                                 + "/raw%2Fresource/?return=https%3A%2F%2Fexample.com%2Ftest")
+                    .skipUriEncoding()
+                    .request()
+                    .await(Duration.ofSeconds(10));
+
+            try {
+                assertThat(response.status(), is(Http.Status.OK_200));
+                assertThat(response.content().as(String.class).await(Duration.ofSeconds(10)),
+                           is("/raw%2Fresource/?return=https%3A%2F%2Fexample.com%2Ftest"));
+            } finally {
+                response.close().await(Duration.ofSeconds(10));
+            }
+        } finally {
+            server.shutdown().await(Duration.ofSeconds(10));
+        }
+    }
+
+    @Test
     void testOutbound() {
         String tokenContent = "huhahihohyhe";
         TokenCredential tokenCredential = TokenCredential.builder()
@@ -235,5 +325,96 @@ class OidcSupportTest {
 
         assertThat(oidcSupport.hashCode(), not(0));
         assertThat(oidcSupport.toString(), notNullValue());
+    }
+
+    private static CallbackResult callbackResult(boolean useParam,
+                                                 boolean useCookie,
+                                                 String state,
+                                                 String tenantName) throws Exception {
+        AtomicInteger tokenRequestCount = new AtomicInteger();
+        AtomicReference<FormParams> tokenRequestParameters = new AtomicReference<>();
+        WebServer tokenServer = WebServer.builder()
+                .defaultSocket(socket -> socket.host("localhost"))
+                .routing(routing -> routing.post("/token",
+                                                 (req, res) -> req.content()
+                                                         .as(FormParams.class)
+                                                         .thenAccept(form -> {
+                                                             tokenRequestCount.incrementAndGet();
+                                                             tokenRequestParameters.set(form);
+                                                             res.headers().contentType(MediaType.APPLICATION_JSON);
+                                                             res.send("{\"access_token\":\"access-token\"}");
+                                                         })))
+                .build();
+        tokenServer.start().await(Duration.ofSeconds(10));
+
+        try {
+            OidcConfig config = OidcConfig.builder()
+                    .clientId("id")
+                    .clientSecret("secret")
+                    .identityUri(URI.create("http://localhost:" + tokenServer.port() + "/identity"))
+                    .tokenEndpointUri(URI.create("http://localhost:" + tokenServer.port() + "/token"))
+                    .authorizationEndpointUri(URI.create("http://localhost:" + tokenServer.port() + "/authorize"))
+                    .signJwk(JwkKeys.builder().build())
+                    .oidcMetadataWellKnown(false)
+                    .useParam(useParam)
+                    .useCookie(useCookie)
+                    .build();
+            Routing.Builder routing = Routing.builder();
+            OidcSupport.create(config).update(routing);
+            WebServer callbackServer = WebServer.builder()
+                    .defaultSocket(socket -> socket.host("localhost"))
+                    .addRouting(routing.build())
+                    .build();
+            callbackServer.start().await(Duration.ofSeconds(10));
+            try {
+                String callbackUri = "http://localhost:" + callbackServer.port()
+                        + config.redirectUri()
+                        + "?code=code&state=" + URLEncoder.encode(state, StandardCharsets.UTF_8);
+                if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+                    callbackUri += "&" + config.tenantParamName() + "=" + tenantName;
+                }
+                String expectedRedirectUri = "http://localhost:" + callbackServer.port() + config.redirectUri();
+                if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+                    expectedRedirectUri += "?" + config.tenantParamName() + "=" + tenantName;
+                }
+
+                WebClientResponse response = WebClient.builder()
+                        .build()
+                        .get()
+                        .uri(callbackUri)
+                        .followRedirects(false)
+                        .request()
+                        .await(Duration.ofSeconds(10));
+
+                try {
+                    assertThat(response.status(), is(Http.Status.TEMPORARY_REDIRECT_307));
+                    FormParams tokenParams = tokenRequestParameters.get();
+                    assertThat(tokenRequestCount.get(), is(1));
+                    assertThat(tokenParams.first("grant_type").orElseThrow(), is("authorization_code"));
+                    assertThat(tokenParams.first("code").orElseThrow(), is("code"));
+                    assertThat(tokenParams.first("redirect_uri").orElseThrow(), is(expectedRedirectUri));
+                    return new CallbackResult(response.headers()
+                                                      .first(Http.Header.LOCATION)
+                                                      .orElseThrow(),
+                                              response.headers().all(Http.Header.SET_COOKIE));
+                } finally {
+                    response.close().await(Duration.ofSeconds(10));
+                }
+            } finally {
+                callbackServer.shutdown().await(Duration.ofSeconds(10));
+            }
+        } finally {
+            tokenServer.shutdown().await(Duration.ofSeconds(10));
+        }
+    }
+
+    private static final class CallbackResult {
+        private final String location;
+        private final List<String> setCookies;
+
+        private CallbackResult(String location, List<String> setCookies) {
+            this.location = location;
+            this.setCookies = setCookies;
+        }
     }
 }

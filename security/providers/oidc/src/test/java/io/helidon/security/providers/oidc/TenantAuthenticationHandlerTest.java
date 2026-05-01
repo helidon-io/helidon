@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,11 +87,72 @@ public class TenantAuthenticationHandlerTest {
         assertThat(authenticationHandler.origUri(providerRequest), is("/test?someUri=value"));
 
         securityEnvironment = SecurityEnvironment.builder()
+                .targetUri(URI.create("http://localhost:1234/raw%2Fpath?return=https%3A%2F%2Fexample.com%2Ftest"))
+                .build();
+        when(providerRequest.env()).thenReturn(securityEnvironment);
+
+        assertThat(authenticationHandler.origUri(providerRequest),
+                   is("/raw%2Fpath?return=https%3A%2F%2Fexample.com%2Ftest"));
+
+        securityEnvironment = SecurityEnvironment.builder()
+                .targetUri(URI.create("http://localhost:1234/%2f%2fexample.com/test"))
+                .build();
+        when(providerRequest.env()).thenReturn(securityEnvironment);
+
+        assertThat(authenticationHandler.origUri(providerRequest), is("/index.html"));
+
+        securityEnvironment = SecurityEnvironment.builder()
                 .targetUri(URI.create("http://localhost:1234/noQuery"))
                 .build();
         when(providerRequest.env()).thenReturn(securityEnvironment);
 
         assertThat(authenticationHandler.origUri(providerRequest), is("/noQuery"));
+    }
+
+    @Test
+    public void testOriginalUriIgnoresNonLocalHeader() {
+        OidcConfig oidcConfig = OidcConfig.builder()
+                .clientId("test")
+                .clientSecret("123")
+                .identityUri(URI.create("http://localhost:1234"))
+                .build();
+
+        Tenant tenant = mock(Tenant.class);
+        when(tenant.tenantConfig()).thenReturn(oidcConfig);
+
+        TenantAuthenticationHandler authenticationHandler = new TenantAuthenticationHandler(oidcConfig, tenant, false, true);
+        ProviderRequest providerRequest = mock(ProviderRequest.class);
+        SecurityEnvironment securityEnvironment = SecurityEnvironment.builder()
+                .header(Security.HEADER_ORIG_URI, "https://example.com/test")
+                .targetUri(URI.create("http://localhost:1234/test?someUri=value"))
+                .build();
+        when(providerRequest.env()).thenReturn(securityEnvironment);
+
+        assertThat(authenticationHandler.origUri(providerRequest), is("/test?someUri=value"));
+
+        securityEnvironment = SecurityEnvironment.builder()
+                .header(Security.HEADER_ORIG_URI, "//example.com/test")
+                .targetUri(URI.create("http://localhost:1234/noQuery"))
+                .build();
+        when(providerRequest.env()).thenReturn(securityEnvironment);
+
+        assertThat(authenticationHandler.origUri(providerRequest), is("/noQuery"));
+
+        securityEnvironment = SecurityEnvironment.builder()
+                .header(Security.HEADER_ORIG_URI, "/\\example.com/test")
+                .targetUri(URI.create("http://localhost:1234/backslash"))
+                .build();
+        when(providerRequest.env()).thenReturn(securityEnvironment);
+
+        assertThat(authenticationHandler.origUri(providerRequest), is("/backslash"));
+
+        securityEnvironment = SecurityEnvironment.builder()
+                .header(Security.HEADER_ORIG_URI, "/%2f%2fexample.com/test")
+                .targetUri(URI.create("http://localhost:1234/encodedSlash"))
+                .build();
+        when(providerRequest.env()).thenReturn(securityEnvironment);
+
+        assertThat(authenticationHandler.origUri(providerRequest), is("/encodedSlash"));
     }
 
 }

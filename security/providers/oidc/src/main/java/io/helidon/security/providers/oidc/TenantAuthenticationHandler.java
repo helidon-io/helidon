@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,7 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
 class TenantAuthenticationHandler {
     private static final Logger LOGGER = Logger.getLogger(TenantAuthenticationHandler.class.getName());
     private static final TokenHandler PARAM_HEADER_HANDLER = TokenHandler.forHeader(OidcConfig.PARAM_HEADER_NAME);
+    private static final String DEFAULT_REDIRECT = "/index.html";
 
     private final boolean optional;
     private final OidcConfig oidcConfig;
@@ -395,18 +396,22 @@ class TenantAuthenticationHandler {
         List<String> origUri = providerRequest.env().headers()
                 .getOrDefault(Security.HEADER_ORIG_URI, List.of());
 
-        if (origUri.isEmpty()) {
-            URI targetUri = providerRequest.env().targetUri();
-            String query = targetUri.getQuery();
-            String path = targetUri.getPath();
-            if (query == null || query.isEmpty()) {
-                return path;
-            } else {
-                return path + "?" + query;
+        if (!origUri.isEmpty()) {
+            Optional<String> localUri = OidcUtil.localRedirectUri(origUri.get(0));
+            if (localUri.isPresent()) {
+                return localUri.get();
             }
         }
 
-        return origUri.get(0);
+        URI targetUri = providerRequest.env().targetUri();
+        String query = targetUri.getRawQuery();
+        String path = targetUri.getRawPath();
+        path = path == null || path.isEmpty() ? "/" : path;
+        if (query == null || query.isEmpty()) {
+            return OidcUtil.localRedirectUri(path).orElse(DEFAULT_REDIRECT);
+        } else {
+            return OidcUtil.localRedirectUri(path + "?" + query).orElse(DEFAULT_REDIRECT);
+        }
     }
 
     private String encode(String state) {

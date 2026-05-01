@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -344,12 +344,14 @@ public final class OidcSupport implements Service {
                 });
 
         String query = req.query();
+        String path = req.uri().getRawPath();
+        path = path == null || path.isEmpty() ? "/" : path;
         if ((null == query) || query.isEmpty()) {
             newHeaders.put(Security.HEADER_ORIG_URI,
-                           List.of(req.uri().getPath()));
+                           List.of(path));
         } else {
             newHeaders.put(Security.HEADER_ORIG_URI,
-                           List.of(req.uri().getPath() + "?" + query));
+                           List.of(path + "?" + query));
         }
 
         req.next();
@@ -434,13 +436,22 @@ public final class OidcSupport implements Service {
         String idToken = json.getString("id_token", null);
 
         //redirect to "state"
-        String state = req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
+        String state = OidcUtil.localRedirectUri(req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT))
+                .orElse(DEFAULT_REDIRECT);
         res.status(Http.Status.TEMPORARY_REDIRECT_307);
         if (oidcConfig.useParam()) {
-            state += (state.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + tokenValue;
+            StringBuilder redirectUri = new StringBuilder(state)
+                    .append(state.contains("?") ? '&' : '?')
+                    .append(encode(oidcConfig.paramName()))
+                    .append('=')
+                    .append(tokenValue);
             if (!DEFAULT_TENANT_ID.equals(tenantName)) {
-                state += "&" + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
+                redirectUri.append('&')
+                        .append(encode(oidcConfig.tenantParamName()))
+                        .append('=')
+                        .append(encode(tenantName));
             }
+            state = redirectUri.toString();
         }
 
         state = increaseRedirectCounter(state);

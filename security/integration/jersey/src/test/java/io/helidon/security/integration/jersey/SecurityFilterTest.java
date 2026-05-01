@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 
 package io.helidon.security.integration.jersey;
 
+import java.net.URI;
+import java.util.List;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
@@ -27,9 +30,12 @@ import io.helidon.security.SecurityResponse;
 import io.helidon.security.integration.common.SecurityTracing;
 
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.server.ContainerRequest;
+import org.glassfish.jersey.server.ExtendedUriInfo;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerConfig;
 import org.junit.jupiter.api.Assertions;
@@ -47,6 +53,8 @@ import static org.mockito.Mockito.when;
  * Unit test for {@link SecurityFilter}.
  */
 class SecurityFilterTest {
+    private static final Logger LOGGER = Logger.getLogger(SecurityFilterTest.class.getName());
+
     private static Security security;
     private static ServerConfig serverConfig;
     private static SecurityTracing tracing;
@@ -186,6 +194,28 @@ class SecurityFilterTest {
         assertThat(message, is("Unit-test"));
     }
 
+    @Test
+    void testOriginalUriHeaderUsesRawPathAndQuery() {
+        SecurityContext securityContext = security.createContext("testOriginalUriHeaderUsesRawPathAndQuery");
+        SecurityFilterCommon filter = new TestSecurityFilter(security);
+        ContainerRequest request = mock(ContainerRequest.class);
+        ExtendedUriInfo uriInfo = mock(ExtendedUriInfo.class);
+        URI requestUri = URI.create("http://example.org/raw%2Fresource?return=https%3A%2F%2Fexample.com%2Ftest");
+        MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
+
+        headers.put("Host", List.of("example.org"));
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getUriInfo()).thenReturn(uriInfo);
+        when(request.getHeaders()).thenReturn(headers);
+        when(uriInfo.getRequestUri()).thenReturn(requestUri);
+        when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>());
+
+        filter.doFilter(request, securityContext);
+
+        assertThat(securityContext.env().headers().get(Security.HEADER_ORIG_URI),
+                   is(List.of("/raw%2Fresource?return=https%3A%2F%2Fexample.com%2Ftest")));
+    }
+
     private static Application getApplication() {
         return new Application() {
             @Override
@@ -193,5 +223,34 @@ class SecurityFilterTest {
                 return Set.of(OptionalSecurityTest.TheResource.class);
             }
         };
+    }
+
+    private static final class TestSecurityFilter extends SecurityFilterCommon {
+        private TestSecurityFilter(Security security) {
+            super(security, SecurityFeature.builder(security).build().featureConfig());
+        }
+
+        @Override
+        protected FilterContext initRequestFiltering(ContainerRequestContext requestContext) {
+            FilterContext context = new FilterContext();
+            SecurityDefinition methodSecurity = mock(SecurityDefinition.class);
+            when(methodSecurity.getSecurityLevels()).thenReturn(List.of());
+            context.setMethodSecurity(methodSecurity);
+            context.setResourceName("TestResource");
+
+            return configureContext(context, requestContext, requestContext.getUriInfo());
+        }
+
+        @Override
+        protected void processSecurity(ContainerRequestContext request,
+                                       FilterContext context,
+                                       SecurityTracing tracing,
+                                       SecurityContext securityContext) {
+        }
+
+        @Override
+        protected Logger logger() {
+            return LOGGER;
+        }
     }
 }
