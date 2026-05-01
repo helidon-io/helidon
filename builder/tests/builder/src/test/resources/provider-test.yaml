@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023 Oracle and/or its affiliates.
+# Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,7 +37,17 @@ all-defined:
       prop: "config"
     some-2:
       prop: "config2"
+  optional-list-discover:
+    some-1:
+      prop: "config"
+    some-2:
+      prop: "config2"
   list-not-discover:
+    some-1:
+      prop: "config"
+    some-2:
+      prop: "config2"
+  optional-list-not-discover:
     some-1:
       prop: "config"
     some-2:
@@ -50,6 +60,29 @@ single-list:
   list-discover:
     some-1:
       prop: "config"
+  optional-list-discover:
+    some-1:
+      prop: "config"
   list-not-discover:
     some-2:
       prop: "config2"
+  optional-list-not-discover:
+    some-2:
+      prop: "config2"
+empty-optional-list-object:
+  one-not-discover:
+    some-1:
+      prop: "config"
+  optional-list-discover: {}
+  optional-list-not-discover: {}
+empty-optional-list-array:
+  one-not-discover:
+    some-1:
+      prop: "config"
+  optional-list-discover: []
+  optional-list-not-discover: []
+discover-optional-list-from-config:
+  one-not-discover:
+    some-1:
+      prop: "config"
+  optional-list-not-discover-discover-services: true
