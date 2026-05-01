@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -104,8 +104,32 @@ fingerprint (RSA); API Key
 We act as a server and another party is calling us with a signed HTTP request.
 We validate the signature and assume identity of the caller.
 
+By default, inbound validation requires signed `date`, `(request-target)`, and
+`host` fields. The `authorization` field must also be signed when it is present,
+unless the signature itself is carried in the `Authorization` header. The signed
+`Date` value must be within `PT5M` of the server time; configure
+`inbound-date-validity` to another duration, or to `PT0S` to disable date
+freshness validation. Date freshness rejects stale or far-future signatures; it
+does not provide nonce-based replay detection within the accepted time window.
+The `(request-target)` field uses the lower-case HTTP method followed by a
+space, the request path, and the raw query string from the security
+environment, when present. Query parameter order and encoding are significant.
+
+Use `sign-headers` to require additional signed fields such as `digest`,
+`content-length`, or `content-type` for selected methods.
+
+If a request carries the signature in the `Authorization` header, that header
+value cannot be combined with any other authorization scheme. Use the standalone
+`Signature` header when another `Authorization` value must be sent with the same
+request.
+
 *Outbound Signatures*
 We act as a client and we sign our outgoing requests.
 If there is a matching `outbound` target specified in configuration,
  its configuration will be applied for signing the outgoing request,
  otherwise there is no signature added
+
+By default, outbound signing includes `date`, `(request-target)`, and `host`.
+It also signs `authorization` when that field is present, unless the signature
+itself is carried in the `Authorization` header. The provider adds `date` and
+`host` when they are required but missing.

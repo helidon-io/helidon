@@ -1210,5 +1210,63 @@ public final class Http {
                 }
             }
         }
+
+        /**
+         * Parse provided text to {@link ZonedDateTime} using any possible date / time format specified
+         * by <a href="https://tools.ietf.org/html/rfc2616">RFC2616 Hypertext Transfer Protocol</a>.
+         * <p>
+         * The reference time is used only for the obsolete RFC850 two-digit year window.
+         *
+         * @param text a text to parse.
+         * @param referenceTime time used to resolve obsolete two-digit years
+         * @return parsed date time.
+         * @throws DateTimeParseException if not in any of supported formats.
+         */
+        public static ZonedDateTime parse(String text, ZonedDateTime referenceTime) {
+            Objects.requireNonNull(referenceTime, "Reference time must not be null");
+
+            try {
+                return ZonedDateTime.parse(text, RFC_1123_DATE_TIME);
+            } catch (DateTimeParseException pe) {
+                try {
+                    return ZonedDateTime.parse(text, rfc850DateTime(referenceTime.minusYears(50).getYear()));
+                } catch (DateTimeParseException pe2) {
+                    return ZonedDateTime.parse(text, ASCTIME_DATE_TIME);
+                }
+            }
+        }
+
+        private static DateTimeFormatter rfc850DateTime(int baseYear) {
+            Map<Long, String> dayOfWeekFull = Map.of(1L, "Monday",
+                                                     2L, "Tuesday",
+                                                     3L, "Wednesday",
+                                                     4L, "Thursday",
+                                                     5L, "Friday",
+                                                     6L, "Saturday",
+                                                     7L, "Sunday");
+            return new DateTimeFormatterBuilder()
+                    .parseCaseInsensitive()
+                    .parseLenient()
+                    .optionalStart()
+                    .appendText(DAY_OF_WEEK, dayOfWeekFull)
+                    .appendLiteral(", ")
+                    .optionalEnd()
+                    .appendValue(DAY_OF_MONTH, 2, 2, SignStyle.NOT_NEGATIVE)
+                    .appendLiteral('-')
+                    .appendText(MONTH_OF_YEAR, MONTH_NAME_3D)
+                    .appendLiteral('-')
+                    .appendValueReduced(YEAR, 2, 2, baseYear)
+                    .appendLiteral(' ')
+                    .appendValue(HOUR_OF_DAY, 2)
+                    .appendLiteral(':')
+                    .appendValue(MINUTE_OF_HOUR, 2)
+                    .optionalStart()
+                    .appendLiteral(':')
+                    .appendValue(SECOND_OF_MINUTE, 2)
+                    .optionalEnd()
+                    .appendLiteral(' ')
+                    .appendOffset("+HHMM", "GMT")
+                    .toFormatter();
+        }
     }
 }

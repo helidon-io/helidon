@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.security.providers.httpsign;
 
 import java.net.URI;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -234,7 +235,8 @@ class OldHttpSignatureTest {
 
         signature.validate(buildSecurityEnv("/my/resource", headers),
                            inboundClientDef,
-                           List.of("date"))
+                           List.of("date"),
+                           Duration.ZERO)
                 .ifPresent(Assertions::fail);
     }
 
@@ -259,7 +261,8 @@ class OldHttpSignatureTest {
 
         signature.validate(env,
                            inboundClientDef,
-                           List.of("date"))
+                           List.of("date"),
+                           Duration.ZERO)
                 .ifPresent(Assertions::fail);
     }
 

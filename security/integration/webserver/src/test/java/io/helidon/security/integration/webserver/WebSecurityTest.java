@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,5 +58,29 @@ public class WebSecurityTest {
 
         assertThat(execClass, notNullValue());
         assertThat(execClass, is(not(ForkJoinPool.class)));
+    }
+
+    @Test
+    public void testSecurityEnvironmentRequestedTarget() throws TimeoutException, InterruptedException {
+        Security security = Security.builder().build();
+        AtomicReference<String> requestedTarget = new AtomicReference<>();
+
+        Routing routing = Routing.builder()
+                .register(WebSecurity.create(security))
+                .get("/unit_test", (req, res) -> {
+                    req.context()
+                            .get(SecurityContext.class)
+                            .ifPresent(context -> requestedTarget.set(context.env().requestedTarget()));
+                    res.send();
+                })
+                .build();
+
+        TestClient.create(routing)
+                .path("/unit_test")
+                .queryParameter("b", "2")
+                .queryParameter("a", "1")
+                .get();
+
+        assertThat(requestedTarget.get(), is("/unit_test?b=2&a=1"));
     }
 }

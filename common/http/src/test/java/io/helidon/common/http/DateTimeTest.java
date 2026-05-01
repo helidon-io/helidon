@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,14 @@ public class DateTimeTest {
         assertThat(Http.DateTime.parse("Tue, 3 Jun 2008 11:05:30 GMT"), is(ZDT));
         assertThat(Http.DateTime.parse("Tuesday, 03-Jun-08 11:05:30 GMT"), is(ZDT));
         assertThat(Http.DateTime.parse("Tue Jun  3 11:05:30 2008"), is(ZDT));
+    }
+
+    @Test
+    public void parseRfc850WithReferenceTime() {
+        ZonedDateTime referenceTime = ZonedDateTime.of(2114, 6, 3, 11, 5, 30, 0, ZoneId.of("Z"));
+
+        assertThat(Http.DateTime.parse("03-Jun-14 11:05:30 GMT", referenceTime),
+                   is(referenceTime));
     }
 
 }

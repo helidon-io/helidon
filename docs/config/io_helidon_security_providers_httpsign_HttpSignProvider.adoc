@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -83,6 +83,9 @@ This type provides the following service implementations:
   }
  }
  </pre>
+|`inbound-date-validity` |Duration |`PT5M` |Configure the maximum accepted age or future skew for the signed `Date` header.
+ Inbound signatures with a signed `Date` header outside this window are rejected.
+ A zero duration disables date freshness validation.
 |`optional` |boolean |`true` |Set whether the signature is optional. If set to true (default), this provider will
  SecurityResponse.SecurityStatus#ABSTAIN from this request if signature is not
  present. If set to false, this provider will SecurityResponse.SecurityStatus#FAILURE fail
@@ -119,13 +122,10 @@ This type provides the following service implementations:
 |`sign-headers` |xref:{rootdir}/config/io_helidon_security_providers_httpsign_SignedHeadersConfig_HeadersConfig.adoc[HeadersConfig[&#93;] |{nbsp} |Override the default inbound required headers (e.g. headers that MUST be signed and
  headers that MUST be signed IF present).
 
- Defaults:
+Defaults:
 
-- get, head, delete methods: date, (request-target), host are mandatory; authorization if present (unless we are
- creating/validating the HttpSignHeader#AUTHORIZATION ourselves
-- put, post: same as above, with addition of: content-length, content-type and digest if present
- 
-- for other methods: date, (request-target)
+- all methods: date, (request-target), host are mandatory; authorization if present (unless we are
+ creating/validating the HttpSignHeader#AUTHORIZATION ourselves)
 
 Note that this provider DOES NOT validate the "Digest" HTTP header, only the signature.
 

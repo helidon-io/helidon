@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,19 @@
 
 package io.helidon.security.providers.httpsign;
 
+import java.time.Duration;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -51,24 +54,11 @@ import io.helidon.security.spi.OutboundSecurityProvider;
 public final class HttpSignProvider implements AuthenticationProvider, OutboundSecurityProvider {
     static final String ALGORITHM_HMAC = "hmac-sha256";
     static final String ALGORITHM_RSA = "rsa-sha256";
+    static final Duration DEFAULT_DATE_VALIDITY = Duration.ofMinutes(5);
     static final SignedHeadersConfig DEFAULT_REQUIRED_HEADERS = SignedHeadersConfig.builder()
             .defaultConfig(SignedHeadersConfig.HeadersConfig
-                                   .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET)))
-            .config("get", SignedHeadersConfig.HeadersConfig
-                    .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
-                            List.of("authorization")))
-            .config("head", SignedHeadersConfig.HeadersConfig
-                    .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
-                            List.of("authorization")))
-            .config("delete", SignedHeadersConfig.HeadersConfig
-                    .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
-                            List.of("authorization")))
-            .config("put", SignedHeadersConfig.HeadersConfig
-                    .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
-                            List.of("authorization")))
-            .config("post", SignedHeadersConfig.HeadersConfig
-                    .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
-                            List.of("authorization")))
+                                   .create(List.of("date", SignedHeadersConfig.REQUEST_TARGET, "host"),
+                                           List.of("authorization")))
             .build();
     static final String ATTRIB_NAME_KEY_ID = HttpSignProvider.class.getName() + ".keyId";
 
@@ -80,6 +70,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
     private final OutboundConfig outboundConfig;
     // cache of target name to a signature configuration for outbound calls
     private final Map<String, OutboundTargetDefinition> targetKeys = new ConcurrentHashMap<>();
+    private final Duration inboundDateValidity;
     private final boolean backwardCompatibleEol;
 
     private HttpSignProvider(Builder builder) {
@@ -92,6 +83,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         this.inboundRequiredHeaders = builder.inboundRequiredHeaders;
         this.inboundKeys = builder.inboundKeys;
         this.outboundConfig = builder.outboundConfig;
+        this.inboundDateValidity = builder.inboundDateValidity;
         this.backwardCompatibleEol = builder.backwardCompatibleEol;
 
         outboundConfig.targets().forEach(target -> target.getConfig().ifPresent(targetConfig -> {
@@ -130,8 +122,6 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
                     .supplyAsync(() -> signatureHeader(headers.get("Signature"), providerRequest.env()),
                                  providerRequest.securityContext().executorService());
         } else if ((headers.get("Authorization") != null) && acceptHeaders.contains(HttpSignHeader.AUTHORIZATION)) {
-            // TODO when authorization header in use and "authorization" is also a
-            // required header to be signed, we must either fail or ignore, as we cannot sign ourselves
             return CompletableFuture
                     .supplyAsync(() -> authorizeHeader(providerRequest.env()),
                                  providerRequest.securityContext().executorService());
@@ -147,16 +137,38 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
     private AuthenticationResponse authorizeHeader(SecurityEnvironment env) {
         List<String> authorization = env.headers().get("Authorization");
         AuthenticationResponse response = null;
+        boolean hasSignature = false;
+        boolean hasOther = false;
+
+        for (String authorizationValue : authorization) {
+            if (authorizationValue.regionMatches(true, 0, "signature ", 0, "signature ".length())) {
+                hasSignature = true;
+            } else {
+                hasOther = true;
+            }
+        }
+
+        if (hasSignature && hasOther) {
+            String description = "Signature authorization header cannot be combined with other authorization values";
+            if (optional) {
+                return AuthenticationResponse.failed(description);
+            }
+            return challenge(env, description);
+        }
 
         // attempt to validate each authorization, first one that succeeds will finish processing and return
         for (String authorizationValue : authorization) {
-            if (authorizationValue.toLowerCase().startsWith("signature ")) {
-                response = signatureHeader(List.of(authorizationValue.substring("singature ".length())), env);
+            if (authorizationValue.regionMatches(true, 0, "signature ", 0, "signature ".length())) {
+                response = authorizationSignatureHeader(authorizationValue.substring("signature ".length()), env);
                 if (response.status().isSuccess()) {
                     // that was a good header, let's return the response
                     return response;
                 }
             }
+        }
+
+        if (response != null && response.status() != SecurityResponse.SecurityStatus.ABSTAIN) {
+            return response;
         }
 
         // we have reached the end - all headers validated, none fit, fail or abstain
@@ -168,6 +180,28 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         return challenge(env, (null == response)
                 ? "No Signature authorization header"
                 : response.description().orElse("Unknown problem"));
+    }
+
+    private AuthenticationResponse authorizationSignatureHeader(String signature, SecurityEnvironment env) {
+        HttpSignature httpSignature = HttpSignature.fromAuthorizationHeader(signature, backwardCompatibleEol);
+        Optional<String> validate = httpSignature.validate();
+        if (validate.isPresent()) {
+            if (optional) {
+                return AuthenticationResponse.failed(validate.get());
+            }
+            return challenge(env, validate.get());
+        }
+
+        InboundClientDefinition clientDefinition = inboundKeys.get(httpSignature.getKeyId());
+        if (clientDefinition == null) {
+            String description = "Client definition for client with key " + httpSignature.getKeyId() + " not found";
+            if (optional) {
+                return AuthenticationResponse.abstain();
+            }
+            return challenge(env, description);
+        }
+
+        return validateSignature(env, httpSignature, clientDefinition, true);
     }
 
     private AuthenticationResponse challenge(SecurityEnvironment env, String description) {
@@ -210,7 +244,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
                     continue;
                 }
                 //now we have a signature with a valid keyId - if validation fails, we fail
-                return validateSignature(env, httpSignature, clientDefinition);
+                return validateSignature(env, httpSignature, clientDefinition, false);
             }
         }
 
@@ -223,12 +257,19 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
 
     private AuthenticationResponse validateSignature(SecurityEnvironment env,
                                                      HttpSignature httpSignature,
-                                                     InboundClientDefinition clientDefinition) {
+                                                     InboundClientDefinition clientDefinition,
+                                                     boolean authorizationHeader) {
         // validate algorithm
+        List<String> requiredHeaders = inboundRequiredHeaders.headers(env.method(), env.headers());
+        if (authorizationHeader) {
+            requiredHeaders = requiredHeaders.stream()
+                    .filter(header -> !"authorization".equalsIgnoreCase(header))
+                    .collect(Collectors.toList());
+        }
         Optional<String> validationResult = httpSignature.validate(env,
                                                                    clientDefinition,
-                                                                   inboundRequiredHeaders.headers(env.method(),
-                                                                                                  env.headers()));
+                                                                   requiredHeaders,
+                                                                   inboundDateValidity);
 
         if (validationResult.isPresent()) {
             return AuthenticationResponse.failed(validationResult.get());
@@ -277,7 +318,15 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
 
             Map<String, List<String>> newHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
             newHeaders.putAll(outboundEnv.headers());
-            HttpSignature signature = HttpSignature.sign(outboundEnv,
+            SecurityEnvironment signingEnv = outboundEnv;
+            if (targetConfig.header() == HttpSignHeader.AUTHORIZATION) {
+                newHeaders.remove("authorization");
+                signingEnv = outboundEnv.derive()
+                        .clearHeaders()
+                        .headers(newHeaders)
+                        .build();
+            }
+            HttpSignature signature = HttpSignature.sign(signingEnv,
                                                          targetConfig,
                                                          newHeaders,
                                                          targetConfig.backwardCompatibleEol());
@@ -329,9 +378,10 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         private boolean optional = true;
         private String realm = DEFAULT_REALM_VALUE;
         private final Set<HttpSignHeader> acceptHeaders = EnumSet.noneOf(HttpSignHeader.class);
-        private SignedHeadersConfig inboundRequiredHeaders = SignedHeadersConfig.builder().build();
+        private SignedHeadersConfig inboundRequiredHeaders = DEFAULT_REQUIRED_HEADERS;
         private OutboundConfig outboundConfig = OutboundConfig.builder().build();
         private final Map<String, InboundClientDefinition> inboundKeys = new HashMap<>();
+        private Duration inboundDateValidity = DEFAULT_DATE_VALIDITY;
         private boolean backwardCompatibleEol = false;
 
         private Builder() {
@@ -353,6 +403,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
             config.get("optional").asBoolean().ifPresent(this::optional);
             config.get("realm").asString().ifPresent(this::realm);
             config.get("sign-headers").as(SignedHeadersConfig::create).ifPresent(this::inboundRequiredHeaders);
+            config.get("inbound-date-validity").as(Duration.class).ifPresent(this::inboundDateValidity);
             outboundConfig = OutboundConfig.create(config);
 
             config.get("inbound.keys")
@@ -439,10 +490,8 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
          * <p>
          * Defaults:
          * <ul>
-         * <li>get, head, delete methods: date, (request-target), host are mandatory; authorization if present (unless we are
-         * creating/validating the {@link HttpSignHeader#AUTHORIZATION} ourselves</li>
-         * <li>put, post: same as above, with addition of: content-length, content-type and digest if present
-         * <li>for other methods: date, (request-target)</li>
+         * <li>all methods: date, (request-target), host are mandatory; authorization if present (unless we are
+         * creating/validating the {@link HttpSignHeader#AUTHORIZATION} ourselves)</li>
          * </ul>
          * Note that this provider DOES NOT validate the "Digest" HTTP header, only the signature.
          *
@@ -452,6 +501,24 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         @ConfiguredOption(key = "sign-headers", type = SignedHeadersConfig.HeadersConfig.class, kind = ConfiguredOption.Kind.LIST)
         public Builder inboundRequiredHeaders(SignedHeadersConfig inboundRequiredHeaders) {
             this.inboundRequiredHeaders = inboundRequiredHeaders;
+            return this;
+        }
+
+        /**
+         * Configure the maximum accepted age or future skew for the signed {@code Date} header.
+         * Inbound signatures with a signed {@code Date} header outside this window are rejected.
+         * A zero duration disables date freshness validation.
+         *
+         * @param inboundDateValidity allowed age or future skew for signed date headers
+         * @return updated builder instance
+         */
+        @ConfiguredOption("PT5M")
+        public Builder inboundDateValidity(Duration inboundDateValidity) {
+            Objects.requireNonNull(inboundDateValidity, "Inbound date validity must not be null");
+            if (inboundDateValidity.isNegative()) {
+                throw new IllegalArgumentException("Inbound date validity must not be negative");
+            }
+            this.inboundDateValidity = inboundDateValidity;
             return this;
         }
 

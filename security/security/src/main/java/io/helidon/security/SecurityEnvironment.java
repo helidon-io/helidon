@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 
@@ -43,6 +44,8 @@ import io.helidon.security.util.AbacSupport;
  * <li>uri: target URI that was requested</li>
  * <li>path: path that was requested</li>
  * <li>method: method of the request</li>
+ * <li>requestedMethod: operation name observed at the request boundary</li>
+ * <li>requestedTarget: request target observed at the request boundary</li>
  * <li>transport: transport of the request (e.g. http)</li>
  * <li>headers: transport headers of the request (map)</li>
  * </ul>
@@ -57,6 +60,8 @@ public class SecurityEnvironment implements AbacSupport {
     private final Optional<String> path;
     private final Map<String, List<String>> headers;
     private final Parameters queryParams;
+    private final String requestedMethod;
+    private final String requestedTarget;
 
     private SecurityEnvironment(Builder builder) {
         BasicAttributes basicAttributes = BasicAttributes.create(builder.attributes);
@@ -70,11 +75,31 @@ public class SecurityEnvironment implements AbacSupport {
         headers.putAll(builder.headers);
         this.headers = Collections.unmodifiableMap(headers);
         this.queryParams = new ReadOnlyParameters(builder.queryParams);
+        this.requestedMethod = builder.requestedMethod == null ? method : builder.requestedMethod;
+        if (builder.requestedTarget == null) {
+            String rawPath = null;
+            String rawQuery = null;
+            if (targetUri != null) {
+                rawPath = targetUri.getRawPath();
+                rawQuery = targetUri.getRawQuery();
+            }
+            if (rawPath == null || rawPath.isEmpty()) {
+                rawPath = path.orElse("/");
+                if (rawPath.isEmpty()) {
+                    rawPath = "/";
+                }
+            }
+            this.requestedTarget = rawQuery == null ? rawPath : rawPath + "?" + rawQuery;
+        } else {
+            this.requestedTarget = builder.requestedTarget;
+        }
 
         basicAttributes.put("time", time);
         basicAttributes.put("uri", targetUri);
         basicAttributes.put("path", path);
         basicAttributes.put("method", method);
+        basicAttributes.put("requestedMethod", requestedMethod);
+        basicAttributes.put("requestedTarget", requestedTarget);
         basicAttributes.put("transport", transport);
         basicAttributes.put("headers", headers);
         this.properties = basicAttributes;
@@ -167,6 +192,28 @@ public class SecurityEnvironment implements AbacSupport {
     }
 
     /**
+     * Operation name as observed by the integration at the request boundary.
+     * <p>
+     * This is a boundary snapshot and does not track later changes to {@link #method()}.
+     *
+     * @return requested operation name, defaults to {@link #method()}
+     */
+    public String requestedMethod() {
+        return requestedMethod;
+    }
+
+    /**
+     * Request target as observed by the integration at the request boundary.
+     * <p>
+     * This is a boundary snapshot and does not track later changes to {@link #path()} or {@link #queryParams()}.
+     *
+     * @return requested target, including a query delimiter when one was present
+     */
+    public String requestedTarget() {
+        return requestedTarget;
+    }
+
+    /**
      * Return type of transport (such as http, https, jms etc.).
      * Transport should be case insensitive, yet I recommend using all lower case.
      * For the purpose of this method, http and https are two separate transports!
@@ -183,7 +230,7 @@ public class SecurityEnvironment implements AbacSupport {
      * @return builder to build a new environment overriding only needed values with a new timestamp
      */
     public Builder derive() {
-        return builder(timeProvider)
+        Builder builder = builder(timeProvider)
                 .attributes(properties)
                 .targetUri(targetUri)
                 .method(method)
@@ -191,6 +238,11 @@ public class SecurityEnvironment implements AbacSupport {
                 .path(path.orElse(null))
                 .headers(headers)
                 .queryParams(queryParams);
+
+        builder.requestedMethod = requestedMethod;
+        builder.requestedTarget = requestedTarget;
+
+        return builder;
     }
 
     /**
@@ -241,6 +293,10 @@ public class SecurityEnvironment implements AbacSupport {
         private String path;
         private String method = DEFAULT_METHOD;
         private String transport = DEFAULT_TRANSPORT;
+        private String requestedMethod;
+        private String requestedTarget;
+        private boolean requestedMethodExplicit;
+        private boolean requestedTargetExplicit;
 
         private Builder(SecurityTime timeProvider) {
             this.timeProvider = timeProvider;
@@ -328,6 +384,9 @@ public class SecurityEnvironment implements AbacSupport {
          */
         public Builder targetUri(URI uri) {
             this.targetUri = uri;
+            if (!requestedTargetExplicit) {
+                this.requestedTarget = null;
+            }
             return this;
         }
 
@@ -339,6 +398,9 @@ public class SecurityEnvironment implements AbacSupport {
          */
         public Builder path(String path) {
             this.path = path;
+            if (!requestedTargetExplicit) {
+                this.requestedTarget = null;
+            }
             return this;
         }
 
@@ -351,6 +413,37 @@ public class SecurityEnvironment implements AbacSupport {
          */
         public Builder method(String method) {
             this.method = method;
+            if (!requestedMethodExplicit) {
+                this.requestedMethod = null;
+            }
+            return this;
+        }
+
+        /**
+         * Configure the operation name as observed at the request boundary.
+         * <p>
+         * This is a boundary snapshot and will not be recomputed from later changes to {@link #method(String)}.
+         *
+         * @param requestedMethod boundary operation name
+         * @return this instance
+         */
+        public Builder requestedMethod(String requestedMethod) {
+            this.requestedMethod = Objects.requireNonNull(requestedMethod);
+            this.requestedMethodExplicit = true;
+            return this;
+        }
+
+        /**
+         * Configure the request target as observed at the request boundary.
+         * <p>
+         * This is a boundary snapshot and will not be recomputed from later path, URI, or query parameter changes.
+         *
+         * @param requestedTarget boundary request target
+         * @return this instance
+         */
+        public Builder requestedTarget(String requestedTarget) {
+            this.requestedTarget = Objects.requireNonNull(requestedTarget);
+            this.requestedTargetExplicit = true;
             return this;
         }
 
@@ -387,6 +480,9 @@ public class SecurityEnvironment implements AbacSupport {
          */
         public Builder queryParam(String paramName, String value) {
             this.queryParams.put(paramName, value);
+            if (!requestedTargetExplicit) {
+                this.requestedTarget = null;
+            }
             return this;
         }
 
@@ -400,6 +496,9 @@ public class SecurityEnvironment implements AbacSupport {
          */
         public Builder queryParam(String paramName, List<String> values) {
             this.queryParams.put(paramName, values);
+            if (!requestedTargetExplicit) {
+                this.requestedTarget = null;
+            }
             return this;
         }
 
@@ -411,6 +510,9 @@ public class SecurityEnvironment implements AbacSupport {
          */
         public Builder queryParams(Parameters queryParams) {
             this.queryParams.putAll(queryParams);
+            if (!requestedTargetExplicit) {
+                this.requestedTarget = null;
+            }
             return this;
         }
 
@@ -421,6 +523,9 @@ public class SecurityEnvironment implements AbacSupport {
          */
         public Builder clearQueryParams() {
             this.queryParams = HashParameters.create();
+            if (!requestedTargetExplicit) {
+                this.requestedTarget = null;
+            }
             return this;
         }
     }

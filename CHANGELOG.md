@@ -21,6 +21,7 @@ This is a bugfix release of Helidon and is recommended for all users of Helidon 
 - Dependencies: Upgrade Kafka to 3.9.2 [11210](https://github.com/helidon-io/helidon/pull/11210)
 - Dependencies: Update log4j to 2.25.3 [11033](https://github.com/helidon-io/helidon/pull/11033)
 - Dependencies: remove unecessary dependencies from  helidon-graal-native-image-extension [11412](https://github.com/helidon-io/helidon/pull/11412)
+- Security: Harden HTTP Signature validation defaults and add `inbound-date-validity`
 - Tests: Fix for disabled cipher suites [11361](https://github.com/helidon-io/helidon/pull/11361)
 
 ## [3.2.16]

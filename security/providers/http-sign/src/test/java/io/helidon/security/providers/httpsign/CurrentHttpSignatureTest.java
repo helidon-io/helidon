@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package io.helidon.security.providers.httpsign;
 
 import java.net.URI;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.ZoneId;
+import java.time.temporal.ChronoField;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +30,7 @@ import java.util.TreeMap;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityTime;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -178,6 +182,54 @@ class CurrentHttpSignatureTest {
     }
 
     @Test
+    void testSignedStringUsesRawTargetUri() {
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        headers.put("DATE", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("Authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+        headers.put("host", List.of("example.org"));
+        SecurityEnvironment env = SecurityEnvironment.builder()
+                .path("/changed")
+                .targetUri(URI.create("http://example.org/my%2Fresource?b=2&a=1&admin"))
+                .headers(headers)
+                .build();
+
+        HttpSignature signature = new HttpSignature("myServiceKeyId",
+                                                    "hmac-sha256",
+                                                    List.of("date", "host", "(request-target)", "authorization"),
+                                                    false);
+
+        assertThat(signature.getSignedString(null, env),
+                   is("date: Thu, 08 Jun 2014 18:32:30 GMT\n"
+                              + "host: example.org\n"
+                              + "(request-target): get /my%2Fresource?b=2&a=1&admin\n"
+                              + "authorization: basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+    }
+
+    @Test
+    void testSignedStringPreservesExplicitEmptyQueryDelimiter() {
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        headers.put("DATE", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("Authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+        headers.put("host", List.of("example.org"));
+        SecurityEnvironment env = SecurityEnvironment.builder()
+                .path("/changed")
+                .requestedTarget("/my%2Fresource?")
+                .headers(headers)
+                .build();
+
+        HttpSignature signature = new HttpSignature("myServiceKeyId",
+                                                    "hmac-sha256",
+                                                    List.of("date", "host", "(request-target)", "authorization"),
+                                                    false);
+
+        assertThat(signature.getSignedString(null, env),
+                   is("date: Thu, 08 Jun 2014 18:32:30 GMT\n"
+                              + "host: example.org\n"
+                              + "(request-target): get /my%2Fresource?\n"
+                              + "authorization: basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+    }
+
+    @Test
     void testSignHmacAddHeaders() {
         SecurityEnvironment env = SecurityEnvironment.builder()
                 .targetUri(URI.create("http://localhost/test/path"))
@@ -228,7 +280,8 @@ class CurrentHttpSignatureTest {
 
         signature.validate(buildSecurityEnv("/my/resource", headers),
                            inboundClientDef,
-                           List.of("date"))
+                           List.of("date"),
+                           Duration.ZERO)
                 .ifPresent(Assertions::fail);
     }
 
@@ -253,7 +306,43 @@ class CurrentHttpSignatureTest {
 
         signature.validate(env,
                            inboundClientDef,
-                           List.of("date"))
+                           List.of("date"),
+                           Duration.ZERO)
+                .ifPresent(Assertions::fail);
+    }
+
+    @Test
+    void testVerifyHmacRfc850DateUsesSecurityTimeYearWindow() {
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        headers.put("DATE", List.of("08-Jun-14 18:32:30 GMT"));
+        headers.put("Authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+        headers.put("host", List.of("example.org"));
+        SecurityEnvironment env = SecurityEnvironment.builder(securityTime(2114))
+                .path("/my/resource")
+                .headers(headers)
+                .build();
+
+        OutboundTargetDefinition outboundDef = OutboundTargetDefinition.builder("myServiceKeyId")
+                .hmacSecret("MyPasswordForHmac")
+                .signedHeaders(SignedHeadersConfig.builder()
+                                       .defaultConfig(SignedHeadersConfig
+                                                              .HeadersConfig
+                                                              .create(List.of("date",
+                                                                              "host",
+                                                                              "(request-target)",
+                                                                              "authorization")))
+                                       .build())
+                .build();
+        HttpSignature signature = HttpSignature.sign(env, outboundDef, new HashMap<>(), false);
+        InboundClientDefinition inboundClientDef = InboundClientDefinition.builder("myServiceKeyId")
+                .principalName("theService")
+                .hmacSecret("MyPasswordForHmac")
+                .build();
+
+        signature.validate(env,
+                           inboundClientDef,
+                           List.of("date"),
+                           Duration.ofMinutes(5))
                 .ifPresent(Assertions::fail);
     }
 
@@ -261,6 +350,19 @@ class CurrentHttpSignatureTest {
         return SecurityEnvironment.builder()
                 .path(path)
                 .headers(headers)
+                .build();
+    }
+
+    private SecurityTime securityTime(int year) {
+        return SecurityTime.builder()
+                .timeZone(ZoneId.of("GMT"))
+                .value(ChronoField.YEAR, year)
+                .value(ChronoField.MONTH_OF_YEAR, 6)
+                .value(ChronoField.DAY_OF_MONTH, 8)
+                .value(ChronoField.HOUR_OF_DAY, 18)
+                .value(ChronoField.MINUTE_OF_HOUR, 32)
+                .value(ChronoField.SECOND_OF_MINUTE, 30)
+                .value(ChronoField.MILLI_OF_SECOND, 0)
                 .build();
     }
 
