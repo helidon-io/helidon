@@ -87,6 +87,7 @@ class Http2ServerRequest implements RoutingRequest {
                        boolean hasEntity,
                        Supplier<BufferData> entitySupplier,
                        LimitAlgorithm.Outcome limitOutcome,
+                       long maxPayloadSize,
                        long maxBufferedEntitySize) {
         this.ctx = ctx;
         this.security = security;
@@ -112,6 +113,7 @@ class Http2ServerRequest implements RoutingRequest {
                                                                                  NO_OP_RUNNABLE,
                                                                                  this.headers,
                                                                                  ctx.listenerContext().mediaContext(),
+                                                                                 maxPayloadSize,
                                                                                  maxBufferedEntitySize));
         } else {
             this.entity = LazyValue.create(ReadableEntityBase.empty());
@@ -129,6 +131,7 @@ class Http2ServerRequest implements RoutingRequest {
                                      boolean hasEntity,
                                      Supplier<BufferData> entitySupplier,
                                      LimitAlgorithm.Outcome limitOutcome,
+                                     long maxPayloadSize,
                                      long maxBufferedEntitySize) {
         return new Http2ServerRequest(ctx,
                                       security,
@@ -139,6 +142,7 @@ class Http2ServerRequest implements RoutingRequest {
                                       hasEntity,
                                       entitySupplier,
                                       limitOutcome,
+                                      maxPayloadSize,
                                       maxBufferedEntitySize);
     }
 
