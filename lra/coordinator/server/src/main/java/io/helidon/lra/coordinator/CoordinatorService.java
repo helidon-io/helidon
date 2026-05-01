@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,7 @@ public class CoordinatorService implements Service {
     private final LraPersistentRegistry lraPersistentRegistry;
 
     private final LazyValue<URI> coordinatorURL;
+    private final ParticipantUriValidator participantUriValidator;
     private final Config config;
     private Task recoveryTask;
     private Task persistTask = null;
@@ -87,6 +88,7 @@ public class CoordinatorService implements Service {
         this.lraPersistentRegistry = lraPersistentRegistry;
         coordinatorURL = LazyValue.create(coordinatorUriSupplier);
         this.config = config;
+        this.participantUriValidator = ParticipantUriValidator.create(config);
         init();
     }
 
@@ -234,7 +236,13 @@ public class CoordinatorService implements Service {
             res.status(412).send();
             return;
         }
-        lra.addParticipant(compensatorLink);
+        try {
+            lra.addParticipant(compensatorLink);
+        } catch (IllegalArgumentException e) {
+            LOGGER.log(Level.FINE, "Rejected participant link", e);
+            res.status(400).send();
+            return;
+        }
         String recoveryUrl = coordinatorUriWithPath("/" + lraId + "/recovery").toASCIIString();
 
         res.headers().put(LRA_HTTP_RECOVERY_HEADER, recoveryUrl);
@@ -389,6 +397,10 @@ public class CoordinatorService implements Service {
 
     LazyValue<URI> getCoordinatorURL() {
         return coordinatorURL;
+    }
+
+    ParticipantUriValidator participantUriValidator() {
+        return participantUriValidator;
     }
 
     private Single<Void> nextRecoveryCycle() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ class Participant {
     private final AtomicReference<Status> status = new AtomicReference<>(Status.ACTIVE);
     private final Map<String, WebClient> webClientMap = new HashMap<>();
     private final Map<String, URI> compensatorLinks = new HashMap<>();
+    private final ParticipantUriValidator participantUriValidator;
     private final long timeout;
 
     enum Status {
@@ -136,7 +137,8 @@ class Participant {
         NOT_SENT, SENDING, SENT;
     }
 
-    Participant(Config config) {
+    Participant(Config config, ParticipantUriValidator participantUriValidator) {
+        this.participantUriValidator = participantUriValidator;
         timeout = config.get("timeout")
                 .asLong()
                 .orElse(500L);
@@ -146,6 +148,7 @@ class Participant {
         Stream.of(compensatorLinks.split(","))
                 .filter(s -> !s.isBlank())
                 .map(Link::valueOf)
+                .peek(link -> participantUriValidator.validate(link.uri()))
                 .forEach(link -> this.compensatorLinks.put(link.rel(), link.uri()));
     }
 
@@ -595,9 +598,11 @@ class Participant {
     }
 
     private WebClient getWebClient(URI baseUri) {
+        participantUriValidator.validate(baseUri);
         return webClientMap.computeIfAbsent(baseUri.toASCIIString(), unused -> WebClient.builder()
                 // Workaround for #3242
                 .keepAlive(false)
+                .followRedirects(false)
                 .baseUri(baseUri)
                 .build());
     }

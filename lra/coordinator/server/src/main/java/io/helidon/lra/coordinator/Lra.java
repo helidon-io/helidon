@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,7 @@ class Lra {
 
     private final String lraId;
     private final Config config;
+    private final ParticipantUriValidator participantUriValidator;
 
     private final List<Lra> children = Collections.synchronizedList(new ArrayList<>());
 
@@ -77,6 +78,7 @@ class Lra {
     Lra(CoordinatorService coordinatorService, String lraUUID, Config config) {
         lraId = lraUUID;
         this.config = config;
+        this.participantUriValidator = coordinatorService.participantUriValidator();
         lraCtr.inc();
         coordinatorURL = LazyValue.create(coordinatorService.getCoordinatorURL());
     }
@@ -85,6 +87,7 @@ class Lra {
         lraId = lraUUID;
         this.parentId = parentId;
         this.config = config;
+        this.participantUriValidator = coordinatorService.participantUriValidator();
         lraCtr.inc();
         coordinatorURL = LazyValue.create(coordinatorService.getCoordinatorURL());
     }
@@ -143,9 +146,14 @@ class Lra {
 
     void addParticipant(String compensatorLink) {
         if (compensatorLinks.add(compensatorLink)) {
-            Participant participant = new Participant(config);
-            participant.parseCompensatorLinks(compensatorLink);
-            participants.add(participant);
+            try {
+                Participant participant = new Participant(config, participantUriValidator);
+                participant.parseCompensatorLinks(compensatorLink);
+                participants.add(participant);
+            } catch (IllegalArgumentException e) {
+                compensatorLinks.remove(compensatorLink);
+                throw e;
+            }
         }
     }
 

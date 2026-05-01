@@ -39,6 +39,7 @@
         <maven.deploy.skip>true</maven.deploy.skip>
         <maven.sources.skip>true</maven.sources.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
         <mainClass>io.helidon.lra.coordinator.Main</mainClass>
     </properties>
     
@@ -110,6 +111,24 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>4.4.2.2</version>
+                <configuration>
+                    <skip>false</skip>
+                    <threshold>Medium</threshold>
+                    <excludeFilterFile>${spotbugs.exclude}</excludeFilterFile>
+                    <xmlOutput>true</xmlOutput>
+                    <plugins>
+                        <plugin>
+                            <groupId>com.h3xstream.findsecbugs</groupId>
+                            <artifactId>findsecbugs-plugin</artifactId>
+                            <version>1.11.0</version>
+                        </plugin>
+                    </plugins>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
@@ -120,9 +139,26 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>spotbugs</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
-
-
-
-
 

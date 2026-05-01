@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,7 +111,8 @@ class LraDatabasePersistentRegistry implements LraPersistentRegistry {
                     }
 
                     if (participantStatus != null) {
-                        Participant participant = new Participant(config);
+                        Participant participant = new Participant(config,
+                                                                  coordinatorService.participantUriValidator());
                         participant.setCompleteURI(Optional.ofNullable(completeLink).map(URI::create).orElse(null));
                         participant.setCompensateURI(Optional.ofNullable(compensateLink).map(URI::create).orElse(null));
                         participant.setAfterURI(Optional.ofNullable(afterLink).map(URI::create).orElse(null));

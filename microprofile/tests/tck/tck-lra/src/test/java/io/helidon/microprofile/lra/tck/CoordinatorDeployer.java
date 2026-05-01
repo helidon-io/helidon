@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,8 @@ public class CoordinatorDeployer {
 
         containerConfig.addConfigBuilderConsumer(configBuilder -> {
             var is = CoordinatorService.class.getResourceAsStream("/application.yaml");
-            configBuilder.withSources(MpConfigSources.create(ConfigSources.create(is, MediaType.APPLICATION_X_YAML.toString())),
+            configBuilder.withSources(
+                    MpConfigSources.create(ConfigSources.create(is, MediaType.APPLICATION_X_YAML.toString())),
                     MpConfigSources.create(Map.of(
                             // Force client to use random port first time with 0
                             // reuse port second time(TckRecoveryTests does redeploy)
@@ -67,7 +68,10 @@ public class CoordinatorDeployer {
                             "server.sockets.0.port", String.valueOf(coordinatorPort.get()),
                             "server.sockets.0.worker-count", "16",
                             "server.sockets.0.bind-address", "localhost",
-                            "helidon.lra.coordinator.db.connection.url", "jdbc:h2:file:./target/lra-coordinator",
+                            "helidon.lra.coordinator.db.connection.url",
+                            "jdbc:h2:file:./target/lra-coordinator",
+                            "helidon.lra.coordinator.participant-url.validation.allow-local-addresses",
+                            "true",
                             "helidon.lra.coordinator.recovery-interval", "100",
                             "helidon.lra.coordinator.timeout", "3000"
                     )));

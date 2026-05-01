@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package io.helidon.lra.coordinator;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -29,6 +32,8 @@ import io.helidon.webserver.WebServer;
  * In memory Lra coordinator.
  */
 public class Main {
+
+    private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
 
     private Main() {
     }
@@ -62,8 +67,7 @@ public class Main {
                         System.out.println("Helidon LRA Coordinator is DOWN. Good bye!");
                     });
         }).exceptionallyAccept(t -> {
-            System.err.println("Startup failed: " + t.getMessage());
-            t.printStackTrace(System.err);
+            LOGGER.log(Level.SEVERE, "Startup failed", t);
         });
     }
 
