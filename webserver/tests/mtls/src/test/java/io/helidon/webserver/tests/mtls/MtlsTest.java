@@ -16,6 +16,11 @@
 
 package io.helidon.webserver.tests.mtls;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -29,6 +34,7 @@ import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsClientAuth;
 import io.helidon.common.tls.TlsMaterial;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
@@ -38,6 +44,7 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.http2.Http2Config;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
@@ -74,6 +81,10 @@ class MtlsTest {
                 .get("/certs", (req, res) -> {
                     Certificate[] certs = req.remotePeer().tlsCertificates().orElse(null);
                     sendCertificateString(certs, res);
+                })
+                .get("/client-cn-header", (req, res) -> {
+                    List<String> names = req.headers().all(HeaderNames.X_HELIDON_CN, List::of);
+                    res.send(String.join("|", names));
                 })
                 .get("/reload", (req, res) -> {
                     Keys privateKeyConfig = Keys.builder()
@@ -124,7 +135,8 @@ class MtlsTest {
                                           .readTimeout(Duration.ZERO)
                                           .connectTimeout(Duration.ZERO)
                                           .build())
-                .tls(tls);
+                .tls(tls)
+                .addProtocol(Http2Config.builder().build());
     }
 
     @Test
@@ -147,6 +159,46 @@ class MtlsTest {
 
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("X.509:CN=Helidon-Test-Client|X.509:CN=Helidon-Test-CA"));
+    }
+
+    @Test
+    void testHttp2ClientCnHeaderCannotBeSpoofed() throws IOException, InterruptedException {
+        Keys privateKeyConfig = Keys.builder()
+                .keystore(keystore -> keystore
+                        .keystore(Resource.create("client.p12"))
+                        .passphrase("password"))
+                .build();
+
+        Tls tls = Tls.builder()
+                .clientAuth(TlsClientAuth.REQUIRED)
+                .privateKey(privateKeyConfig.privateKey().get())
+                .privateKeyCertChain(privateKeyConfig.certChain())
+                .trust(trust -> trust
+                        .keystore(store -> store
+                                .passphrase("password")
+                                .trustStore(true)
+                                .keystore(Resource.create("client.p12"))))
+                .build();
+
+        try (var client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(Duration.ofSeconds(5))
+                .sslContext(tls.sslContext())
+                .build()) {
+            HttpResponse<String> response = client.send(HttpRequest.newBuilder()
+                                                                   .timeout(Duration.ofSeconds(5))
+                                                                   .uri(URI.create("https://localhost:" + port
+                                                                                           + "/client-cn-header"))
+                                                                   .header(HeaderNames.X_HELIDON_CN_NAME,
+                                                                           "spoofed-client")
+                                                                   .GET()
+                                                                   .build(),
+                                                           HttpResponse.BodyHandlers.ofString());
+
+            assertThat(response.version(), is(HttpClient.Version.HTTP_2));
+            assertThat(response.statusCode(), is(Status.OK_200.code()));
+            assertThat(response.body(), is("Helidon-Test-Client"));
+        }
     }
 
     @Test

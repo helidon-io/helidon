@@ -173,6 +173,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     String authority = SniRequestSupport.singleHostAuthority(prologue, headers);
                     SniRequestSupport.validateAuthority(sniContext, prologue, headers, authority);
                 });
+                headers.remove(X_HELIDON_CN);
                 ctx.remotePeer().tlsCertificates()
                         .flatMap(TlsUtils::parseCn)
                         .ifPresent(name -> headers.set(X_HELIDON_CN, name));

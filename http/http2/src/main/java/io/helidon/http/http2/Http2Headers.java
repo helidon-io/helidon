@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -77,6 +78,7 @@ public class Http2Headers {
     public static final HeaderName STATUS_NAME = HeaderNames.create(STATUS);
     static final DynamicHeader EMPTY_HEADER_RECORD = new DynamicHeader(null, null, 0);
     private static final System.Logger LOGGER = System.getLogger(Http2Headers.class.getName());
+    private static final Set<HeaderName> NO_IGNORED_HEADERS = Set.of();
     private static final String TRAILERS = "trailers";
     private static final String HTTP = "http";
     private static final String HTTPS = "https";
@@ -110,6 +112,27 @@ public class Http2Headers {
                                       DynamicTable table,
                                       Http2HuffmanDecoder huffman,
                                       Http2Headers headers,
+                                      Http2FrameData... frames) {
+        return create(stream, table, huffman, headers, NO_IGNORED_HEADERS, frames);
+    }
+
+    /**
+     * Create headers from HTTP request.
+     *
+     * @param stream         stream that owns these headers
+     * @param table          dynamic table for this connection
+     * @param huffman        huffman decoder
+     * @param headers        http2 headers
+     * @param ignoredHeaders decoded header names that must not be added to the result
+     * @param frames         frames of the headers
+     * @return new headers parsed from the frames
+     * @throws Http2Exception in case of protocol errors
+     */
+    public static Http2Headers create(Http2Stream stream,
+                                      DynamicTable table,
+                                      Http2HuffmanDecoder huffman,
+                                      Http2Headers headers,
+                                      Set<HeaderName> ignoredHeaders,
                                       Http2FrameData... frames) {
 
         if (frames.length == 0) {
@@ -155,7 +178,13 @@ public class Http2Headers {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Expecting more header bytes");
             }
 
-            lastIsPseudoHeader = readHeader(writableHeaders, pseudoHeaders, table, huffman, data, lastIsPseudoHeader);
+            lastIsPseudoHeader = readHeader(writableHeaders,
+                                            pseudoHeaders,
+                                            table,
+                                            huffman,
+                                            data,
+                                            lastIsPseudoHeader,
+                                            ignoredHeaders);
         }
     }
 
@@ -527,13 +556,14 @@ public class Http2Headers {
                                       DynamicTable table,
                                       Http2HuffmanDecoder huffman,
                                       BufferData data,
-                                      boolean lastIsPseudoHeader) {
+                                      boolean lastIsPseudoHeader,
+                                      Set<HeaderName> ignoredHeaders) {
         // find out what kind of header we have
         HeaderApproach approach = HeaderApproach.resolve(data);
 
         if (approach.tableSizeUpdate) {
             table.maxTableSize(approach.number);
-            if (headers.size() > 0 || pseudoHeaders.size() > 0) {
+            if (!lastIsPseudoHeader || pseudoHeaders.size() > 0) {
                 throw new Http2Exception(Http2ErrorCode.COMPRESSION, "Table size update is after headers");
             }
             return lastIsPseudoHeader;
@@ -628,7 +658,7 @@ public class Http2Headers {
                 table.add(headerName, value);
             }
 
-            if (!isPseudoHeader) {
+            if (!isPseudoHeader && !ignoredHeaders.contains(headerName)) {
                 headers.add(HeaderValues.create(headerName,
                                                 !approach.addToIndex,
                                                 approach.neverIndex,
