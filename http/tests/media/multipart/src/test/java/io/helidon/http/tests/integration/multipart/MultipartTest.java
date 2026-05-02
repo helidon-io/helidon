@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,28 @@ class MultipartTest {
                         parts.add(next.name() + ":" + next.as(String.class));
                     }
                     res.send(String.join(",", parts));
+                })
+                .post("/multipart-skip", (req, res) -> {
+                    MultiPart multiPart = req.content().as(MultiPart.class);
+                    ReadablePart first = multiPart.next();
+                    try (InputStream inputStream = first.inputStream()) {
+                        long skipped = inputStream.skip(1);
+                        String remaining = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+                        ReadablePart second = multiPart.next();
+                        res.send(skipped + ":" + first.name() + ":" + remaining + ","
+                                         + second.name() + ":" + second.as(String.class));
+                    }
+                })
+                .post("/multipart-read-first", (req, res) -> {
+                    MultiPart multiPart = req.content().as(MultiPart.class);
+                    ReadablePart first = multiPart.next();
+                    try (InputStream inputStream = first.inputStream()) {
+                        int firstByte = inputStream.read();
+                        String remaining = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+                        ReadablePart second = multiPart.next();
+                        res.send(firstByte + ":" + first.name() + ":" + remaining + ","
+                                         + second.name() + ":" + second.as(String.class));
+                    }
                 });
     }
 
@@ -123,6 +145,123 @@ class MultipartTest {
                 inputStream.transferTo(out);
                 assertThat(out.toString(StandardCharsets.UTF_8), is(SECOND_PART_CONTENT));
             }
+        }
+    }
+
+    @Test
+    void testInvalidContentLengthHeaderIsIgnored() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"\r
+                            Content-Length: not-a-number\r
+                            \r
+                            alpha\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("first:alpha"));
+        }
+    }
+
+    @Test
+    void testContentLengthDoesNotControlBoundaryParsing() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"\r
+                            Content-Length: 1000\r
+                            \r
+                            alpha\r
+                            --boundary001\r
+                            Content-Disposition: form-data; name="second"\r
+                            Content-Length: 4\r
+                            \r
+                            beta\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("first:alpha,second:beta"));
+        }
+    }
+
+    @Test
+    void testPartInputStreamSkipBeforeRead() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart-skip")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"\r
+                            Content-Length: 5\r
+                            \r
+                            alpha\r
+                            --boundary001\r
+                            Content-Disposition: form-data; name="second"\r
+                            Content-Length: 4\r
+                            \r
+                            beta\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("1:first:lpha,second:beta"));
+        }
+    }
+
+    @Test
+    void testPartInputStreamReadBeforeReadWithLeadingNewLine() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart-read-first")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"\r
+                            Content-Length: 7\r
+                            \r
+                            \r
+                            alpha\r
+                            --boundary001\r
+                            Content-Disposition: form-data; name="second"\r
+                            Content-Length: 4\r
+                            \r
+                            beta\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("13:first:\nalpha,second:beta"));
+        }
+    }
+
+    @Test
+    void testPartInputStreamSkipBeforeReadWithLeadingNewLine() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart-skip")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"\r
+                            Content-Length: 7\r
+                            \r
+                            \r
+                            alpha\r
+                            --boundary001\r
+                            Content-Disposition: form-data; name="second"\r
+                            Content-Length: 4\r
+                            \r
+                            beta\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("1:first:\nalpha,second:beta"));
         }
     }
 }
