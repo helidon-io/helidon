@@ -42,11 +42,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-mapper</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.codegen.api.stability.it</groupId>
             <artifactId>api-stability-dependency</artifactId>
             <version>${project.version}</version>

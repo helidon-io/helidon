@@ -17,9 +17,9 @@
 package io.helidon.codegen.tests.apistability.consumer;
 
 import io.helidon.codegen.tests.apistability.dependency.DeprecatedApi;
+import io.helidon.codegen.tests.apistability.dependency.PreviewApi;
 import io.helidon.common.DeprecationSupport;
 import io.helidon.common.ParserHelper;
-import io.helidon.common.mapper.DefaultsResolver;
 
 @SuppressWarnings({
         "helidon:api:internal",
@@ -30,6 +30,6 @@ import io.helidon.common.mapper.DefaultsResolver;
 class SuppressedUsesApis {
     DeprecationSupport internalApi;
     ParserHelper incubatingApi;
-    DefaultsResolver previewApi;
+    PreviewApi previewApi;
     DeprecatedApi deprecatedApi;
 }
