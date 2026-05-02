@@ -52,6 +52,27 @@ class ConfigUserStoreTest {
 
         assertThat(user.login(), is("jack"));
         assertThat(user.isPasswordValid("secret".toCharArray()), is(true));
+        assertThat(user.isPasswordValid("secert".toCharArray()), is(false));
+        assertThat(user.isPasswordValid("sec".toCharArray()), is(false));
+        assertThat(user.isPasswordValid("secret1".toCharArray()), is(false));
+        assertThat(user.isPasswordValid("".toCharArray()), is(false));
+        assertThat(user.isPasswordValid(null), is(false));
         assertThat(user.roles(), is(Set.of("admin", "user")));
+    }
+
+    @Test
+    void createUsesEmptyPasswordWhenMissing() {
+        Config config = Config.just("""
+                user:
+                  login: "jill"
+                """, MediaTypes.APPLICATION_YAML)
+                .get("user");
+
+        ConfigUserStore.ConfigUser user = ConfigUserStore.ConfigUser.create(config);
+
+        assertThat(user.login(), is("jill"));
+        assertThat(user.isPasswordValid("".toCharArray()), is(true));
+        assertThat(user.isPasswordValid("password".toCharArray()), is(false));
+        assertThat(user.roles().isEmpty(), is(true));
     }
 }

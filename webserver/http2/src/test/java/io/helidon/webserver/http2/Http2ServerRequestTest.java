@@ -65,6 +65,7 @@ class Http2ServerRequestTest {
                                                                false,
                                                                () -> null,
                                                                null,
+                                                               0,
                                                                0);
 
         assertThat(request.headers().first(HeaderNames.HOST).orElseThrow(), is("signed.example:8443"));
@@ -90,6 +91,7 @@ class Http2ServerRequestTest {
                                                                false,
                                                                () -> null,
                                                                null,
+                                                               0,
                                                                0);
 
         assertThat(request.authority(), is("signed.example"));

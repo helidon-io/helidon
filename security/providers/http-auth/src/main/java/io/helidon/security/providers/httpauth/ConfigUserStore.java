@@ -16,7 +16,6 @@
 
 package io.helidon.security.providers.httpauth;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -138,8 +137,31 @@ public class ConfigUserStore implements SecureUserStore {
         }
 
         @Override
-        public boolean isPasswordValid(char[] password) {
-            return Arrays.equals(this.password, password);
+        public boolean isPasswordValid(char[] passwordA) {
+            if (passwordA == null) {
+                return false;
+            }
+
+            char[] passwordB = this.password;
+
+            if (passwordB.length == 0) {
+                return passwordA.length == 0;
+            }
+
+            int actualLength = passwordA.length;
+            if (actualLength == 0) {
+                return false;
+            }
+
+            int expectedLength = passwordB.length;
+            int diff = actualLength - expectedLength;
+
+            for (int i = 0; i < expectedLength; i++) {
+                int actualIndex = ((i - actualLength) >>> 31) * i;
+                diff |= passwordA[actualIndex] ^ passwordB[i];
+            }
+
+            return diff == 0;
         }
 
         @Override
