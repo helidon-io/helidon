@@ -238,6 +238,21 @@ class Http2HeadersTest {
         assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
     }
 
+    @Test
+    void testRequestRejectsTransferEncoding() {
+        WritableHeaders<?> headers = WritableHeaders.create()
+                .add(HeaderNames.TRANSFER_ENCODING, "chunked");
+        Http2Headers http2Headers = Http2Headers.create(headers);
+        http2Headers.method(Method.GET);
+        http2Headers.scheme("http");
+        http2Headers.path("/");
+        http2Headers.authority("signed.example");
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
     /*
     https://www.rfc-editor.org/rfc/rfc7541.html#appendix-C.4
     */

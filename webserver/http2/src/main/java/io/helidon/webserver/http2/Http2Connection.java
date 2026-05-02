@@ -21,7 +21,9 @@ import java.net.SocketException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.Set;
 
 import io.helidon.common.buffers.BufferData;
@@ -91,6 +93,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             Set.of(Http2StreamState.CLOSED, Http2StreamState.HALF_CLOSED_LOCAL);
     private static final Set<HeaderName> SERVER_CONTROLLED_REQUEST_HEADERS = Set.of(X_HELIDON_CN);
     private final Http2ConnectionStreams streams = new Http2ConnectionStreams();
+    private final Set<Integer> locallyResetStreams = new HashSet<>();
     private final ConnectionContext ctx;
     private final Http2Config http2Config;
     private final HttpRouting routing;
@@ -577,9 +580,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
         if (upgradeHeaders != null) {
             // initial request from outside
-            io.helidon.http.Headers httpHeaders = upgradeHeaders.httpHeaders();
-            boolean hasEntity = httpHeaders.contains(HeaderNames.CONTENT_LENGTH)
-                    || httpHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+            boolean hasEntity = upgradeHasEntity(upgradeHeaders);
             // we now have all information needed to execute
             Http2ServerStream stream = stream(1).stream();
             stream.prologue(upgradePrologue);
@@ -590,14 +591,35 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
     }
 
+    private static boolean upgradeHasEntity(Http2Headers headers) {
+        io.helidon.http.Headers httpHeaders = headers.httpHeaders();
+        if (!httpHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
+            return httpHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        }
+        OptionalLong contentLength;
+        try {
+            contentLength = httpHeaders.contentLength();
+        } catch (NumberFormatException e) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Content-Length header must be a number.", e);
+        } catch (IllegalArgumentException e) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, e.getMessage(), e);
+        }
+        return contentLength.orElse(0) > 0 || httpHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+    }
+
     private void dataFrame() {
         BufferData buffer;
 
         int streamId = frameHeader.streamId();
+        boolean endOfStream = frameHeader.flags(Http2FrameTypes.DATA).endOfStream();
+        if (streamId != 0 && locallyResetStreams.contains(streamId)) {
+            discardDataForLocallyResetStream(streamId, endOfStream);
+            state = State.READ_FRAME;
+            return;
+        }
+
         StreamContext stream = stream(streamId);
         stream.stream().checkDataReceivable();
-
-        boolean endOfStream = frameHeader.flags(Http2FrameTypes.DATA).endOfStream();
 
         // Flow-control: reading frameHeader.length() bytes from HTTP2 socket for known stream ID.
         int length = frameHeader.length();
@@ -619,12 +641,13 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         if (frameHeader.flags(Http2FrameTypes.DATA).padded()) {
             BufferData frameData = inProgressFrame();
             int padLength = frameData.read();
+            int dataLength = frameHeader.length() - padLength - 1;
 
-            if (frameHeader.length() == padLength) {
-                buffer = null;
-            } else if (frameHeader.length() - padLength > 0) {
-                buffer = BufferData.create(frameHeader.length() - padLength);
-                buffer.write(frameData);
+            if (dataLength == 0) {
+                buffer = BufferData.empty();
+            } else if (dataLength > 0) {
+                buffer = BufferData.create(dataLength);
+                buffer.write(frameData, dataLength);
             } else {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid pad length");
             }
@@ -642,6 +665,22 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
 
         state = State.READ_FRAME;
+    }
+
+    private void discardDataForLocallyResetStream(int streamId, boolean endOfStream) {
+        int length = frameHeader.length();
+        if (length > 0) {
+            emptyFrames = 0;
+            flowControl.decrementInboundConnectionWindowSize(length);
+            flowControl.incrementInboundConnectionWindowSize(length);
+        } else if (emptyFrames++ > maxEmptyFrames && !endOfStream) {
+            throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM, "Too much subsequent empty frames received.");
+        }
+        BufferData frameData = inProgressFrame();
+        frameData.skip(frameData.available());
+        if (endOfStream) {
+            locallyResetStreams.remove(streamId);
+        }
     }
 
     private void doHeaders(Limit limit) {
@@ -729,6 +768,10 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         stream.prologue(httpPrologue);
         stream.requestLimit(limit);
         stream.headers(headers, endOfStream);
+        if (stream.streamState() == Http2StreamState.CLOSED) {
+            state = State.READ_FRAME;
+            return;
+        }
         state = State.READ_FRAME;
 
         this.lastRequestTimestamp = DateTime.timestamp();
@@ -816,6 +859,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             }
             throw e;
         } finally {
+            locallyResetStreams.remove(streamId);
             streams.remove(streamId);
         }
     }
@@ -861,6 +905,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                               http2Config.maxHeaderListSize(),
                                               new Http2ServerStream(ctx,
                                                                     streams,
+                                                                    locallyResetStreams::add,
                                                                     routing,
                                                                     http2Config,
                                                                     subProviders,

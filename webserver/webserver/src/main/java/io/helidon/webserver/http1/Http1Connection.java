@@ -33,7 +33,6 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
-import io.helidon.common.mapper.MapperException;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
@@ -308,9 +307,15 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
      * @param headers the HTTP headers in the prologue
      * @return whether to accept or reject the upgrade
      */
-    static boolean upgradeHasEntity(WritableHeaders<?> headers) {
-        return headers.contains(HeaderNames.CONTENT_LENGTH) && !headers.contains(HeaderValues.CONTENT_LENGTH_ZERO)
-                || headers.contains(HeaderNames.TRANSFER_ENCODING);
+    private static boolean upgradeHasEntity(WritableHeaders<?> headers) {
+        if (headers.contains(HeaderNames.TRANSFER_ENCODING)) {
+            return true;
+        }
+        try {
+            return headers.contentLength().orElse(0) > 0;
+        } catch (IllegalArgumentException e) {
+            return true;
+        }
     }
 
     static void validateHostHeader(HttpPrologue prologue, WritableHeaders<?> headers, boolean fullValidation) {
@@ -518,25 +523,24 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             entity = EntityStyle.CHUNKED;
             this.currentEntitySize = -1;
         } else if (headers.contains(HeaderNames.CONTENT_LENGTH)) {
+            long contentLength;
             try {
-                this.currentEntitySize = headers.get(HeaderNames.CONTENT_LENGTH).get(long.class);
-                if (maxPayloadSize != -1 && currentEntitySize > maxPayloadSize) {
-                    throw RequestException.builder()
-                            .type(EventType.BAD_REQUEST)
-                            .status(Status.REQUEST_ENTITY_TOO_LARGE_413)
-                            .request(DirectTransportRequest.create(prologue, headers))
-                            .setKeepAlive(false)
-                            .build();
-                }
-                entity = currentEntitySize == 0 ? EntityStyle.NONE : EntityStyle.LENGTH;
-            } catch (MapperException e) {
+                contentLength = headers.contentLength().orElse(0);
+            } catch (NumberFormatException e) {
+                throw invalidRequestFraming(prologue, headers, "Content length is not a number");
+            } catch (IllegalArgumentException e) {
+                throw invalidRequestFraming(prologue, headers, e.getMessage());
+            }
+            this.currentEntitySize = contentLength;
+            if (maxPayloadSize != -1 && currentEntitySize > maxPayloadSize) {
                 throw RequestException.builder()
                         .type(EventType.BAD_REQUEST)
+                        .status(Status.REQUEST_ENTITY_TOO_LARGE_413)
                         .request(DirectTransportRequest.create(prologue, headers))
-                        .message("Content length is not a number")
-                        .cause(e)
+                        .setKeepAlive(false)
                         .build();
             }
+            entity = currentEntitySize == 0 ? EntityStyle.NONE : EntityStyle.LENGTH;
         }
         requestId++;
 

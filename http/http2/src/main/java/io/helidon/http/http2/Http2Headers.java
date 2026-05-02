@@ -363,6 +363,16 @@ public class Http2Headers {
         if (headers.contains(HeaderNames.CONNECTION)) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Connection in request headers");
         }
+        if (headers.contains(HeaderNames.TRANSFER_ENCODING)) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Transfer-Encoding in request headers");
+        }
+        try {
+            headers.contentLength();
+        } catch (NumberFormatException e) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Content-Length header must be a number.", e);
+        } catch (IllegalArgumentException e) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, e.getMessage(), e);
+        }
         if (headers.contains(HeaderNames.TE)) {
             List<String> values = headers.all(HeaderNames.TE, List::of);
             if (!values.equals(List.of(TRAILERS))) {
