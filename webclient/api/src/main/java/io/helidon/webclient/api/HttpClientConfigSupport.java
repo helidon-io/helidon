@@ -39,6 +39,7 @@ import io.helidon.webclient.spi.DnsResolver;
 import io.helidon.webclient.spi.DnsResolverProvider;
 
 class HttpClientConfigSupport {
+    private static final String UNIX_DOMAIN_SOCKET_PREFIX = "unix:";
     private static final LazyValue<Tls> EMPTY_TLS = LazyValue.create(() -> Tls.builder().build());
     private static final LazyValue<DnsResolver> DISCOVERED_DNS_RESOLVER = LazyValue.create(() -> {
         return HelidonServiceLoader.builder(ServiceLoader.load(DnsResolverProvider.class))
@@ -190,8 +191,8 @@ class HttpClientConfigSupport {
         static SocketAddress createBaseAddress(Config config) {
             String address = config.asString().get();
             // unix:/path/to/socket
-            if (address.startsWith("unix:")) {
-                String path = address.substring(7);
+            if (address.startsWith(UNIX_DOMAIN_SOCKET_PREFIX)) {
+                String path = address.substring(UNIX_DOMAIN_SOCKET_PREFIX.length());
                 return UnixDomainSocketAddress.of(path);
             }
             // must be localhost:8080 or similar (localhost, :8080 are also OK)
