@@ -40,6 +40,7 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.spi.ServerFeature;
 
 class WebServerConfigSupport {
+    private static final String UNIX_DOMAIN_SOCKET_PREFIX = "unix:";
 
     static class CustomMethods {
 
@@ -187,8 +188,8 @@ class WebServerConfigSupport {
         static SocketAddress createBindAddress(Config config) {
             String address = config.asString().get();
             // unix:/path/to/socket
-            if (address.startsWith("unix:")) {
-                String path = address.substring(7);
+            if (address.startsWith(UNIX_DOMAIN_SOCKET_PREFIX)) {
+                String path = address.substring(UNIX_DOMAIN_SOCKET_PREFIX.length());
                 return UnixDomainSocketAddress.of(path);
             }
             // must be localhost:8080 or similar
