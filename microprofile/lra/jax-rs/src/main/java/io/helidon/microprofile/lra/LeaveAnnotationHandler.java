@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.microprofile.lra;
 
 import java.net.URI;
+import java.time.Duration;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
@@ -33,10 +34,14 @@ class LeaveAnnotationHandler implements AnnotationHandler {
 
     private final CoordinatorClient coordinatorClient;
     private final ParticipantService participantService;
+    private final Duration coordinatorTimeout;
 
-    LeaveAnnotationHandler(CoordinatorClient coordinatorClient, ParticipantService participantService) {
+    LeaveAnnotationHandler(CoordinatorClient coordinatorClient,
+                           ParticipantService participantService,
+                           Duration coordinatorTimeout) {
         this.coordinatorClient = coordinatorClient;
         this.participantService = participantService;
+        this.coordinatorTimeout = coordinatorTimeout;
     }
 
     @Override
@@ -45,7 +50,7 @@ class LeaveAnnotationHandler implements AnnotationHandler {
                 .ifPresent(lraId -> {
                     URI baseUri = reqCtx.getUriInfo().getBaseUri();
                     Participant p = participantService.participant(baseUri, resourceInfo.getResourceClass());
-                    coordinatorClient.leave(lraId, PropagatedHeaders.noop(), p);
+                    awaitCoordinator(() -> coordinatorClient.leave(lraId, PropagatedHeaders.noop(), p), coordinatorTimeout);
                     reqCtx.getHeaders().add(LRA_HTTP_CONTEXT_HEADER, lraId.toASCIIString());
                     reqCtx.setProperty(LRA_HTTP_CONTEXT_HEADER, lraId);
                 });

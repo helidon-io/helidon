@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jakarta.annotation.Priority;
@@ -35,6 +39,7 @@ import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.DeploymentException;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
@@ -49,8 +54,11 @@ import jakarta.ws.rs.core.Response;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
+import io.helidon.lra.coordinator.client.Participant;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
+import io.helidon.lra.coordinator.client.narayana.NarayanaClient;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.lra.resources.Work;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
@@ -64,6 +72,7 @@ import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.Service;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;
@@ -78,9 +87,12 @@ import org.junit.jupiter.api.Test;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @HelidonTest
 @DisableDiscovery
@@ -99,6 +111,8 @@ import static org.hamcrest.Matchers.not;
 @AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX + ".0", value = "Xxx-tmm-")
 @AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX + ".1", value = "xbb-tmm-")
 @AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX + ".2", value = "xcc-tmm-")
+@AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_ALLOWED_URI + ".0",
+           value = "http://localhost:80/configured-coordinator")
 class CoordinatorHeaderPropagationTest {
 
     private static final long TIMEOUT_SEC = 45L;
@@ -121,12 +135,18 @@ class CoordinatorHeaderPropagationTest {
     private static final CompletableFuture<Void> completedNonJaxRs = new CompletableFuture<>();
     private static final AtomicLong lraIndex = new AtomicLong();
     private static final Map<String, Map<String, URI>> lraMap = Collections.synchronizedMap(new HashMap<>());
+    private static final AtomicBoolean foreignCoordinatorCalled = new AtomicBoolean();
+    private static final AtomicBoolean directCoordinatorCalled = new AtomicBoolean();
 
     @Inject
     CoordinatorClient coordinatorClient;
 
     @Inject
     CoordinatorLocatorService coordinatorLocatorService;
+
+    @Inject
+    @ConfigProperty(name = CoordinatorClient.CONF_KEY_COORDINATOR_ALLOWED_URI)
+    Set<String> configuredAllowedCoordinatorUris;
 
     @Produces
     @ApplicationScoped
@@ -135,9 +155,12 @@ class CoordinatorHeaderPropagationTest {
         return rules -> rules
                 .post("/start", (req, res) -> {
                     startHeadersCoordinator.putAll(req.headers().toMap());
+                    boolean directCoordinator = req.queryParams().first("ClientID")
+                            .filter("direct"::equalsIgnoreCase)
+                            .isPresent();
                     String lraId = URI.create("http://localhost:"
                             + port
-                            + "/lra-coordinator/xxx-xxx-"
+                            + (directCoordinator ? "/direct-coordinator/direct-" : "/lra-coordinator/xxx-xxx-")
                             + lraIndex.incrementAndGet()).toASCIIString();
 
                     lraMap.put(lraId, new ConcurrentHashMap<>());
@@ -231,6 +254,27 @@ class CoordinatorHeaderPropagationTest {
                             .onError(res::send)
                             .ignoreElements();
                 });
+    }
+
+    @Produces
+    @ApplicationScoped
+    @RoutingPath("/direct-coordinator")
+    Service directCoordinator() {
+        return rules -> rules
+                .put("/{lraId}", (req, res) -> {
+                    directCoordinatorCalled.set(true);
+                    res.send();
+                });
+    }
+
+    @Produces
+    @ApplicationScoped
+    @RoutingPath("/foreign-coordinator")
+    Service foreignCoordinator() {
+        return rules -> rules.any((req, res) -> {
+            foreignCoordinatorCalled.set(true);
+            res.status(200).send();
+        });
     }
 
     private void ready(
@@ -350,9 +394,199 @@ class CoordinatorHeaderPropagationTest {
         assertThat(leaveHeadersParticipant, not(hasEntry(NOT_PROPAGATED_HEADER, List.of("not me!"))));
     }
 
+    @Test
+    void rejectForeignLraContextHeader(WebTarget target) throws Exception {
+        reset();
+
+        Response response = target.path("headers-test-jaxrs")
+                .path("existing")
+                .request()
+                .header(LRA_HTTP_CONTEXT_HEADER, "http://localhost:" + port + "/foreign-coordinator/existing")
+                .async()
+                .put(Entity.text(""))
+                .get(TIMEOUT_SEC, TimeUnit.SECONDS);
+
+        assertThat(response.getStatus(), is(Response.Status.PRECONDITION_FAILED.getStatusCode()));
+        assertThat(foreignCoordinatorCalled.get(), is(false));
+    }
+
+    @Test
+    void rejectForeignLeaveContextHeader(WebTarget target) throws Exception {
+        reset();
+
+        Response response = target.path("headers-test-leave")
+                .path("leave")
+                .request()
+                .header(LRA_HTTP_CONTEXT_HEADER, "http://localhost:" + port + "/foreign-coordinator/existing")
+                .async()
+                .put(Entity.text(""))
+                .get(TIMEOUT_SEC, TimeUnit.SECONDS);
+
+        assertThat(response.getStatus(), is(Response.Status.PRECONDITION_FAILED.getStatusCode()));
+        assertThat(foreignCoordinatorCalled.get(), is(false));
+    }
+
+    @Test
+    void rejectForeignNestedLraContextHeader(WebTarget target) throws Exception {
+        reset();
+
+        Response response = target.path("headers-test-jaxrs")
+                .path("nested")
+                .request()
+                .header(LRA_HTTP_CONTEXT_HEADER, "http://localhost:" + port + "/foreign-coordinator/existing")
+                .async()
+                .put(Entity.text(""))
+                .get(TIMEOUT_SEC, TimeUnit.SECONDS);
+
+        assertThat(response.getStatus(), is(Response.Status.PRECONDITION_FAILED.getStatusCode()));
+        assertThat(foreignCoordinatorCalled.get(), is(false));
+    }
+
+    @Test
+    void rejectDotSegmentLraContextHeader(WebTarget target) throws Exception {
+        reset();
+
+        Response response = target.path("headers-test-jaxrs")
+                .path("existing")
+                .request()
+                .header(LRA_HTTP_CONTEXT_HEADER, "http://localhost:" + port
+                        + "/foreign-coordinator/%2e%2e/lra-coordinator/existing")
+                .async()
+                .put(Entity.text(""))
+                .get(TIMEOUT_SEC, TimeUnit.SECONDS);
+
+        assertThat(response.getStatus(), is(Response.Status.PRECONDITION_FAILED.getStatusCode()));
+        assertThat(foreignCoordinatorCalled.get(), is(false));
+    }
+
+    @Test
+    void rejectMalformedLraContextHeader(WebTarget target) throws Exception {
+        reset();
+
+        Response response = target.path("headers-test-jaxrs")
+                .path("existing")
+                .request()
+                .header(LRA_HTTP_CONTEXT_HEADER, "http://[")
+                .async()
+                .put(Entity.text(""))
+                .get(TIMEOUT_SEC, TimeUnit.SECONDS);
+
+        assertThat(response.getStatus(), is(Response.Status.PRECONDITION_FAILED.getStatusCode()));
+        assertThat(foreignCoordinatorCalled.get(), is(false));
+    }
+
+    @Test
+    void bindAllowedCoordinatorUrisFromConfig() {
+        assertThat(configuredAllowedCoordinatorUris, hasItem("http://localhost:80/configured-coordinator"));
+        assertThat(coordinatorLocatorService.allowedCoordinatorUris(),
+                   hasItem(URI.create("http://localhost:80/configured-coordinator")));
+    }
+
+    @Test
+    void rejectInvalidAllowedCoordinatorUriConfig() {
+        DeploymentException exception = assertThrows(DeploymentException.class,
+                () -> new CoordinatorLocatorService(
+                        Optional.empty(),
+                        "http://localhost:" + port + "/lra-coordinator",
+                        Set.of("http://["),
+                        TIMEOUT_SEC,
+                        TimeUnit.SECONDS)
+                        .allowedCoordinatorUris());
+
+        assertThat(exception.getMessage(), containsString(CoordinatorClient.CONF_KEY_COORDINATOR_ALLOWED_URI));
+        assertThat(exception.getMessage(), containsString("http://["));
+    }
+
+    @Test
+    void rejectAllowedCoordinatorUriConfigForUnsupportedClient() {
+        DeploymentException exception = assertThrows(DeploymentException.class,
+                () -> new CoordinatorLocatorService(
+                        Optional.empty(),
+                        "http://localhost:" + port + "/lra-coordinator",
+                        Set.of("http://example.com/lra-coordinator"),
+                        TIMEOUT_SEC,
+                        TimeUnit.SECONDS)
+                        .applyAllowedCoordinatorUris(new UnsupportedAllowedCoordinatorClient()));
+
+        assertThat(exception.getMessage(), containsString(CoordinatorClient.CONF_KEY_COORDINATOR_ALLOWED_URI));
+        assertThat(exception.getMessage(), containsString(UnsupportedAllowedCoordinatorClient.class.getName()));
+        assertThat(exception.getMessage(), containsString("http://example.com/lra-coordinator"));
+    }
+
+    @Test
+    void rejectHostlessAllowedCoordinatorUriConfigForNarayanaClient() {
+        DeploymentException exception = assertThrows(DeploymentException.class,
+                () -> new CoordinatorLocatorService(
+                        Optional.empty(),
+                        "http://localhost:" + port + "/lra-coordinator",
+                        Set.of("/lra-coordinator"),
+                        TIMEOUT_SEC,
+                        TimeUnit.SECONDS)
+                        .applyAllowedCoordinatorUris(new NarayanaClient()));
+
+        assertThat(exception.getMessage(), containsString(CoordinatorClient.CONF_KEY_COORDINATOR_ALLOWED_URI));
+        assertThat(exception.getMessage(), containsString(NarayanaClient.class.getName()));
+        assertThat(exception.getMessage(), containsString("/lra-coordinator"));
+    }
+
+    @Test
+    void allowConfiguredLraContextHeader() {
+        reset();
+
+        CoordinatorClient client = new CoordinatorLocatorService(
+                Optional.empty(),
+                "http://localhost:" + port + "/lra-coordinator",
+                Set.of("http://localhost:" + port + "/foreign-coordinator"),
+                TIMEOUT_SEC,
+                TimeUnit.SECONDS)
+                .coordinatorClient();
+
+        client.join(URI.create("http://localhost:" + port + "/foreign-coordinator/existing"),
+                    PropagatedHeaders.noop(),
+                    0,
+                    noopParticipant())
+                .await(TIMEOUT_SEC, TimeUnit.SECONDS);
+
+        assertThat(foreignCoordinatorCalled.get(), is(true));
+    }
+
+    @Test
+    void allowCoordinatorReturnedFromStartResponse() {
+        reset();
+
+        URI lraId = coordinatorClient.start("direct", PropagatedHeaders.noop(), 0)
+                .await(TIMEOUT_SEC, TimeUnit.SECONDS);
+
+        coordinatorClient.join(lraId, PropagatedHeaders.noop(), 0, noopParticipant())
+                .await(TIMEOUT_SEC, TimeUnit.SECONDS);
+
+        assertThat(lraId, is(URI.create("http://localhost:" + port + "/direct-coordinator/direct-1")));
+        assertThat(directCoordinatorCalled.get(), is(true));
+    }
+
+    @Test
+    void allowTrustedNestedLraContextHeader(WebTarget target) throws Exception {
+        reset();
+
+        URI parentLraId = URI.create("http://localhost:" + port + "/lra-coordinator/parent");
+        Response response = target.path("headers-test-jaxrs")
+                .path("nested")
+                .request()
+                .header(LRA_HTTP_CONTEXT_HEADER, parentLraId.toASCIIString())
+                .async()
+                .put(Entity.text(""))
+                .get(TIMEOUT_SEC, TimeUnit.SECONDS);
+
+        assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+        assertThat(response.getHeaderString(LRA_HTTP_CONTEXT_HEADER), is(parentLraId.toASCIIString()));
+        assertThat(lraIndex.get(), is(1L));
+    }
+
     private static void reset() {
         lraMap.clear();
         lraIndex.set(0);
+        foreignCoordinatorCalled.set(false);
+        directCoordinatorCalled.set(false);
         Stream.of(
                         startHeadersCoordinator,
                         startHeadersParticipant,
@@ -365,6 +599,85 @@ class CoordinatorHeaderPropagationTest {
                         closeHeadersCoordinator
                 )
                 .forEach(Map::clear);
+    }
+
+    private static Participant noopParticipant() {
+        return new Participant() {
+            @Override
+            public Optional<URI> compensate() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<URI> complete() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<URI> forget() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<URI> leave() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<URI> after() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<URI> status() {
+                return Optional.empty();
+            }
+        };
+    }
+
+    private static class UnsupportedAllowedCoordinatorClient implements CoordinatorClient {
+
+        @Override
+        public void init(Supplier<URI> coordinatorUriSupplier, long timeout, TimeUnit timeoutUnit) {
+        }
+
+        @Override
+        public Single<URI> start(String clientID, PropagatedHeaders headers, long timeout) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Single<URI> start(URI parentLRA, String clientID, PropagatedHeaders headers, long timeout) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Single<Optional<URI>> join(URI lraId,
+                                          PropagatedHeaders headers,
+                                          long timeLimit,
+                                          Participant participant) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Single<Void> cancel(URI lraId, PropagatedHeaders headers) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Single<Void> close(URI lraId, PropagatedHeaders headers) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Single<Void> leave(URI lraId, PropagatedHeaders headers, Participant participant) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Single<LRAStatus> status(URI lraId, PropagatedHeaders headers) {
+            throw new UnsupportedOperationException();
+        }
     }
 
 
@@ -441,6 +754,20 @@ class CoordinatorHeaderPropagationTest {
                 @Context HttpHeaders headers) {
             thirdStartHeadersParticipant.putAll(headers.getRequestHeaders());
             throw new RuntimeException("BOOM -> Compensate!");
+        }
+
+        @PUT
+        @LRA(value = LRA.Type.MANDATORY, end = false)
+        @Path("/existing")
+        public Response existingLra(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
+            return Response.ok().build();
+        }
+
+        @PUT
+        @LRA(value = LRA.Type.NESTED, end = false)
+        @Path("/nested")
+        public Response nestedLra(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
+            return Response.ok().build();
         }
 
         @GET

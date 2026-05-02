@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,9 @@
  * <ul>
  * <li>{@link io.helidon.lra.coordinator.client.CoordinatorClient#CONF_KEY_COORDINATOR_URL mp.lra.coordinator.url}
  * URL of coordinator</li>
+ * <li>{@link io.helidon.lra.coordinator.client.CoordinatorClient#CONF_KEY_COORDINATOR_ALLOWED_URI
+ * mp.lra.coordinator.allowed-uri}
+ * Additional coordinator URLs whose LRA ids should be trusted, such as direct coordinator nodes behind a load balancer</li>
  * <li>{@link io.helidon.lra.coordinator.client.CoordinatorClient#CONF_KEY_COORDINATOR_TIMEOUT mp.lra.coordinator.timeout}
  * Timeout for coordinator calls</li>
  * <li>{@link io.helidon.lra.coordinator.client.CoordinatorClient#CONF_KEY_COORDINATOR_TIMEOUT_UNIT mp.lra.coordinator.timeout-unit}

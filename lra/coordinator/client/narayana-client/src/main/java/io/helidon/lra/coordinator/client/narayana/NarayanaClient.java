@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,19 @@
 package io.helidon.lra.coordinator.client.narayana;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.http.Headers;
@@ -58,8 +60,8 @@ public class NarayanaClient implements CoordinatorClient {
     private static final String QUERY_PARAM_TIME_LIMIT = "TimeLimit";
     private static final String QUERY_PARAM_PARENT_LRA = "ParentLRA";
     private static final String HEADER_LINK = "Link";
-    private static final Pattern LRA_ID_PATTERN = Pattern.compile("(.*)/([^/?]+).*");
 
+    private final Set<URI> allowedCoordinators = ConcurrentHashMap.newKeySet();
     private Supplier<URI> coordinatorUriSupplier;
     private Long coordinatorTimeout;
     private TimeUnit coordinatorTimeoutUnit;
@@ -79,6 +81,11 @@ public class NarayanaClient implements CoordinatorClient {
     }
 
     @Override
+    public void allowCoordinator(URI coordinatorUri) {
+        allowedCoordinators.add(normalizeCoordinatorUri(coordinatorUri));
+    }
+
+    @Override
     public Single<URI> start(String clientID, PropagatedHeaders headers, long timeout) {
         return startInternal(null, clientID, headers, timeout);
     }
@@ -90,9 +97,20 @@ public class NarayanaClient implements CoordinatorClient {
 
     private Single<URI> startInternal(URI parentLRA, String clientID, PropagatedHeaders headers, long timeout) {
         // We need to call coordinator which knows parent LRA
-        URI baseUri = Optional.ofNullable(parentLRA)
-                .map(p -> parseBaseUri(p.toASCIIString()))
-                .orElse(coordinatorUriSupplier.get());
+        URI baseUri;
+        if (parentLRA == null) {
+            baseUri = coordinatorUriSupplier.get();
+        } else {
+            try {
+                baseUri = parseLraCoordinatorBase(parentLRA);
+            } catch (CoordinatorConnectionException e) {
+                return Single.error(e);
+            }
+            Optional<CoordinatorConnectionException> validationError = validateCoordinatorBase(baseUri);
+            if (validationError.isPresent()) {
+                return Single.error(validationError.get());
+            }
+        }
 
         return retry.invoke(() -> prepareWebClient(baseUri)
                 .post()
@@ -127,12 +145,24 @@ public class NarayanaClient implements CoordinatorClient {
                                                 + "'Long-Running-Action' header."))
                 )
                 .onErrorResumeWith(t -> connectionError("Unable to start LRA", t))
-                .peek(lraId -> logF("LRA started - LRAID: {0} parent: {1}", lraId, parentLRA))
-                .first());
+                .first())
+                .flatMapSingle(lraId -> {
+                    try {
+                        allowedCoordinators.add(parseLraCoordinatorBase(lraId));
+                        return Single.just(lraId);
+                    } catch (CoordinatorConnectionException e) {
+                        return Single.error(e);
+                    }
+                })
+                .peek(lraId -> logF("LRA started - LRAID: {0} parent: {1}", lraId, parentLRA));
     }
 
     @Override
     public Single<Void> cancel(URI lraId, PropagatedHeaders headers) {
+        Optional<Single<Void>> validationError = coordinatorValidationError(lraId);
+        if (validationError.isPresent()) {
+            return validationError.get();
+        }
         return retry.invoke(() -> prepareWebClient(lraId)
                 .put()
                 .path("/cancel")
@@ -159,6 +189,10 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public Single<Void> close(URI lraId, PropagatedHeaders headers) {
+        Optional<Single<Void>> validationError = coordinatorValidationError(lraId);
+        if (validationError.isPresent()) {
+            return validationError.get();
+        }
         return retry.invoke(() -> prepareWebClient(lraId)
                 .put()
                 .path("/close")
@@ -191,6 +225,10 @@ public class NarayanaClient implements CoordinatorClient {
                                       PropagatedHeaders headers,
                                       long timeLimit,
                                       Participant p) {
+        Optional<Single<Optional<URI>>> validationError = coordinatorValidationError(lraId);
+        if (validationError.isPresent()) {
+            return validationError.get();
+        }
         String links = compensatorLinks(p);
 
         return retry.invoke(() -> prepareWebClient(lraId)
@@ -228,6 +266,10 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public Single<Void> leave(URI lraId, PropagatedHeaders headers, Participant p) {
+        Optional<Single<Void>> validationError = coordinatorValidationError(lraId);
+        if (validationError.isPresent()) {
+            return validationError.get();
+        }
         return retry.invoke(() -> prepareWebClient(lraId)
                 .put()
                 .path("/remove")
@@ -256,6 +298,10 @@ public class NarayanaClient implements CoordinatorClient {
 
     @Override
     public Single<LRAStatus> status(URI lraId, PropagatedHeaders headers) {
+        Optional<Single<LRAStatus>> validationError = coordinatorValidationError(lraId);
+        if (validationError.isPresent()) {
+            return validationError.get();
+        }
         return retry.invoke(() -> prepareWebClient(lraId)
                 .get()
                 .path("/status")
@@ -331,12 +377,84 @@ public class NarayanaClient implements CoordinatorClient {
     }
 
     static URI parseBaseUri(String lraUri) {
-        Matcher m = LRA_ID_PATTERN.matcher(lraUri);
-        if (!m.matches()) {
+        URI uri = URI.create(lraUri);
+        String path = Optional.ofNullable(uri.getPath()).orElse("");
+        for (String segment : path.split("/", -1)) {
+            if (".".equals(segment) || "..".equals(segment)) {
+                throw new RuntimeException("Error when parsing lra uri: " + lraUri);
+            }
+        }
+        int lastPathSeparator = path.lastIndexOf('/');
+        if (lastPathSeparator < 0 || lastPathSeparator == path.length() - 1) {
             //LRA id uri format
             throw new RuntimeException("Error when parsing lra uri: " + lraUri);
         }
-        return URI.create(m.group(1));
+        try {
+            return normalizeCoordinatorUri(new URI(uri.getScheme(),
+                                                  uri.getUserInfo(),
+                                                  uri.getHost(),
+                                                  uri.getPort(),
+                                                  path.substring(0, lastPathSeparator),
+                                                  null,
+                                                  null));
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("Error when parsing lra uri: " + lraUri, e);
+        }
+    }
+
+    private <T> Optional<Single<T>> coordinatorValidationError(URI lraId) {
+        return validateCoordinator(lraId)
+                .map(Single::error);
+    }
+
+    // Package-private for focused URI normalization tests without network calls.
+    Optional<CoordinatorConnectionException> validateCoordinator(URI lraId) {
+        try {
+            return validateCoordinatorBase(parseLraCoordinatorBase(lraId));
+        } catch (CoordinatorConnectionException e) {
+            return Optional.of(e);
+        }
+    }
+
+    private URI parseLraCoordinatorBase(URI lraId) {
+        try {
+            return parseBaseUri(lraId.toASCIIString());
+        } catch (RuntimeException e) {
+            throw new CoordinatorConnectionException("Untrusted LRA coordinator URI", e, 412);
+        }
+    }
+
+    private Optional<CoordinatorConnectionException> validateCoordinatorBase(URI coordinatorBase) {
+        URI configuredCoordinator = normalizeCoordinatorUri(coordinatorUriSupplier.get());
+        if (!coordinatorBase.equals(configuredCoordinator) && !allowedCoordinators.contains(coordinatorBase)) {
+            return Optional.of(new CoordinatorConnectionException("Untrusted LRA coordinator URI", 412));
+        }
+        return Optional.empty();
+    }
+
+    private static URI normalizeCoordinatorUri(URI uri) {
+        String scheme = Optional.ofNullable(uri.getScheme())
+                .map(s -> s.toLowerCase(Locale.ROOT))
+                .orElse(null);
+        String host = Optional.ofNullable(uri.getHost())
+                .map(h -> h.toLowerCase(Locale.ROOT))
+                .orElse(null);
+        if (scheme == null || host == null) {
+            throw new IllegalArgumentException("Coordinator URI must be absolute and include a host");
+        }
+        int port = uri.getPort();
+        if (("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443)) {
+            port = -1;
+        }
+        String path = Optional.ofNullable(uri.normalize().getPath()).orElse("");
+        while (path.endsWith("/") && !path.isEmpty()) {
+            path = path.substring(0, path.length() - 1);
+        }
+        try {
+            return new URI(scheme, uri.getUserInfo(), host, port, path, null, null);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid coordinator URI", e);
+        }
     }
 
     private Function<WebClientRequestHeaders, Headers> copyHeaders(PropagatedHeaders headers) {
@@ -363,4 +481,3 @@ public class NarayanaClient implements CoordinatorClient {
         LOGGER.log(Level.FINE, msg, params);
     }
 }
-

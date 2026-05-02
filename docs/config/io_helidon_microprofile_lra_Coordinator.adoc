@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ Optional configuration options:
 |Key |Type |Default value |Description
 
 |`mp.lra.coordinator.url` |string |`http://localhost:8070/lra-coordinator` |Url of coordinator.
+|`mp.lra.coordinator.allowed-uri` |string[] |{nbsp} |Additional coordinator URLs whose LRA ids should be trusted, such as direct coordinator nodes behind a load balancer.
 |`mp.lra.coordinator.propagation.active` |boolean |{nbsp} |Propagate LRA headers LRA_HTTP_CONTEXT_HEADER and LRA_HTTP_PARENT_CONTEXT_HEADER through non-LRA endpoints.
 |`mp.lara.participant.url` |string |{nbsp} |Url of the LRA enabled service overrides standard base uri, so coordinator can call load-balancer instead of the service.
 |`mp.lra.coordinator.timeout` |string |{nbsp} |Timeout for synchronous communication with coordinator.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.microprofile.lra;
 
 import java.net.URI;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -161,6 +162,9 @@ public class CoordinatorClusterDeploymentService {
                 ConfigSources.create(Config.builder()
                         // Coordinator config file
                         .addSource(ConfigSources.classpath("application.yaml"))
+                        .addSource(ConfigSources.create(Map.of(
+                                "helidon.lra.coordinator.participant-url.validation.allow-local-addresses",
+                                "true")))
                         .addFilter((key, old) ->
                                 // Replace jdbc url to avoid collision between coordinators
                                 // use inmemory db with different name

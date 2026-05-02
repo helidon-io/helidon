@@ -50,7 +50,7 @@ class HandlerService {
     private static final Map<String, AnnotationHandler.HandlerMaker> HANDLER_SUPPLIERS =
             Map.of(
                     LRA.class.getName(), LraAnnotationHandler::new,
-                    Leave.class.getName(), (a, c, i, p, t) -> new LeaveAnnotationHandler(c, p),
+                    Leave.class.getName(), (a, c, i, p, t) -> new LeaveAnnotationHandler(c, p, t),
                     Status.class.getName(), (a, c, i, p, t) -> new NoopAnnotationHandler(p),
                     AfterLRA.class.getName(), (a, c, i, p, t) -> new NoopAnnotationHandler(p)
             );
@@ -97,7 +97,7 @@ class HandlerService {
             Optional<Class<?>> inheritedAnnotation = ParticipantImpl.getLRAAnnotation(m)
                     .map(annotation -> annotation.annotationType());
             if (inheritedAnnotation.map(Class::getName).filter(Leave.class.getName()::equals).isPresent()) {
-                return List.of(new LeaveAnnotationHandler(coordinatorClient, participantService));
+                return List.of(new LeaveAnnotationHandler(coordinatorClient, participantService, coordinatorTimeout));
             }
             if (inheritedAnnotation.map(Class::getName).filter(STAND_ALONE_ANNOTATIONS::contains).isPresent()) {
                 return List.of(new NoopAnnotationHandler(participantService));
@@ -108,7 +108,7 @@ class HandlerService {
         if (lraAnnotations.stream()
                 .map(a -> a.name().toString())
                 .anyMatch(Leave.class.getName()::equals)) {
-            return List.of(new LeaveAnnotationHandler(coordinatorClient, participantService));
+            return List.of(new LeaveAnnotationHandler(coordinatorClient, participantService, coordinatorTimeout));
         }
 
         if (lraAnnotations.stream()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -46,6 +47,7 @@ import static io.helidon.lra.coordinator.client.CoordinatorClient.CONF_KEY_COORD
 public class CoordinatorLocatorService {
 
     private final Optional<String> clientFqdn;
+    private final Set<String> allowedCoordinatorUris;
     private final Long coordinatorTimeout;
     private final TimeUnit coordinatorTimeoutUnit;
     private Supplier<URI> coordinatorUriSupplier;
@@ -54,11 +56,14 @@ public class CoordinatorLocatorService {
     CoordinatorLocatorService(@ConfigProperty(name = "mp.lra.coordinator.client") Optional<String> clientFqdn,
                               @ConfigProperty(name = CONF_KEY_COORDINATOR_URL, defaultValue = CONF_DEFAULT_COORDINATOR_URL)
                                       String coordinatorUrl,
+                              @ConfigProperty(name = CoordinatorClient.CONF_KEY_COORDINATOR_ALLOWED_URI, defaultValue = "")
+                                      Set<String> allowedCoordinatorUris,
                               @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT, defaultValue = "30")
                                       Long coordinatorTimeout,
                               @ConfigProperty(name = CONF_KEY_COORDINATOR_TIMEOUT_UNIT, defaultValue = "SECONDS")
                                       TimeUnit coordinatorTimeoutUnit) {
         this.clientFqdn = clientFqdn;
+        this.allowedCoordinatorUris = allowedCoordinatorUris;
         this.coordinatorUriSupplier = () -> URI.create(coordinatorUrl);
         this.coordinatorTimeout = coordinatorTimeout;
         this.coordinatorTimeoutUnit = coordinatorTimeoutUnit;
@@ -103,7 +108,48 @@ public class CoordinatorLocatorService {
         }
 
         client.init(() -> coordinatorUriSupplier.get(), coordinatorTimeout, coordinatorTimeoutUnit);
+        applyAllowedCoordinatorUris(client);
 
         return client;
+    }
+
+    // Package-private for producer boundary tests with custom coordinator clients.
+    void applyAllowedCoordinatorUris(CoordinatorClient client) {
+        for (URI allowedCoordinatorUri : allowedCoordinatorUris()) {
+            try {
+                client.allowCoordinator(allowedCoordinatorUri);
+            } catch (UnsupportedOperationException e) {
+                throw new DeploymentException("Configured coordinator adapter "
+                                                      + client.getClass().getName()
+                                                      + " does not support "
+                                                      + CoordinatorClient.CONF_KEY_COORDINATOR_ALLOWED_URI
+                                                      + " value "
+                                                      + allowedCoordinatorUri, e);
+            } catch (IllegalArgumentException e) {
+                throw new DeploymentException("Invalid "
+                                                      + CoordinatorClient.CONF_KEY_COORDINATOR_ALLOWED_URI
+                                                      + " value "
+                                                      + allowedCoordinatorUri
+                                                      + " for configured coordinator adapter "
+                                                      + client.getClass().getName(), e);
+            }
+        }
+    }
+
+    // Package-private for config binding tests without starting a custom coordinator client.
+    List<URI> allowedCoordinatorUris() {
+        return allowedCoordinatorUris.stream()
+                .filter(uri -> !uri.isBlank())
+                .map(uri -> {
+                    try {
+                        return URI.create(uri);
+                    } catch (IllegalArgumentException e) {
+                        throw new DeploymentException("Invalid "
+                                                              + CoordinatorClient.CONF_KEY_COORDINATOR_ALLOWED_URI
+                                                              + " value "
+                                                              + uri, e);
+                    }
+                })
+                .collect(Collectors.toList());
     }
 }

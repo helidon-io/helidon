@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,10 @@ public interface CoordinatorClient {
      */
     String CONF_KEY_COORDINATOR_URL = "mp.lra.coordinator.url";
     /**
+     * Additional coordinator URLs whose LRA ids should be trusted, such as direct coordinator nodes behind a load balancer.
+     */
+    String CONF_KEY_COORDINATOR_ALLOWED_URI = "mp.lra.coordinator.allowed-uri";
+    /**
      * Timeout for synchronous communication with coordinator.
      */
     String CONF_KEY_COORDINATOR_TIMEOUT = "mp.lra.coordinator.timeout";
@@ -61,6 +65,21 @@ public interface CoordinatorClient {
      * @param timeoutUnit            timeout unit for coordinator calls
      */
     void init(Supplier<URI> coordinatorUriSupplier, long timeout, TimeUnit timeoutUnit);
+
+    /**
+     * Allow LRA ids that belong to the provided coordinator URI.
+     * <p>
+     * Implementations that validate LRA ids should trust the provided coordinator URI. Implementations that do not
+     * support explicit coordinator trust configuration should fail rather than silently ignoring this setting.
+     *
+     * @param coordinatorUri coordinator URI to trust
+     * @throws UnsupportedOperationException when the implementation does not support explicit coordinator trust
+     *                                      configuration
+     */
+    default void allowCoordinator(URI coordinatorUri) {
+        throw new UnsupportedOperationException("Coordinator trust configuration is not supported by "
+                                                        + getClass().getName());
+    }
 
     /**
      * Ask coordinator to start new LRA and return its id.
