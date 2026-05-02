@@ -69,6 +69,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
         // if not expecting continue, then we must expect the entity is being sent, and so we also treat it as if continue
         // was sent
         this.continueSent = continueImmediately || !expectContinue;
+        var listenerCtx = ctx.listenerContext();
         // we need the same entity instance every time the entity() method is called
         this.entity = LazyValue.create(() -> ServerRequestEntity.create(this::trySend100,
                                                                         streamFilter,
@@ -76,7 +77,8 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
                                                                         it -> readEntityFromPipeline.get(),
                                                                         entityReadLatch::countDown,
                                                                         headers,
-                                                                        ctx.listenerContext().mediaContext(),
+                                                                        listenerCtx.mediaContext(),
+                                                                        listenerCtx.config().maxPayloadSize(),
                                                                         http1Config.maxBufferedEntitySize().toBytes()));
     }
 
