@@ -16,10 +16,15 @@
 
 package io.helidon.webclient.api;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Optional;
+
 import io.helidon.common.GenericType;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Status;
+import io.helidon.http.media.ReadableEntity;
 
 class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
     private final HttpClientResponse response;
@@ -50,7 +55,7 @@ class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
         T entity;
         RuntimeException thrown;
         try {
-            entity = response.entity().as(entityType);
+            entity = entity(response, entityType);
             thrown = null;
         } catch (RuntimeException e) {
             thrown = e;
@@ -92,5 +97,65 @@ class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
     @Override
     public void close() {
         response.close();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T entity(HttpClientResponse response, GenericType<T> entityType) {
+        GenericType<?> optionalEntityType = optionalEntityType(entityType);
+        if (optionalEntityType != null) {
+            if (emptyOptionalResponse(response)) {
+                return (T) Optional.empty();
+            }
+            ReadableEntity readableEntity = response.entity();
+            if (response.status() == Status.NOT_FOUND_404) {
+                readableEntity.consume();
+                response.close();
+                return (T) Optional.empty();
+            }
+            if (!readableEntity.hasEntity()) {
+                response.close();
+                return (T) Optional.empty();
+            }
+            return (T) readableEntity.asOptional(optionalEntityType);
+        }
+        return response.entity().as(entityType);
+    }
+
+    private static boolean emptyOptionalResponse(HttpClientResponse response) {
+        Status status = response.status();
+        if (status.family() == Status.Family.INFORMATIONAL) {
+            response.close();
+            return true;
+        }
+
+        int statusCode = status.code();
+        if (statusCode == Status.NO_CONTENT_204.code()
+                || statusCode == Status.RESET_CONTENT_205.code()
+                || statusCode == Status.NOT_MODIFIED_304.code()) {
+            response.close();
+            return true;
+        }
+
+        if (response.headers().contentLength().orElse(-1) == 0) {
+            response.close();
+            return true;
+        }
+
+        return false;
+    }
+
+    private static GenericType<?> optionalEntityType(GenericType<?> entityType) {
+        if (!Optional.class.equals(entityType.rawType())) {
+            return null;
+        }
+        Type genericType = entityType.type();
+        if (!(genericType instanceof ParameterizedType parameterizedType)) {
+            return null;
+        }
+        Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+        if (actualTypeArguments.length != 1) {
+            return null;
+        }
+        return GenericType.create(actualTypeArguments[0]);
     }
 }

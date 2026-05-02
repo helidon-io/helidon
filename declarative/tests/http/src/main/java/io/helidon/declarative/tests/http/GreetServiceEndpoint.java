@@ -198,6 +198,33 @@ class GreetServiceEndpoint implements GreetService {
         return "Success";
     }
 
+    @Http.GET
+    @Http.Path("/optional-present/{name}")
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    JsonObject optionalMessage(@Http.PathParam("name") String name) {
+        return response(name);
+    }
+
+    @Http.GET
+    @Http.Path("/optional/empty")
+    @RestServer.Status(Status.NO_CONTENT_204_CODE)
+    void optionalMessageEmpty() {
+    }
+
+    @Http.GET
+    @Http.Path("/optional/not-found")
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    Optional<JsonObject> optionalMessageNotFound() {
+        return Optional.empty();
+    }
+
+    @Http.GET
+    @Http.Path("/optional/not-found/handled")
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    Optional<JsonObject> optionalMessageNotFoundHandled() {
+        return Optional.empty();
+    }
+
     /**
      * Set the greeting to use in future messages.
      *

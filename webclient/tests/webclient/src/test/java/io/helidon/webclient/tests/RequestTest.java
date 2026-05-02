@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package io.helidon.webclient.tests;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.Optional;
 
+import io.helidon.common.GenericType;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1ClientRequest;
@@ -113,9 +115,40 @@ class RequestTest extends TestParent {
         JsonObject jsonObject = client.get().requestEntity(JsonObject.class);
         assertThat(jsonObject.getString("message"), is("Hola World!"));
 
-        try (Http1ClientResponse response = client.put("/greeting").submit(JSON_OLD_GREETING)) {
-            assertThat(response.status().code(), is(204));
+        try (Http1ClientResponse restoreResponse = client.put("/greeting").submit(JSON_OLD_GREETING)) {
+            assertThat(restoreResponse.status().code(), is(204));
         }
+    }
+
+    @Test
+    void testOptionalTypedResponseNoContent() {
+        GenericType<Optional<JsonObject>> optionalJson = new GenericType<Optional<JsonObject>>() { };
+
+        var response = noServiceClient().put("/greeting").submit(JSON_NEW_GREETING, optionalJson);
+        assertThat(response.status(), is(Status.NO_CONTENT_204));
+        assertThat(response.entity(), is(Optional.empty()));
+
+        try (Http1ClientResponse restoreResponse = client.put("/greeting").submit(JSON_OLD_GREETING)) {
+            assertThat(restoreResponse.status().code(), is(204));
+        }
+    }
+
+    @Test
+    void testOptionalTypedResponseNotFound() {
+        GenericType<Optional<JsonObject>> optionalJson = new GenericType<Optional<JsonObject>>() { };
+
+        var response = noServiceClient().get("/incorrect").request(optionalJson);
+        assertThat(response.status(), is(Status.NOT_FOUND_404));
+        assertThat(response.entity(), is(Optional.empty()));
+    }
+
+    @Test
+    void testOptionalTypedResponseNotFoundWithEntity() {
+        GenericType<Optional<JsonObject>> optionalJson = new GenericType<Optional<JsonObject>>() { };
+
+        var response = noServiceClient().get("/not-found-with-entity").request(optionalJson);
+        assertThat(response.status(), is(Status.NOT_FOUND_404));
+        assertThat(response.entity(), is(Optional.empty()));
     }
 
     @Test
