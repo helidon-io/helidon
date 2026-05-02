@@ -37,6 +37,10 @@ class CorsValidator {
 
     static CorsValidator create(CorsConfig config, String socketName) {
         List<CorsPathValidator> validators = new ArrayList<>();
+        if (!config.enabled()) {
+            return new CorsValidator(socketName, validators);
+        }
+
         Set<String> usedPatterns = new HashSet<>();
 
         for (CorsPathConfig path : config.paths()) {
@@ -44,7 +48,7 @@ class CorsValidator {
             // and at the same time eliminate disabled entries
             // we could keep them in, as the config override is called first, and it never reaches the discovered one
             // but this is cleaner and faster
-            if (usedPatterns.add(path.pathPattern())) {
+            if (path.enabled() && usedPatterns.add(path.pathPattern())) {
                 validators.add(CorsPathValidator.create(path));
             }
         }
