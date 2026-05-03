@@ -99,7 +99,7 @@
         <version.lib.opentelemetry>1.58.0</version.lib.opentelemetry>
         <version.lib.opentelemetry.instrumentation.annotations>2.24.0</version.lib.opentelemetry.instrumentation.annotations>
         <version.lib.parsson>1.1.7</version.lib.parsson>
-        <version.lib.postgresql>42.7.2</version.lib.postgresql>
+        <version.lib.postgresql>42.7.11</version.lib.postgresql>
         <version.lib.prometheus>0.16.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.slf4j>2.0.17</version.lib.slf4j>
