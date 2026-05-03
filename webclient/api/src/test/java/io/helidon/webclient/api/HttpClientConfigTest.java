@@ -17,6 +17,7 @@
 package io.helidon.webclient.api;
 
 import java.net.UnixDomainSocketAddress;
+import java.nio.file.Path;
 import java.util.Map;
 
 import io.helidon.config.Config;
@@ -37,6 +38,6 @@ class HttpClientConfigTest {
                 .baseAddress()
                 .orElseThrow();
 
-        assertThat(socketAddress.getPath().toString(), is("/tmp/client.sock"));
+        assertThat(socketAddress.getPath(), is(Path.of("/tmp/client.sock")));
     }
 }

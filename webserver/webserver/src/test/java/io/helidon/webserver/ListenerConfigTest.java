@@ -17,6 +17,7 @@
 package io.helidon.webserver;
 
 import java.net.UnixDomainSocketAddress;
+import java.nio.file.Path;
 import java.util.Map;
 
 import io.helidon.config.Config;
@@ -37,7 +38,7 @@ public class ListenerConfigTest {
                 .bindAddress()
                 .orElseThrow();
 
-        assertThat(socketAddress.getPath().toString(), is("/tmp/server.sock"));
+        assertThat(socketAddress.getPath(), is(Path.of("/tmp/server.sock")));
     }
 
     @Test
