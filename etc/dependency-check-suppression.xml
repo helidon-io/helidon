@@ -171,7 +171,23 @@
     <cve>CVE-2026-39882</cve>
 </suppress>
 
-
+<!--
+   These CVEs are against OpenTelemetry dotnet, not Java
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: opentelemetry-proto-1.5.0-alpha.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.proto/opentelemetry-proto@.*$</packageUrl>
+    <cve>CVE-2026-41078</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: opentelemetry-proto-1.5.0-alpha.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.proto/opentelemetry-proto@.*$</packageUrl>
+    <cve>CVE-2026-40894</cve>
+</suppress>
 
 <!-- False Positive.
      This CVE is against gRPC-Go servers not gRPC Java
