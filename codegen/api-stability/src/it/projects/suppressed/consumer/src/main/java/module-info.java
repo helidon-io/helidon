@@ -16,6 +16,5 @@
 
 module io.helidon.codegen.tests.apistability.consumer {
     requires io.helidon.common;
-    requires io.helidon.common.mapper;
     requires io.helidon.codegen.tests.apistability.dependency;
 }

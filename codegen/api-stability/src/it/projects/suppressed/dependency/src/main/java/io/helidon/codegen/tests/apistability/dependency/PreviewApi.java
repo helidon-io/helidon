@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-module io.helidon.codegen.tests.apistability.consumer {
-    requires io.helidon.common;
-    requires io.helidon.codegen.tests.apistability.dependency;
+package io.helidon.codegen.tests.apistability.dependency;
+
+import io.helidon.common.Api;
+
+@Api.Preview
+public class PreviewApi {
 }
