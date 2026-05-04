@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 /**
- * JSON Processing support for Helidon Database Client.
- *
- * @deprecated use {@code helidon-dbclient-json} instead
+ * Helidon JSON support for Helidon Database Client.
  */
-@Deprecated(forRemoval = true, since = "4.5.0")
-package io.helidon.dbclient.jsonp;
+package io.helidon.dbclient.json;

@@ -59,13 +59,22 @@ public abstract sealed class JsonValue
      */
     public abstract void toJson(JsonGenerator generator);
 
-    @Override
-    public String toString() {
+    /**
+     * Return the JSON text representation of this value.
+     *
+     * @return serialized JSON text
+     */
+    public String text() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         JsonGenerator.create(baos)
                 .write(this)
                 .close();
         return baos.toString(StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public String toString() {
+        return text();
     }
 
     /**

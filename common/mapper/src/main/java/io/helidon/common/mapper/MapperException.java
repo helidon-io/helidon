@@ -19,12 +19,20 @@ import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 
 /**
- * An exception that is thrown when mapping failed to map source to target.
- * This may be either a problem that the mapper was not found (it is not registered) or that the mapping itself failed.
+ * A mapping failure between source and target types.
+ * <p>
+ * This base exception covers both lookup failures, when no mapper is registered, and execution failures reported by a
+ * mapper that was found. Use {@link #sourceType()}, {@link #targetType()}, and {@link #detail()} to inspect the
+ * failed mapping without parsing {@link #getMessage()}. Some APIs may report missing-mapper cases using the more
+ * specific {@link MapperNotFoundException}.
  */
 @Api.Stable
 public class MapperException extends RuntimeException {
     private static final long serialVersionUID = 1L;
+
+    private final GenericType<?> sourceType;
+    private final GenericType<?> targetType;
+    private final String detail;
 
     /**
      * Failed with no underlying exception.
@@ -34,7 +42,10 @@ public class MapperException extends RuntimeException {
      * @param detail descriptive message of what failed
      */
     public MapperException(GenericType<?> source, GenericType<?> target, String detail) {
-        super("Failed to map " + source.getTypeName() + " to " + target.getTypeName() + ": " + detail);
+        super(createMessage(source, target, detail));
+        this.sourceType = source;
+        this.targetType = target;
+        this.detail = detail;
     }
 
     /**
@@ -46,6 +57,42 @@ public class MapperException extends RuntimeException {
      * @param cause cause of this exception
      */
     public MapperException(GenericType<?> source, GenericType<?> target, String detail, Throwable cause) {
-        super("Failed to map " + source.getTypeName() + " to " + target.getTypeName() + ": " + detail, cause);
+        super(createMessage(source, target, detail), cause);
+        this.sourceType = source;
+        this.targetType = target;
+        this.detail = detail;
+    }
+
+    /**
+     * Type of the source involved in the failed mapping attempt.
+     *
+     * @return source type
+     */
+    public GenericType<?> sourceType() {
+        return sourceType;
+    }
+
+    /**
+     * Type of the requested target involved in the failed mapping attempt.
+     *
+     * @return target type
+     */
+    public GenericType<?> targetType() {
+        return targetType;
+    }
+
+    /**
+     * Detail describing the mapping failure.
+     * <p>
+     * This is the unformatted detail appended to the standard exception message.
+     *
+     * @return failure detail
+     */
+    public String detail() {
+        return detail;
+    }
+
+    private static String createMessage(GenericType<?> source, GenericType<?> target, String detail) {
+        return "Failed to map " + source.getTypeName() + " to " + target.getTypeName() + ": " + detail;
     }
 }

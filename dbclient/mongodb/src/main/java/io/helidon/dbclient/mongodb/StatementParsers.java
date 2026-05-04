@@ -25,7 +25,11 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import jakarta.json.Json;
+import io.helidon.json.JsonBoolean;
+import io.helidon.json.JsonNull;
+import io.helidon.json.JsonNumber;
+import io.helidon.json.JsonString;
+
 import jakarta.json.JsonValue;
 
 /**
@@ -46,10 +50,13 @@ final class StatementParsers {
      */
     static String toJson(Object value) {
         if (value == null) {
-            return JsonValue.NULL.toString();
+            return JsonNull.instance().text();
         }
         if (value instanceof JsonValue jsonValue) {
             return jsonValue.toString();
+        }
+        if (value instanceof io.helidon.json.JsonValue jsonValue) {
+            return jsonValue.text();
         }
         if (value instanceof Map<?, ?> map) {
             return toJsonObject(map);
@@ -61,29 +68,33 @@ final class StatementParsers {
             return toJsonArray(value);
         }
         if ((value instanceof Integer) || (value instanceof Short) || (value instanceof Byte)) {
-            return Json.createValue(((Number) value).intValue()).toString();
+            return JsonNumber.create(((Number) value).longValue()).text();
         }
         if (value instanceof Long) {
-            return Json.createValue((Long) value).toString();
+            return JsonNumber.create((Long) value).text();
         }
         if ((value instanceof Double) || (value instanceof Float)) {
-            return Json.createValue(((Number) value).doubleValue()).toString();
+            double doubleValue = ((Number) value).doubleValue();
+            if (Double.isFinite(doubleValue)) {
+                return JsonNumber.create(doubleValue).text();
+            }
+            return JsonString.create(String.valueOf(value)).text();
         }
         if (value instanceof BigInteger) {
-            return Json.createValue((BigInteger) value).toString();
+            return JsonNumber.create(new BigDecimal((BigInteger) value)).text();
         }
         if (value instanceof BigDecimal) {
-            return Json.createValue((BigDecimal) value).toString();
+            return JsonNumber.create((BigDecimal) value).text();
         }
         if (value instanceof Boolean) {
-            return value.toString();
+            return JsonBoolean.create((Boolean) value).text();
         }
         // Check instanceof Number is more expensive than final types, it shall be at the end
         if (value instanceof Number) {
             return value.toString();
         }
         // String.valueOf handles null value
-        return Json.createValue(String.valueOf(value)).toString();
+        return JsonString.create(String.valueOf(value)).text();
     }
 
     private static String toJsonObject(Map<?, ?> value) {
@@ -91,7 +102,7 @@ final class StatementParsers {
         Iterator<? extends Map.Entry<?, ?>> iterator = value.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<?, ?> entry = iterator.next();
-            builder.append(Json.createValue(String.valueOf(entry.getKey())));
+            builder.append(JsonString.create(String.valueOf(entry.getKey())).text());
             builder.append(':');
             builder.append(toJson(entry.getValue()));
             if (iterator.hasNext()) {
