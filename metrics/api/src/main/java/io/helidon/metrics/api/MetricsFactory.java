@@ -56,7 +56,10 @@ public interface MetricsFactory {
      * current config.
      *
      * @return current or new metrics factory
+     * @deprecated use {@link io.helidon.service.registry.Services#get(Class)} - i.e.
+     *          {@code Services.get(MetricsFactory.class)}
      */
+    @Deprecated(since = "4.5.0", forRemoval = true)
     static MetricsFactory getInstance() {
         return MetricsFactoryManager.getMetricsFactory();
     }
@@ -68,7 +71,8 @@ public interface MetricsFactory {
      *
      * @param config config node
      * @return new instance configured as directed
-     * @deprecated use {@link #getInstance(io.helidon.config.Config)} instead
+     * @deprecated use {@link io.helidon.service.registry.Services#get(Class)} - i.e.
+     *          {@code Services.get(MetricsFactory.class)}
      */
     @SuppressWarnings("removal")
     @Deprecated(since = "4.4.0", forRemoval = true)
@@ -83,7 +87,10 @@ public interface MetricsFactory {
      *
      * @param metricsConfigNode metrics config node
      * @return new instance configured as directed
+     * @deprecated use {@link io.helidon.service.registry.Services#get(Class)} - i.e.
+     *          {@code Services.get(MetricsFactory.class)}
      */
+    @Deprecated(since = "4.5.0", forRemoval = true)
     static MetricsFactory getInstance(Config metricsConfigNode) {
         return MetricsFactoryManager.getMetricsFactory(metricsConfigNode);
     }
