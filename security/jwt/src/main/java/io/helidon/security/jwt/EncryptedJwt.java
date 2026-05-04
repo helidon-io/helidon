@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ public final class EncryptedJwt {
 
     private static final Map<SupportedAlgorithm, String> RSA_ALGORITHMS;
     private static final Map<SupportedEncryption, AesAlgorithm> CONTENT_ENCRYPTION;
+    private static final String RSA1_5_UNSUPPORTED = "RSA1_5 is not supported for JWE key management.";
 
     private static final Pattern JWE_PATTERN = Pattern
             .compile("(^[\\S]+)\\.([\\S]+)\\.([\\S]+)\\.([\\S]+)\\.([\\S]+$)");
@@ -64,8 +65,7 @@ public final class EncryptedJwt {
 
     static {
         RSA_ALGORITHMS = Map.of(SupportedAlgorithm.RSA_OAEP, "RSA/ECB/OAEPWithSHA-1AndMGF1Padding",
-                                SupportedAlgorithm.RSA_OAEP_256, "RSA/ECB/OAEPWithSHA-256AndMGF1Padding",
-                                SupportedAlgorithm.RSA1_5, "RSA/ECB/PKCS1Padding");
+                                SupportedAlgorithm.RSA_OAEP_256, "RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
 
         CONTENT_ENCRYPTION = Map.of(SupportedEncryption.A128GCM, new AesGcmAlgorithm(128),
                                     SupportedEncryption.A192GCM, new AesGcmAlgorithm(192),
@@ -317,7 +317,11 @@ public final class EncryptedJwt {
         if (alg != null) {
             try {
                 SupportedAlgorithm supportedAlgorithm = SupportedAlgorithm.getValue(alg);
-                algorithm = RSA_ALGORITHMS.get(supportedAlgorithm);
+                if (supportedAlgorithm == SupportedAlgorithm.RSA1_5) {
+                    errors.fatal(RSA1_5_UNSUPPORTED);
+                } else {
+                    algorithm = RSA_ALGORITHMS.get(supportedAlgorithm);
+                }
             } catch (IllegalArgumentException e) {
                 errors.fatal("Value of the claim alg not supported. alg: " + alg);
             }
@@ -489,6 +493,9 @@ public final class EncryptedJwt {
 
         @Override
         public EncryptedJwt build() {
+            if (algorithm == SupportedAlgorithm.RSA1_5) {
+                throw new JwtException(RSA1_5_UNSUPPORTED);
+            }
             headersBuilder.algorithm(algorithm.toString());
             headersBuilder.encryption(encryption.toString());
             headersBuilder.contentType("JWT");
@@ -550,8 +557,11 @@ public final class EncryptedJwt {
          */
         RSA_OAEP_256("RSA-OAEP-256"),
         /**
-         * RSA1_5 declares that RSA/ECB/PKCS1Padding cipher will be used for content key encryption.
+         * RSA1_5 declares a legacy RSA/ECB/PKCS1Padding key management value retained for source compatibility.
+         *
+         * @deprecated RSA1_5 is not supported for JWE key management.
          */
+        @Deprecated(forRemoval = true, since = "3.2.17")
         RSA1_5("RSA1_5");
 
         private final String algorithmName;
