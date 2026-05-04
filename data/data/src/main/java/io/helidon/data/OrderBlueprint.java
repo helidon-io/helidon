@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.data;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Single rule of the dynamic ordering of the query result.
@@ -26,6 +27,7 @@ import io.helidon.builder.api.Prototype;
  * {@code SELECT t FROM Type t WHERE t.name = :name ORDER BY t.name DESC, t.id} this is the
  * {@code t.name DESC} and {@code t.id} as two separate {@link Order} instances.
  */
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.CustomMethods(OrderSupport.class)
 interface OrderBlueprint {
