@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,12 @@
  */
 package io.helidon.data;
 
+import io.helidon.common.Api;
+
 /**
  * Thrown when a query was expected to produce a result, but did not.
  */
+@Api.Preview
 public class NoResultException extends DataException {
 
     /**

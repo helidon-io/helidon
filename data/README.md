@@ -3,6 +3,9 @@ Helidon Data
 
 Repository based database access.
 
+Helidon Data is a preview feature. It is ready for production use, but its APIs may change without
+the usual deprecation process. This feature will be backward compatible within a major version of Helidon.
+
 # Glossary
 
 | Name             | Description                                                                                                          |

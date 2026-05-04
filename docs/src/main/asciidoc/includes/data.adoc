@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,6 +26,10 @@ interfaces with query definitions to be translated into implementation classes a
 
 The Helidon Data Repository supports Jakarta Persistence and major providers such as EclipseLink
 and Hibernate.
+
+[NOTE]
+Helidon Data Repository is a preview feature. It is ready for production use, but its APIs may change without
+the usual deprecation process. This feature will be backward compatible within a major version of Helidon.
 
 include::{rootdir}/includes/dependencies.adoc[]
 

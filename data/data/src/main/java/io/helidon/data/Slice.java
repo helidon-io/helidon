@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.data;
 import java.util.List;
 import java.util.stream.Stream;
 
+import io.helidon.common.Api;
+
 /**
  * Pageable query result as pages without total size of the result.
  * <p>
@@ -29,6 +31,7 @@ import java.util.stream.Stream;
  *
  * @param <T> query result type (entity or entity attribute)
  */
+@Api.Preview
 public interface Slice<T> extends Iterable<T> {
 
     /**

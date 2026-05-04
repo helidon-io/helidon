@@ -16,12 +16,16 @@
 
 /**
  * Helidon Data Repository with Jakarta Persistence Runtime.
+ * <p>
+ * This is a preview feature of Helidon - it is ready for production use, but we reserve the rights to change APIs
+ * without the usual deprecation process. This feature will be backward compatible within a major version of Helidon.
  */
 module io.helidon.data.jakarta.persistence {
 
     requires transitive jakarta.persistence;
     requires transitive io.helidon.service.registry;
 
+    requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.data;
     requires io.helidon.data.sql.common;

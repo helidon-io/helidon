@@ -20,6 +20,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.Functions;
 import io.helidon.service.registry.Service;
 
@@ -30,6 +31,7 @@ import jakarta.persistence.PersistenceUnitUtil;
 /**
  * Jakarta Persistence specific repository tasks executor.
  */
+@Api.Preview
 @Service.Contract
 public interface JpaRepositoryExecutor extends AutoCloseable {
     /**
