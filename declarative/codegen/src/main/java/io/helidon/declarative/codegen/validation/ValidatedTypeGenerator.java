@@ -395,7 +395,7 @@ class ValidatedTypeGenerator {
                 .addContent("(")
                 .addContentLiteral("Invalid property name: ")
                 .addContentLine(" + propertyName);")
-                .addContentLine("};");
+                .addContentLine("}");
 
         classModel.addMethod(checkProperty);
 
@@ -428,7 +428,7 @@ class ValidatedTypeGenerator {
                 .addContent("(")
                 .addContentLiteral("Invalid property name: ")
                 .addContentLine(" + propertyName);")
-                .addContentLine("};");
+                .addContentLine("}");
 
         classModel.addMethod(checkPropertyValue);
     }
