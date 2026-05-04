@@ -110,7 +110,7 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
      *
      * @return tracer
      * @deprecated use {@link io.helidon.service.registry.Services#get(Class)} - i.e.
-     *          {@code Services.get(Tracer.class)}, or use your registry instance in a similar way
+     *          {@code Services.get(Tracer.class)}
      */
     @Deprecated(since = "4.5.0", forRemoval = true)
     public static Tracer globalTracer() {
