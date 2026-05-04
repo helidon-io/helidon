@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,13 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 
+import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.config.Config;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.core.PriorityBag;
+import io.helidon.grpc.server.spi.GrpcRoutingConfigurer;
 
 import io.grpc.BindableService;
 import io.grpc.ServerInterceptor;
@@ -62,6 +66,16 @@ public interface GrpcRouting {
     }
 
     /**
+     * Obtain a GrpcRouting builder configured from the provided root application config.
+     *
+     * @param config root application configuration to use with routing configurers
+     * @return a GrpcRouting builder
+     */
+    static Builder builder(Config config) {
+        return new Builder().config(config);
+    }
+
+    /**
      * Creates new {@link GrpcServer} instance with provided configuration and this routing.
      *
      * @param configuration a gRPC server configuration
@@ -98,6 +112,22 @@ public interface GrpcRouting {
          * applied to all services.
          */
         private PriorityBag<ServerInterceptor> interceptors = PriorityBag.withDefaultPriority(InterceptorPriorities.USER);
+
+        private List<GrpcRoutingConfigurer> configurers =
+                HelidonServiceLoader.create(ServiceLoader.load(GrpcRoutingConfigurer.class)).asList();
+
+        private Config config;
+
+        /**
+         * Update the builder from root application configuration.
+         *
+         * @param config root application configuration to use with routing configurers
+         * @return this builder to allow fluent method chaining
+         */
+        public Builder config(Config config) {
+            this.config = config;
+            return this;
+        }
 
         /**
          * Add one or more global {@link ServerInterceptor} instances that will intercept calls
@@ -206,7 +236,33 @@ public interface GrpcRouting {
          * @return a new {@link GrpcRouting} instance
          */
         public GrpcRouting build() {
-            return GrpcRoutingImpl.create(services.values(), interceptors);
+            PriorityBag<ServerInterceptor> routingInterceptors = interceptors.copyMe();
+            if (!configurers.isEmpty()) {
+                Config routingConfig = config == null ? Config.create() : config;
+
+                for (GrpcRoutingConfigurer configurer : configurers) {
+                    Iterable<ServerInterceptor> configuredInterceptors =
+                            configurer.interceptors(routingConfig, routingInterceptors);
+                    if (configuredInterceptors == null) {
+                        continue;
+                    }
+
+                    for (ServerInterceptor interceptor : configuredInterceptors) {
+                        if (interceptor != null) {
+                            routingInterceptors.add(interceptor);
+                        }
+                    }
+                }
+            }
+
+            for (ServerInterceptor interceptor : routingInterceptors) {
+                if (interceptor instanceof ServiceDescriptor.Configurer) {
+                    ServiceDescriptor.Configurer configurer = (ServiceDescriptor.Configurer) interceptor;
+                    services.values().forEach(configurer::validate);
+                }
+            }
+
+            return GrpcRoutingImpl.create(services.values(), routingInterceptors);
         }
 
         // ---- helpers -----------------------------------------------------
@@ -222,7 +278,11 @@ public interface GrpcRouting {
                     .map(ServiceDescriptor.Configurer.class::cast)
                     .forEach(interceptor -> interceptor.configure(builder));
 
-            register(builder.build());
+            ServiceDescriptor service = builder.build();
+            if (configurer != null) {
+                configurer.validate(service);
+            }
+            register(service);
             return this;
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,14 @@ package io.helidon.security.integration.grpc;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -126,6 +129,9 @@ public final class GrpcSecurity
     public static final Context.Key<GrpcSecurityHandler> GRPC_SECURITY_HANDLER =
             Context.key("Helidon.SecurityInterceptor");
 
+    private static final Context.Key<Config> GRPC_SECURITY_PROCESSED =
+            Context.key("Helidon.SecurityInterceptorProcessed");
+
     /**
      * The value used for the key of the security context environment's ABAC request remote address attribute.
      */
@@ -152,8 +158,12 @@ public final class GrpcSecurity
     private static final AtomicInteger SECURITY_COUNTER = new AtomicInteger();
 
     private final Security security;
+    private final Optional<Config> securityConfig;
     private final Optional<Config> config;
     private final GrpcSecurityHandler defaultHandler;
+    private final Map<String, GrpcSecurityHandler> serviceHandlers = new HashMap<>();
+    private final Map<String, Map<String, GrpcSecurityHandler>> methodHandlers = new HashMap<>();
+    private final Set<GrpcSecurityHandler> configBackedHandlers = Collections.newSetFromMap(new IdentityHashMap<>());
 
     private GrpcSecurity(Security security, Config config) {
         this(security, Optional.ofNullable(config), GrpcSecurityHandler.create());
@@ -161,10 +171,43 @@ public final class GrpcSecurity
 
     private GrpcSecurity(Security security, Optional<Config> config, GrpcSecurityHandler defaultHandler) {
         this.security = security;
-        this.config = config.map(cfg -> cfg.get(KEY_GRPC_CONFIG));
+        this.securityConfig = config.filter(Config::exists);
+        this.config = securityConfig.map(cfg -> cfg.get(KEY_GRPC_CONFIG))
+                .filter(Config::exists);
         this.defaultHandler = this.config
-                .map(cfg -> GrpcSecurityHandler.create(cfg.get("defaults"), defaultHandler))
+                .map(cfg -> createConfigBackedHandler(cfg.get("defaults"), defaultHandler))
                 .orElse(defaultHandler);
+        this.config.ifPresent(grpcConfig -> grpcConfig.get("services").asNodeList().ifPresent(configs -> {
+            for (Config grpcServiceConfig : configs) {
+                String serviceName = grpcServiceConfig.get("name").asString().orElse(null);
+                if (serviceName == null) {
+                    continue;
+                }
+
+                GrpcSecurityHandler defaults = grpcServiceConfig.get("defaults").exists()
+                        ? createConfigBackedHandler(grpcServiceConfig.get("defaults"), this.defaultHandler)
+                        : this.defaultHandler;
+
+                Config methodsConfig = grpcServiceConfig.get("methods");
+                if (methodsConfig.exists()) {
+                    Map<String, GrpcSecurityHandler> handlers = new HashMap<>();
+                    methodsConfig.asNodeList().ifPresent(methodConfigs -> {
+                        for (Config methodConfig : methodConfigs) {
+                            String name = methodConfig.get("name")
+                                    .asString()
+                                    .orElseThrow(() -> new SecurityException(methodConfig
+                                                             .key() + " must contain name key with a method name to "
+                                                             + "register to gRPC server security"));
+
+                            handlers.put(name, createConfigBackedHandler(methodConfig, defaults));
+                        }
+                    });
+                    methodHandlers.put(serviceName, handlers);
+                } else {
+                    serviceHandlers.put(serviceName, defaults);
+                }
+            }
+        }));
     }
 
     /**
@@ -207,6 +250,23 @@ public final class GrpcSecurity
      */
     public static GrpcSecurity create(Security security, Config config) {
         return new GrpcSecurity(security, config);
+    }
+
+    /**
+     * Whether this interceptor uses the same security configuration.
+     *
+     * @param config security configuration
+     * @return {@code true} if this interceptor was created from an equivalent security configuration
+     */
+    public boolean usesSameConfig(Config config) {
+        Objects.requireNonNull(config, "Config must not be null");
+        if (!config.exists()) {
+            return false;
+        }
+        return securityConfig
+                .map(security -> security.asMap().orElse(Collections.emptyMap())
+                        .equals(config.asMap().orElse(Collections.emptyMap())))
+                .orElse(false);
     }
 
     /**
@@ -384,18 +444,46 @@ public final class GrpcSecurity
         config.ifPresent(grpcConfig -> modifyServiceDescriptorConfig(rules, grpcConfig));
     }
 
+    @Override
+    public void validate(ServiceDescriptor descriptor) {
+        config.ifPresent(grpcConfig -> grpcConfig.get("services")
+                .asNodeList()
+                .map(list -> findServiceConfig(descriptor.name(), descriptor.fullName(), list))
+                .ifPresent(grpcServiceConfig -> {
+                    Config methodsConfig = grpcServiceConfig.get("methods");
+                    if (methodsConfig.exists()) {
+                        methodsConfig.asNodeList().ifPresent(configs -> {
+                            for (Config methodConfig : configs) {
+                                String name = methodConfig.get("name")
+                                        .asString()
+                                        .orElseThrow(() -> new SecurityException(methodConfig
+                                                                 .key() + " must contain name key with a method name to "
+                                                                 + "register to gRPC server security"));
+
+                                if (descriptor.method(name) == null) {
+                                    throw new IllegalArgumentException("No method exists with name '" + name + "'");
+                                }
+                            }
+                        });
+                    }
+                }));
+    }
+
     private void modifyServiceDescriptorConfig(ServiceDescriptor.Rules rules, Config grpcConfig) {
         String serviceName = rules.name();
 
         grpcConfig.get("services")
                 .asNodeList()
-                .map(list -> findServiceConfig(serviceName, list))
+                .map(list -> findServiceConfig(serviceName, null, list))
                 .ifPresent(cfg -> configureServiceSecurity(rules, cfg));
     }
 
-    private Config findServiceConfig(String serviceName, List<Config> list) {
+    private Config findServiceConfig(String serviceName, String fullServiceName, List<Config> list) {
         return list.stream()
-                .filter(cfg -> cfg.get("name").asString().map(serviceName::equals).orElse(false))
+                .filter(cfg -> cfg.get("name")
+                        .asString()
+                        .map(name -> name.equals(serviceName) || name.equals(fullServiceName))
+                        .orElse(false))
                 .findFirst()
                 .orElse(null);
     }
@@ -405,7 +493,7 @@ public final class GrpcSecurity
             GrpcSecurityHandler defaults;
 
             if (grpcServiceConfig.get("defaults").exists()) {
-                defaults = GrpcSecurityHandler.create(grpcServiceConfig.get("defaults"), defaultHandler);
+                defaults = createConfigBackedHandler(grpcServiceConfig.get("defaults"), defaultHandler);
             } else {
                 defaults = defaultHandler;
             }
@@ -420,7 +508,7 @@ public final class GrpcSecurity
                                                          .key() + " must contain name key with a method name to "
                                                          + "register to gRPC server security"));
 
-                        rules.intercept(name, GrpcSecurityHandler.create(methodConfig, defaults));
+                        rules.intercept(name, createConfigBackedHandler(methodConfig, defaults));
                     }
                 });
             } else {
@@ -436,8 +524,60 @@ public final class GrpcSecurity
         Context context = registerContext(call, headers);
 
         try {
+            if (config.isPresent()) {
+                Config grpcConfig = config.get();
+                if (GRPC_SECURITY_PROCESSED.get(context) == grpcConfig) {
+                    ServerCall.Listener<ReqT> listener = context.call(() -> next.startCall(call, headers));
+                    return new ContextualizedServerCallListener<>(listener, context);
+                }
+                context = context.withValue(GRPC_SECURITY_PROCESSED, grpcConfig);
+            }
+
             GrpcSecurityHandler configuredHandler = GrpcSecurity.GRPC_SECURITY_HANDLER.get(context);
-            GrpcSecurityHandler handler = configuredHandler == null ? defaultHandler : configuredHandler;
+            boolean ignoredConfigBackedHandler = false;
+            if (configuredHandler != null
+                    && config.isPresent()
+                    && configuredHandler.configBacked()
+                    && !configBackedHandlers.contains(configuredHandler)) {
+                configuredHandler = null;
+                ignoredConfigBackedHandler = true;
+            }
+            GrpcSecurityHandler configHandler = null;
+            if (config.isPresent()
+                    && (configuredHandler == null || !configBackedHandlers.contains(configuredHandler))
+                    && (!methodHandlers.isEmpty() || !serviceHandlers.isEmpty())) {
+                String fullMethodName = call.getMethodDescriptor().getFullMethodName();
+                int serviceSeparator = fullMethodName.lastIndexOf('/');
+                if (serviceSeparator > -1) {
+                    String serviceName = fullMethodName.substring(0, serviceSeparator);
+                    String methodName = fullMethodName.substring(serviceSeparator + 1);
+                    String simpleServiceName = serviceName;
+                    int packageSeparator = serviceName.lastIndexOf('.');
+                    if (packageSeparator > -1) {
+                        simpleServiceName = serviceName.substring(packageSeparator + 1);
+                    }
+
+                    Map<String, GrpcSecurityHandler> handlers = methodHandlers.get(serviceName);
+                    if (handlers == null && !serviceName.equals(simpleServiceName)) {
+                        handlers = methodHandlers.get(simpleServiceName);
+                    }
+                    if (handlers != null) {
+                        configHandler = handlers.get(methodName);
+                    }
+                    if (configHandler == null) {
+                        configHandler = serviceHandlers.get(serviceName);
+                        if (configHandler == null && !serviceName.equals(simpleServiceName)) {
+                            configHandler = serviceHandlers.get(simpleServiceName);
+                        }
+                    }
+                }
+            }
+            GrpcSecurityHandler handler = configHandler == null
+                    ? (configuredHandler == null ? defaultHandler : configuredHandler)
+                    : configHandler;
+            if (ignoredConfigBackedHandler) {
+                context = context.withValue(GrpcSecurity.GRPC_SECURITY_HANDLER, handler);
+            }
 
             ServerCall.Listener<ReqT> listener = context.call(() -> handler.handleSecurity(call, headers, next));
 
@@ -453,7 +593,8 @@ public final class GrpcSecurity
     <ReqT, RespT> Context registerContext(ServerCall<ReqT, RespT> call, Metadata headers) {
         Context grpcContext;
 
-        if (SECURITY_CONTEXT.get() == null) {
+        if (SECURITY_CONTEXT.get() == null
+                || config.map(grpcConfig -> GRPC_SECURITY_PROCESSED.get() != grpcConfig).orElse(false)) {
             SocketAddress remoteSocket = call.getAttributes().get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
             String address = null;
             int port = -1;
@@ -518,6 +659,14 @@ public final class GrpcSecurity
         }
 
         return grpcContext;
+    }
+
+    private GrpcSecurityHandler createConfigBackedHandler(Config config, GrpcSecurityHandler defaults) {
+        GrpcSecurityHandler handler = GrpcSecurityHandler.create(config, defaults);
+        if (handler.configBacked()) {
+            configBackedHandlers.add(handler);
+        }
+        return handler;
     }
 
     /**

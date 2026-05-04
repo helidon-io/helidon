@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -277,6 +277,10 @@ public class GrpcSecurityHandler
         return DEFAULT_INSTANCE;
     }
 
+    boolean configBacked() {
+        return config.isPresent();
+    }
+
     private static Builder builder() {
         return new Builder();
     }
@@ -331,27 +335,23 @@ public class GrpcSecurityHandler
         if (combined) {
             return processSecurity(securityContext, call, headers, next);
         } else {
-            // the following condition may be met for multiple threads - and we don't really care
-            // as the result is exactly the same in all cases and doesn't have side effects
-            if (null == combinedHandler.get()) {
-                // we may have a default handler configured
-                GrpcSecurityHandler defaultHandler = GrpcSecurity.GRPC_SECURITY_HANDLER.get();
+            GrpcSecurityHandler defaultHandler = GrpcSecurity.GRPC_SECURITY_HANDLER.get();
 
-                if (defaultHandler == null) {
-                    defaultHandler = DEFAULT_INSTANCE;
-                }
-
-                // intentional same instance comparison, as I want to prevent endless loop
-                //noinspection ObjectEquality
-                if (defaultHandler == DEFAULT_INSTANCE) {
+            if (defaultHandler == null || defaultHandler == DEFAULT_INSTANCE) {
+                // the following condition may be met for multiple threads - and we don't really care
+                // as the result is exactly the same in all cases and doesn't have side effects
+                if (combinedHandler.get() == null) {
                     combinedHandler.set(this);
-                } else {
-                    combinedHandler.compareAndSet(null,
-                                                  builder(defaultHandler).configureFrom(this).combined().build());
                 }
+
+                return combinedHandler.get().processSecurity(securityContext, call, headers, next);
             }
 
-            return combinedHandler.get().processSecurity(securityContext, call, headers, next);
+            return builder(defaultHandler)
+                    .configureFrom(this)
+                    .combined()
+                    .build()
+                    .processSecurity(securityContext, call, headers, next);
         }
     }
 
