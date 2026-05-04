@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -91,17 +91,18 @@ URI to send requests &mdash;see `JsonRpcRouting` instance creation above.
 The logic for the two methods `start` and `stop` is very similar. First, they
 inspect parameters, then they decide to return either a
 result or an error, and finally they call `send()` on the response. Parameters,
-as well as results, can be either JSON-P instances or JSON-B objects. In this
-example, we defined some simple records to bind and serialize data using JSON-B.
+as well as results, can be either Helidon JSON instances or Java objects
+bound using Helidon JSON binding. In this example, we define some simple
+records annotated with `@Json.Entity`.
 
 [source,java]
 ----
 include::{sourcedir}/se/jsonrpc/ServerSnippets.java[tag=snippet_3, indent=0]
 ----
 
-NOTE: These record types used during serialization must be public for the
-JSON-B implementation (Eclipse Yasson in our example) to have access to
-them.
+NOTE: Custom types used during serialization and deserialization must be
+annotated with `@Json.Entity` and compiled with the Helidon JSON annotation
+processor.
 
 == Configuration
 

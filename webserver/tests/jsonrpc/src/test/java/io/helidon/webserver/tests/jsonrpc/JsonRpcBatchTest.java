@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ import java.util.Optional;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Status;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.jsonrpc.core.JsonRpcResult;
 import io.helidon.webclient.http1.Http1Client;
@@ -26,8 +29,6 @@ import io.helidon.webclient.jsonrpc.JsonRpcClient;
 import io.helidon.webclient.jsonrpc.JsonRpcClientBatchRequest;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -61,10 +62,10 @@ class JsonRpcBatchTest extends JsonRpcBaseTest {
             assertThat(res.size(), is(2));
             Optional<JsonRpcResult> result0 = res.get(0).result();
             assertThat(result0.isPresent(), is(true));
-            assertThat(result0.get().asJsonObject().getString("status"), is("RUNNING"));
+            assertThat(result0.get().asJsonObject().stringValue("status").orElseThrow(), is("RUNNING"));
             Optional<JsonRpcResult> result1 = res.get(1).result();
             assertThat(result1.isPresent(), is(true));
-            assertThat(result1.get().asJsonObject().getString("status"), is("STOPPED"));
+            assertThat(result1.get().asJsonObject().stringValue("status").orElseThrow(), is("STOPPED"));
         }
     }
 
@@ -74,8 +75,8 @@ class JsonRpcBatchTest extends JsonRpcBaseTest {
         try (var res = batch.submit()) {
             assertThat(res.status(), is(Status.OK_200));
             JsonObject object = res.entity().as(JsonObject.class);      // not array
-            JsonObject error = object.getJsonObject("error");
-            assertThat(error.getInt("code"), is(JsonRpcError.INVALID_REQUEST));
+            JsonObject error = object.objectValue("error").orElseThrow();
+            assertThat(error.intValue("code").orElseThrow(), is(JsonRpcError.INVALID_REQUEST));
         }
     }
 
@@ -86,8 +87,8 @@ class JsonRpcBatchTest extends JsonRpcBaseTest {
                 .submit(JSON_RPC_BATCH.replace("[", "("))) {
             assertThat(res.status(), is(Status.OK_200));
             JsonObject object = res.entity().as(JsonObject.class);      // not array
-            JsonObject error = object.getJsonObject("error");
-            assertThat(error.getInt("code"), is(JsonRpcError.PARSE_ERROR));
+            JsonObject error = object.objectValue("error").orElseThrow();
+            assertThat(error.intValue("code").orElseThrow(), is(JsonRpcError.PARSE_ERROR));
         }
     }
 
@@ -98,11 +99,11 @@ class JsonRpcBatchTest extends JsonRpcBaseTest {
                 .submit(JSON_RPC_BATCH.replace("stop", "foo"))) {
             assertThat(res.status(), is(Status.OK_200));
             JsonArray array = res.entity().as(JsonArray.class);
-            assertThat(array.size(), is(2));
-            JsonObject object0 = array.getJsonObject(0).getJsonObject("result");
-            assertThat(object0.getString("status"), is("RUNNING"));
-            JsonObject error = array.getJsonObject(1).getJsonObject("error");
-            assertThat(error.getInt("code"), is(JsonRpcError.METHOD_NOT_FOUND));
+            assertThat(array.values().size(), is(2));
+            JsonObject object0 = array.get(0).map(JsonValue::asObject).flatMap(it -> it.objectValue("result")).orElseThrow();
+            assertThat(object0.stringValue("status").orElseThrow(), is("RUNNING"));
+            JsonObject error = array.get(1).map(JsonValue::asObject).flatMap(it -> it.objectValue("error")).orElseThrow();
+            assertThat(error.intValue("code").orElseThrow(), is(JsonRpcError.METHOD_NOT_FOUND));
         }
     }
 
@@ -113,10 +114,10 @@ class JsonRpcBatchTest extends JsonRpcBaseTest {
                 .submit("[1, 2, 3]")) {
             assertThat(res.status(), is(Status.OK_200));
             JsonArray array = res.entity().as(JsonArray.class);
-            assertThat(array.size(), is(3));
-            for (int i = 0; i < array.size(); i++) {
-                JsonObject error = array.getJsonObject(i).getJsonObject("error");
-                assertThat(error.getInt("code"), is(JsonRpcError.INVALID_REQUEST));
+            assertThat(array.values().size(), is(3));
+            for (int i = 0; i < array.values().size(); i++) {
+                JsonObject error = array.get(i).map(JsonValue::asObject).flatMap(it -> it.objectValue("error")).orElseThrow();
+                assertThat(error.intValue("code").orElseThrow(), is(JsonRpcError.INVALID_REQUEST));
             }
         }
     }

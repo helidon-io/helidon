@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,20 +28,18 @@ import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.http.media.ReadableEntity;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.spi.Source;
-
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-
-import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
 
 /**
  * A representation of JSON-RPC client batch response.
  */
 class JsonRpcClientBatchResponseImpl implements JsonRpcClientBatchResponse {
-    private static final JsonArray EMPTY_JSON_ARRAY = JSON_BUILDER_FACTORY.createArrayBuilder().build();
+    private static final JsonArray EMPTY_JSON_ARRAY = JsonArray.empty();
 
     private final HttpClientResponse delegate;
     private JsonArray jsonArray;
@@ -53,16 +51,16 @@ class JsonRpcClientBatchResponseImpl implements JsonRpcClientBatchResponse {
 
     @Override
     public int size() {
-        return asJsonArray().size();
+        return asJsonArray().values().size();
     }
 
     @Override
     public JsonRpcClientResponse get(int index) {
         if (responses == null) {
-            responses = new ArrayList<>();
-            JsonArray array = asJsonArray();
-            for (jakarta.json.JsonValue jsonValue : array) {
-                JsonObject object = jsonValue.asJsonObject();
+            List<JsonValue> jsonValues = asJsonArray().values();
+            responses = new ArrayList<>(jsonValues.size());
+            for (JsonValue jsonValue : jsonValues) {
+                JsonObject object = jsonValue.asObject();
                 responses.add(new JsonRpcClientResponseImpl(delegate, object));
             }
         }
@@ -71,13 +69,13 @@ class JsonRpcClientBatchResponseImpl implements JsonRpcClientBatchResponse {
 
     @Override
     public Iterator<JsonRpcClientResponse> iterator() {
-        JsonArray array = asJsonArray();
+        List<JsonValue> jsonValues = asJsonArray().values();
         return new Iterator<>() {
             private int index = 0;
 
             @Override
             public boolean hasNext() {
-                return array.size() > index;
+                return jsonValues.size() > index;
             }
 
             @Override

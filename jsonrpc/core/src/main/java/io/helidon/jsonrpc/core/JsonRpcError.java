@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,8 @@ package io.helidon.jsonrpc.core;
 import java.util.Objects;
 import java.util.Optional;
 
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonValue;
-
-import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 
 /**
  * A representation of a JSON-RPC error.
@@ -74,10 +71,10 @@ public interface JsonRpcError {
      */
     static JsonRpcError create(int code, String message) {
         Objects.requireNonNull(message, "message is null");
-        JsonObjectBuilder builder = JSON_BUILDER_FACTORY.createObjectBuilder();
-        builder.add("code", code);
-        builder.add("message", message);
-        return new JsonRpcErrorImpl(builder.build());
+        return new JsonRpcErrorImpl(JsonObject.builder()
+                                           .set("code", code)
+                                           .set("message", message)
+                                           .build());
     }
 
     /**
@@ -91,11 +88,11 @@ public interface JsonRpcError {
     static JsonRpcError create(int code, String message, JsonValue data) {
         Objects.requireNonNull(message, "message is null");
         Objects.requireNonNull(data, "data is null");
-        JsonObjectBuilder builder = JSON_BUILDER_FACTORY.createObjectBuilder();
-        builder.add("code", code);
-        builder.add("message", message);
-        builder.add("data", data);
-        return new JsonRpcErrorImpl(builder.build());
+        return new JsonRpcErrorImpl(JsonObject.builder()
+                                           .set("code", code)
+                                           .set("message", message)
+                                           .set("data", data)
+                                           .build());
     }
 
     /**
@@ -120,14 +117,13 @@ public interface JsonRpcError {
     Optional<JsonValue> data();
 
     /**
-     * Get the data associated with this error as an object, if defined.
-     * This method will use JSONB for binding.
+     * Get the data associated with this error as a Java object, if defined.
+     * This method uses Helidon JSON binding.
      *
      * @param type the bean class
      * @param <T>  the bean type
      * @return optional data
-     * @throws ClassCastException if the data is not a JSON object
-     * @throws jakarta.json.bind.JsonbException if an error occurs during mapping
+     * @throws io.helidon.json.binding.JsonBindingException if an error occurs during mapping
      */
     <T> Optional<T> dataAs(Class<T> type);
 

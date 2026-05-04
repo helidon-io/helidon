@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ package io.helidon.jsonrpc.core;
 
 import java.util.Optional;
 
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 
 /**
  * A representation of a JSON-RPC response result.
@@ -40,7 +40,7 @@ public interface JsonRpcResult {
      * Access a response result as a JSON object.
      *
      * @return a JSON object
-     * @throws ClassCastException if not a JSON object
+     * @throws io.helidon.json.JsonException if not a JSON object
      */
     JsonObject asJsonObject();
 
@@ -48,14 +48,14 @@ public interface JsonRpcResult {
      * Access a response result as a JSON array.
      *
      * @return a JSON array
-     * @throws ClassCastException if not a JSON array
+     * @throws io.helidon.json.JsonException if not a JSON array
      */
     JsonArray asJsonArray();
 
     /**
      * Access a response result as a JSON value.
      *
-     * @return a JSON structure
+     * @return a JSON value
      */
     JsonValue asJsonValue();
 
@@ -64,7 +64,7 @@ public interface JsonRpcResult {
      *
      * @param name property name
      * @return the property value
-     * @throws ClassCastException       if not a JSON object
+     * @throws io.helidon.json.JsonException if not a JSON object
      * @throws IllegalArgumentException if the property does not exist
      */
     JsonValue get(String name);
@@ -74,17 +74,17 @@ public interface JsonRpcResult {
      *
      * @param name property name
      * @return the property value as a string
-     * @throws ClassCastException       if not a JSON object or value not a string
+     * @throws io.helidon.json.JsonException if not a JSON object or value not a string
      * @throws IllegalArgumentException if the property does not exist
      */
     String getString(String name);
 
     /**
-     * Get a JSON object property value as a string, if present.
+     * Get a JSON object property value as a JSON value, if present.
      *
      * @param name property name
      * @return an optional property value
-     * @throws ClassCastException if not a JSON object or value not a string
+     * @throws io.helidon.json.JsonException if not a JSON object
      */
     Optional<JsonValue> find(String name);
 
@@ -93,7 +93,7 @@ public interface JsonRpcResult {
      *
      * @param index the index
      * @return the JSON value
-     * @throws ClassCastException        if not a JSON array
+     * @throws io.helidon.json.JsonException if not a JSON array
      * @throws IndexOutOfBoundsException if index is out of bounds
      */
     JsonValue get(int index);
@@ -103,29 +103,28 @@ public interface JsonRpcResult {
      *
      * @param index the index
      * @return the property value as a string
-     * @throws ClassCastException        if not a JSON array or value not a string
+     * @throws io.helidon.json.JsonException if not a JSON array or value not a string
      * @throws IndexOutOfBoundsException if index is out of bounds
      */
     String getString(int index);
 
     /**
-     * Get a JSON array value by index as a string, if present.
+     * Get a JSON array value by index as a JSON value, if present.
      *
      * @param index the index
-     * @return the optional property value as a string
-     * @throws ClassCastException        if not a JSON array or value not a string
-     * @throws IndexOutOfBoundsException if index is out of bounds
+     * @return the optional property value
+     * @throws io.helidon.json.JsonException if not a JSON array
      */
     Optional<JsonValue> find(int index);
 
     /**
-     * Access a response result as a Java object. This method will bind the result
-     * using JSONB.
+     * Access a response result as a Java object. This method binds the result
+     * using Helidon JSON binding.
      *
      * @param type the bean class
      * @param <T>  the bean type
      * @return an instance of the bean type
-     * @throws jakarta.json.bind.JsonbException if an error occurs during mapping
+     * @throws io.helidon.json.binding.JsonBindingException if an error occurs during mapping
      */
     <T> T as(Class<T> type);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.docs.se.jsonrpc;
 
 import java.time.Duration;
 
+import io.helidon.json.binding.Json;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
@@ -85,9 +86,11 @@ class ServerSnippets {
     // end::snippet_2[]
 
     // tag::snippet_3[]
+    @Json.Entity
     public record StartStopParams(String when, Duration duration) {
     }
 
+    @Json.Entity
     public record StartStopResult(String status) {
     }
     // end::snippet_3[]

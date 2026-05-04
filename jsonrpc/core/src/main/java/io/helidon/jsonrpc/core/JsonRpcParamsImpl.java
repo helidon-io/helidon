@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,78 +18,74 @@ package io.helidon.jsonrpc.core;
 import java.util.Objects;
 import java.util.Optional;
 
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonString;
-import jakarta.json.JsonStructure;
-import jakarta.json.JsonValue;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
+import io.helidon.json.JsonValueType;
 
 /**
  * An implementation of {@link io.helidon.jsonrpc.core.JsonRpcParams}.
  */
 class JsonRpcParamsImpl implements JsonRpcParams {
 
-    private final JsonStructure params;
+    private final JsonValue params;
 
-    JsonRpcParamsImpl(JsonStructure params) {
+    JsonRpcParamsImpl(JsonValue params) {
         this.params = Objects.requireNonNull(params);
+        if (params.type() != JsonValueType.OBJECT && params.type() != JsonValueType.ARRAY) {
+            throw new IllegalArgumentException("JSON-RPC params must be a JSON object or array");
+        }
     }
 
     @Override
-    public JsonStructure asJsonStructure() {
+    public JsonValue asJsonValue() {
         return params;
     }
 
     @Override
     public JsonObject asJsonObject() {
-        return params.asJsonObject();
+        return params.asObject();
     }
 
     @Override
     public JsonArray asJsonArray() {
-        return params.asJsonArray();
+        return params.asArray();
     }
 
     @Override
     public JsonValue get(String name) {
-        JsonValue value = asJsonObject().get(name);
-        if (value == null) {
-            throw new IllegalArgumentException("Unable to find param " + name);
-        }
-        return value;
+        return asJsonObject().value(name)
+                .orElseThrow(() -> new IllegalArgumentException("Unable to find param " + name));
     }
 
     @Override
     public String getString(String name) {
-        return ((JsonString) get(name)).getString();
+        return get(name).asString().value();
     }
 
     @Override
     public Optional<JsonValue> find(String name) {
-        return Optional.ofNullable(asJsonObject().get(name));
+        return asJsonObject().value(name);
     }
 
     @Override
     public JsonValue get(int index) {
-        return asJsonArray().get(index);
+        return asJsonArray().get(index)
+                .orElseThrow(() -> new IndexOutOfBoundsException("Unable to find param " + index));
     }
 
     @Override
     public String getString(int index) {
-        return ((JsonString) get(index)).getString();
+        return get(index).asString().value();
     }
 
     @Override
     public Optional<JsonValue> find(int index) {
-        JsonArray array = asJsonArray();
-        if (index >= 0 && index < array.size()) {
-            return Optional.of(array.get(index));
-        }
-        return Optional.empty();
+        return asJsonArray().get(index);
     }
 
     @Override
     public <T> T as(Class<T> type) {
-        return JsonUtil.jsonpToJsonb(asJsonObject(), type);
+        return JsonUtil.fromJson(asJsonValue(), type);
     }
 }
