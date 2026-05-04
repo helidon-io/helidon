@@ -62,6 +62,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return base address of the client requests
      */
+    @Option.Configured
     Optional<SocketAddress> baseAddress();
 
     /**
