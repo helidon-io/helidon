@@ -266,6 +266,29 @@ class CachedHandlerTest {
     }
 
     @Test
+    void testSingleFileInMemoryCacheSkipsSymlinkParent(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Path linkRoot = tempDir.resolve("link-root");
+        Files.createDirectories(root);
+        Files.writeString(root.resolve("resource.txt"), "Content");
+        createSymbolicLink(linkRoot, root);
+
+        SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(linkRoot.resolve("resource.txt"))
+                        .cachedFiles(Set.of("."))
+                        .build());
+        handler.beforeStart();
+
+        assertThat("Resource under symlink parent should not be cached in memory",
+                   handler.cacheInMemory("."),
+                   optionalEmpty());
+        assertThat("Resource under symlink parent should fall back to a path handler",
+                   handler.cacheHandler(".").orElse(null),
+                   instanceOf(CachedHandlerPath.class));
+    }
+
+    @Test
     void testFsHiddenSymlinkIsForbidden(@TempDir Path tempDir) throws IOException {
         Path root = tempDir.resolve("root");
         Files.createDirectories(root);

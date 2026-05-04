@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
@@ -39,6 +40,8 @@ class FileSystemContentHandler extends FileBasedContentHandler {
 
     private final AtomicBoolean populatedInMemoryCache = new AtomicBoolean();
     private final Path root;
+    // The configured location is pinned for the handler instance lifetime, including stop/start cycles.
+    private final AtomicReference<Path> realRoot = new AtomicReference<>();
     private final Set<String> cacheInMemory;
 
     FileSystemContentHandler(FileSystemHandlerConfig config) {
@@ -59,6 +62,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
 
     @Override
     public void beforeStart() {
+        realRoot();
         if (populatedInMemoryCache.compareAndSet(false, true)) {
             for (String resource : cacheInMemory) {
                 try {
@@ -74,6 +78,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     @Override
     void releaseCache() {
         populatedInMemoryCache.set(false);
+        super.releaseCache();
     }
 
     @Override
@@ -231,13 +236,35 @@ class FileSystemContentHandler extends FileBasedContentHandler {
         }
 
         try {
-            Path realRoot = root.toRealPath();
+            Optional<Path> maybeRealRoot = realRoot();
+            if (maybeRealRoot.isEmpty()) {
+                return Optional.empty();
+            }
+            Path currentRealRoot = maybeRealRoot.get();
+            Path expectedPath = currentRealRoot.resolve(root.relativize(path)).normalize();
+            Path expectedRealPath = expectedPath.toRealPath();
             Path realPath = path.toRealPath();
-            if (realPath.startsWith(realRoot)) {
+            if (expectedRealPath.startsWith(currentRealRoot) && realPath.equals(expectedRealPath)) {
                 return Optional.of(realPath);
             }
             return Optional.empty();
-        } catch (IOException e) {
+        } catch (IOException | SecurityException e) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<Path> realRoot() {
+        Path currentRealRoot = realRoot.get();
+        if (currentRealRoot != null) {
+            return Optional.of(currentRealRoot);
+        }
+        try {
+            Path resolvedRoot = root.toRealPath();
+            if (realRoot.compareAndSet(null, resolvedRoot)) {
+                return Optional.of(resolvedRoot);
+            }
+            return Optional.ofNullable(realRoot.get());
+        } catch (IOException | SecurityException e) {
             return Optional.empty();
         }
     }

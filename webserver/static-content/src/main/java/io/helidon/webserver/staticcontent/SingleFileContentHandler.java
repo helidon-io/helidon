@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
@@ -31,6 +32,8 @@ class SingleFileContentHandler extends FileBasedContentHandler {
 
     private final boolean cacheInMemory;
     private final Path path;
+    // The configured file is pinned for the handler instance lifetime, including stop/start cycles.
+    private final AtomicReference<Path> realPath = new AtomicReference<>();
 
     SingleFileContentHandler(FileSystemHandlerConfig config) {
         super(config);
@@ -42,16 +45,31 @@ class SingleFileContentHandler extends FileBasedContentHandler {
     @Override
     public void beforeStart() {
         try {
+            Optional<Path> maybeResolvedPath = contentPath(path);
             if (cacheInMemory) {
                 // directly cache in memory
-                byte[] fileBytes = Files.readAllBytes(path);
-                cacheInMemory(".", detectType(fileName(path)), fileBytes, lastModified(path));
+                if (maybeResolvedPath.isPresent()) {
+                    Path resolvedPath = maybeResolvedPath.get();
+                    if (path.equals(resolvedPath)) {
+                        byte[] fileBytes = Files.readAllBytes(resolvedPath);
+                        cacheInMemory(".", detectType(fileName(path)), fileBytes, lastModified(resolvedPath));
+                    } else {
+                        LOGGER.log(System.Logger.Level.WARNING, "File " + path + " cannot be added to in memory cache,"
+                                + " as it uses a symbolic link.");
+                        cacheFileHandler();
+                    }
+                } else {
+                    LOGGER.log(System.Logger.Level.WARNING, "File " + path + " cannot be added to in memory cache,"
+                            + " as it does not exist or no longer matches the configured file.");
+                    cacheFileHandler();
+                }
             } else {
                 // cache a handler that loads it from file system
                 cacheFileHandler();
             }
         } catch (IOException e) {
             LOGGER.log(System.Logger.Level.WARNING, "Failed to add file to in-memory cache, path: " + path, e);
+            cacheFileHandler();
         }
         super.beforeStart();
     }
@@ -60,11 +78,12 @@ class SingleFileContentHandler extends FileBasedContentHandler {
     boolean doHandle(Method method, String requestedPath, ServerRequest req, ServerResponse res, boolean mapped)
             throws IOException {
         if ("".equals(requestedPath) || "/".equals(requestedPath)) {
-            Optional<CachedHandler> cachedHandler = cacheHandler(".");
+            String resource = ".";
+            Optional<CachedHandler> cachedHandler = cacheHandler(resource);
             if (cachedHandler.isPresent()) {
-                return cachedHandler.get().handle(handlerCache(), method, req, res, requestedPath);
+                return cachedHandler.get().handle(handlerCache(), method, req, res, resource);
             }
-            return doHandle(method, req, res);
+            return cacheFileHandler().handle(handlerCache(), method, req, res, resource);
         }
 
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
@@ -73,17 +92,37 @@ class SingleFileContentHandler extends FileBasedContentHandler {
         return false;
     }
 
-    private boolean doHandle(Method method, ServerRequest req, ServerResponse res) throws IOException {
-        return cacheFileHandler().handle(handlerCache(), method, req, res, ".");
-    }
-
     private CachedHandler cacheFileHandler() {
         CachedHandler handler = new CachedHandlerPath(path,
                                                       detectType(fileName(path)),
                                                       FileBasedContentHandler::lastModified,
-                                                      ServerResponseHeaders::lastModified);
+                                                      ServerResponseHeaders::lastModified,
+                                                      this::contentPath);
         cacheHandler(".", handler);
 
         return handler;
+    }
+
+    private Optional<Path> contentPath(Path path) {
+        try {
+            Path currentRealPath = path.toRealPath();
+            Path pinnedRealPath = realPath.get();
+            if (pinnedRealPath == null) {
+                if (realPath.compareAndSet(null, currentRealPath)) {
+                    pinnedRealPath = currentRealPath;
+                } else {
+                    pinnedRealPath = realPath.get();
+                }
+            }
+            if (pinnedRealPath == null) {
+                return Optional.empty();
+            }
+            if (currentRealPath.equals(pinnedRealPath)) {
+                return Optional.of(currentRealPath);
+            }
+            return Optional.empty();
+        } catch (IOException | SecurityException e) {
+            return Optional.empty();
+        }
     }
 }

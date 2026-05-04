@@ -19,6 +19,7 @@ package io.helidon.webserver.staticcontent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
 import io.helidon.http.HeaderNames;
@@ -45,6 +46,8 @@ class StaticContentTest {
     private static Path externalDir;
     private static Path alternateRoot;
     private static Path rootLink;
+    private static Path singleLink;
+    private static Path singleParentLink;
 
     private final DirectClient testClient;
 
@@ -82,6 +85,21 @@ class StaticContentTest {
             builder.register("/linkroot", createService(FileSystemHandlerConfig.create(rootLink)));
         } else {
             rootLink = null;
+        }
+        singleLink = tempDir.resolve("current-file");
+        if (createSymbolicLink(singleLink, resource)) {
+            builder.register("/singlelink", createService(FileSystemHandlerConfig.create(singleLink)));
+        } else {
+            singleLink = null;
+        }
+        singleParentLink = tempDir.resolve("current-parent");
+        if (createSymbolicLink(singleParentLink, staticRoot)) {
+            builder.register("/singleparentlink", createService(FileSystemHandlerConfig.builder()
+                                                                      .location(singleParentLink.resolve("resource.txt"))
+                                                                      .cachedFiles(Set.of("."))
+                                                                      .build()));
+        } else {
+            singleParentLink = null;
         }
     }
 
@@ -183,6 +201,7 @@ class StaticContentTest {
     @Test
     void testFileSystemSymlinkRootRetargeting() throws Exception {
         assumeTrue(rootLink != null, "Symbolic links cannot be created");
+        assumeTrue(createSymbolicLink(rootLink, staticRoot), "Symbolic links cannot be retargeted");
 
         try (Http1ClientResponse response = testClient.get("/linkroot/resource.txt")
                 .request()) {
@@ -196,8 +215,49 @@ class StaticContentTest {
         try (Http1ClientResponse response = testClient.get("/linkroot/resource.txt")
                 .request()) {
 
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
+        }
+    }
+
+    @Test
+    void testFileSystemSingleFileSymlinkRetargeting() throws Exception {
+        assumeTrue(singleLink != null, "Symbolic links cannot be created");
+        assumeTrue(createSymbolicLink(singleLink, staticRoot.resolve("resource.txt")), "Symbolic links cannot be retargeted");
+
+        try (Http1ClientResponse response = testClient.get("/singlelink")
+                .request()) {
+
             assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.as(String.class), is("Alternate content"));
+            assertThat(response.as(String.class), is("Content"));
+        }
+
+        assumeTrue(createSymbolicLink(singleLink, externalDir.resolve("resource.txt")), "Symbolic links cannot be retargeted");
+
+        try (Http1ClientResponse response = testClient.get("/singlelink")
+                .request()) {
+
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
+        }
+    }
+
+    @Test
+    void testFileSystemSingleFileCachedParentSymlinkRetargeting() throws Exception {
+        assumeTrue(singleParentLink != null, "Symbolic links cannot be created");
+        assumeTrue(createSymbolicLink(singleParentLink, staticRoot), "Symbolic links cannot be retargeted");
+
+        try (Http1ClientResponse response = testClient.get("/singleparentlink")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
+        }
+
+        assumeTrue(createSymbolicLink(singleParentLink, alternateRoot), "Symbolic links cannot be retargeted");
+
+        try (Http1ClientResponse response = testClient.get("/singleparentlink")
+                .request()) {
+
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
         }
     }
 
