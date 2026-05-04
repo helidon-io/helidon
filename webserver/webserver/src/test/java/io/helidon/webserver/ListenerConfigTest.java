@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,12 @@
 
 package io.helidon.webserver;
 
+import java.net.UnixDomainSocketAddress;
+import java.nio.file.Path;
+import java.util.Map;
+
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +29,17 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ListenerConfigTest {
+
+    @Test
+    void testUnixBindAddressKeepsConfiguredPath() {
+        Config config = Config.just(ConfigSources.create(Map.of("bind-address", "unix:/tmp/server.sock")));
+
+        var socketAddress = (UnixDomainSocketAddress) ListenerConfig.create(config)
+                .bindAddress()
+                .orElseThrow();
+
+        assertThat(socketAddress.getPath(), is(Path.of("/tmp/server.sock")));
+    }
 
     @Test
     void testListenerConfig() {
