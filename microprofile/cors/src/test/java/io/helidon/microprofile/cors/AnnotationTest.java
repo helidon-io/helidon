@@ -57,6 +57,26 @@ class AnnotationTest {
         }
     }
 
+    @Test
+    void checkWildcardOriginsWithCredentials() {
+
+        SeContainerInitializer initializer = SeContainerInitializer.newInstance();
+        initializer.addBeanClasses(CorsResourceWithWildcardCredentials.class);
+
+        try {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () ->
+                    seContainer = initializer.initialize());
+            assertThat("Exception error message",
+                       e.getMessage(),
+                       containsString("CORS cannot allow credentials with wildcard origins"));
+
+        } finally {
+            if (seContainer != null) {
+                seContainer.close();
+            }
+        }
+    }
+
     @RequestScoped
     @Path("/cors1")
     static class CorsResourceWithBadAnnotation {
@@ -86,6 +106,21 @@ class AnnotationTest {
         @OPTIONS
         @Cors.Defaults
         public void optionsForMainPath() {
+        }
+    }
+
+    @RequestScoped
+    @Path("/cors-wildcard-credentials")
+    static class CorsResourceWithWildcardCredentials {
+
+        @GET
+        public Response get() {
+            return Response.ok().build();
+        }
+
+        @OPTIONS
+        @Cors.AllowCredentials
+        public void options() {
         }
     }
 }

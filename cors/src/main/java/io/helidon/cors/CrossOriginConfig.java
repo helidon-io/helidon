@@ -367,7 +367,8 @@ public class CrossOriginConfig {
         }
 
         @Override
-        @ConfiguredOption(description = "Sets the allow credentials flag.", value = "false")
+        @ConfiguredOption(description = "Sets the allow credentials flag. Cannot be enabled with wildcard origins.",
+                          value = "false")
         public Builder allowCredentials(boolean allowCredentials) {
             this.allowCredentials = allowCredentials;
             return this;
@@ -393,7 +394,25 @@ public class CrossOriginConfig {
 
         @Override
         public CrossOriginConfig build() {
+            return build(true);
+        }
+
+        CrossOriginConfig build(boolean owningConfigEnabled) {
+            validateCredentialsOrigins(owningConfigEnabled, enabled, allowCredentials, origins);
             return new CrossOriginConfig(this);
+        }
+
+        static void validateCredentialsOrigins(boolean owningConfigEnabled,
+                                               boolean enabled,
+                                               boolean allowCredentials,
+                                               String[] origins) {
+            if (owningConfigEnabled && enabled && allowCredentials) {
+                for (String origin : origins) {
+                    if ("*".equals(origin)) {
+                        throw new IllegalArgumentException("CORS cannot allow credentials with wildcard origins");
+                    }
+                }
+            }
         }
 
         @Override
