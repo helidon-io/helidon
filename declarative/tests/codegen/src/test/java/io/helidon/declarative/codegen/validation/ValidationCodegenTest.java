@@ -84,6 +84,44 @@ public class ValidationCodegenTest {
     }
 
     @Test
+    void testValidatedInterfaceWithOnlyParameterConstraints() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("DefaultApi.java", """
+                        package com.example;
+
+                        import java.util.Optional;
+
+                        import io.helidon.validation.Validation;
+
+                        @Validation.Validated
+                        public interface DefaultApi {
+                            String listStoreItems(@Validation.Integer.Min(1)
+                                                  @Validation.Integer.Max(100) Optional<Integer> pageSize);
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(diagnostics, not(containsString("unreachable statement")));
+
+        var validator = result.sourceOutput().resolve("com/example/DefaultApi__Validated.java");
+        assertThat(Files.exists(validator), is(true));
+
+        var content = Files.readString(validator, StandardCharsets.UTF_8);
+        assertThat(content, matches("""
+                                            //...
+                                            class DefaultApi__Validated implements TypeValidator<DefaultApi> {
+                                            //...
+                                            }
+                                            """));
+    }
+
+    @Test
     void testPrivateFieldValidation() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
