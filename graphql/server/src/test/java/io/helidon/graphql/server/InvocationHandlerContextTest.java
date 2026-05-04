@@ -19,6 +19,9 @@ package io.helidon.graphql.server;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
+
 import graphql.Scalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -31,7 +34,6 @@ import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class InvocationHandlerContextTest {
     @Test
@@ -51,13 +53,27 @@ class InvocationHandlerContextTest {
 
     @Test
     void contextValuesCanBeReadByType() {
-        ExecutionContext context = new ExecutionContextImpl();
+        ExecutionContext context = new ExecutionContextImpl(Context.create());
 
         context.setContextValue("answer", 42);
 
         assertThat(context.contextValue("answer", Integer.class), is(Optional.of(42)));
         assertThat(context.contextValue("missing", Integer.class), is(Optional.empty()));
-        assertThrows(ClassCastException.class, () -> context.contextValue("answer", String.class));
+        assertThat(context.contextValue("answer", String.class), is(Optional.empty()));
+    }
+
+    @Test
+    void existingHelidonContextIsReused() {
+        Context context = Context.create();
+        context.register("authorization", "Bearer request-context");
+
+        InvocationHandler handler = InvocationHandler.builder()
+                .schema(schema(InvocationHandlerContextTest::authorizationValue))
+                .build();
+
+        Map<String, Object> result = Contexts.runInContext(context, () -> handler.execute("{value}"));
+
+        assertThat(((Map<?, ?>) result.get("data")).get("value"), is("Bearer request-context"));
     }
 
     @SuppressWarnings("deprecation")
@@ -79,8 +95,16 @@ class InvocationHandlerContextTest {
     private static String contextValue(DataFetchingEnvironment env) {
         ExecutionContext context = env.getContext();
         String authorization = context.contextValue("authorization", String.class).orElse("missing");
-        Long requestId = context.contextValue("requestId", Long.class).orElse(-1L);
+        Long requestId = Contexts.context()
+                .flatMap(it -> it.get("requestId", Long.class))
+                .orElse(-1L);
 
         return authorization + ":" + requestId;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static String authorizationValue(DataFetchingEnvironment env) {
+        ExecutionContext context = env.getContext();
+        return context.contextValue("authorization", String.class).orElse("missing");
     }
 }

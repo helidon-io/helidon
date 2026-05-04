@@ -29,6 +29,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
+
 import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
@@ -92,7 +95,18 @@ class InvocationHandlerImpl implements InvocationHandler {
     }
 
     private Map<String, Object> doExecute(String query, String operationName, Map<String, Object> variables) {
-        ExecutionContext context = new ExecutionContextImpl();
+        Context commonContext = Contexts.context().orElseGet(Context::create);
+        ExecutionContext context = new ExecutionContextImpl(commonContext);
+        return Contexts.runInContext(commonContext, () -> doExecuteInContext(query,
+                                                                             operationName,
+                                                                             variables,
+                                                                             context));
+    }
+
+    private Map<String, Object> doExecuteInContext(String query,
+                                                   String operationName,
+                                                   Map<String, Object> variables,
+                                                   ExecutionContext context) {
         contextHandlers.forEach(handler -> handler.update(context));
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()

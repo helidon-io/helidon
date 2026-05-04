@@ -16,33 +16,33 @@
 
 package io.helidon.graphql.server;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+
+import io.helidon.common.context.Context;
 
 class ExecutionContextImpl implements ExecutionContext {
     private final AtomicReference<Throwable> currentThrowable = new AtomicReference<>();
-    private final Map<String, Object> contextValues = new ConcurrentHashMap<>();
+    private final Context context;
 
-    ExecutionContextImpl() {
+    ExecutionContextImpl(Context context) {
+        this.context = context;
     }
 
     @Override
     public void setContextValue(String name, Object value) {
-        contextValues.put(Objects.requireNonNull(name), Objects.requireNonNull(value));
+        context.register(Objects.requireNonNull(name), Objects.requireNonNull(value));
     }
 
     @Override
     public Optional<Object> contextValue(String name) {
-        return Optional.ofNullable(contextValues.get(Objects.requireNonNull(name)));
+        return context.get(Objects.requireNonNull(name), Object.class);
     }
 
     @Override
     public <T> Optional<T> contextValue(String name, Class<T> type) {
-        Objects.requireNonNull(type);
-        return contextValue(name).map(type::cast);
+        return context.get(Objects.requireNonNull(name), Objects.requireNonNull(type));
     }
 
     @Override

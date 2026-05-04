@@ -20,6 +20,8 @@ import java.util.Optional;
 
 /**
  * GraphQL execution context to support partial results and context values.
+ * Context values are backed by Helidon common context and are also available from
+ * {@link io.helidon.common.context.Contexts#context()} during GraphQL execution.
  */
 public interface ExecutionContext {
     /**
@@ -28,7 +30,8 @@ public interface ExecutionContext {
      * @param name name of the context value
      * @param value context value
      */
-    void setContextValue(String name, Object value);
+    default void setContextValue(String name, Object value) {
+    }
 
     /**
      * Retrieve a context value.
@@ -36,7 +39,9 @@ public interface ExecutionContext {
      * @param name name of the context value
      * @return the context value, or empty if it is not present
      */
-    Optional<Object> contextValue(String name);
+    default Optional<Object> contextValue(String name) {
+        return Optional.empty();
+    }
 
     /**
      * Retrieve a typed context value.
@@ -44,10 +49,11 @@ public interface ExecutionContext {
      * @param name name of the context value
      * @param type expected type of the context value
      * @param <T> type of the context value
-     * @return the context value, or empty if it is not present
-     * @throws ClassCastException in case the context value is not assignable to the requested type
+     * @return the context value, or empty if it is not present or not assignable to the requested type
      */
-    <T> Optional<T> contextValue(String name, Class<T> type);
+    default <T> Optional<T> contextValue(String name, Class<T> type) {
+        return Optional.empty();
+    }
 
     /**
      * Add a partial results {@link Throwable}.
