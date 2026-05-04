@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,20 @@ import io.helidon.common.features.api.Features;
 
 /**
  * Helidon Data Repository API.
+ * <p>
+ * This is a preview feature of Helidon - it is ready for production use, but we reserve the rights to change APIs
+ * without the usual deprecation process. This feature will be backward compatible within a major version of Helidon.
+ *
  * @see io.helidon.data
  */
 @Features.Name("Data")
 @Features.Since("4.3.0")
 @Features.Path("Data")
 @Features.Description("Helidon Data - repository pattern")
-@Features.Incubating
 module io.helidon.data {
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.common;
     requires io.helidon.service.registry;
     requires transitive io.helidon.builder.api;
 
