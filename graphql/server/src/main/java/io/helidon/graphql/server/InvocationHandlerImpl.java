@@ -65,11 +65,13 @@ class InvocationHandlerImpl implements InvocationHandler {
     private final GraphQLSchema schema;
     private final GraphQL graphQl;
     private final SchemaPrinter schemaPrinter;
+    private final List<InvocationHandler.ContextHandler> contextHandlers;
 
     InvocationHandlerImpl(InvocationHandler.Builder builder, GraphQL graphQl) {
         this.schema = builder.schema();
         this.schemaPrinter = builder.schemaPrinter();
         this.defaultErrorMessage = builder.defaultErrorMessage();
+        this.contextHandlers = List.copyOf(builder.contextHandlers());
 
         this.graphQl = graphQl;
 
@@ -91,6 +93,8 @@ class InvocationHandlerImpl implements InvocationHandler {
 
     private Map<String, Object> doExecute(String query, String operationName, Map<String, Object> variables) {
         ExecutionContext context = new ExecutionContextImpl();
+        contextHandlers.forEach(handler -> handler.update(context));
+
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .operationName(operationName)

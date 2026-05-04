@@ -16,9 +16,12 @@
 
 package io.helidon.graphql.server;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import io.helidon.config.Config;
@@ -101,11 +104,25 @@ public interface InvocationHandler {
     Set<String> whitelistedExceptions();
 
     /**
+     * Handler used to update the {@link ExecutionContext} before GraphQL execution.
+     */
+    @FunctionalInterface
+    interface ContextHandler {
+        /**
+         * Update the execution context.
+         *
+         * @param context execution context
+         */
+        void update(ExecutionContext context);
+    }
+
+    /**
      * Fluent API builder to configure the invocation handler.
      */
     class Builder implements io.helidon.common.Builder<Builder, InvocationHandler> {
         private final Set<String> blacklistedExceptions = new HashSet<>();
         private final Set<String> whitelistedExceptions = new HashSet<>();
+        private final List<ContextHandler> contextHandlers = new ArrayList<>();
 
         private String defaultErrorMessage = DEFAULT_ERROR_MESSAGE;
         private GraphQLSchema schema;
@@ -205,6 +222,17 @@ public interface InvocationHandler {
         }
 
         /**
+         * Add a context handler to update the {@link ExecutionContext} before GraphQL execution.
+         *
+         * @param contextHandler context handler
+         * @return updated builder instance
+         */
+        public Builder addContextHandler(ContextHandler contextHandler) {
+            contextHandlers.add(Objects.requireNonNull(contextHandler));
+            return this;
+        }
+
+        /**
          * Blacklisted error classes that will not return error message back to caller.
          *
          * @param classNames names of classes to deny for checked exceptions
@@ -268,6 +296,10 @@ public interface InvocationHandler {
 
         Set<String> allowExceptions() {
             return whitelistedExceptions;
+        }
+
+        List<ContextHandler> contextHandlers() {
+            return Collections.unmodifiableList(contextHandlers);
         }
 
         SchemaPrinter schemaPrinter() {

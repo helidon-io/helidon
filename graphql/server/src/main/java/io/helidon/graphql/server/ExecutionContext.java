@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,39 @@
 
 package io.helidon.graphql.server;
 
+import java.util.Optional;
+
 /**
- * GraphQL execution context to support partial results.
+ * GraphQL execution context to support partial results and context values.
  */
 public interface ExecutionContext {
+    /**
+     * Set a context value.
+     *
+     * @param name name of the context value
+     * @param value context value
+     */
+    void setContextValue(String name, Object value);
+
+    /**
+     * Retrieve a context value.
+     *
+     * @param name name of the context value
+     * @return the context value, or empty if it is not present
+     */
+    Optional<Object> contextValue(String name);
+
+    /**
+     * Retrieve a typed context value.
+     *
+     * @param name name of the context value
+     * @param type expected type of the context value
+     * @param <T> type of the context value
+     * @return the context value, or empty if it is not present
+     * @throws ClassCastException in case the context value is not assignable to the requested type
+     */
+    <T> Optional<T> contextValue(String name, Class<T> type);
+
     /**
      * Add a partial results {@link Throwable}.
      *
