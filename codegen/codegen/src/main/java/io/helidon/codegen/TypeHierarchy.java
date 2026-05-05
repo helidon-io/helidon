@@ -225,6 +225,10 @@ public final class TypeHierarchy {
      */
     public static Set<TypeName> nestedAnnotations(CodegenContext ctx, TypeInfo typeInfo) {
         Set<TypeName> result = new HashSet<>();
+        List<TypedElementInfo> elements = typeInfo.elementInfo()
+                .stream()
+                .map(it -> mergeHierarchyAnnotations(typeInfo, it))
+                .toList();
 
         // on type
         typeInfo.annotations()
@@ -241,22 +245,19 @@ public final class TypeHierarchy {
                 .forEach(result::add);
 
         // on fields, methods etc.
-        typeInfo.elementInfo()
-                .stream()
+        elements.stream()
                 .map(TypedElementInfo::annotations)
                 .flatMap(List::stream)
                 .map(Annotation::typeName)
                 .forEach(result::add);
 
-        typeInfo.elementInfo()
-                .stream()
+        elements.stream()
                 .map(TypedElementInfo::inheritedAnnotations)
                 .flatMap(List::stream)
                 .map(Annotation::typeName)
                 .forEach(result::add);
 
-        typeInfo.elementInfo()
-                .stream()
+        elements.stream()
                 .map(TypedElementInfo::typeName)
                 .map(TypeHierarchy::typeNameAnnotations)
                 .flatMap(List::stream)
@@ -264,16 +265,14 @@ public final class TypeHierarchy {
                 .forEach(result::add);
 
         // on parameters
-        typeInfo.elementInfo()
-                .stream()
+        elements.stream()
                 .map(TypedElementInfo::parameterArguments)
                 .flatMap(List::stream)
                 .map(TypedElementInfo::annotations)
                 .flatMap(List::stream)
                 .map(Annotation::typeName)
                 .forEach(result::add);
-        typeInfo.elementInfo()
-                .stream()
+        elements.stream()
                 .map(TypedElementInfo::parameterArguments)
                 .flatMap(List::stream)
                 .map(TypedElementInfo::inheritedAnnotations)
@@ -281,8 +280,7 @@ public final class TypeHierarchy {
                 .map(Annotation::typeName)
                 .forEach(result::add);
 
-        typeInfo.elementInfo()
-                .stream()
+        elements.stream()
                 .map(TypedElementInfo::parameterArguments)
                 .flatMap(List::stream)
                 .map(TypedElementInfo::typeName)
@@ -292,6 +290,87 @@ public final class TypeHierarchy {
                 .forEach(result::add);
 
         return result;
+    }
+
+    /**
+     * Merge method and parameter annotations, and return and parameter type-use annotations, from overridden methods and
+     * interface methods into the provided method element. Non-method elements are returned unchanged.
+     * <p>
+     * When the same annotation type exists on both the target method and an inherited method, the target method annotation
+     * is preserved. Type-use annotations are merged using {@link #mergeTypeNameAnnotations(TypeName, TypeName)}.
+     *
+     * @param type    type declaring the element
+     * @param element element to merge
+     * @return element with matching hierarchy annotations merged in
+     */
+    @Api.Internal
+    public static TypedElementInfo mergeHierarchyAnnotations(TypeInfo type, TypedElementInfo element) {
+        if (element.kind() != ElementKind.METHOD) {
+            return element;
+        }
+
+        List<TypedElementInfo> prototypes = new ArrayList<>();
+        Set<TypeName> processedTypes = new HashSet<>();
+        String packageName = type.typeName().packageName();
+
+        type.superTypeInfo().ifPresent(it -> collectInheritedMethods(
+                processedTypes,
+                prototypes,
+                it,
+                element,
+                packageName));
+        type.interfaceTypeInfo().forEach(it -> collectInheritedMethods(
+                processedTypes,
+                prototypes,
+                it,
+                element,
+                packageName));
+
+        if (prototypes.isEmpty()) {
+            return element;
+        }
+
+        Map<TypeName, Annotation> annotations = new LinkedHashMap<>();
+        element.annotations().forEach(it -> annotations.put(it.typeName(), it));
+        prototypes.stream()
+                .map(TypedElementInfo::annotations)
+                .flatMap(List::stream)
+                .forEach(it -> annotations.putIfAbsent(it.typeName(), it));
+
+        TypeName returnType = element.typeName();
+        for (TypedElementInfo prototype : prototypes) {
+            returnType = mergeTypeNameAnnotations(returnType, prototype.typeName());
+        }
+
+        List<TypedElementInfo> parameters = new ArrayList<>();
+        List<TypedElementInfo> elementParameters = element.parameterArguments();
+        for (int i = 0; i < elementParameters.size(); i++) {
+            TypedElementInfo parameter = elementParameters.get(i);
+            Map<TypeName, Annotation> parameterAnnotations = new LinkedHashMap<>();
+            parameter.annotations().forEach(it -> parameterAnnotations.put(it.typeName(), it));
+
+            TypeName parameterType = parameter.typeName();
+            for (TypedElementInfo prototype : prototypes) {
+                List<TypedElementInfo> prototypeParameters = prototype.parameterArguments();
+                if (prototypeParameters.size() > i) {
+                    TypedElementInfo prototypeParameter = prototypeParameters.get(i);
+                    prototypeParameter.annotations()
+                            .forEach(it -> parameterAnnotations.putIfAbsent(it.typeName(), it));
+                    parameterType = mergeTypeNameAnnotations(parameterType, prototypeParameter.typeName());
+                }
+            }
+
+            parameters.add(TypedElementInfo.builder(parameter)
+                                   .annotations(List.copyOf(parameterAnnotations.values()))
+                                   .typeName(parameterType)
+                                   .build());
+        }
+
+        return TypedElementInfo.builder(element)
+                .annotations(List.copyOf(annotations.values()))
+                .typeName(returnType)
+                .parameterArguments(parameters)
+                .build();
     }
 
     /**
