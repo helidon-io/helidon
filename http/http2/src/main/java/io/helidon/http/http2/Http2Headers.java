@@ -695,7 +695,37 @@ public class Http2Headers {
         // +---+---------------------------+
         // | Value String (Length octets)  |
         // +-------------------------------+
-        int length = data.readHpackInt(first, 7);
+        int length = first & 0b01111111;
+        if (length == 0b01111111) {
+            long longLength = length;
+            int shiftBy = 0;
+            while (true) {
+                if (data.available() == 0) {
+                    throw new Http2Exception(Http2ErrorCode.COMPRESSION,
+                                             "HPACK string length exceeds available header block bytes");
+                }
+                int next = data.read();
+                int nextValue = next & 0b01111111;
+                if (nextValue != 0 && shiftBy > 30) {
+                    throw new Http2Exception(Http2ErrorCode.COMPRESSION,
+                                             "HPACK string length exceeds available header block bytes");
+                }
+                longLength += (long) nextValue << shiftBy;
+                if (longLength > data.available()) {
+                    throw new Http2Exception(Http2ErrorCode.COMPRESSION,
+                                             "HPACK string length exceeds available header block bytes");
+                }
+                if ((next & 0b10000000) == 0) {
+                    length = (int) longLength;
+                    break;
+                }
+                shiftBy += 7;
+            }
+        }
+        if (length > data.available()) {
+            throw new Http2Exception(Http2ErrorCode.COMPRESSION,
+                                     "HPACK string length exceeds available header block bytes");
+        }
 
         if (isHuffman) {
             return huffman.decodeString(data, length);
