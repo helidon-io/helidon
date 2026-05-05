@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,10 +44,13 @@ final class VirtualBuffer {
     private int voffset;
     private int vlength;
     private int nextId;
+    private int cachedBufferIndex;
+    private int cachedBufferStart;
+    private int cachedBufferEnd;
 
     /**
      * Create a new virtual buffer.
-     * @param capacity initial capacity
+     * @param initialCapacity initial capacity
      */
     private VirtualBuffer(int initialCapacity) {
         bufferIds = new int[initialCapacity];
@@ -58,6 +61,7 @@ final class VirtualBuffer {
         count = 0;
         startIndex = 0;
         endIndex = 0;
+        cachedBufferIndex = -1;
     }
 
     /**
@@ -95,6 +99,7 @@ final class VirtualBuffer {
         count = 0;
         startIndex = 0;
         endIndex = 0;
+        cachedBufferIndex = -1;
     }
 
     /**
@@ -142,6 +147,9 @@ final class VirtualBuffer {
         if (!found) {
             throw new IllegalStateException("Unable to find new absolute position for offset: " + newOffset);
         }
+        if (newOffset != 0) {
+            cachedBufferIndex = -1;
+        }
         return nextId;
     }
 
@@ -157,12 +165,25 @@ final class VirtualBuffer {
         if (index < 0 || index >= vlength) {
             throw new IndexOutOfBoundsException("Invalid index: " + index);
         }
-        int pos = 0; // absolute position for current buffer start
         int off = voffset + index; // actual offset
-        for (int i = startIndex; isBufferIndex(i); i = nextBufferIndex(i)) {
+        int pos = 0; // absolute position for current buffer start
+        int bufferIndex = startIndex;
+        if (cachedBufferIndex >= 0) {
+            if (off >= cachedBufferStart && off < cachedBufferEnd) {
+                return buffers[cachedBufferIndex].get(off - cachedBufferStart);
+            }
+            if (off >= cachedBufferEnd) {
+                pos = cachedBufferEnd;
+                bufferIndex = nextBufferIndex(cachedBufferIndex);
+            }
+        }
+        for (int i = bufferIndex; isBufferIndex(i); i = nextBufferIndex(i)) {
             ByteBuffer buffer = buffers[i];
             int nextPos = pos + buffer.limit();
             if (nextPos > off) {
+                cachedBufferIndex = i;
+                cachedBufferStart = pos;
+                cachedBufferEnd = nextPos;
                 return buffer.get(off - pos);
             }
             pos = nextPos;
@@ -284,16 +305,19 @@ final class VirtualBuffer {
     private void doubleCapacity() {
         ByteBuffer[] newBuffers = new ByteBuffer[buffers.length * 2];
         int[] newIds = new int[buffers.length * 2];
-        int count1 = count - (startIndex + 1);
-        int count2 = count - count1;
-        System.arraycopy(buffers, startIndex, newBuffers, 0, count1);
-        System.arraycopy(buffers, 0, newBuffers, count1, count2);
-        System.arraycopy(bufferIds, startIndex, newIds, 0, count1);
-        System.arraycopy(bufferIds, 0, newIds, count1, count2);
+        int index = startIndex;
+        for (int i = 0; i < count; i++) {
+            newBuffers[i] = buffers[index];
+            newIds[i] = bufferIds[index];
+            if (++index == buffers.length) {
+                index = 0;
+            }
+        }
         buffers = newBuffers;
         bufferIds = newIds;
         startIndex = 0;
-        endIndex = count - 1;
+        endIndex = count;
+        cachedBufferIndex = -1;
     }
 
     /**

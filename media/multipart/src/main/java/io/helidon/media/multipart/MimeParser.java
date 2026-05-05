@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -251,6 +251,9 @@ final class MimeParser {
 
     private static final Logger LOGGER = Logger.getLogger(MimeParser.class.getName());
     private static final Charset HEADER_ENCODING = StandardCharsets.UTF_8;
+    private static final int MAX_HEADER_LINE_LENGTH = 8192;
+    private static final int MAX_HEADERS_PER_PART = 100;
+    private static final int MAX_PARTS = 1000;
 
     /**
      * All states.
@@ -335,6 +338,21 @@ final class MimeParser {
     private boolean closed;
 
     /**
+     * Number of body parts emitted for this message.
+     */
+    private int partCount;
+
+    /**
+     * Number of headers emitted for the current body part.
+     */
+    private int headerCount;
+
+    /**
+     * Number of bytes already scanned in the current incomplete header line.
+     */
+    private int headerLineLength;
+
+    /**
      * Parses the MIME content.
      */
     MimeParser(String boundary) {
@@ -416,6 +434,15 @@ final class MimeParser {
     }
 
     /**
+     * Testing seam for parser buffer retention assertions.
+     *
+     * @return current virtual buffer length
+     */
+    int bufferedLengthForTesting() {
+        return buf.length();
+    }
+
+    /**
      * Advances parsing.
      *
      * @throws ParsingException if an error occurs during parsing
@@ -478,6 +505,10 @@ final class MimeParser {
                                 if (LOGGER.isLoggable(Level.FINER)) {
                                     LOGGER.log(Level.FINER, "state={0}", STATE.START_PART);
                                 }
+                                if (++partCount > MAX_PARTS) {
+                                    throw new ParsingException("Too many MIME parts");
+                                }
+                                headerCount = 0;
                                 state = STATE.HEADERS;
                                 nextEvent = START_PART_EVENT;
                                 return true;
@@ -496,6 +527,9 @@ final class MimeParser {
                                     return false;
                                 }
                                 if (!headerLine.isEmpty()) {
+                                    if (++headerCount > MAX_HEADERS_PER_PART) {
+                                        throw new ParsingException("Too many MIME headers in part");
+                                    }
                                     Hdr header = new Hdr(headerLine);
                                     nextEvent = new HeaderEvent(header.name(), header.value());
                                     return true;
@@ -674,6 +708,9 @@ final class MimeParser {
         bndStart = match();
         if (bndStart == -1) {
             // No boundary is found
+            int bufLen = buf.length();
+            int retainedBoundaryPrefix = bl - 1;
+            position = Math.max(position, bufLen - retainedBoundaryPrefix);
             return;
         }
 
@@ -694,11 +731,19 @@ final class MimeParser {
             if (buf.getByte(bndStart + bl + lwsp) == '\n') {
                 position = bndStart + bl + lwsp + 1;
                 return;
-            } else if (bndStart + bl + lwsp + 1 < bufLen
-                    && buf.getByte(bndStart + bl + lwsp + 1) == '\n') {
+            } else if (bndStart + bl + lwsp + 1 >= bufLen) {
+                position = bndStart;
+                bndStart = -1;
+                return;
+            } else if (buf.getByte(bndStart + bl + lwsp + 1) == '\n') {
                 position = bndStart + bl + lwsp + 2;
                 return;
             }
+        }
+        if (bndStart + bl + lwsp >= bufLen) {
+            position = bndStart;
+            bndStart = -1;
+            return;
         }
         position = bndStart + 1;
     }
@@ -719,24 +764,35 @@ final class MimeParser {
             return null;
         }
         int offset = position;
-        int hdrLen = 0;
+        int hdrLen = headerLineLength;
         int lwsp = 0;
         for (; offset + hdrLen < bufLen; hdrLen++) {
-            if (buf.getByte(offset + hdrLen) == '\n') {
+            byte current = buf.getByte(offset + hdrLen);
+            if (current == '\n') {
                 lwsp += 1;
                 break;
             }
+            if (current == '\r') {
+                if (offset + hdrLen + 1 >= bufLen) {
+                    headerLineLength = hdrLen;
+                    return null;
+                }
+                if (buf.getByte(offset + hdrLen + 1) == '\n') {
+                    lwsp += 2;
+                    break;
+                }
+            }
+            if (hdrLen >= MAX_HEADER_LINE_LENGTH) {
+                throw new ParsingException("MIME header line is too long");
+            }
             if (offset + hdrLen + 1 >= bufLen) {
                 // No more data in the buffer
+                headerLineLength = hdrLen + 1;
                 return null;
-            }
-            if (buf.getByte(offset + hdrLen) == '\r'
-                    && buf.getByte(offset + hdrLen + 1) == '\n') {
-                lwsp += 2;
-                break;
             }
         }
         position = offset + hdrLen + lwsp;
+        headerLineLength = 0;
         if (hdrLen == 0) {
             return "";
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,74 @@ public class MimeParserTest {
         assertThat(part1.headers.get("Content-Id"), hasItems("part1"));
         assertThat(part1.content, is(notNullValue()));
         assertThat(new String(part1.content), is(equalTo("1")));
+    }
+
+    @Test
+    public void testSkipPreambleCapsBufferedData() {
+        String boundary = "boundary";
+        byte[] preamble = "x".repeat(1024).getBytes();
+        MimeParser parser = new MimeParser(boundary);
+        try {
+            parser.offer(ByteBuffer.wrap(preamble));
+            Iterator<MimeParser.ParserEvent> it = parser.parseIterator();
+            assertThat(it.hasNext(), is(true));
+            assertThat(it.next().type(), is(equalTo(MimeParser.EventType.START_MESSAGE)));
+            assertThat(it.hasNext(), is(false));
+
+            parser.offer(ByteBuffer.wrap(preamble));
+            int retainedBoundaryPrefix = ("--" + boundary).length() - 1;
+            assertThat(parser.bufferedLengthForTesting(),
+                    is(equalTo(preamble.length + retainedBoundaryPrefix)));
+        } finally {
+            parser.cleanup();
+        }
+    }
+
+    @Test
+    public void testSkipPreambleKeepsSplitBoundary() {
+        String boundary = "boundary";
+        List<MimePart> parts = parse(boundary, List.of(
+                "x".repeat(1024).getBytes(),
+                ("x".repeat(1024) + "--bou").getBytes(),
+                ("ndary\n"
+                        + "\n"
+                        + "part1\n"
+                        + "--" + boundary + "--").getBytes())).parts;
+
+        assertThat(parts.size(), is(equalTo(1)));
+        assertThat(new String(parts.get(0).content), is(equalTo("part1")));
+    }
+
+    @Test
+    public void testSkipPreambleWaitsForSplitBoundaryTerminator() {
+        String boundary = "boundary";
+        List<MimePart> parts = parse(boundary, List.of(
+                ("preamble\n--" + boundary).getBytes(),
+                ("\n"
+                        + "Content-Id: part1\n"
+                        + "\n"
+                        + "1\n"
+                        + "--" + boundary + "--").getBytes())).parts;
+
+        assertThat(parts.size(), is(equalTo(1)));
+        assertThat(parts.get(0).headers.get("Content-Id"), hasItems("part1"));
+        assertThat(new String(parts.get(0).content), is(equalTo("1")));
+    }
+
+    @Test
+    public void testSkipPreambleWaitsForSplitCrLfBoundaryTerminator() {
+        String boundary = "boundary";
+        List<MimePart> parts = parse(boundary, List.of(
+                ("preamble\n--" + boundary + "\r").getBytes(),
+                ("\n"
+                        + "Content-Id: part1\n"
+                        + "\n"
+                        + "1\n"
+                        + "--" + boundary + "--").getBytes())).parts;
+
+        assertThat(parts.size(), is(equalTo(1)));
+        assertThat(parts.get(0).headers.get("Content-Id"), hasItems("part1"));
+        assertThat(new String(parts.get(0).content), is(equalTo("1")));
     }
 
     @Test
@@ -675,6 +743,140 @@ public class MimeParserTest {
         assertThat(part1.headers.get("Content-Type"), hasItems(""));
         assertThat(part1.content, is(notNullValue()));
         assertThat(new String(part1.content), is(equalTo("part1")));
+    }
+
+    @Test
+    public void testHeaderLineLengthLimit() {
+        String boundary = "boundary";
+        final byte[] chunk1 = ("--" + boundary + "\n"
+                + "X-Test: " + "a".repeat(8192) + "\n"
+                + "\n"
+                + "part1\n"
+                + "--" + boundary + "--").getBytes();
+
+        MimeParser.ParsingException ex = assertThrows(MimeParser.ParsingException.class,
+                () -> parse(boundary, chunk1));
+        assertThat(ex.getMessage(), is(equalTo("MIME header line is too long")));
+    }
+
+    @Test
+    public void testHeaderLineLengthLimitAllowsCrLfTerminator() {
+        String boundary = "boundary";
+        String headerPrefix = "X-Test: ";
+        int headerValueLength = 8192 - headerPrefix.length();
+        final byte[] chunk1 = ("--" + boundary + "\n"
+                + headerPrefix + "a".repeat(headerValueLength) + "\r\n"
+                + "\n"
+                + "part1\n"
+                + "--" + boundary + "--").getBytes();
+
+        List<MimePart> parts = parse(boundary, chunk1).parts;
+        assertThat(parts.size(), is(equalTo(1)));
+        assertThat(parts.get(0).headers.get("X-Test").get(0).length(), is(equalTo(headerValueLength)));
+    }
+
+    @Test
+    public void testHeaderLineLengthLimitAllowsTerminatorAcrossChunks() {
+        String boundary = "boundary";
+        String headerPrefix = "X-Test: ";
+        int headerValueLength = 8192 - headerPrefix.length();
+        final byte[] chunk1 = ("--" + boundary + "\n"
+                + headerPrefix + "a".repeat(headerValueLength)).getBytes();
+        final byte[] chunk2 = ("\r\n"
+                + "\n"
+                + "part1\n"
+                + "--" + boundary + "--").getBytes();
+
+        List<MimePart> parts = parse(boundary, List.of(chunk1, chunk2)).parts;
+        assertThat(parts.size(), is(equalTo(1)));
+        assertThat(parts.get(0).headers.get("X-Test").get(0).length(), is(equalTo(headerValueLength)));
+    }
+
+    @Test
+    public void testHeaderLineLengthLimitAcrossChunks() {
+        String boundary = "boundary";
+        String headerPrefix = "X-Test: ";
+        int headerValueLength = 8192 - headerPrefix.length();
+        final byte[] chunk1 = ("--" + boundary + "\n"
+                + headerPrefix + "a".repeat(headerValueLength)).getBytes();
+        final byte[] chunk2 = ("a\n"
+                + "\n"
+                + "part1\n"
+                + "--" + boundary + "--").getBytes();
+
+        MimeParser.ParsingException ex = assertThrows(MimeParser.ParsingException.class,
+                () -> parse(boundary, List.of(chunk1, chunk2)));
+        assertThat(ex.getMessage(), is(equalTo("MIME header line is too long")));
+    }
+
+    @Test
+    public void testHeaderCountLimit() {
+        String boundary = "boundary";
+        StringBuilder request = new StringBuilder("--" + boundary + "\n");
+        for (int i = 0; i < 101; i++) {
+            request.append("X-Test-").append(i).append(": value\n");
+        }
+        request.append("\n")
+                .append("part1\n")
+                .append("--").append(boundary).append("--");
+
+        MimeParser.ParsingException ex = assertThrows(MimeParser.ParsingException.class,
+                () -> parse(boundary, request.toString().getBytes()));
+        assertThat(ex.getMessage(), is(equalTo("Too many MIME headers in part")));
+    }
+
+    @Test
+    public void testHeaderCountLimitAllowsExactLimit() {
+        String boundary = "boundary";
+        StringBuilder request = new StringBuilder("--" + boundary + "\n");
+        for (int i = 0; i < 100; i++) {
+            request.append("X-Test-").append(i).append(": value\n");
+        }
+        request.append("\n")
+                .append("part1\n")
+                .append("--").append(boundary).append("\n")
+                .append("X-Next: value\n")
+                .append("\n")
+                .append("part2\n")
+                .append("--").append(boundary).append("--");
+
+        List<MimePart> parts = parse(boundary, request.toString().getBytes()).parts;
+        assertThat(parts.size(), is(equalTo(2)));
+        assertThat(parts.get(0).headers.size(), is(equalTo(100)));
+        assertThat(parts.get(1).headers.size(), is(equalTo(1)));
+    }
+
+    @Test
+    public void testPartCountLimit() {
+        String boundary = "boundary";
+        StringBuilder request = new StringBuilder();
+        for (int i = 0; i < 1001; i++) {
+            request.append("--").append(boundary).append("\n")
+                    .append("\n")
+                    .append("part").append(i).append("\n");
+        }
+        request.append("--").append(boundary).append("--");
+
+        MimeParser.ParsingException ex = assertThrows(MimeParser.ParsingException.class,
+                () -> parse(boundary, request.toString().getBytes()));
+        assertThat(ex.getMessage(), is(equalTo("Too many MIME parts")));
+    }
+
+    @Test
+    public void testPartCountLimitAllowsExactLimit() {
+        String boundary = "boundary";
+        StringBuilder request = new StringBuilder();
+        for (int i = 0; i < 1000; i++) {
+            request.append("--").append(boundary).append("\n")
+                    .append("\n")
+                    .append("part").append(i).append("\n");
+        }
+        request.append("--").append(boundary).append("--");
+
+        List<MimePart> parts = parse(boundary, request.toString().getBytes()).parts;
+        assertThat(parts.size(), is(equalTo(1000)));
+        assertThat(new String(parts.get(0).content), is(equalTo("part0")));
+        assertThat(new String(parts.get(999).content), is(equalTo("part999")));
     }
 
     @Test

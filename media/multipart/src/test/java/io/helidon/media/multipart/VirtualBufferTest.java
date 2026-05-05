@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,33 @@ public class VirtualBufferTest {
     public void multipleBuffersWithOffsetGetByteTest() {
         VirtualBuffer buf = new VirtualBuffer();
         buf.offer(ByteBuffer.wrap("foo".getBytes()), 0);
+        buf.offer(ByteBuffer.wrap("bar".getBytes()), 3);
+        assertThat((char) buf.getByte(0), is(equalTo('b')));
+        assertThat((char) buf.getByte(1), is(equalTo('a')));
+        assertThat((char) buf.getByte(2), is(equalTo('r')));
+    }
+
+    @Test
+    public void multipleSingleByteBuffersGetByteTest() {
+        VirtualBuffer buf = new VirtualBuffer();
+        String data = "abcdefghijklmnopqrstuvwxyz";
+        for (int i = 0; i < data.length(); i++) {
+            buf.offer(ByteBuffer.wrap(data.substring(i, i + 1).getBytes()), 0);
+        }
+        for (int i = 0; i < data.length(); i++) {
+            assertThat((char) buf.getByte(i), is(equalTo(data.charAt(i))));
+        }
+        for (int i = data.length() - 1; i >= 0; i--) {
+            assertThat((char) buf.getByte(i), is(equalTo(data.charAt(i))));
+        }
+    }
+
+    @Test
+    public void multipleBuffersWithOffsetAfterGetByteTest() {
+        VirtualBuffer buf = new VirtualBuffer();
+        buf.offer(ByteBuffer.wrap("foo".getBytes()), 0);
+        assertThat((char) buf.getByte(2), is(equalTo('o')));
+
         buf.offer(ByteBuffer.wrap("bar".getBytes()), 3);
         assertThat((char) buf.getByte(0), is(equalTo('b')));
         assertThat((char) buf.getByte(1), is(equalTo('a')));
