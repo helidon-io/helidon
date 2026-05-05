@@ -171,6 +171,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 if (http1Config.validateRequestHeaders()) {
                     validateHostHeader(prologue, headers, http1Config.validateRequestHostHeader());
                 }
+                headers.remove(X_HELIDON_CN);
                 ctx.remotePeer().tlsCertificates()
                         .flatMap(TlsUtils::parseCn)
                         .ifPresent(name -> headers.set(X_HELIDON_CN, name));

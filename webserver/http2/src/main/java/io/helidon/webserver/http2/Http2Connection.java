@@ -33,6 +33,7 @@ import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
 import io.helidon.http.DateTime;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
@@ -89,6 +90,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private static final int FRAME_HEADER_LENGTH = 9;
     private static final Set<Http2StreamState> REMOVABLE_STREAMS =
             Set.of(Http2StreamState.CLOSED, Http2StreamState.HALF_CLOSED_LOCAL);
+    private static final Set<HeaderName> SERVER_CONTROLLED_REQUEST_HEADERS = Set.of(X_HELIDON_CN);
     private final Http2ConnectionStreams streams = new Http2ConnectionStreams();
     private final ConnectionContext ctx;
     private final Http2Config http2Config;
@@ -664,21 +666,23 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
         if (frameHeader.type() == Http2FrameType.CONTINUATION) {
             // end of continuations with header frames
-            headers = Http2Headers.create(stream,
-                                          requestDynamicTable,
-                                          requestHuffman,
-                                          Http2Headers.create(connectionHeaders),
-                                          streamContext.contData());
+            headers = Http2Headers.createRequest(stream,
+                                                 requestDynamicTable,
+                                                 requestHuffman,
+                                                 Http2Headers.create(connectionHeaders),
+                                                 SERVER_CONTROLLED_REQUEST_HEADERS,
+                                                 streamContext.contData());
             endOfStream = streamContext.contHeader().flags(Http2FrameTypes.HEADERS).endOfStream();
             streamContext.clearContinuations();
             continuationExpectedStreamId = 0;
         } else {
             endOfStream = frameHeader.flags(Http2FrameTypes.HEADERS).endOfStream();
-            headers = Http2Headers.create(stream,
-                                          requestDynamicTable,
-                                          requestHuffman,
-                                          Http2Headers.create(connectionHeaders),
-                                          new Http2FrameData(frameHeader, inProgressFrame()));
+            headers = Http2Headers.createRequest(stream,
+                                                 requestDynamicTable,
+                                                 requestHuffman,
+                                                 Http2Headers.create(connectionHeaders),
+                                                 SERVER_CONTROLLED_REQUEST_HEADERS,
+                                                 new Http2FrameData(frameHeader, inProgressFrame()));
         }
 
         receiveFrameListener.headers(ctx, streamId, headers);
