@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,17 @@
 
 package io.helidon.graphql.server;
 
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.media.jsonb.JsonbSupport;
@@ -79,6 +88,53 @@ class GraphQlSupportTest {
         }
     }
 
+    @Test
+    void testUnexpectedExceptionSendsErrorResponse() throws Exception {
+        CountDownLatch executeStarted = new CountDownLatch(1);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        WebServer server = WebServer.builder()
+                .host("localhost")
+                .routing(Routing.builder()
+                                 .register(GraphQlSupport.builder()
+                                                   .executor(executor)
+                                                   .invocationHandler(new ThrowingInvocationHandler(executeStarted))
+                                                   .build())
+                                 .build())
+                .build()
+                .start()
+                .await(10, TimeUnit.SECONDS);
+
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) new URL("http://localhost:" + server.port() + "/graphql").openConnection();
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+            connection.setConnectTimeout(1000);
+            connection.setReadTimeout(10_000);
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Connection", "close");
+
+            byte[] requestBody = "{\"query\":\"{boom}\"}".getBytes(StandardCharsets.UTF_8);
+            connection.setFixedLengthStreamingMode(requestBody.length);
+
+            try (OutputStream outputStream = connection.getOutputStream()) {
+                outputStream.write(requestBody);
+            }
+
+            assertThat("The custom InvocationHandler.execute() method was not reached",
+                       executeStarted.await(5, TimeUnit.SECONDS),
+                       is(true));
+            assertThat(connection.getResponseCode(), is(500));
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+            server.shutdown().await(10, TimeUnit.SECONDS);
+            executor.shutdownNow();
+            executor.awaitTermination(10, TimeUnit.SECONDS);
+        }
+    }
+
     private static GraphQLSchema buildSchema() {
         String schema = "type Query{hello: String}";
 
@@ -91,5 +147,39 @@ class GraphQlSupportTest {
 
         SchemaGenerator schemaGenerator = new SchemaGenerator();
         return schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
+    }
+
+    private static final class ThrowingInvocationHandler implements InvocationHandler {
+        private final CountDownLatch executeStarted;
+
+        private ThrowingInvocationHandler(CountDownLatch executeStarted) {
+            this.executeStarted = executeStarted;
+        }
+
+        @Override
+        public Map<String, Object> execute(String query, String operationName, Map<String, Object> variables) {
+            executeStarted.countDown();
+            throw new IllegalStateException("test-trigger");
+        }
+
+        @Override
+        public String schemaString() {
+            return "type Query { boom: String }";
+        }
+
+        @Override
+        public String defaultErrorMessage() {
+            return "Internal Server Error";
+        }
+
+        @Override
+        public Set<String> blacklistedExceptions() {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public Set<String> whitelistedExceptions() {
+            return Collections.emptySet();
+        }
     }
 }
