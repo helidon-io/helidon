@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
@@ -301,6 +302,7 @@ public final class TypeHierarchy {
      * @param typeName type name to scan
      * @return nested annotation instances
      */
+    @Api.Internal
     public static List<Annotation> typeNameAnnotations(TypeName typeName) {
         List<Annotation> result = new ArrayList<>();
         result.addAll(typeName.annotations());
@@ -332,6 +334,7 @@ public final class TypeHierarchy {
      * @param sourceTypeName source type name
      * @return type name with annotations merged from the source
      */
+    @Api.Internal
     public static TypeName mergeTypeNameAnnotations(TypeName typeName, TypeName sourceTypeName) {
         if (!sameStructure(typeName, sourceTypeName)) {
             return typeName;

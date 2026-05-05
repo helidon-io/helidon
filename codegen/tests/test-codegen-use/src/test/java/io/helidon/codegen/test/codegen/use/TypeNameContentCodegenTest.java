@@ -49,7 +49,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class TypeNameContentCodegenTest {
     private static final String PACKAGE_NAME = "io.helidon.codegen.test.codegen.use.generated";
     private static final String PACKAGE_PATH = PACKAGE_NAME.replace('.', '/');
-    private static final String TRIGGER_CLASS = "Trigger";
 
     @Test
     void testAnnotatedNestedTypeNameCompiles() throws IOException {
@@ -67,7 +66,26 @@ public class TypeNameContentCodegenTest {
                                          .build())
                 .build();
 
-        var result = compile(typeNameModel("NestedTypeName", typeName));
+        GeneratedModel model = typeNameModel("NestedTypeName", typeName);
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addProcessor(new ContentProcessor(model))
+                .addClasspath(List.of(Builder.class,
+                                      Prototype.class,
+                                      Annotation.class,
+                                      ElementKind.class,
+                                      TypeName.class,
+                                      TypedElementInfo.class))
+                .printDiagnostics(false)
+                .addSource("io/helidon/codegen/test/codegen/use/generated/Trigger.java", """
+                        package io.helidon.codegen.test.codegen.use.generated;
+
+                        final class Trigger {
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
         String source = generatedSource(result, "NestedTypeName");
 
         assertThat(source, not(containsString("TypeName.create(\"java.util.Map<java.lang.String,")));
@@ -102,7 +120,26 @@ public class TypeNameContentCodegenTest {
                                          .build())
                 .build();
 
-        var result = compile(typeNameModel("BoundTypeName", typeName));
+        GeneratedModel model = typeNameModel("BoundTypeName", typeName);
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addProcessor(new ContentProcessor(model))
+                .addClasspath(List.of(Builder.class,
+                                      Prototype.class,
+                                      Annotation.class,
+                                      ElementKind.class,
+                                      TypeName.class,
+                                      TypedElementInfo.class))
+                .printDiagnostics(false)
+                .addSource("io/helidon/codegen/test/codegen/use/generated/Trigger.java", """
+                        package io.helidon.codegen.test.codegen.use.generated;
+
+                        final class Trigger {
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
         String source = generatedSource(result, "BoundTypeName");
 
         assertThat(source, not(containsString("TypeName.create(\"java.util.List<? extends")));
@@ -132,7 +169,26 @@ public class TypeNameContentCodegenTest {
                                          .build())
                 .build();
 
-        var result = compile(typeNameModel("LowerBoundTypeName", typeName));
+        GeneratedModel model = typeNameModel("LowerBoundTypeName", typeName);
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addProcessor(new ContentProcessor(model))
+                .addClasspath(List.of(Builder.class,
+                                      Prototype.class,
+                                      Annotation.class,
+                                      ElementKind.class,
+                                      TypeName.class,
+                                      TypedElementInfo.class))
+                .printDiagnostics(false)
+                .addSource("io/helidon/codegen/test/codegen/use/generated/Trigger.java", """
+                        package io.helidon.codegen.test.codegen.use.generated;
+
+                        final class Trigger {
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
         String source = generatedSource(result, "LowerBoundTypeName");
 
         assertThat(source, not(containsString("TypeName.create(\"java.util.List<? super")));
@@ -160,7 +216,26 @@ public class TypeNameContentCodegenTest {
                 .componentType(componentType)
                 .build();
 
-        var result = compile(typeNameModel("ComponentTypeName", typeName));
+        GeneratedModel model = typeNameModel("ComponentTypeName", typeName);
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addProcessor(new ContentProcessor(model))
+                .addClasspath(List.of(Builder.class,
+                                      Prototype.class,
+                                      Annotation.class,
+                                      ElementKind.class,
+                                      TypeName.class,
+                                      TypedElementInfo.class))
+                .printDiagnostics(false)
+                .addSource("io/helidon/codegen/test/codegen/use/generated/Trigger.java", """
+                        package io.helidon.codegen.test.codegen.use.generated;
+
+                        final class Trigger {
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
         String source = generatedSource(result, "ComponentTypeName");
 
         assertThat(source, not(containsString("TypeName.create(\"java.lang.String[]")));
@@ -187,7 +262,26 @@ public class TypeNameContentCodegenTest {
                 .enclosingType(enclosingType)
                 .build();
 
-        var result = compile(typedElementModel("ElementInfo", elementInfo));
+        GeneratedModel model = typedElementModel("ElementInfo", elementInfo);
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addProcessor(new ContentProcessor(model))
+                .addClasspath(List.of(Builder.class,
+                                      Prototype.class,
+                                      Annotation.class,
+                                      ElementKind.class,
+                                      TypeName.class,
+                                      TypedElementInfo.class))
+                .printDiagnostics(false)
+                .addSource("io/helidon/codegen/test/codegen/use/generated/Trigger.java", """
+                        package io.helidon.codegen.test.codegen.use.generated;
+
+                        final class Trigger {
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
         String source = generatedSource(result, "ElementInfo");
 
         assertThat(source, containsString(".enclosingType(TypeName.create(\"" + enclosingType.fqName() + "\"))"));
@@ -228,30 +322,6 @@ public class TypeNameContentCodegenTest {
                         .addContentLine(";"))
                 .build();
         return new GeneratedModel(className, classModel);
-    }
-
-    private static TestCompiler.Result compile(GeneratedModel model) {
-        var result = TestCompiler.builder()
-                .currentRelease()
-                .addProcessor(new ContentProcessor(model))
-                .addClasspath(List.of(Builder.class,
-                                      Prototype.class,
-                                      Annotation.class,
-                                      ElementKind.class,
-                                      TypeName.class,
-                                      TypedElementInfo.class))
-                .printDiagnostics(false)
-                .addSource(PACKAGE_PATH + "/" + TRIGGER_CLASS + ".java", """
-                        package %s;
-
-                        final class %s {
-                        }
-                        """.formatted(PACKAGE_NAME, TRIGGER_CLASS))
-                .build()
-                .compile();
-
-        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
-        return result;
     }
 
     private static String generatedSource(TestCompiler.Result result, String className) throws IOException {
