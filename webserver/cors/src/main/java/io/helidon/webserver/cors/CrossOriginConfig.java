@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -339,7 +339,8 @@ public class CrossOriginConfig {
         }
 
         @Override
-        @ConfiguredOption(description = "Sets the allow credentials flag.", value = "false")
+        @ConfiguredOption(description = "Sets the allow credentials flag. Enabled configs cannot use wildcard origins.",
+                          value = "false")
         public Builder allowCredentials(boolean allowCredentials) {
             this.allowCredentials = allowCredentials;
             return this;
@@ -365,7 +366,25 @@ public class CrossOriginConfig {
 
         @Override
         public CrossOriginConfig build() {
+            return build(true);
+        }
+
+        CrossOriginConfig build(boolean owningConfigEnabled) {
+            validateCredentialsOrigins(owningConfigEnabled, enabled, allowCredentials, origins);
             return new CrossOriginConfig(this);
+        }
+
+        static void validateCredentialsOrigins(boolean owningConfigEnabled,
+                                               boolean enabled,
+                                               boolean allowCredentials,
+                                               String[] origins) {
+            if (owningConfigEnabled && enabled && allowCredentials) {
+                for (String origin : origins) {
+                    if ("*".equals(origin)) {
+                        throw new IllegalArgumentException("CORS cannot allow credentials with wildcard origins");
+                    }
+                }
+            }
         }
 
         @Override

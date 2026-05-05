@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,10 +104,19 @@ class Aggregator {
         @Override
         public Aggregator build() {
             if (pathlessCrossOriginConfigMatchable != null) {
-                addPathlessCrossOrigin(pathlessCrossOriginConfigMatchable.get());
+                addPathlessCrossOrigin(pathlessCrossOriginConfigMatchable.get(isEnabled));
             }
             if (requestDefaultBehaviorIfNone && crossOriginConfigMatchables.isEmpty()) {
-                addPathlessCrossOrigin(CrossOriginConfig.builder().build());
+                addPathlessCrossOrigin(CrossOriginConfig.builder().build(isEnabled));
+            }
+            if (isEnabled) {
+                for (CrossOriginConfigMatchable matchable : crossOriginConfigMatchables) {
+                    CrossOriginConfig crossOriginConfig = matchable.get();
+                    CrossOriginConfig.Builder.validateCredentialsOrigins(true,
+                                                                         crossOriginConfig.isEnabled(),
+                                                                         crossOriginConfig.allowCredentials(),
+                                                                         crossOriginConfig.allowOrigins());
+                }
             }
             return new Aggregator(this);
         }
@@ -116,8 +125,9 @@ class Aggregator {
             if (config.exists()) {
                 ConfigValue<CrossOriginConfig.Builder> configValue = config.as(CrossOriginConfig::builder);
                 if (configValue.isPresent()) {
-                    CrossOriginConfig crossOriginConfig = configValue.get().build();
-                    addPathlessCrossOrigin(crossOriginConfig);
+                    CrossOriginConfig.Builder crossOriginConfigBuilder = configValue.get();
+                    config.get("enabled").asBoolean().ifPresent(value -> isEnabled = value);
+                    addPathlessCrossOrigin(crossOriginConfigBuilder);
                 }
             }
             return this;
@@ -134,7 +144,10 @@ class Aggregator {
             if (config.exists()) {
                 ConfigValue<MappedCrossOriginConfig.Builder> mappedConfigValue = config.as(MappedCrossOriginConfig::builder);
                 if (mappedConfigValue.isPresent()) {
-                    MappedCrossOriginConfig mapped = mappedConfigValue.get().build();
+                    config.get("enabled").asBoolean().ifPresent(value -> isEnabled = value);
+                    MappedCrossOriginConfig mapped = mappedConfigValue.get()
+                            .enabled(isEnabled)
+                            .build(false);
                     /*
                      * Merge the newly-provided config with what we've assembled so far. We do not merge the config for a given path;
                      * we add paths that are not already present and override paths that are there.
@@ -145,13 +158,12 @@ class Aggregator {
                         foundCrossOrigin.set(true);
                     });
 
-                    isEnabled = mapped.isEnabled();
                     /*
                      * If the config just set enabled to true without specifying any cross-origin set-up, create a wildcarded
                      * default one.
                      */
                     if (!foundCrossOrigin.get()) {
-                        addPathlessCrossOrigin(CrossOriginConfig.builder().build());
+                        addPathlessCrossOrigin(CrossOriginConfig.builder());
                     }
                 }
             }
@@ -183,6 +195,11 @@ class Aggregator {
          */
         Builder addPathlessCrossOrigin(CrossOriginConfig crossOrigin) {
             crossOriginConfigMatchables.add(new FixedCrossOriginConfigMatchable(PATHLESS_KEY, crossOrigin));
+            return this;
+        }
+
+        private Builder addPathlessCrossOrigin(CrossOriginConfig.Builder crossOriginConfigBuilder) {
+            crossOriginConfigMatchables.add(new BuildableCrossOriginConfigMatchable(PATHLESS_KEY, crossOriginConfigBuilder));
             return this;
         }
 
@@ -357,8 +374,16 @@ class Aggregator {
         }
 
         CrossOriginConfig get() {
+            return get(true);
+        }
+
+        CrossOriginConfig get(boolean owningConfigEnabled) {
             if (config == null) {
-                config = builder.build();
+                config = builder.build(false);
+                CrossOriginConfig.Builder.validateCredentialsOrigins(owningConfigEnabled,
+                                                                     config.isEnabled(),
+                                                                     config.allowCredentials(),
+                                                                     config.allowOrigins());
             }
             return config;
         }

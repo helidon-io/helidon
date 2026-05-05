@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -153,7 +153,7 @@ ifndef::cors-config-table-exclude-keys[| config key]
 
 ifndef::cors-config-table-exclude-methods[|`allowCredentials`]
 ifndef::cors-config-table-exclude-keys[|`allow-credentials`]
-|boolean |`false`|Sets the allow credentials flag. |`Access-Control-Allow-Credentials`
+|boolean |`false`|Sets the allow credentials flag. Enabled configs cannot use wildcard origins. |`Access-Control-Allow-Credentials`
 
 ifndef::cors-config-table-exclude-methods[|`allowHeaders`]
 ifndef::cors-config-table-exclude-keys[|`allow-headers`]
@@ -181,6 +181,7 @@ ifndef::cors-config-table-exclude-keys[|`enabled`]
 |====================
 
 If the cross-origin configuration is disabled (`enabled` = false), then the Helidon CORS implementation ignores the cross-origin configuration entry.
+If `allow-credentials` is `true`, configure explicit allowed origins instead of the default wildcard origin.
 // end::cors-config-table[]
 
 // tag::mapped-config[]

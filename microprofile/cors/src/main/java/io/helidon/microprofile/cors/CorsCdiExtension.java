@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 /**
  * CDI extension for processing CORS-annotated types.
  * <p>
- *     Pre-computes the {@link CrossOriginConfig} for each method which should have one and makes sure that the
+ *     Pre-computes the {@link CrossOriginConfig} builders for each method which should have one and makes sure that the
  *     {@link CrossOrigin} annotation appears only on methods which also have {@code OPTIONS}.
  * </p>
  */
@@ -59,6 +59,7 @@ public class CorsCdiExtension implements Extension {
     private CorsSupportMp corsSupportMp;
 
     private final Set<Method> methodsWithCrossOriginIncorrectlyUsed = new HashSet<>();
+    private final Map<Method, CrossOriginConfig.Builder> corsConfigBuilders = new HashMap<>();
     private final Map<Method, CrossOriginConfig> corsConfigs = new HashMap<>();
 
     void processManagedBean(@Observes ProcessManagedBean<?> pmb) {
@@ -67,9 +68,9 @@ public class CorsCdiExtension implements Extension {
             if (am.isAnnotationPresent(CrossOrigin.class) && !am.isAnnotationPresent(OPTIONS.class)) {
                 methodsWithCrossOriginIncorrectlyUsed.add(method);
             } else {
-                crossOriginConfigFromAnnotationOnAssociatedMethod(method)
-                        .ifPresent(crossOriginConfig -> corsConfigs.put(method,
-                                                                        crossOriginConfig));
+                crossOriginConfigBuilderFromAnnotationOnAssociatedMethod(method)
+                        .ifPresent(crossOriginConfig -> corsConfigBuilders.put(method,
+                                                                               crossOriginConfig));
             }
         });
     }
@@ -89,6 +90,10 @@ public class CorsCdiExtension implements Extension {
         }
 
         Config corsConfig = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(CORS_CONFIG_KEY);
+        if (corsConfig.get("enabled").asBoolean().orElse(true)) {
+            corsConfigBuilders.forEach((method, builder) -> corsConfigs.put(method, builder.build()));
+        }
+        corsConfigBuilders.clear();
 
         CorsSupportMp.Builder corsBuilder = CorsSupportMp.builder();
         corsConfig.ifExists(corsBuilder::mappedConfig);
@@ -116,7 +121,7 @@ public class CorsCdiExtension implements Extension {
         return supplierOfCrossOriginConfigFromAnnotation.get();
     }
 
-    private Optional<CrossOriginConfig> crossOriginConfigFromAnnotationOnAssociatedMethod(Method resourceMethod) {
+    private Optional<CrossOriginConfig.Builder> crossOriginConfigBuilderFromAnnotationOnAssociatedMethod(Method resourceMethod) {
 
         /*
          * Only @OPTIONS methods should bear the @CrossOrigin annotation, but the annotation on such methods applies to
@@ -149,18 +154,17 @@ public class CorsCdiExtension implements Extension {
             corsAnnot = optionsMethod.map(m -> m.getAnnotation(CrossOrigin.class))
                     .orElse(null);
         }
-        return Optional.ofNullable(corsAnnot == null ? null : annotationToConfig(corsAnnot));
-    }
-
-    private static CrossOriginConfig annotationToConfig(CrossOrigin crossOrigin) {
-        return CrossOriginConfig.builder()
-                .allowOrigins(crossOrigin.value())
-                .allowHeaders(crossOrigin.allowHeaders())
-                .exposeHeaders(crossOrigin.exposeHeaders())
-                .allowMethods(crossOrigin.allowMethods())
-                .allowCredentials(crossOrigin.allowCredentials())
-                .maxAgeSeconds(crossOrigin.maxAge())
-                .build();
+        if (corsAnnot == null) {
+            return Optional.empty();
+        }
+        CrossOriginConfig.Builder builder = CrossOriginConfig.builder()
+                .allowOrigins(corsAnnot.value())
+                .allowHeaders(corsAnnot.allowHeaders())
+                .exposeHeaders(corsAnnot.exposeHeaders())
+                .allowMethods(corsAnnot.allowMethods())
+                .allowCredentials(corsAnnot.allowCredentials())
+                .maxAgeSeconds(corsAnnot.maxAge());
+        return Optional.of(builder);
     }
 
 }

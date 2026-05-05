@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ interface CorsSetter<T> {
 
     /**
      * Sets the allow credentials flag.
+     * Cannot be enabled with wildcard origins in an enabled CORS configuration.
      *
      * @param allowCredentials the allow credentials flag
      * @return updated setter

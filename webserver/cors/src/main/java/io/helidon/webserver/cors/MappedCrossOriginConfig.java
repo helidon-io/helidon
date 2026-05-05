@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,9 +54,9 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
          */
         CrossOriginConfig get() {
             if (crossOriginConfig == null) {
-                crossOriginConfig = builder.build();
+                crossOriginConfig = builder.build(false);
             }
-           return crossOriginConfig;
+            return crossOriginConfig;
         }
 
         @Override
@@ -66,12 +66,22 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
     }
 
     private MappedCrossOriginConfig(Builder builder) {
+        this(builder, true);
+    }
+
+    private MappedCrossOriginConfig(Builder builder, boolean validateEntries) {
         this.name = builder.nameOpt.orElse("");
         this.isEnabled = builder.enabledOpt.orElse(true);
         buildables = builder.builders;
 
         // Force building to prevent any changes to the underlying builders that could cause surprising behavior later.
-        buildables.forEach((path, b) -> b.get());
+        buildables.forEach((path, b) -> {
+            CrossOriginConfig crossOriginConfig = b.get();
+            CrossOriginConfig.Builder.validateCredentialsOrigins(validateEntries && isEnabled,
+                                                                 crossOriginConfig.isEnabled(),
+                                                                 crossOriginConfig.allowCredentials(),
+                                                                 crossOriginConfig.allowOrigins());
+        });
     }
 
     /**
@@ -181,6 +191,10 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
         @Override
         public MappedCrossOriginConfig build() {
             return new MappedCrossOriginConfig(this);
+        }
+
+        MappedCrossOriginConfig build(boolean validateEntries) {
+            return new MappedCrossOriginConfig(this, validateEntries);
         }
 
         /**

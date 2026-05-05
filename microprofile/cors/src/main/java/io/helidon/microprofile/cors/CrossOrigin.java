@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ public @interface CrossOrigin {
 
     /**
      * A list of origins that are allowed such as {@code "http://foo.com"} or
-     * {@code "*"} to allow all origins. Corresponds to header {@code
-     * Access-Control-Allow-Origin}.
+     * {@code "*"} to allow all origins. Credentials require non-wildcard
+     * explicit origins. Corresponds to header {@code Access-Control-Allow-Origin}.
      *
      * @return Allowed origins.
      */
@@ -66,8 +66,8 @@ public @interface CrossOrigin {
     String[] allowMethods() default {"*"};
 
     /**
-     * Whether the client can send cookies or credentials. Corresponds to {@code
-     * Access-Control-Allow-Credentials}.
+     * Whether the client can send cookies or credentials. Credentials require
+     * non-wildcard explicit origins. Corresponds to {@code Access-Control-Allow-Credentials}.
      *
      * @return Allowed credentials.
      */

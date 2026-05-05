@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package io.helidon.microprofile.cors;
+
+import java.util.Map;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.inject.se.SeContainer;
@@ -55,6 +57,101 @@ class TestAnnotation {
         }
     }
 
+    @Test
+    void checkWildcardOriginsWithCredentials() {
+
+        SeContainerInitializer initializer = SeContainerInitializer.newInstance();
+        initializer.addBeanClasses(CorsResourceWithWildcardCredentials.class);
+
+        try {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () ->
+                    seContainer = initializer.initialize());
+            assertThat("Exception error message",
+                       e.getMessage(),
+                       containsString("CORS cannot allow credentials with wildcard origins"));
+
+        } finally {
+            if (seContainer != null) {
+                seContainer.close();
+            }
+        }
+    }
+
+    @Test
+    void checkConfigWildcardOriginsWithCredentials() {
+
+        Map<String, String> properties = Map.of(
+                "cors.paths.0.path-pattern", "/cors-config-wildcard-credentials",
+                "cors.paths.0.allow-credentials", "true");
+        setProperties(properties);
+
+        SeContainerInitializer initializer = SeContainerInitializer.newInstance();
+        initializer.addBeanClasses(CorsResourceWithConfig.class);
+
+        try {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () ->
+                    seContainer = initializer.initialize());
+            assertThat("Exception error message",
+                       e.getMessage(),
+                       containsString("CORS cannot allow credentials with wildcard origins"));
+
+        } finally {
+            clearProperties(properties);
+            if (seContainer != null) {
+                seContainer.close();
+            }
+        }
+    }
+
+    @Test
+    void checkDisabledAnnotationWildcardOriginsWithCredentials() {
+
+        Map<String, String> properties = Map.of("cors.enabled", "false");
+        setProperties(properties);
+
+        SeContainerInitializer initializer = SeContainerInitializer.newInstance();
+        initializer.addBeanClasses(CorsResourceWithWildcardCredentials.class);
+
+        try {
+            seContainer = initializer.initialize();
+        } finally {
+            clearProperties(properties);
+            if (seContainer != null) {
+                seContainer.close();
+            }
+        }
+    }
+
+    @Test
+    void checkDisabledConfigWildcardOriginsWithCredentials() {
+
+        Map<String, String> properties = Map.of(
+                "cors.enabled", "false",
+                "cors.paths.0.path-pattern", "/cors-disabled-config-wildcard-credentials",
+                "cors.paths.0.allow-credentials", "true");
+        setProperties(properties);
+
+        SeContainerInitializer initializer = SeContainerInitializer.newInstance();
+        initializer.addBeanClasses(CorsResourceWithConfig.class);
+
+        try {
+            seContainer = initializer.initialize();
+        } finally {
+            clearProperties(properties);
+            if (seContainer != null) {
+                seContainer.close();
+            }
+        }
+    }
+
+    private static void setProperties(Map<String, String> properties) {
+        properties.forEach(System::setProperty);
+    }
+
+    private static void clearProperties(Map<String, String> properties) {
+        properties.keySet().forEach(System::clearProperty);
+    }
+
     @RequestScoped
     @Path("/cors1")
     static class CorsResourceWithBadAnnotation {
@@ -84,6 +181,31 @@ class TestAnnotation {
         @OPTIONS
         @CrossOrigin()
         public void optionsForMainPath() {
+        }
+    }
+
+    @RequestScoped
+    @Path("/cors-wildcard-credentials")
+    static class CorsResourceWithWildcardCredentials {
+
+        @GET
+        public Response get() {
+            return Response.ok().build();
+        }
+
+        @OPTIONS
+        @CrossOrigin(allowCredentials = true)
+        public void options() {
+        }
+    }
+
+    @RequestScoped
+    @Path("/cors-config-wildcard-credentials")
+    static class CorsResourceWithConfig {
+
+        @GET
+        public Response get() {
+            return Response.ok().build();
         }
     }
 }
