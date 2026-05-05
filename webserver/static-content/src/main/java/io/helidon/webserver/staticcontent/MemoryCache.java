@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
     private final Map<StaticContentHandler, Map<String, CachedHandlerInMemory>> cache = new IdentityHashMap<>();
     private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
 
+    // Mutations that affect currentSize take sizeLock before cacheLock to keep currentSize in sync with cache entries.
     private final ReentrantLock sizeLock = new ReentrantLock();
     private long currentSize;
 
@@ -100,10 +101,19 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
 
     void clear(StaticContentHandler staticContentHandler) {
         try {
+            sizeLock.lock();
             cacheLock.writeLock().lock();
-            cache.remove(staticContentHandler);
+            Map<String, CachedHandlerInMemory> removed = cache.remove(staticContentHandler);
+            if (removed != null) {
+                long removedSize = removed.values()
+                        .stream()
+                        .mapToLong(CachedHandlerInMemory::contentLength)
+                        .sum();
+                adjustSize(-removedSize);
+            }
         } finally {
             cacheLock.writeLock().unlock();
+            sizeLock.unlock();
         }
     }
 
@@ -115,32 +125,59 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
      * @return if there is space in the cache for the number of bytes requested
      */
     boolean available(int bytes) {
-        return maxSize != 0 && (currentSize + bytes) <= maxSize;
+        try {
+            sizeLock.lock();
+            return maxSize != 0 && (currentSize + bytes) <= maxSize;
+        } finally {
+            sizeLock.unlock();
+        }
     }
 
     Optional<CachedHandlerInMemory> cache(StaticContentHandler handler,
                                           String resource,
                                           int size,
                                           Supplier<CachedHandlerInMemory> handlerSupplier) {
+        if (maxSize == 0) {
+            // either we are not enabled, or the size would be bigger than maximal size
+            return Optional.empty();
+        }
+        long oldSize;
         try {
             sizeLock.lock();
-            if (maxSize == 0 || currentSize + size > maxSize) {
-                // either we are not enabled, or the size would be bigger than maximal size
+            try {
+                cacheLock.readLock().lock();
+                Map<String, CachedHandlerInMemory> resourceCache = cache.get(handler);
+                oldSize = contentLength(resourceCache == null ? null : resourceCache.get(resource));
+            } finally {
+                cacheLock.readLock().unlock();
+            }
+            if (currentSize - oldSize + size > maxSize) {
                 return Optional.empty();
             }
-            // increase current size
-            currentSize += size;
+            adjustSize(size - oldSize);
+            CachedHandlerInMemory cachedHandlerInMemory;
+            try {
+                cachedHandlerInMemory = handlerSupplier.get();
+            } catch (RuntimeException | Error e) {
+                adjustSize(oldSize - size);
+                throw e;
+            }
+            long newSize = cachedHandlerInMemory.contentLength();
+            if (currentSize - size + newSize > maxSize) {
+                adjustSize(oldSize - size);
+                return Optional.empty();
+            }
+            cacheLock.writeLock().lock();
+            try {
+                cache.computeIfAbsent(handler, k -> new HashMap<>())
+                        .put(resource, cachedHandlerInMemory);
+                adjustSize(newSize - size);
+                return Optional.of(cachedHandlerInMemory);
+            } finally {
+                cacheLock.writeLock().unlock();
+            }
         } finally {
             sizeLock.unlock();
-        }
-        try {
-            cacheLock.writeLock().lock();
-            CachedHandlerInMemory cachedHandlerInMemory = handlerSupplier.get();
-            cache.computeIfAbsent(handler, k -> new HashMap<>())
-                    .put(resource, cachedHandlerInMemory);
-            return Optional.of(cachedHandlerInMemory);
-        } finally {
-            cacheLock.writeLock().unlock();
         }
     }
 
@@ -148,19 +185,13 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
     void cache(StaticContentHandler handler, String resource, CachedHandlerInMemory inMemoryHandler) {
         try {
             sizeLock.lock();
-            if (maxSize != 0) {
-                // only increase current size if enabled, otherwise it does not matter
-                currentSize += inMemoryHandler.contentLength();
-            }
-        } finally {
-            sizeLock.unlock();
-        }
-        try {
             cacheLock.writeLock().lock();
-            cache.computeIfAbsent(handler, k -> new HashMap<>())
-                    .put(resource, inMemoryHandler);
+            Map<String, CachedHandlerInMemory> resourceCache = cache.computeIfAbsent(handler, k -> new HashMap<>());
+            CachedHandlerInMemory oldValue = resourceCache.put(resource, inMemoryHandler);
+            adjustSize(inMemoryHandler.contentLength() - contentLength(oldValue));
         } finally {
             cacheLock.writeLock().unlock();
+            sizeLock.unlock();
         }
     }
 
@@ -175,5 +206,15 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
         } finally {
             cacheLock.readLock().unlock();
         }
+    }
+
+    private void adjustSize(long sizeDelta) {
+        if (maxSize != 0) {
+            currentSize = Math.max(0, currentSize + sizeDelta);
+        }
+    }
+
+    private static long contentLength(CachedHandlerInMemory handler) {
+        return handler == null ? 0 : handler.contentLength();
     }
 }

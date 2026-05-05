@@ -17,8 +17,10 @@
 package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -27,6 +29,8 @@ import java.util.function.Function;
 import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.ForbiddenException;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
@@ -39,15 +43,10 @@ record CachedHandlerPath(Path path,
                          MediaType mediaType,
                          IoFunction<Path, Optional<Instant>> lastModified,
                          BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
-                         Function<Path, Optional<Path>> pathResolver) implements CachedHandler {
+                         Function<Path, Optional<Path>> pathResolver,
+                         boolean followLinks,
+                         Function<Path, Optional<Path>> secureRootResolver) implements CachedHandler {
     private static final System.Logger LOGGER = System.getLogger(CachedHandlerPath.class.getName());
-
-    CachedHandlerPath(Path path,
-                      MediaType mediaType,
-                      IoFunction<Path, Optional<Instant>> lastModified,
-                      BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader) {
-        this(path, mediaType, lastModified, setLastModifiedHeader, Optional::of);
-    }
 
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,
@@ -66,10 +65,17 @@ record CachedHandlerPath(Path path,
             return false;
         }
         Path resolvedPath = resolved.get();
+        Path secureRoot = secureRootResolver.apply(resolvedPath).orElse(null);
 
         // now it exists and is a file
-        if (!Files.exists(resolvedPath)
-                || !Files.isRegularFile(resolvedPath)
+        BasicFileAttributes attributes;
+        try {
+            attributes = FileBasedContentHandler.attributes(resolvedPath, followLinks, secureRoot);
+        } catch (IOException e) {
+            cache.remove(requestedResource);
+            throw new ForbiddenException("File is not accessible", e);
+        }
+        if (!attributes.isRegularFile()
                 || !Files.isReadable(resolvedPath)
                 || Files.isHidden(path)
                 || Files.isHidden(resolvedPath)) {
@@ -79,7 +85,17 @@ record CachedHandlerPath(Path path,
             throw new ForbiddenException("File is not accessible");
         }
 
-        Instant lastModified = lastModified().apply(resolvedPath).orElse(null);
+        Instant lastModified;
+        try {
+            if (followLinks && secureRoot == null) {
+                lastModified = lastModified().apply(resolvedPath).orElse(null);
+            } else {
+                lastModified = FileBasedContentHandler.lastModified(resolvedPath, followLinks, secureRoot).orElse(null);
+            }
+        } catch (IOException e) {
+            cache.remove(requestedResource);
+            throw new ForbiddenException("File is not accessible", e);
+        }
 
         // etag etc.
         if (lastModified != null) {
@@ -90,9 +106,33 @@ record CachedHandlerPath(Path path,
         response.headers().contentType(mediaType);
 
         if (method == Method.GET) {
-            FileBasedContentHandler.send(request, response, resolvedPath);
+            SeekableByteChannel channel;
+            try {
+                channel = FileBasedContentHandler.newByteChannel(resolvedPath, followLinks, secureRoot);
+            } catch (IOException e) {
+                cache.remove(requestedResource);
+                throw new ForbiddenException("File is not accessible", e);
+            }
+            try (SeekableByteChannel openChannel = channel) {
+                FileBasedContentHandler.send(request, response, openChannel);
+            }
         } else {
-            FileBasedContentHandler.processContentLength(resolvedPath, response.headers());
+            try {
+                long contentLength;
+                if (!followLinks || secureRoot != null) {
+                    try (SeekableByteChannel channel = FileBasedContentHandler.newByteChannel(resolvedPath,
+                                                                                              followLinks,
+                                                                                              secureRoot)) {
+                        contentLength = channel.size();
+                    }
+                } else {
+                    contentLength = Files.size(resolvedPath);
+                }
+                response.headers().set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength));
+            } catch (IOException e) {
+                cache.remove(requestedResource);
+                throw new ForbiddenException("File is not accessible", e);
+            }
             response.send();
         }
 

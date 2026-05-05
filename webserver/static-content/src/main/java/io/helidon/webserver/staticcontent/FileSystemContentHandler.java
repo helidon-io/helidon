@@ -157,7 +157,6 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                     // Or redirect to slash ended
                     String redirectLocation = rawPath + "/";
                     CachedHandlerRedirect handler = new CachedHandlerRedirect(redirectLocation);
-                    cacheHandler(requestedResource, handler);
                     return handler.handle(handlerCache(), method, req, res, requestedResource);
                 }
             }
@@ -167,7 +166,9 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                                                       detectType(fileName(path)),
                                                       FileBasedContentHandler::lastModified,
                                                       ServerResponseHeaders::lastModified,
-                                                      this::contentPath);
+                                                      this::contentPath,
+                                                      false,
+                                                      it -> Optional.ofNullable(realRoot.get()));
         cacheHandler(requestedResource, handler);
         return handler.handle(handlerCache(), method, req, res, requestedResource);
     }
@@ -178,10 +179,11 @@ class FileSystemContentHandler extends FileBasedContentHandler {
           - content size
           - media type
           - last modified timestamp
-         - content
+          - content
          */
         Path path = requestedPath(resource);
-        if (contentPath(path).isEmpty()) {
+        Optional<Path> realPath = contentPath(path);
+        if (realPath.isEmpty()) {
             LOGGER.log(Level.WARNING, "File " + resource + " cannot be added to in memory cache, as it does not exist"
                     + " or is not within the root directory.");
             return;
@@ -202,25 +204,21 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                 });
             }
         } else {
-            addToInMemoryCache(resource, path);
+            Path resolvedPath = realPath.get();
+            Path currentRealRoot = realRoot.get();
+            if (currentRealRoot == null
+                    || Files.isSymbolicLink(root)
+                    || !root.relativize(path).equals(currentRealRoot.relativize(resolvedPath))) {
+                LOGGER.log(Level.WARNING, "File " + resource + " cannot be added to in memory cache, as it uses a"
+                        + " symbolic link.");
+                return;
+            }
+            byte[] fileBytes = FileBasedContentHandler.readAllBytes(resolvedPath, false, currentRealRoot);
+            cacheInMemory(resource,
+                          detectType(fileName(path)),
+                          fileBytes,
+                          lastModified(resolvedPath, false, currentRealRoot));
         }
-    }
-
-    private void addToInMemoryCache(String resource, Path path) throws IOException {
-        Optional<Path> realPath = contentPath(path);
-        if (realPath.isEmpty()) {
-            LOGGER.log(Level.WARNING, "File " + resource + " cannot be added to in memory cache, as it does not exist"
-                    + " or is not within the root directory.");
-            return;
-        }
-        Path resolvedPath = realPath.get();
-        if (!path.equals(resolvedPath)) {
-            LOGGER.log(Level.WARNING, "File " + resource + " cannot be added to in memory cache, as it uses a"
-                    + " symbolic link.");
-            return;
-        }
-        byte[] fileBytes = Files.readAllBytes(resolvedPath);
-        cacheInMemory(resource, detectType(fileName(path)), fileBytes, lastModified(resolvedPath));
     }
 
     private Path requestedPath(String requestedPath) {

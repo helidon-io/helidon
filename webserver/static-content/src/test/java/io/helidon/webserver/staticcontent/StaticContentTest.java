@@ -61,7 +61,9 @@ class StaticContentTest {
         externalDir = tempDir.resolve("outside-root");
         alternateRoot = tempDir.resolve("alternate-root");
         Path nested = staticRoot.resolve("nested");
+        Path welcome = staticRoot.resolve("welcome");
         Files.createDirectories(nested);
+        Files.createDirectories(welcome);
         Files.createDirectories(externalDir);
         Files.createDirectories(alternateRoot);
 
@@ -80,6 +82,12 @@ class StaticContentTest {
                 .register("/singleclasspath", createService(ClasspathHandlerConfig.create("web/resource.txt")))
                 .register("/path", createService(FileSystemHandlerConfig.create(staticRoot)))
                 .register("/singlepath", createService(FileSystemHandlerConfig.create(resource)));
+
+        builder.register("/welcome-path", createService(FileSystemHandlerConfig.builder()
+                                                   .location(staticRoot)
+                                                   .welcome("index.html")
+                                                   .build()));
+
         rootLink = tempDir.resolve("current-root");
         if (createSymbolicLink(rootLink, staticRoot)) {
             builder.register("/linkroot", createService(FileSystemHandlerConfig.create(rootLink)));
@@ -199,9 +207,44 @@ class StaticContentTest {
     }
 
     @Test
+    void testFileSystemSymlinkRangeRetargeting() throws Exception {
+        Path link = staticRoot.resolve("range-alias.txt");
+        assumeTrue(createSymbolicLink(link, staticRoot.resolve("alias-one.txt")), "Symbolic links cannot be created");
+
+        try (Http1ClientResponse response = testClient.get("/path/range-alias.txt")
+                .header(HeaderNames.RANGE, "bytes=0-4")
+                .request()) {
+
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 0-4/9"));
+            assertThat(response.as(String.class), is("Alias"));
+        }
+
+        assumeTrue(createSymbolicLink(link, externalDir.resolve("resource.txt")), "Symbolic links cannot be retargeted");
+
+        try (Http1ClientResponse response = testClient.get("/path/range-alias.txt")
+                .header(HeaderNames.RANGE, "bytes=0-4")
+                .request()) {
+
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
+        }
+    }
+
+    @Test
+    void testFileSystemWelcomeFileSymlinkOutsideRoot() throws Exception {
+        Path link = staticRoot.resolve("welcome").resolve("index.html");
+        assumeTrue(createSymbolicLink(link, externalDir.resolve("resource.txt")), "Symbolic links cannot be created");
+
+        try (Http1ClientResponse response = testClient.get("/welcome-path/welcome/")
+                .request()) {
+
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
+        }
+    }
+
+    @Test
     void testFileSystemSymlinkRootRetargeting() throws Exception {
         assumeTrue(rootLink != null, "Symbolic links cannot be created");
-        assumeTrue(createSymbolicLink(rootLink, staticRoot), "Symbolic links cannot be retargeted");
 
         try (Http1ClientResponse response = testClient.get("/linkroot/resource.txt")
                 .request()) {
@@ -222,7 +265,6 @@ class StaticContentTest {
     @Test
     void testFileSystemSingleFileSymlinkRetargeting() throws Exception {
         assumeTrue(singleLink != null, "Symbolic links cannot be created");
-        assumeTrue(createSymbolicLink(singleLink, staticRoot.resolve("resource.txt")), "Symbolic links cannot be retargeted");
 
         try (Http1ClientResponse response = testClient.get("/singlelink")
                 .request()) {
@@ -243,7 +285,6 @@ class StaticContentTest {
     @Test
     void testFileSystemSingleFileCachedParentSymlinkRetargeting() throws Exception {
         assumeTrue(singleParentLink != null, "Symbolic links cannot be created");
-        assumeTrue(createSymbolicLink(singleParentLink, staticRoot), "Symbolic links cannot be retargeted");
 
         try (Http1ClientResponse response = testClient.get("/singleparentlink")
                 .request()) {
@@ -277,9 +318,8 @@ class StaticContentTest {
         try {
             Files.createSymbolicLink(link, target);
             return true;
-        } catch (UnsupportedOperationException | IOException e) {
+        } catch (UnsupportedOperationException | IOException | SecurityException e) {
             return false;
         }
     }
-
 }

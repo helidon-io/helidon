@@ -17,7 +17,6 @@
 package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -51,8 +50,9 @@ class SingleFileContentHandler extends FileBasedContentHandler {
                 if (maybeResolvedPath.isPresent()) {
                     Path resolvedPath = maybeResolvedPath.get();
                     if (path.equals(resolvedPath)) {
-                        byte[] fileBytes = Files.readAllBytes(resolvedPath);
-                        cacheInMemory(".", detectType(fileName(path)), fileBytes, lastModified(resolvedPath));
+                        Path secureRoot = Optional.ofNullable(realPath.get()).map(Path::getParent).orElse(null);
+                        byte[] fileBytes = FileBasedContentHandler.readAllBytes(resolvedPath, false, secureRoot);
+                        cacheInMemory(".", detectType(fileName(path)), fileBytes, lastModified(resolvedPath, false, secureRoot));
                     } else {
                         LOGGER.log(System.Logger.Level.WARNING, "File " + path + " cannot be added to in memory cache,"
                                 + " as it uses a symbolic link.");
@@ -83,7 +83,7 @@ class SingleFileContentHandler extends FileBasedContentHandler {
             if (cachedHandler.isPresent()) {
                 return cachedHandler.get().handle(handlerCache(), method, req, res, resource);
             }
-            return cacheFileHandler().handle(handlerCache(), method, req, res, resource);
+            return cacheFileHandler().handle(handlerCache(), method, req, res, ".");
         }
 
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
@@ -97,7 +97,9 @@ class SingleFileContentHandler extends FileBasedContentHandler {
                                                       detectType(fileName(path)),
                                                       FileBasedContentHandler::lastModified,
                                                       ServerResponseHeaders::lastModified,
-                                                      this::contentPath);
+                                                      this::contentPath,
+                                                      false,
+                                                      it -> Optional.ofNullable(realPath.get()).map(Path::getParent));
         cacheHandler(".", handler);
 
         return handler;

@@ -23,15 +23,22 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SecureDirectoryStream;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import io.helidon.common.Size;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
@@ -266,6 +273,305 @@ class CachedHandlerTest {
     }
 
     @Test
+    void testSecureFallbackRejectsNestedPathWithoutSecureDirectoryStream(@TempDir Path tempDir) throws IOException {
+        URI zipUri = URI.create("jar:" + tempDir.resolve("content.zip").toUri());
+        try (FileSystem fileSystem = FileSystems.newFileSystem(zipUri, Map.of("create", "true"))) {
+            Path root = fileSystem.getPath("/root");
+            Path nested = root.resolve("nested");
+            Files.createDirectories(nested);
+            Path nestedResource = nested.resolve("resource.txt");
+            Files.writeString(nestedResource, "Nested content");
+
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(root)) {
+                assertThat(stream, not(instanceOf(SecureDirectoryStream.class)));
+            }
+
+            assertThrows(NoSuchFileException.class,
+                         () -> FileBasedContentHandler.attributes(nestedResource, false, root));
+            assertThrows(NoSuchFileException.class,
+                         () -> FileBasedContentHandler.newByteChannel(nestedResource, false, root).close());
+        }
+    }
+
+    @Test
+    void testFileSystemSymlinkRootRetargetingAfterStart(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Path nestedRoot = root.resolve("nested");
+        Path alternateRoot = tempDir.resolve("alternate-root");
+        Path linkRoot = tempDir.resolve("link-root");
+        Files.createDirectories(nestedRoot);
+        Files.createDirectories(alternateRoot);
+        Files.writeString(root.resolve("resource.txt"), "Content");
+        Files.writeString(nestedRoot.resolve("resource.txt"), "Nested content");
+        Files.writeString(alternateRoot.resolve("resource.txt"), "Alternate content");
+        createSymbolicLink(linkRoot, root);
+
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(linkRoot)
+                        .build());
+        handler.beforeStart();
+
+        ServerRequest req = mock(ServerRequest.class);
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1",
+                                                            "http",
+                                                            "1.1",
+                                                            Method.HEAD,
+                                                            "/resource.txt",
+                                                            false));
+        when(req.headers()).thenReturn(ServerRequestHeaders.create());
+
+        ServerResponse res = mock(ServerResponse.class);
+        when(res.headers()).thenReturn(ServerResponseHeaders.create());
+
+        createSymbolicLink(linkRoot, nestedRoot);
+
+        assertThat("Retargeted symlink root should not remap the visible resource tree",
+                   handler.doHandle(Method.HEAD, "resource.txt", req, res, false),
+                   is(false));
+
+        createSymbolicLink(linkRoot, root);
+        assertThat("Original symlink root should still serve the pinned resource tree",
+                   handler.doHandle(Method.HEAD, "resource.txt", req, res, false),
+                   is(true));
+
+        createSymbolicLink(linkRoot, alternateRoot);
+
+        assertThat("Out-of-root symlink root should not be served",
+                   handler.doHandle(Method.HEAD, "resource.txt", req, res, false),
+                   is(false));
+    }
+
+    @Test
+    void testFsInMemoryCacheSkipsSymlinkInCachedDirectory(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Path dir = root.resolve("dir");
+        Path externalDir = tempDir.resolve("external");
+        Files.createDirectories(dir);
+        Files.createDirectories(externalDir);
+        Files.writeString(dir.resolve("resource.txt"), "Content");
+        Files.writeString(externalDir.resolve("resource.txt"), "External content");
+        createSymbolicLink(dir.resolve("link.txt"), externalDir.resolve("resource.txt"));
+
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(root)
+                        .cachedFiles(Set.of("dir"))
+                        .build());
+        handler.beforeStart();
+
+        assertThat("Plain file in cached directory should be cached in memory",
+                   handler.cacheInMemory("dir/resource.txt"),
+                   optionalPresent());
+        assertThat("Symlink child in cached directory should not be cached in memory",
+                   handler.cacheInMemory("dir/link.txt"),
+                   optionalEmpty());
+
+        ServerRequest req = mock(ServerRequest.class);
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Method.HEAD, "/dir/link.txt", false));
+
+        ServerResponse res = mock(ServerResponse.class);
+
+        assertThat("Out-of-root symlink child should not be served",
+                   handler.doHandle(Method.HEAD, "dir/link.txt", req, res, false),
+                   is(false));
+        assertThat("Out-of-root symlink child should not remain cached",
+                   handler.cacheHandler("dir/link.txt"),
+                   optionalEmpty());
+    }
+
+    @Test
+    void testFsInMemoryCacheEvictsStaleEntryOnRestart(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Path externalDir = tempDir.resolve("external");
+        Files.createDirectories(root);
+        Files.createDirectories(externalDir);
+        Files.writeString(root.resolve("resource.txt"), "Content");
+        Files.writeString(externalDir.resolve("resource.txt"), "External content");
+
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(root)
+                        .cachedFiles(Set.of("resource.txt"))
+                        .build());
+        handler.beforeStart();
+
+        assertThat("Initial resource should be cached in memory",
+                   handler.cacheInMemory("resource.txt"),
+                   optionalPresent());
+
+        handler.afterStop();
+        createSymbolicLink(root.resolve("resource.txt"), externalDir.resolve("resource.txt"));
+        handler.beforeStart();
+
+        assertThat("Stale in-memory resource should be evicted after restart",
+                   handler.cacheInMemory("resource.txt"),
+                   optionalEmpty());
+    }
+
+    @Test
+    void testMemoryCacheClearReleasesCapacity(@TempDir Path tempDir) throws IOException {
+        Path firstRoot = tempDir.resolve("first-root");
+        Path secondRoot = tempDir.resolve("second-root");
+        Files.createDirectories(firstRoot);
+        Files.createDirectories(secondRoot);
+        Files.writeString(firstRoot.resolve("resource.txt"), "Content");
+        Files.writeString(secondRoot.resolve("resource.txt"), "Content");
+
+        MemoryCache memoryCache = MemoryCache.create(it -> it.capacity(Size.create(14)));
+        FileSystemContentHandler firstHandler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(firstRoot)
+                        .cachedFiles(Set.of("resource.txt"))
+                        .memoryCache(memoryCache)
+                        .build());
+        FileSystemContentHandler secondHandler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(secondRoot)
+                        .cachedFiles(Set.of("resource.txt"))
+                        .memoryCache(memoryCache)
+                        .build());
+        firstHandler.beforeStart();
+        secondHandler.beforeStart();
+
+        assertThat("Both configured files should consume the shared memory cache capacity",
+                   memoryCache.available(1),
+                   is(false));
+
+        firstHandler.afterStop();
+
+        assertThat("Clearing one handler memory cache should release only that handler capacity",
+                   memoryCache.available(7),
+                   is(true));
+        assertThat("Clearing one handler memory cache should remove that handler entry",
+                   firstHandler.cacheInMemory("resource.txt"),
+                   optionalEmpty());
+        assertThat("Clearing one handler memory cache should preserve the other handler entry",
+                   secondHandler.cacheInMemory("resource.txt"),
+                   optionalPresent());
+        assertThat("The second handler should still consume its shared capacity",
+                   memoryCache.available(8),
+                   is(false));
+
+        secondHandler.afterStop();
+
+        assertThat("Clearing both handlers should release all shared capacity",
+                   memoryCache.available(14),
+                   is(true));
+    }
+
+    @Test
+    void testMemoryCacheReplaceKeepsCapacity(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Files.createDirectories(root);
+
+        MemoryCache memoryCache = MemoryCache.create(it -> it.capacity(Size.create(8)));
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(root)
+                        .memoryCache(memoryCache)
+                        .build());
+
+        handler.cacheInMemory("resource.txt",
+                              MediaTypes.TEXT_PLAIN,
+                              "Content".getBytes(StandardCharsets.UTF_8),
+                              Optional.empty());
+        handler.cacheInMemory("resource.txt",
+                              MediaTypes.TEXT_PLAIN,
+                              "Content".getBytes(StandardCharsets.UTF_8),
+                              Optional.empty());
+        handler.cacheInMemory("resource.txt",
+                              MediaTypes.TEXT_PLAIN,
+                              "X".getBytes(StandardCharsets.UTF_8),
+                              Optional.empty());
+
+        assertThat("Replacing a cached resource with a smaller payload should release capacity",
+                   memoryCache.available(7),
+                   is(true));
+
+        handler.cacheInMemory("resource.txt",
+                              MediaTypes.TEXT_PLAIN,
+                              "Content".getBytes(StandardCharsets.UTF_8),
+                              Optional.empty());
+
+        assertThat("Replacing a cached resource should not double-count its size",
+                   memoryCache.available(1),
+                   is(true));
+        assertThat("Replacing a cached resource with a larger payload should consume capacity",
+                   memoryCache.available(2),
+                   is(false));
+    }
+
+    @Test
+    void testSingleFileSymlinkRetargetingAfterStart(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Path externalDir = tempDir.resolve("external");
+        Files.createDirectories(root);
+        Files.createDirectories(externalDir);
+        Files.writeString(root.resolve("resource.txt"), "Content");
+        Files.writeString(externalDir.resolve("resource.txt"), "External content");
+
+        Path link = root.resolve("link.txt");
+        createSymbolicLink(link, root.resolve("resource.txt"));
+
+        SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(link)
+                        .build());
+        handler.beforeStart();
+        createSymbolicLink(link, externalDir.resolve("resource.txt"));
+
+        ServerRequest req = mock(ServerRequest.class);
+        when(req.headers()).thenReturn(ServerRequestHeaders.create());
+
+        ServerResponse res = mock(ServerResponse.class);
+        when(res.headers()).thenReturn(ServerResponseHeaders.create());
+
+        assertThat("Retargeted single-file symlink should not become the trusted file",
+                   handler.doHandle(Method.HEAD, "", req, res, false),
+                   is(false));
+    }
+
+    @Test
+    void testSingleFileInMemoryCacheSkipsSymlink(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Path externalDir = tempDir.resolve("external");
+        Files.createDirectories(root);
+        Files.createDirectories(externalDir);
+        Files.writeString(root.resolve("resource.txt"), "Content");
+        Files.writeString(externalDir.resolve("resource.txt"), "External content");
+
+        Path link = root.resolve("link.txt");
+        createSymbolicLink(link, root.resolve("resource.txt"));
+
+        SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(link)
+                        .cachedFiles(Set.of("."))
+                        .build());
+        handler.beforeStart();
+
+        assertThat("Single-file symlink should not be cached in memory",
+                   handler.cacheInMemory("."),
+                   optionalEmpty());
+
+        ServerRequest req = mock(ServerRequest.class);
+        when(req.headers()).thenReturn(ServerRequestHeaders.create());
+
+        ServerResponse res = mock(ServerResponse.class);
+        when(res.headers()).thenReturn(ServerResponseHeaders.create());
+
+        assertThat("Initial symlink target should be served", handler.doHandle(Method.HEAD, "", req, res, false), is(true));
+
+        createSymbolicLink(link, externalDir.resolve("resource.txt"));
+
+        assertThat("Retargeted symlink should not be served", handler.doHandle(Method.HEAD, "", req, res, false), is(false));
+        assertThat("Retargeted symlink handler should be evicted",
+                   handler.cacheHandler("."),
+                   optionalEmpty());
+    }
+
+    @Test
     void testSingleFileInMemoryCacheSkipsSymlinkParent(@TempDir Path tempDir) throws IOException {
         Path root = tempDir.resolve("root");
         Path linkRoot = tempDir.resolve("link-root");
@@ -388,13 +694,9 @@ class CachedHandlerTest {
         assertThat("Handler should have redirected", result, is(true));
         assertThat(responseHeaders, hasHeader(HeaderNames.LOCATION, "/nested/"));
 
-        // now make sure it is cached
+        // Filesystem redirects depend on mutable path state, so they must not be cached.
         Optional<CachedHandler> cachedHandler = fsHandler.cacheHandler("nested");
-        assertThat("Handler should be cached", cachedHandler, optionalPresent());
-        CachedHandler cached = cachedHandler.get();
-        assertThat("This should be a cached redirect handler", cached, instanceOf(CachedHandlerRedirect.class));
-        CachedHandlerRedirect redirectHandler = (CachedHandlerRedirect) cached;
-        assertThat(redirectHandler.location(), is("/nested/"));
+        assertThat("Handler should not be cached", cachedHandler, optionalEmpty());
     }
 
     @Test
@@ -475,8 +777,9 @@ class CachedHandlerTest {
 
     private static void createSymbolicLink(Path link, Path target) throws IOException {
         try {
+            Files.deleteIfExists(link);
             Files.createSymbolicLink(link, target);
-        } catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException | SecurityException e) {
             assumeTrue(false, "Symbolic links are not supported");
         } catch (IOException e) {
             assumeTrue(false, "Symbolic links cannot be created: " + e.getMessage());

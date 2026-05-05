@@ -115,7 +115,9 @@ class CachedHandlerJar implements CachedHandler {
         if (method == Method.GET) {
             try {
                 if (path != null && Files.exists(path)) {
-                    FileBasedContentHandler.send(request, response, path);
+                    try (var channel = Files.newByteChannel(path)) {
+                        FileBasedContentHandler.send(request, response, channel);
+                    }
                     return true;
                 }
             } catch (IOException e) {
