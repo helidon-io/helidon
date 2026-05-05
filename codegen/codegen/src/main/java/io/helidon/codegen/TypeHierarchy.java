@@ -212,7 +212,11 @@ public final class TypeHierarchy {
     }
 
     /**
-     * Annotations on the {@code typeInfo}, it's methods, and method parameters.
+     * Annotations on the {@code typeInfo}, its methods, method parameters, and the type-use positions nested in their
+     * {@link TypeName}s.
+     * <p>
+     * Type-use positions include type arguments, wildcard bounds, and array component types of the type itself,
+     * element return or field types, and parameter types.
      *
      * @param ctx context
      * @param typeInfo type info to check
@@ -318,7 +322,11 @@ public final class TypeHierarchy {
 
     /**
      * Merge type-use annotations from a source type name into a target type name.
-     * Only structurally matching nested type arguments, wildcard bounds, and array component types are merged.
+     * If the type names do not have the same structure, the target type name is returned unchanged.
+     * <p>
+     * Matching type names merge direct and inherited annotations on the root type, type arguments, wildcard bounds,
+     * and array component types. When both type names contain the same annotation type at a matching position, the
+     * target annotation is preserved. Formal type parameter names do not block merging.
      *
      * @param typeName       target type name
      * @param sourceTypeName source type name
@@ -370,7 +378,6 @@ public final class TypeHierarchy {
     private static boolean sameStructure(TypeName typeName, TypeName sourceTypeName) {
         if (typeName.primitive() != sourceTypeName.primitive()
                 || typeName.array() != sourceTypeName.array()
-                || typeName.vararg() != sourceTypeName.vararg()
                 || typeName.generic() != sourceTypeName.generic()
                 || typeName.wildcard() != sourceTypeName.wildcard()
                 || typeName.typeArguments().size() != sourceTypeName.typeArguments().size()
@@ -382,7 +389,6 @@ public final class TypeHierarchy {
         return typeName.packageName().equals(sourceTypeName.packageName())
                 && typeName.className().equals(sourceTypeName.className())
                 && typeName.enclosingNames().equals(sourceTypeName.enclosingNames())
-                && typeName.typeParameters().equals(sourceTypeName.typeParameters())
                 && sameStructure(typeName.typeArguments(), sourceTypeName.typeArguments())
                 && sameStructure(typeName.lowerBounds(), sourceTypeName.lowerBounds())
                 && sameStructure(typeName.upperBounds(), sourceTypeName.upperBounds())
@@ -406,7 +412,7 @@ public final class TypeHierarchy {
     }
 
     private static void addAnnotationIfAbsent(List<Annotation> annotations, Annotation annotation) {
-        if (!annotations.contains(annotation)) {
+        if (annotations.stream().noneMatch(it -> it.typeName().equals(annotation.typeName()))) {
             annotations.add(annotation);
         }
     }

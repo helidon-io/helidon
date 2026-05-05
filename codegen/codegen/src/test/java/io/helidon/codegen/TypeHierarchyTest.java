@@ -173,6 +173,23 @@ class TypeHierarchyTest {
 
         assertThat(lowerBoundMerged.typeArguments().getFirst().lowerBounds().getFirst().annotations(), hasItem(notBlank));
 
+        TypeName varargTargetType = TypeName.builder(TypeNames.STRING)
+                .array(true)
+                .vararg(true)
+                .componentType(TypeNames.STRING)
+                .build();
+        TypeName arraySourceType = TypeName.builder(TypeNames.STRING)
+                .array(true)
+                .componentType(TypeName.builder(TypeNames.STRING)
+                                       .addAnnotation(notBlank)
+                                       .build())
+                .build();
+
+        TypeName varargMerged = TypeHierarchy.mergeTypeNameAnnotations(varargTargetType, arraySourceType);
+
+        assertThat(varargMerged.vararg(), is(true));
+        assertThat(varargMerged.componentType().orElseThrow().annotations(), hasItem(notBlank));
+
         TypeName rawList = TypeNames.LIST;
         TypeName mergedRawList = TypeHierarchy.mergeTypeNameAnnotations(rawList, sourceType);
         assertThat(mergedRawList.typeArguments().isEmpty(), is(true));
@@ -200,6 +217,52 @@ class TypeHierarchyTest {
 
         assertThat(mismatchedMerged.annotations(), not(hasItem(notBlank)));
         assertThat(mismatchedMerged.typeArguments().getFirst().annotations(), not(hasItem(notBlank)));
+    }
+
+    @Test
+    void mergeTypeNameAnnotationsKeepsTargetAnnotationValueForSameAnnotationType() {
+        TypeName annotationType = TypeName.create("io.helidon.codegen.Annotation");
+        Annotation targetAnnotation = Annotation.create(annotationType, "target");
+        Annotation sourceAnnotation = Annotation.create(annotationType, "source");
+        TypeName targetType = TypeName.builder(TypeNames.LIST)
+                .addAnnotation(targetAnnotation)
+                .addTypeArgument(TypeName.builder(TypeNames.STRING)
+                                         .addAnnotation(targetAnnotation)
+                                         .build())
+                .build();
+        TypeName sourceType = TypeName.builder(TypeNames.LIST)
+                .addAnnotation(sourceAnnotation)
+                .addTypeArgument(TypeName.builder(TypeNames.STRING)
+                                         .addAnnotation(sourceAnnotation)
+                                         .build())
+                .build();
+
+        TypeName merged = TypeHierarchy.mergeTypeNameAnnotations(targetType, sourceType);
+
+        assertThat(merged.annotations(), hasItem(targetAnnotation));
+        assertThat(merged.annotations(), not(hasItem(sourceAnnotation)));
+        assertThat(merged.typeArguments().getFirst().annotations(), hasItem(targetAnnotation));
+        assertThat(merged.typeArguments().getFirst().annotations(), not(hasItem(sourceAnnotation)));
+    }
+
+    @Test
+    void mergeTypeNameAnnotationsIgnoresFormalTypeParameterNames() {
+        Annotation notBlank = Annotation.create(NOT_BLANK);
+        TypeName targetType = TypeName.builder(TypeNames.LIST)
+                .addTypeParameter("T")
+                .addTypeArgument(TypeNames.STRING)
+                .build();
+        TypeName sourceType = TypeName.builder(TypeNames.LIST)
+                .addTypeParameter("E")
+                .addTypeArgument(TypeName.builder(TypeNames.STRING)
+                                         .addAnnotation(notBlank)
+                                         .build())
+                .build();
+
+        TypeName merged = TypeHierarchy.mergeTypeNameAnnotations(targetType, sourceType);
+
+        assertThat(merged.typeParameters(), is(List.of("T")));
+        assertThat(merged.typeArguments().getFirst().annotations(), hasItem(notBlank));
     }
 
     private static final class EmptyCodegenContext implements CodegenContext {

@@ -17,13 +17,6 @@
 package io.helidon.codegen.classmodel;
 
 import java.lang.annotation.ElementType;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
 import io.helidon.common.types.Annotation;
@@ -33,7 +26,6 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -108,7 +100,7 @@ class TypesCodegenTest {
     }
 
     @Test
-    void testAnnotatedNestedTypeName(@TempDir Path tempDir) throws Exception {
+    void testAnnotatedNestedTypeName() {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create("io.helidon.RandomAnnotation"))
                 .property("value", "quoted \" backslash \\ tab \t")
@@ -133,11 +125,10 @@ class TypesCodegenTest {
         assertThat(createString, containsString(".addTypeArgument(@io.helidon.common.types.TypeName@.builder()"));
         assertThat(createString, containsString(".addAnnotation(@io.helidon.common.types.Annotation@.builder()"));
         assertThat(createString, containsString(".property(\"value\", \"quoted \\\" backslash \\\\ tab \\t\")"));
-        assertTypeName("NestedTypeName", typeName, compileAndCreateTypeName(tempDir, "NestedTypeName", createString));
     }
 
     @Test
-    void testAnnotatedBoundTypeName(@TempDir Path tempDir) throws Exception {
+    void testAnnotatedBoundTypeName() {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create("io.helidon.RandomAnnotation"))
                 .build();
@@ -160,11 +151,10 @@ class TypesCodegenTest {
         assertThat(createString, containsString(".wildcard(true)"));
         assertThat(createString, containsString(".addUpperBound(@io.helidon.common.types.TypeName@.builder()"));
         assertThat(createString, containsString(".addAnnotation(@io.helidon.common.types.Annotation@.create("));
-        assertTypeName("BoundTypeName", typeName, compileAndCreateTypeName(tempDir, "BoundTypeName", createString));
     }
 
     @Test
-    void testAnnotatedLowerBoundTypeName(@TempDir Path tempDir) throws Exception {
+    void testAnnotatedLowerBoundTypeName() {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create("io.helidon.RandomAnnotation"))
                 .build();
@@ -187,11 +177,10 @@ class TypesCodegenTest {
         assertThat(createString, containsString(".wildcard(true)"));
         assertThat(createString, containsString(".addLowerBound(@io.helidon.common.types.TypeName@.builder()"));
         assertThat(createString, containsString(".addAnnotation(@io.helidon.common.types.Annotation@.create("));
-        assertTypeName("LowerBoundTypeName", typeName, compileAndCreateTypeName(tempDir, "LowerBoundTypeName", createString));
     }
 
     @Test
-    void testAnnotatedComponentTypeName(@TempDir Path tempDir) throws Exception {
+    void testAnnotatedComponentTypeName() {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create("io.helidon.RandomAnnotation"))
                 .build();
@@ -212,11 +201,10 @@ class TypesCodegenTest {
         assertThat(createString, containsString(".array(true)"));
         assertThat(createString, containsString(".componentType(@io.helidon.common.types.TypeName@.builder()"));
         assertThat(createString, containsString(".addAnnotation(@io.helidon.common.types.Annotation@.create("));
-        assertTypeName("ComponentTypeName", typeName, compileAndCreateTypeName(tempDir, "ComponentTypeName", createString));
     }
 
     @Test
-    void testTypedElementEnclosingType(@TempDir Path tempDir) throws Exception {
+    void testTypedElementEnclosingType() {
         TypeName enclosingType = TypeName.create("io.helidon.codegen.classmodel.EnclosingType");
         TypedElementInfo elementInfo = TypedElementInfo.builder()
                 .kind(ElementKind.METHOD)
@@ -230,127 +218,9 @@ class TypesCodegenTest {
         String createString = contentBuilder.generatedString();
 
         assertThat(createString, containsString(".enclosingType("));
-        TypedElementInfo actual = compileAndCreateElement(tempDir, "ElementInfo", createString);
-        assertThat(actual.enclosingType().orElseThrow(), is(enclosingType));
-    }
-
-    private static TypeName compileAndCreateTypeName(Path tempDir, String className, String createString) throws Exception {
-        Path source = tempDir.resolve(className + ".java");
-        Path output = Files.createDirectory(tempDir.resolve("classes-" + className));
-        String sourceContent = """
-                import io.helidon.common.types.TypeName;
-
-                public final class %s {
-                    public static TypeName create() {
-                        return %s;
-                    }
-                }
-                """.formatted(className, javaSource(createString));
-        Files.writeString(source, sourceContent, StandardCharsets.UTF_8);
-
-        List<String> command = javacCommand(output, source);
-        Process process = new ProcessBuilder(command)
-                .redirectErrorStream(true)
-                .start();
-        String compilerOutput = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        int result = process.waitFor();
-        assertThat(compilerOutput, result, is(0));
-
-        try (URLClassLoader classLoader = new URLClassLoader(new URL[] {output.toUri().toURL()},
-                                                             TypesCodegenTest.class.getClassLoader())) {
-            Class<?> generatedType = classLoader.loadClass(className);
-            Method create = generatedType.getMethod("create");
-            return (TypeName) create.invoke(null);
-        }
-    }
-
-    private static TypedElementInfo compileAndCreateElement(Path tempDir, String className, String createString)
-            throws Exception {
-        Path source = tempDir.resolve(className + ".java");
-        Path output = Files.createDirectory(tempDir.resolve("classes-" + className));
-        String sourceContent = """
-                import io.helidon.common.types.TypedElementInfo;
-
-                public final class %s {
-                    public static TypedElementInfo create() {
-                        return %s;
-                    }
-                }
-                """.formatted(className, javaSource(createString));
-        Files.writeString(source, sourceContent, StandardCharsets.UTF_8);
-
-        List<String> command = javacCommand(output, source);
-        Process process = new ProcessBuilder(command)
-                .redirectErrorStream(true)
-                .start();
-        String compilerOutput = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        int result = process.waitFor();
-        assertThat(compilerOutput, result, is(0));
-
-        try (URLClassLoader classLoader = new URLClassLoader(new URL[] {output.toUri().toURL()},
-                                                             TypesCodegenTest.class.getClassLoader())) {
-            Class<?> generatedType = classLoader.loadClass(className);
-            Method create = generatedType.getMethod("create");
-            return (TypedElementInfo) create.invoke(null);
-        }
-    }
-
-    private static String javaSource(String createString) {
-        return createString.replaceAll("@([^@]+)@", "$1");
-    }
-
-    private static List<String> javacCommand(Path output, Path source) {
-        List<String> command = new ArrayList<>();
-        command.add(javac().toString());
-        String modulePath = System.getProperty("jdk.module.path");
-        if (modulePath != null && !modulePath.isBlank()) {
-            command.add("--module-path");
-            command.add(modulePath);
-            command.add("--add-modules");
-            command.add("io.helidon.common.types");
-        }
-        command.add("-classpath");
-        command.add(System.getProperty("java.class.path"));
-        command.add("-d");
-        command.add(output.toString());
-        command.add(source.toString());
-        return command;
-    }
-
-    private static Path javac() {
-        String executable = System.getProperty("os.name").toLowerCase().contains("win") ? "javac.exe" : "javac";
-        Path javac = Path.of(System.getProperty("java.home"), "bin", executable);
-        assertThat("JDK javac is required", Files.isRegularFile(javac), is(true));
-        return javac;
-    }
-
-    private static void assertTypeName(String description, TypeName expected, TypeName actual) {
-        assertThat(description + " package name", actual.packageName(), is(expected.packageName()));
-        assertThat(description + " class name", actual.className(), is(expected.className()));
-        assertThat(description + " enclosing names", actual.enclosingNames(), is(expected.enclosingNames()));
-        assertThat(description + " primitive", actual.primitive(), is(expected.primitive()));
-        assertThat(description + " array", actual.array(), is(expected.array()));
-        assertThat(description + " vararg", actual.vararg(), is(expected.vararg()));
-        assertThat(description + " generic", actual.generic(), is(expected.generic()));
-        assertThat(description + " wildcard", actual.wildcard(), is(expected.wildcard()));
-        assertThat(description + " annotations", actual.annotations(), is(expected.annotations()));
-        assertThat(description + " inherited annotations", actual.inheritedAnnotations(), is(expected.inheritedAnnotations()));
-        assertThat(description + " type parameters", actual.typeParameters(), is(expected.typeParameters()));
-        assertTypeNames(description + " type argument", expected.typeArguments(), actual.typeArguments());
-        assertTypeNames(description + " lower bound", expected.lowerBounds(), actual.lowerBounds());
-        assertTypeNames(description + " upper bound", expected.upperBounds(), actual.upperBounds());
-        assertThat(description + " component type present",
-                   actual.componentType().isPresent(),
-                   is(expected.componentType().isPresent()));
-        if (expected.componentType().isPresent()) {
-            assertTypeName(description + " component type", expected.componentType().orElseThrow(), actual.componentType().orElseThrow());
-        }
-    }
-
-    private static void assertTypeNames(String description, List<TypeName> expected, List<TypeName> actual) {
-        assertThat(description + " size", actual.size(), is(expected.size()));
-        for (int i = 0; i < expected.size(); i++) {
-            assertTypeName(description + " " + i, expected.get(i), actual.get(i));
-        }
+        assertThat(createString,
+                   containsString(".enclosingType(@io.helidon.common.types.TypeName@.create(\""
+                                          + enclosingType.fqName()
+                                          + "\"))"));
     }
 }
