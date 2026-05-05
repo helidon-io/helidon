@@ -25,7 +25,7 @@ public class LimitAlgorithmOutcomeTest {
     @Test
     void deferredRejectionPreservesWaitEndTime() {
         LimitAlgorithm.Outcome.Deferred deferred =
-                (LimitAlgorithm.Outcome.Deferred) LimitAlgorithm.Outcome.deferredRejection("socket", "fixed", 11, 29);
+                (LimitAlgorithm.Outcome.Deferred) LimitAlgorithm.Outcome.deferredRejection("listener", "fixed", 11, 29);
 
         assertThat(deferred.disposition(), is(LimitAlgorithm.Outcome.Disposition.REJECTED));
         assertThat(deferred.timing(), is(LimitAlgorithm.Outcome.Timing.DEFERRED));

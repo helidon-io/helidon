@@ -26,7 +26,7 @@ module io.helidon.common.concurrency.limits {
     requires io.helidon.builder.api;
     requires io.helidon.common;
     requires io.helidon.config;
-    requires io.helidon.metrics.api;
+    requires transitive io.helidon.metrics.api;
 
     exports io.helidon.common.concurrency.limits;
     exports io.helidon.common.concurrency.limits.spi;

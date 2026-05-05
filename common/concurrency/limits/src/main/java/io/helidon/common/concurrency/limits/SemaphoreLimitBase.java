@@ -78,9 +78,14 @@ abstract class SemaphoreLimitBase extends LimitBase implements Limit {
     }
 
     @Override
-    public void init(String socketName) {
-        originName = socketName;
-        metrics.init(socketName);
+    public void init(Limit.Context context) {
+        originName = context.originName();
+        metrics.init(context);
+    }
+
+    @Override
+    public void init(String originName) {
+        init(Limit.Context.create(originName, SemaphoreMetrics.legacySocketTags(originName)));
     }
 
     /**

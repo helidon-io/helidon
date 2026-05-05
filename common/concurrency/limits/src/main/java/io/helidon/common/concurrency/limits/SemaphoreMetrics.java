@@ -61,7 +61,7 @@ class SemaphoreMetrics {
         this.concurrentRequests = concurrentRequests;
     }
 
-    void init(String socketName) {
+    void init(Limit.Context context) {
         if (!enableMetrics) {
             return;
         }
@@ -69,14 +69,11 @@ class SemaphoreMetrics {
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         MeterRegistry meterRegistry = metricsFactory.globalRegistry();
 
-        List<Tag> tags;
-        if (socketName.equals(Service.Named.DEFAULT_NAME)) {
-            tags = List.of();
-        } else {
-            tags = List.of(Tag.create("socketName", socketName));
-        }
+        register(metricsFactory, meterRegistry, context.metricTags());
+    }
 
-        register(metricsFactory, meterRegistry, tags);
+    void init(String originName) {
+        init(Limit.Context.create(originName, legacySocketTags(originName)));
     }
 
     void register(MetricsFactory metricsFactory, MeterRegistry meterRegistry, List<Tag> tags) {
@@ -141,5 +138,12 @@ class SemaphoreMetrics {
             return;
         }
         queueWaitTimer.record(endWait - startWait, TimeUnit.NANOSECONDS);
+    }
+
+    static List<Tag> legacySocketTags(String originName) {
+        if (originName.equals(Service.Named.DEFAULT_NAME)) {
+            return List.of();
+        }
+        return List.of(Tag.create("socketName", originName));
     }
 }

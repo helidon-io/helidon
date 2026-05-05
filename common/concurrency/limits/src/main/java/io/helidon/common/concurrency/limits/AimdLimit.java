@@ -141,7 +141,12 @@ public class AimdLimit implements LimitAlgorithm, Limit, RuntimeType.Api<AimdLim
     }
 
     @Override
-    public void init(String socketName) {
-        aimdLimitImpl.init(socketName);
+    public void init(Limit.Context context) {
+        aimdLimitImpl.init(context);
+    }
+
+    @Override
+    public void init(String originName) {
+        aimdLimitImpl.init(originName);
     }
 }
