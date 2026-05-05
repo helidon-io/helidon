@@ -76,6 +76,13 @@ class SemaphoreMetrics {
         init(Limit.InitializationContext.create(originName, legacySocketTags(originName)));
     }
 
+    static List<Tag> legacySocketTags(String originName) {
+        if (originName.equals(Service.Named.DEFAULT_NAME)) {
+            return List.of();
+        }
+        return List.of(Tag.create("socketName", originName));
+    }
+
     void register(MetricsFactory metricsFactory, MeterRegistry meterRegistry, List<Tag> tags) {
         if (semaphore != null) {
             Gauge.Builder<Integer> queueLengthBuilder = metricsFactory.gaugeBuilder(
@@ -140,10 +147,4 @@ class SemaphoreMetrics {
         queueWaitTimer.record(endWait - startWait, TimeUnit.NANOSECONDS);
     }
 
-    static List<Tag> legacySocketTags(String originName) {
-        if (originName.equals(Service.Named.DEFAULT_NAME)) {
-            return List.of();
-        }
-        return List.of(Tag.create("socketName", originName));
-    }
 }

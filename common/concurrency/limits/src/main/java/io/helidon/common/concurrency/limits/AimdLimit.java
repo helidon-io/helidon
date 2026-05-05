@@ -146,6 +146,7 @@ public class AimdLimit implements LimitAlgorithm, Limit, RuntimeType.Api<AimdLim
     }
 
     @Override
+    @Deprecated
     public void init(String originName) {
         aimdLimitImpl.init(originName);
     }

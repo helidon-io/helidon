@@ -17,14 +17,17 @@
 package io.helidon.webserver.tests.resourcelimit;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.observe.ObserveFeature;
@@ -32,6 +35,7 @@ import io.helidon.webserver.observe.metrics.MetricsObserver;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.webserver.testing.junit5.Socket;
 
 import org.junit.jupiter.api.Test;
 
@@ -53,10 +57,14 @@ class FixedLimitMetricsTest {
             "fixed_concurrent_requests"
     };
 
-    private final WebClient webClient;
+    private static final Tag ADMIN_SOCKET_TAG = Tag.create("socketName", "admin");
 
-    FixedLimitMetricsTest(WebClient webClient) {
+    private final WebClient webClient;
+    private final WebClient adminClient;
+
+    FixedLimitMetricsTest(WebClient webClient, @Socket("admin") WebClient adminClient) {
         this.webClient = webClient;
+        this.adminClient = adminClient;
     }
 
     @SetUpServer
@@ -73,6 +81,17 @@ class FixedLimitMetricsTest {
 
     @SetUpRoute
     static void routeSetup(HttpRules rules) {
+        rules.get("/greet", (req, res) -> {
+            res.send("hello");
+        });
+    }
+
+    @SetUpRoute("admin")
+    static void adminRouteSetup(ListenerConfig.Builder listener, HttpRules rules) {
+        listener.concurrencyLimit(FixedLimit.builder()
+                                          .permits(1)
+                                          .enableMetrics(true)
+                                          .build());
         rules.get("/greet", (req, res) -> {
             res.send("hello");
         });
@@ -96,5 +115,20 @@ class FixedLimitMetricsTest {
         Optional<Timer> rtt = meterRegistry.timer("fixed_rtt", Collections.emptyList());
         assertThat(rtt.isPresent(), is(true));
         assertThat(rtt.get().count(), is(greaterThan(0L)));
+    }
+
+    @Test
+    void testNamedSocketMetricsTag() {
+        try (HttpClientResponse res = adminClient.get("/greet").request()) {
+            assertThat(res.status().code(), is(200));
+        }
+
+        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        Optional<Timer> rtt = meterRegistry.timer("fixed_rtt", List.of(ADMIN_SOCKET_TAG));
+        assertThat(rtt.isPresent(), is(true));
+        assertThat(rtt.get().count(), is(greaterThan(0L)));
+
+        Optional<Timer> defaultTaggedRtt = meterRegistry.timer("fixed_rtt", Collections.emptyList());
+        assertThat(defaultTaggedRtt.isPresent(), is(true));
     }
 }

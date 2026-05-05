@@ -50,7 +50,9 @@ public interface Limit extends LimitAlgorithm, NamedService {
      * task, including metrics initialization.
      *
      * @param originName origin name for this limit, such as {@code "@default"}
+     * @deprecated use {@link #init(InitializationContext)} to provide initialization details explicitly.
      */
+    @Deprecated
     default void init(String originName) {
     }
 
