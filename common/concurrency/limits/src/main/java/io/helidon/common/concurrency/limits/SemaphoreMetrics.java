@@ -26,7 +26,6 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.service.registry.Service;
 import io.helidon.service.registry.Services;
 
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
@@ -73,7 +72,7 @@ class SemaphoreMetrics {
     }
 
     void init(String originName) {
-        init(Limit.InitializationContext.create(originName, legacySocketTags(originName)));
+        init(Limit.InitializationContext.createForLegacySocketName(originName));
     }
 
     void register(MetricsFactory metricsFactory, MeterRegistry meterRegistry, List<Tag> tags) {
@@ -140,10 +139,4 @@ class SemaphoreMetrics {
         queueWaitTimer.record(endWait - startWait, TimeUnit.NANOSECONDS);
     }
 
-    static List<Tag> legacySocketTags(String originName) {
-        if (originName.equals(Service.Named.DEFAULT_NAME)) {
-            return List.of();
-        }
-        return List.of(Tag.create("socketName", originName));
-    }
 }

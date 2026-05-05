@@ -198,10 +198,7 @@ class ServerListener implements ListenerContext {
     }
 
     private static Limit.InitializationContext limitContext(String socketName) {
-        if (WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
-            return Limit.InitializationContext.create(socketName);
-        }
-        return Limit.InitializationContext.create(socketName, Map.of("socketName", socketName));
+        return Limit.InitializationContext.createForLegacySocketName(socketName);
     }
 
     @Override

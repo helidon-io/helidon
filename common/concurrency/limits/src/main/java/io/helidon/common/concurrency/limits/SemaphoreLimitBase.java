@@ -84,8 +84,9 @@ abstract class SemaphoreLimitBase extends LimitBase implements Limit {
     }
 
     @Override
+    @Deprecated
     public void init(String originName) {
-        init(Limit.InitializationContext.create(originName, SemaphoreMetrics.legacySocketTags(originName)));
+        init(Limit.InitializationContext.createForLegacySocketName(originName));
     }
 
     /**

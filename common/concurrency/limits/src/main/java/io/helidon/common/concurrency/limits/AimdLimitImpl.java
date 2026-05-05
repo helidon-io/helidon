@@ -195,8 +195,9 @@ class AimdLimitImpl extends LimitBase {
         metrics.init(context);
     }
 
+    @Deprecated
     void init(String originName) {
-        init(Limit.InitializationContext.create(originName, SemaphoreMetrics.legacySocketTags(originName)));
+        init(Limit.InitializationContext.createForLegacySocketName(originName));
     }
 
     private static final class AdjustableSemaphore extends Semaphore {

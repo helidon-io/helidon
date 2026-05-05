@@ -20,11 +20,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Service;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -33,6 +36,26 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.not;
 
 class LimitMetricsTest {
+    private static final List<Tag> REAL_METER_TAGS = List.of(Tag.create("origin", "limit-metrics-test"));
+    private static final String[] REAL_METER_NAMES = {
+            "test_fixed_concurrent_requests",
+            "test_fixed_rtt",
+            "test_throughput_concurrent_requests",
+            "test_throughput_rtt",
+            "test_aimd_concurrent_requests",
+            "test_aimd_rtt",
+            "test_aimd_limit",
+            "test_disabled_concurrent_requests"
+    };
+
+    @BeforeEach
+    @AfterEach
+    void cleanMeters() {
+        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        for (String meterName : REAL_METER_NAMES) {
+            meterRegistry.remove(meterName, REAL_METER_TAGS, Meter.Scope.VENDOR);
+        }
+    }
 
     @Test
     void customContextTagsAreUsedForMetrics() {
@@ -73,6 +96,72 @@ class LimitMetricsTest {
         metrics.init(Service.Named.DEFAULT_NAME);
 
         assertThat(metrics.capturedTags().containsKey("socketName"), is(false));
+    }
+
+    @Test
+    void publicContextInitRegistersRealMetersForBuiltInLimits() {
+        Limit.InitializationContext context = Limit.InitializationContext.create("unit-test", REAL_METER_TAGS);
+        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+
+        Limit fixed = FixedLimit.builder()
+                .name("test_fixed")
+                .permits(1)
+                .enableMetrics(true)
+                .build();
+        Limit throughput = ThroughputLimit.builder()
+                .name("test_throughput")
+                .amount(1)
+                .enableMetrics(true)
+                .build();
+        Limit aimd = AimdLimit.builder()
+                .name("test_aimd")
+                .minLimit(1)
+                .initialLimit(1)
+                .maxLimit(1)
+                .enableMetrics(true)
+                .build();
+
+        fixed.init(context);
+        fixed.init(context);
+        throughput.init(context);
+        aimd.init(context);
+
+        assertThat(meterRegistry.gauge("test_fixed_concurrent_requests", REAL_METER_TAGS).isPresent(), is(true));
+        assertThat(meterRegistry.timer("test_fixed_rtt", REAL_METER_TAGS).isPresent(), is(true));
+        assertThat(meterRegistry.gauge("test_throughput_concurrent_requests", REAL_METER_TAGS).isPresent(), is(true));
+        assertThat(meterRegistry.timer("test_throughput_rtt", REAL_METER_TAGS).isPresent(), is(true));
+        assertThat(meterRegistry.timer("test_aimd_rtt", REAL_METER_TAGS).isPresent(), is(true));
+        assertThat(meterRegistry.gauge("test_aimd_limit", REAL_METER_TAGS).isPresent(), is(true));
+        assertThat(meterCount(meterRegistry, Meter.Type.GAUGE, "test_fixed_concurrent_requests", REAL_METER_TAGS), is(1L));
+    }
+
+    @Test
+    void disabledMetricsDoNotRegisterRealMeters() {
+        Limit disabled = FixedLimit.builder()
+                .name("test_disabled")
+                .permits(1)
+                .enableMetrics(false)
+                .build();
+
+        disabled.init(Limit.InitializationContext.create("unit-test", REAL_METER_TAGS));
+
+        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        assertThat(meterRegistry.gauge("test_disabled_concurrent_requests", REAL_METER_TAGS).isPresent(), is(false));
+    }
+
+    private static long meterCount(MeterRegistry meterRegistry,
+                                   Meter.Type meterType,
+                                   String meterName,
+                                   List<Tag> tags) {
+        Map<String, String> expectedTags = tags.stream()
+                .collect(java.util.stream.Collectors.toMap(Tag::key, Tag::value));
+
+        return meterRegistry.meters()
+                .stream()
+                .filter(meter -> meter.id().name().equals(meterName))
+                .filter(meter -> meter.type() == meterType)
+                .filter(meter -> meter.id().tagsMap().entrySet().containsAll(expectedTags.entrySet()))
+                .count();
     }
 
     private static class CapturingSemaphoreMetrics extends SemaphoreMetrics {

@@ -51,7 +51,9 @@ public interface Limit extends LimitAlgorithm, NamedService {
      * task, including metrics initialization.
      *
      * @param originName origin name for this limit, such as {@code "@default"}
+     * @deprecated use {@link #init(InitializationContext)} to provide initialization details explicitly.
      */
+    @Deprecated
     default void init(String originName) {
     }
 
@@ -101,6 +103,20 @@ public interface Limit extends LimitAlgorithm, NamedService {
                                                      .stream()
                                                      .map(it -> Tag.create(it.getKey(), it.getValue()))
                                                      .toList());
+        }
+
+        /**
+         * Create a limit context preserving the legacy WebServer socket-name metric tag behavior.
+         * The {@code socketName} tag is omitted for the default socket.
+         *
+         * @param socketName WebServer socket name
+         * @return a new limit context
+         */
+        public static InitializationContext createForLegacySocketName(String socketName) {
+            if (socketName.equals(Service.Named.DEFAULT_NAME)) {
+                return create(socketName);
+            }
+            return create(socketName, Map.of("socketName", socketName));
         }
 
         /**
