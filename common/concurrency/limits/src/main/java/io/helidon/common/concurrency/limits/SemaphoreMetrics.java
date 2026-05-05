@@ -61,7 +61,7 @@ class SemaphoreMetrics {
         this.concurrentRequests = concurrentRequests;
     }
 
-    void init(Limit.Context context) {
+    void init(Limit.InitializationContext context) {
         if (!enableMetrics) {
             return;
         }
@@ -73,7 +73,7 @@ class SemaphoreMetrics {
     }
 
     void init(String originName) {
-        init(Limit.Context.create(originName, legacySocketTags(originName)));
+        init(Limit.InitializationContext.create(originName, legacySocketTags(originName)));
     }
 
     void register(MetricsFactory metricsFactory, MeterRegistry meterRegistry, List<Tag> tags) {

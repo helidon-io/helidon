@@ -190,13 +190,13 @@ class AimdLimitImpl extends LimitBase {
      *
      * @param context context for limit initialization
      */
-    void init(Limit.Context context) {
+    void init(Limit.InitializationContext context) {
         originName = context.originName();
         metrics.init(context);
     }
 
     void init(String originName) {
-        init(Limit.Context.create(originName, SemaphoreMetrics.legacySocketTags(originName)));
+        init(Limit.InitializationContext.create(originName, SemaphoreMetrics.legacySocketTags(originName)));
     }
 
     private static final class AdjustableSemaphore extends Semaphore {

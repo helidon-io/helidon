@@ -40,7 +40,7 @@ class LimitMetricsTest {
                                  Tag.create("component", "inventory"));
         CapturingSemaphoreMetrics metrics = new CapturingSemaphoreMetrics();
 
-        metrics.init(Limit.Context.create("batch-import", tags));
+        metrics.init(Limit.InitializationContext.create("batch-import", tags));
 
         assertThat(metrics.capturedTags(), hasEntry("origin", "batch-import"));
         assertThat(metrics.capturedTags(), hasEntry("component", "inventory"));
@@ -51,7 +51,7 @@ class LimitMetricsTest {
     void mapTagsAreConvertedToMetricTags() {
         CapturingSemaphoreMetrics metrics = new CapturingSemaphoreMetrics();
 
-        metrics.init(Limit.Context.create("listener-quic", Map.of("origin", "listener", "transport", "quic")));
+        metrics.init(Limit.InitializationContext.create("listener-quic", Map.of("origin", "listener", "transport", "quic")));
 
         assertThat(metrics.capturedTags(), hasEntry("origin", "listener"));
         assertThat(metrics.capturedTags(), hasEntry("transport", "quic"));

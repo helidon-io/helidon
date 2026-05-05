@@ -42,7 +42,7 @@ public interface Limit extends LimitAlgorithm, NamedService {
      *
      * @param context the context for limit initialization
      */
-    default void init(Context context) {
+    default void init(InitializationContext context) {
         init(context.originName());
     }
 
@@ -58,11 +58,11 @@ public interface Limit extends LimitAlgorithm, NamedService {
     /**
      * Runtime context used when initializing a {@link Limit}.
      */
-    final class Context {
+    final class InitializationContext {
         private final String originName;
         private final List<Tag> metricTags;
 
-        private Context(String originName, List<Tag> metricTags) {
+        private InitializationContext(String originName, List<Tag> metricTags) {
             this.originName = Objects.requireNonNull(originName);
             this.metricTags = List.copyOf(metricTags);
         }
@@ -73,8 +73,8 @@ public interface Limit extends LimitAlgorithm, NamedService {
          * @param originName origin name of the work protected by the limit
          * @return a new limit context
          */
-        public static Context create(String originName) {
-            return new Context(originName, List.of());
+        public static InitializationContext create(String originName) {
+            return new InitializationContext(originName, List.of());
         }
 
         /**
@@ -84,8 +84,8 @@ public interface Limit extends LimitAlgorithm, NamedService {
          * @param metricTags metric tags to use when registering limit metrics
          * @return a new limit context
          */
-        public static Context create(String originName, List<Tag> metricTags) {
-            return new Context(originName, metricTags);
+        public static InitializationContext create(String originName, List<Tag> metricTags) {
+            return new InitializationContext(originName, metricTags);
         }
 
         /**
@@ -95,12 +95,12 @@ public interface Limit extends LimitAlgorithm, NamedService {
          * @param metricTags metric tag names and values to use when registering limit metrics
          * @return a new limit context
          */
-        public static Context create(String originName, Map<String, String> metricTags) {
-            return new Context(originName,
-                               metricTags.entrySet()
-                                       .stream()
-                                       .map(it -> Tag.create(it.getKey(), it.getValue()))
-                                       .toList());
+        public static InitializationContext create(String originName, Map<String, String> metricTags) {
+            return new InitializationContext(originName,
+                                             metricTags.entrySet()
+                                                     .stream()
+                                                     .map(it -> Tag.create(it.getKey(), it.getValue()))
+                                                     .toList());
         }
 
         /**

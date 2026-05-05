@@ -141,7 +141,7 @@ public class AimdLimit implements LimitAlgorithm, Limit, RuntimeType.Api<AimdLim
     }
 
     @Override
-    public void init(Limit.Context context) {
+    public void init(Limit.InitializationContext context) {
         aimdLimitImpl.init(context);
     }
 

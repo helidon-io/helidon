@@ -144,7 +144,7 @@ class ServerListener implements ListenerContext {
                     .build();
         }
 
-        Limit.Context limitContext = limitContext(socketName);
+        Limit.InitializationContext limitContext = limitContext(socketName);
         this.connectionLimit.init(limitContext);
         this.requestLimit.init(limitContext);
 
@@ -197,11 +197,11 @@ class ServerListener implements ListenerContext {
                 .unstarted(this::listen);
     }
 
-    private static Limit.Context limitContext(String socketName) {
+    private static Limit.InitializationContext limitContext(String socketName) {
         if (WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
-            return Limit.Context.create(socketName);
+            return Limit.InitializationContext.create(socketName);
         }
-        return Limit.Context.create(socketName, Map.of("socketName", socketName));
+        return Limit.InitializationContext.create(socketName, Map.of("socketName", socketName));
     }
 
     @Override
