@@ -23,6 +23,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HeaderNames;
@@ -37,11 +38,16 @@ import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2HuffmanEncoder;
 import io.helidon.http.http2.Http2Setting;
+import io.helidon.security.AuthenticationResponse;
+import io.helidon.security.Principal;
+import io.helidon.security.Security;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.Http2Config;
 import io.helidon.webserver.http2.Http2Route;
+import io.helidon.webserver.security.SecurityFeature;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
@@ -58,18 +64,33 @@ import static org.hamcrest.Matchers.is;
 class ConnectionHeaderTest {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final String MISSING = "missing";
+    private static final AtomicInteger SECURITY_INVOCATIONS = new AtomicInteger();
 
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
         router.route(Http2Route.route(GET, "/client-cn", (req, res) -> {
             String commonName = req.headers().value(HeaderNames.X_HELIDON_CN).orElse(MISSING);
             res.send(commonName);
-        }));
+        }))
+                .get("/security-once",
+                     SecurityFeature.authenticate(),
+                     (req, res) -> res.send("secure"));
     }
 
     @SetUpServer
     static void setup(WebServerConfig.Builder server) {
-        server.addProtocol(Http2Config.builder().build());
+        Security security = Security.builder()
+                .addAuthenticationProvider(providerRequest -> {
+                    SECURITY_INVOCATIONS.incrementAndGet();
+                    return AuthenticationResponse.success(Principal.create("jack"));
+                })
+                .build();
+
+        server.addFeature(ContextFeature.create())
+                .addFeature(SecurityFeature.builder()
+                                    .security(security)
+                                    .build())
+                .addProtocol(Http2Config.builder().build());
     }
 
     @Test
@@ -133,6 +154,27 @@ class ConnectionHeaderTest {
         assertThat(response.version(), is(HttpClient.Version.HTTP_2));
         assertThat(response.statusCode(), is(Status.OK_200.code()));
         assertThat(response.body(), is(MISSING));
+    }
+
+    @Test
+    void securityRunsOnceForHttp2Upgrade(WebServer server) throws IOException, InterruptedException {
+        SECURITY_INVOCATIONS.set(0);
+
+        HttpResponse<String> response = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(TIMEOUT)
+                .build()
+                .send(HttpRequest.newBuilder()
+                              .timeout(TIMEOUT)
+                              .uri(URI.create("http://localhost:" + server.port() + "/security-once"))
+                              .GET()
+                              .build(),
+                      HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.version(), is(HttpClient.Version.HTTP_2));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
+        assertThat(response.body(), is("secure"));
+        assertThat(SECURITY_INVOCATIONS.get(), is(1));
     }
 
     private static void assertMissingHeaderResponse(Http2TestConnection connection, int streamId) {

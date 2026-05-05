@@ -18,13 +18,15 @@ package io.helidon.webserver.http;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.security.SecurityContext;
+import io.helidon.webserver.http.spi.ProtocolUpgradeHandler;
 
 /**
  * A handler that enforces authentication and/or authorization.
  * When configured, it just validates that security was processed. If not, appropriate exception is thrown.
  */
-public final class SecureHandler implements Handler {
+public final class SecureHandler implements Handler, ProtocolUpgradeHandler {
     private static final String[] NO_ROLES = new String[0];
 
     private final boolean authenticate;
@@ -95,6 +97,12 @@ public final class SecureHandler implements Handler {
         }
     }
 
+    @Api.Internal
+    @Override
+    public void handleProtocolUpgrade(ServerRequest req, ServerResponse res) throws Exception {
+        handle(req, res);
+    }
+
     private boolean doHandle(ServerRequest req, ServerResponse res) {
         Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
 
@@ -119,7 +127,7 @@ public final class SecureHandler implements Handler {
         return true;
     }
 
-    private static class WrappedHandler implements Handler {
+    private static class WrappedHandler implements Handler, ProtocolUpgradeHandler {
         private final SecureHandler secureHandler;
         private final Handler handler;
 
@@ -133,6 +141,19 @@ public final class SecureHandler implements Handler {
         public void handle(ServerRequest req, ServerResponse res) throws Exception {
             if (secureHandler.doHandle(req, res)) {
                 handler.handle(req, res);
+            }
+        }
+
+        @Api.Internal
+        @Override
+        public void handleProtocolUpgrade(ServerRequest req, ServerResponse res) throws Exception {
+            if (!secureHandler.doHandle(req, res)) {
+                return;
+            }
+            if (handler instanceof ProtocolUpgradeHandler upgradeHandler) {
+                upgradeHandler.handleProtocolUpgrade(req, res);
+            } else {
+                res.next();
             }
         }
     }

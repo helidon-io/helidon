@@ -34,6 +34,16 @@
             <artifactId>helidon-webserver-http2</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-context</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-security</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.http.encoding</groupId>
             <artifactId>helidon-http-encoding-deflate</artifactId>
             <scope>test</scope>

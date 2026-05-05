@@ -39,6 +39,7 @@ import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Headers;
 import io.helidon.http.HttpException;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
@@ -54,11 +55,12 @@ import io.helidon.webserver.http.ServerResponseBase;
 import io.helidon.webserver.http.spi.Sink;
 import io.helidon.webserver.http.spi.SinkProvider;
 import io.helidon.webserver.http.spi.SinkProviderContext;
+import io.helidon.webserver.http1.spi.Http1UpgradeResponse;
 
 /**
  * An HTTP/1 server response.
  */
-class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
+class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implements Http1UpgradeResponse {
     private static final System.Logger LOGGER = System.getLogger(Http1ServerResponse.class.getName());
     private static final byte[] HTTP_BYTES = "HTTP/1.1 ".getBytes(StandardCharsets.UTF_8);
     private static final byte[] OK_200 = "HTTP/1.1 200 OK\r\n".getBytes(StandardCharsets.UTF_8);
@@ -256,6 +258,48 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     @Override
     public ServerResponseHeaders headers() {
         return headers;
+    }
+
+    @Override
+    public void send(Status status) {
+        status(Objects.requireNonNull(status));
+        send();
+    }
+
+    @Override
+    public void sendSwitchingProtocols(Headers requiredHeaders) {
+        Objects.requireNonNull(requiredHeaders);
+        if (isSent) {
+            throw new IllegalStateException("Response already sent");
+        }
+        if (streamingEntity) {
+            throw new IllegalStateException("Cannot switch protocols after requesting output stream.");
+        }
+
+        status(Status.SWITCHING_PROTOCOLS_101);
+        headers.from(requiredHeaders);
+        headers.remove(HeaderNames.CONTENT_LENGTH);
+        headers.remove(HeaderNames.TRANSFER_ENCODING);
+        beforeSend();
+        headers.from(requiredHeaders);
+        headers.remove(HeaderNames.CONTENT_LENGTH);
+        headers.remove(HeaderNames.TRANSFER_ENCODING);
+
+        sendListener.status(ctx, Status.SWITCHING_PROTOCOLS_101);
+        sendListener.headers(ctx, headers);
+
+        BufferData responseBuffer = BufferData.growing(256);
+        nonEntityBytes(headers, Status.SWITCHING_PROTOCOLS_101, responseBuffer, true, validateHeaders);
+        bytesWritten = responseBuffer.available();
+        isSent = true;
+        request.reset();
+        sendListener.data(ctx, responseBuffer);
+        try {
+            dataWriter.writeNow(responseBuffer);
+        } catch (SocketWriterException | UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write switching protocols response", e);
+        }
+        afterSend();
     }
 
     @Override

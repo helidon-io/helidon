@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
@@ -33,13 +34,18 @@ import io.helidon.http.Status;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerLifecycle;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http1.spi.Http1RoutedUpgrade;
+import io.helidon.webserver.http1.spi.Http1UpgradeResponse;
+import io.helidon.webserver.http1.spi.Http1UpgradeResult;
+import io.helidon.webserver.http1.spi.Http1UpgradeRouting;
 
-final class HttpRoutingImpl implements HttpRouting {
+final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
     private static final System.Logger LOGGER = System.getLogger(HttpRoutingImpl.class.getName());
     private static final HttpRoutingImpl EMPTY = builder().build();
 
     private final Filters filters;
     private final ServiceRoute rootRoute;
+    private final ServiceRoute protocolUpgradeRoute;
     private final List<HttpFeature> features;
     private final int maxReRouteCount;
     private final HttpSecurity security;
@@ -48,6 +54,7 @@ final class HttpRoutingImpl implements HttpRouting {
         ErrorHandlers errorHandlers = ErrorHandlers.create(builder.errorHandlers);
         this.filters = Filters.create(errorHandlers, List.copyOf(builder.filters));
         this.rootRoute = builder.rootRules.build();
+        this.protocolUpgradeRoute = builder.rootRules.buildProtocolUpgrade();
         this.features = List.copyOf(builder.features);
         this.maxReRouteCount = builder.maxReRouteCount;
         this.security = builder.security;
@@ -72,6 +79,27 @@ final class HttpRoutingImpl implements HttpRouting {
         // we cannot throw an exception to the filters, as then the filter would not have information about actual status
         // code, so error handling is done in routing executor and for each filter
         filters.filter(ctx, request, response, routingExecutor);
+    }
+
+    @Override
+    public Http1UpgradeResult routeUpgrade(ConnectionContext ctx,
+                                           RoutingRequest request,
+                                           RoutingResponse response,
+                                           Http1UpgradeResponse upgradeResponse,
+                                           Http1RoutedUpgrade upgrade) {
+        UpgradeRoutingExecutor routingExecutor = new UpgradeRoutingExecutor(ctx,
+                                                                            rootRoute,
+                                                                            protocolUpgradeRoute,
+                                                                            request,
+                                                                            response,
+                                                                            upgradeResponse,
+                                                                            maxReRouteCount,
+                                                                            upgrade);
+        filters.filter(ctx, request, response, routingExecutor);
+        if (routingExecutor.result == null) {
+            return Http1UpgradeResult.responded();
+        }
+        return routingExecutor.result;
     }
 
     @Override
@@ -212,6 +240,118 @@ final class HttpRoutingImpl implements HttpRouting {
             }
 
             return RoutingResult.NONE;
+        }
+    }
+
+    private static final class UpgradeRoutingExecutor implements Callable<Void> {
+        private final ConnectionContext ctx;
+        private final RoutingRequest request;
+        private final RoutingResponse response;
+        private final Http1UpgradeResponse upgradeResponse;
+        private final ServiceRoute ordinaryRoute;
+        private final ServiceRoute protocolUpgradeRoute;
+        private final int maxReRouteCount;
+        private final Http1RoutedUpgrade upgrade;
+
+        private Http1UpgradeResult result;
+
+        private UpgradeRoutingExecutor(ConnectionContext ctx,
+                                       ServiceRoute ordinaryRoute,
+                                       ServiceRoute protocolUpgradeRoute,
+                                       RoutingRequest request,
+                                       RoutingResponse response,
+                                       Http1UpgradeResponse upgradeResponse,
+                                       int maxReRouteCount,
+                                       Http1RoutedUpgrade upgrade) {
+            this.ctx = ctx;
+            this.ordinaryRoute = ordinaryRoute;
+            this.protocolUpgradeRoute = protocolUpgradeRoute;
+            this.request = request;
+            this.response = response;
+            this.upgradeResponse = upgradeResponse;
+            this.maxReRouteCount = maxReRouteCount;
+            this.upgrade = upgrade;
+        }
+
+        @Override
+        public Void call() throws Exception {
+            RoutingResult routingResult = doRoute(ctx, request, response);
+
+            int counter = 1;
+            while (routingResult == RoutingResult.ROUTE) {
+                counter++;
+                if (counter == maxReRouteCount) {
+                    LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than " + maxReRouteCount
+                            + " times. Will not attempt further routing");
+
+                    throw new HttpException("Too many reroutes", Status.INTERNAL_SERVER_ERROR_500, true);
+                }
+                routingResult = doRoute(ctx, request, response);
+            }
+
+            if (routingResult == RoutingResult.FINISH
+                    && result.kind() == Http1UpgradeResult.Kind.RESPONDED) {
+                response.commit();
+            }
+            return null;
+        }
+
+        private RoutingResult doRoute(ConnectionContext ctx,
+                                      RoutingRequest request,
+                                      RoutingResponse response) throws Exception {
+            HttpPrologue prologue = request.prologue();
+            RouteCrawler crawler = protocolUpgradeRoute.crawler(ctx, request);
+
+            while (crawler.hasNext()) {
+                response.resetRouting();
+                RouteCrawler.CrawlerItem next = crawler.next();
+                request.path(next.path());
+                request.matchingPattern(next.matchingElement());
+
+                Handler handler = next.handler();
+                handler.handle(request, response);
+                if (response.shouldReroute()) {
+                    if (response.isSent()) {
+                        LOGGER.log(System.Logger.Level.WARNING, "Request to " + request.prologue()
+                                + " in inconsistent state. Request to re-route, but response was already sent. Ignoring "
+                                + "reroute.");
+                        result = Http1UpgradeResult.responded();
+                        return RoutingResult.FINISH;
+                    }
+                    request.prologue(response.reroutePrologue(prologue));
+                    response.resetRouting();
+                    new RoutingExecutor(ctx, ordinaryRoute, request, response, maxReRouteCount).call();
+                    result = Http1UpgradeResult.responded();
+                    return RoutingResult.FINISH;
+                }
+                if (response.isNexted()) {
+                    if (response.isSent()) {
+                        LOGGER.log(System.Logger.Level.WARNING, "Request to " + request.prologue()
+                                + " in inconsistent state. Request to next, but response was already sent. "
+                                + "Ignoring next().");
+                        result = Http1UpgradeResult.responded();
+                        return RoutingResult.FINISH;
+                    }
+                    continue;
+                }
+                if (response.hasEntity()) {
+                    result = Http1UpgradeResult.responded();
+                    return RoutingResult.FINISH;
+                }
+
+                LOGGER.log(System.Logger.Level.WARNING,
+                           "A protocol upgrade policy route MUST call either send, reroute, or next on ServerResponse "
+                                   + "on the request thread. Neither of these was called for request: "
+                                   + request.prologue() + "; Handler: " + next.handler());
+
+                throw RequestException.builder()
+                        .message("Internal Server Error")
+                        .type(DirectHandler.EventType.INTERNAL_ERROR)
+                        .build();
+            }
+
+            result = Objects.requireNonNull(upgrade.upgrade(upgradeResponse));
+            return RoutingResult.FINISH;
         }
     }
 
