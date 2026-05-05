@@ -163,6 +163,58 @@ class TypeHierarchyTest {
     }
 
     @Test
+    void nestedAnnotationsDoNotMergeHierarchyAnnotationsIntoGeneratedTypes() {
+        Annotation notBlank = Annotation.create(NOT_BLANK);
+        TypeName annotatedList = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(TypeName.builder(TypeNames.STRING)
+                                         .addAnnotation(notBlank)
+                                         .build())
+                .build();
+        TypeName plainList = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(TypeNames.STRING)
+                .build();
+        TypedElementInfo serviceMethod = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .elementName("validate")
+                .typeName(TypeNames.PRIMITIVE_VOID)
+                .addParameterArgument(TypedElementInfo.builder()
+                                              .kind(ElementKind.PARAMETER)
+                                              .elementName("value")
+                                              .typeName(annotatedList)
+                                              .build())
+                .build();
+        TypeInfo service = TypeInfo.builder()
+                .typeName(TypeName.create("io.helidon.codegen.test.ValidatedService"))
+                .kind(ElementKind.CLASS)
+                .addElementInfo(serviceMethod)
+                .build();
+        TypedElementInfo generatedMethod = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .elementName("validate")
+                .typeName(TypeNames.PRIMITIVE_VOID)
+                .addParameterArgument(TypedElementInfo.builder()
+                                              .kind(ElementKind.PARAMETER)
+                                              .elementName("value")
+                                              .typeName(plainList)
+                                              .build())
+                .build();
+        TypeInfo generatedSubtype = TypeInfo.builder()
+                .typeName(TypeName.create("io.helidon.codegen.test.ValidatedService__Intercepted"))
+                .kind(ElementKind.CLASS)
+                .superTypeInfo(service)
+                .addAnnotation(Annotation.create(TypeNames.GENERATED))
+                .addElementInfo(generatedMethod)
+                .build();
+
+        Set<TypeName> annotations = TypeHierarchy.nestedAnnotations(CTX, generatedSubtype);
+
+        assertThat(annotations, hasItem(TypeNames.GENERATED));
+        assertThat(annotations, not(hasItem(NOT_BLANK)));
+    }
+
+    @Test
     void mergeTypeNameAnnotationsPreservesTargetStructure() {
         Annotation notBlank = Annotation.create(NOT_BLANK);
         Annotation targetAnnotation = Annotation.create(TypeName.create("io.helidon.TargetAnnotation"));

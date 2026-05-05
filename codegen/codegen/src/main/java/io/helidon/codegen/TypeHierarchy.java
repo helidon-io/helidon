@@ -33,6 +33,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
+import static io.helidon.common.types.TypeNames.GENERATED;
 import static io.helidon.common.types.TypeNames.INHERITED;
 import static java.util.function.Predicate.not;
 
@@ -225,10 +226,12 @@ public final class TypeHierarchy {
      */
     public static Set<TypeName> nestedAnnotations(CodegenContext ctx, TypeInfo typeInfo) {
         Set<TypeName> result = new HashSet<>();
-        List<TypedElementInfo> elements = typeInfo.elementInfo()
-                .stream()
-                .map(it -> mergeHierarchyAnnotations(typeInfo, it))
-                .toList();
+        List<TypedElementInfo> elements = typeInfo.hasAnnotation(GENERATED)
+                ? typeInfo.elementInfo()
+                : typeInfo.elementInfo()
+                        .stream()
+                        .map(it -> mergeHierarchyAnnotations(typeInfo, it))
+                        .toList();
 
         // on type
         typeInfo.annotations()
