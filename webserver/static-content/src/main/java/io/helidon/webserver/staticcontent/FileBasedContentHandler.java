@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,18 +19,27 @@ package io.helidon.webserver.staticcontent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.SecureDirectoryStream;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
@@ -42,6 +51,11 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 abstract class FileBasedContentHandler extends StaticContentHandler {
+    private static final OpenOption[] READ_OPTIONS = {StandardOpenOption.READ};
+    private static final OpenOption[] READ_NOFOLLOW_OPTIONS = {StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS};
+    private static final LinkOption[] NOFOLLOW_LINK_OPTIONS = {LinkOption.NOFOLLOW_LINKS};
+    private static final Set<OpenOption> READ_NOFOLLOW_SET = Set.of(StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS);
+
     private final Map<String, MediaType> customMediaTypes;
 
     FileBasedContentHandler(BaseHandlerConfig config) {
@@ -60,22 +74,17 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         return fileName.toString();
     }
 
-    static void processContentLength(Path path, ServerResponseHeaders headers) {
-        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength(path)));
-    }
-
-    static long contentLength(Path path) {
-        try {
-            return Files.size(path);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+    static byte[] readAllBytes(Path path, boolean followLinks, Path secureRoot) throws IOException {
+        try (SeekableByteChannel channel = newByteChannel(path, followLinks, secureRoot);
+                InputStream in = Channels.newInputStream(channel)) {
+            return in.readAllBytes();
         }
     }
 
-    static void send(ServerRequest request, ServerResponse response, Path path) throws IOException {
+    static void send(ServerRequest request, ServerResponse response, SeekableByteChannel channel) throws IOException {
         ServerRequestHeaders headers = request.headers();
+        long contentLength = channel.size();
         if (headers.contains(HeaderNames.RANGE)) {
-            long contentLength = contentLength(path);
             List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
                                                                    response,
                                                                    headers.get(HeaderNames.RANGE).values(),
@@ -86,7 +95,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                 range.setContentRange(response);
 
                 // only send a part of the file
-                try (OutputStream out = response.outputStream(); SeekableByteChannel channel = Files.newByteChannel(path)) {
+                try (OutputStream out = response.outputStream()) {
                     WritableByteChannel outChannel = Channels.newChannel(out);
                     channel.position(range.offset());
                     long toRead = range.length();
@@ -103,19 +112,117 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                 }
             } else {
                 // multipart response not yet supported, send all
-                processContentLength(path, response.headers());
+                response.headers().set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength));
                 // send the full file
-                try (InputStream in = Files.newInputStream(path); OutputStream out = response.outputStream()) {
+                channel.position(0);
+                try (InputStream in = Channels.newInputStream(channel); OutputStream out = response.outputStream()) {
                     in.transferTo(out);
                 }
             }
         } else {
-            processContentLength(path, response.headers());
+            response.headers().set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength));
             // send the full file
-            try (InputStream in = Files.newInputStream(path); OutputStream out = response.outputStream()) {
+            channel.position(0);
+            try (InputStream in = Channels.newInputStream(channel); OutputStream out = response.outputStream()) {
                 in.transferTo(out);
             }
         }
+    }
+
+    static SeekableByteChannel newByteChannel(Path path, boolean followLinks, Path secureRoot) throws IOException {
+        if (secureRoot == null) {
+            OpenOption[] options = followLinks ? READ_OPTIONS : READ_NOFOLLOW_OPTIONS;
+            return Files.newByteChannel(path, options);
+        }
+
+        Path relative = relativeToSecureRoot(path, secureRoot);
+        validateSecureRoot(secureRoot);
+        try (DirectoryStream<Path> directory = Files.newDirectoryStream(secureRoot)) {
+            if (directory instanceof SecureDirectoryStream<Path> secureDirectory) {
+                List<SecureDirectoryStream<Path>> openedDirectories = new ArrayList<>();
+                SecureDirectoryStream<Path> currentDirectory = secureDirectory;
+                try {
+                    int nameCount = relative.getNameCount();
+                    for (int i = 0; i < nameCount - 1; i++) {
+                        SecureDirectoryStream<Path> child = currentDirectory.newDirectoryStream(relative.getName(i),
+                                                                                                LinkOption.NOFOLLOW_LINKS);
+                        openedDirectories.add(child);
+                        currentDirectory = child;
+                    }
+                    return currentDirectory.newByteChannel(relative.getFileName(), READ_NOFOLLOW_SET);
+                } finally {
+                    for (int i = openedDirectories.size() - 1; i >= 0; i--) {
+                        openedDirectories.get(i).close();
+                    }
+                }
+            }
+        }
+
+        if (relative.getNameCount() > 1) {
+            throw new NoSuchFileException(path.toString());
+        }
+        return Files.newByteChannel(path, READ_NOFOLLOW_OPTIONS);
+    }
+
+    static BasicFileAttributes attributes(Path path, boolean followLinks, Path secureRoot) throws IOException {
+        if (secureRoot == null) {
+            if (followLinks) {
+                return Files.readAttributes(path, BasicFileAttributes.class);
+            }
+            return Files.readAttributes(path, BasicFileAttributes.class, NOFOLLOW_LINK_OPTIONS);
+        }
+
+        Path relative = relativeToSecureRoot(path, secureRoot);
+        validateSecureRoot(secureRoot);
+        try (DirectoryStream<Path> directory = Files.newDirectoryStream(secureRoot)) {
+            if (directory instanceof SecureDirectoryStream<Path> secureDirectory) {
+                List<SecureDirectoryStream<Path>> openedDirectories = new ArrayList<>();
+                SecureDirectoryStream<Path> currentDirectory = secureDirectory;
+                try {
+                    int nameCount = relative.getNameCount();
+                    for (int i = 0; i < nameCount - 1; i++) {
+                        SecureDirectoryStream<Path> child = currentDirectory.newDirectoryStream(relative.getName(i),
+                                                                                                LinkOption.NOFOLLOW_LINKS);
+                        openedDirectories.add(child);
+                        currentDirectory = child;
+                    }
+                    BasicFileAttributeView view = currentDirectory.getFileAttributeView(relative.getFileName(),
+                                                                                       BasicFileAttributeView.class,
+                                                                                       LinkOption.NOFOLLOW_LINKS);
+                    return view.readAttributes();
+                } finally {
+                    for (int i = openedDirectories.size() - 1; i >= 0; i--) {
+                        openedDirectories.get(i).close();
+                    }
+                }
+            }
+        }
+
+        if (relative.getNameCount() > 1) {
+            throw new NoSuchFileException(path.toString());
+        }
+        return Files.readAttributes(path, BasicFileAttributes.class, NOFOLLOW_LINK_OPTIONS);
+    }
+
+    private static void validateSecureRoot(Path secureRoot) throws IOException {
+        BasicFileAttributes attributes = Files.readAttributes(secureRoot,
+                                                              BasicFileAttributes.class,
+                                                              NOFOLLOW_LINK_OPTIONS);
+        if (!attributes.isDirectory()) {
+            throw new NoSuchFileException(secureRoot.toString());
+        }
+    }
+
+    private static Path relativeToSecureRoot(Path path, Path secureRoot) throws IOException {
+        if (!path.startsWith(secureRoot)) {
+            throw new NoSuchFileException(path.toString());
+        }
+
+        Path relative = secureRoot.relativize(path);
+        if (relative.getNameCount() == 0) {
+            throw new NoSuchFileException(path.toString());
+        }
+        return relative;
     }
 
     Optional<MediaType> findCustomMediaType(String fileName) {
@@ -135,7 +242,10 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         return Optional.of(new CachedHandlerPath(path,
                                                  detectType(fileName(path)),
                                                  FileBasedContentHandler::lastModified,
-                                                 ServerResponseHeaders::lastModified));
+                                                 ServerResponseHeaders::lastModified,
+                                                 Optional::of,
+                                                 true,
+                                                 it -> Optional.empty()));
     }
 
     MediaType detectType(String fileName) {
@@ -159,8 +269,13 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
     }
 
     static Optional<Instant> lastModified(Path path) throws IOException {
-        if (Files.exists(path) && Files.isRegularFile(path)) {
-            return Optional.of(Files.getLastModifiedTime(path).toInstant());
+        return lastModified(path, true, null);
+    }
+
+    static Optional<Instant> lastModified(Path path, boolean followLinks, Path secureRoot) throws IOException {
+        BasicFileAttributes attributes = attributes(path, followLinks, secureRoot);
+        if (attributes.isRegularFile()) {
+            return Optional.of(attributes.lastModifiedTime().toInstant());
         }
         return Optional.empty();
     }

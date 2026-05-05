@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,13 +148,19 @@ class StaticContentConfigTest {
     }
 
     @Test
-    void testFileSystemNested() {
+    void testFileSystemNested() throws IOException {
+        Path root = Paths.get("./src/test/resources/web").toAbsolutePath().normalize();
+        Status expectedStatus = StaticContentTestSupport.supportsSecureDirectoryStream(root)
+                ? Status.OK_200
+                : Status.FORBIDDEN_403;
         try (Http1ClientResponse response = testClient.get("/path/nested/resource.txt")
                 .request()) {
 
-            assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
-            assertThat(response.as(String.class), is("Nested content"));
+            assertThat(response.status(), is(expectedStatus));
+            if (Status.OK_200.equals(expectedStatus)) {
+                assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
+                assertThat(response.as(String.class), is("Nested content"));
+            }
         }
     }
 
