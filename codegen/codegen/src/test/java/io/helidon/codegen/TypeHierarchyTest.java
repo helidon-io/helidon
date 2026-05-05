@@ -35,6 +35,7 @@ import io.helidon.common.types.TypedElementInfo;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class TypeHierarchyTest {
@@ -72,6 +73,9 @@ class TypeHierarchyTest {
     @Test
     void typeNameAnnotationsIncludeWildcardBoundsAndArrayComponents() {
         Annotation notBlank = Annotation.create(NOT_BLANK);
+        TypeName directAnnotatedType = TypeName.builder(TypeNames.STRING)
+                .addAnnotation(notBlank)
+                .build();
         TypeName upperBoundType = TypeName.builder(TypeNames.LIST)
                 .addTypeArgument(TypeName.builder()
                                          .className("?")
@@ -93,14 +97,62 @@ class TypeHierarchyTest {
         TypeName componentType = TypeName.builder(TypeNames.STRING)
                 .addAnnotation(notBlank)
                 .build();
-        TypeName arrayType = TypeName.builder(componentType)
+        TypeName arrayType = TypeName.builder(TypeNames.STRING)
                 .array(true)
                 .componentType(componentType)
                 .build();
 
+        assertThat(TypeHierarchy.typeNameAnnotations(directAnnotatedType), hasItem(notBlank));
         assertThat(TypeHierarchy.typeNameAnnotations(upperBoundType), hasItem(notBlank));
         assertThat(TypeHierarchy.typeNameAnnotations(lowerBoundType), hasItem(notBlank));
         assertThat(TypeHierarchy.typeNameAnnotations(arrayType), hasItem(notBlank));
+    }
+
+    @Test
+    void mergeTypeNameAnnotationsPreservesTargetStructure() {
+        Annotation notBlank = Annotation.create(NOT_BLANK);
+        Annotation targetAnnotation = Annotation.create(TypeName.create("io.helidon.TargetAnnotation"));
+        TypeName targetComponentType = TypeName.builder(TypeNames.STRING)
+                .addAnnotation(targetAnnotation)
+                .build();
+        TypeName sourceComponentType = TypeName.builder(TypeNames.STRING)
+                .addAnnotation(notBlank)
+                .build();
+        TypeName targetType = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(TypeName.builder()
+                                         .className("?")
+                                         .wildcard(true)
+                                         .addUpperBound(TypeName.builder(TypeNames.STRING)
+                                                        .addAnnotation(targetAnnotation)
+                                                        .build())
+                                         .build())
+                .array(true)
+                .componentType(targetComponentType)
+                .build();
+        TypeName sourceType = TypeName.builder(TypeNames.LIST)
+                .addAnnotation(notBlank)
+                .addTypeArgument(TypeName.builder()
+                                         .className("?")
+                                         .wildcard(true)
+                                         .addUpperBound(TypeName.builder(TypeNames.STRING)
+                                                        .addAnnotation(notBlank)
+                                                        .build())
+                                         .build())
+                .array(true)
+                .componentType(sourceComponentType)
+                .build();
+
+        TypeName merged = TypeHierarchy.mergeTypeNameAnnotations(targetType, sourceType);
+
+        assertThat(merged.annotations(), hasItem(notBlank));
+        assertThat(merged.typeArguments().getFirst().upperBounds().getFirst().annotations(), hasItem(notBlank));
+        assertThat(merged.componentType().orElseThrow().annotations(), hasItem(notBlank));
+        assertThat(merged.componentType().orElseThrow().annotations(), hasItem(targetAnnotation));
+
+        TypeName rawList = TypeNames.LIST;
+        TypeName mergedRawList = TypeHierarchy.mergeTypeNameAnnotations(rawList, sourceType);
+        assertThat(mergedRawList.typeArguments().isEmpty(), is(true));
+        assertThat(mergedRawList.componentType().isEmpty(), is(true));
     }
 
     private static final class EmptyCodegenContext implements CodegenContext {

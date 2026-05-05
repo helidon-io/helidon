@@ -325,6 +325,10 @@ public final class TypeHierarchy {
      * @return type name with annotations merged from the source
      */
     public static TypeName mergeTypeNameAnnotations(TypeName typeName, TypeName sourceTypeName) {
+        if (!sameStructure(typeName, sourceTypeName)) {
+            return typeName;
+        }
+
         List<Annotation> annotations = new ArrayList<>(typeName.annotations());
         sourceTypeName.annotations().forEach(it -> addAnnotationIfAbsent(annotations, it));
         List<Annotation> inheritedAnnotations = new ArrayList<>(typeName.inheritedAnnotations());
@@ -340,8 +344,6 @@ public final class TypeHierarchy {
         if (typeName.componentType().isPresent() && sourceTypeName.componentType().isPresent()) {
             builder.componentType(mergeTypeNameAnnotations(typeName.componentType().get(),
                                                           sourceTypeName.componentType().get()));
-        } else if (typeName.componentType().isEmpty() && sourceTypeName.componentType().isPresent()) {
-            builder.componentType(sourceTypeName.componentType().get());
         }
 
         return builder.build();
@@ -352,7 +354,7 @@ public final class TypeHierarchy {
             return typeNames;
         }
         if (typeNames.isEmpty()) {
-            return sourceTypeNames;
+            return typeNames;
         }
         if (typeNames.size() != sourceTypeNames.size()) {
             return typeNames;
@@ -363,6 +365,24 @@ public final class TypeHierarchy {
             merged.add(mergeTypeNameAnnotations(typeNames.get(i), sourceTypeNames.get(i)));
         }
         return merged;
+    }
+
+    private static boolean sameStructure(TypeName typeName, TypeName sourceTypeName) {
+        if (typeName.primitive() != sourceTypeName.primitive()
+                || typeName.array() != sourceTypeName.array()
+                || typeName.vararg() != sourceTypeName.vararg()
+                || typeName.generic() != sourceTypeName.generic()
+                || typeName.wildcard() != sourceTypeName.wildcard()
+                || typeName.typeArguments().size() != sourceTypeName.typeArguments().size()
+                || typeName.lowerBounds().size() != sourceTypeName.lowerBounds().size()
+                || typeName.upperBounds().size() != sourceTypeName.upperBounds().size()
+                || typeName.componentType().isPresent() != sourceTypeName.componentType().isPresent()) {
+            return false;
+        }
+        return typeName.packageName().equals(sourceTypeName.packageName())
+                && typeName.className().equals(sourceTypeName.className())
+                && typeName.enclosingNames().equals(sourceTypeName.enclosingNames())
+                && typeName.typeParameters().equals(sourceTypeName.typeParameters());
     }
 
     private static void addAnnotationIfAbsent(List<Annotation> annotations, Annotation annotation) {

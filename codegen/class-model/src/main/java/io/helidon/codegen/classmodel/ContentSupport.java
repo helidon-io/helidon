@@ -264,7 +264,7 @@ final class ContentSupport {
 
     private static void addAnnotationValue(ContentBuilder<?> contentBuilder, Object objectValue) {
         switch (objectValue) {
-        case String value -> contentBuilder.addContent("\"" + value + "\"");
+        case String value -> contentBuilder.addContentLiteral(value);
         case Boolean value -> contentBuilder.addContent(String.valueOf(value));
         case Long value -> contentBuilder.addContent(String.valueOf(value) + 'L');
         case Double value -> contentBuilder.addContent(String.valueOf(value) + 'D');

@@ -27,8 +27,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.TypedElementInfo;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -109,6 +111,7 @@ class TypesCodegenTest {
     void testAnnotatedNestedTypeName(@TempDir Path tempDir) throws Exception {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create("io.helidon.RandomAnnotation"))
+                .property("value", "quoted \" backslash \\ tab \t")
                 .build();
         TypeName typeName = TypeName.builder(TypeNames.MAP)
                 .addTypeArgument(TypeNames.STRING)
@@ -128,7 +131,8 @@ class TypesCodegenTest {
                    not(containsString("@io.helidon.common.types.TypeName@.create(\"java.util.Map<java.lang.String,")));
         assertThat(createString, containsString(".className(\"Map\")"));
         assertThat(createString, containsString(".addTypeArgument(@io.helidon.common.types.TypeName@.builder()"));
-        assertThat(createString, containsString(".addAnnotation(@io.helidon.common.types.Annotation@.create("));
+        assertThat(createString, containsString(".addAnnotation(@io.helidon.common.types.Annotation@.builder()"));
+        assertThat(createString, containsString(".property(\"value\", \"quoted \\\" backslash \\\\ tab \\t\")"));
         assertTypeName("NestedTypeName", typeName, compileAndCreateTypeName(tempDir, "NestedTypeName", createString));
     }
 
@@ -194,7 +198,7 @@ class TypesCodegenTest {
         TypeName componentType = TypeName.builder(TypeNames.STRING)
                 .addAnnotation(annotation)
                 .build();
-        TypeName typeName = TypeName.builder(componentType)
+        TypeName typeName = TypeName.builder(TypeNames.STRING)
                 .array(true)
                 .componentType(componentType)
                 .build();
@@ -209,6 +213,25 @@ class TypesCodegenTest {
         assertThat(createString, containsString(".componentType(@io.helidon.common.types.TypeName@.builder()"));
         assertThat(createString, containsString(".addAnnotation(@io.helidon.common.types.Annotation@.create("));
         assertTypeName("ComponentTypeName", typeName, compileAndCreateTypeName(tempDir, "ComponentTypeName", createString));
+    }
+
+    @Test
+    void testTypedElementEnclosingType(@TempDir Path tempDir) throws Exception {
+        TypeName enclosingType = TypeName.create("io.helidon.codegen.classmodel.EnclosingType");
+        TypedElementInfo elementInfo = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .elementName("method")
+                .typeName(TypeNames.STRING)
+                .enclosingType(enclosingType)
+                .build();
+
+        TestContentBuilder contentBuilder = new TestContentBuilder();
+        ContentSupport.addCreateElement(contentBuilder, elementInfo);
+        String createString = contentBuilder.generatedString();
+
+        assertThat(createString, containsString(".enclosingType("));
+        TypedElementInfo actual = compileAndCreateElement(tempDir, "ElementInfo", createString);
+        assertThat(actual.enclosingType().orElseThrow(), is(enclosingType));
     }
 
     private static TypeName compileAndCreateTypeName(Path tempDir, String className, String createString) throws Exception {
@@ -238,6 +261,37 @@ class TypesCodegenTest {
             Class<?> generatedType = classLoader.loadClass(className);
             Method create = generatedType.getMethod("create");
             return (TypeName) create.invoke(null);
+        }
+    }
+
+    private static TypedElementInfo compileAndCreateElement(Path tempDir, String className, String createString)
+            throws Exception {
+        Path source = tempDir.resolve(className + ".java");
+        Path output = Files.createDirectory(tempDir.resolve("classes-" + className));
+        String sourceContent = """
+                import io.helidon.common.types.TypedElementInfo;
+
+                public final class %s {
+                    public static TypedElementInfo create() {
+                        return %s;
+                    }
+                }
+                """.formatted(className, javaSource(createString));
+        Files.writeString(source, sourceContent, StandardCharsets.UTF_8);
+
+        List<String> command = javacCommand(output, source);
+        Process process = new ProcessBuilder(command)
+                .redirectErrorStream(true)
+                .start();
+        String compilerOutput = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        int result = process.waitFor();
+        assertThat(compilerOutput, result, is(0));
+
+        try (URLClassLoader classLoader = new URLClassLoader(new URL[] {output.toUri().toURL()},
+                                                             TypesCodegenTest.class.getClassLoader())) {
+            Class<?> generatedType = classLoader.loadClass(className);
+            Method create = generatedType.getMethod("create");
+            return (TypedElementInfo) create.invoke(null);
         }
     }
 
