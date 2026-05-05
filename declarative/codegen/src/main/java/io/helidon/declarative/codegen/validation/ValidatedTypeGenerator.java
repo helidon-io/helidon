@@ -323,13 +323,27 @@ class ValidatedTypeGenerator {
 
         List<Property> properties = new ArrayList<>();
 
+        var privateElements = type.elementInfo()
+                .stream()
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(ElementInfoPredicates::isPrivate)
+                .filter(it -> needsWork(constraintAnnotations, it))
+                .map(TypedElementInfo::originatingElementValue)
+                .toArray(Object[]::new);
+
+        if (privateElements.length != 0) {
+            throw new CodegenException("Validation annotations on private interface methods are not supported.",
+                                      privateElements);
+        }
+
         type.elementInfo()
                 .stream()
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(Predicate.not(ElementInfoPredicates::isPrivate))
+                .filter(Predicate.not(ElementInfoPredicates::isStatic))
                 .filter(ElementInfoPredicates::hasNoArgs)
                 .filter(Predicate.not(ElementInfoPredicates::isVoid))
-                .filter(it -> needsWork(constraintAnnotations, it))
+                .filter(it -> needsWork(constraintAnnotations, it, false))
                 .forEach(element -> {
                     String propertyName = element.elementName();
                     if (isPropertyGetter(propertyName)) {
@@ -395,7 +409,7 @@ class ValidatedTypeGenerator {
                 .addContent("(")
                 .addContentLiteral("Invalid property name: ")
                 .addContentLine(" + propertyName);")
-                .addContentLine("};");
+                .addContentLine("}");
 
         classModel.addMethod(checkProperty);
 
@@ -428,7 +442,7 @@ class ValidatedTypeGenerator {
                 .addContent("(")
                 .addContentLiteral("Invalid property name: ")
                 .addContentLine(" + propertyName);")
-                .addContentLine("};");
+                .addContentLine("}");
 
         classModel.addMethod(checkPropertyValue);
     }

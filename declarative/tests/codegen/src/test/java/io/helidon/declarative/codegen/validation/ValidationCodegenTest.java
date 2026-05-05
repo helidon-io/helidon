@@ -32,6 +32,7 @@ import io.helidon.validation.Validation;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.codegen.CodegenUtil.capitalize;
+import static io.helidon.codegen.testing.CodegenMatchers.matches;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -78,6 +79,44 @@ class ValidationCodegenTest {
                 .compile();
 
         assertGeneratedAndContainsCases(result, "Foo", "id", "age", "size");
+    }
+
+    @Test
+    void testValidatedInterfaceWithOnlyParameterConstraints() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("DefaultApi.java", """
+                        package com.example;
+
+                        import java.util.Optional;
+
+                        import io.helidon.validation.Validation;
+
+                        @Validation.Validated
+                        public interface DefaultApi {
+                            String listStoreItems(@Validation.Integer.Min(1)
+                                                  @Validation.Integer.Max(100) Optional<Integer> pageSize);
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(diagnostics, not(containsString("unreachable statement")));
+
+        var validator = result.sourceOutput().resolve("com/example/DefaultApi__Validated.java");
+        assertThat(Files.exists(validator), is(true));
+
+        var content = Files.readString(validator, StandardCharsets.UTF_8);
+        assertThat(content, matches("""
+                                            //...
+                                            class DefaultApi__Validated implements TypeValidator<DefaultApi> {
+                                            //...
+                                            }
+                                            """));
     }
 
     @Test
@@ -328,7 +367,7 @@ class ValidationCodegenTest {
     }
 
     @Test
-    void testInterfacePrivateAnnotatedMethodFailsCompilation() throws IOException {
+    void testInterfacePrivateAnnotatedMethodFailsCompilation() {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
@@ -340,6 +379,7 @@ class ValidationCodegenTest {
 
                         @Validation.Validated
                         public interface Foo {
+                            @Validation.Valid
                             @Validation.Integer.Min(1)
                             private Integer id() {
                                 return 1;
@@ -349,19 +389,48 @@ class ValidationCodegenTest {
                 .build()
                 .compile();
 
-        String diagnostics = String.join("\n", result.diagnostics());
-        assertThat("Build should fail", result.success(), is(false));
-        assertThat(diagnostics, containsString("error:"));
-        assertThat(diagnostics, containsString("unreachable statement"));
-
+        assertCompilationFails(result,
+                               "Validation annotations on private interface methods are not supported",
+                               "private Integer id()");
         var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
-        assertThat(Files.exists(validator), is(true));
-        var content = Files.readString(validator, StandardCharsets.UTF_8);
-        assertThat(content, not(containsString("case \"id\" -> checkId(ctx, (Integer) value);")));
+        assertThat("The Foo__Validated.java should not be generated (interface private method)",
+                   Files.exists(validator),
+                   is(false));
     }
 
     @Test
-    void testInterfaceStaticAnnotatedMethodFailsCompilation() {
+    void testInterfacePrivateMethodWithParameterValidationFailsCompilation() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("Foo.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        @Validation.Validated
+                        public interface Foo {
+                            private Integer id(@Validation.Valid
+                                               @Validation.Integer.Min(1) Integer value) {
+                                return value;
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertCompilationFails(result,
+                               "Validation annotations on private interface methods are not supported",
+                               "private Integer id(");
+        var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
+        assertThat("The Foo__Validated.java should not be generated (interface private method parameter)",
+                   Files.exists(validator),
+                   is(false));
+    }
+
+    @Test
+    void testInterfaceStaticAnnotatedMethodIgnoredByTypeValidator() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
@@ -383,13 +452,13 @@ class ValidationCodegenTest {
                 .compile();
 
         String diagnostics = String.join("\n", result.diagnostics());
-        assertThat("Build should fail", result.success(), is(false));
-        assertThat(diagnostics, containsString("error:"));
-        assertThat(diagnostics, containsString("id"));
+        assertThat("Compilation diagnostics: " + diagnostics, result.success(), is(true));
+        assertThat(diagnostics, not(containsString("unreachable statement")));
+
         var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
-        assertThat("The Foo__Validated.java should be generated (interface static method)",
-                   Files.exists(validator),
-                   is(true));
+        assertThat(Files.exists(validator), is(true));
+        var content = Files.readString(validator, StandardCharsets.UTF_8);
+        assertThat(content, not(containsString("case \"id\" -> checkId(ctx, (Integer) value);")));
     }
 
     @Test
@@ -425,7 +494,7 @@ class ValidationCodegenTest {
     }
 
     @Test
-    void testInterfaceAnnotatedMethodWithArgumentsFailsCompilation() throws IOException {
+    void testInterfaceMethodParameterConstraintsSupported() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
@@ -437,17 +506,16 @@ class ValidationCodegenTest {
 
                         @Validation.Validated
                         public interface Foo {
-                            @Validation.Valid
-                            Integer id(Integer value);
+                            Integer id(@Validation.Integer.Min(1) Integer first,
+                                       @Validation.Integer.Min(1) Integer second);
                         }
                         """)
                 .build()
                 .compile();
 
         String diagnostics = String.join("\n", result.diagnostics());
-        assertThat("Build should fail", result.success(), is(false));
-        assertThat(diagnostics, containsString("error:"));
-        assertThat(diagnostics, containsString("unreachable statement"));
+        assertThat("Compilation diagnostics: " + diagnostics, result.success(), is(true));
+        assertThat(diagnostics, not(containsString("unreachable statement")));
 
         var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
         assertThat(Files.exists(validator), is(true));
@@ -456,7 +524,7 @@ class ValidationCodegenTest {
     }
 
     @Test
-    void testInterfaceAnnotatedVoidMethodFailsCompilation() throws IOException {
+    void testInterfaceVoidMethodParameterConstraintsSupported() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
@@ -468,17 +536,15 @@ class ValidationCodegenTest {
 
                         @Validation.Validated
                         public interface Foo {
-                            @Validation.Valid
-                            void ping();
+                            void ping(@Validation.Integer.Min(1) Integer id);
                         }
                         """)
                 .build()
                 .compile();
 
         String diagnostics = String.join("\n", result.diagnostics());
-        assertThat("Build should fail", result.success(), is(false));
-        assertThat(diagnostics, containsString("error:"));
-        assertThat(diagnostics, containsString("unreachable statement"));
+        assertThat("Compilation diagnostics: " + diagnostics, result.success(), is(true));
+        assertThat(diagnostics, not(containsString("unreachable statement")));
 
         var validator = result.sourceOutput().resolve("com/example/Foo__Validated.java");
         assertThat(Files.exists(validator), is(true));
