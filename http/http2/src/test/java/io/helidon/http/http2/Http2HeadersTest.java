@@ -253,6 +253,67 @@ class Http2HeadersTest {
         assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
     }
 
+    @Test
+    void testRejectsHuffmanStringLengthLargerThanHeaderBlock() {
+        String hexEncoded = "40 ff 81 c1 d7 2f";
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+
+        Http2Exception exception = assertThrows(Http2Exception.class, () -> headers(hexEncoded, dynamicTable));
+
+        assertThat(exception.code(), is(Http2ErrorCode.COMPRESSION));
+    }
+
+    @Test
+    void testAcceptsExtendedPlainValueStringLength() {
+        String value = "a".repeat(128);
+        String hexEncoded = "40 " + lengthAndValue("custom-key") + " 7f 01 "
+                + HexFormat.of().formatHex(value.getBytes(StandardCharsets.US_ASCII));
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Headers requestHeaders = headers(hexEncoded, dynamicTable).httpHeaders();
+
+        assertThat(requestHeaders.get(CUSTOM_HEADER_NAME).get(), is(value));
+    }
+
+    @Test
+    void testRejectsPlainValueStringLengthLargerThanHeaderBlock() {
+        String hexEncoded = "41 7f 00";
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+
+        Http2Exception exception = assertThrows(Http2Exception.class, () -> headers(hexEncoded, dynamicTable));
+
+        assertThat(exception.code(), is(Http2ErrorCode.COMPRESSION));
+    }
+
+    @Test
+    void testRejectsOverflowingStringLength() {
+        String hexEncoded = "40 7f 80 80 80 80 80 01 " + "61 ".repeat(127);
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+
+        Http2Exception exception = assertThrows(Http2Exception.class, () -> headers(hexEncoded, dynamicTable));
+
+        assertThat(exception.code(), is(Http2ErrorCode.COMPRESSION));
+    }
+
+    @Test
+    void testRejectsPositivelyWrappedStringLength() {
+        String hexEncoded = "40 7f 80 80 80 80 10 " + "61 ".repeat(127) + "00";
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+
+        Http2Exception exception = assertThrows(Http2Exception.class, () -> headers(hexEncoded, dynamicTable));
+
+        assertThat(exception.code(), is(Http2ErrorCode.COMPRESSION));
+    }
+
+    @Test
+    void testRejectsTruncatedStringLength() {
+        String hexEncoded = "40 ff";
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+
+        Http2Exception exception = assertThrows(Http2Exception.class, () -> headers(hexEncoded, dynamicTable));
+
+        assertThat(exception.code(), is(Http2ErrorCode.COMPRESSION));
+    }
+
     /*
     https://www.rfc-editor.org/rfc/rfc7541.html#appendix-C.4
     */
