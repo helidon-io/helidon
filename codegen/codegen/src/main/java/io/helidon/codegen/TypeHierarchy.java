@@ -382,7 +382,27 @@ public final class TypeHierarchy {
         return typeName.packageName().equals(sourceTypeName.packageName())
                 && typeName.className().equals(sourceTypeName.className())
                 && typeName.enclosingNames().equals(sourceTypeName.enclosingNames())
-                && typeName.typeParameters().equals(sourceTypeName.typeParameters());
+                && typeName.typeParameters().equals(sourceTypeName.typeParameters())
+                && sameStructure(typeName.typeArguments(), sourceTypeName.typeArguments())
+                && sameStructure(typeName.lowerBounds(), sourceTypeName.lowerBounds())
+                && sameStructure(typeName.upperBounds(), sourceTypeName.upperBounds())
+                && sameStructure(typeName.componentType(), sourceTypeName.componentType());
+    }
+
+    private static boolean sameStructure(List<TypeName> typeNames, List<TypeName> sourceTypeNames) {
+        for (int i = 0; i < typeNames.size(); i++) {
+            if (!sameStructure(typeNames.get(i), sourceTypeNames.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean sameStructure(Optional<TypeName> typeName, Optional<TypeName> sourceTypeName) {
+        if (typeName.isEmpty()) {
+            return true;
+        }
+        return sameStructure(typeName.get(), sourceTypeName.get());
     }
 
     private static void addAnnotationIfAbsent(List<Annotation> annotations, Annotation annotation) {

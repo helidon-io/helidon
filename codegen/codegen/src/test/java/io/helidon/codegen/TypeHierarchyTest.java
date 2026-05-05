@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class TypeHierarchyTest {
@@ -149,10 +150,56 @@ class TypeHierarchyTest {
         assertThat(merged.componentType().orElseThrow().annotations(), hasItem(notBlank));
         assertThat(merged.componentType().orElseThrow().annotations(), hasItem(targetAnnotation));
 
+        TypeName lowerBoundTargetType = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(TypeName.builder()
+                                         .className("?")
+                                         .wildcard(true)
+                                         .addLowerBound(TypeName.builder(TypeNames.STRING)
+                                                        .addAnnotation(targetAnnotation)
+                                                        .build())
+                                         .build())
+                .build();
+        TypeName lowerBoundSourceType = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(TypeName.builder()
+                                         .className("?")
+                                         .wildcard(true)
+                                         .addLowerBound(TypeName.builder(TypeNames.STRING)
+                                                        .addAnnotation(notBlank)
+                                                        .build())
+                                         .build())
+                .build();
+
+        TypeName lowerBoundMerged = TypeHierarchy.mergeTypeNameAnnotations(lowerBoundTargetType, lowerBoundSourceType);
+
+        assertThat(lowerBoundMerged.typeArguments().getFirst().lowerBounds().getFirst().annotations(), hasItem(notBlank));
+
         TypeName rawList = TypeNames.LIST;
         TypeName mergedRawList = TypeHierarchy.mergeTypeNameAnnotations(rawList, sourceType);
         assertThat(mergedRawList.typeArguments().isEmpty(), is(true));
         assertThat(mergedRawList.componentType().isEmpty(), is(true));
+        assertThat(mergedRawList.annotations(), not(hasItem(notBlank)));
+
+        TypeName mismatchedTargetType = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(TypeName.builder()
+                                         .className("?")
+                                         .wildcard(true)
+                                         .addUpperBound(TypeName.create("io.helidon.codegen.Foo"))
+                                         .build())
+                .build();
+        TypeName mismatchedSourceType = TypeName.builder(TypeNames.LIST)
+                .addAnnotation(notBlank)
+                .addTypeArgument(TypeName.builder()
+                                         .className("?")
+                                         .wildcard(true)
+                                         .addAnnotation(notBlank)
+                                         .addUpperBound(TypeName.create("io.helidon.codegen.Bar"))
+                                         .build())
+                .build();
+
+        TypeName mismatchedMerged = TypeHierarchy.mergeTypeNameAnnotations(mismatchedTargetType, mismatchedSourceType);
+
+        assertThat(mismatchedMerged.annotations(), not(hasItem(notBlank)));
+        assertThat(mismatchedMerged.typeArguments().getFirst().annotations(), not(hasItem(notBlank)));
     }
 
     private static final class EmptyCodegenContext implements CodegenContext {
