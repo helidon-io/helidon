@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,9 @@ package io.helidon.service.tests.interception;
 
 import io.helidon.logging.common.LogConfig;
 import io.helidon.service.registry.InterceptionException;
-import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -134,7 +131,9 @@ class DelegatingInterceptionTest {
     void testRepeatWithNoExceptionThrownFromTarget() {
         InterceptionException e = assertThrows(InterceptionException.class,
                                                () -> service.intercepted("hello", false, true, false));
-        assertThat(e.getMessage(), startsWith("Duplicate invocation, or unknown call type: java.lang.String intercepted"));
+        assertThat(e.getMessage(), startsWith("Duplicate invocation, or unknown call type: "
+                                                      + "io.helidon.service.tests.interception.DelegatedContract::"
+                                                      + "java.lang.String intercepted"));
         assertThat(e.targetWasCalled(), is(true));
     }
 
