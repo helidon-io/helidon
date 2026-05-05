@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -230,7 +230,7 @@ public final class TypeHierarchy {
                 .stream()
                 .map(Annotation::typeName)
                 .forEach(result::add);
-        genericTypeAnnotations(typeInfo.typeName())
+        typeNameAnnotations(typeInfo.typeName())
                 .stream()
                 .map(Annotation::typeName)
                 .forEach(result::add);
@@ -253,7 +253,7 @@ public final class TypeHierarchy {
         typeInfo.elementInfo()
                 .stream()
                 .map(TypedElementInfo::typeName)
-                .map(TypeHierarchy::genericTypeAnnotations)
+                .map(TypeHierarchy::typeNameAnnotations)
                 .flatMap(List::stream)
                 .map(Annotation::typeName)
                 .forEach(result::add);
@@ -281,7 +281,7 @@ public final class TypeHierarchy {
                 .map(TypedElementInfo::parameterArguments)
                 .flatMap(List::stream)
                 .map(TypedElementInfo::typeName)
-                .map(TypeHierarchy::genericTypeAnnotations)
+                .map(TypeHierarchy::typeNameAnnotations)
                 .flatMap(List::stream)
                 .map(Annotation::typeName)
                 .forEach(result::add);
@@ -289,14 +289,86 @@ public final class TypeHierarchy {
         return result;
     }
 
-    private static List<Annotation> genericTypeAnnotations(TypeName typeName) {
-        // annotations on type arguments (i.e. Set<@Valid SomeType>)
+    /**
+     * Annotation instances nested inside a type name.
+     * This includes annotations declared directly on the provided type name and annotations declared on nested
+     * type arguments, wildcard bounds, and array component types.
+     *
+     * @param typeName type name to scan
+     * @return nested annotation instances
+     */
+    public static List<Annotation> typeNameAnnotations(TypeName typeName) {
         List<Annotation> result = new ArrayList<>();
+        result.addAll(typeName.annotations());
+        result.addAll(typeName.inheritedAnnotations());
         for (TypeName typeArgument : typeName.typeArguments()) {
-            result.addAll(typeArgument.annotations());
-            genericTypeAnnotations(typeArgument);
+            result.addAll(typeNameAnnotations(typeArgument));
         }
+        for (TypeName lowerBound : typeName.lowerBounds()) {
+            result.addAll(typeNameAnnotations(lowerBound));
+        }
+        for (TypeName upperBound : typeName.upperBounds()) {
+            result.addAll(typeNameAnnotations(upperBound));
+        }
+        typeName.componentType()
+                .map(TypeHierarchy::typeNameAnnotations)
+                .ifPresent(result::addAll);
         return result;
+    }
+
+    /**
+     * Merge type-use annotations from a source type name into a target type name.
+     * Only structurally matching nested type arguments, wildcard bounds, and array component types are merged.
+     *
+     * @param typeName       target type name
+     * @param sourceTypeName source type name
+     * @return type name with annotations merged from the source
+     */
+    public static TypeName mergeTypeNameAnnotations(TypeName typeName, TypeName sourceTypeName) {
+        List<Annotation> annotations = new ArrayList<>(typeName.annotations());
+        sourceTypeName.annotations().forEach(it -> addAnnotationIfAbsent(annotations, it));
+        List<Annotation> inheritedAnnotations = new ArrayList<>(typeName.inheritedAnnotations());
+        sourceTypeName.inheritedAnnotations().forEach(it -> addAnnotationIfAbsent(inheritedAnnotations, it));
+
+        TypeName.Builder builder = TypeName.builder(typeName)
+                .annotations(annotations)
+                .inheritedAnnotations(inheritedAnnotations)
+                .typeArguments(mergeTypeNameLists(typeName.typeArguments(), sourceTypeName.typeArguments()))
+                .lowerBounds(mergeTypeNameLists(typeName.lowerBounds(), sourceTypeName.lowerBounds()))
+                .upperBounds(mergeTypeNameLists(typeName.upperBounds(), sourceTypeName.upperBounds()));
+
+        if (typeName.componentType().isPresent() && sourceTypeName.componentType().isPresent()) {
+            builder.componentType(mergeTypeNameAnnotations(typeName.componentType().get(),
+                                                          sourceTypeName.componentType().get()));
+        } else if (typeName.componentType().isEmpty() && sourceTypeName.componentType().isPresent()) {
+            builder.componentType(sourceTypeName.componentType().get());
+        }
+
+        return builder.build();
+    }
+
+    private static List<TypeName> mergeTypeNameLists(List<TypeName> typeNames, List<TypeName> sourceTypeNames) {
+        if (sourceTypeNames.isEmpty()) {
+            return typeNames;
+        }
+        if (typeNames.isEmpty()) {
+            return sourceTypeNames;
+        }
+        if (typeNames.size() != sourceTypeNames.size()) {
+            return typeNames;
+        }
+
+        List<TypeName> merged = new ArrayList<>(typeNames.size());
+        for (int i = 0; i < typeNames.size(); i++) {
+            merged.add(mergeTypeNameAnnotations(typeNames.get(i), sourceTypeNames.get(i)));
+        }
+        return merged;
+    }
+
+    private static void addAnnotationIfAbsent(List<Annotation> annotations, Annotation annotation) {
+        if (!annotations.contains(annotation)) {
+            annotations.add(annotation);
+        }
     }
 
     private static void processMetaAnnotations(CodegenContext ctx,
