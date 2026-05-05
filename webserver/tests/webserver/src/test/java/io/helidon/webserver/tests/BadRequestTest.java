@@ -132,6 +132,65 @@ class BadRequestTest {
     }
 
     @Test
+    void testNegativeContentLengthRejected() {
+        assertRejectedContentLengthAttempt("Content-Length: -1\r\n");
+    }
+
+    @Test
+    void testSignedContentLengthRejected() {
+        assertRejectedContentLengthAttempt("Content-Length: +5\r\n");
+    }
+
+    @Test
+    void testNegativeZeroContentLengthRejected() {
+        assertRejectedContentLengthAttempt("Content-Length: -0\r\n");
+    }
+
+    @Test
+    void testOverflowContentLengthRejected() {
+        assertRejectedContentLengthAttempt("Content-Length: 9223372036854775808\r\n");
+    }
+
+    @Test
+    void testRepeatedNegativeContentLengthRejected() {
+        assertRejectedContentLengthAttempt("""
+                Content-Length: 5\r
+                Content-Length: -1\r
+                """);
+    }
+
+    @Test
+    void testConflictingContentLengthRejected() {
+        assertRejectedContentLengthAttempt("""
+                Content-Length: 5\r
+                Content-Length: 4\r
+                """);
+    }
+
+    @Test
+    void testCommaSeparatedConflictingContentLengthRejected() {
+        assertRejectedContentLengthAttempt("Content-Length: 5, 4\r\n");
+    }
+
+    @Test
+    void testEqualCommaSeparatedContentLengthRejected() {
+        assertRejectedContentLengthAttempt("Content-Length: 4, 4\r\n");
+    }
+
+    @Test
+    void testEqualRepeatedContentLengthRejected() {
+        assertRejectedContentLengthAttempt("""
+                Content-Length: 4\r
+                Content-Length: 4\r
+                """);
+    }
+
+    @Test
+    void testControlCharacterContentLengthRejected() {
+        assertRejectedContentLengthAttempt("Content-Length: 5\u000b\r\n");
+    }
+
+    @Test
     void testNonChunkedTransferEncodingWithContentLengthRejected() {
         assertRejectedSmugglingAttempt("Transfer-Encoding: gzip\r\n");
     }
@@ -303,6 +362,21 @@ class BadRequestTest {
                                       + "Connection: keep-alive\r\n"
                                       + transferEncodingHeaders
                                       + "Content-Length: 14\r\n"
+                                      + "\r\n"
+                                      + "4\r\n"
+                                      + "PING\r\n"
+                                      + "0\r\n"
+                                      + "\r\n"
+                                      + "GET / HTTP/1.1\r\n"
+                                      + "Host: localhost\r\n"
+                                      + "\r\n");
+    }
+
+    private void assertRejectedContentLengthAttempt(String contentLengthHeaders) {
+        assertRejectedRequest("GET / HTTP/1.1\r\n"
+                                      + "Host: localhost\r\n"
+                                      + "Connection: keep-alive\r\n"
+                                      + contentLengthHeaders
                                       + "\r\n"
                                       + "4\r\n"
                                       + "PING\r\n"

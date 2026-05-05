@@ -199,10 +199,40 @@ public interface Headers extends Iterable<Header> {
      * @see HeaderNames#CONTENT_LENGTH
      */
     default OptionalLong contentLength() {
-        if (contains(HeaderNameEnum.CONTENT_LENGTH)) {
-            return OptionalLong.of(get(HeaderNameEnum.CONTENT_LENGTH).get(long.class));
+        if (!contains(HeaderNameEnum.CONTENT_LENGTH)) {
+            return OptionalLong.empty();
         }
-        return OptionalLong.empty();
+
+        Header contentLengthHeader = get(HeaderNames.CONTENT_LENGTH);
+        if (contentLengthHeader.valueCount() != 1) {
+            throw new IllegalArgumentException("Content-Length header must have exactly one value.");
+        }
+
+        String contentLengthValue = contentLengthHeader.get();
+        if (contentLengthValue.indexOf(',') != -1) {
+            throw new IllegalArgumentException("Content-Length header must have exactly one value.");
+        }
+
+        int start = 0;
+        int end = contentLengthValue.length();
+        while (start < end && (contentLengthValue.charAt(start) == ' ' || contentLengthValue.charAt(start) == '\t')) {
+            start++;
+        }
+        while (end > start && (contentLengthValue.charAt(end - 1) == ' '
+                || contentLengthValue.charAt(end - 1) == '\t')) {
+            end--;
+        }
+        if (start == end) {
+            throw new NumberFormatException("Content length is not a number");
+        }
+        for (int i = start; i < end; i++) {
+            char c = contentLengthValue.charAt(i);
+            if (c < '0' || c > '9') {
+                throw new NumberFormatException("Content length is not a number");
+            }
+        }
+
+        return OptionalLong.of(Long.parseLong(contentLengthValue.substring(start, end)));
     }
 
     /**

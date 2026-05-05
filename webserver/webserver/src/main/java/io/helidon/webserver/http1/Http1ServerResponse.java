@@ -168,7 +168,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         if (isNoEntityStatus) {
             if (!headers.contains(HeaderNames.CONTENT_LENGTH)) {
                 headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
-            } else if (headers.get(HeaderNames.CONTENT_LENGTH).getLong() > 0L) {
+            } else if (headers.contentLength().orElse(0) > 0L) {
                 throw new IllegalStateException("Cannot set status to " + status + " with header "
                                                         + HeaderNames.CONTENT_LENGTH + " greater than zero");
             }
