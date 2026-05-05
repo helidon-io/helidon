@@ -16,7 +16,11 @@
 
 package io.helidon.common.concurrency.limits;
 
+import java.util.List;
+import java.util.Objects;
+
 import io.helidon.config.NamedService;
+import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Service;
 
 /**
@@ -35,8 +39,75 @@ public interface Limit extends LimitAlgorithm, NamedService {
      * Initialization method for this limit. This method can be used for any
      * task, including metrics initialization.
      *
-     * @param socketName socket name for this limit such as {@code "@default"}
+     * @param context the context for limit initialization
      */
-    default void init(String socketName) {
+    default void init(InitializationContext context) {
+        init(context.originName());
+    }
+
+    /**
+     * Initialization method for this limit. This method can be used for any
+     * task, including metrics initialization.
+     *
+     * @param originName origin name for this limit, such as {@code "@default"}
+     */
+    default void init(String originName) {
+    }
+
+    /**
+     * Runtime context used when initializing a {@link Limit}.
+     */
+    interface InitializationContext {
+        /**
+         * Create a limit context with no metric tags.
+         *
+         * @param originName origin name of the work protected by the limit
+         * @return a new limit context
+         */
+        static InitializationContext create(String originName) {
+            return createContext(originName, List.of());
+        }
+
+        /**
+         * Create a limit context with metric tags.
+         *
+         * @param originName origin name of the work protected by the limit
+         * @param metricTags metric tags to use when registering limit metrics
+         * @return a new limit context
+         */
+        static InitializationContext create(String originName, List<Tag> metricTags) {
+            return createContext(originName, metricTags);
+        }
+
+        /**
+         * Origin name of the work protected by the limit.
+         *
+         * @return origin name
+         */
+        String originName();
+
+        /**
+         * Metric tags to use when registering limit metrics.
+         *
+         * @return metric tags
+         */
+        List<Tag> metricTags();
+
+        private static InitializationContext createContext(String originName, List<Tag> metricTags) {
+            Objects.requireNonNull(originName);
+            List<Tag> copiedTags = List.copyOf(metricTags);
+
+            return new InitializationContext() {
+                @Override
+                public String originName() {
+                    return originName;
+                }
+
+                @Override
+                public List<Tag> metricTags() {
+                    return copiedTags;
+                }
+            };
+        }
     }
 }
