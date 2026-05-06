@@ -148,9 +148,8 @@ class Http2ConnectionTest {
         Http2Connection connection = new Http2Connection(ctx, config, List.of());
         Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
 
-        checks.madeYouResetCheck(0);
         ServerConnectionException exception = assertThrows(ServerConnectionException.class,
-                                                           () -> checks.madeYouResetCheck(0));
+                                                           checks::madeYouResetCheck);
 
         assertAll(
                 () -> assertThat(exception.getCause(), instanceOf(UncheckedIOException.class)),
@@ -192,6 +191,40 @@ class Http2ConnectionTest {
         TimeUnit.MILLISECONDS.sleep(1);
         checks.rapidResetCheck(true);
         checks.rapidResetCheck(true);
+
+        verify(writer, never()).writeNow(any(BufferData.class));
+    }
+
+    @Test
+    void madeYouResetClosesWhenThresholdIsExceeded() {
+        DataWriter writer = mock(DataWriter.class);
+        Http2Config config = Http2Config.builder()
+                .maxRapidResets(2)
+                .build();
+        ConnectionContext ctx = http2Context(writer);
+        Http2Connection connection = new Http2Connection(ctx, config, List.of());
+        Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
+
+        checks.madeYouResetCheck();
+        checks.madeYouResetCheck();
+        verify(writer, never()).writeNow(any(BufferData.class));
+
+        assertThrows(CloseConnectionException.class, checks::madeYouResetCheck);
+    }
+
+    @Test
+    void madeYouResetCanBeDisabled() {
+        DataWriter writer = mock(DataWriter.class);
+        Http2Config config = Http2Config.builder()
+                .maxRapidResets(-1)
+                .build();
+        ConnectionContext ctx = http2Context(writer);
+        Http2Connection connection = new Http2Connection(ctx, config, List.of());
+        Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
+
+        for (int i = 0; i < 10; i++) {
+            checks.madeYouResetCheck();
+        }
 
         verify(writer, never()).writeNow(any(BufferData.class));
     }

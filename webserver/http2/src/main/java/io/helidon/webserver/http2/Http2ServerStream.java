@@ -226,14 +226,14 @@ class Http2ServerStream implements Runnable, Http2Stream {
             if (windowUpdate.windowSizeIncrement() == 0) {
                 Http2RstStream frame = new Http2RstStream(Http2ErrorCode.PROTOCOL);
                 writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
-                connectionAttackVectorMetrics.madeYouResetCheck(streamId);
+                connectionAttackVectorMetrics.madeYouResetCheck();
             }
             //6.9.1/3
             long size = flowControl.outbound().incrementStreamWindowSize(windowUpdate.windowSizeIncrement());
             if (size > WindowSize.MAX_WIN_SIZE || size < 0L) {
                 Http2RstStream frame = new Http2RstStream(Http2ErrorCode.FLOW_CONTROL);
                 writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
-                connectionAttackVectorMetrics.madeYouResetCheck(streamId);
+                connectionAttackVectorMetrics.madeYouResetCheck();
             }
         } catch (UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write window update", e);
@@ -530,7 +530,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
         streams.remove(this.streamId);
         Http2RstStream rst = new Http2RstStream(Http2ErrorCode.PROTOCOL);
         writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
-        connectionAttackVectorMetrics.madeYouResetCheck(streamId);
+        connectionAttackVectorMetrics.madeYouResetCheck();
 
         if (currentFrameLength > 0) {
             flowControl.inbound().incrementWindowSize(currentFrameLength);

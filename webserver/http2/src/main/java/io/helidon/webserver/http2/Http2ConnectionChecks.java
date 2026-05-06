@@ -30,6 +30,7 @@ class Http2ConnectionChecks {
     private final Http2Connection connection;
     private final long rapidResetCheckPeriod;
     private final int maxRapidResets;
+    private final int maxServerSideResets;
     private int rapidResetCnt = 0;
     private long rapidResetPeriodStart = 0;
     private long serverSideResetCounter = 0;
@@ -37,6 +38,7 @@ class Http2ConnectionChecks {
     Http2ConnectionChecks(Http2Config http2Config, Http2Connection connection) {
         this.rapidResetCheckPeriod = http2Config.rapidResetCheckPeriod().toNanos();
         this.maxRapidResets = http2Config.maxRapidResets();
+        this.maxServerSideResets = http2Config.maxRapidResets();
         this.connection = connection;
     }
 
@@ -60,12 +62,10 @@ class Http2ConnectionChecks {
 
     /**
      * Made you reset counter. Not thread safe, expected to run on dispatcher thread.
-     *
-     * @param lastStreamId the highest stream id seen on the connection so far.
+     * Uses the configured reset threshold as a connection lifetime limit for server-side resets.
      */
-    void madeYouResetCheck(int lastStreamId) {
-        if (serverSideResetCounter++ > maxRapidResets
-                && serverSideResetCounter > lastStreamId / 4) {
+    void madeYouResetCheck() {
+        if (maxServerSideResets != -1 && ++serverSideResetCounter > maxServerSideResets) {
             closeConnection("MadeYouReset attack detected!");
         }
     }
