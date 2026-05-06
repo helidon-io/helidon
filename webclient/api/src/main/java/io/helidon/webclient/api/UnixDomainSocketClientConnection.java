@@ -302,6 +302,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
     private void startTlsHandshake(TlsNioSocket tlsSocket) throws IOException {
         Duration readTimeout = this.webClient.prototype().socketOptions().readTimeout();
         DeadlineGuard guard = DeadlineGuard.create(readTimeout, this::closeChannelOnTimeout);
+
         try (guard) {
             tlsSocket.handshake();
         } catch (RuntimeException e) {
@@ -310,6 +311,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
             }
             throw e;
         }
+
         if (guard.timedOut()) {
             throw timeoutException(readTimeout, null, guard);
         }
