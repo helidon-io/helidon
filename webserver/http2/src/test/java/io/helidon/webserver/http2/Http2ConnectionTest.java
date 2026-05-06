@@ -19,6 +19,7 @@ package io.helidon.webserver.http2;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketException;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -273,6 +274,44 @@ class Http2ConnectionTest {
         for (int i = 0; i < 10; i++) {
             checks.madeYouResetCheck();
         }
+
+        verify(writer, never()).writeNow(any(BufferData.class));
+    }
+
+    @Test
+    void rapidResetClosesWhenThresholdIsExceededWithinPeriod() {
+        DataWriter writer = mock(DataWriter.class);
+        Http2Config config = Http2Config.builder()
+                .rapidResetCheckPeriod(Duration.ofSeconds(10))
+                .maxRapidResets(2)
+                .build();
+        ConnectionContext ctx = http2Context(writer);
+        Http2Connection connection = new Http2Connection(ctx, config, List.of());
+        Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
+
+        checks.rapidResetCheck(true);
+        checks.rapidResetCheck(true);
+        verify(writer, never()).writeNow(any(BufferData.class));
+
+        assertThrows(CloseConnectionException.class, () -> checks.rapidResetCheck(true));
+    }
+
+    @Test
+    void rapidResetCounterRestartsAfterCheckPeriod() throws InterruptedException {
+        DataWriter writer = mock(DataWriter.class);
+        Http2Config config = Http2Config.builder()
+                .rapidResetCheckPeriod(Duration.ofNanos(1))
+                .maxRapidResets(2)
+                .build();
+        ConnectionContext ctx = http2Context(writer);
+        Http2Connection connection = new Http2Connection(ctx, config, List.of());
+        Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
+
+        checks.rapidResetCheck(true);
+        checks.rapidResetCheck(true);
+        TimeUnit.MILLISECONDS.sleep(1);
+        checks.rapidResetCheck(true);
+        checks.rapidResetCheck(true);
 
         verify(writer, never()).writeNow(any(BufferData.class));
     }
