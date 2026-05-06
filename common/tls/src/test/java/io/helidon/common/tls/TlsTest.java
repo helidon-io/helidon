@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.common.tls;
 
+import java.io.IOException;
 import java.security.AlgorithmConstraints;
 import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
@@ -24,11 +25,13 @@ import java.util.List;
 import java.util.Set;
 
 import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLServerSocket;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayContaining;
 
 public class TlsTest {
     @Test
@@ -67,5 +70,49 @@ public class TlsTest {
 
         first.setSNIMatchers(List.of());
         second.setSNIMatchers(List.of());
+    }
+
+    @Test
+    public void testSslParametersCannotMutateTls() throws IOException {
+        Tls tls = Tls.create(it -> it.addApplicationProtocol("h2")
+                .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_HTTPS));
+
+        SSLParameters parameters = tls.sslParameters();
+        parameters.setApplicationProtocols(new String[] {"http/1.1"});
+        parameters.setEndpointIdentificationAlgorithm("");
+
+        SSLParameters freshParameters = tls.sslParameters();
+        assertThat(freshParameters.getApplicationProtocols(), arrayContaining("h2"));
+        assertThat(freshParameters.getEndpointIdentificationAlgorithm(), is(Tls.ENDPOINT_IDENTIFICATION_HTTPS));
+
+        SSLParameters engineParameters = tls.newEngine().getSSLParameters();
+        assertThat(engineParameters.getApplicationProtocols(), arrayContaining("h2"));
+        assertThat(engineParameters.getEndpointIdentificationAlgorithm(), is(Tls.ENDPOINT_IDENTIFICATION_HTTPS));
+
+        try (SSLServerSocket serverSocket = tls.createServerSocket()) {
+            SSLParameters serverParameters = serverSocket.getSSLParameters();
+            assertThat(serverParameters.getApplicationProtocols(), arrayContaining("h2"));
+            assertThat(serverParameters.getEndpointIdentificationAlgorithm(), is(""));
+        }
+    }
+
+    @Test
+    public void testConfiguredSslParametersCannotMutateTls() {
+        SSLParameters configured = new SSLParameters();
+        configured.setApplicationProtocols(new String[] {"h2"});
+        configured.setEndpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_HTTPS);
+
+        Tls tls = Tls.create(it -> it.sslParameters(configured));
+
+        configured.setApplicationProtocols(new String[] {"http/1.1"});
+        configured.setEndpointIdentificationAlgorithm("");
+
+        SSLParameters freshParameters = tls.sslParameters();
+        assertThat(freshParameters.getApplicationProtocols(), arrayContaining("h2"));
+        assertThat(freshParameters.getEndpointIdentificationAlgorithm(), is(Tls.ENDPOINT_IDENTIFICATION_HTTPS));
+
+        SSLParameters engineParameters = tls.newEngine().getSSLParameters();
+        assertThat(engineParameters.getApplicationProtocols(), arrayContaining("h2"));
+        assertThat(engineParameters.getEndpointIdentificationAlgorithm(), is(Tls.ENDPOINT_IDENTIFICATION_HTTPS));
     }
 }

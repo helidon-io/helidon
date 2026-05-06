@@ -69,7 +69,7 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
         // at this time, the TlsConfigDecorator should have created SSL parameters; the SSL context is the responsibility
         // of the manager to provide
         this.tlsConfig = Objects.requireNonNull(config);
-        this.sslParameters = config.sslParameters().orElseThrow();
+        this.sslParameters = copySslParameters(config.sslParameters().orElseThrow());
         this.enabled = config.enabled();
 
         if (config.enabled()) {
@@ -140,7 +140,7 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
     public final SSLEngine newEngine() {
         checkEnabled();
         SSLEngine sslEngine = sslContext.createSSLEngine();
-        sslEngine.setSSLParameters(sslParameters);
+        sslEngine.setSSLParameters(copySslParameters(sslParameters));
         return sslEngine;
     }
 
@@ -177,9 +177,7 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
         try {
             SSLServerSocket socket = (SSLServerSocket) sslServerSocketFactory.createServerSocket();
 
-            // create a copy of SSLParameters, as otherwise we may use wrong endpoint identification algorithm for server
-            SSLParameters parameters = copySslParameters();
-            parameters.setApplicationProtocols(this.sslParameters.getApplicationProtocols());
+            SSLParameters parameters = copySslParameters(sslParameters);
             parameters.setEndpointIdentificationAlgorithm("");
 
             socket.setSSLParameters(parameters);
@@ -203,10 +201,8 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
             SSLSocket sslSocket = (SSLSocket) sslSocketFactory
                     .createSocket(socket, address.getHostName(), address.getPort(), true);
 
-            // create a copy of SSLParameters, as otherwise we may overwrite alpnProtocols of requests in parallel
-            SSLParameters parameters = copySslParameters();
+            SSLParameters parameters = copySslParameters(sslParameters);
             parameters.setApplicationProtocols(alpnProtocols.toArray(new String[0]));
-            parameters.setEndpointIdentificationAlgorithm(this.sslParameters.getEndpointIdentificationAlgorithm());
 
             sslSocket.setSSLParameters(parameters);
             return sslSocket;
@@ -226,12 +222,12 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
     }
 
     /**
-     * SSL parameters.
+     * SSL parameters. The returned parameters are a copy, and changing them does not modify this TLS configuration.
      *
-     * @return SSL parameters
+     * @return SSL parameters copy
      */
     public SSLParameters sslParameters() {
-        return sslParameters;
+        return copySslParameters(sslParameters);
     }
 
     /**
@@ -262,25 +258,25 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
         return tlsManager.trustManager();
     }
 
-    private SSLParameters copySslParameters() {
-        // this copy does not set application protocols (each client request may have different ones)
-        // this copy does not set endpoint identification algorithm, server must not set it
+    private static SSLParameters copySslParameters(SSLParameters source) {
         SSLParameters parameters = new SSLParameters();
-        parameters.setServerNames(this.sslParameters.getServerNames());
-        parameters.setCipherSuites(this.sslParameters.getCipherSuites());
-        parameters.setAlgorithmConstraints(this.sslParameters.getAlgorithmConstraints());
-        parameters.setEnableRetransmissions(this.sslParameters.getEnableRetransmissions());
-        parameters.setMaximumPacketSize(this.sslParameters.getMaximumPacketSize());
-        parameters.setNamedGroups(this.sslParameters.getNamedGroups());
-        parameters.setProtocols(this.sslParameters.getProtocols());
-        parameters.setSignatureSchemes(this.sslParameters.getSignatureSchemes());
-        parameters.setSNIMatchers(this.sslParameters.getSNIMatchers());
-        parameters.setUseCipherSuitesOrder(this.sslParameters.getUseCipherSuitesOrder());
-        if (this.sslParameters.getNeedClientAuth()) {
-            parameters.setNeedClientAuth(this.sslParameters.getNeedClientAuth());
+        parameters.setServerNames(source.getServerNames());
+        parameters.setCipherSuites(source.getCipherSuites());
+        parameters.setAlgorithmConstraints(source.getAlgorithmConstraints());
+        parameters.setApplicationProtocols(source.getApplicationProtocols());
+        parameters.setEndpointIdentificationAlgorithm(source.getEndpointIdentificationAlgorithm());
+        parameters.setEnableRetransmissions(source.getEnableRetransmissions());
+        parameters.setMaximumPacketSize(source.getMaximumPacketSize());
+        parameters.setNamedGroups(source.getNamedGroups());
+        parameters.setProtocols(source.getProtocols());
+        parameters.setSignatureSchemes(source.getSignatureSchemes());
+        parameters.setSNIMatchers(source.getSNIMatchers());
+        parameters.setUseCipherSuitesOrder(source.getUseCipherSuitesOrder());
+        if (source.getNeedClientAuth()) {
+            parameters.setNeedClientAuth(source.getNeedClientAuth());
         }
-        if (this.sslParameters.getWantClientAuth()) {
-            parameters.setWantClientAuth(this.sslParameters.getWantClientAuth());
+        if (source.getWantClientAuth()) {
+            parameters.setWantClientAuth(source.getWantClientAuth());
         }
         return parameters;
     }
