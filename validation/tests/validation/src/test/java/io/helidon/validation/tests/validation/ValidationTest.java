@@ -40,9 +40,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Testing.Test
 public class ValidationTest {
     private final ValidatedService service;
+    private final InterfaceConstrainedService interfaceConstrainedService;
 
-    public ValidationTest(ValidatedService service) {
+    public ValidationTest(ValidatedService service, InterfaceConstrainedService interfaceConstrainedService) {
         this.service = service;
+        this.interfaceConstrainedService = interfaceConstrainedService;
     }
 
     @Test
@@ -50,6 +52,18 @@ public class ValidationTest {
         var response = service.process(new ValidatedType("good_test_value", 42, new BigDecimal("1.10")));
 
         assertThat(response, is("Good"));
+    }
+
+    @Test
+    public void testInterfaceMethodConstraint() {
+        var response = interfaceConstrainedService.validate("value");
+
+        assertThat(response, is("value"));
+
+        var result = assertThrows(ValidationException.class, () -> interfaceConstrainedService.validate(""));
+
+        assertThat(result.violations(), hasSize(1));
+        assertThat(result.violations().getFirst().message(), containsString("is blank"));
     }
 
     @Test

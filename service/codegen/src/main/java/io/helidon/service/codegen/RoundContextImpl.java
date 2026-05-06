@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 
 import io.helidon.codegen.ClassCode;
 import io.helidon.codegen.RoundContext;
+import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
@@ -96,9 +97,10 @@ class RoundContextImpl implements RegistryRoundContext {
         }
 
         List<TypeInfo> result = new ArrayList<>();
-
         for (TypeInfo typeInfo : typeInfos) {
-            if (typeInfo.hasAnnotation(annotationType)) {
+            if (typeInfo.hasAnnotation(annotationType) || TypeHierarchy.hierarchyAnnotations(ctx, typeInfo)
+                    .stream()
+                    .anyMatch(it -> it.typeName().equals(annotationType))) {
                 result.add(typeInfo);
             }
         }

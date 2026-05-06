@@ -17,7 +17,10 @@
 package io.helidon.declarative.codegen.validation;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -74,8 +77,16 @@ class InterceptorGenerator {
             // ignore annotations, these are good
             return;
         }
+        if (factoryInterceptionWrapper(type)) {
+            // The original factory provider owns the element interceptors used by the generated wrapper.
+            return;
+        }
 
         if (!isService(type)) {
+            if (hasOnlyNonPrivateInterfaceMethodValidation(type)) {
+                // Interface method constraints are validated by interceptors generated for service implementations.
+                return;
+            }
             if (!type.hasAnnotation(VALIDATION_VALIDATED)) {
                 throw new CodegenException(VALIDATION_VALIDATED.fqName()
                                                    + " annotation is required on non-service type that has constraints "
@@ -123,14 +134,50 @@ class InterceptorGenerator {
         }
 
         // and finally annotated methods
+        Set<String> generatedMethodTargets = new HashSet<>();
         type.elementInfo()
                 .stream()
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(Predicate.not(ElementInfoPredicates::isPrivate))
                 .filter(Predicate.not(ElementInfoPredicates::isStatic))
                 .forEach(element -> {
-                    generateInterceptor(type, interceptorCounter, element, "METHOD");
+                    String target = type.typeName().fqName() + "." + element.signature().text();
+                    if (generatedMethodTargets.contains(target)) {
+                        return;
+                    }
+                    if (generateInterceptor(type, interceptorCounter, element, "METHOD")) {
+                        generatedMethodTargets.add(target);
+                    }
                 });
+    }
+
+    private boolean factoryInterceptionWrapper(TypeInfo type) {
+        return type.superTypeInfo()
+                .map(TypeInfo::typeName)
+                .map(TypeName::genericTypeName)
+                .filter(it -> it.equals(ServiceCodegenTypes.INTERCEPT_G_WRAPPER_SUPPLIER_FACTORY)
+                        || it.equals(ServiceCodegenTypes.INTERCEPT_G_WRAPPER_OPTIONAL_SUPPLIER_FACTORY)
+                        || it.equals(ServiceCodegenTypes.INTERCEPT_G_WRAPPER_SERVICES_FACTORY)
+                        || it.equals(ServiceCodegenTypes.INTERCEPT_G_WRAPPER_IP_FACTORY)
+                        || it.equals(ServiceCodegenTypes.INTERCEPT_G_WRAPPER_QUALIFIED_FACTORY))
+                .isPresent();
+    }
+
+    private boolean hasOnlyNonPrivateInterfaceMethodValidation(TypeInfo type) {
+        if (type.kind() != ElementKind.INTERFACE) {
+            return false;
+        }
+
+        List<TypedElementInfo> elementsWithValidation = type.elementInfo()
+                .stream()
+                .filter(it -> ValidationHelper.needsWork(constraintAnnotations, it))
+                .toList();
+
+        return !elementsWithValidation.isEmpty()
+                && elementsWithValidation.stream()
+                .allMatch(it -> ElementInfoPredicates.isMethod(it)
+                        && !ElementInfoPredicates.isPrivate(it)
+                        && !ElementInfoPredicates.isStatic(it));
     }
 
     private boolean isService(TypeInfo type) {
@@ -138,7 +185,15 @@ class InterceptorGenerator {
         if (type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER)) {
             return true;
         }
+        if (type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_PER_INSTANCE)) {
+            return true;
+        }
         if (type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_SCOPE)) {
+            return true;
+        }
+        if (type.elementInfo()
+                .stream()
+                .anyMatch(ElementInfoPredicates.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))) {
             return true;
         }
         for (Annotation annotation : type.annotations()) {
@@ -152,12 +207,12 @@ class InterceptorGenerator {
         return false;
     }
 
-    private void generateInterceptor(TypeInfo interceptedType,
-                                     AtomicInteger interceptorCounter,
-                                     TypedElementInfo element,
-                                     String location) {
+    private boolean generateInterceptor(TypeInfo interceptedType,
+                                        AtomicInteger interceptorCounter,
+                                        TypedElementInfo element,
+                                        String location) {
         if (!ValidationHelper.needsWork(constraintAnnotations, element)) {
-            return;
+            return false;
         }
 
         TypeName typeName = interceptedType.typeName();
@@ -285,6 +340,7 @@ class InterceptorGenerator {
         classModel.addConstructor(constructor);
         classModel.addMethod(proceedMethod.addContentLine());
         roundContext.addGeneratedType(generatedType, classModel, GENERATOR);
+        return true;
     }
 
     private void addValidators(TypeName generatedType,

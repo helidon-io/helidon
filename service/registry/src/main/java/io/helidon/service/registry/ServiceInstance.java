@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,11 @@ public interface ServiceInstance<T> extends Service.QualifiedInstance<T> {
     TypeName TYPE = TypeName.create(ServiceInstance.class);
 
     /**
-     * Contracts of the service instance.
+     * Contracts associated with this service instance for the lookup that produced it.
+     * For factory-backed services, provided-service lookups return the provided service contracts, while provider-targeted
+     * lookups return the provider or factory contracts.
      *
-     * @return contracts the service instance implements
+     * @return contracts associated with this service instance for the current lookup
      */
     Set<ResolvedType> contracts();
 

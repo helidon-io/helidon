@@ -87,6 +87,11 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_G_DEPENDENC
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_G_PER_INSTANCE_DESCRIPTOR;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_G_QUALIFIED_FACTORY_DESCRIPTOR;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_G_SCOPE_HANDLER_DESCRIPTOR;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_INJECTION_POINT_FACTORY;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_LOOKUP;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIED_FACTORY;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIED_INSTANCE;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_SCOPE_HANDLER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_SERVICE_INSTANCE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SET_OF_QUALIFIERS;
@@ -214,9 +219,9 @@ public class ServiceDescriptorCodegen {
         Set<ResolvedType> factoryContracts;
 
         if (service.isFactory()) {
-            if (serviceTypeName.className().endsWith("__Interception_Wrapper")) {
+            if (service.factoryInterceptionWrapper()) {
                 contracts = service.providedDescriptor().contracts();
-                factoryContracts = service.serviceDescriptor().contracts();
+                factoryContracts = service.providerFactoryContracts();
             } else {
                 // check if contracts are intercepted
                 var providedElements = service.providedDescriptor().elements();
@@ -224,7 +229,7 @@ public class ServiceDescriptorCodegen {
                 if (providedElements.methodsIntercepted()) {
                     // remove contracts from the original service, service descriptor will only be used to instantiate provider
                     contracts = Set.of();
-                    factoryContracts = Set.of();
+                    factoryContracts = service.directProviderContracts();
                     // generate delegate injection (unless already generated) in current package
                     TypeName delegateType = generateProvidedInterceptionDelegate(roundCtx, service);
                     // then generate a service that injects the original service, and wraps provider method(s) using delegation
@@ -448,23 +453,6 @@ public class ServiceDescriptorCodegen {
         contentBuilder.addContent(enumValue.getDeclaringClass())
                 .addContent(".")
                 .addContent(enumValue.name());
-    }
-
-    private static void addInterfaceAnnotations(List<Annotation> elementAnnotations,
-                                                List<TypedElements.DeclaredElement> declaredElements) {
-
-        for (TypedElements.DeclaredElement declaredElement : declaredElements) {
-            declaredElement.element()
-                    .annotations()
-                    .forEach(it -> addInterfaceAnnotation(elementAnnotations, it));
-        }
-    }
-
-    private static void addInterfaceAnnotation(List<Annotation> elementAnnotations, Annotation annotation) {
-        // only add if not already there
-        if (!elementAnnotations.contains(annotation)) {
-            elementAnnotations.add(annotation);
-        }
     }
 
     private static List<ParamDefinition> declareCtrParamsAndGetThem(Method.Builder method, List<ParamDefinition> params) {
@@ -1768,7 +1756,7 @@ public class ServiceDescriptorCodegen {
                 .decreaseContentPadding()
                 .addContent(".invoke(")
                 .addContent(constructorParams.stream()
-                                    .map(ParamDefinition::ipParamName)
+                                    .map(ServiceDescriptorCodegen::invokerArgument)
                                     .collect(Collectors.joining(", ")))
                 .addContentLine(");")
                 .decreaseContentPadding()
@@ -2056,8 +2044,10 @@ public class ServiceDescriptorCodegen {
             // assign the instance
             methodBuilder.addContent("instance__helidonInject.")
                     .addContent(field.ipParamName())
-                    .addContent(" = config__invoker.invoke(")
-                    .addContent(field.ipParamName())
+                    .addContent(" = ")
+                    .addContent(invokerName)
+                    .addContent(".invoke(")
+                    .addContent(invokerArgument(field))
                     .addContentLine(");")
                     .decreaseContentPadding();
             // end try/catch block
@@ -2327,6 +2317,10 @@ public class ServiceDescriptorCodegen {
                                            DescribedService service,
                                            TypeName delegateType) {
         TypeName typeName = service.serviceDescriptor().typeName();
+        TypeName descriptorType = service.descriptorType();
+        List<InterceptedTypeGenerator.MethodDefinition> factoryMethods = factoryMethods(service);
+        List<InterceptedTypeGenerator.MethodDefinition> interceptedFactoryMethods = interceptedFactoryMethods(service,
+                                                                                                             factoryMethods);
 
         String typeNameSuffix = "__Interception_Wrapper";
         TypeName wrapperType = TypeName.builder()
@@ -2351,12 +2345,20 @@ public class ServiceDescriptorCodegen {
 
         service.qualifiers()
                 .forEach(classModel::addAnnotation);
+        serviceOrderAnnotations(service.serviceDescriptor().typeInfo())
+                .forEach(classModel::addAnnotation);
 
         classModel.addField(interceptMeta -> interceptMeta
                 .type(INTERCEPT_METADATA)
                 .name("interceptMeta")
                 .isFinal(true)
                 .accessModifier(AccessModifier.PRIVATE));
+
+        if (!interceptedFactoryMethods.isEmpty()) {
+            Qualifiers.generateQualifiersConstant(classModel, service.qualifiers());
+            annotationsField(classModel, service.serviceDescriptor().typeInfo());
+            InterceptedTypeGenerator.generateInvokerFields(classModel, interceptedFactoryMethods);
+        }
 
         classModel.addConstructor(ctr -> ctr
                 .addAnnotation(Annotation.create(SERVICE_ANNOTATION_INJECT))
@@ -2367,11 +2369,21 @@ public class ServiceDescriptorCodegen {
                 .addParameter(interceptMeta -> interceptMeta
                         .type(INTERCEPT_METADATA)
                         .name("interceptMeta"))
-                .addContentLine("super(delegate);")
+                .addContent("super(")
+                .update(it -> factoryDelegate(it, service))
+                .addContentLine(");")
                 .addContentLine("this.interceptMeta = interceptMeta;")
+                .update(it -> InterceptedTypeGenerator.createInvokers(it,
+                                                                       descriptorType,
+                                                                       interceptedFactoryMethods,
+                                                                       true,
+                                                                       "interceptMeta",
+                                                                       descriptorType.fqName() + ".INSTANCE",
+                                                                       "QUALIFIERS",
+                                                                       "ANNOTATIONS",
+                                                                       "super"))
         );
 
-        TypeName descriptorType = service.descriptorType();
         classModel.addMethod(wrap -> wrap
                 .addAnnotation(Annotations.OVERRIDE)
                 .accessModifier(AccessModifier.PROTECTED)
@@ -2391,10 +2403,422 @@ public class ServiceDescriptorCodegen {
                 .addContentLine("instance);")
         );
 
+        InterceptedTypeGenerator.generateInterceptedMethods(classModel, interceptedFactoryMethods);
+
         roundContext.addGeneratedType(wrapperType,
                                       classModel,
                                       typeName,
                                       service.serviceDescriptor().typeInfo().originatingElementValue());
+    }
+
+    private List<Annotation> serviceOrderAnnotations(TypeInfo typeInfo) {
+        List<Annotation> annotations = new ArrayList<>();
+        typeInfo.findAnnotation(TypeName.create(Weight.class))
+                .ifPresent(annotations::add);
+        typeInfo.findAnnotation(SERVICE_ANNOTATION_RUN_LEVEL)
+                .ifPresent(annotations::add);
+        return annotations;
+    }
+
+    private void factoryDelegate(ContentBuilder<?> content, DescribedService service) {
+        List<InterceptedTypeGenerator.MethodDefinition> factoryMethods = factoryMethods(service);
+        if (factoryMethods.isEmpty()) {
+            content.addContent("delegate");
+            return;
+        }
+
+        TypeName interceptedType = interceptedTypeName(service.serviceDescriptor().typeName());
+        switch (service.providerType()) {
+        case INJECTION_POINT -> injectionPointFactoryDelegate(content, service, interceptedType, factoryMethods);
+        case QUALIFIED -> qualifiedFactoryDelegate(content, service, interceptedType, factoryMethods);
+        default -> methodReferenceFactoryDelegate(content, service, interceptedType, factoryMethods);
+        }
+    }
+
+    private List<InterceptedTypeGenerator.MethodDefinition> interceptedFactoryMethods(
+            DescribedService service,
+            List<InterceptedTypeGenerator.MethodDefinition> factoryMethods) {
+        List<InterceptedTypeGenerator.MethodDefinition> result = new ArrayList<>();
+        switch (service.providerType()) {
+        case SUPPLIER -> factoryMethod(factoryMethods, "get")
+                .ifPresent(result::add);
+        case SERVICES -> factoryMethod(factoryMethods, "services")
+                .ifPresent(result::add);
+        case INJECTION_POINT -> {
+            factoryMethod(factoryMethods, "first", SERVICE_LOOKUP)
+                    .ifPresent(result::add);
+            factoryMethod(factoryMethods, "list", SERVICE_LOOKUP)
+                    .ifPresent(result::add);
+        }
+        case QUALIFIED -> {
+            TypeName genericProvidedType = TypeName.builder(TypeNames.GENERIC_TYPE)
+                    .addTypeArgument(service.providedDescriptor().typeName())
+                    .build();
+            factoryMethod(factoryMethods,
+                          "first",
+                          SERVICE_QUALIFIER,
+                          SERVICE_LOOKUP,
+                          genericProvidedType)
+                    .ifPresent(result::add);
+            factoryMethod(factoryMethods,
+                          "list",
+                          SERVICE_QUALIFIER,
+                          SERVICE_LOOKUP,
+                          genericProvidedType)
+                    .ifPresent(result::add);
+        }
+        default -> {
+        }
+        }
+        return List.copyOf(result);
+    }
+
+    private void methodReferenceFactoryDelegate(ContentBuilder<?> content,
+                                                DescribedService service,
+                                                TypeName interceptedType,
+                                                List<InterceptedTypeGenerator.MethodDefinition> factoryMethods) {
+        String factoryMethodName = switch (service.providerType()) {
+            case SUPPLIER -> "get";
+            case SERVICES -> "services";
+            case NONE, SERVICE, INJECTION_POINT, QUALIFIED -> "";
+        };
+        if (factoryMethodName.isEmpty()) {
+            content.addContent("delegate");
+            return;
+        }
+
+        Optional<InterceptedTypeGenerator.MethodDefinition> factoryMethod =
+                factoryMethod(factoryMethods, factoryMethodName);
+        if (factoryMethod.isEmpty()) {
+            content.addContent("delegate");
+            return;
+        }
+
+        content.addContent("delegate instanceof ")
+                .addContent(interceptedType)
+                .addContent(" helidonInject__delegate ? helidonInject__delegate::")
+                .addContent(factoryMethod.get().delegateName())
+                .addContent(" : delegate");
+    }
+
+    private void injectionPointFactoryDelegate(ContentBuilder<?> content,
+                                               DescribedService service,
+                                               TypeName interceptedType,
+                                               List<InterceptedTypeGenerator.MethodDefinition> factoryMethods) {
+        Optional<InterceptedTypeGenerator.MethodDefinition> firstMethod = factoryMethod(factoryMethods,
+                                                                                       "first",
+                                                                                       SERVICE_LOOKUP);
+        Optional<InterceptedTypeGenerator.MethodDefinition> listMethod = factoryMethod(factoryMethods,
+                                                                                      "list",
+                                                                                      SERVICE_LOOKUP);
+
+        factoryDelegateHeader(content, service, interceptedType);
+        content.addContentLine(" {")
+                .increaseContentPadding();
+
+        TypeName optionalQualifiedInstance = optionalQualifiedInstanceType(service);
+        content.addContentLine("@Override")
+                .addContent("public ")
+                .addContent(optionalQualifiedInstance)
+                .addContentLine(" first(")
+                .increaseContentPadding()
+                .addContent(SERVICE_LOOKUP)
+                .addContentLine(" lookup) {");
+        injectionPointFactoryFirstBody(content, service, firstMethod, listMethod);
+        content.addContentLine("}")
+                .decreaseContentPadding()
+                .addContentLine();
+
+        TypeName listQualifiedInstance = listQualifiedInstanceType(service);
+        content.addContentLine("@Override")
+                .addContent("public ")
+                .addContent(listQualifiedInstance)
+                .addContentLine(" list(")
+                .increaseContentPadding()
+                .addContent(SERVICE_LOOKUP)
+                .addContentLine(" lookup) {");
+        injectionPointFactoryListBody(content, service, firstMethod, listMethod);
+        content.addContentLine("}")
+                .decreaseContentPadding()
+                .decreaseContentPadding()
+                .addContent("} : delegate");
+    }
+
+    private void injectionPointFactoryFirstBody(ContentBuilder<?> content,
+                                                DescribedService service,
+                                                Optional<InterceptedTypeGenerator.MethodDefinition> firstMethod,
+                                                Optional<InterceptedTypeGenerator.MethodDefinition> listMethod) {
+        if (listMethod.isPresent()) {
+            // Raw first(...) may still dispatch to the intercepted list(...) override from the provider implementation.
+            content.addContent(listQualifiedInstanceType(service))
+                    .addContent(" helidonInject__list = helidonInject__delegate.")
+                    .addContent(listMethod.get().delegateName())
+                    .addContentLine("(lookup);")
+                    .addContent("return helidonInject__list.isEmpty() ? ")
+                    .addContent(Optional.class)
+                    .addContent(".empty() : ")
+                    .addContent(Optional.class)
+                    .addContentLine(".of(helidonInject__list.getFirst());");
+            return;
+        }
+        content.addContent("return helidonInject__delegate.")
+                .addContent(firstMethod.map(InterceptedTypeGenerator.MethodDefinition::delegateName).orElse("first"))
+                .addContentLine("(lookup);");
+    }
+
+    private void injectionPointFactoryListBody(ContentBuilder<?> content,
+                                               DescribedService service,
+                                               Optional<InterceptedTypeGenerator.MethodDefinition> firstMethod,
+                                               Optional<InterceptedTypeGenerator.MethodDefinition> listMethod) {
+        if (listMethod.isPresent()) {
+            content.addContent("return helidonInject__delegate.")
+                    .addContent(listMethod.get().delegateName())
+                    .addContentLine("(lookup);");
+            return;
+        }
+        if (firstMethod.isPresent() && !factoryMethodCustomized(service, "list", SERVICE_LOOKUP)) {
+            content.addContent("return helidonInject__delegate.")
+                    .addContent(firstMethod.get().delegateName())
+                    .addContentLine("(lookup).map(List::of).orElseGet(List::of);");
+            return;
+        }
+        content.addContentLine("return helidonInject__delegate.list(lookup);");
+    }
+
+    private void qualifiedFactoryDelegate(ContentBuilder<?> content,
+                                          DescribedService service,
+                                          TypeName interceptedType,
+                                          List<InterceptedTypeGenerator.MethodDefinition> factoryMethods) {
+        TypeName genericProvidedType = TypeName.builder(TypeNames.GENERIC_TYPE)
+                .addTypeArgument(service.providedDescriptor().typeName())
+                .build();
+        Optional<InterceptedTypeGenerator.MethodDefinition> firstMethod = factoryMethod(factoryMethods,
+                                                                                       "first",
+                                                                                       SERVICE_QUALIFIER,
+                                                                                       SERVICE_LOOKUP,
+                                                                                       genericProvidedType);
+        Optional<InterceptedTypeGenerator.MethodDefinition> listMethod = factoryMethod(factoryMethods,
+                                                                                      "list",
+                                                                                      SERVICE_QUALIFIER,
+                                                                                      SERVICE_LOOKUP,
+                                                                                      genericProvidedType);
+
+        factoryDelegateHeader(content, service, interceptedType);
+        content.addContentLine(" {")
+                .increaseContentPadding();
+
+        TypeName optionalQualifiedInstance = optionalQualifiedInstanceType(service);
+        content.addContentLine("@Override")
+                .addContent("public ")
+                .addContent(optionalQualifiedInstance)
+                .addContentLine(" first(")
+                .increaseContentPadding()
+                .addContent(SERVICE_QUALIFIER)
+                .addContentLine(" qualifier,")
+                .addContent(SERVICE_LOOKUP)
+                .addContentLine(" lookup,")
+                .addContent(genericProvidedType)
+                .addContentLine(" type) {");
+        qualifiedFactoryFirstBody(content, service, firstMethod, listMethod);
+        content.addContentLine("}")
+                .decreaseContentPadding()
+                .addContentLine();
+
+        TypeName listQualifiedInstance = listQualifiedInstanceType(service);
+        content.addContentLine("@Override")
+                .addContent("public ")
+                .addContent(listQualifiedInstance)
+                .addContentLine(" list(")
+                .increaseContentPadding()
+                .addContent(SERVICE_QUALIFIER)
+                .addContentLine(" qualifier,")
+                .addContent(SERVICE_LOOKUP)
+                .addContentLine(" lookup,")
+                .addContent(genericProvidedType)
+                .addContentLine(" type) {");
+        qualifiedFactoryListBody(content, service, genericProvidedType, firstMethod, listMethod);
+        content.addContentLine("}")
+                .decreaseContentPadding()
+                .decreaseContentPadding()
+                .addContent("} : delegate");
+    }
+
+    private void qualifiedFactoryFirstBody(ContentBuilder<?> content,
+                                           DescribedService service,
+                                           Optional<InterceptedTypeGenerator.MethodDefinition> firstMethod,
+                                           Optional<InterceptedTypeGenerator.MethodDefinition> listMethod) {
+        if (listMethod.isPresent()) {
+            // Raw first(...) may still dispatch to the intercepted list(...) override from the provider implementation.
+            content.addContent(listQualifiedInstanceType(service))
+                    .addContent(" helidonInject__list = helidonInject__delegate.")
+                    .addContent(listMethod.get().delegateName())
+                    .addContentLine("(qualifier, lookup, type);")
+                    .addContent("return helidonInject__list.isEmpty() ? ")
+                    .addContent(Optional.class)
+                    .addContent(".empty() : ")
+                    .addContent(Optional.class)
+                    .addContentLine(".of(helidonInject__list.getFirst());");
+            return;
+        }
+        content.addContent("return helidonInject__delegate.")
+                .addContent(firstMethod.map(InterceptedTypeGenerator.MethodDefinition::delegateName).orElse("first"))
+                .addContentLine("(qualifier, lookup, type);");
+    }
+
+    private void qualifiedFactoryListBody(ContentBuilder<?> content,
+                                          DescribedService service,
+                                          TypeName genericProvidedType,
+                                          Optional<InterceptedTypeGenerator.MethodDefinition> firstMethod,
+                                          Optional<InterceptedTypeGenerator.MethodDefinition> listMethod) {
+        if (listMethod.isPresent()) {
+            content.addContent("return helidonInject__delegate.")
+                    .addContent(listMethod.get().delegateName())
+                    .addContentLine("(qualifier, lookup, type);");
+            return;
+        }
+        if (firstMethod.isPresent()
+                && !factoryMethodCustomized(service, "list", SERVICE_QUALIFIER, SERVICE_LOOKUP, genericProvidedType)) {
+            content.addContent("return helidonInject__delegate.")
+                    .addContent(firstMethod.get().delegateName())
+                    .addContentLine("(qualifier, lookup, type).map(List::of).orElseGet(List::of);");
+            return;
+        }
+        content.addContentLine("return helidonInject__delegate.list(qualifier, lookup, type);");
+    }
+
+    private void factoryDelegateHeader(ContentBuilder<?> content,
+                                       DescribedService service,
+                                       TypeName interceptedType) {
+        content.addContent("delegate instanceof ")
+                .addContent(interceptedType)
+                .addContent(" helidonInject__delegate ? new ")
+                .addContent(service.providerInterface())
+                .addContent("()");
+    }
+
+    private TypeName optionalQualifiedInstanceType(DescribedService service) {
+        return TypeName.builder(TypeNames.OPTIONAL)
+                .addTypeArgument(qualifiedInstanceType(service))
+                .build();
+    }
+
+    private TypeName listQualifiedInstanceType(DescribedService service) {
+        return TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(qualifiedInstanceType(service))
+                .build();
+    }
+
+    private TypeName qualifiedInstanceType(DescribedService service) {
+        return TypeName.builder(SERVICE_QUALIFIED_INSTANCE)
+                .addTypeArgument(service.providedDescriptor().typeName())
+                .build();
+    }
+
+    private List<InterceptedTypeGenerator.MethodDefinition> factoryMethods(DescribedService service) {
+        if (!service.serviceDescriptor().elements().methodsIntercepted()) {
+            return List.of();
+        }
+
+        return InterceptedTypeGenerator.MethodDefinition.toDefinitions(
+                        ctx,
+                        service.serviceDescriptor().typeInfo(),
+                        service.serviceDescriptor()
+                                .elements()
+                                .interceptedElements()
+                                .stream()
+                                .filter(it -> it.element().kind() == ElementKind.METHOD)
+                                .toList());
+    }
+
+    private boolean factoryMethodCustomized(DescribedService service, String factoryMethodName, TypeName... parameterTypes) {
+        return factoryMethodCustomized(service.serviceDescriptor().typeInfo(),
+                                       new HashSet<>(),
+                                       factoryMethodName,
+                                       parameterTypes);
+    }
+
+    private boolean factoryMethodCustomized(TypeInfo typeInfo,
+                                            Set<TypeName> processedTypes,
+                                            String factoryMethodName,
+                                            TypeName... parameterTypes) {
+        if (!processedTypes.add(typeInfo.typeName().genericTypeName())) {
+            return false;
+        }
+        if (!defaultFactoryInterface(typeInfo)
+                && typeInfo.elementInfo()
+                        .stream()
+                        .filter(it -> it.kind() == ElementKind.METHOD)
+                        .filter(not(ElementInfoPredicates::isPrivate))
+                        .filter(not(ElementInfoPredicates::isStatic))
+                        .filter(it -> it.elementName().equals(factoryMethodName))
+                        .anyMatch(it -> hasFactoryParameters(it, parameterTypes))) {
+            return true;
+        }
+
+        if (typeInfo.superTypeInfo()
+                .map(it -> factoryMethodCustomized(it, processedTypes, factoryMethodName, parameterTypes))
+                .orElse(false)) {
+            return true;
+        }
+
+        return typeInfo.interfaceTypeInfo()
+                .stream()
+                .anyMatch(it -> factoryMethodCustomized(it, processedTypes, factoryMethodName, parameterTypes));
+    }
+
+    private boolean defaultFactoryInterface(TypeInfo typeInfo) {
+        TypeName genericType = typeInfo.typeName().genericTypeName();
+        return genericType.equals(SERVICE_INJECTION_POINT_FACTORY) || genericType.equals(SERVICE_QUALIFIED_FACTORY);
+    }
+
+    private Optional<InterceptedTypeGenerator.MethodDefinition> factoryMethod(
+            List<InterceptedTypeGenerator.MethodDefinition> factoryMethods,
+            String factoryMethodName,
+            TypeName... parameterTypes) {
+        return factoryMethods
+                .stream()
+                .filter(it -> it.info().elementName().equals(factoryMethodName))
+                .filter(it -> hasParameters(it, parameterTypes))
+                .findFirst();
+    }
+
+    private boolean hasParameters(InterceptedTypeGenerator.MethodDefinition method, TypeName... parameterTypes) {
+        List<TypedElementInfo> parameterArguments = method.info().parameterArguments();
+        if (parameterArguments.size() != parameterTypes.length) {
+            return false;
+        }
+
+        for (int i = 0; i < parameterTypes.length; i++) {
+            if (!parameterArguments.get(i).typeName().equals(parameterTypes[i])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean hasFactoryParameters(TypedElementInfo method, TypeName... parameterTypes) {
+        List<TypedElementInfo> parameterArguments = method.parameterArguments();
+        if (parameterArguments.size() != parameterTypes.length) {
+            return false;
+        }
+
+        for (int i = 0; i < parameterTypes.length; i++) {
+            TypeName actualType = parameterArguments.get(i).typeName();
+            TypeName expectedType = parameterTypes[i];
+            if (!actualType.equals(expectedType) && !actualType.genericTypeName().equals(expectedType.genericTypeName())) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static String invokerArgument(ParamDefinition param) {
+        if (param.declaredType().array()) {
+            return "(Object) " + param.ipParamName();
+        }
+        return param.ipParamName();
     }
 
     private void factoryType(ClassModel.Builder classModel, DescribedService service, FactoryType factoryType) {
@@ -2454,10 +2878,7 @@ public class ServiceDescriptorCodegen {
         if (ElementInfoPredicates.isStatic(method)) {
             return false;
         }
-        List<Annotation> elementAnnotations = new ArrayList<>(method.annotations());
-        addInterfaceAnnotations(elementAnnotations, element.abstractMethods());
-
-        for (Annotation elementAnnotation : elementAnnotations) {
+        for (Annotation elementAnnotation : element.effectiveElement().annotations()) {
             if (elementAnnotation.hasMetaAnnotation(SERVICE_ANNOTATION_ENTRY_POINT)) {
                 return true;
             }
@@ -2473,13 +2894,6 @@ public class ServiceDescriptorCodegen {
         String uniqueName = ctx.uniqueName(typeInfo, method);
         String constantName = "METHOD_" + toConstantName(uniqueName);
 
-        // add inherited annotations from interfaces
-        List<Annotation> elementAnnotations = new ArrayList<>(method.annotations());
-        addInterfaceAnnotations(elementAnnotations, element.abstractMethods());
-        TypedElementInfo typedElementInfo = TypedElementInfo.builder()
-                .from(method)
-                .annotations(elementAnnotations)
-                .build();
         classModel.addField(constant -> constant
                 .description("Element info for method: {@code " + method.signature() + "}.")
                 .accessModifier(AccessModifier.PUBLIC)
@@ -2487,7 +2901,7 @@ public class ServiceDescriptorCodegen {
                 .isFinal(true)
                 .type(TypeNames.TYPED_ELEMENT_INFO)
                 .name(constantName)
-                .addContentCreate(typedElementInfo));
+                .addContentCreate(element.effectiveElement()));
     }
 
     private void generateInterceptedType(RegistryRoundContext roundContext,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,13 +112,13 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
                                                                   TypedElementInfo element) {
         // need to find all interceptors for the providers (ordered by weight)
         List<ServiceManager<Interception.Interceptor>> allInterceptors = registry.interceptors();
+        String elementSignature = descriptor.serviceType().fqName() + "." + element.signature().text();
 
         List<Supplier<Interception.Interceptor>> result = new ArrayList<>();
 
         for (ServiceManager<Interception.Interceptor> interceptor : allInterceptors) {
             if (interceptor.descriptor().contracts().contains(ELEMENT_INTERCEPTOR)) {
                 // interceptors of specific elements (methods, constructors)
-                String elementSignature = descriptor.serviceType().fqName() + "." + element.signature().text();
                 if (applicableElement(elementSignature, interceptor.descriptor())) {
                     result.add(new ServiceSupply<>(Lookup.EMPTY, List.of(interceptor)));
                 }
