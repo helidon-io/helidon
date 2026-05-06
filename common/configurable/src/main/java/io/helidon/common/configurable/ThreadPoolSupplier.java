@@ -42,7 +42,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService>, Runt
 
     private final int corePoolSize;
     private final int maxPoolSize;
-    private final int keepAliveMinutes;
+    private final long keepAliveMinutes;
     private final int queueCapacity;
     private final boolean isDaemon;
     private final String threadNamePrefix;
@@ -59,7 +59,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService>, Runt
         this.config = config;
         this.corePoolSize = config.corePoolSize();
         this.maxPoolSize = config.maxPoolSize();
-        this.keepAliveMinutes = config.keepAlive().toMinutesPart();
+        this.keepAliveMinutes = config.keepAlive().toMinutes();
         this.queueCapacity = config.queueCapacity();
         this.isDaemon = config.daemon();
         this.prestart = config.shouldPrestart();
