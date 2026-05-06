@@ -101,7 +101,9 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
                            request,
                            initialUri,
                            http1EntityHandler);
-        if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
+        if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2
+                && (request.connection().isEmpty()
+                        || Http2ClientConnectionHandler.ownsExplicitConnection(request))) {
             http2Supported.put(connectionKey, true);
         }
         return result;

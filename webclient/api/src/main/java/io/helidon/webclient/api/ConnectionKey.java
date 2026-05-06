@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.api;
 
+import java.net.UnixDomainSocketAddress;
 import java.util.Objects;
 
 import io.helidon.common.tls.Tls;
@@ -32,6 +33,7 @@ public final class ConnectionKey {
     private final DnsResolver dnsResolver;
     private final DnsAddressLookup dnsAddressLookup;
     private final Proxy proxy;
+    private final Transport transport;
 
     private ConnectionKey(String scheme,
                           String host,
@@ -40,6 +42,17 @@ public final class ConnectionKey {
                           DnsResolver dnsResolver,
                           DnsAddressLookup dnsAddressLookup,
                           Proxy proxy) {
+        this(scheme, host, port, tls, dnsResolver, dnsAddressLookup, proxy, null);
+    }
+
+    private ConnectionKey(String scheme,
+                          String host,
+                          int port,
+                          Tls tls,
+                          DnsResolver dnsResolver,
+                          DnsAddressLookup dnsAddressLookup,
+                          Proxy proxy,
+                          Transport transport) {
         this.scheme = scheme;
         this.host = host;
         this.port = port;
@@ -47,6 +60,7 @@ public final class ConnectionKey {
         this.dnsResolver = dnsResolver;
         this.dnsAddressLookup = dnsAddressLookup;
         this.proxy = proxy;
+        this.transport = transport;
     }
 
     /**
@@ -69,6 +83,35 @@ public final class ConnectionKey {
                                        DnsAddressLookup dnsAddressLookup,
                                        Proxy proxy) {
         return new ConnectionKey(scheme, host, port, tls, dnsResolver, dnsAddressLookup, proxy);
+    }
+
+    /**
+     * Create new instance of the {@link ConnectionKey} for a Unix domain socket transport.
+     *
+     * @param scheme           uri address scheme
+     * @param host             uri address host
+     * @param port             uri address port
+     * @param tls              TLS to be used in connection
+     * @param dnsResolver      DNS resolver to be used
+     * @param dnsAddressLookup DNS address lookup strategy
+     * @param address          Unix domain socket transport address
+     * @return new instance
+     */
+    public static ConnectionKey createUnixDomainSocket(String scheme,
+                                                       String host,
+                                                       int port,
+                                                       Tls tls,
+                                                       DnsResolver dnsResolver,
+                                                       DnsAddressLookup dnsAddressLookup,
+                                                       UnixDomainSocketAddress address) {
+        return new ConnectionKey(Objects.requireNonNull(scheme, "scheme"),
+                                 Objects.requireNonNull(host, "host"),
+                                 port,
+                                 Objects.requireNonNull(tls, "tls"),
+                                 Objects.requireNonNull(dnsResolver, "dnsResolver"),
+                                 Objects.requireNonNull(dnsAddressLookup, "dnsAddressLookup"),
+                                 Proxy.noProxy(),
+                                 Transport.unixDomainSocket(Objects.requireNonNull(address, "address")));
     }
 
     /**
@@ -149,12 +192,13 @@ public final class ConnectionKey {
                 && Objects.equals(this.tls, that.tls)
                 && Objects.equals(this.dnsResolver, that.dnsResolver)
                 && Objects.equals(this.dnsAddressLookup, that.dnsAddressLookup)
-                && Objects.equals(this.proxy, that.proxy);
+                && Objects.equals(this.proxy, that.proxy)
+                && Objects.equals(this.transport, that.transport);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(scheme, host, port, tls, dnsResolver, dnsAddressLookup, proxy);
+        return Objects.hash(scheme, host, port, tls, dnsResolver, dnsAddressLookup, proxy, transport);
     }
 
     @Override
@@ -166,7 +210,45 @@ public final class ConnectionKey {
                 + "tls=" + tls + ", "
                 + "dnsResolver=" + dnsResolver + ", "
                 + "dnsAddressLookup=" + dnsAddressLookup + ", "
-                + "proxy=" + proxy + ']';
+                + "proxy=" + proxy
+                + (transport == null ? "" : ", transport=" + transport)
+                + ']';
     }
 
+    private static final class Transport {
+        private final String type;
+        private final String value;
+
+        private Transport(String type, String value) {
+            this.type = type;
+            this.value = value;
+        }
+
+        static Transport unixDomainSocket(UnixDomainSocketAddress address) {
+            return new Transport("unix", address.getPath().toString());
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (obj == null || obj.getClass() != this.getClass()) {
+                return false;
+            }
+            Transport that = (Transport) obj;
+            return Objects.equals(this.type, that.type)
+                    && Objects.equals(this.value, that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type, value);
+        }
+
+        @Override
+        public String toString() {
+            return "Transport[type=" + type + ", value=" + value + "]";
+        }
+    }
 }

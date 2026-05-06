@@ -172,8 +172,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                     .port(inet.getPort());
             this.socketAddress = null;
         } else if (socketAddress instanceof UnixDomainSocketAddress) {
-            this.clientUri.host("localhost")
-                    .port(0);
             this.socketAddress = socketAddress;
         } else {
             throw new IllegalArgumentException("Unsupported socket address type: " + socketAddress.getClass().getName());
