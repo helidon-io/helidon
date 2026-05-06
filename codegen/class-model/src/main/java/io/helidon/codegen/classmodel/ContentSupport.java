@@ -62,6 +62,11 @@ final class ContentSupport {
                     .addContentLine("\")");
         }
 
+        element.enclosingType()
+                .ifPresent(it -> contentBuilder.addContent(".enclosingType(")
+                        .addContentCreate(it)
+                        .addContentLine(")"));
+
         for (Annotation annotation : element.annotations()) {
             contentBuilder.addContent(".addAnnotation(")
                     .addContentCreate(annotation)
@@ -153,6 +158,74 @@ final class ContentSupport {
     }
 
     static void addCreateTypeName(ContentBuilder<?> builder, TypeName typeName) {
+        if (hasNestedAnnotations(typeName)) {
+            builder.addContent(TypeNames.TYPE_NAME)
+                    .addContentLine(".builder()")
+                    .increaseContentPadding()
+                    .increaseContentPadding();
+
+            addBuilderString(builder, "packageName", typeName.packageName());
+            addBuilderString(builder, "className", typeName.className());
+            typeName.enclosingNames().forEach(it -> addBuilderString(builder, "addEnclosingName", it));
+            if (typeName.primitive()) {
+                builder.addContentLine(".primitive(true)");
+            }
+            if (typeName.array()) {
+                builder.addContentLine(".array(true)");
+            }
+            if (typeName.vararg()) {
+                builder.addContentLine(".vararg(true)");
+            }
+            if (typeName.generic()) {
+                builder.addContentLine(".generic(true)");
+            }
+            if (typeName.wildcard()) {
+                builder.addContentLine(".wildcard(true)");
+            }
+
+            for (Annotation annotation : typeName.annotations()) {
+                builder.addContent(".addAnnotation(")
+                        .addContentCreate(annotation)
+                        .addContentLine(")");
+            }
+
+            for (Annotation annotation : typeName.inheritedAnnotations()) {
+                builder.addContent(".addInheritedAnnotation(")
+                        .addContentCreate(annotation)
+                        .addContentLine(")");
+            }
+
+            for (TypeName typeArgument : typeName.typeArguments()) {
+                builder.addContent(".addTypeArgument(")
+                        .addContentCreate(typeArgument)
+                        .addContentLine(")");
+            }
+
+            typeName.typeParameters().forEach(it -> addBuilderString(builder, "addTypeParameter", it));
+
+            for (TypeName lowerBound : typeName.lowerBounds()) {
+                builder.addContent(".addLowerBound(")
+                        .addContentCreate(lowerBound)
+                        .addContentLine(")");
+            }
+
+            for (TypeName upperBound : typeName.upperBounds()) {
+                builder.addContent(".addUpperBound(")
+                        .addContentCreate(upperBound)
+                        .addContentLine(")");
+            }
+
+            typeName.componentType()
+                    .ifPresent(componentType -> builder.addContent(".componentType(")
+                            .addContentCreate(componentType)
+                            .addContentLine(")"));
+
+            builder.addContentLine(".build()")
+                    .decreaseContentPadding()
+                    .decreaseContentPadding();
+            return;
+        }
+
         // TypeName.create("my.type.Name<my.type.TypeArgument>")
         builder.addContent(TypeNames.TYPE_NAME)
                 .addContent(".create(\"")
@@ -160,9 +233,38 @@ final class ContentSupport {
                 .addContent("\")");
     }
 
+    private static void addBuilderString(ContentBuilder<?> builder, String method, String value) {
+        if (value.isEmpty()) {
+            return;
+        }
+        builder.addContent(".")
+                .addContent(method)
+                .addContent("(")
+                .addContentLiteral(value)
+                .addContentLine(")");
+    }
+
+    private static boolean hasNestedAnnotations(TypeName typeName) {
+        if (!typeName.annotations().isEmpty() || !typeName.inheritedAnnotations().isEmpty()) {
+            return true;
+        }
+        if (typeName.typeArguments().stream().anyMatch(ContentSupport::hasNestedAnnotations)) {
+            return true;
+        }
+        if (typeName.lowerBounds().stream().anyMatch(ContentSupport::hasNestedAnnotations)) {
+            return true;
+        }
+        if (typeName.upperBounds().stream().anyMatch(ContentSupport::hasNestedAnnotations)) {
+            return true;
+        }
+        return typeName.componentType()
+                .map(ContentSupport::hasNestedAnnotations)
+                .orElse(false);
+    }
+
     private static void addAnnotationValue(ContentBuilder<?> contentBuilder, Object objectValue) {
         switch (objectValue) {
-        case String value -> contentBuilder.addContent("\"" + value + "\"");
+        case String value -> contentBuilder.addContentLiteral(value);
         case Boolean value -> contentBuilder.addContent(String.valueOf(value));
         case Long value -> contentBuilder.addContent(String.valueOf(value) + 'L');
         case Double value -> contentBuilder.addContent(String.valueOf(value) + 'D');

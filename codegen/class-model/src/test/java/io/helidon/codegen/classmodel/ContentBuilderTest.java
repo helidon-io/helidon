@@ -47,6 +47,14 @@ class ContentBuilderTest {
     }
 
     @Test
+    void testAddContentLiteralBackslash() {
+        var c = new TestContentBuilder();
+        c.addContentLiteral("test string with \\ backslash");
+
+        assertThat(c.generatedString(), is("    \"test string with \\\\ backslash\""));
+    }
+
+    @Test
     void testAddContentLiteralNewLine() {
         var c = new TestContentBuilder();
         c.addContentLiteral("test string with\n lines");

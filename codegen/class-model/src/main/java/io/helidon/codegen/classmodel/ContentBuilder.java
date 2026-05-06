@@ -132,7 +132,9 @@ public interface ContentBuilder<T extends ContentBuilder<T>> {
      * To create a type name without type arguments (such as when used with {@code .class}), use
      * {@link io.helidon.common.types.TypeName#genericTypeName()}.
      * <p>
-     * The generated content will be similar to: {@code TypeName.create("some.type.Name")}
+     * Simple type names use generated content similar to: {@code TypeName.create("some.type.Name")}.
+     * Type names with direct or inherited type-use annotations use generated builder content to preserve annotations
+     * on the root type, type arguments, wildcard bounds, and array component types.
      *
      * @param typeName type name to code generate
      * @return updated builder instance
