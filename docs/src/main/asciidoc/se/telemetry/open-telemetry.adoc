@@ -119,6 +119,7 @@ To enable various aspects of {feature-name}
 add one or more of the following dependencies to your project's `pom.xml` (see
 xref:{rootdir}/about/managing-dependencies.adoc[Managing Dependencies]).
 
+[[otel-tracing-provider-dep]]
 === Using the OpenTelemetry implementation of the Helidon Tracing API
 Helidon offers an implementation of its xref:{rootdir}/se/tracing.adoc[ neutral tracing API] that uses OpenTelemetry. Add the following dependency to use OpenTelemetry for tracing.
 [source,xml]
@@ -132,6 +133,7 @@ Helidon offers an implementation of its xref:{rootdir}/se/tracing.adoc[ neutral 
 
 ----
 
+[[otel-config-support-dep]]
 === Adding OpenTelemetry Configuration and Builder Support
 To allow deployers and end users to set up Helidon configuration to control OpenTelemetry behavior, add the following dependency.
 
@@ -146,6 +148,7 @@ To allow deployers and end users to set up Helidon configuration to control Open
 ----
 <1> To use the Helidon OpenTelemetry API in your application code, remove this line or change it to `<scope>compile</scope>`.
 
+[[otel-http-request-tracing-dep]]
 === Enabling Automatic Spans for HTTP Requests
 Helidon's tracing observability support automatically creates a new tracing span for each HTTP request if your project includes the following dependency.
 
@@ -309,6 +312,43 @@ include::{rootdir}/config/io_helidon_telemetry_otelconfig_OtlpExporterConfig.ado
 | `timeout` | 10 seconds
 |====
 
+====== Exporting to Oracle APM
+
+Oracle Application Performance Monitoring (APM) accepts OpenTelemetry data using OTLP over HTTP.
+To send Helidon tracing data to Oracle APM, configure an OTLP exporter using `http/proto`, set the full Oracle APM traces endpoint, and add the required `Authorization` header using your APM data key.
+
+The following example shows a typical tracing configuration:
+
+[source,yaml]
+.Example Helidon configuration for exporting tracing data to Oracle APM
+----
+telemetry:
+  service: "my-helidon-service"
+  signals:
+    tracing:
+      exporters:
+        - name: oracle-apm
+          type: otlp
+          protocol: http/proto
+          endpoint: "${APM_TRACES_ENDPOINT:https://<dataUploadEndpoint>/20200101/opentelemetry/private/v1/traces}"
+          headers:
+            Authorization: "dataKey ${APM_DATA_KEY:replace-with-your-data-key}"
+      processors:
+        - type: batch
+          exporters: ["oracle-apm"]
+----
+
+Set `APM_TRACES_ENDPOINT` to the full Oracle APM traces endpoint.
+Oracle APM supports either public or private data keys for traces.
+
+If you want Helidon to create spans automatically for incoming HTTP requests and emit them using OpenTelemetry semantic conventions, add the dependencies described earlier in this page for:
+
+* <<otel-http-request-tracing-dep,automatic HTTP request tracing>>
+* <<otel-config-support-dep,Helidon OpenTelemetry configuration>>
+* <<otel-tracing-provider-dep,the OpenTelemetry tracing provider>>
+* <<note-about-exporter-dependencies,the OTLP exporter dependency>>
+
+For a complete example, see the link:{helidon-github-examples-url}/telemetry/apm[Oracle APM example application].
 
 ====== OTLP Retry Policy
 You can control how each exporter retries if a transmission to a backend fails.
@@ -736,6 +776,10 @@ See the <<exporters-and-processors,earlier section>> for more information.
 === Helidon Documentation
 
 * xref:{rootdir}/se/tracing.adoc[Helidon Tracing]
+
+=== Oracle APM Documentation
+
+* link:https://docs.oracle.com/en-us/iaas/application-performance-monitoring/doc/configure-open-source-tracing-systems.html[Configure OpenTelemetry and Other Tracers]
 
 === OpenTelemetry Documentation
 
