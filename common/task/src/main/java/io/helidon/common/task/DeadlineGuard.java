@@ -39,13 +39,22 @@ import static java.lang.System.Logger.Level.TRACE;
 public final class DeadlineGuard implements AutoCloseable {
     private static final System.Logger LOGGER = System.getLogger(DeadlineGuard.class.getName());
     private static final ScheduledExecutorService EXECUTOR = defaultExecutor();
+    private static final Runnable EMPTY_RUNNABLE = () -> {
+    };
 
     private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
     private final AtomicReference<Throwable> timeoutActionFailure = new AtomicReference<>();
 
-    private volatile ScheduledFuture<?> future;
+    private final ScheduledFuture<?> future;
 
     private DeadlineGuard() {
+        this.future = null;
+    }
+
+    private DeadlineGuard(ScheduledExecutorService executor, Runnable timeoutAction, Runnable timeoutClaimed, Duration timeout) {
+        this.future = executor.schedule(() -> this.timeout(timeoutAction, timeoutClaimed),
+                                        timeoutNanos(timeout),
+                                        TimeUnit.NANOSECONDS);
     }
 
     /**
@@ -53,7 +62,7 @@ public final class DeadlineGuard implements AutoCloseable {
      * <p>
      * A zero or negative timeout creates a guard that never expires.
      *
-     * @param timeout timeout to wait before invoking the timeout action
+     * @param timeout       timeout to wait before invoking the timeout action
      * @param timeoutAction action to invoke when the timeout expires
      * @return active deadline guard
      */
@@ -63,8 +72,7 @@ public final class DeadlineGuard implements AutoCloseable {
 
     // Intended for testing: allows deterministic executor injection.
     static DeadlineGuard create(Duration timeout, Runnable timeoutAction, ScheduledExecutorService executor) {
-        return create(timeout, timeoutAction, executor, () -> {
-        });
+        return create(timeout, timeoutAction, executor, EMPTY_RUNNABLE);
     }
 
     // Intended for testing: observes when the timeout task has won the guard.
@@ -77,15 +85,11 @@ public final class DeadlineGuard implements AutoCloseable {
         Objects.requireNonNull(executor, "executor");
         Objects.requireNonNull(timeoutClaimed, "timeoutClaimed");
 
-        DeadlineGuard guard = new DeadlineGuard();
         if (timeout.isZero() || timeout.isNegative()) {
-            return guard;
+            return new DeadlineGuard();
         }
 
-        guard.future = executor.schedule(() -> guard.timeout(timeoutAction, timeoutClaimed),
-                                         timeoutNanos(timeout),
-                                         TimeUnit.NANOSECONDS);
-        return guard;
+        return new DeadlineGuard(executor, timeoutAction, timeoutClaimed, timeout);
     }
 
     /**
@@ -116,19 +120,6 @@ public final class DeadlineGuard implements AutoCloseable {
         }
     }
 
-    private void timeout(Runnable timeoutAction, Runnable timeoutClaimed) {
-        if (!state.compareAndSet(State.OPEN, State.TIMED_OUT)) {
-            return;
-        }
-        timeoutClaimed.run();
-        try {
-            timeoutAction.run();
-        } catch (Throwable t) {
-            timeoutActionFailure.compareAndSet(null, t);
-            LOGGER.log(TRACE, "Deadline guard timeout action failed", t);
-        }
-    }
-
     private static long timeoutNanos(Duration timeout) {
         try {
             return timeout.toNanos();
@@ -146,6 +137,19 @@ public final class DeadlineGuard implements AutoCloseable {
                         .factory());
         executor.setRemoveOnCancelPolicy(true);
         return executor;
+    }
+
+    private void timeout(Runnable timeoutAction, Runnable timeoutClaimed) {
+        if (!state.compareAndSet(State.OPEN, State.TIMED_OUT)) {
+            return;
+        }
+        timeoutClaimed.run();
+        try {
+            timeoutAction.run();
+        } catch (Throwable t) {
+            timeoutActionFailure.compareAndSet(null, t);
+            LOGGER.log(TRACE, "Deadline guard timeout action failed", t);
+        }
     }
 
     private enum State {
