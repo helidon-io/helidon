@@ -144,8 +144,9 @@ class ServerListener implements ListenerContext {
                     .build();
         }
 
-        this.connectionLimit.init(socketName);
-        this.requestLimit.init(socketName);
+        Limit.InitializationContext limitContext = limitContext(socketName);
+        this.connectionLimit.init(limitContext);
+        this.requestLimit.init(limitContext);
 
         this.connectionProviders = ConnectionProviders.create(selectors);
         this.socketName = socketName;
@@ -194,6 +195,10 @@ class ServerListener implements ListenerContext {
                 .daemon(false)
                 .name("server-" + socketName + "-listener")
                 .unstarted(this::listen);
+    }
+
+    private static Limit.InitializationContext limitContext(String socketName) {
+        return Limit.InitializationContext.createForLegacySocketName(socketName);
     }
 
     @Override

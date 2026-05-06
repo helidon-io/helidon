@@ -188,11 +188,16 @@ class AimdLimitImpl extends LimitBase {
     /**
      * Initialize metrics for this limit.
      *
-     * @param socketName name of socket for which this limit was created
+     * @param context context for limit initialization
      */
-    void init(String socketName) {
-        originName = socketName;
-        metrics.init(socketName);
+    void init(Limit.InitializationContext context) {
+        originName = context.originName();
+        metrics.init(context);
+    }
+
+    @Deprecated
+    void init(String originName) {
+        init(Limit.InitializationContext.createForLegacySocketName(originName));
     }
 
     private static final class AdjustableSemaphore extends Semaphore {

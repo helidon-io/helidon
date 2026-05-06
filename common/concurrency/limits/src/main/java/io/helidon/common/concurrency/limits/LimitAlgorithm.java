@@ -294,7 +294,7 @@ public interface LimitAlgorithm {
         }
 
         /**
-         * Origin (e.g., socket name) of the work item.
+         * Origin of the work item.
          *
          * @return origin
          */

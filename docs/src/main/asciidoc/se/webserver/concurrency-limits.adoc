@@ -206,10 +206,18 @@ server:
 ----
 
 The following tables describe the metrics that are available for each of the
-strategies described above. A metric tag `socketName=<name-of-socket>` is used to
-group metrics that correspond to a particular socket; for simplicity this metric tag
-is _omitted_ for the default socket. All metrics provided by the Concurrency Limit
-module are in **vendor** scope.
+strategies described above. The common Concurrency Limit API accepts caller-provided
+metric tags when a limit is initialized. WebServer preserves its existing metric
+tagging behavior: a metric tag `socketName=<name-of-origin>` is used to group
+metrics that correspond to a non-default WebServer listener or binding origin; for
+simplicity this metric tag is _omitted_ for the default origin. All metrics provided
+by the Concurrency Limit module are in **vendor** scope.
+
+Existing WebServer dashboards that use the `socketName` tag continue to work. New
+code that uses the common `Limit` API outside WebServer can initialize limits with
+tags that describe its own runtime origin instead of using WebServer socket
+terminology. The legacy `Limit.init(String)` overload is retained for compatibility;
+new code should prefer `Limit.init(Limit.InitializationContext)`.
 
 .Fixed
 |===
