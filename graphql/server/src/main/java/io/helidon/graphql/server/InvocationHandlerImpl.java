@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 
 import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionInput;
@@ -65,11 +68,13 @@ class InvocationHandlerImpl implements InvocationHandler {
     private final GraphQLSchema schema;
     private final GraphQL graphQl;
     private final SchemaPrinter schemaPrinter;
+    private final List<InvocationHandler.ContextHandler> contextHandlers;
 
     InvocationHandlerImpl(InvocationHandler.Builder builder, GraphQL graphQl) {
         this.schema = builder.schema();
         this.schemaPrinter = builder.schemaPrinter();
         this.defaultErrorMessage = builder.defaultErrorMessage();
+        this.contextHandlers = List.copyOf(builder.contextHandlers());
 
         this.graphQl = graphQl;
 
@@ -90,7 +95,20 @@ class InvocationHandlerImpl implements InvocationHandler {
     }
 
     private Map<String, Object> doExecute(String query, String operationName, Map<String, Object> variables) {
-        ExecutionContext context = new ExecutionContextImpl();
+        Context commonContext = Contexts.context().orElseGet(Context::create);
+        ExecutionContext context = new ExecutionContextImpl(commonContext);
+        return Contexts.runInContext(commonContext, () -> doExecuteInContext(query,
+                                                                             operationName,
+                                                                             variables,
+                                                                             context));
+    }
+
+    private Map<String, Object> doExecuteInContext(String query,
+                                                   String operationName,
+                                                   Map<String, Object> variables,
+                                                   ExecutionContext context) {
+        contextHandlers.forEach(handler -> handler.update(context));
+
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .operationName(operationName)

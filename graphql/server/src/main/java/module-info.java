@@ -21,6 +21,7 @@ module io.helidon.graphql.server {
 
     requires io.helidon.config;
     requires io.helidon.common;
+    requires io.helidon.common.context;
 
     requires transitive com.graphqljava;
 
