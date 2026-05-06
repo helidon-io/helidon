@@ -48,13 +48,12 @@ class Http2ConnectionChecks {
     void rapidResetCheck(boolean rapidReset) {
         if (rapidReset && maxRapidResets != -1) {
             long currentTime = System.nanoTime();
-            if (rapidResetCheckPeriod >= currentTime - rapidResetPeriodStart) {
-                rapidResetCnt = 1;
+            if (rapidResetPeriodStart == 0 || currentTime - rapidResetPeriodStart > rapidResetCheckPeriod) {
+                rapidResetCnt = 0;
                 rapidResetPeriodStart = currentTime;
-            } else if (maxRapidResets < rapidResetCnt) {
+            }
+            if (++rapidResetCnt > maxRapidResets) {
                 closeConnection("Rapid reset attack detected!");
-            } else {
-                rapidResetCnt++;
             }
         }
     }
