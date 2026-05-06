@@ -87,8 +87,9 @@ public final class FaultTolerance {
             try {
                 Thread.sleep(millis);
             } catch (InterruptedException e) {
-                // should never be interrupted
-                LOGGER.log(ERROR, "Delayed runnable was unexpectedly interrupted");
+                // Future.cancel(true) interrupts the sleeping task to cancel the delayed action.
+                Thread.currentThread().interrupt();
+                return;
             }
             runnable.run();
         };

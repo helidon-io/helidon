@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,20 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import io.helidon.common.testing.junit5.InMemoryLoggingHandler;
+import io.helidon.common.testing.junit5.LogRecordMatcher;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 
 /**
@@ -58,6 +67,57 @@ class TimeoutThreadTest {
         for (Thread thread : threads) {
             assertThat(thread.getState(), is(not(Thread.State.TIMED_WAITING)));
         }
+    }
+
+    @Test
+    void testCurrentThreadCompletionDoesNotLogInterruptedMonitor() {
+        Logger logger = Logger.getLogger(FaultTolerance.class.getName());
+        Level originalLevel = logger.getLevel();
+        logger.setLevel(Level.ALL);
+
+        TestThreadFactory threadFactory = new TestThreadFactory();
+        try (ExecutorService executor = Executors.newThreadPerTaskExecutor(threadFactory);
+                InMemoryLoggingHandler handler = InMemoryLoggingHandler.create(logger)) {
+            String status = Timeout.builder()
+                    .timeout(Duration.ofSeconds(10))
+                    .currentThread(true)
+                    .executor(executor)
+                    .build()
+                    .invoke(() -> {
+                        Thread monitorThread = awaitMonitorThread(threadFactory);
+                        awaitThreadState(monitorThread, Thread.State.TIMED_WAITING);
+                        return "done";
+                    });
+            assertThat(status, is("done"));
+            assertThat(handler.logRecords(),
+                       not(hasItem(LogRecordMatcher.withMessage(
+                               containsString("Delayed runnable was unexpectedly interrupted")))));
+        } finally {
+            logger.setLevel(originalLevel);
+        }
+    }
+
+    private static Thread awaitMonitorThread(TestThreadFactory threadFactory) {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (System.nanoTime() < deadline) {
+            List<Thread> threads = threadFactory.threads();
+            if (!threads.isEmpty()) {
+                return threads.get(0);
+            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10));
+        }
+        throw new AssertionError("Timed out waiting for the timeout monitor thread to start");
+    }
+
+    private static void awaitThreadState(Thread thread, Thread.State expectedState) {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (System.nanoTime() < deadline) {
+            if (thread.getState() == expectedState) {
+                return;
+            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10));
+        }
+        throw new AssertionError("Timed out waiting for thread state " + expectedState + ", last state was " + thread.getState());
     }
 
     static class TestThreadFactory implements ThreadFactory {
