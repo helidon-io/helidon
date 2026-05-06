@@ -123,6 +123,10 @@ public class RequestedUriDiscoveryContextTest {
                 // and report the most recent proxy as the "client."
                 Arguments.arguments(null,
                                     "UriInfo{scheme=https,host=serverinstance,port=443,path=/path,query=,fragment=}"),
+                // With only the originating client in X_FORWARDED_FOR, there are no trusted proxy entries
+                // validating the single X_FORWARDED_* values.
+                Arguments.arguments("randomclient",
+                                    "UriInfo{scheme=https,host=serverinstance,port=443,path=/path,query=,fragment=}"),
                 // With X_FORWARDED_FOR present, the server should process the various X_FORWARDED_* headers.
                 Arguments.arguments("randomclient,trustedproxy",
                                      "UriInfo{scheme=http,host=serverpublic,port=8080,path=/path,query=,fragment=}"));
