@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package io.helidon.common.configurable;
 
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.context.ContextAwareExecutorService;
@@ -27,6 +29,8 @@ import io.helidon.config.Config;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -105,6 +109,23 @@ class ThreadPoolSupplierTest {
                      2,
                      true);
         checkObserver(builtSupplier, builtInstance, "thread-pool-unit-test-");
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {60, 90})
+    void keepAliveUsesTotalMinutes(long minutes) {
+        ThreadPoolSupplier supplier = ThreadPoolSupplier.builder()
+                .name("keep-alive-test-" + minutes)
+                .keepAlive(Duration.ofMinutes(minutes))
+                .build();
+
+        ExecutorService executor = supplier.getThreadPool();
+        try {
+            ThreadPoolExecutor pool = ensureOurExecutor(executor);
+            assertThat(pool.getKeepAliveTime(TimeUnit.MINUTES), is(minutes));
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     @Test
