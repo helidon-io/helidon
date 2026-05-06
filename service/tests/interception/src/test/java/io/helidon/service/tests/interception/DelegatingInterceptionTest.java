@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,7 +134,9 @@ class DelegatingInterceptionTest {
     void testRepeatWithNoExceptionThrownFromTarget() {
         InterceptionException e = assertThrows(InterceptionException.class,
                                                () -> service.intercepted("hello", false, true, false));
-        assertThat(e.getMessage(), startsWith("Duplicate invocation, or unknown call type: java.lang.String intercepted"));
+        assertThat(e.getMessage(), startsWith("Duplicate invocation, or unknown call type: "
+                                                      + "io.helidon.service.tests.interception.DelegatedContract::"
+                                                      + "java.lang.String intercepted"));
         assertThat(e.targetWasCalled(), is(true));
     }
 
