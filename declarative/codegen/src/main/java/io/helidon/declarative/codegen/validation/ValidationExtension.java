@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.declarative.codegen.validation;
 
 import java.util.Collection;
+import java.util.Optional;
 
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -40,7 +41,10 @@ class ValidationExtension implements RegistryCodegenExtension {
         // we want both, as we must not add interceptors to types that are marked as validated
         // also constraints are valid (outside validated types) only on interceptable services
         Collection<TypeInfo> validated = roundContext.annotatedTypes(ValidationTypes.VALIDATION_VALIDATED);
-        Collection<TypeName> constraintAnnotations = roundContext.annotatedAnnotations(VALIDATION_CONSTRAINT);
+        Collection<TypeName> constraintAnnotations = roundContext.annotatedAnnotations(VALIDATION_CONSTRAINT)
+                .stream()
+                .filter(this::isConstraintAnnotation)
+                .toList();
 
         var validatedGenerator = new ValidatedTypeGenerator(roundContext, constraintAnnotations);
         for (TypeInfo validate : validated) {
@@ -51,5 +55,16 @@ class ValidationExtension implements RegistryCodegenExtension {
         for (TypeInfo type : roundContext.types()) {
             interceptorGenerator.process(type);
         }
+    }
+
+    private boolean isConstraintAnnotation(TypeName typeName) {
+        return roundContextTypeInfo(typeName)
+                .map(it -> it.hasAnnotation(VALIDATION_CONSTRAINT))
+                .orElse(true);
+    }
+
+    private Optional<TypeInfo> roundContextTypeInfo(TypeName typeName) {
+        return ctx.typeInfo(typeName)
+                .or(() -> ctx.typeInfo(typeName.genericTypeName()));
     }
 }

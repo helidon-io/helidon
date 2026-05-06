@@ -168,7 +168,7 @@ interface LookupBlueprint {
 
         boolean matches = matches(serviceInfo.serviceType(), this.serviceType());
         if (matches && this.serviceType().isEmpty() && hiddenFactoryProviderDescriptor(serviceInfo)) {
-            matches = !this.contracts().isEmpty() || !this.factoryTypes().isEmpty();
+            matches = !this.contracts().isEmpty() || hasFactoryTypeFilter(this.factoryTypes());
         }
         if (matches && this.serviceType().isEmpty()) {
             matches = serviceInfo.contracts().containsAll(this.contracts())
@@ -254,6 +254,15 @@ interface LookupBlueprint {
             return true;
         }
         return providerTypes.contains(providerType);
+    }
+
+    private boolean hasFactoryTypeFilter(Set<FactoryType> providerTypes) {
+        for (FactoryType providerType : providerTypes) {
+            if (providerType != FactoryType.NONE) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean matchesTypes(Set<TypeName> scopes, Set<TypeName> criteria) {

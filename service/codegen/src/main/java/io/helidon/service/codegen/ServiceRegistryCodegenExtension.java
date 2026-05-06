@@ -36,10 +36,13 @@ import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.ElementSignature;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
 import io.helidon.service.metadata.DescriptorMetadata;
@@ -251,7 +254,8 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
                                                                                     metaAnnotationsCache,
                                                                                     metaAnnotatedCache);
             if (!contractAnnotations.isEmpty()) {
-                processedTypes.put(annotatedType.typeInfo().typeName(), annotatedType.typeInfo());
+                processedTypes.put(annotatedType.typeInfo().typeName(),
+                                   effectiveServiceType(roundContext, annotatedType.typeInfo()));
                 availableAnnotations.addAll(contractAnnotations);
                 contractAnnotations.forEach(it -> addMetaAnnotated(metaAnnotated,
                                                                     it,
@@ -273,6 +277,51 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
                 Map.copyOf(annotationToTypes),
                 Map.copyOf(metaAnnotatedCopy),
                 List.copyOf(processedTypes.values()));
+    }
+
+    private TypeInfo effectiveServiceType(RoundContext roundContext, TypeInfo serviceType) {
+        ServiceContracts serviceContracts = ServiceContracts.create(ctx.options(), roundContext::typeInfo, serviceType);
+        Set<ResolvedType> contracts = new HashSet<>();
+        serviceContracts.addContracts(contracts, new HashSet<>(), serviceType);
+
+        List<TypedElementInfo> elements = new ArrayList<>();
+        Set<ElementSignature> signatures = new HashSet<>();
+        addEffectiveElements(elements, signatures, TypedElements.gatherElements(ctx, contracts, serviceType));
+
+        ServiceTypes.FactoryInfo factoryInfo = ServiceTypes.factoryInfo(serviceContracts, serviceType);
+        if (factoryInfo.providerType() != FactoryType.SERVICE && factoryInfo.providedTypeInfo() != null) {
+            addEffectiveMethodElements(elements,
+                                       signatures,
+                                       TypedElements.gatherElements(ctx,
+                                                                    factoryInfo.providedContracts(),
+                                                                    factoryInfo.providedTypeInfo()));
+        }
+
+        return TypeInfo.builder(serviceType)
+                .elementInfo(elements)
+                .build();
+    }
+
+    private void addEffectiveElements(List<TypedElementInfo> elements,
+                                      Set<ElementSignature> signatures,
+                                      List<TypedElements.ElementMeta> elementMetas) {
+        for (TypedElements.ElementMeta elementMeta : elementMetas) {
+            TypedElementInfo element = elementMeta.effectiveElement();
+            if (signatures.add(element.signature())) {
+                elements.add(element);
+            }
+        }
+    }
+
+    private void addEffectiveMethodElements(List<TypedElementInfo> elements,
+                                            Set<ElementSignature> signatures,
+                                            List<TypedElements.ElementMeta> elementMetas) {
+        for (TypedElements.ElementMeta elementMeta : elementMetas) {
+            TypedElementInfo element = elementMeta.effectiveElement();
+            if (element.kind() == ElementKind.METHOD && signatures.add(element.signature())) {
+                elements.add(element);
+            }
+        }
     }
 
     private Set<TypeName> supportedServiceContractAnnotations(RoundContext roundContext,

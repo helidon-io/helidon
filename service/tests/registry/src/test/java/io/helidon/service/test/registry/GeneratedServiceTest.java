@@ -60,6 +60,11 @@ class GeneratedServiceTest {
                            .matches(descriptor),
                    is(false));
         assertThat(Lookup.builder()
+                           .addFactoryType(FactoryType.NONE)
+                           .build()
+                           .matches(descriptor),
+                   is(false));
+        assertThat(Lookup.builder()
                            .addContract(HiddenFactoryProviderInfo.PROVIDER_CONTRACT)
                            .addFactoryType(FactoryType.SUPPLIER)
                            .build()
