@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -147,6 +147,14 @@ public class RequestedUriDiscoveryContextTest {
                 // With no X_FORWARDED_FOR header, the server should ignore the other X_FORWARDED_* headers
                 // and report the most recent proxy as the "client."
                 Arguments.arguments(null,
+                                    "UriInfo{scheme=https,host=serverinstance,port=443,path=/path,query=,fragment=}"),
+                // With only the originating client in X_FORWARDED_FOR, there are no trusted proxy entries
+                // validating the single X_FORWARDED_* values.
+                Arguments.arguments("randomclient",
+                                    "UriInfo{scheme=https,host=serverinstance,port=443,path=/path,query=,fragment=}"),
+                Arguments.arguments("trustedproxy",
+                                    "UriInfo{scheme=https,host=serverinstance,port=443,path=/path,query=,fragment=}"),
+                Arguments.arguments("randomclient,untrustedproxy",
                                     "UriInfo{scheme=https,host=serverinstance,port=443,path=/path,query=,fragment=}"),
                 // With X_FORWARDED_FOR present, the server should process the various X_FORWARDED_* headers.
                 Arguments.arguments("randomclient,trustedproxy",
