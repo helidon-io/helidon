@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,9 @@ package io.helidon.service.codegen;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.codegen.CodegenException;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.ResolvedType;
@@ -33,6 +31,7 @@ import io.helidon.common.types.TypeNames;
 
 import static io.helidon.service.codegen.ServiceCodegenAnnotations.WILDCARD_NAMED;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPT_G_WRAPPER_IP_FACTORY;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPT_G_WRAPPER_OPTIONAL_SUPPLIER_FACTORY;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPT_G_WRAPPER_QUALIFIED_FACTORY;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPT_G_WRAPPER_SERVICES_FACTORY;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPT_G_WRAPPER_SUPPLIER_FACTORY;
@@ -53,9 +52,14 @@ class DescribedService {
 
     /*
      the following is only relevant on service itself (not on provided type)
-     */
+    */
     // type of provider (if this is a provider at all)
     private final FactoryType providerType;
+    // generic provider interface implemented by the service, such as Supplier<Optional<MyContract>>
+    private final TypeName factoryTypeName;
+    private final Set<ResolvedType> directProviderContracts;
+    private final Set<ResolvedType> providerFactoryContracts;
+    private final boolean factoryInterceptionWrapper;
     // qualifiers of provided type are inherited from service
     private final Set<Annotation> qualifiers;
     // provided type does not have a descriptor, only service does
@@ -74,6 +78,10 @@ class DescribedService {
                              TypeName descriptorType,
                              Set<Annotation> qualifiers,
                              FactoryType providerType,
+                             TypeName factoryTypeName,
+                             Set<ResolvedType> directProviderContracts,
+                             Set<ResolvedType> providerFactoryContracts,
+                             boolean factoryInterceptionWrapper,
                              TypeName qualifiedProviderQualifier) {
 
         this.serviceType = serviceType;
@@ -83,6 +91,10 @@ class DescribedService {
         this.scope = scope;
         this.qualifiers = Set.copyOf(qualifiers);
         this.providerType = providerType;
+        this.factoryTypeName = factoryTypeName;
+        this.directProviderContracts = Set.copyOf(directProviderContracts);
+        this.providerFactoryContracts = Set.copyOf(providerFactoryContracts);
+        this.factoryInterceptionWrapper = factoryInterceptionWrapper;
         this.qualifiedProviderQualifier = qualifiedProviderQualifier;
     }
 
@@ -96,6 +108,7 @@ class DescribedService {
         TypeName descriptorType = ctx.descriptorType(serviceType);
 
         Set<ResolvedType> directContracts = new HashSet<>();
+        Set<ResolvedType> serviceElementContracts = new HashSet<>();
         Set<ResolvedType> providedContracts = new HashSet<>();
         FactoryType providerType = FactoryType.SERVICE;
         TypeName qualifiedProviderQualifier = null;
@@ -105,73 +118,20 @@ class DescribedService {
         ServiceContracts serviceContracts = roundContext.serviceContracts(serviceInfo);
         if (serviceInfo.kind() == ElementKind.INTERFACE) {
             directContracts.add(ResolvedType.create(serviceInfo.typeName()));
+            serviceElementContracts.add(ResolvedType.create(serviceInfo.typeName()));
         }
 
-        // now we know which contracts are OK to use, and we can check the service types and real contracts
-        // service is a factory only if it implements the interface directly; this is never inherited
-        List<TypeInfo> typeInfos = serviceInfo.interfaceTypeInfo();
-        Map<TypeName, TypeInfo> implementedInterfaceTypes = new HashMap<>();
-        typeInfos.forEach(it -> implementedInterfaceTypes.put(it.typeName(), it));
-
-        /*
-        For each service type we support, gather contracts
-         */
-        var response = serviceContracts.analyseFactory(TypeNames.SUPPLIER);
-        if (response.valid()) {
-            providerType = FactoryType.SUPPLIER;
-            directContracts.add(ResolvedType.create(response.factoryType()));
-            providedContracts.addAll(response.providedContracts());
-            providedTypeName = response.providedType();
-            providedTypeInfo = response.providedTypeInfo();
-            implementedInterfaceTypes.remove(TypeNames.SUPPLIER);
-        }
-        response = serviceContracts.analyseFactory(SERVICE_SERVICES_FACTORY);
-        if (response.valid()) {
-            // if this is not a service type, throw
-            if (providerType != FactoryType.SERVICE) {
-                throw new CodegenException("Service implements more than one provider type: "
-                                                   + providerType + ", and services provider.",
-                                           serviceInfo.originatingElementValue());
-            }
-            providerType = FactoryType.SERVICES;
-            directContracts.add(ResolvedType.create(response.providedType()));
-            providedContracts.addAll(response.providedContracts());
-            providedTypeName = response.providedType();
-            providedTypeInfo = response.providedTypeInfo();
-            implementedInterfaceTypes.remove(SERVICE_SERVICES_FACTORY);
-        }
-        response = serviceContracts.analyseFactory(SERVICE_INJECTION_POINT_FACTORY);
-        if (response.valid()) {
-            // if this is not a service type, throw
-            if (providerType != FactoryType.SERVICE) {
-                throw new CodegenException("Service implements more than one provider type: "
-                                                   + providerType + ", and injection point provider.",
-                                           serviceInfo.originatingElementValue());
-            }
-            providerType = FactoryType.INJECTION_POINT;
-            directContracts.add(ResolvedType.create(response.providedType()));
-            providedContracts.addAll(response.providedContracts());
-            providedTypeName = response.providedType();
-            providedTypeInfo = response.providedTypeInfo();
-            implementedInterfaceTypes.remove(SERVICE_INJECTION_POINT_FACTORY);
-        }
-        response = serviceContracts.analyseFactory(SERVICE_QUALIFIED_FACTORY);
-        if (response.valid()) {
-            // if this is not a service type, throw
-            if (providerType != FactoryType.SERVICE) {
-                throw new CodegenException("Service implements more than one provider type: "
-                                                   + providerType + ", and qualified provider.",
-                                           serviceInfo.originatingElementValue());
-            }
-            providerType = FactoryType.QUALIFIED;
-            directContracts.add(ResolvedType.create(response.providedType()));
-            providedContracts.addAll(response.providedContracts());
-            qualifiedProviderQualifier = ServiceContracts
-                    .requiredTypeArgument(implementedInterfaceTypes.remove(SERVICE_QUALIFIED_FACTORY), 1);
-            providedTypeName = response.providedType();
-            providedTypeInfo = response.providedTypeInfo();
-            implementedInterfaceTypes.remove(SERVICE_QUALIFIED_FACTORY);
-        }
+        ServiceTypes.FactoryInfo factoryInfo = ServiceTypes.factoryInfo(serviceContracts, serviceInfo);
+        providerType = factoryInfo.providerType();
+        TypeName factoryTypeName = factoryInfo.factoryTypeName();
+        Set<ResolvedType> providerFactoryContracts = new HashSet<>(factoryInfo.directContracts());
+        directContracts.addAll(providerFactoryContracts);
+        providedContracts.addAll(factoryInfo.providedContracts());
+        qualifiedProviderQualifier = factoryInfo.qualifiedProviderQualifier();
+        providedTypeName = factoryInfo.providedTypeName();
+        providedTypeInfo = factoryInfo.providedTypeInfo();
+        providerFactoryContracts.removeAll(providedContracts);
+        Map<TypeName, TypeInfo> implementedInterfaceTypes = new HashMap<>(factoryInfo.remainingImplementedInterfaces());
 
         // add direct contracts
         HashSet<ResolvedType> processedDirectContracts = new HashSet<>();
@@ -179,11 +139,19 @@ class DescribedService {
             serviceContracts.addContracts(directContracts,
                                           processedDirectContracts,
                                           typeInfo);
+            serviceContracts.addContracts(serviceElementContracts,
+                                          new HashSet<>(),
+                                          typeInfo);
         });
         // add contracts from super type(s)
-        serviceInfo.superTypeInfo().ifPresent(it -> serviceContracts.addContracts(directContracts,
-                                                                                  processedDirectContracts,
-                                                                                  it));
+        serviceInfo.superTypeInfo().ifPresent(it -> {
+            serviceContracts.addContracts(directContracts,
+                                          processedDirectContracts,
+                                          it);
+            serviceContracts.addContracts(serviceElementContracts,
+                                          new HashSet<>(),
+                                          it);
+        });
 
         Map<ResolvedType, Set<ResolvedType>> contractMap = new HashMap<>();
         directContracts.forEach(directContract -> addContractToMap(roundContext,
@@ -195,11 +163,15 @@ class DescribedService {
                                                                        contractMap,
                                                                        providedContract));
 
+        Set<ResolvedType> directProviderContracts = new HashSet<>(directContracts);
+        directProviderContracts.removeAll(providerFactoryContracts);
+        directProviderContracts.removeAll(providedContracts);
+
         DescribedType serviceDescriptor;
         DescribedType providedDescriptor;
 
         if (providerType == FactoryType.SERVICE) {
-            var serviceElements = DescribedElements.create(ctx, interception, directContracts, serviceInfo);
+            var serviceElements = DescribedElements.create(ctx, interception, serviceElementContracts, serviceInfo);
             serviceDescriptor = new DescribedType(serviceInfo,
                                                   serviceInfo.typeName(),
                                                   directContracts,
@@ -208,7 +180,7 @@ class DescribedService {
 
             providedDescriptor = null;
         } else {
-            var serviceElements = DescribedElements.create(ctx, interception, Set.of(), serviceInfo);
+            var serviceElements = DescribedElements.create(ctx, interception, serviceElementContracts, serviceInfo);
             serviceDescriptor = new DescribedType(serviceInfo,
                                                   serviceInfo.typeName(),
                                                   directContracts,
@@ -231,8 +203,24 @@ class DescribedService {
                 descriptorType,
                 gatherQualifiers(serviceInfo),
                 providerType,
+                factoryTypeName,
+                directProviderContracts,
+                providerFactoryContracts,
+                factoryInterceptionWrapper(serviceInfo),
                 qualifiedProviderQualifier
         );
+    }
+
+    private static boolean factoryInterceptionWrapper(TypeInfo serviceInfo) {
+        return serviceInfo.superTypeInfo()
+                .map(TypeInfo::typeName)
+                .map(TypeName::genericTypeName)
+                .filter(it -> it.equals(INTERCEPT_G_WRAPPER_SUPPLIER_FACTORY)
+                        || it.equals(INTERCEPT_G_WRAPPER_OPTIONAL_SUPPLIER_FACTORY)
+                        || it.equals(INTERCEPT_G_WRAPPER_SERVICES_FACTORY)
+                        || it.equals(INTERCEPT_G_WRAPPER_IP_FACTORY)
+                        || it.equals(INTERCEPT_G_WRAPPER_QUALIFIED_FACTORY))
+                .isPresent();
     }
 
     private static void addContractToMap(RegistryRoundContext ctx,
@@ -261,7 +249,9 @@ class DescribedService {
     TypeName interceptionWrapperSuperType() {
         return switch (providerType()) {
             case NONE, SERVICE -> serviceType.typeName();
-            case SUPPLIER -> createType(INTERCEPT_G_WRAPPER_SUPPLIER_FACTORY, providedType.typeName());
+            case SUPPLIER -> optionalSupplier()
+                    ? createType(INTERCEPT_G_WRAPPER_OPTIONAL_SUPPLIER_FACTORY, providedType.typeName())
+                    : createType(INTERCEPT_G_WRAPPER_SUPPLIER_FACTORY, providedType.typeName());
             case SERVICES -> createType(INTERCEPT_G_WRAPPER_SERVICES_FACTORY, providedType.typeName());
             case INJECTION_POINT -> createType(INTERCEPT_G_WRAPPER_IP_FACTORY, providedType.typeName());
             case QUALIFIED ->
@@ -272,11 +262,20 @@ class DescribedService {
     TypeName providerInterface() {
         return switch (providerType()) {
             case NONE, SERVICE -> serviceType.typeName();
-            case SUPPLIER -> createType(TypeNames.SUPPLIER, providedType.typeName());
+            case SUPPLIER -> optionalSupplier()
+                    ? createType(TypeNames.SUPPLIER, createType(TypeNames.OPTIONAL, providedType.typeName()))
+                    : createType(TypeNames.SUPPLIER, providedType.typeName());
             case SERVICES -> createType(SERVICE_SERVICES_FACTORY, providedType.typeName());
             case INJECTION_POINT -> createType(SERVICE_INJECTION_POINT_FACTORY, providedType.typeName());
             case QUALIFIED -> createType(SERVICE_QUALIFIED_FACTORY, providedType.typeName(), qualifiedProviderQualifier);
         };
+    }
+
+    private boolean optionalSupplier() {
+        return providerType == FactoryType.SUPPLIER
+                && factoryTypeName != null
+                && !factoryTypeName.typeArguments().isEmpty()
+                && factoryTypeName.typeArguments().getFirst().isOptional();
     }
 
     boolean isFactory() {
@@ -289,6 +288,18 @@ class DescribedService {
 
     DescribedType serviceDescriptor() {
         return serviceType;
+    }
+
+    Set<ResolvedType> directProviderContracts() {
+        return directProviderContracts;
+    }
+
+    Set<ResolvedType> providerFactoryContracts() {
+        return providerFactoryContracts;
+    }
+
+    boolean factoryInterceptionWrapper() {
+        return factoryInterceptionWrapper;
     }
 
     ServiceSuperType superType() {

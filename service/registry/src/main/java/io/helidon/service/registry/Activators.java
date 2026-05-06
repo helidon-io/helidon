@@ -332,26 +332,7 @@ final class Activators {
          * @return whether the provider itself should be returned
          */
         protected boolean requestedProvider(Lookup lookup, FactoryType providerType) {
-            if (lookup.factoryTypes().contains(providerType)) {
-                return true;
-            }
-            if (lookup.contracts().size() == 1) {
-                ResolvedType requestedContract = lookup.contracts().iterator().next();
-                if (requestedContract.equals(ResolvedType.create(descriptor().serviceType()))) {
-                    // requested actual service
-                    return true;
-                }
-                if (descriptor().factoryContracts().contains(requestedContract)
-                        && !descriptor().contracts().contains(requestedContract)) {
-                    // requested a contract satisfied by the factory only
-                    return true;
-                }
-            }
-            if (lookup.serviceType().isPresent() && lookup.serviceType().get().equals(descriptor().serviceType())) {
-                return true;
-            }
-
-            return false;
+            return Contracts.requestedProvider(lookup, descriptor(), providerType);
         }
 
         private void stateTransitionStart(ActivationResult.Builder res, ActivationPhase phase) {
@@ -624,6 +605,11 @@ final class Activators {
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             if (serviceInstance == null) {
                 return Optional.empty();
+            }
+
+            if (requestedProvider(lookup, FactoryType.QUALIFIED)) {
+                T instance = serviceInstance.get();
+                return Optional.of(List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers())));
             }
 
             return lookup.qualifiers()

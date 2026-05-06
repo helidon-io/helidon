@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,8 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
                     return new ExtensionInfo(extension,
                                              discoveryPredicate(it.supportedAnnotations(),
                                                                 it.supportedAnnotationPackages()),
-                                             it.supportedMetaAnnotations());
+                                             it.supportedMetaAnnotations(),
+                                             it.supportsServiceContractAnnotations());
                 })
                 .toList();
     }
@@ -216,15 +217,26 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
 
         Set<TypeName> availableAnnotations = new HashSet<>();
         Map<TypeName, List<TypeInfo>> annotationToTypes = new HashMap<>();
+        Map<TypeName, Set<TypeName>> supportedAnnotationsCache = new HashMap<>();
+        Map<TypeName, Set<TypeName>> metaAnnotationsCache = new HashMap<>();
+        Map<TypeName, Boolean> metaAnnotatedCache = new HashMap<>();
+        Map<TypeName, Set<TypeName>> metaAnnotated = new HashMap<>();
         Map<TypeName, TypeInfo> processedTypes = new HashMap<>();
+
+        for (TypeName typeName : extension.supportedMetaAnnotations()) {
+            metaAnnotated.put(typeName, new HashSet<>(roundContext.annotatedAnnotations(typeName)));
+        }
 
         for (TypeInfoAndAnnotations annotatedType : annotatedTypes) {
             for (TypeName annotationType : annotatedType.annotations()) {
                 // first check if directly supported
                 if (extension.supportedAnnotationsPredicate.test(annotationType)
-                        || isMetaAnnotated(roundContext, extension, annotationType)) {
+                        || isMetaAnnotated(roundContext, extension, annotationType, metaAnnotationsCache, metaAnnotatedCache)) {
 
                     availableAnnotations.add(annotationType);
+                    addMetaAnnotated(metaAnnotated,
+                                     annotationType,
+                                     metaAnnotations(roundContext, extension, annotationType, metaAnnotationsCache));
                     processedTypes.put(annotatedType.typeInfo().typeName(), annotatedType.typeInfo());
                     annotationToTypes.computeIfAbsent(annotationType, k -> new ArrayList<>())
                             .add(annotatedType.typeInfo());
@@ -232,12 +244,26 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
                     // or we support the annotation type, or it is prefixed by the package prefix
                 }
             }
+            Set<TypeName> contractAnnotations = supportedServiceContractAnnotations(roundContext,
+                                                                                    extension,
+                                                                                    annotatedType.typeInfo(),
+                                                                                    supportedAnnotationsCache,
+                                                                                    metaAnnotationsCache,
+                                                                                    metaAnnotatedCache);
+            if (!contractAnnotations.isEmpty()) {
+                processedTypes.put(annotatedType.typeInfo().typeName(), annotatedType.typeInfo());
+                availableAnnotations.addAll(contractAnnotations);
+                contractAnnotations.forEach(it -> addMetaAnnotated(metaAnnotated,
+                                                                    it,
+                                                                    metaAnnotations(roundContext,
+                                                                                    extension,
+                                                                                    it,
+                                                                                    metaAnnotationsCache)));
+            }
         }
 
-        Map<TypeName, Set<TypeName>> metaAnnotated = new HashMap<>();
-        for (TypeName typeName : extension.supportedMetaAnnotations()) {
-            metaAnnotated.put(typeName, Set.copyOf(roundContext.annotatedAnnotations(typeName)));
-        }
+        Map<TypeName, Set<TypeName>> metaAnnotatedCopy = new HashMap<>();
+        metaAnnotated.forEach((key, value) -> metaAnnotatedCopy.put(key, Set.copyOf(value)));
 
         return new RoundContextImpl(
                 ctx,
@@ -245,17 +271,166 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
                 newDescriptors::add,
                 Set.copyOf(availableAnnotations),
                 Map.copyOf(annotationToTypes),
-                Map.copyOf(metaAnnotated),
+                Map.copyOf(metaAnnotatedCopy),
                 List.copyOf(processedTypes.values()));
     }
 
-    private boolean isMetaAnnotated(RoundContext roundContext, ExtensionInfo extension, TypeName annotationType) {
+    private Set<TypeName> supportedServiceContractAnnotations(RoundContext roundContext,
+                                                              ExtensionInfo extension,
+                                                              TypeInfo serviceType,
+                                                              Map<TypeName, Set<TypeName>> supportedAnnotationsCache,
+                                                              Map<TypeName, Set<TypeName>> metaAnnotationsCache,
+                                                              Map<TypeName, Boolean> metaAnnotatedCache) {
+        if (!extension.supportsServiceContractAnnotations() || !ServiceTypes.isService(serviceType)) {
+            return Set.of();
+        }
+
+        ServiceContracts serviceContracts = ServiceContracts.create(ctx.options(), roundContext::typeInfo, serviceType);
+        Set<ResolvedType> contracts = new HashSet<>();
+        serviceContracts.addContracts(contracts, new HashSet<>(), serviceType);
+
+        Set<TypeName> result = new HashSet<>(supportedAnnotationsOnContracts(roundContext,
+                                                                             extension,
+                                                                             contracts,
+                                                                             supportedAnnotationsCache,
+                                                                             metaAnnotationsCache,
+                                                                             metaAnnotatedCache));
+        result.addAll(supportedAnnotationsOnContracts(roundContext,
+                                                      extension,
+                                                      ServiceTypes.factoryProvidedContracts(serviceContracts, serviceType),
+                                                      supportedAnnotationsCache,
+                                                      metaAnnotationsCache,
+                                                      metaAnnotatedCache));
+
+        return Set.copyOf(result);
+    }
+
+    private Set<TypeName> supportedAnnotationsOnContracts(RoundContext roundContext,
+                                                          ExtensionInfo extension,
+                                                          Set<ResolvedType> contracts,
+                                                          Map<TypeName, Set<TypeName>> supportedAnnotationsCache,
+                                                          Map<TypeName, Set<TypeName>> metaAnnotationsCache,
+                                                          Map<TypeName, Boolean> metaAnnotatedCache) {
+        Set<TypeName> result = new HashSet<>();
+        for (ResolvedType contract : contracts) {
+            TypeName contractType = contract.type();
+            result.addAll(supportedAnnotationsCache.computeIfAbsent(contractType,
+                                                                    it -> supportedAnnotations(roundContext,
+                                                                                               extension,
+                                                                                               contractType,
+                                                                                               metaAnnotationsCache,
+                                                                                               metaAnnotatedCache)));
+        }
+
+        return result;
+    }
+
+    private Set<TypeName> supportedAnnotations(RoundContext roundContext,
+                                               ExtensionInfo extension,
+                                               TypeName typeName,
+                                               Map<TypeName, Set<TypeName>> metaAnnotationsCache,
+                                               Map<TypeName, Boolean> metaAnnotatedCache) {
+        Optional<TypeInfo> typeInfo = roundContext.typeInfo(typeName)
+                .or(() -> roundContext.typeInfo(typeName.genericTypeName()));
+        return typeInfo.map(it -> supportedAnnotations(roundContext,
+                                                       extension,
+                                                       it,
+                                                       metaAnnotationsCache,
+                                                       metaAnnotatedCache))
+                .orElseGet(Set::of);
+    }
+
+    private Set<TypeName> supportedAnnotations(RoundContext roundContext,
+                                               ExtensionInfo extension,
+                                               TypeInfo typeInfo,
+                                               Map<TypeName, Set<TypeName>> metaAnnotationsCache,
+                                               Map<TypeName, Boolean> metaAnnotatedCache) {
+        Set<TypeName> result = new HashSet<>();
+        for (TypeName annotationType : TypeHierarchy.nestedAnnotations(ctx, typeInfo)) {
+            if (extension.supportedAnnotationsPredicate.test(annotationType)
+                    || isMetaAnnotated(roundContext,
+                                       extension,
+                                       annotationType,
+                                       metaAnnotationsCache,
+                                       metaAnnotatedCache)) {
+                result.add(annotationType);
+            }
+        }
+
+        return result;
+    }
+
+    private boolean isMetaAnnotated(RoundContext roundContext,
+                                    ExtensionInfo extension,
+                                    TypeName annotationType,
+                                    Map<TypeName, Set<TypeName>> metaAnnotationsCache,
+                                    Map<TypeName, Boolean> metaAnnotatedCache) {
+        return metaAnnotatedCache.computeIfAbsent(annotationType,
+                                                  it -> !metaAnnotations(roundContext,
+                                                                         extension,
+                                                                         annotationType,
+                                                                         metaAnnotationsCache).isEmpty());
+    }
+
+    private Set<TypeName> metaAnnotations(RoundContext roundContext,
+                                          ExtensionInfo extension,
+                                          TypeName annotationType,
+                                          Map<TypeName, Set<TypeName>> metaAnnotationsCache) {
+        return metaAnnotationsCache.computeIfAbsent(annotationType,
+                                                    it -> metaAnnotations(roundContext, extension, annotationType));
+    }
+
+    private Set<TypeName> metaAnnotations(RoundContext roundContext, ExtensionInfo extension, TypeName annotationType) {
+        Set<TypeName> result = new HashSet<>();
         for (TypeName typeName : extension.supportedMetaAnnotations()) {
-            if (roundContext.annotatedAnnotations(typeName)
-                    .contains(annotationType)) {
+            if (roundContext.annotatedAnnotations(typeName).contains(annotationType)) {
+                result.add(typeName);
+            }
+        }
+        Optional<TypeInfo> annotationInfo = ctx.typeInfo(annotationType);
+        if (annotationInfo.isEmpty()) {
+            return Set.copyOf(result);
+        }
+        for (TypeName supportedMetaAnnotation : extension.supportedMetaAnnotations()) {
+            if (!result.contains(supportedMetaAnnotation)
+                    && isMetaAnnotated(annotationInfo.get(), Set.of(supportedMetaAnnotation), new HashSet<>())) {
+                result.add(supportedMetaAnnotation);
+            }
+        }
+
+        return Set.copyOf(result);
+    }
+
+    private void addMetaAnnotated(Map<TypeName, Set<TypeName>> metaAnnotated,
+                                  TypeName annotationType,
+                                  Set<TypeName> metaAnnotations) {
+        for (TypeName metaAnnotation : metaAnnotations) {
+            metaAnnotated.computeIfAbsent(metaAnnotation, ignored -> new HashSet<>())
+                    .add(annotationType);
+        }
+    }
+
+    private boolean isMetaAnnotated(TypeInfo annotationType, Set<TypeName> supportedMetaAnnotations, Set<TypeName> processed) {
+        if (!processed.add(annotationType.typeName())) {
+            return false;
+        }
+
+        for (Annotation annotation : annotationType.annotations()) {
+            if (supportedMetaAnnotations.contains(annotation.typeName())) {
+                return true;
+            }
+            for (TypeName supportedMetaAnnotation : supportedMetaAnnotations) {
+                if (annotation.hasMetaAnnotation(supportedMetaAnnotation)) {
+                    return true;
+                }
+            }
+            if (ctx.typeInfo(annotation.typeName())
+                    .map(it -> isMetaAnnotated(it, supportedMetaAnnotations, processed))
+                    .orElse(false)) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -277,6 +452,7 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
 
     private record ExtensionInfo(RegistryCodegenExtension extension,
                                  Predicate<TypeName> supportedAnnotationsPredicate,
-                                 Set<TypeName> supportedMetaAnnotations) {
+                                 Set<TypeName> supportedMetaAnnotations,
+                                 boolean supportsServiceContractAnnotations) {
     }
 }

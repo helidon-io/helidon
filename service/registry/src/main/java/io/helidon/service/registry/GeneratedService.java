@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@ package io.helidon.service.registry;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.LazyValue;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 
@@ -143,7 +145,7 @@ public final class GeneratedService {
          * @return qualified instance with wrapped instance
          */
         protected Service.QualifiedInstance<T> wrapQualifiedInstance(Service.QualifiedInstance<T> qualifiedInstance) {
-            return Service.QualifiedInstance.create(wrap(qualifiedInstance.get()), qualifiedInstance.qualifiers());
+            return new LazyQualifiedInstance<>(qualifiedInstance, this);
         }
 
         /**
@@ -154,6 +156,26 @@ public final class GeneratedService {
          * @return wrapped instance
          */
         protected abstract T wrap(T originalInstance);
+
+        private static final class LazyQualifiedInstance<T> implements Service.QualifiedInstance<T> {
+            private final Service.QualifiedInstance<T> delegate;
+            private final LazyValue<T> instance;
+
+            private LazyQualifiedInstance(Service.QualifiedInstance<T> delegate, InterceptionWrapper<T> wrapper) {
+                this.delegate = delegate;
+                this.instance = LazyValue.create(() -> wrapper.wrap(delegate.get()));
+            }
+
+            @Override
+            public Set<Qualifier> qualifiers() {
+                return delegate.qualifiers();
+            }
+
+            @Override
+            public T get() {
+                return instance.get();
+            }
+        }
     }
 
     /**
@@ -177,6 +199,31 @@ public final class GeneratedService {
         @Override
         public T get() {
             return wrap(delegate.get());
+        }
+    }
+
+    /**
+     * Wrapper for generated Service factories that implement a {@link java.util.function.Supplier} of an optional service.
+     *
+     * @param <T> type of the provided contract
+     */
+    public abstract static class OptionalSupplierFactoryInterceptionWrapper<T> extends InterceptionWrapper<T>
+            implements Supplier<Optional<T>> {
+        private final Supplier<Optional<T>> delegate;
+
+        /**
+         * Creates a new instance delegating service instantiation to the provided supplier.
+         *
+         * @param delegate used to obtain optional service instance that will be {@link #wrap(Object) wrapped} for interception
+         */
+        protected OptionalSupplierFactoryInterceptionWrapper(Supplier<Optional<T>> delegate) {
+            this.delegate = Objects.requireNonNull(delegate, "delegate");
+        }
+
+        @Override
+        public Optional<T> get() {
+            return delegate.get()
+                    .map(this::wrap);
         }
     }
 
@@ -229,7 +276,7 @@ public final class GeneratedService {
 
         @Override
         public List<Service.QualifiedInstance<T>> list(Lookup lookup) {
-            return delegate.first(lookup)
+            return delegate.list(lookup)
                     .stream()
                     .map(this::wrapQualifiedInstance)
                     .collect(Collectors.toUnmodifiableList());

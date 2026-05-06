@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,7 +152,9 @@ final class Interception {
             return true;
         }
         for (TypedElements.DeclaredElement interfaceMethod : methodMeta.abstractMethods()) {
-            return hasInterceptTrigger(interfaceMethod.abstractType(), interfaceMethod.element());
+            if (hasInterceptTrigger(interfaceMethod.abstractType(), interfaceMethod.element())) {
+                return true;
+            }
         }
 
         return false;
@@ -174,12 +176,10 @@ final class Interception {
     }
 
     private boolean hasInterceptTriggerOnParams(TypeInfo typeInfo, TypedElementInfo tei) {
-        // we currently cannot retrieve annotations on generics, i.e. List<@NotBlank String>
         if (hasInterceptTriggerOnTypeArguments(typeInfo, tei.typeName())) {
             return true;
         }
 
-        // so for now, just support direct annotations on parameters
         for (TypedElementInfo parameter : tei.parameterArguments()) {
             if (hasInterceptTrigger(typeInfo, parameter)) {
                 return true;
@@ -200,6 +200,21 @@ final class Interception {
             if (hasInterceptTriggerOnTypeArguments(typeInfo, typeArgument)) {
                 return true;
             }
+        }
+        for (TypeName lowerBound : typeName.lowerBounds()) {
+            if (hasInterceptTriggerOnTypeArguments(typeInfo, lowerBound)) {
+                return true;
+            }
+        }
+        for (TypeName upperBound : typeName.upperBounds()) {
+            if (hasInterceptTriggerOnTypeArguments(typeInfo, upperBound)) {
+                return true;
+            }
+        }
+        if (typeName.componentType()
+                .map(componentType -> hasInterceptTriggerOnTypeArguments(typeInfo, componentType))
+                .orElse(false)) {
+            return true;
         }
         return false;
     }
