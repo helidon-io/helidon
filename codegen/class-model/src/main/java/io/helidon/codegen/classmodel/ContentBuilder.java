@@ -17,6 +17,7 @@
 package io.helidon.codegen.classmodel;
 
 import java.util.List;
+import java.util.Objects;
 
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ResolvedType;
@@ -75,23 +76,13 @@ public interface ContentBuilder<T extends ContentBuilder<T>> {
     /**
      * Adds the provided literal as content, enclosed in double quotes.
      * <p>
-     * In case the {@code literal} contains an end of line character, the output will be a text-block (multiline string),
-     * otherwise it will be a quotes string, with escaped tabs, quotes, and backslashes.
+     * The output is a quoted string with escaped tabs, line endings, quotes, and backslashes.
      *
      * @param literal the literal string to be added as content
      * @return updated builder instance
      */
     default T addContentLiteral(String literal) {
-        if (literal.contains("\n")) {
-            // the simplest solution is to use multiline string
-            return addContent("\"\"\"\n" + literal + "\"\"\"");
-        }
-        // escape tabs, double quote, and backslashes
-        String toWrite = literal;
-        toWrite = toWrite.replace("\\", "\\\\");
-        toWrite = toWrite.replace("\"", "\\\"");
-        toWrite = toWrite.replace("\t", "\\t");
-        return addContent("\"" + toWrite + "\"");
+        return addContent("\"" + escapedContentLiteral(literal) + "\"");
     }
 
     /**
@@ -132,7 +123,9 @@ public interface ContentBuilder<T extends ContentBuilder<T>> {
      * To create a type name without type arguments (such as when used with {@code .class}), use
      * {@link io.helidon.common.types.TypeName#genericTypeName()}.
      * <p>
-     * The generated content will be similar to: {@code TypeName.create("some.type.Name")}
+     * Simple type names use generated content similar to: {@code TypeName.create("some.type.Name")}.
+     * Type names with direct or inherited type-use annotations use generated builder content to preserve annotations
+     * on the root type, type arguments, wildcard bounds, and array component types.
      *
      * @param typeName type name to code generate
      * @return updated builder instance
@@ -235,4 +228,30 @@ public interface ContentBuilder<T extends ContentBuilder<T>> {
      * @return updated builder instance
      */
     T clearContent();
+
+    private static String escapedContentLiteral(String literal) {
+        Objects.requireNonNull(literal, "literal is null");
+
+        StringBuilder result = new StringBuilder(literal.length());
+        for (int i = 0; i < literal.length(); i++) {
+            char ch = literal.charAt(i);
+            switch (ch) {
+            case '\b' -> result.append("\\b");
+            case '\t' -> result.append("\\t");
+            case '\n' -> result.append("\\n");
+            case '\f' -> result.append("\\f");
+            case '\r' -> result.append("\\r");
+            case '"' -> result.append("\\\"");
+            case '\\' -> result.append("\\\\");
+            default -> {
+                if (ch < ' ') {
+                    result.append(String.format("\\u%04x", (int) ch));
+                } else {
+                    result.append(ch);
+                }
+            }
+            }
+        }
+        return result.toString();
+    }
 }
