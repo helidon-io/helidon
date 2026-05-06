@@ -80,8 +80,8 @@ class TracingTest extends TestParent {
             Http1Client client = client(uri, tracing.tracer());
 
             try (Http1ClientResponse response = client.get("/error").request()) {
-                // we must fully read entity, as otherwise tracing does not finish
-                response.entity().as(String.class);
+                // we must fully consume entity if present, as otherwise tracing does not finish
+                response.entity().consume();
             }
 
             List<SpanData> spanData = tracing.spanData(1);

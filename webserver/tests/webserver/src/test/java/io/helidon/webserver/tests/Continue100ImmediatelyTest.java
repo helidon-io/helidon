@@ -29,6 +29,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatchers;
 import io.helidon.http.Status;
+import io.helidon.webserver.ErrorHandling;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.Handler;
@@ -100,6 +101,9 @@ class Continue100ImmediatelyTest {
 
         wsb.writeQueueLength(2);
         wsb.smartAsyncWrites(true);
+        wsb.errorHandling(ErrorHandling.builder()
+                                  .includeEntity(true)
+                                  .build());
         wsb.addConnectionSelector(http1);
     }
 

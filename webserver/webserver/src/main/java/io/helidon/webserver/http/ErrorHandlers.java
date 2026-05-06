@@ -200,7 +200,10 @@ public final class ErrorHandlers {
             handleRequestException(ctx, request, response, RequestException.builder()
                     .cause(e)
                     .type(DirectHandler.EventType.INTERNAL_ERROR)
-                    .message(e.getMessage())
+                    .message(ctx.listenerContext()
+                                     .config()
+                                     .errorHandling()
+                                     .includeEntity() ? e.getMessage() : "Internal Server Error")
                     .request(DirectTransportRequest.create(request.prologue(), request.headers()))
                     .build());
         }
