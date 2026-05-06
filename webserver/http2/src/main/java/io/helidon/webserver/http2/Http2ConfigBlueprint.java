@@ -135,11 +135,12 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
     Duration rapidResetCheckPeriod();
 
     /**
-     * Maximum number of rapid resets(stream RST sent by client before any data have been sent by server).
-     * When reached within {@link #rapidResetCheckPeriod()}, GOAWAY is sent to client and connection is closed.
+     * Maximum number of rapid client resets within the check period and server-side resets over the connection lifetime
+     * before GOAWAY is sent, or {@code -1} to disable both checks.
+     * Rapid client resets are stream RST frames sent by the client before any data have been sent by the server.
      * Default value is {@code 50}.
      *
-     * @return maximum number of rapid resets
+     * @return maximum number of resets
      */
     @Option.Configured
     @Option.DefaultInt(50)
