@@ -304,6 +304,8 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 clientConfig.tls(),
                 List.of(Http2Client.PROTOCOL_ID),
                 udsAddress,
+                clientUri.host(),
+                clientUri.port(),
                 connection -> false,
                 connection -> {}).connect();
         }

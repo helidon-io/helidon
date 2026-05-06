@@ -275,18 +275,18 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
 
     private HelidonSocket createSocket(Tls tls, SocketChannel socket, String channelId) throws IOException {
         if (listenerConfig.useNio()) {
-          return createNioSocket(tls, socket, channelId);
+            return createNioSocket(tls, socket, channelId);
         }
         return createByteSocket(tls, socket, channelId);
     }
 
-    private HelidonSocket createNioSocket(Tls tls, SocketChannel channel, String channelId) {
+    private HelidonSocket createNioSocket(Tls tls, SocketChannel channel, String channelId) throws IOException {
         if (tls.enabled()) {
-            var address = channel.socket().getRemoteSocketAddress();
+            var address = channel.getRemoteAddress();
 
             SSLEngine engine;
             if (address instanceof InetSocketAddress isa) {
-                engine = tls.sslContext().createSSLEngine(isa.getHostName(), isa.getPort());
+                engine = tls.sslContext().createSSLEngine(isa.getHostString(), isa.getPort());
             } else {
                 engine = tls.sslContext().createSSLEngine();
             }

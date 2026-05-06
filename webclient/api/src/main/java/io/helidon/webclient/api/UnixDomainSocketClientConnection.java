@@ -18,22 +18,26 @@ package io.helidon.webclient.api;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.SocketTimeoutException;
 import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.time.Duration;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.NioSocket;
 import io.helidon.common.socket.TlsNioSocket;
+import io.helidon.common.task.DeadlineGuard;
 import io.helidon.common.tls.Tls;
 
 import static io.helidon.webclient.api.TcpClientConnection.debugTls;
@@ -45,10 +49,13 @@ import static java.lang.System.Logger.Level.TRACE;
  */
 public class UnixDomainSocketClientConnection implements ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(UnixDomainSocketClientConnection.class.getName());
+
     private final WebClient webClient;
     private final Tls tls;
     private final UnixDomainSocketAddress address;
     private final List<String> alpnId;
+    private final String tlsPeerHost;
+    private final int tlsPeerPort;
     private final Function<UnixDomainSocketClientConnection, Boolean> releaseFunction;
     private final Consumer<UnixDomainSocketClientConnection> closeConsumer;
 
@@ -64,18 +71,25 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                                              Tls tls,
                                              UnixDomainSocketAddress address,
                                              List<String> alpnId,
+                                             String tlsPeerHost,
+                                             int tlsPeerPort,
                                              Function<UnixDomainSocketClientConnection, Boolean> releaseFunction,
                                              Consumer<UnixDomainSocketClientConnection> closeConsumer) {
-        this.webClient = webClient;
-        this.tls = tls;
-        this.address = address;
-        this.alpnId = alpnId;
-        this.releaseFunction = releaseFunction;
-        this.closeConsumer = closeConsumer;
+        this.webClient = Objects.requireNonNull(webClient, "webClient");
+        this.tls = Objects.requireNonNull(tls, "tls");
+        this.address = Objects.requireNonNull(address, "address");
+        this.alpnId = Objects.requireNonNull(alpnId, "alpnId");
+        this.tlsPeerHost = tlsPeerHost;
+        this.tlsPeerPort = tlsPeerPort;
+        this.releaseFunction = Objects.requireNonNull(releaseFunction, "releaseFunction");
+        this.closeConsumer = Objects.requireNonNull(closeConsumer, "closeConsumer");
     }
 
     /**
      * Create a new UNIX Domain Socket Connection.
+     * <p>
+     * For TLS connections with a known logical HTTPS authority, use the overload that accepts the logical TLS peer
+     * host and port.
      *
      * @param webClient       webclient, to get configuration
      * @param tls             TLS configuration
@@ -85,6 +99,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
      *                        be closed instead kept open
      * @param closeConsumer   called when {@link #closeResource()} is called, the connection is no longer usable after this moment
      * @return a new UNIX domain socket connection, {@link #connect()} must be called to make it available for use
+     * @see #create(WebClient, Tls, List, UnixDomainSocketAddress, String, int, Function, Consumer)
      */
     public static UnixDomainSocketClientConnection create(WebClient webClient,
                                                           Tls tls,
@@ -96,6 +111,41 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                                                     tls,
                                                     address,
                                                     tcpProtocolIds,
+                                                    null,
+                                                    -1,
+                                                    releaseFunction,
+                                                    closeConsumer);
+    }
+
+    /**
+     * Create a new UNIX Domain Socket Connection.
+     *
+     * @param webClient       webclient, to get configuration
+     * @param tls             TLS configuration
+     * @param tcpProtocolIds  protocol IDs for ALPN (TLS protocol negotiation)
+     * @param address         address of the socket
+     * @param tlsPeerHost     logical URI host used for SNI and endpoint identification, not the Unix socket path
+     * @param tlsPeerPort     logical URI port used for SNI and endpoint identification, not the Unix socket path
+     * @param releaseFunction called when {@link #releaseResource()} is called, if {@code false} is returned, the connection will
+     *                        be closed instead kept open
+     * @param closeConsumer   called when {@link #closeResource()} is called, the connection is no longer usable after this moment
+     * @return a new UNIX domain socket connection, {@link #connect()} must be called to make it available for use
+     */
+    @SuppressWarnings("checkstyle:ParameterNumber") // public factory preserves the explicit connection setup contract
+    public static UnixDomainSocketClientConnection create(WebClient webClient,
+                                                          Tls tls,
+                                                          List<String> tcpProtocolIds,
+                                                          UnixDomainSocketAddress address,
+                                                          String tlsPeerHost,
+                                                          int tlsPeerPort,
+                                                          Function<UnixDomainSocketClientConnection, Boolean> releaseFunction,
+                                                          Consumer<UnixDomainSocketClientConnection> closeConsumer) {
+        return new UnixDomainSocketClientConnection(webClient,
+                                                    tls,
+                                                    address,
+                                                    tcpProtocolIds,
+                                                    Objects.requireNonNull(tlsPeerHost, "tlsPeerHost"),
+                                                    tlsPeerPort,
                                                     releaseFunction,
                                                     closeConsumer);
     }
@@ -153,7 +203,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
 
     @Override
     public boolean isConnected() {
-        return !closed && channel.isConnected();
+        return !closed && channel != null && channel.isConnected();
     }
 
     @Override
@@ -162,7 +212,9 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
             return;
         }
         try {
-            this.channel.close();
+            if (this.channel != null) {
+                this.channel.close();
+            }
         } catch (IOException e) {
             LOGGER.log(TRACE, "Failed to close a client socket channel", e);
         }
@@ -204,22 +256,31 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                     .configureSocket(this.channel);
 
             this.webClient.prototype().connectionListener()
-                .socketChannelConnected(new ConnectedSocketChannelInfoImpl(this.channelId, this.channel));
+                    .socketChannelConnected(new ConnectedSocketChannelInfoImpl(this.channelId, this.channel));
 
             if (this.tls.enabled()) {
-                SSLEngine engine = this.tls.sslContext().createSSLEngine();
-                engine.setEnabledProtocols(this.alpnId.toArray(new String[0]));
+                SSLEngine engine = tlsPeerHost == null
+                        ? this.tls.sslContext().createSSLEngine()
+                        : this.tls.sslContext().createSSLEngine(tlsPeerHost, tlsPeerPort);
+                engine.setUseClientMode(true);
+                engine.setSSLParameters(sslParameters(engine.getSSLParameters()));
 
                 if (LOGGER.isLoggable(TRACE)) {
                     debugTls(engine, channelId);
                 }
 
-                this.socket = TlsNioSocket.client(this.channel, engine, this.channelId);
+                TlsNioSocket tlsSocket = TlsNioSocket.client(this.channel, engine, this.channelId);
+                startTlsHandshake(tlsSocket);
+                this.socket = tlsSocket;
             } else {
                 this.socket = NioSocket.client(this.channel, this.channelId);
             }
         } catch (IOException e) {
+            closeChannelOnFailure(e);
             throw new UncheckedIOException(e);
+        } catch (RuntimeException e) {
+            closeChannelOnFailure(e);
+            throw e;
         }
 
         this.reader = DataReader.create(this.socket);
@@ -229,4 +290,82 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
         return this;
     }
 
+    private static SocketTimeoutException timeoutException(Duration readTimeout, Throwable cause, DeadlineGuard guard) {
+        SocketTimeoutException result = new SocketTimeoutException("TLS handshake timed out after " + readTimeout);
+        if (cause != null) {
+            result.initCause(cause);
+        }
+        guard.timeoutActionFailure().ifPresent(result::addSuppressed);
+        return result;
+    }
+
+    private void startTlsHandshake(TlsNioSocket tlsSocket) throws IOException {
+        Duration readTimeout = this.webClient.prototype().socketOptions().readTimeout();
+        DeadlineGuard guard = DeadlineGuard.create(readTimeout, this::closeChannelOnTimeout);
+        try (guard) {
+            tlsSocket.handshake();
+        } catch (RuntimeException e) {
+            if (guard.timedOut()) {
+                throw timeoutException(readTimeout, e, guard);
+            }
+            throw e;
+        }
+        if (guard.timedOut()) {
+            throw timeoutException(readTimeout, null, guard);
+        }
+    }
+
+    private SSLParameters sslParameters(SSLParameters parameters) {
+        SSLParameters source = this.tls.sslParameters();
+        if (source.getServerNames() != null) {
+            parameters.setServerNames(source.getServerNames());
+        }
+        if (source.getCipherSuites() != null) {
+            parameters.setCipherSuites(source.getCipherSuites());
+        }
+        parameters.setAlgorithmConstraints(source.getAlgorithmConstraints());
+        parameters.setEnableRetransmissions(source.getEnableRetransmissions());
+        parameters.setMaximumPacketSize(source.getMaximumPacketSize());
+        parameters.setNamedGroups(source.getNamedGroups());
+        if (source.getProtocols() != null) {
+            parameters.setProtocols(source.getProtocols());
+        }
+        parameters.setSignatureSchemes(source.getSignatureSchemes());
+        if (source.getSNIMatchers() != null) {
+            parameters.setSNIMatchers(source.getSNIMatchers());
+        }
+        parameters.setUseCipherSuitesOrder(source.getUseCipherSuitesOrder());
+        parameters.setEndpointIdentificationAlgorithm(source.getEndpointIdentificationAlgorithm());
+        parameters.setApplicationProtocols(this.alpnId.toArray(new String[0]));
+        if (source.getNeedClientAuth()) {
+            parameters.setNeedClientAuth(true);
+        }
+        if (source.getWantClientAuth()) {
+            parameters.setWantClientAuth(true);
+        }
+        return parameters;
+    }
+
+    private void closeChannelOnFailure(Throwable cause) {
+        this.closed = true;
+        if (this.channel == null) {
+            return;
+        }
+        try {
+            this.channel.close();
+        } catch (IOException e) {
+            cause.addSuppressed(e);
+        }
+    }
+
+    private void closeChannelOnTimeout() {
+        if (this.channel == null) {
+            return;
+        }
+        try {
+            this.channel.close();
+        } catch (IOException e) {
+            LOGGER.log(TRACE, "Failed to close a timed out client socket channel", e);
+        }
+    }
 }

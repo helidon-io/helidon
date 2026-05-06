@@ -81,9 +81,12 @@ class Http1ConnectionCache extends ClientConnectionCache {
                                                            effectiveTls,
                                                            ALPN_ID,
                                                            address,
+                                                           uri.host(),
+                                                           uri.port(),
                                                            it -> false,
                                                            it -> {
-                                                           });
+                                                           })
+                    .connect();
         }
     }
 
@@ -142,13 +145,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
 
         Http1ClientConfig clientConfig = http1Client.clientConfig();
 
-        ConnectionKey connectionKey = ConnectionKey.create(uri.scheme(),
-                                                           "unix:" + address.getPath().toString(),
-                                                           0,
-                                                           tls,
-                                                           clientConfig.dnsResolver(),
-                                                           clientConfig.dnsAddressLookup(),
-                                                           Proxy.noProxy());
+        ConnectionKey connectionKey = unixConnectionKey(tls, uri, address, clientConfig);
 
         LinkedBlockingDeque<ClientConnection> connectionQueue =
                 cache.computeIfAbsent(connectionKey,
@@ -163,6 +160,8 @@ class Http1ConnectionCache extends ClientConnectionCache {
                                                                  tls,
                                                                  ALPN_ID,
                                                                  address,
+                                                                 uri.host(),
+                                                                 uri.port(),
                                                                  conn -> finishRequest(connectionQueue, conn),
                                                                  conn -> {
                                                                  })
@@ -177,6 +176,18 @@ class Http1ConnectionCache extends ClientConnectionCache {
         return connection;
     }
 
+    private static ConnectionKey unixConnectionKey(Tls tls,
+                                                   ClientUri uri,
+                                                   UnixDomainSocketAddress address,
+                                                   Http1ClientConfig clientConfig) {
+        return ConnectionKey.createUnixDomainSocket(uri.scheme(),
+                                                    uri.host(),
+                                                    uri.port(),
+                                                    tls,
+                                                    clientConfig.dnsResolver(),
+                                                    clientConfig.dnsAddressLookup(),
+                                                    address);
+    }
 
     private ClientConnection keepAliveConnection(Http1ClientImpl http1Client,
                                                  Tls tls,
