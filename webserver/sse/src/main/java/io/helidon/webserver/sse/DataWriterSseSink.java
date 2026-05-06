@@ -104,41 +104,20 @@ class DataWriterSseSink implements SseSink {
         try {
             Optional<String> comment = sseEvent.comment();
             if (comment.isPresent()) {
-                outputStream.write(SSE_COMMENT);
-                outputStream.write(comment.get().getBytes(StandardCharsets.UTF_8));
-                outputStream.write(SSE_NL);
+                writeSseMultiLineField(SSE_COMMENT, comment.get().getBytes(StandardCharsets.UTF_8));
             }
             Optional<String> id = sseEvent.id();
             if (id.isPresent()) {
-                outputStream.write(SSE_ID);
-                outputStream.write(id.get().getBytes(StandardCharsets.UTF_8));
-                outputStream.write(SSE_NL);
+                writeSseSingleLineField(SSE_ID, id.get());
             }
             Optional<String> name = sseEvent.name();
             if (name.isPresent()) {
-                outputStream.write(SSE_EVENT);
-                outputStream.write(name.get().getBytes(StandardCharsets.UTF_8));
-                outputStream.write(SSE_NL);
+                writeSseSingleLineField(SSE_EVENT, name.get());
             }
             Object data = sseEvent.data();
             if (data != SseEvent.NO_DATA) {
                 MediaType mediaType = sseEvent.mediaType().orElse(MediaTypes.TEXT_PLAIN);
-
-                // is it multi-line string data?
-                if (data instanceof String stringData && stringData.contains("\n")) {
-                    String[] lines = stringData.split("\n");
-                    for (String line : lines) {
-                        outputStream.write(SSE_DATA);
-                        byte[] bytes = serializeData(line, mediaType);
-                        outputStream.write(bytes);
-                        outputStream.write(SSE_NL);
-                    }
-                } else {
-                    outputStream.write(SSE_DATA);
-                    byte[] bytes = serializeData(data, mediaType);
-                    outputStream.write(bytes);
-                    outputStream.write(SSE_NL);
-                }
+                writeSseMultiLineField(SSE_DATA, serializeData(data, mediaType));
             }
             outputStream.write(SSE_NL);
 
@@ -227,5 +206,47 @@ class DataWriterSseSink implements SseSink {
             }
         }
         throw new IllegalStateException("Unable to serialize SSE event without a media context");
+    }
+
+    private void writeSseSingleLineField(byte[] field, String value) throws IOException {
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        outputStream.write(field);
+        int start = 0;
+        for (int i = 0; i < bytes.length; i++) {
+            byte b = bytes[i];
+            if (b == '\r' || b == '\n') {
+                outputStream.write(bytes, start, i - start);
+                outputStream.write(' ');
+                if (b == '\r' && i + 1 < bytes.length && bytes[i + 1] == '\n') {
+                    i++;
+                }
+                start = i + 1;
+            }
+        }
+        outputStream.write(bytes, start, bytes.length - start);
+        outputStream.write(SSE_NL);
+    }
+
+    private void writeSseMultiLineField(byte[] field, byte[] value) throws IOException {
+        int start = 0;
+        boolean lineWritten = false;
+        for (int i = 0; i < value.length; i++) {
+            byte b = value[i];
+            if (b == '\r' || b == '\n') {
+                outputStream.write(field);
+                outputStream.write(value, start, i - start);
+                outputStream.write(SSE_NL);
+                lineWritten = true;
+                if (b == '\r' && i + 1 < value.length && value[i + 1] == '\n') {
+                    i++;
+                }
+                start = i + 1;
+            }
+        }
+        if (!lineWritten || start < value.length) {
+            outputStream.write(field);
+            outputStream.write(value, start, value.length - start);
+            outputStream.write(SSE_NL);
+        }
     }
 }
