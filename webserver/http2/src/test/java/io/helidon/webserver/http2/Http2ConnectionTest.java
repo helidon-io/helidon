@@ -18,12 +18,14 @@ package io.helidon.webserver.http2;
 
 import java.io.UncheckedIOException;
 import java.net.SocketException;
+import java.time.Duration;
 import java.util.List;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.http.http2.Http2Ping;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
@@ -38,6 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class Http2ConnectionTest {
@@ -94,5 +98,32 @@ class Http2ConnectionTest {
                 () -> assertThat(exception.getCause(), instanceOf(UncheckedIOException.class)),
                 () -> assertThat(exception.getCause().getCause(), instanceOf(SocketException.class))
         );
+    }
+
+    @Test
+    void rapidResetClosesWhenThresholdIsExceededWithinPeriod() {
+        DataWriter writer = mock(DataWriter.class);
+        Http2Config config = Http2Config.builder()
+                .rapidResetCheckPeriod(Duration.ofSeconds(10))
+                .maxRapidResets(2)
+                .build();
+        ConnectionContext ctx = mockConnectionContext(writer);
+        Http2Connection connection = new Http2Connection(ctx, config, List.of());
+        Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
+
+        checks.rapidResetCheck(true);
+        checks.rapidResetCheck(true);
+        verify(writer, never()).writeNow(any(BufferData.class));
+
+        assertThrows(CloseConnectionException.class, () -> checks.rapidResetCheck(true));
+    }
+
+    private static ConnectionContext mockConnectionContext(DataWriter writer) {
+        ConnectionContext ctx = mock(ConnectionContext.class);
+        when(ctx.router()).thenReturn(Router.empty());
+        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
+        when(ctx.dataWriter()).thenReturn(writer);
+        when(ctx.dataReader()).thenReturn(mock(DataReader.class));
+        return ctx;
     }
 }
