@@ -2797,21 +2797,6 @@ public class ServiceDescriptorCodegen {
         return true;
     }
 
-    private boolean hasParameters(TypedElementInfo method, TypeName... parameterTypes) {
-        List<TypedElementInfo> parameterArguments = method.parameterArguments();
-        if (parameterArguments.size() != parameterTypes.length) {
-            return false;
-        }
-
-        for (int i = 0; i < parameterTypes.length; i++) {
-            if (!parameterArguments.get(i).typeName().equals(parameterTypes[i])) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     private boolean hasFactoryParameters(TypedElementInfo method, TypeName... parameterTypes) {
         List<TypedElementInfo> parameterArguments = method.parameterArguments();
         if (parameterArguments.size() != parameterTypes.length) {
