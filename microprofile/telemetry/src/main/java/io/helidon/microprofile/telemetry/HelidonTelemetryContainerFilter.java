@@ -29,9 +29,6 @@ import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
-import io.opentelemetry.api.baggage.Baggage;
-import io.opentelemetry.api.baggage.BaggageEntryMetadata;
-import io.opentelemetry.context.Context;
 import io.opentelemetry.semconv.ServerAttributes;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
@@ -162,9 +159,6 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         requestContext.setProperty(SPAN, helidonSpan);
         requestContext.setProperty(SPAN_SCOPE, helidonScope);
 
-        // Handle OpenTelemetry Baggage from the current OpenTelemetry Context.
-        handleBaggage(requestContext, Context.current());
-
     }
 
     @Override
@@ -277,30 +271,6 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             return path + "?" + rawQuery;
         }
         return path;
-    }
-
-    // Extract OpenTelemetry Baggage from Request Headers.
-    private void handleBaggage(ContainerRequestContext containerRequestContext, Context context) {
-        List<String> baggageProperties = containerRequestContext.getHeaders().get("baggage");
-        if (baggageProperties != null) {
-            var baggageBuilder = Baggage.builder();
-            for (String b : baggageProperties) {
-                String[] assignments = b.split(",");
-                for (String assignment : assignments) {
-                    String[] split = assignment.split("=");
-                    if (split.length == 2) {
-                        String[] valueAndMetadata = split[1].split(";");
-                        String value = valueAndMetadata.length > 0 ? valueAndMetadata[0] : "";
-                        String metadata = valueAndMetadata.length > 1 ? valueAndMetadata[1] : "";
-                        baggageBuilder
-                                .put(split[0], value, BaggageEntryMetadata.create(metadata));
-                    }
-                }
-            }
-            baggageBuilder.build()
-                    .storeInContext(context)
-                    .makeCurrent();
-        }
     }
 
     private static Class<?> getRealClass(Class<?> object) {
