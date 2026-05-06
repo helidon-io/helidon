@@ -16,6 +16,7 @@
 
 package io.helidon.service.test.registry;
 
+import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -49,6 +50,14 @@ class GeneratedServiceTest {
     }
 
     @Test
+    void factoryInterceptionWrappersRejectNullDelegates() {
+        assertNullDelegate(() -> new TestSupplierWrapper(null));
+        assertNullDelegate(() -> new TestServicesFactoryWrapper(null, new AtomicInteger()));
+        assertNullDelegate(() -> new TestIpFactoryWrapper(null));
+        assertNullDelegate(() -> new TestQualifiedFactoryWrapper(null));
+    }
+
+    @Test
     void broadLookupsSkipHiddenFactoryProviderDescriptors() {
         var descriptor = new HiddenFactoryProviderInfo();
 
@@ -61,6 +70,11 @@ class GeneratedServiceTest {
                    is(false));
         assertThat(Lookup.builder()
                            .addFactoryType(FactoryType.NONE)
+                           .build()
+                           .matches(descriptor),
+                   is(false));
+        assertThat(Lookup.builder()
+                           .addFactoryType(FactoryType.SUPPLIER)
                            .build()
                            .matches(descriptor),
                    is(false));
@@ -167,9 +181,49 @@ class GeneratedServiceTest {
         assertThat(wraps.get(), is(1));
     }
 
+    private static void assertNullDelegate(Runnable runnable) {
+        NullPointerException e = assertThrows(NullPointerException.class, runnable::run);
+
+        assertThat(e.getMessage(), is("delegate"));
+    }
+
+    private static final class TestSupplierWrapper extends GeneratedService.SupplierFactoryInterceptionWrapper<String> {
+        private TestSupplierWrapper(Supplier<String> delegate) {
+            super(delegate);
+        }
+
+        @Override
+        protected String wrap(String originalInstance) {
+            return originalInstance;
+        }
+    }
+
     private static final class TestOptionalSupplierWrapper
             extends GeneratedService.OptionalSupplierFactoryInterceptionWrapper<String> {
         private TestOptionalSupplierWrapper(Supplier<Optional<String>> delegate) {
+            super(delegate);
+        }
+
+        @Override
+        protected String wrap(String originalInstance) {
+            return originalInstance;
+        }
+    }
+
+    private static final class TestIpFactoryWrapper extends GeneratedService.IpFactoryInterceptionWrapper<String> {
+        private TestIpFactoryWrapper(Service.InjectionPointFactory<String> delegate) {
+            super(delegate);
+        }
+
+        @Override
+        protected String wrap(String originalInstance) {
+            return originalInstance;
+        }
+    }
+
+    private static final class TestQualifiedFactoryWrapper
+            extends GeneratedService.QualifiedFactoryInterceptionWrapper<String, Annotation> {
+        private TestQualifiedFactoryWrapper(Service.QualifiedFactory<String, Annotation> delegate) {
             super(delegate);
         }
 

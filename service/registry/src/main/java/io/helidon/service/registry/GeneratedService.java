@@ -191,9 +191,10 @@ public final class GeneratedService {
          * Creates a new instance delegating service instantiation to the provided supplier.
          *
          * @param delegate used to obtain service instance that will be {@link #wrap(Object) wrapped} for interception
+         * @throws NullPointerException when delegate is {@code null}
          */
         protected SupplierFactoryInterceptionWrapper(Supplier<T> delegate) {
-            this.delegate = delegate;
+            this.delegate = Objects.requireNonNull(delegate, "delegate");
         }
 
         @Override
@@ -215,6 +216,7 @@ public final class GeneratedService {
          * Creates a new instance delegating service instantiation to the provided supplier.
          *
          * @param delegate used to obtain optional service instance that will be {@link #wrap(Object) wrapped} for interception
+         * @throws NullPointerException when delegate is {@code null}
          */
         protected OptionalSupplierFactoryInterceptionWrapper(Supplier<Optional<T>> delegate) {
             this.delegate = Objects.requireNonNull(delegate, "delegate");
@@ -241,9 +243,10 @@ public final class GeneratedService {
          * Creates a new instance delegating service instantiation to the provided services factory.
          *
          * @param delegate used to obtain service instances that will be {@link #wrap(Object) wrapped} for interception
+         * @throws NullPointerException when delegate is {@code null}
          */
         protected ServicesFactoryInterceptionWrapper(Service.ServicesFactory<T> delegate) {
-            this.delegate = delegate;
+            this.delegate = Objects.requireNonNull(delegate, "delegate");
         }
 
         @Override
@@ -269,9 +272,10 @@ public final class GeneratedService {
          * Creates a new instance delegating service instantiation to the provided injection point factory.
          *
          * @param delegate used to obtain service instances that will be {@link #wrap(Object) wrapped} for interception
+         * @throws NullPointerException when delegate is {@code null}
          */
         protected IpFactoryInterceptionWrapper(Service.InjectionPointFactory<T> delegate) {
-            this.delegate = delegate;
+            this.delegate = Objects.requireNonNull(delegate, "delegate");
         }
 
         @Override
@@ -304,9 +308,10 @@ public final class GeneratedService {
          * Creates a new instance delegating service instantiation to the provided qualified factory.
          *
          * @param delegate used to obtain service instances that will be {@link #wrap(Object) wrapped} for interception
+         * @throws NullPointerException when delegate is {@code null}
          */
         protected QualifiedFactoryInterceptionWrapper(Service.QualifiedFactory<T, A> delegate) {
-            this.delegate = delegate;
+            this.delegate = Objects.requireNonNull(delegate, "delegate");
         }
 
         @Override

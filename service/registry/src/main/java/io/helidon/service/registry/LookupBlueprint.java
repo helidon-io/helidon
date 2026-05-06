@@ -116,6 +116,8 @@ interface LookupBlueprint {
      * If configured, the lookup will return service factories of the
      * chosen types.
      * If no factory types are defined, service instances are returned.
+     * Factory types alone do not expose hidden raw factory-provider descriptors; use a service type or a contract when
+     * the factory provider itself is requested.
      * <p>
      * Otherwise only service factories of the chosen types are returned, as follows:
      * <ul>
@@ -168,7 +170,7 @@ interface LookupBlueprint {
 
         boolean matches = matches(serviceInfo.serviceType(), this.serviceType());
         if (matches && this.serviceType().isEmpty() && hiddenFactoryProviderDescriptor(serviceInfo)) {
-            matches = !this.contracts().isEmpty() || hasFactoryTypeFilter(this.factoryTypes());
+            matches = !this.contracts().isEmpty();
         }
         if (matches && this.serviceType().isEmpty()) {
             matches = serviceInfo.contracts().containsAll(this.contracts())
@@ -254,15 +256,6 @@ interface LookupBlueprint {
             return true;
         }
         return providerTypes.contains(providerType);
-    }
-
-    private boolean hasFactoryTypeFilter(Set<FactoryType> providerTypes) {
-        for (FactoryType providerType : providerTypes) {
-            if (providerType != FactoryType.NONE) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private boolean matchesTypes(Set<TypeName> scopes, Set<TypeName> criteria) {
