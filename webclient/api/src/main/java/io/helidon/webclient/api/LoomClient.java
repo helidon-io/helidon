@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -189,6 +189,7 @@ class LoomClient implements WebClient {
 
     record EndpointKey(String scheme, // http/https
                        String authority, // myserver:80
+                       String transportKey, // optional explicit transport address, such as a UDS path (may be null)
                        Tls tlsConfig, // TLS configuration (may be disabled, never null)
                        Proxy proxy) { // proxy, never null
     }

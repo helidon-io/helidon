@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.ClientUri;
-import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.FullClientRequest;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.HttpClientSpi;
@@ -67,14 +66,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
 
     @Override
     public SupportLevel supports(FullClientRequest<?> clientRequest, ClientUri clientUri) {
-        ConnectionKey ck = ConnectionKey.create(clientUri.scheme(),
-                                                clientUri.host(),
-                                                clientUri.port(),
-                                                clientRequest.tls(),
-                                                clientConfig.dnsResolver(),
-                                                clientConfig.dnsAddressLookup(),
-                                                clientRequest.proxy());
-        if (connectionCache.supports(ck)) {
+        if (connectionCache.supports(Http2ConnectionKeys.create(clientUri, clientRequest, clientConfig))) {
             return SupportLevel.SUPPORTED;
         }
 
@@ -91,6 +83,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
 
         clientRequest.connection().ifPresent(request::connection);
         clientRequest.pathParams().forEach(request::pathParam);
+        clientRequest.address().ifPresent(request::address);
 
         return request.readTimeout(clientRequest.readTimeout())
                 .followRedirects(clientRequest.followRedirects())
