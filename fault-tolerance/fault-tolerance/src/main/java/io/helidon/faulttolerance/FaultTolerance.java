@@ -18,6 +18,7 @@ package io.helidon.faulttolerance;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
@@ -129,12 +130,14 @@ public final class FaultTolerance {
      */
     @Deprecated(forRemoval = true, since = "4.3.0")
     public static Runnable toDelayedRunnable(Runnable runnable, long millis) {
+        Objects.requireNonNull(runnable, "runnable");
         return () -> {
             try {
                 Thread.sleep(millis);
             } catch (InterruptedException e) {
-                // should never be interrupted
-                LOGGER.log(ERROR, "Delayed runnable was unexpectedly interrupted");
+                // Future.cancel(true) interrupts the sleeping task to cancel the delayed action.
+                Thread.currentThread().interrupt();
+                return;
             }
             runnable.run();
         };
