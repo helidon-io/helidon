@@ -114,43 +114,49 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     @Override
     public final void run() {
         String channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
+        boolean setupComplete = false;
 
-        // proxy protocol before SSL handshake
-        if (listenerConfig.enableProxyProtocol()) {
-            ProxyProtocolHandler handler = new ProxyProtocolHandler(socket, channelId);
-            try {
-                proxyProtocolData = handler.get();
-            } catch (RuntimeException e) {
-                if (LOGGER.isLoggable(TRACE)) {
-                    LOGGER.log(TRACE, "[" + channelId + "] Failed to retrieve Proxy Protocol data", e);
+        try {
+            // proxy protocol before SSL handshake
+            if (listenerConfig.enableProxyProtocol()) {
+                ProxyProtocolHandler handler = new ProxyProtocolHandler(socket, channelId);
+                try {
+                    proxyProtocolData = handler.get();
+                } catch (RuntimeException e) {
+                    if (LOGGER.isLoggable(TRACE)) {
+                        LOGGER.log(TRACE, "[" + channelId + "] Failed to retrieve Proxy Protocol data", e);
+                    }
+                    return;
                 }
-                closeChannel(channelId);
+            }
+
+            // handle SSL and init helidonSocket, reader and writer
+            try {
+                helidonSocket = createSocket(tls, socket, channelId);
+
+                reader = DataReader.create(new MapExceptionDataSupplier(helidonSocket));
+                writer = SocketWriter.create(listenerContext.executor(),
+                                             helidonSocket,
+                                             listenerConfig.writeQueueLength(),
+                                             listenerConfig.smartAsyncWrites());
+            } catch (RuntimeException e) {
+                // these exceptions are thrown to the executor service
+                if (LOGGER.isLoggable(TRACE)) {
+                    LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
+                }
+                return;
+            } catch (Exception e) {
+                if (LOGGER.isLoggable(TRACE)) {
+                    LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
+                }
                 return;
             }
-        }
-
-        // handle SSL and init helidonSocket, reader and writer
-        try {
-            helidonSocket = createSocket(tls, socket, channelId);
-
-            reader = DataReader.create(new MapExceptionDataSupplier(helidonSocket));
-            writer = SocketWriter.create(listenerContext.executor(),
-                                         helidonSocket,
-                                         listenerConfig.writeQueueLength(),
-                                         listenerConfig.smartAsyncWrites());
-        } catch (RuntimeException e) {
-            // these exceptions are thrown to the executor service
-            if (LOGGER.isLoggable(TRACE)) {
-                LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
+            setupComplete = true;
+        } finally {
+            if (!setupComplete) {
+                connectionSemaphore.release();
+                closeChannel(channelId);
             }
-            closeChannel(channelId);
-            return;
-        } catch (Exception e) {
-            if (LOGGER.isLoggable(TRACE)) {
-                LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
-            }
-            closeChannel(channelId);
-            return;
         }
 
         // connection handling
