@@ -37,6 +37,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Check that all threads created by timeout instances are properly
@@ -78,23 +79,30 @@ class TimeoutThreadTest {
         TestThreadFactory threadFactory = new TestThreadFactory();
         try (ExecutorService executor = Executors.newThreadPerTaskExecutor(threadFactory);
                 InMemoryLoggingHandler handler = InMemoryLoggingHandler.create(logger)) {
+            Thread[] monitorThread = new Thread[1];
             String status = Timeout.builder()
                     .timeout(Duration.ofSeconds(10))
                     .currentThread(true)
                     .executor(executor)
                     .build()
                     .invoke(() -> {
-                        Thread monitorThread = awaitMonitorThread(threadFactory);
-                        awaitThreadState(monitorThread, Thread.State.TIMED_WAITING);
+                        monitorThread[0] = awaitMonitorThread(threadFactory);
+                        awaitThreadState(monitorThread[0], Thread.State.TIMED_WAITING);
                         return "done";
                     });
             assertThat(status, is("done"));
+            awaitThreadTerminated(monitorThread[0]);
             assertThat(handler.logRecords(),
                        not(hasItem(LogRecordMatcher.withMessage(
                                containsString("Delayed runnable was unexpectedly interrupted")))));
         } finally {
             logger.setLevel(originalLevel);
         }
+    }
+
+    @Test
+    void testDelayedRunnableRequiresRunnable() {
+        assertThrows(NullPointerException.class, () -> FaultTolerance.toDelayedRunnable(null, 1));
     }
 
     private static Thread awaitMonitorThread(TestThreadFactory threadFactory) {
@@ -118,6 +126,22 @@ class TimeoutThreadTest {
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10));
         }
         throw new AssertionError("Timed out waiting for thread state " + expectedState + ", last state was " + thread.getState());
+    }
+
+    private static void awaitThreadTerminated(Thread thread) {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (System.nanoTime() < deadline) {
+            try {
+                thread.join(10);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError("Interrupted while waiting for thread to terminate", e);
+            }
+            if (!thread.isAlive()) {
+                return;
+            }
+        }
+        throw new AssertionError("Timed out waiting for thread to terminate, last state was " + thread.getState());
     }
 
     static class TestThreadFactory implements ThreadFactory {
