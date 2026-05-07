@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.security.cert.X509Certificate;
@@ -26,7 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,14 +38,19 @@ import javax.net.ssl.SSLEngine;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 import io.helidon.logging.common.HelidonMdc;
 import io.helidon.webserver.ByteBufRequestChunk.DataChunkHoldingQueue;
 import io.helidon.webserver.DirectHandler.TransportResponse;
 import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
+import io.helidon.webserver.spi.UpgradeCodecProvider;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -74,7 +83,8 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private static final AtomicLong REQUEST_ID_GENERATOR = new AtomicLong(0);
     private static final String MDC_SCOPE_ID = "io.helidon.scope-id";
 
-    private final Routing routing;
+    private final RequestRouting routing;
+    private final Router router;
     private final NettyWebServer webServer;
     private final SSLEngine sslEngine;
     private final ReferenceQueue<Object> queues;
@@ -93,8 +103,10 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private CompletableFuture<ChannelFutureListener> requestEntityAnalyzed;
     private CompletableFuture<?> prevRequestFuture;
     private boolean lastContent;
+    private boolean ignoreRoutedUpgradeContent;
 
-    ForwardingHandler(Routing routing,
+    ForwardingHandler(RequestRouting routing,
+                      Router router,
                       NettyWebServer webServer,
                       SSLEngine sslEngine,
                       ReferenceQueue<Object> queues,
@@ -102,6 +114,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                       SocketConfiguration soConfig,
                       DirectHandlers directHandlers) {
         this.routing = routing;
+        this.router = router;
         this.webServer = webServer;
         this.sslEngine = sslEngine;
         this.queues = queues;
@@ -113,6 +126,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
     private void reset() {
         lastContent = false;
+        ignoreRoutedUpgradeContent = false;
         actualPayloadSize = 0L;
         ignorePayload = false;
     }
@@ -167,6 +181,16 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
         if (msg instanceof HttpContent) {
             if (requestContext == null) {
+                if (ignoreRoutedUpgradeContent) {
+                    lastContent = msg instanceof LastHttpContent;
+                    if (lastContent) {
+                        ignoreRoutedUpgradeContent = false;
+                    } else {
+                        ctx.channel().read();
+                    }
+                    HelidonMdc.remove(MDC_SCOPE_ID);
+                    return;
+                }
                 LOGGER.fine(() -> formatMsg("Received HttpContent: %s", ctx, System.identityHashCode(msg)));
                 HelidonMdc.remove(MDC_SCOPE_ID);
                 throw new IllegalStateException("There is no request context associated with this http content. "
@@ -296,6 +320,61 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         X509Certificate cert = ctx.channel().attr(CLIENT_CERTIFICATE).get();
         if (cert != null) {
             requestScope.register(WebServerTls.CLIENT_X509_CERTIFICATE, cert);
+        }
+
+        Optional<UpgradeCodecProvider.RoutedUpgrade> routedUpgrade = UpgradeManager.routedUpgrade(router, request);
+        if (routedUpgrade.isPresent()) {
+            long requestId = REQUEST_ID_GENERATOR.incrementAndGet();
+            BareRequestImpl bareRequest;
+            try {
+                bareRequest = new BareRequestImpl(webServer,
+                                                  soConfig,
+                                                  sslEngine,
+                                                  ctx,
+                                                  request,
+                                                  Multi.empty(),
+                                                  requestId);
+            } catch (IllegalArgumentException e) {
+                send400BadRequest(ctx, request, e, "Malformed URI in protocol upgrade request");
+                return true;
+            }
+
+            ignoreRoutedUpgradeContent = true;
+            boolean unsupportedUpgradeEntity = request.headers().contains(HttpHeaderNames.TRANSFER_ENCODING);
+            String contentLength = request.headers().get(HttpHeaderNames.CONTENT_LENGTH);
+            if (!unsupportedUpgradeEntity && contentLength != null) {
+                try {
+                    unsupportedUpgradeEntity = Long.parseLong(contentLength) > 0;
+                } catch (NumberFormatException e) {
+                    unsupportedUpgradeEntity = true;
+                }
+            }
+            boolean rejectUpgradeEntity = unsupportedUpgradeEntity;
+            UpgradeCodecProvider.RoutedUpgrade upgrade = routedUpgrade.get();
+            ProtocolUpgradeBareResponse bareResponse = new ProtocolUpgradeBareResponse(ctx, requestId, upgrade);
+            Consumer<ServerResponse> terminalHandler = response -> ctx.executor().execute(() -> {
+                try {
+                    if (rejectUpgradeEntity) {
+                        response.status(Http.Status.BAD_REQUEST_400);
+                        response.send("Bad request, see server log for more information\n");
+                        return;
+                    }
+                    if (upgrade.prepareResponse(ctx, response)) {
+                        response.headers().send()
+                                .exceptionally(t -> {
+                                    LOGGER.log(Level.FINE, "Protocol upgrade response failed", t);
+                                    bareResponse.fail(t);
+                                    return null;
+                                });
+                    }
+                } catch (Throwable t) {
+                    LOGGER.log(Level.FINE, "Protocol upgrade failed", t);
+                    bareResponse.fail(t);
+                }
+            });
+            Contexts.runInContext(requestScope,
+                                  () -> routing.routeProtocolUpgrade(bareRequest, bareResponse, terminalHandler));
+            return true;
         }
 
         // Context, publisher and DataChunk queue for this request/response
@@ -617,6 +696,167 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         list.add(ctx != null ? ctx.channel().id() : "N/A");
         list.addAll(Arrays.asList(params));
         return String.format("[Handler: %s, Channel: 0x%s] " + template, list.toArray());
+    }
+
+    private static final class ProtocolUpgradeBareResponse implements BareResponse {
+        private final ChannelHandlerContext ctx;
+        private final long requestId;
+        private final UpgradeCodecProvider.RoutedUpgrade upgrade;
+        private final CompletableFuture<BareResponse> headersFuture = new CompletableFuture<>();
+        private final CompletableFuture<BareResponse> completionFuture = new CompletableFuture<>();
+        private final AtomicBoolean completed = new AtomicBoolean();
+        private final ByteArrayOutputStream entity = new ByteArrayOutputStream();
+
+        private volatile Flow.Subscription subscription;
+        private volatile Http.ResponseStatus status = Http.Status.OK_200;
+        private volatile Map<String, List<String>> headers = Map.of();
+
+        private ProtocolUpgradeBareResponse(ChannelHandlerContext ctx,
+                                            long requestId,
+                                            UpgradeCodecProvider.RoutedUpgrade upgrade) {
+            this.ctx = ctx;
+            this.requestId = requestId;
+            this.upgrade = upgrade;
+        }
+
+        @Override
+        public void writeStatusAndHeaders(Http.ResponseStatus status, Map<String, List<String>> headers) {
+            this.status = status;
+            this.headers = headers;
+            if (status.code() == Http.Status.SWITCHING_PROTOCOLS_101.code()) {
+                sendUpgradeResponse(status, headers);
+            } else {
+                headersFuture.complete(this);
+            }
+        }
+
+        @Override
+        public Single<BareResponse> whenHeadersCompleted() {
+            return Single.create(headersFuture);
+        }
+
+        @Override
+        public Single<BareResponse> whenCompleted() {
+            return Single.create(completionFuture);
+        }
+
+        @Override
+        public void backpressureStrategy(BackpressureStrategy backpressureStrategy) {
+            // no backpressure needed; protocol upgrade policy responses are small HTTP responses
+        }
+
+        @Override
+        public void onSubscribe(Flow.Subscription subscription) {
+            this.subscription = subscription;
+            subscription.request(Long.MAX_VALUE);
+        }
+
+        @Override
+        public void onNext(DataChunk data) {
+            if (data == null) {
+                return;
+            }
+            try {
+                entity.writeBytes(data.bytes());
+            } finally {
+                data.release();
+            }
+        }
+
+        @Override
+        public void onError(Throwable thr) {
+            if (status == Http.Status.OK_200) {
+                status = Http.Status.INTERNAL_SERVER_ERROR_500;
+            }
+            sendResponse(thr);
+        }
+
+        @Override
+        public void onComplete() {
+            sendResponse(null);
+        }
+
+        @Override
+        public long requestId() {
+            return requestId;
+        }
+
+        private void fail(Throwable t) {
+            if (completed.compareAndSet(false, true)) {
+                headersFuture.completeExceptionally(t);
+                completionFuture.completeExceptionally(t);
+                ctx.close();
+            }
+        }
+
+        private void sendUpgradeResponse(Http.ResponseStatus status, Map<String, List<String>> headers) {
+            if (!completed.compareAndSet(false, true)) {
+                return;
+            }
+
+            FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1,
+                                                                    HttpResponseStatus.valueOf(status.code(),
+                                                                                               status.reasonPhrase()),
+                                                                    Unpooled.EMPTY_BUFFER);
+            HttpHeaders nettyHeaders = response.headers();
+            headers.forEach(nettyHeaders::add);
+            nettyHeaders.remove(HttpHeaderNames.CONTENT_LENGTH);
+
+            ChannelFuture writeComplete = ctx.writeAndFlush(response);
+            Throwable upgradeFailure = null;
+            try {
+                upgrade.upgrade(ctx);
+            } catch (Throwable t) {
+                upgradeFailure = t;
+                ctx.close();
+            }
+            Throwable failure = upgradeFailure;
+            writeComplete.addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
+                    .addListener(future -> {
+                        if (future.isSuccess() && failure == null) {
+                            headersFuture.complete(this);
+                            completionFuture.complete(this);
+                        } else {
+                            Throwable cause = failure == null ? future.cause() : failure;
+                            headersFuture.completeExceptionally(cause);
+                            completionFuture.completeExceptionally(cause);
+                        }
+                    });
+        }
+
+        private void sendResponse(Throwable throwable) {
+            Flow.Subscription currentSubscription = subscription;
+            if (currentSubscription != null) {
+                currentSubscription.cancel();
+            }
+            if (!completed.compareAndSet(false, true)) {
+                return;
+            }
+
+            byte[] bytes = entity.toByteArray();
+            FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1,
+                                                                    HttpResponseStatus.valueOf(status.code(),
+                                                                                               status.reasonPhrase()),
+                                                                    Unpooled.wrappedBuffer(bytes));
+            HttpHeaders nettyHeaders = response.headers();
+            headers.forEach(nettyHeaders::add);
+            nettyHeaders.set(HttpHeaderNames.CONTENT_LENGTH, bytes.length);
+            nettyHeaders.set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+            headersFuture.complete(this);
+            ctx.writeAndFlush(response)
+                    .addListener(ChannelFutureListener.CLOSE)
+                    .addListener(future -> {
+                        if (future.isSuccess()) {
+                            if (throwable == null) {
+                                completionFuture.complete(this);
+                            } else {
+                                completionFuture.completeExceptionally(throwable);
+                            }
+                        } else {
+                            completionFuture.completeExceptionally(future.cause());
+                        }
+                    });
+        }
     }
 
     private static final class DirectHandlerRequest implements DirectHandler.TransportRequest {

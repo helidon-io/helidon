@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ import io.helidon.webserver.Handler;
 import io.helidon.webserver.ResponseHeaders;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.spi.ProtocolUpgradeHandler;
 
 import static io.helidon.security.AuditEvent.AuditParam.plain;
 
@@ -70,7 +71,7 @@ import static io.helidon.security.AuditEvent.AuditParam.plain;
  */
 // we need to have all fields optional and this is cleaner than checking for null
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-public final class SecurityHandler implements Handler {
+public final class SecurityHandler implements Handler, ProtocolUpgradeHandler {
     private static final Logger LOGGER = Logger.getLogger(SecurityHandler.class.getName());
     private static final String KEY_ROLES_ALLOWED = "roles-allowed";
     private static final String KEY_AUTHENTICATOR = "authenticator";

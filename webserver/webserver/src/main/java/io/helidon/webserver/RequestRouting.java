@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
+import io.helidon.webserver.spi.ProtocolUpgradeHandler;
 
 /**
  * Default implementation of {@link Routing}.
@@ -68,6 +69,19 @@ class RequestRouting implements Routing {
 
     @Override
     public void route(BareRequest bareRequest, BareResponse bareResponse) {
+        route(bareRequest, bareResponse, false, null);
+    }
+
+    void routeProtocolUpgrade(BareRequest bareRequest,
+                              BareResponse bareResponse,
+                              Consumer<ServerResponse> terminalHandler) {
+        route(bareRequest, bareResponse, true, terminalHandler);
+    }
+
+    private void route(BareRequest bareRequest,
+                       BareResponse bareResponse,
+                       boolean protocolUpgrade,
+                       Consumer<ServerResponse> terminalHandler) {
 
         try {
             WebServer webServer = bareRequest.webServer();
@@ -83,7 +97,7 @@ class RequestRouting implements Routing {
 
             Crawler crawler = new Crawler(routes, path, rawPath, bareRequest.method(), bareRequest.version());
             RoutedRequest nextRequests = new RoutedRequest(bareRequest, response, webServer, crawler, errorHandlers,
-                                                           requestHeaders);
+                                                           requestHeaders, protocolUpgrade, terminalHandler);
             response.request(nextRequests);
             nextRequests.next();
         } catch (Error | RuntimeException e) {
@@ -173,9 +187,13 @@ class RequestRouting implements Routing {
          * @return a next item.
          */
         public Item next() {
+            return next(false);
+        }
+
+        public Item next(boolean protocolUpgrade) {
             while ((subCrawler != null) || (++index < routes.size())) {
                 if (subCrawler != null) {
-                    Item result = subCrawler.next();
+                    Item result = subCrawler.next(protocolUpgrade);
                     if (result != null) {
                         return result;
                     } else {
@@ -187,6 +205,9 @@ class RequestRouting implements Routing {
                         if (route instanceof HandlerRoute hr) {
                             PathMatcher.Result match = hr.match(path);
                             if (match.matches() && hr.matchVersion(version)) {
+                                if (protocolUpgrade && !(hr.handler() instanceof ProtocolUpgradeHandler)) {
+                                    continue;
+                                }
                                 return new Item(hr, Request.Path.create(contextPath, path, rawPath, match.params()));
                             }
                         } else if (route instanceof RouteList rl) {
@@ -235,6 +256,8 @@ class RequestRouting implements Routing {
         private final LinkedList<ErrorHandlerRecord<? extends Throwable>> errorHandlers;
         private final Path path;
         private final RoutedResponse response;
+        private final boolean protocolUpgrade;
+        private final Consumer<ServerResponse> terminalHandler;
 
         private final AtomicBoolean nexted = new AtomicBoolean(false);
         private final LazyValue<URI> lazyAbsoluteUri = LazyValue.create(super::absoluteUri);
@@ -253,12 +276,16 @@ class RequestRouting implements Routing {
                       WebServer webServer,
                       Crawler crawler,
                       List<ErrorHandlerRecord<?>> errorHandlers,
-                      HashRequestHeaders headers) {
+                      HashRequestHeaders headers,
+                      boolean protocolUpgrade,
+                      Consumer<ServerResponse> terminalHandler) {
             super(req, webServer, headers);
             this.crawler = crawler;
             this.errorHandlers = new LinkedList<>(errorHandlers);
             this.path = null;
             this.response = response;
+            this.protocolUpgrade = protocolUpgrade;
+            this.terminalHandler = terminalHandler;
         }
 
         /**
@@ -278,6 +305,8 @@ class RequestRouting implements Routing {
             this.response = response;
             this.path = path;
             this.errorHandlers = new LinkedList<>(errorHandlers);
+            this.protocolUpgrade = request.protocolUpgrade;
+            this.terminalHandler = request.terminalHandler;
         }
 
         Span span() {
@@ -301,11 +330,15 @@ class RequestRouting implements Routing {
         @Override
         public void next() {
             checkNexted();
-            Crawler.Item nextItem = crawler.next();
+            Crawler.Item nextItem = crawler.next(protocolUpgrade);
             if (nextItem == null) {
-                // 404 error
-                nextNoCheck(new NotFoundException("No handler found for path: "
-                        + HtmlEncoder.encode(path().toString())));
+                if (terminalHandler == null) {
+                    // 404 error
+                    nextNoCheck(new NotFoundException("No handler found for path: "
+                            + HtmlEncoder.encode(path().toString())));
+                } else {
+                    terminalHandler.accept(response);
+                }
             } else {
                 try {
                     RoutedResponse nextResponse = new RoutedResponse(response);

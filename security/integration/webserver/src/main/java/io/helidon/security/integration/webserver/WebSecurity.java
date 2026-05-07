@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import io.helidon.webserver.spi.ProtocolUpgradeHandler;
 
 /**
  * Integration of security into Web Server.
@@ -324,7 +325,7 @@ public final class WebSecurity implements Service {
             LOGGER.info("Security is disabled. Not registering any security handlers");
             return;
         }
-        routing.any(this::registerContext);
+        routing.any(new SecurityContextHandler());
 
         if (null != config) {
             // only configure routing if we were asked to do so (otherwise it must be configured by hand on web server)
@@ -367,6 +368,13 @@ public final class WebSecurity implements Service {
         }
 
         req.next();
+    }
+
+    private final class SecurityContextHandler implements ProtocolUpgradeHandler {
+        @Override
+        public void accept(ServerRequest req, ServerResponse res) {
+            registerContext(req, res);
+        }
     }
 
     private void registerRouting(Routing.Rules routing) {

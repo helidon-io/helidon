@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,11 @@ package io.helidon.webserver.spi;
 import java.util.Optional;
 
 import io.helidon.webserver.Router;
+import io.helidon.webserver.ServerResponse;
 
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 
@@ -62,6 +65,17 @@ public interface UpgradeCodecProvider {
                                                        int maxContentLength);
 
     /**
+     * Prepare a routed protocol upgrade.
+     *
+     * @param router router with configured routings
+     * @param request upgrade request
+     * @return routed upgrade, or empty optional to continue as ordinary HTTP
+     */
+    default Optional<RoutedUpgrade> routedUpgrade(Router router, HttpRequest request) {
+        return Optional.empty();
+    }
+
+    /**
      * Used as a wrapper for actual upgrade handler, if available.
      * Provides prior-knowledge capability in case other side decides to skip HTTP upgrade.
      *
@@ -75,5 +89,32 @@ public interface UpgradeCodecProvider {
                                                            HttpServerUpgradeHandler wrappedUpgradeHandler,
                                                            int maxContentLength) {
         return Optional.empty();
+    }
+
+    /**
+     * Routed protocol upgrade.
+     *
+     * @deprecated internal SPI for Helidon 3.x protocol upgrade handling
+     */
+    @Deprecated(since = "3.0.0")
+    interface RoutedUpgrade {
+        /**
+         * Prepare the protocol upgrade response after HTTP routing policy handlers
+         * allow the request.
+         *
+         * @param ctx channel handler context
+         * @param response server response to update or send
+         * @return {@code true} to send the upgrade response and complete the
+         *         protocol switch, or {@code false} if the response was rejected
+         *         before the protocol switch
+         */
+        boolean prepareResponse(ChannelHandlerContext ctx, ServerResponse response);
+
+        /**
+         * Complete the protocol switch after the upgrade response has been sent.
+         *
+         * @param ctx channel handler context
+         */
+        void upgrade(ChannelHandlerContext ctx);
     }
 }

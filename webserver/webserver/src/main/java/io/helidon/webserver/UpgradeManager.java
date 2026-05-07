@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,9 @@ import io.helidon.webserver.spi.UpgradeCodecProvider;
 
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
@@ -96,7 +99,12 @@ class UpgradeManager {
                         return null;
                     }
                     return upgradeCodecProvider.upgradeCodec(sourceCodec, router, maxContentLength);
-                }, maxContentLength);
+                }, maxContentLength) {
+            @Override
+            protected boolean shouldHandleUpgradeRequest(HttpRequest req) {
+                return !isRoutedUpgrade(router, req);
+            }
+        };
 
         // Prior-knowledge decoder needs to wrap upgrade handler
         Optional<ChannelHandler> priorKnowledgeWrapper = priorKnowledgeWrapper(sourceCodec, upgradeHandler, maxContentLength);
@@ -111,5 +119,51 @@ class UpgradeManager {
             // Wrap upgrade handler inside prior knowledge decoder
             p.addLast(priorKnowledgeWrapper.get());
         }
+    }
+
+    static boolean isRoutedUpgrade(Router router, HttpRequest request) {
+        return routedUpgrade(router, request).isPresent();
+    }
+
+    static Optional<UpgradeCodecProvider.RoutedUpgrade> routedUpgrade(Router router, HttpRequest request) {
+        if (!canRouteUpgrade(router)) {
+            return Optional.empty();
+        }
+        return provider(request).flatMap(it -> it.routedUpgrade(router, request));
+    }
+
+    private static boolean canRouteUpgrade(Router router) {
+        return router.routing(RequestRouting.class, null) != null;
+    }
+
+    private static Optional<UpgradeCodecProvider> provider(HttpRequest request) {
+        CharSequence upgradeHeader = request.headers().get(HttpHeaderNames.UPGRADE);
+        if (upgradeHeader == null) {
+            return Optional.empty();
+        }
+
+        boolean upgradeConnection = false;
+        for (String connectionHeader : request.headers().getAll(HttpHeaderNames.CONNECTION)) {
+            for (String value : connectionHeader.split(",")) {
+                if (HttpHeaderValues.UPGRADE.contentEqualsIgnoreCase(value.trim())) {
+                    upgradeConnection = true;
+                    break;
+                }
+            }
+            if (upgradeConnection) {
+                break;
+            }
+        }
+        if (!upgradeConnection) {
+            return Optional.empty();
+        }
+
+        for (String protocol : upgradeHeader.toString().split(",")) {
+            UpgradeCodecProvider provider = UPGRADE_HANDLERS.get(protocol.trim());
+            if (provider != null) {
+                return Optional.of(provider);
+            }
+        }
+        return Optional.empty();
     }
 }

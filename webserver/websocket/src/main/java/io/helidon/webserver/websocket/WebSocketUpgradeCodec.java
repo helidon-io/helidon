@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.ForwardingHandler;
+import io.helidon.webserver.ServerResponse;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -50,6 +51,7 @@ class WebSocketUpgradeCodec implements HttpServerUpgradeHandler.UpgradeCodec {
     private final WebSocketRouting webSocketRouting;
     private String path;
     private WebSocketHandler wsHandler;
+    private Http.ResponseStatus responseStatus = Http.Status.SWITCHING_PROTOCOLS_101;
 
     WebSocketUpgradeCodec(WebSocketRouting webSocketRouting) {
         this.webSocketRouting = webSocketRouting;
@@ -66,15 +68,13 @@ class WebSocketUpgradeCodec implements HttpServerUpgradeHandler.UpgradeCodec {
                                           FullHttpRequest upgradeRequest,
                                           HttpHeaders upgradeResponseHeaders) {
         try {
-            path = upgradeRequest.uri();
-            upgradeResponseHeaders.remove(Http.Header.UPGRADE);
-            upgradeResponseHeaders.remove(Http.Header.CONNECTION);
-            wsHandler = new WebSocketHandler(ctx, path, upgradeRequest, upgradeResponseHeaders, webSocketRouting);
+            TyrusUpgradeResponse upgradeResponse = prepareUpgrade(ctx, upgradeRequest, upgradeResponseHeaders);
 
             // if not 101 code, create and write to channel a custom user response of
             // type text/plain using reason as payload and return false back to Netty
-            TyrusUpgradeResponse upgradeResponse = wsHandler.upgradeResponse();
             if (upgradeResponse.getStatus() != Http.Status.SWITCHING_PROTOCOLS_101.code()) {
+                responseStatus = Http.ResponseStatus.create(upgradeResponse.getStatus(),
+                                                            upgradeResponse.getReasonPhrase());
                 // prepare headers for failed response
                 Map<String, List<String>> upgradeHeaders = upgradeResponse.getHeaders();
                 upgradeHeaders.remove(Http.Header.UPGRADE);
@@ -100,10 +100,49 @@ class WebSocketUpgradeCodec implements HttpServerUpgradeHandler.UpgradeCodec {
                 return false;
             }
         } catch (Throwable cause) {
+            responseStatus = Http.Status.INTERNAL_SERVER_ERROR_500;
             LOGGER.log(Level.SEVERE, "Error during upgrade to WebSocket", cause);
             return false;
         }
         return true;
+    }
+
+    boolean prepareRoutedUpgradeResponse(ChannelHandlerContext ctx,
+                                         FullHttpRequest upgradeRequest,
+                                         ServerResponse response) {
+        try {
+            response.headers().remove(Http.Header.UPGRADE);
+            response.headers().remove(Http.Header.CONNECTION);
+            response.headers().remove(SEC_WEBSOCKET_ACCEPT);
+            response.headers().remove(SEC_WEBSOCKET_PROTOCOL);
+            HttpHeaders upgradeResponseHeaders = new DefaultHttpHeaders();
+            TyrusUpgradeResponse upgradeResponse = prepareUpgrade(ctx, upgradeRequest, upgradeResponseHeaders);
+            if (upgradeResponse.getStatus() != Http.Status.SWITCHING_PROTOCOLS_101.code()) {
+                responseStatus = Http.ResponseStatus.create(upgradeResponse.getStatus(),
+                                                            upgradeResponse.getReasonPhrase());
+                Map<String, List<String>> upgradeHeaders = upgradeResponse.getHeaders();
+                upgradeHeaders.remove(Http.Header.UPGRADE);
+                upgradeHeaders.remove(Http.Header.CONNECTION);
+                upgradeHeaders.remove(SEC_WEBSOCKET_ACCEPT);
+                upgradeHeaders.remove(SEC_WEBSOCKET_PROTOCOL);
+                upgradeHeaders.forEach(response.headers()::add);
+                response.headers().put(Http.Header.CONTENT_TYPE, "text/plain");
+
+                String reasonPhrase = upgradeResponse.getReasonPhrase() == null ? "" : upgradeResponse.getReasonPhrase();
+                response.status(responseStatus);
+                response.send(reasonPhrase);
+                return false;
+            }
+
+            upgradeResponseHeaders.forEach(header -> response.headers().add(header.getKey(), header.getValue()));
+            return true;
+        } catch (Throwable cause) {
+            responseStatus = Http.Status.INTERNAL_SERVER_ERROR_500;
+            LOGGER.log(Level.SEVERE, "Error during upgrade to WebSocket", cause);
+            response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+            response.send("Internal server error\n");
+            return false;
+        }
     }
 
     @Override
@@ -116,5 +155,17 @@ class WebSocketUpgradeCodec implements HttpServerUpgradeHandler.UpgradeCodec {
         // Handshake done by tyrus
         ctx.pipeline().remove("io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandshakeHandler");
         this.wsHandler.open(ctx);
+    }
+
+    private TyrusUpgradeResponse prepareUpgrade(ChannelHandlerContext ctx,
+                                                FullHttpRequest upgradeRequest,
+                                                HttpHeaders upgradeResponseHeaders) {
+        path = upgradeRequest.uri();
+        upgradeResponseHeaders.remove(Http.Header.UPGRADE);
+        upgradeResponseHeaders.remove(Http.Header.CONNECTION);
+        upgradeResponseHeaders.remove(SEC_WEBSOCKET_ACCEPT);
+        upgradeResponseHeaders.remove(SEC_WEBSOCKET_PROTOCOL);
+        wsHandler = new WebSocketHandler(ctx, path, upgradeRequest, upgradeResponseHeaders, webSocketRouting);
+        return wsHandler.upgradeResponse();
     }
 }
