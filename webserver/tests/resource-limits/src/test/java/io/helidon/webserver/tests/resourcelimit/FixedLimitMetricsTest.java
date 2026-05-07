@@ -126,7 +126,13 @@ class FixedLimitMetricsTest {
         MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
         Optional<Timer> rtt = meterRegistry.timer("fixed_rtt", List.of(ADMIN_SOCKET_TAG));
         assertThat(rtt.isPresent(), is(true));
-        assertThat(rtt.get().count(), is(greaterThan(0L)));
+
+        try (HttpClientResponse res = webClient.get("/observe/metrics").request()) {
+            String s = res.as(String.class);
+            assertThat(s, containsString("fixed_rtt_seconds_count"));
+            assertThat(s, containsString("socketName=\"admin\""));
+            assertThat(res.status().code(), is(200));
+        }
 
         Optional<Timer> defaultTaggedRtt = meterRegistry.timer("fixed_rtt", Collections.emptyList());
         assertThat(defaultTaggedRtt.isPresent(), is(true));
