@@ -205,7 +205,11 @@ class FixedBufferData implements BufferData {
 
     @Override
     public int lastIndexOf(byte aByte, int length) {
-        for (int i = (readPosition + length) - 1; i >= readPosition; i--) {
+        if (length <= 0) {
+            return -1;
+        }
+        int searchLength = Math.min(length, available());
+        for (int i = (readPosition + searchLength) - 1; i >= readPosition; i--) {
             byte b = bytes[i];
             if (b == aByte) {
                 return i - readPosition;
