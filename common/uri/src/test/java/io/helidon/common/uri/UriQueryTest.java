@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UriQueryTest {
@@ -61,6 +62,28 @@ class UriQueryTest {
         assertThat(uriQuery.all("e"), hasItems("f", "g"));
         assertThat(uriQuery.get("h"), is("xc#e<"));
         assertThat(uriQuery.get("a"), is("b&c=d"));
+    }
+
+    @Test
+    void malformedHexEscapesRemainLiteral() {
+        assertAll(
+                () -> assertThat(UriQuery.create("value=%2G").get("value"), is("%2G")),
+                () -> assertThat(UriQuery.create("value=%G2").get("value"), is("%G2")),
+                () -> assertThat(UriQuery.create("%2G=value").get("%2G"), is("value")),
+                () -> assertThat(writeableQuery("value=%2G").get("value"), is("%2G")),
+                () -> assertThat(writeableQuery("value=%G2").get("value"), is("%G2")),
+                () -> assertThat(writeableQuery("%G2=value").get("%G2"), is("value")));
+    }
+
+    @Test
+    void incompletePercentEscapesRemainLiteral() {
+        assertAll(
+                () -> assertThat(UriQuery.create("value=%").get("value"), is("%")),
+                () -> assertThat(UriQuery.create("value=%4").get("value"), is("%4")),
+                () -> assertThat(UriQuery.create("%=value").get("%"), is("value")),
+                () -> assertThat(writeableQuery("value=%").get("value"), is("%")),
+                () -> assertThat(writeableQuery("value=%4").get("value"), is("%4")),
+                () -> assertThat(writeableQuery("%4=value").get("%4"), is("value")));
     }
 
     @Test
@@ -102,5 +125,11 @@ class UriQueryTest {
         assertThat(query.getRaw("p3"), is("%2F%2Fv3%2F%2F"));
         assertThat(query.get("p4"), is("a b c"));
         assertThat(query.getRaw("p4"), is("a%20b%20c"));
+    }
+
+    private static UriQueryWriteable writeableQuery(String queryString) {
+        UriQueryWriteable query = UriQueryWriteable.create();
+        query.fromQueryString(queryString);
+        return query;
     }
 }
