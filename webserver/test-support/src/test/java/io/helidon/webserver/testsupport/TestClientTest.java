@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -184,33 +184,58 @@ public class TestClientTest {
 
     @Test
     public void exceptionalDefaultErrorHandling() throws Exception {
-        errorHandling(new RuntimeException("test-exception"), Http.Status.INTERNAL_SERVER_ERROR_500, true);
+        errorHandling(new RuntimeException("test-exception"),
+                      Http.Status.INTERNAL_SERVER_ERROR_500,
+                      true,
+                      Http.Status.INTERNAL_SERVER_ERROR_500.reasonPhrase());
+    }
+
+    @Test
+    public void exceptionalDefaultErrorHandlingDoesNotExposeMessage() throws Exception {
+        Http.Status status = Http.Status.INTERNAL_SERVER_ERROR_500;
+        Exception nested = new HttpException("nested-exception", status);
+        errorHandling(new RuntimeException("test-exception", nested),
+                      Http.Status.INTERNAL_SERVER_ERROR_500,
+                      true,
+                      Http.Status.INTERNAL_SERVER_ERROR_500.reasonPhrase());
+    }
+
+    @Test
+    public void exceptionalNestedInternalErrorHandlingDoesNotExposeReason() throws Exception {
+        Http.ResponseStatus status = Http.ResponseStatus.create(500, "test-reason");
+        Exception nested = new HttpException("nested-exception", status);
+        errorHandling(new RuntimeException("test-exception", nested),
+                      Http.Status.INTERNAL_SERVER_ERROR_500,
+                      true,
+                      Http.Status.INTERNAL_SERVER_ERROR_500.reasonPhrase());
     }
 
     @Test
     public void exceptionalNotFoundErrorHandling() throws Exception {
-        errorHandling(new NotFoundException("test-exception"), Http.Status.NOT_FOUND_404, true);
+        errorHandling(new NotFoundException("test-exception"), Http.Status.NOT_FOUND_404, true, "test-exception");
     }
 
     @Test
     public void exceptionalNestedHttpExceptionHandling() throws Exception {
         Http.Status status = SERVICE_UNAVAILABLE_503;
         Exception nested = new HttpException(status.reasonPhrase(), status);
-        errorHandling(new RuntimeException("test", nested), status, true);
+        errorHandling(new RuntimeException("test", nested), status, true, "test");
     }
 
     @Test
     public void explicitDefaultErrorHandling() throws Exception {
-        errorHandling(new RuntimeException("test-exception"), Http.Status.INTERNAL_SERVER_ERROR_500, false);
+        errorHandling(new RuntimeException("test-exception"),
+                      Http.Status.INTERNAL_SERVER_ERROR_500,
+                      false,
+                      Http.Status.INTERNAL_SERVER_ERROR_500.reasonPhrase());
     }
 
     @Test
     public void explicitNotFoundErrorHandling() throws Exception {
-        errorHandling(new NotFoundException("test-exception"), Http.Status.NOT_FOUND_404, false);
+        errorHandling(new NotFoundException("test-exception"), Http.Status.NOT_FOUND_404, false, "test-exception");
     }
 
-    void errorHandling(RuntimeException exception, Http.Status status, boolean doThrow) throws Exception {
-
+    void errorHandling(RuntimeException exception, Http.Status status, boolean doThrow, String expectedMessage) throws Exception {
         Routing routing = Routing.builder()
                 .any((req, res) -> {
                     if (doThrow) {
@@ -225,6 +250,7 @@ public class TestClientTest {
                 .get();
 
         assertThat(response.status(), is(status));
+        assertThat(response.asString().get(10, TimeUnit.SECONDS), is(expectedMessage));
     }
 
 

@@ -422,19 +422,28 @@ class RequestRouting implements Routing {
             try {
                 if (t instanceof HttpException) {
                     response.status(((HttpException) t).status());
+                    message = t.getMessage();
                 } else if (t.getCause() instanceof HttpException) {
-                    response.status(((HttpException) t.getCause()).status());
+                    Http.ResponseStatus status = ((HttpException) t.getCause()).status();
+                    if (status.code() == Http.Status.INTERNAL_SERVER_ERROR_500.code()) {
+                        response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+                        message = Http.Status.INTERNAL_SERVER_ERROR_500.reasonPhrase();
+                    } else {
+                        response.status(status);
+                        message = t.getMessage();
+                    }
                 } else if (t instanceof RejectedExecutionException
                         || t.getCause() instanceof RejectedExecutionException) {
                     response.status(Http.Status.SERVICE_UNAVAILABLE_503);
+                    message = t.getMessage();
                 } else {
                     LOGGER.log(t instanceof Error ? Level.SEVERE : Level.WARNING,
                                "Default error handler: Unhandled exception encountered.",
                                new ExecutionException("Unhandled 'cause' of this exception encountered.", t));
 
                     response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+                    message = Http.Status.INTERNAL_SERVER_ERROR_500.reasonPhrase();
                 }
-                message = t.getMessage();
             } catch (AlreadyCompletedException e) {
                 LOGGER.log(Level.WARNING,
                            "Cannot perform error handling of the throwable (see cause of this exception) because headers "
