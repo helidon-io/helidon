@@ -31,6 +31,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatchers;
 import io.helidon.http.Status;
+import io.helidon.webserver.ErrorHandling;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.Handler;
@@ -118,6 +119,9 @@ class Continue100Test {
     static void server(WebServerConfig.Builder server) {
         server.writeQueueLength(2);
         server.smartAsyncWrites(true);
+        server.errorHandling(ErrorHandling.builder()
+                                     .includeEntity(true)
+                                     .build());
     }
 
     @Test
