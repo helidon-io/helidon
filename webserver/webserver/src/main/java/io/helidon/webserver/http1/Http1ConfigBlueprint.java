@@ -70,35 +70,33 @@ interface Http1ConfigBlueprint extends ProtocolConfig {
     Size maxBufferedEntitySize();
 
     /**
-     * Whether to validate headers.
-     * If set to false, any value is accepted, otherwise validates headers + known headers
-     * are validated by format
+     * Whether to validate request headers.
+     * If set to false, any request header value is accepted, otherwise request headers and known headers are
+     * validated by format
      * (content length is always validated as it is part of protocol processing (other headers may be validated if
      * features use them)).
      * <p>
      *     Defaults to {@code true}.
      * </p>
      *
-     * @return whether to validate headers
+     * @return whether to validate request headers
      */
     @Option.Configured
     @Option.DefaultBoolean(true)
     boolean validateRequestHeaders();
 
     /**
-     * Whether to validate headers.
-     * If set to false, any value is accepted, otherwise validates headers + known headers
-     * are validated by format
-     * (content length is always validated as it is part of protocol processing (other headers may be validated if
-     * features use them)).
+     * Whether to validate response headers.
+     * If set to false, any response header value is accepted, otherwise response headers and known headers are
+     * validated by format.
      * <p>
-     *     Defaults to {@code false} as user has control on the header creation.
+     *     Defaults to {@code true}. Disabling this setting can allow invalid response header values to be written.
      * </p>
      *
-     * @return whether to validate headers
+     * @return whether to validate response headers
      */
     @Option.Configured
-    @Option.DefaultBoolean(false)
+    @Option.DefaultBoolean(true)
     boolean validateResponseHeaders();
 
     /**
