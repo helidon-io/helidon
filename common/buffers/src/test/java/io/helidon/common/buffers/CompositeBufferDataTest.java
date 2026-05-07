@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,30 @@ class CompositeBufferDataTest {
         combined.read();
         String result = combined.readString(combined.indexOf((byte) '0'));
         assertThat(result, is("123456789"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
+    void lastIndexOfReturnsCompositeRelativeIndex(TestContext context) {
+        BufferData combined = context.bufferData();
+
+        assertThat(combined.lastIndexOf((byte) '0', combined.available()), is(10));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
+    void lastIndexOfSearchesOnlyRequestedLength(TestContext context) {
+        BufferData combined = context.bufferData();
+
+        assertThat(combined.lastIndexOf((byte) '8', 7), is(-1));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
+    void lastIndexOfSearchesPreviousBuffersWithinRequestedLength(TestContext context) {
+        BufferData combined = context.bufferData();
+
+        assertThat(combined.lastIndexOf((byte) '6', 8), is(6));
     }
 
     private record TestContext(String name, BufferData bufferData) {

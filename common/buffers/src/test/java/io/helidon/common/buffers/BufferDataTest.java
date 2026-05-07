@@ -67,6 +67,36 @@ class BufferDataTest {
 
     @ParameterizedTest
     @MethodSource("initParams")
+    void lastIndexOfWithLengthAfterPartialRead(TestContext context) {
+        BufferData b = context.bufferData();
+        b.writeAscii("01abcy");
+        b.skip(2);
+
+        assertThat(b.lastIndexOf((byte) 'y', 4), is(3));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
+    void lastIndexOfClampsLengthToAvailable(TestContext context) {
+        BufferData b = context.bufferData();
+        b.writeAscii("01abcy");
+        b.skip(2);
+
+        assertThat(b.lastIndexOf((byte) 'y', 5), is(3));
+        assertThat(b.lastIndexOf((byte) 0, 5), is(-1));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
+    void lastIndexOfIgnoresNegativeLength(TestContext context) {
+        BufferData b = context.bufferData();
+        b.writeAscii("abc");
+
+        assertThat(b.lastIndexOf((byte) 'a', Integer.MIN_VALUE), is(-1));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
     void testWriteHpackInt(TestContext context) {
         int value = 10;
 

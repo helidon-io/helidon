@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -198,7 +198,11 @@ class GrowingBufferData implements BufferData {
 
     @Override
     public int lastIndexOf(byte aByte, int length) {
-        for (int i = length - 1; i >= readPosition; i--) {
+        if (length <= 0) {
+            return -1;
+        }
+        int searchLength = Math.min(length, available());
+        for (int i = (readPosition + searchLength) - 1; i >= readPosition; i--) {
             byte b = bytes[i];
             if (b == aByte) {
                 return i - readPosition;

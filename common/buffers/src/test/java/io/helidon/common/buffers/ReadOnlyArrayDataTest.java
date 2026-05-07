@@ -45,6 +45,35 @@ class ReadOnlyArrayDataTest {
     }
 
     @Test
+    void lastIndexOfWithLengthAfterPartialRead() {
+        byte[] data = "01abcy".getBytes(StandardCharsets.UTF_8);
+        ReadOnlyArrayData buf = new ReadOnlyArrayData(data, 0, data.length);
+
+        buf.skip(2);
+
+        assertThat(buf.lastIndexOf((byte) 'y', 4), is(3));
+    }
+
+    @Test
+    void lastIndexOfClampsLengthToAvailable() {
+        byte[] data = "01abcy".getBytes(StandardCharsets.UTF_8);
+        ReadOnlyArrayData buf = new ReadOnlyArrayData(data, 0, data.length);
+
+        buf.skip(2);
+
+        assertThat(buf.lastIndexOf((byte) 'y', 5), is(3));
+        assertThat(buf.lastIndexOf((byte) 0, 5), is(-1));
+    }
+
+    @Test
+    void lastIndexOfIgnoresNegativeLength() {
+        byte[] data = "abc".getBytes(StandardCharsets.UTF_8);
+        ReadOnlyArrayData buf = new ReadOnlyArrayData(data, 0, data.length);
+
+        assertThat(buf.lastIndexOf((byte) 'a', Integer.MIN_VALUE), is(-1));
+    }
+
+    @Test
     void testDebugData() {
         byte[] test = "Hello World!".getBytes(StandardCharsets.UTF_8);
         ReadOnlyArrayData rad = new ReadOnlyArrayData(test, 1, test.length - 1);
