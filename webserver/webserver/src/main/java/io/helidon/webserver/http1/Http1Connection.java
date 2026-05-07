@@ -562,7 +562,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             if (this.http1Config.continueImmediately()) {
                 try {
                     writer.writeNow(BufferData.create(CONTINUE_100));
-                } catch (UncheckedIOException e) {
+                } catch (SocketWriterException | UncheckedIOException e) {
                     throw new ServerConnectionException("Failed to write continue", e);
                 }
             }

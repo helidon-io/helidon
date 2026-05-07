@@ -204,8 +204,8 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             helidonSocket.log(LOGGER, WARNING, "unexpected exception", e);
         } finally {
             // connection has finished the loop of handling, release the semaphore
-            connectionSemaphore.release();
             activeConnections.remove(socketsId);
+            connectionSemaphore.release();
             writer.close();
             closeChannel(channelId);
         }
