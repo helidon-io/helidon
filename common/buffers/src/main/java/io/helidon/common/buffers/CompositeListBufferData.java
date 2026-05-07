@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 
 class CompositeListBufferData extends ReadOnlyBufferData implements CompositeBufferData {
     private final List<BufferData> data;
@@ -223,16 +224,34 @@ class CompositeListBufferData extends ReadOnlyBufferData implements CompositeBuf
     public int lastIndexOf(byte aByte, int length) {
         int index;
         int lengthRemaining = length;
+        int indexPrefix = 0;
 
-        for (int i = data.size() - 1; i >= 0; i--) {
-            BufferData datum = data.get(i);
-            index = datum.lastIndexOf(aByte, Math.min(lengthRemaining, datum.available()));
-            if (index > -1) {
-                return index;
-            }
-            lengthRemaining -= datum.available();
+        ListIterator<BufferData> iterator = data.listIterator();
+        while (iterator.hasNext()) {
             if (lengthRemaining <= 0) {
                 break;
+            }
+            BufferData datum = iterator.next();
+            int available = datum.available();
+            if (lengthRemaining <= available) {
+                index = datum.lastIndexOf(aByte, lengthRemaining);
+                if (index > -1) {
+                    return indexPrefix + index;
+                }
+                iterator.previous();
+                break;
+            }
+            lengthRemaining -= available;
+            indexPrefix += available;
+        }
+
+        while (iterator.hasPrevious()) {
+            BufferData datum = iterator.previous();
+            int available = datum.available();
+            indexPrefix -= available;
+            index = datum.lastIndexOf(aByte, available);
+            if (index > -1) {
+                return indexPrefix + index;
             }
         }
         return -1;

@@ -145,7 +145,11 @@ class ReadOnlyArrayData extends ReadOnlyBufferData {
 
     @Override
     public int lastIndexOf(byte aByte, int length) {
-        for (int i = length - 1; i >= position; i--) {
+        if (length <= 0) {
+            return -1;
+        }
+        int searchLength = Math.min(length, available());
+        for (int i = (position + searchLength) - 1; i >= position; i--) {
             byte b = bytes[offset + i];
             if (b == aByte) {
                 return i - position;
