@@ -28,6 +28,11 @@
     <artifactId>helidon-common-features-codegen</artifactId>
     <name>Helidon Common Features Codegen</name>
 
+    <properties>
+        <!-- TestCompiler module-path setup is incorrectly reported as compile-scope test-only dependencies. -->
+        <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.metadata</groupId>
@@ -49,5 +54,54 @@
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-metadata</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.common.features</groupId>
+            <artifactId>helidon-common-features-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-apt</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-testing</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <proc>none</proc>
+                            <compilerArgs combine.children="append">
+                                <compilerArg>--add-modules</compilerArg>
+                                <compilerArg>java.compiler</compilerArg>
+                                <compilerArg>--add-reads</compilerArg>
+                                <compilerArg>io.helidon.common.features.codegen=java.compiler</compilerArg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
