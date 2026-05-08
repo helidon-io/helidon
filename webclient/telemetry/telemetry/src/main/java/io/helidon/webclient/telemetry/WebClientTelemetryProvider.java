@@ -19,6 +19,7 @@ package io.helidon.webclient.telemetry;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
@@ -35,9 +36,9 @@ public class WebClientTelemetryProvider implements WebClientServiceProvider {
     private final List<WebClientService> subservices = new ArrayList<>();
 
     /**
-     * For service loader use only.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public WebClientTelemetryProvider() {
     }
 
@@ -47,19 +48,7 @@ public class WebClientTelemetryProvider implements WebClientServiceProvider {
     }
 
     @Override
-    public WebClientService create(io.helidon.common.config.Config config, String name) {
-        return create((Config) config, name);
-    }
-
-    /**
-     * Creates a new client telemetry service.
-     *
-     * @param config client telemetry config
-     * @param name   component name
-     * @return new webclient service instance for client telemetry
-     */
     public WebClientService create(Config config, String name) {
-
         if (config.get("metrics").exists()) {
             subservices.add(WebClientTelemetryMetrics.create(config.get("metrics")));
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.util.AbacSupport;
 
@@ -162,17 +162,17 @@ public class EndpointConfig implements AbacSupport {
     public enum AnnotationScope {
         /**
          * Annotations on an application class or application layer.
-         * Example: JAX-RS application class annotation
+         * Example: application-level annotation
          */
         APPLICATION,
         /**
          * Annotations on a resource class.
-         * Example: JAX-RS resource class annotation
+         * Example: endpoint class annotation
          */
         CLASS,
         /**
          * Annotation on a resource method.
-         * Example: JAX-RS resource method annotation
+         * Example: endpoint method annotation
          */
         METHOD,
         /**

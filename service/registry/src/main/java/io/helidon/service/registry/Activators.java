@@ -292,29 +292,29 @@ final class Activators {
             return getClass().getSimpleName() + " for " + provider;
         }
 
-        protected void construct(ActivationResult.Builder response) {
+        void construct(ActivationResult.Builder response) {
         }
 
-        protected void inject(ActivationResult.Builder response) {
+        void inject(ActivationResult.Builder response) {
         }
 
-        protected void postConstruct(ActivationResult.Builder response) {
+        void postConstruct(ActivationResult.Builder response) {
         }
 
-        protected void finishActivation(ActivationResult.Builder response) {
+        void finishActivation(ActivationResult.Builder response) {
         }
 
-        protected void preDestroy(ActivationResult.Builder response) {
+        void preDestroy(ActivationResult.Builder response) {
         }
 
-        protected void setTargetInstances() {
+        void setTargetInstances() {
         }
 
-        protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+        Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             return targetInstances();
         }
 
-        protected Optional<List<QualifiedInstance<T>>> targetInstances() {
+        Optional<List<QualifiedInstance<T>>> targetInstances() {
             return Optional.empty();
         }
 
@@ -331,7 +331,7 @@ final class Activators {
          * @param providerType type of provider this type implements
          * @return whether the provider itself should be returned
          */
-        protected boolean requestedProvider(Lookup lookup, FactoryType providerType) {
+        boolean requestedProvider(Lookup lookup, FactoryType providerType) {
             if (lookup.factoryTypes().contains(providerType)) {
                 return true;
             }
@@ -432,7 +432,7 @@ final class Activators {
         }
 
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances() {
+        Optional<List<QualifiedInstance<T>>> targetInstances() {
             return instances;
         }
     }
@@ -451,7 +451,7 @@ final class Activators {
         }
 
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances() {
+        Optional<List<QualifiedInstance<T>>> targetInstances() {
             return instances.get();
         }
 
@@ -488,20 +488,20 @@ final class Activators {
      */
     static class SingleServiceActivator<T> extends BaseActivator<T> {
         private final ReentrantLock lock = new ReentrantLock();
-        protected InstanceHolder<T> serviceInstance;
-        protected List<QualifiedInstance<T>> targetInstances;
+        InstanceHolder<T> serviceInstance;
+        List<QualifiedInstance<T>> targetInstances;
 
         SingleServiceActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
             super(provider, dependencyContext);
         }
 
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances() {
+        Optional<List<QualifiedInstance<T>>> targetInstances() {
             return Optional.ofNullable(targetInstances);
         }
 
         @Override
-        protected void construct(ActivationResult.Builder response) {
+        void construct(ActivationResult.Builder response) {
             if (lock.isHeldByCurrentThread()) {
                 throw new ServiceRegistryException("Cyclic dependency, attempting to obtain an instance of "
                                                            + provider.descriptor().serviceType().fqName()
@@ -520,7 +520,7 @@ final class Activators {
         }
 
         @Override
-        protected void setTargetInstances() {
+        void setTargetInstances() {
             if (serviceInstance != null) {
                 // lifecycle of the target instances is the same as of the service instance
                 // when service is created, we have the target...
@@ -529,20 +529,20 @@ final class Activators {
             }
         }
 
-        protected void inject(ActivationResult.Builder response) {
+        void inject(ActivationResult.Builder response) {
             if (serviceInstance != null) {
                 serviceInstance.inject();
             }
         }
 
-        protected void postConstruct(ActivationResult.Builder response) {
+        void postConstruct(ActivationResult.Builder response) {
             if (serviceInstance != null) {
                 serviceInstance.postConstruct();
             }
         }
 
         @Override
-        protected void preDestroy(ActivationResult.Builder response) {
+        void preDestroy(ActivationResult.Builder response) {
             if (serviceInstance != null) {
                 serviceInstance.preDestroy();
             }
@@ -560,7 +560,7 @@ final class Activators {
         }
 
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+        Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             if (requestedProvider(lookup, FactoryType.SUPPLIER)) {
                 // the user requested the provider, not the provided
                 T instance = serviceInstance.get();
@@ -572,7 +572,7 @@ final class Activators {
 
         @SuppressWarnings("unchecked")
         @Override
-        protected void setTargetInstances() {
+        void setTargetInstances() {
             if (serviceInstance == null) {
                 return;
             }
@@ -616,12 +616,12 @@ final class Activators {
         }
 
         @Override
-        protected void setTargetInstances() {
+        void setTargetInstances() {
             // target instances cannot be created, they are resolved on each lookup
         }
 
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+        Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             if (serviceInstance == null) {
                 return Optional.empty();
             }
@@ -666,13 +666,13 @@ final class Activators {
         }
 
         @Override
-        protected void setTargetInstances() {
+        void setTargetInstances() {
             // target instances cannot be created, they are resolved on each lookup
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+        Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             if (serviceInstance == null) {
                 return Optional.empty();
             }
@@ -702,13 +702,13 @@ final class Activators {
         }
 
         @Override
-        protected void construct(ActivationResult.Builder response) {
+        void construct(ActivationResult.Builder response) {
             super.construct(response);
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        protected void setTargetInstances() {
+        void setTargetInstances() {
             if (serviceInstance == null) {
                 return;
             }
@@ -718,7 +718,7 @@ final class Activators {
         }
 
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+        Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             if (requestedProvider(lookup, FactoryType.SERVICES)) {
                 return Optional.of(List.of(QualifiedInstance.create(serviceInstance.get(), descriptor().qualifiers())));
             }
@@ -812,7 +812,7 @@ final class Activators {
         }
 
         @Override
-        protected void construct(ActivationResult.Builder response) {
+        void construct(ActivationResult.Builder response) {
             // at this moment, we must resolve services that are driving this instance
 
             // we do not want to use lookup, as that is doing too much for us
@@ -835,21 +835,21 @@ final class Activators {
         }
 
         @Override
-        protected void inject(ActivationResult.Builder response) {
+        void inject(ActivationResult.Builder response) {
             for (QualifiedServiceInstance<T> instance : serviceInstances) {
                 instance.serviceInstance().inject();
             }
         }
 
         @Override
-        protected void postConstruct(ActivationResult.Builder response) {
+        void postConstruct(ActivationResult.Builder response) {
             for (QualifiedServiceInstance<T> instance : serviceInstances) {
                 instance.serviceInstance().postConstruct();
             }
         }
 
         @Override
-        protected void setTargetInstances() {
+        void setTargetInstances() {
             if (serviceInstances != null) {
                 targetInstances = serviceInstances.stream()
                         .map(it -> QualifiedInstance.create(it.serviceInstance().get(), it.qualifiers()))
@@ -858,7 +858,7 @@ final class Activators {
         }
 
         @Override
-        protected void preDestroy(ActivationResult.Builder response) {
+        void preDestroy(ActivationResult.Builder response) {
             if (serviceInstances != null) {
                 serviceInstances.stream()
                         .map(QualifiedServiceInstance::serviceInstance)
@@ -869,7 +869,7 @@ final class Activators {
         }
 
         @Override
-        protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+        Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             if (targetInstances == null) {
                 return Optional.empty();
             }

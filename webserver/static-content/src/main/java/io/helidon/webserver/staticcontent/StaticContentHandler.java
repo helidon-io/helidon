@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import io.helidon.common.configurable.LruCache;
+import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.DateTime;
 import io.helidon.http.Header;
@@ -44,15 +44,16 @@ import io.helidon.http.PathMatchers;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 /**
  * Base implementation of static content support.
  */
-@SuppressWarnings("removal") // will be replaced with HttpService once removed, or made package local
-abstract class StaticContentHandler implements StaticContentService {
+abstract class StaticContentHandler implements HttpService {
     private static final System.Logger LOGGER = System.getLogger(StaticContentHandler.class.getName());
 
     private final LruCache<String, CachedHandler> handlerCache;
@@ -64,9 +65,9 @@ abstract class StaticContentHandler implements StaticContentService {
     StaticContentHandler(BaseHandlerConfig config) {
         this.welcomeFilename = config.welcome().orElse(null);
         this.resolvePathFunction = config.pathMapper();
-        this.handlerCache = LruCache.<String, CachedHandler>builder()
-                .update(it -> config.recordCacheCapacity().ifPresent(it::capacity))
-                .build();
+        this.handlerCache = config.recordCacheCapacity()
+                .map(LruCache::<String, CachedHandler>create)
+                .orElseGet(LruCache::create);
         this.memoryCache = config.memoryCache().orElseGet(MemoryCache::create);
     }
 
@@ -233,6 +234,8 @@ abstract class StaticContentHandler implements StaticContentService {
             if (!doHandle(method, requestPath, request, response, mapped)) {
                 response.next();
             }
+        } catch (CloseConnectionException e) {
+            throw e;
         } catch (HttpException httpException) {
             if (httpException.status().code() == Status.NOT_FOUND_404.code()) {
                 // Prefer to next() before NOT_FOUND

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
@@ -81,7 +81,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
 
     /**
      * Get a builder instance to construct a new security provider.
-     * Alternative approach is {@link #create(io.helidon.common.config.Config)} (or {@link HttpBasicAuthProvider#create(Config)}).
+     * Alternative approach is {@link HttpBasicAuthProvider#create(Config)}.
      *
      * @return builder to fluently construct Basic security provider
      */
@@ -92,8 +92,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
     /**
      * Load this provider from configuration.
      *
-     * @param config Configuration located at this provider's configuration (e.g. child is either http-basic-auth or
-     *               http-digest-auth)
+     * @param config Configuration located at this provider's configuration (e.g. child is http-basic-auth)
      * @return instance of provider configured from provided config
      */
     public static HttpBasicAuthProvider create(Config config) {
@@ -314,6 +313,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
 
         /**
          * Update this builder from configuration.
+         *
          * @param config configuration to read, located on the node of the http basic authentication provider
          * @return updated builder instance
          */
@@ -338,7 +338,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
 
                         @Override
                         public SecureUserStore create(Config config) {
-                            return usersConfig.map(ConfigUserStore::create)
+                            return usersConfig.as(ConfigUserStore::create)
                                     .orElseThrow(() -> new HttpAuthException(
                                             "No users configured! Key \"users\" must be in configuration"));
                         }
@@ -352,7 +352,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
                         addUserStore(userStoreService.create(config.get(userStoreService.configKey())));
                     });
 
-            config.get("outbound").mapList(OutboundTarget::create)
+            config.get("outbound").asList(OutboundTarget::create)
                     .ifPresent(it -> it.forEach(outboundBuilder::addTarget));
 
             return this;

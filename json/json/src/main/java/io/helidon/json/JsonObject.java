@@ -27,9 +27,12 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
+
 /**
  * Represents a JSON object value containing key-value pairs.
  */
+@Api.Preview
 public final class JsonObject extends JsonValue {
 
     static final JsonObject EMPTY_OBJECT = JsonObject.create(List.of());
@@ -69,6 +72,15 @@ public final class JsonObject extends JsonValue {
         return new JsonObject(new LinkedHashMap<>(content));
     }
 
+    /**
+     * Returns the shared empty JSON object instance.
+     *
+     * @return the empty JSON object
+     */
+    public static JsonObject empty() {
+        return EMPTY_OBJECT;
+    }
+
     static JsonObject create(List<Pair> pairs) {
         return new JsonObject(pairs);
     }
@@ -103,6 +115,17 @@ public final class JsonObject extends JsonValue {
             return defaultValue;
         }
         return jsonValue;
+    }
+
+    /**
+     * Return the value associated with the specified key, or the empty value if the key is not present.
+     *
+     * @param key the key to look up
+     * @return the value associated with the key, or empty
+     */
+    public Optional<JsonValue> value(String key) {
+        ensureResolvedKeys();
+        return Optional.ofNullable(content.get(key));
     }
 
     /**
@@ -397,7 +420,7 @@ public final class JsonObject extends JsonValue {
     private void ensureResolvedKeys() {
         if (!resolved) {
             for (Pair pair : pairs) {
-                content.put(pair.key.resolveValue(), pair.value);
+                content.put(pair.key.value(), pair.value);
             }
         }
     }
@@ -422,6 +445,19 @@ public final class JsonObject extends JsonValue {
         @Override
         public JsonObject build() {
             return new JsonObject(new LinkedHashMap<>(values));
+        }
+
+        /**
+         * Copies all properties from the provided object into this builder.
+         *
+         * @param object the object to copy values from
+         * @return this builder for method chaining
+         */
+        public Builder from(JsonObject object) {
+            Objects.requireNonNull(object, "object cannot be null");
+            object.ensureResolvedKeys();
+            values.putAll(object.content);
+            return this;
         }
 
         /**
@@ -584,7 +620,7 @@ public final class JsonObject extends JsonValue {
          * @param value the list of JsonValue instances
          * @return this builder for method chaining
          */
-        public Builder setValues(String key, List<JsonValue> value) {
+        public Builder setValues(String key, List<? extends JsonValue> value) {
             Objects.requireNonNull(key, "key cannot be null");
             Objects.requireNonNull(value, "value cannot be null");
 

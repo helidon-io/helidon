@@ -18,7 +18,7 @@
 
 = Helidon SE Tracing Guide
 :description: Helidon tracing
-:keywords: helidon, tracing, microprofile, guide
+:keywords: helidon, tracing, guide
 :toc:
 :rootdir: {docdir}/../..
 :imagesdir: {rootdir}/images
@@ -619,7 +619,7 @@ include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;detailed]
 This guide has demonstrated how to use the Helidon SE tracing feature with Jaeger. You have learned to do the following:
 
 - Enable tracing within a service
-- Use tracing with JAX-RS
+- Use tracing with HTTP endpoints
 - Use the Jaeger REST API and UI
 - Use tracing across multiple services
 - Integrate tracing with Kubernetes
@@ -627,8 +627,5 @@ This guide has demonstrated how to use the Helidon SE tracing feature with Jaege
 
 Refer to the following references for additional information:
 
-- link:{microprofile-tracing-spec-url}[MicroProfile OpenTracing specification]
-- link:{microprofile-tracing-javadoc-url}[MicroProfile OpenTracing Javadoc]
 * link:https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API]
 - link:{javadoc-base-url}/index.html?overview-summary.html[Helidon Javadoc]
-

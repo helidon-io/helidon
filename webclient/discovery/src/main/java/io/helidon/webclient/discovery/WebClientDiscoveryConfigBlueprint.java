@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ interface WebClientDiscoveryConfigBlueprint extends Prototype.Factory<WebClientD
      * The name to assign to the runtime type ({@code discovery} by default).
      *
      * @return a name
-     * @see io.helidon.common.config.NamedService#name()
+     * @see io.helidon.config.NamedService#name()
      */
     @Option.Configured
     @Option.Default("discovery")

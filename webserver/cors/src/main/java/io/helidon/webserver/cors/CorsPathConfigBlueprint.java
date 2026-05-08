@@ -30,9 +30,7 @@ import static io.helidon.webserver.cors.Cors.ALLOW_ALL;
 @Prototype.Blueprint
 @Prototype.Configured
 @Prototype.CustomMethods(CorsConfigSupport.PathCustomMethods.class)
-@Prototype.Annotated({"io.helidon.service.registry.Service.Contract",
-        "java.lang.SuppressWarnings(\"removal\")"
-})
+@Prototype.Annotated({"io.helidon.service.registry.Service.Contract"})
 interface CorsPathConfigBlueprint {
     /**
      * Path pattern to apply this configuration for.

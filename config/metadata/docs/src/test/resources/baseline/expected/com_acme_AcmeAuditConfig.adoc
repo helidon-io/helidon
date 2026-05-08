@@ -1,0 +1,36 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeAuditConfig
+
+== Description
+
+++++
+ACME Audit configuration
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Description
+
+| `paths`
+|`Map<String, String>`
+|pass:[Audited paths]
+
+| `strict`
+|`Boolean`
+|pass:[Fail on error]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/com_acme_AcmeFeature.adoc#a18176ccf-audit[`server.features.audit`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

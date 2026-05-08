@@ -11,7 +11,7 @@ We see the following three environments that are used for code processing:
 
 In Helidon, we do as much as possible using annotation processing and source code generation. 
 For the cases where we need to analyze external libraries, or arbitrary code, we use classpath scanning (such as from a Maven plugin or command line tool).
-Reflection can only be used in Helidon Microprofile, or in selected modules that are intentionally reflection based (this should be currently limited to Config object mapping module).
+Reflection can only be used in selected modules that are intentionally reflection based (this should currently be limited to the Config object mapping module).
 
 
 # Modules
@@ -54,4 +54,3 @@ Main entry point is the `CodegenContext` that provides:
 Class model provides APIs to construct a class in memory, and then write it out (using for example `CodegenFiler`) as source file.
 
 Start with `ClassModel.builder()`.
-

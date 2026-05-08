@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2016, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,27 +38,21 @@ security:
       # SUFFICIENT - provider must succeed or abstain. If succeeds, no further provider is called
       # FORBIDDEN - provider must abstain or fail
       # MUST_FAIL - provider must fail
-      - name: "google-login"
+      - name: "http-signatures"
         flag: "OPTIONAL"
     authorization:
       - name: "roles"
         flag: "MAY_FAIL"
     # Outbound does not support flags
     outbound:
-      - name: "google-login"
       - name: "http-signatures"
   providers:
     # default authentication provider (by name) - useful when more providers are configured that support both atn and atz
     # only makes sense when selection policy is "FIRST"
-    default-authentication-provider: "google-login"
+    default-authentication-provider: "http-signatures"
     # default authorization provider (by name) - useful when more providers are configured that support both atn and atz
     default-authorization-provider: "roles"
     # A list of configured security providers with their configuration
-    - google-login:
-        client-id: "..."
-        token:
-          header: "GoogleToken"
-          regexp: "(.*)"
     - name: "roles"
       class: "io.helidon.security.roles.RolesProvider"
     # Equivalent to the one above (as roles provider maps "roles" configuration to itself through spi)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public class ReadablePartLengthTest {
     public void testReadInt() throws IOException {
         MediaContext mediaContext = MediaContext.create();
         WritableHeaders<?> headers = WritableHeaders.create();
-        DataReader dataReader = new DataReader(() -> BUFFER);
+        DataReader dataReader = DataReader.create(() -> BUFFER);
         int index = 0;
         int partLength = 1;
 

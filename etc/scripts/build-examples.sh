@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+# Copyright (c) 2024, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ readonly HELIDON_VERSION
 # If needed we clone the helidon-examples repo
 if [ ! -d "${WS_DIR}/helidon-examples" ]; then
   echo "Cloning examples repository into ${WS_DIR}/helidon-examples"
-  git clone --branch dev-4.x --single-branch https://github.com/helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
+  git clone --branch dev-27.x --single-branch https://github.com/helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
 
   # If in a tag, update the version on the fly
   if [ -n "$(git tag --points-at HEAD)" ] ; then

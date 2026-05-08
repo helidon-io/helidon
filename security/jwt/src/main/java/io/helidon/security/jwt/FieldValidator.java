@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import io.helidon.common.Errors;
-
-import jakarta.json.JsonString;
 
 /**
  * Validator of a string field obtained from the JWT.
@@ -140,9 +138,9 @@ public final class FieldValidator extends OptionalValidator {
                     collector.fatal(getClass(), "Field accessor or claim key name has to be set.");
                 }
                 if (scope() == JwtScope.PAYLOAD) {
-                    fieldAccessor = jwt -> jwt.payloadClaim(claimKey).map(it -> ((JsonString) it).getString());
+                    fieldAccessor = jwt -> jwt.payloadClaimValue(claimKey).map(it -> it.asString().value());
                 } else {
-                    fieldAccessor = jwt -> jwt.headerClaim(claimKey).map(it -> ((JsonString) it).getString());
+                    fieldAccessor = jwt -> jwt.headerClaimValue(claimKey).map(it -> it.asString().value());
                 }
             }
             collector.collect().checkValid();

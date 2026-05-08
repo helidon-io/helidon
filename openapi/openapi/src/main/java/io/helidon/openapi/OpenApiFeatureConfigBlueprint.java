@@ -22,7 +22,6 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.cors.CrossOriginConfig;
 import io.helidon.openapi.spi.OpenApiManagerProvider;
 import io.helidon.openapi.spi.OpenApiServiceProvider;
 import io.helidon.webserver.spi.ServerFeatureProvider;
@@ -69,19 +68,6 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      */
     @Option.Configured
     Optional<String> staticFile();
-
-    /**
-     * CORS config.
-     *
-     * @return CORS config
-     * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
-     *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
-     *  server feature
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    @Option.Configured
-    Optional<CrossOriginConfig> cors();
 
     /**
      * OpenAPI services.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import io.helidon.codegen.Option;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.codegen.spi.CodegenExtensionProvider;
 import io.helidon.codegen.spi.CodegenProvider;
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -72,11 +73,9 @@ public class ServiceRegistryCodegenProvider implements CodegenExtensionProvider 
                     .collect(Collectors.toUnmodifiableSet());
 
     /**
-     * Required default constructor.
-     *
-     * @deprecated required by {@link java.util.ServiceLoader}
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public ServiceRegistryCodegenProvider() {
     }
 

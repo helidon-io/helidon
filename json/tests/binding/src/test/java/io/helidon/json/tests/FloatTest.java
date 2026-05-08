@@ -20,7 +20,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -35,46 +36,54 @@ public class FloatTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testFloatSerialization() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testFloatSerializationParameterized(BindingMethod bindingMethod) {
         FloatModel model = new FloatModel(123.456F, 456.789F);
 
         String expected = "{\"object\":123.456,\"primitive\":456.789}";
-        assertThat(jsonBinding.serialize(model), is(expected));
+        assertThat(bindingMethod.serialize(jsonBinding, model), is(expected));
     }
 
-    @Test
-    public void testFloatDeserializationFromFloatAsStringValue() {
-        FloatModel floatModel = jsonBinding.deserialize("{\"object\":\"123.456\",\"primitive\":\"456.789\"}", FloatModel.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testFloatDeserializationFromFloatAsStringValueParameterized(BindingMethod bindingMethod) {
+        FloatModel floatModel = bindingMethod.deserialize(jsonBinding,
+                                                          "{\"object\":\"123.456\",\"primitive\":\"456.789\"}",
+                                                          FloatModel.class);
         assertThat(floatModel.object, is(123.456F));
         assertThat(floatModel.primitive, is(456.789F));
     }
 
-    @Test
-    public void testFloatDeserializationFromFloatRawValue() {
-        FloatModel floatModel = jsonBinding.deserialize("{\"object\":123.456,\"primitive\":456.789}", FloatModel.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testFloatDeserializationFromFloatRawValueParameterized(BindingMethod bindingMethod) {
+        FloatModel floatModel = bindingMethod.deserialize(jsonBinding,
+                                                          "{\"object\":123.456,\"primitive\":456.789}",
+                                                          FloatModel.class);
         assertThat(floatModel.object, is(123.456F));
         assertThat(floatModel.primitive, is(456.789F));
     }
 
-    @Test
-    public void testRawFloats() {
-        Float value = jsonBinding.deserialize("123.456", Float.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRawFloatsParameterized(BindingMethod bindingMethod) {
+        Float value = bindingMethod.deserialize(jsonBinding, "123.456", Float.class);
         assertThat(value, is(123.456F));
-        value = jsonBinding.deserialize("123.456", float.class);
+        value = bindingMethod.deserialize(jsonBinding, "123.456", float.class);
         assertThat(value, is(123.456F));
-        value = jsonBinding.deserialize("\"123.456\"", Float.class);
+        value = bindingMethod.deserialize(jsonBinding, "\"123.456\"", Float.class);
         assertThat(value, is(123.456F));
-        value = jsonBinding.deserialize("\"123.456\"", float.class);
+        value = bindingMethod.deserialize(jsonBinding, "\"123.456\"", float.class);
         assertThat(value, is(123.456F));
-        value = jsonBinding.deserialize("null", Float.class);
+        value = bindingMethod.deserialize(jsonBinding, "null", Float.class);
         assertThat(value, is(nullValue()));
-        value = jsonBinding.deserialize("null", float.class);
+        value = bindingMethod.deserialize(jsonBinding, "null", float.class);
         assertThat(value, is(0.0F));
 
-        String serialized = jsonBinding.serialize(123.456F);
+        String serialized = bindingMethod.serialize(jsonBinding, 123.456F);
         assertThat(serialized, is("123.456"));
-        serialized = jsonBinding.serialize(Float.valueOf(123.456F));
+        serialized = bindingMethod.serialize(jsonBinding, Float.valueOf(123.456F));
         assertThat(serialized, is("123.456"));
     }
 
@@ -82,5 +91,4 @@ public class FloatTest {
     record FloatModel(Float object, float primitive) {
 
     }
-
 }

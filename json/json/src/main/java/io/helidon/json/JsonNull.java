@@ -16,9 +16,12 @@
 
 package io.helidon.json;
 
+import io.helidon.common.Api;
+
 /**
  * Represents a JSON null value.
  */
+@Api.Preview
 public final class JsonNull extends JsonValue {
 
     private static final JsonNull INSTANCE = new JsonNull();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
@@ -27,20 +28,17 @@ import java.util.function.BiFunction;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weights;
 import io.helidon.common.mapper.spi.MapperProvider;
-import io.helidon.service.registry.Service;
 
 /**
  * Implementation of {@link io.helidon.common.mapper.Mappers}.
  */
-@SuppressWarnings("removal")
-final class MappersImpl implements MapperManager, Mappers {
+final class MappersImpl implements Mappers {
     private final Map<ClassCacheKey, Mapper<?, ?>> classCache = new ConcurrentHashMap<>();
     private final Map<GenericCacheKey, Mapper<?, ?>> typeCache = new ConcurrentHashMap<>();
 
     private final List<MapperProvider> providers;
     private final MappersConfig prototype;
 
-    @Service.Inject
     MappersImpl() {
         this(MappersConfig.create());
     }
@@ -50,15 +48,6 @@ final class MappersImpl implements MapperManager, Mappers {
         List<MapperProvider> providers = new ArrayList<>(prototype.mapperProviders());
         Weights.sort(providers);
         this.providers = providers;
-    }
-
-    @SuppressWarnings("removal")
-    MappersImpl(MapperManager.Builder builder) {
-        this.prototype = MappersConfig.builder()
-                .useBuiltInMappers(false)
-                .mapperProviders(builder.mapperProviders())
-                .buildPrototype();
-        this.providers = builder.mapperProviders();
     }
 
     @Override
@@ -135,7 +124,9 @@ final class MappersImpl implements MapperManager, Mappers {
                                                                Class<TARGET> targetType,
                                                                boolean fromTypes,
                                                                String... qualifiers) {
-        Mapper<?, ?> mapper = classCache.computeIfAbsent(new ClassCacheKey(sourceType, targetType, List.of(qualifiers)), key -> {
+        Mapper<?, ?> mapper = classCache.computeIfAbsent(new ClassCacheKey(sourceType,
+                                                                           targetType,
+                                                                           new QualifiersWrapper(qualifiers)), key -> {
             // first attempt to find by classes
             return fromProviders(sourceType, targetType, qualifiers)
                     .orElseGet(() -> {
@@ -155,7 +146,9 @@ final class MappersImpl implements MapperManager, Mappers {
                                                                GenericType<TARGET> targetType,
                                                                boolean fromClasses,
                                                                String... qualifiers) {
-        Mapper<?, ?> mapper = typeCache.computeIfAbsent(new GenericCacheKey(sourceType, targetType, List.of(qualifiers)), key -> {
+        Mapper<?, ?> mapper = typeCache.computeIfAbsent(new GenericCacheKey(sourceType,
+                                                                            targetType,
+                                                                            new QualifiersWrapper(qualifiers)), key -> {
             // first attempt to find by types
             return fromProviders(sourceType, targetType, qualifiers)
                     .orElseGet(() -> {
@@ -235,10 +228,33 @@ final class MappersImpl implements MapperManager, Mappers {
                              qualifiers);
     }
 
-    private record GenericCacheKey(GenericType<?> sourceType, GenericType<?> targetType, List<String> qualifiers) {
+    // simple array wrapper that has equals and hashcode - faster than creating a List
+    private static class QualifiersWrapper {
+        private final String[] qualifiers;
+
+        private QualifiersWrapper(String[] qualifiers) {
+            // defensive copy, so if somebody modifies the original array, we do not get broken
+            this.qualifiers = Arrays.copyOf(qualifiers, qualifiers.length);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof QualifiersWrapper that)) {
+                return false;
+            }
+            return Objects.deepEquals(qualifiers, that.qualifiers);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(qualifiers);
+        }
     }
 
-    private record ClassCacheKey(Class<?> sourceType, Class<?> targetType, List<String> qualifiers) {
+    private record GenericCacheKey(GenericType<?> sourceType, GenericType<?> targetType, QualifiersWrapper qualifiers) {
+    }
+
+    private record ClassCacheKey(Class<?> sourceType, Class<?> targetType, QualifiersWrapper qualifiers) {
     }
 
     @SuppressWarnings("rawtypes")

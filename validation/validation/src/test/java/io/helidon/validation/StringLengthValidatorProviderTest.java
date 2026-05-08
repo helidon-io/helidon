@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class StringLengthValidatorProviderTest {
     public void testMinLengthOnly() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
                 .typeName(TypeName.create(Validation.String.Length.class))
-                .putValue("min", 5)
+                .property("min", 5)
                 .build());
 
         // Valid cases
@@ -60,7 +60,7 @@ public class StringLengthValidatorProviderTest {
     public void testMaxLengthOnly() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
                 .typeName(TypeName.create(Validation.String.Length.class))
-                .putValue("value", 5)
+                .property("value", 5)
                 .build());
 
         // Valid cases
@@ -77,8 +77,8 @@ public class StringLengthValidatorProviderTest {
     public void testMinAndMaxLength() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
                 .typeName(TypeName.create(Validation.String.Length.class))
-                .putValue("min", 3)
-                .putValue("value", 7)
+                .property("min", 3)
+                .property("value", 7)
                 .build());
 
         // Valid cases
@@ -99,8 +99,8 @@ public class StringLengthValidatorProviderTest {
     public void testCustomMessage() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
                 .typeName(TypeName.create(Validation.String.Length.class))
-                .putValue("min", 5)
-                .putValue("message", "String too short")
+                .property("min", 5)
+                .property("message", "String too short")
                 .build());
 
         var response = validator.check(ctx, "hi");
@@ -113,7 +113,7 @@ public class StringLengthValidatorProviderTest {
     public void testNonStringValues() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
                 .typeName(TypeName.create(Validation.String.Length.class))
-                .putValue("min", 5)
+                .property("min", 5)
                 .build());
 
         // Non-string values should fail validation
@@ -126,7 +126,7 @@ public class StringLengthValidatorProviderTest {
     public void testNullValue() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
                 .typeName(TypeName.create(Validation.String.Length.class))
-                .putValue("min", 5)
+                .property("min", 5)
                 .build());
 
         // Null values should be considered valid (not sent to validator)
@@ -137,7 +137,7 @@ public class StringLengthValidatorProviderTest {
     public void testStringBuilder() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
                 .typeName(TypeName.create(Validation.String.Length.class))
-                .putValue("min", 5)
+                .property("min", 5)
                 .build());
 
         // StringBuilder should work as it implements CharSequence

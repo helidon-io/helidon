@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ the request is denied (depending on configuration as mentioned above).
 ABAC provider also allows an object to be used in authorization process, such
 as when evaluating if an object's owner is the current user.
 The following example uses the Expression language validator to demonstrate the point
-in a JAX-RS resource:
+in an endpoint:
 
 [source,java]
 .Example of using an object
@@ -125,29 +125,10 @@ security:
 ----
 
 [source,java]
-.JAX-RS example
+.Annotation example
 ----
 include::{sourcedir}/includes/security/providers/AbacSnippets.java[tag=snippet_2, indent=0]
 ----
-
-===== Interaction with JAX-RS sub-resource locators
-When using sub-resource locators in JAX-RS, the roles allowed are collected from each "level" of
-execution:
-- Application class annotations
-- Resource class annotations + resource method annotations
-- Sub-resource class annotations + sub-resource method annotations
-- Sub-resource class annotations + sub-resource method annotations (for every sub-resource on the path)
-
-The `RolesAllowed` or `Roles` annotation to be used is the last one in the path as defined above.
-
-_Example 1:_
-There is a `RolesAllowed("admin")` defined on a sub-resource locator resource class.
-In this case the required role is `admin`.
-
-_Example 2:_
-There is a `RolesAllowed("admin")` defined on a sub-resource locator resource class and
-a `RolesAllowed("user")` defined on the method of the sub-resource that provides the response.
-In this case the required role is `user`.
 
 ==== Scope Validator
 Checks whether user has all the required scopes.
@@ -167,7 +148,7 @@ security:
 ----
 
 [source,java]
-.JAX-RS example
+.Annotation example
 ----
 include::{sourcedir}/includes/security/providers/AbacSnippets.java[tag=snippet_3, indent=0]
 ----
@@ -192,13 +173,13 @@ security:
 ----
 
 [source,java]
-.JAX-RS example
+.Annotation example
 ----
 include::{sourcedir}/includes/security/providers/AbacSnippets.java[tag=snippet_4, indent=0]
 ----
 
 [source,yaml]
-.Configuration example for `JAX-RS` over the configuration
+.Configuration example for endpoint security over configuration
 ----
 server:
   features:

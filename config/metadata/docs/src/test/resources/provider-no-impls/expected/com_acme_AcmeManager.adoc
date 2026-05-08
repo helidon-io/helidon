@@ -1,0 +1,22 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeManager
+
+== Description
+
+++++
+This type is a provider contract.
+++++
+
+== Implementations
+
+
+No implementations are currently known.
+
+
+== Usages
+
+* xref:{rootdir}/config/com_acme_AcmeConfig.adoc#a64494686-manager[`acme.manager`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

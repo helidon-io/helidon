@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,15 @@
 
 package io.helidon.declarative.tests.metrics;
 
+import java.math.BigDecimal;
+
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
-import jakarta.json.JsonNumber;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -92,18 +93,21 @@ class DeclarativeMetricsTest {
                 .request(JsonObject.class);
         assertThat(response.status(), is(Status.OK_200));
         JsonObject metrics = response.entity();
-        JsonObject appMetrics = metrics.getJsonObject("application");
+        JsonObject appMetrics = metrics.objectValue("application").orElse(null);
+        assertThat(appMetrics, notNullValue());
         // absolute metric name
-        JsonObject timed = appMetrics.getJsonObject("my-timed-metric");
+        JsonObject timed = appMetrics.objectValue("my-timed-metric").orElse(null);
         assertThat(timed, notNullValue());
 
         // relative metric name + tags from type and annotation
-        JsonNumber counted = appMetrics.getJsonNumber("TestEndpoint.counted;application=MyNiceApp;endpoint=TestEndpoint;location=method");
+        BigDecimal counted = appMetrics.numberValue("TestEndpoint.counted;application=MyNiceApp;endpoint=TestEndpoint;location=method")
+                .orElse(null);
         assertThat(counted, notNullValue());
         assertThat(counted.intValue(), is(1));
 
         // relative metric name + tags from type
-        JsonNumber gauge = appMetrics.getJsonNumber("TestEndpoint.gaugeValue;application=MyNiceApp;endpoint=TestEndpoint");
+        BigDecimal gauge = appMetrics.numberValue("TestEndpoint.gaugeValue;application=MyNiceApp;endpoint=TestEndpoint")
+                .orElse(null);
         assertThat(gauge, notNullValue());
         assertThat(gauge.intValue(), is(42));
     }

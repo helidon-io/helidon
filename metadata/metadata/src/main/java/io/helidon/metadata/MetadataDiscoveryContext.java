@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,12 @@ package io.helidon.metadata;
 import java.util.Set;
 
 record MetadataDiscoveryContext(ClassLoader classLoader, Set<String> metadataFiles, String location, String manifestFile) {
-    @SuppressWarnings("removal")
     private static final Set<String> METADATA_FILES = Set.of(MetadataConstants.SERVICE_REGISTRY_FILE,
                                                              MetadataConstants.FEATURE_REGISTRY_FILE,
                                                              MetadataConstants.CONFIG_METADATA_FILE,
                                                              MetadataConstants.SERVICE_LOADER_FILE,
                                                              MetadataConstants.SERIAL_CONFIG_FILE,
-                                                             MetadataConstants.MEDIA_TYPES_FILE,
-                                                             MetadataConstants.FEATURE_METADATA_FILE);
+                                                             MetadataConstants.MEDIA_TYPES_FILE);
 
     static MetadataDiscoveryContext create(ClassLoader cl) {
         return new MetadataDiscoveryContext(cl,

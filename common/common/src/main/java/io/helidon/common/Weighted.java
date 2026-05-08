@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ package io.helidon.common;
  * <p>
  * A {@code Weighted} with weight {@code 2} is more significant (will be returned before) weight {@code 1}.
  */
+@Api.Stable
 public interface Weighted extends Comparable<Weighted> {
     /**
      * Default weight for any weighted component (whether it implements this interface

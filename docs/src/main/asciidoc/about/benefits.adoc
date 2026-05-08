@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 = Features and Benefits of Helidon
 
 * <<Open Source with Support, Open Source with Support>>
-* <<Two API Flavors for Two Programming Styles, Two API Flavors for Two Programming Styles>>
+* <<A Programming Model Focused on Clarity, A Programming Model Focused on Clarity>>
 * <<Feature Richness, Feature Richness>>
 * <<Enterprise Features, Enterprise Features>>
 * <<Integrations, Integrations>>
@@ -47,18 +47,15 @@ mission-critical production applications.
 
 
 
-== Two API Flavors for Two Programming Styles
-Helidon offers two API flavors: Helidon SE, and Helidon MP. Both are fun to
-program in, but each caters to a different style of programming
+== A Programming Model Focused on Clarity
+Helidon SE offers a direct, explicit programming model that gives you fine-grained
+control over application behavior without sacrificing productivity.
 
 
 == Feature Richness
-Both API flavors, Helidon SE and Helidon MP, offer a rich and similar set of
-features, like configuration and metrics and security, as examples. In Helidon
-MP, the APIs for the features are specified by a standards body, whereas in
-Helidon SE they are not. In both cases, the
-set of features available is complete enough to cover every aspect of the needs
-of modern microservices applications.
+Helidon provides a rich set of features, including configuration, metrics,
+security, data access, messaging, and integrations. The available feature set is
+broad enough to cover the needs of modern microservices applications.
 
 == Enterprise Features
 Helidon intentionally includes many features required by industrial-strength
@@ -84,10 +81,7 @@ hosted JMS destinations
 using Oracle Identity Cloud Service
 - Distributed transaction coordination between Helidon and WLS
 - hosted resources using Oracle MicroTx Free
-* Messaging Connectors for JMS, Kafka, and Oracle AQ, to allow Helidon
+* Messaging Connectors for JMS and Oracle AQ, to allow Helidon
 applications to consume and produce messages with those providers
-* HashiCorp Vault for accessing securely stored tokens, passwords, API
-keys, PKI certificates, and other secrets
 * Micrometer Metrics, for monitoring Helidon applications using
 Micrometer
-* Neo4j, for using a graph database from within Helidon applications

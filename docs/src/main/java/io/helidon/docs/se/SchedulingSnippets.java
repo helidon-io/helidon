@@ -15,8 +15,8 @@
  */
 package io.helidon.docs.se;
 
+import java.time.Duration;
 import java.time.ZoneId;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
@@ -30,9 +30,8 @@ class SchedulingSnippets {
     void snippet_1() {
         // tag::snippet_1[]
         FixedRate.builder()
-                .delay(10)
-                .initialDelay(5)
-                .timeUnit(TimeUnit.MINUTES)
+                .interval(Duration.ofMinutes(10))
+                .delayBy(Duration.ofMinutes(5))
                 .task(inv -> System.out.println("Every 10 minutes, first invocation 5 minutes after start"))
                 .build();
         // end::snippet_1[]
@@ -41,7 +40,7 @@ class SchedulingSnippets {
     void snippet_2() {
         // tag::snippet_2[]
         FixedRate.builder()
-                .delay(10)
+                .interval(Duration.ofSeconds(10))
                 .task(inv -> System.out.println("Method invoked " + inv.description()))
                 .build();
         // end::snippet_2[]
@@ -51,7 +50,7 @@ class SchedulingSnippets {
         // tag::snippet_3[]
         Cron.builder()
                 .expression("0 15 8 ? * *")
-                .task(inv -> System.out.println("Executer every day at 8:15"))
+                .task(inv -> System.out.println("Executes every day at 8:15"))
                 .build();
         // end::snippet_3[]
     }
@@ -61,10 +60,9 @@ class SchedulingSnippets {
         FixedRate.builder()
                 .config(Config.create(() -> ConfigSources.create(
                         """
-                                delay: 4
+                                interval: PT4M
                                 delay-type: SINCE_PREVIOUS_END
-                                initial-delay: 1
-                                time-unit: SECONDS
+                                delay-by: PT1M
                                 """,
                         MediaTypes.APPLICATION_X_YAML)))
                 .task(inv -> System.out.println("Every 4 minutes, first invocation 1 minutes after start"))
@@ -75,9 +73,8 @@ class SchedulingSnippets {
     void snippet_5() {
         // tag::snippet_5[]
         FixedRate.builder()
-                .delay(10)
-                .initialDelay(5)
-                .timeUnit(TimeUnit.MINUTES)
+                .interval(Duration.ofMinutes(10))
+                .delayBy(Duration.ofMinutes(5))
                 .task(inv -> System.out.println("Every 10 minutes, first invocation 5 minutes after start"))
                 .build();
         // end::snippet_5[]
@@ -86,7 +83,7 @@ class SchedulingSnippets {
     void snippet_6() {
         // tag::snippet_6[]
         FixedRate.builder()
-                .delay(10)
+                .interval(Duration.ofSeconds(10))
                 .task(inv -> System.out.println("Method invoked " + inv.description()))
                 .build();
         // end::snippet_6[]

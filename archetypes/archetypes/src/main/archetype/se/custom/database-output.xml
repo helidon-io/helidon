@@ -24,11 +24,10 @@
             <output if="${db.server} == 'h2'">
                 <model>
                     <value key="readme-description">Helidon SE application that uses the dbclient API with an in-memory H2 database.</value>
-                    <value key="integration-artifactId">h2</value>
                     <value key="db">H2</value>
                     <list key="dependencies">
                         <map>
-                            <value key="groupId">io.helidon.integrations.db</value>
+                            <value key="groupId">com.h2database</value>
                             <value key="artifactId">h2</value>
                         </map>
                     </list>
@@ -53,13 +52,8 @@ For details, see https://www.h2database.com/html/cheatSheet.html
                 <model>
                     <value key="helidon-test">false</value>
                     <value key="readme-description">Helidon SE application that uses the dbclient API with MySQL database.</value>
-                    <value key="integration-artifactId">helidon-integrations-db-mysql</value>
                     <value key="db">MySQL</value>
                     <list key="dependencies">
-                        <map>
-                            <value key="groupId">io.helidon.integrations.db</value>
-                            <value key="artifactId">helidon-integrations-db-mysql</value>
-                        </map>
                         <map>
                             <value key="groupId">com.mysql</value>
                             <value key="artifactId">mysql-connector-j</value>
@@ -94,8 +88,9 @@ docker run --rm --name mysql -p 3306:3306 \
                     <value key="db">OracleDB</value>
                     <list key="dependencies">
                         <map>
-                            <value key="groupId">io.helidon.integrations.db</value>
-                            <value key="artifactId">ojdbc</value>
+                            <value key="groupId">com.oracle.database.jdbc</value>
+                            <value key="artifactId">ojdbc17-production</value>
+                            <value key="type">pom</value>
                         </map>
                     </list>
                     <value key="db-health-check-stmt" if="${health}">SELECT 1 FROM DUAL</value>

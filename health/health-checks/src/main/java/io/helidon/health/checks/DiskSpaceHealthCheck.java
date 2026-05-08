@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.nio.file.Paths;
 import java.util.Formatter;
 import java.util.Locale;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckException;
 import io.helidon.health.HealthCheckResponse;
@@ -46,7 +46,7 @@ import io.helidon.health.HealthCheckType;
  * Unless ephemeral disk space is being used, it is often not sufficient to simply restart a server in the event
  * that that health check fails.
  *<p>
- * This health check is automatically created and registered through CDI.
+ * This health check is automatically created and registered.
  *</p>
  * <p>
  * This health check can be referred to in properties as {@code diskSpace}. So for example, to exclude this
@@ -58,7 +58,7 @@ public class DiskSpaceHealthCheck implements HealthCheck {
      * If you need to check a different path (e.g. application runtime disks are not mounted the same
      * directory as application path), use
      * {@link DiskSpaceHealthCheck.Builder#path(java.nio.file.Path)}.
-     * When running within a MicroProfile server, you can configure path using a configuration key
+     * You can configure the path using the configuration key
      * {@value #CONFIG_KEY_PATH}
      * Defaults to {@value}
      */
@@ -75,14 +75,14 @@ public class DiskSpaceHealthCheck implements HealthCheck {
     static final String CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX = "thresholdPercent";
 
     /**
-     * Full configuration key for path, when configured through MicroProfile config.
+     * Full configuration key for the configured path.
      */
     public static final String CONFIG_KEY_PATH = HealthChecks.CONFIG_KEY_HEALTH_PREFIX
             + "." + CONFIG_KEY_DISKSPACE_PREFIX
             + "." + CONFIG_KEY_PATH_SUFFIX;
 
     /**
-     * Full configuration key for threshold percent, when configured through Microprofile config.
+     * Full configuration key for the configured threshold percent.
      */
     public static final String CONFIG_KEY_THRESHOLD_PERCENT = HealthChecks.CONFIG_KEY_HEALTH_PREFIX
             + "." + CONFIG_KEY_DISKSPACE_PREFIX

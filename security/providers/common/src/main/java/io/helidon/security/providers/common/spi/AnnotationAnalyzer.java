@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,13 @@
  */
 package io.helidon.security.providers.common.spi;
 
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.config.Config;
 import io.helidon.security.ClassToInstanceStore;
 
 /**
@@ -48,7 +46,7 @@ public interface AnnotationAnalyzer {
     /**
      * Analyze an application class.
      *
-     * @param maybeAnnotated class of the JAX-RS application
+     * @param maybeAnnotated class of the application layer
      * @return response with information whether to (and how) authenticate and authorize
      * @deprecated this method will be made default in a future version, and marked for removal; it will be removed in two
      *         major versions from now (most likely version 6).
@@ -75,53 +73,14 @@ public interface AnnotationAnalyzer {
     }
 
     /**
-     * Analyze a resource class.
-     * By default returns an abstain response.
-     *
-     * @param maybeAnnotated   class of the JAX-RS resource
-     * @param previousResponse response from parent of this class (e.g. from application analysis)
-     * @return response with information whether to (and how) authenticate and authorize
-     * @deprecated going away from reflection, use
-     *         {@link #analyze(io.helidon.common.types.TypeName, java.util.List,
-     *         io.helidon.security.providers.common.spi.AnnotationAnalyzer.AnalyzerResponse)}
-     *         instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    default AnalyzerResponse analyze(Class<?> maybeAnnotated, AnalyzerResponse previousResponse) {
-        return AnalyzerResponse.abstain(previousResponse);
-    }
-
-    /**
      * Analyze an endpoint class.
      *
-     * @param endpointType     type of the endpoint (such as JAX-RS resource)
+     * @param endpointType     type of the endpoint
      * @param annotations      annotations on the type
      * @param previousResponse response from parent of this class (e.g. from application analysis)
      * @return response with information whether to (and how) authenticate and authorize
      */
     default AnalyzerResponse analyze(TypeName endpointType, List<Annotation> annotations, AnalyzerResponse previousResponse) {
-        // the default must fallback to reflection, as only this method is going to be called now
-        try {
-            return analyze(Class.forName(endpointType.name()), previousResponse);
-        } catch (ClassNotFoundException e) {
-            throw new SecurityException("Cannot analyze endpoint class, as it cannot be obtained", e);
-        }
-    }
-
-    /**
-     * Analyze a resource method.
-     * By default returns an abstain response.
-     *
-     * @param maybeAnnotated   JAX-RS resource method
-     * @param previousResponse response from parent of this class (e.g. from resource class analysis)
-     * @return response with information whether to (and how) authenticate and authorize
-     * @deprecated going away from reflection, use
-     *         {@link #analyze(io.helidon.common.types.TypeName, io.helidon.common.types.TypedElementInfo,
-     *         io.helidon.security.providers.common.spi.AnnotationAnalyzer.AnalyzerResponse)}
-     *         instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    default AnalyzerResponse analyze(Method maybeAnnotated, AnalyzerResponse previousResponse) {
         return AnalyzerResponse.abstain(previousResponse);
     }
 
@@ -130,52 +89,12 @@ public interface AnnotationAnalyzer {
      * By default returns an abstain response.
      *
      * @param typeName         type that contains the method
-     * @param method           endpoint method (such as JAX-RS method)
+     * @param method           endpoint method
      * @param previousResponse response from parent of this class (e.g. from resource class analysis)
      * @return response with information whether to (and how) authenticate and authorize
      */
     default AnalyzerResponse analyze(TypeName typeName, TypedElementInfo method, AnalyzerResponse previousResponse) {
-        // the default must fallback to reflection, as only this method is going to be called now
-        try {
-            Class<?> aClass = Class.forName(typeName.name());
-            for (Method declaredMethod : aClass.getDeclaredMethods()) {
-                // find the right method
-                if (!declaredMethod.getName().equals(method.elementName())) {
-                    continue;
-                }
-
-                List<TypedElementInfo> expectedArguments = method.parameterArguments();
-
-                if (matchesMethod(declaredMethod, expectedArguments)) {
-                    return analyze(declaredMethod, previousResponse);
-                }
-            }
-            throw new SecurityException("Cannot analyze endpoint method, as the signature could not be found on declaring "
-                                                + "type: " + aClass.getName()
-                                                + "." + method.elementName() + "("
-                                                + method.parameterArguments().stream()
-                    .map(TypedElementInfo::typeName)
-                    .map(TypeName::fqName)
-                    .collect(Collectors.joining(", "))
-                                                + ")");
-        } catch (ClassNotFoundException e) {
-            throw new SecurityException("Cannot analyze endpoint class, as it cannot be obtained", e);
-        }
-    }
-
-    private boolean matchesMethod(Method declaredMethod, List<TypedElementInfo> expectedArguments) {
-        // now validate the parameter types
-        if (declaredMethod.getParameterCount() != expectedArguments.size()) {
-            return false;
-        }
-        // same number of parameters, same name, let's go through parameters
-        for (int i = 0; i < declaredMethod.getParameterTypes().length; i++) {
-            Class<?> parameterType = declaredMethod.getParameterTypes()[i];
-            if (!expectedArguments.get(i).typeName().equals(TypeName.create(parameterType))) {
-                return false;
-            }
-        }
-        return true;
+        return AnalyzerResponse.abstain(previousResponse);
     }
 
     /**
@@ -432,5 +351,3 @@ public interface AnnotationAnalyzer {
         }
     }
 }
-
-

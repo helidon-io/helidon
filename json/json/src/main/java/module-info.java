@@ -24,10 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Name("JSON")
 @Features.Description("JSON processing")
 @Features.Flavor(HelidonFlavor.SE)
-@Features.Path("JSON")
-@Features.Incubating
 module io.helidon.json {
-
     requires static io.helidon.common.features.api;
 
     requires io.helidon.common;

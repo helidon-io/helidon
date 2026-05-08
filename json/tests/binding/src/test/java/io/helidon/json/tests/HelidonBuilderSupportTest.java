@@ -20,7 +20,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,14 +35,15 @@ public class HelidonBuilderSupportTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testHelidonBuilderSupport() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testHelidonBuilderSupportParameterized(BindingMethod bindingMethod) {
         String json = """
                 {
                     "value" : "test"
                 }""";
 
-        TestPojoWithBuilder deserialized = jsonBinding.deserialize(json, TestPojoWithBuilder.class);
+        TestPojoWithBuilder deserialized = bindingMethod.deserialize(jsonBinding, json, TestPojoWithBuilder.class);
         assertThat(deserialized.value(), is("test"));
     }
 
@@ -77,5 +79,4 @@ public class HelidonBuilderSupportTest {
             }
         }
     }
-
 }

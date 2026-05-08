@@ -1,0 +1,34 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeFeature
+
+== Description
+
+++++
+This type is a provider contract.
+++++
+
+== Implementations
+
+
+|===
+|Key|Description
+
+|xref:{rootdir}/config/com_acme_AcmeAuditConfig.adoc[`audit`]
+|pass:[ACME Audit configuration]
+
+|xref:{rootdir}/config/com_acme_AcmeLoggingConfig.adoc[`logging`]
+|pass:[ACME Logging configuration]
+
+|xref:{rootdir}/config/com_acme_AcmeTracingConfig.adoc[`tracing`]
+|pass:[ACME Tracing configuration]
+
+|===
+
+
+== Usages
+
+* xref:{rootdir}/config/com_acme_AcmeServerConfig.adoc#afc445d1a-features[`server.features`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

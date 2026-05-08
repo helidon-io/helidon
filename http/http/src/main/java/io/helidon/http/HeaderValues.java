@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,10 @@ public final class HeaderValues {
      * Content type application/json with no charset.
      */
     public static final Header CONTENT_TYPE_JSON = createCached(HeaderNames.CONTENT_TYPE, "application/json");
+    /**
+     * Content type application/json with no charset.
+     */
+    public static final Header CONTENT_TYPE_SMILE = createCached(HeaderNames.CONTENT_TYPE, "application/x-jackson-smile");
     /**
      * Content type text plain with no charset.
      */

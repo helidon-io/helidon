@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,10 @@
 
 package io.helidon.webserver.sse;
 
-import java.util.function.BiConsumer;
-
 import io.helidon.common.GenericType;
-import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.sse.SseEvent;
 import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.spi.Sink;
 import io.helidon.webserver.http.spi.SinkProvider;
 import io.helidon.webserver.http.spi.SinkProviderContext;
@@ -51,23 +47,5 @@ public class SseSinkProvider implements SinkProvider<SseEvent> {
     @SuppressWarnings("unchecked")
     public <X extends Sink<SseEvent>> X create(SinkProviderContext context) {
         return (X) new DataWriterSseSink(context);
-    }
-
-    /**
-     * Creates a Sink for SSE events.
-     *
-     * @param response the HTTP response
-     * @param eventConsumer an event consumer
-     * @param closeRunnable a runnable to call on close
-     * @param <X> type of sink
-     * @return newly created sink
-     * @deprecated replaced by {@link #create(SinkProviderContext)}
-     */
-    @Override
-    @Deprecated(since = "4.1.2", forRemoval = true)
-    public <X extends Sink<SseEvent>> X create(ServerResponse response,
-                                               BiConsumer<Object, MediaType> eventConsumer,
-                                               Runnable closeRunnable) {
-        return (X) new OutputStreamSseSink(response, eventConsumer, closeRunnable);
     }
 }

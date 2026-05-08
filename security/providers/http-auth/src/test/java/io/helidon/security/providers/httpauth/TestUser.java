@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.security.providers.httpauth;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Optional;
 
 /**
  * Testing user.
@@ -54,10 +53,4 @@ class TestUser implements SecureUserStore.User {
     public boolean isPasswordValid(char[] passwordFromRequest) {
         return Arrays.equals(passwordFromRequest, password);
     }
-
-    @Override
-    public Optional<String> digestHa1(String realm, HttpDigest.Algorithm algorithm) {
-        return Optional.of(DigestToken.ha1(algorithm, realm, login(), password));
-    }
-
 }

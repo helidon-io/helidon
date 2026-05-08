@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,7 +113,7 @@ final class CriticalValidator implements ClaimValidator {
     }
 
     private void checkAllCriticalAvailable(Jwt jwt, List<String> critical, Errors.Collector collector) {
-        Set<String> headerClaims = jwt.headers().headerClaims().keySet();
+        Set<String> headerClaims = jwt.headers().headerClaimsJson().keySet();
         boolean containsAllCritical = headerClaims.containsAll(critical);
         if (!containsAllCritical) {
             collector.fatal(jwt, "JWT must contain " + critical + ", yet it contains: " + headerClaims);

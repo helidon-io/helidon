@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
@@ -78,6 +79,11 @@ class BadRequestTest {
                                        .build());
     }
 
+    @AfterEach
+    void tearDown() {
+        socketClient.disconnect();
+    }
+
     @Test
     void testOk() {
         String response = client.method(Method.GET)
@@ -110,6 +116,80 @@ class BadRequestTest {
 
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(response);
         assertThat(headers, hasHeader(LOCATION_ERROR_PAGE));
+    }
+
+    @Test
+    void testRepeatedTransferEncodingWithContentLengthRejected() {
+        assertRejectedSmugglingAttempt("""
+                Transfer-Encoding: gzip\r
+                Transfer-Encoding: chunked\r
+                """);
+    }
+
+    @Test
+    void testCommaSeparatedTransferEncodingWithContentLengthRejected() {
+        assertRejectedSmugglingAttempt("Transfer-Encoding: gzip, chunked\r\n");
+    }
+
+    @Test
+    void testNonChunkedTransferEncodingWithContentLengthRejected() {
+        assertRejectedSmugglingAttempt("Transfer-Encoding: gzip\r\n");
+    }
+
+    @Test
+    void testNonChunkedTransferEncodingWithoutContentLengthRejected() {
+        assertRejectedTransferEncodingAttempt("Transfer-Encoding: gzip\r\n",
+                                             Status.BAD_REQUEST_400,
+                                             "GET / HTTP/1.1\r\n"
+                                                     + "Host: localhost\r\n"
+                                                     + "\r\n");
+    }
+
+    @Test
+    void testAdditionalTransferEncodingBeforeChunkedRejected() {
+        assertRejectedTransferEncodingAttempt("Transfer-Encoding: gzip, chunked\r\n",
+                                             Status.NOT_IMPLEMENTED_501,
+                                             "4\r\n"
+                                                     + "PING\r\n"
+                                                     + "0\r\n"
+                                                     + "\r\n");
+    }
+
+    @Test
+    void testRepeatedChunkedTransferEncodingRejected() {
+        assertRejectedTransferEncodingAttempt("""
+                Transfer-Encoding: chunked\r
+                Transfer-Encoding: chunked\r
+                """,
+                                             Status.BAD_REQUEST_400,
+                                             "4\r\n"
+                                                     + "PING\r\n"
+                                                     + "0\r\n"
+                                                     + "\r\n");
+    }
+
+    @Test
+    void testChunkedTransferEncodingPasses() {
+        socketClient.requestRaw("GET / HTTP/1.1\r\n"
+                                        + "Host: localhost\r\n"
+                                        + "Connection: keep-alive\r\n"
+                                        + "Transfer-Encoding: chunked\r\n"
+                                        + "\r\n"
+                                        + "4\r\n"
+                                        + "PING\r\n"
+                                        + "0\r\n"
+                                        + "\r\n");
+
+        String response = socketClient.receive();
+
+        assertThat(response, containsString("200 OK"));
+        assertThat(response, containsString("Hi"));
+
+        socketClient.request(Method.GET, "/", null, List.of("Accept: text/plain", "Connection: keep-alive"));
+
+        response = socketClient.receive();
+        assertThat(response, containsString("200 OK"));
+        assertThat(response, containsString("Hi"));
     }
 
     @Test
@@ -209,10 +289,57 @@ class BadRequestTest {
                     .build();
         }
         return DirectHandler.TransportResponse.builder()
-                .status(Status.create(Status.BAD_REQUEST_400.code(),
-                                      CUSTOM_REASON_PHRASE))
+                .status(httpStatus.code() == Status.BAD_REQUEST_400.code()
+                                ? Status.create(Status.BAD_REQUEST_400.code(), CUSTOM_REASON_PHRASE)
+                                : httpStatus)
                 .headers(responseHeaders)
                 .entity(CUSTOM_ENTITY)
                 .build();
+    }
+
+    private void assertRejectedSmugglingAttempt(String transferEncodingHeaders) {
+        assertRejectedRequest("GET / HTTP/1.1\r\n"
+                                      + "Host: localhost\r\n"
+                                      + "Connection: keep-alive\r\n"
+                                      + transferEncodingHeaders
+                                      + "Content-Length: 14\r\n"
+                                      + "\r\n"
+                                      + "4\r\n"
+                                      + "PING\r\n"
+                                      + "0\r\n"
+                                      + "\r\n"
+                                      + "GET / HTTP/1.1\r\n"
+                                      + "Host: localhost\r\n"
+                                      + "\r\n");
+    }
+
+    private void assertRejectedTransferEncodingAttempt(String transferEncodingHeaders,
+                                                       Status expectedStatus,
+                                                       String payload) {
+        assertRejectedRequest("GET / HTTP/1.1\r\n"
+                                      + "Host: localhost\r\n"
+                                      + "Connection: keep-alive\r\n"
+                                      + transferEncodingHeaders
+                                      + "\r\n"
+                                      + payload,
+                              expectedStatus);
+    }
+
+    private void assertRejectedRequest(String rawRequest) {
+        assertRejectedRequest(rawRequest, Status.BAD_REQUEST_400);
+    }
+
+    private void assertRejectedRequest(String rawRequest, Status expectedStatus) {
+        socketClient.requestRaw(rawRequest);
+
+        String response = socketClient.receive();
+
+        String expectedStatusLine = expectedStatus.code() == Status.BAD_REQUEST_400.code()
+                ? expectedStatus.code() + " " + CUSTOM_REASON_PHRASE
+                : expectedStatus.code() + " " + expectedStatus.reasonPhrase();
+        assertThat(response, containsString(expectedStatusLine));
+        assertThat(response, containsString("Connection: close"));
+        assertThat(response, containsString(CUSTOM_ENTITY));
+        assertThat(socketClient.receive(), is(""));
     }
 }

@@ -1,7 +1,0 @@
-{
-    "resources": [
-        {
-            "pattern": "io/jaegertracing/internal/jaeger.properties"
-        }
-    ]
-}

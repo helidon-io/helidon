@@ -16,8 +16,9 @@
 
 package io.helidon.common.types;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * A property of an annotation.
@@ -33,20 +34,11 @@ public interface AnnotationProperty {
      * @param value value of the property, must be one of the supported types, see
      *              {@link Annotation}; must not be an instance of this class
      * @return a new annotation property
-     * @see io.helidon.common.types.Annotation.BuilderBase#putValue(String, Object)
+     * @see io.helidon.common.types.Annotation.BuilderBase#putProperty(String, AnnotationProperty)
      */
-    @SuppressWarnings({"rawtypes", "unchecked"})
     static AnnotationProperty create(Object value) {
         Objects.requireNonNull(value);
-
-        return switch (value) {
-            case AnnotationProperty ap ->
-                    throw new IllegalArgumentException("Cannot use an existing annotation property to create a new one."
-                                                               + ", value: " + value + ", inlined value: " + ap.value());
-            case EnumValue ev -> new AnnotationPropertyImpl(value, ev);
-            case Enum en -> new AnnotationPropertyImpl(value, EnumValue.create(en.getDeclaringClass(), en));
-            default -> new AnnotationPropertyImpl(value);
-        };
+        return new AnnotationPropertyImpl(value(value));
     }
 
     /**
@@ -57,7 +49,7 @@ public interface AnnotationProperty {
      * @param constantType type of the class that holds the referenced constant
      * @param constantName name of the constant (i.e. an accessible static final field)
      * @return a new annotation property
-     * @see io.helidon.common.types.Annotation.BuilderBase#putValue(String, Object)
+     * @see io.helidon.common.types.Annotation.BuilderBase#putProperty(String, AnnotationProperty)
      */
     static AnnotationProperty create(Object value, TypeName constantType, String constantName) {
         Objects.requireNonNull(value);
@@ -75,7 +67,7 @@ public interface AnnotationProperty {
                                                            + " Constant: " + constantType.fqName() + "." + constantName);
             }
         }
-        return new AnnotationPropertyImpl(value, new EnumValueImpl(constantType, constantName));
+        return new AnnotationPropertyImpl(new ConstantValueImpl(constantType, constantName, value));
     }
 
     /**
@@ -100,14 +92,22 @@ public interface AnnotationProperty {
      */
     Object value();
 
-    /**
-     * Constant value (i.e. a class and an accessible constant on it) that should be used if this annotation is generated
-     * into source code. In case this is an enum type, the constant value will return the appropriate
-     * {@link EnumValue}.
-     *
-     * @return constant value if defined
-     */
-    Optional<ConstantValue> constantValue();
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static Object value(Object value) {
+        return switch (value) {
+            case ConstantValue cv -> cv;
+            case Enum en -> EnumValue.create(en.getDeclaringClass(), en);
+            case AnnotationProperty ap -> ap.value();
+            case Collection<?> values -> {
+                var list = new ArrayList<>();
+                for (var e : values) {
+                    list.add(value(e));
+                }
+                yield list;
+            }
+            default -> value;
+        };
+    }
 
     /**
      * A reference to a constant, that can be used in generated annotation code.
@@ -126,6 +126,12 @@ public interface AnnotationProperty {
          * @return constant name
          */
         String name();
+
+        /**
+         * Value of the constant.
+         *
+         * @return constant value
+         */
+        Object value();
     }
 }
-

@@ -18,10 +18,12 @@ package io.helidon.telemetry.otelconfig;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
+import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.sdk.metrics.export.MetricExporter;
 import io.opentelemetry.sdk.metrics.export.MetricReader;
 
@@ -31,7 +33,7 @@ import io.opentelemetry.sdk.metrics.export.MetricReader;
 @Prototype.Configured
 @Prototype.Blueprint(decorator = OpenTelemetryMetricsConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(OpenTelemetryMetricsConfigSupport.CustomMethods.class)
-interface OpenTelemetryMetricsConfigBlueprint extends TypedAttributes {
+interface OpenTelemetryMetricsConfigBlueprint {
 
     /**
      * Constructed metric readers.
@@ -56,9 +58,17 @@ interface OpenTelemetryMetricsConfigBlueprint extends TypedAttributes {
      *
      * @return metric exporters
      */
-    @Option.Configured("exporters")
+    @Option.Configured
     @Option.Singular
     Map<String, MetricExporter> exporters();
+
+    /**
+     * Name/value pairs passed to OpenTelemetry.
+     *
+     * @return typed attribute settings
+     */
+    @Option.Configured
+    Optional<AttributesBuilder> attributes();
 
     /**
      * Metric view information, configurable using {@link io.helidon.telemetry.otelconfig.ViewRegistrationConfig}.

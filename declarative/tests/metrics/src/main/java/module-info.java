@@ -17,6 +17,7 @@
 /**
  * Tests for declarative metrics.
  */
+@SuppressWarnings("helidon:api:incubating")
 module io.helidon.declarative.tests.metrics {
     requires io.helidon.http;
     requires io.helidon.logging.common;
@@ -26,9 +27,11 @@ module io.helidon.declarative.tests.metrics {
 
     // needed for generated binding
     requires io.helidon.config.yaml;
-    // this module will not be needed in the future, as CORS will be a feature added separately
-    // now included through other modules (metrics in this case)
-    requires io.helidon.webserver.cors;
+
+    // required for generated binding
+    requires io.helidon.webserver.observe;
+    requires io.helidon.common.mapper;
+    requires io.helidon.common;
 
     exports io.helidon.declarative.tests.metrics;
 }

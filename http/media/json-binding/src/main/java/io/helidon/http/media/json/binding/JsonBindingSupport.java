@@ -20,18 +20,15 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.GenericType;
-import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
-import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
-import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaSupport;
+import io.helidon.http.media.MediaSupportBase;
+import io.helidon.json.JsonValue;
 import io.helidon.json.binding.JsonBinding;
-
-import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
 
 /**
  * Helidon JSON Binding media support implementation.
@@ -43,24 +40,24 @@ import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
  * framework.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class JsonBindingSupport implements MediaSupport, RuntimeType.Api<JsonBindingSupportConfig> {
+public class JsonBindingSupport
+        extends MediaSupportBase<JsonBindingSupportConfig>
+        implements RuntimeType.Api<JsonBindingSupportConfig> {
 
-    static final String HELIDON_JSON_BINDING_TYPE = "json-binding";
+    static final String ID = "json-binding";
 
-    private final String name;
-    private final JsonBindingSupportConfig supportConfig;
     private final JsonBinding jsonBinding;
 
     private final JsonBindingReader reader;
     private final JsonBindingWriter writer;
 
     private JsonBindingSupport(JsonBindingSupportConfig supportConfig) {
-        this.name = supportConfig.name();
-        this.supportConfig = supportConfig;
+        super(supportConfig, ID);
+
         this.jsonBinding = supportConfig.jsonBinding();
 
         this.reader = new JsonBindingReader(jsonBinding);
-        this.writer = new JsonBindingWriter(jsonBinding);
+        this.writer = new JsonBindingWriter(supportConfig, jsonBinding);
     }
 
     /**
@@ -70,7 +67,7 @@ public class JsonBindingSupport implements MediaSupport, RuntimeType.Api<JsonBin
      * @return a new {@link JsonBindingSupport} instance
      */
     public static MediaSupport create(Config config) {
-        return create(config, HELIDON_JSON_BINDING_TYPE);
+        return create(config, ID);
     }
 
     /**
@@ -125,33 +122,18 @@ public class JsonBindingSupport implements MediaSupport, RuntimeType.Api<JsonBin
     }
 
     @Override
-    public String name() {
-        return name;
-    }
-
-    @Override
     public String type() {
-        return HELIDON_JSON_BINDING_TYPE;
+        return ID;
     }
 
     @Override
     public JsonBindingSupportConfig prototype() {
-        return supportConfig;
-    }
-
-    <T> EntityReader<T> reader() {
-        return reader;
-    }
-
-    <T> EntityWriter<T> writer() {
-        return writer;
+        return config();
     }
 
     @Override
     public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
-        if (requestHeaders.contentType()
-                .map(it -> it.test(MediaTypes.APPLICATION_JSON))
-                .orElse(true)) {
+        if (matchesServerRequest(type, requestHeaders)) {
             return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
         }
 
@@ -162,14 +144,8 @@ public class JsonBindingSupport implements MediaSupport, RuntimeType.Api<JsonBin
     public <T> WriterResponse<T> writer(GenericType<T> type,
                                         Headers requestHeaders,
                                         WritableHeaders<?> responseHeaders) {
-        // check if accepted
-        for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
-            if (acceptedType.test(MediaTypes.APPLICATION_JSON)) {
-                return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
-            }
-        }
 
-        if (requestHeaders.acceptedTypes().isEmpty()) {
+        if (matchesServerResponse(type, requestHeaders, responseHeaders)) {
             return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
         }
 
@@ -180,14 +156,8 @@ public class JsonBindingSupport implements MediaSupport, RuntimeType.Api<JsonBin
     public <T> ReaderResponse<T> reader(GenericType<T> type,
                                         Headers requestHeaders,
                                         Headers responseHeaders) {
-        // check if accepted
-        for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
-            if (acceptedType.test(MediaTypes.APPLICATION_JSON) || acceptedType.mediaType().isWildcardType()) {
-                return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
-            }
-        }
 
-        if (requestHeaders.acceptedTypes().isEmpty()) {
+        if (matchesClientResponse(type, responseHeaders)) {
             return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
         }
 
@@ -196,13 +166,31 @@ public class JsonBindingSupport implements MediaSupport, RuntimeType.Api<JsonBin
 
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
-        if (requestHeaders.contains(HeaderNames.CONTENT_TYPE)) {
-            if (requestHeaders.contains(CONTENT_TYPE_JSON)) {
-                return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
-            }
-        } else {
-            return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
+        if (matchesClientRequest(type, requestHeaders)) {
+            return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
         }
         return WriterResponse.unsupported();
+    }
+
+    @Override
+    protected boolean canSerialize(GenericType<?> type) {
+        if (type.isClass()) {
+            return !JsonValue.class.isAssignableFrom(type.rawType());
+        }
+        return true;
+    }
+
+    @Override
+    protected boolean canDeserialize(GenericType<?> type) {
+        return canSerialize(type);
+    }
+
+
+    <T> EntityReader<T> reader() {
+        return reader;
+    }
+
+    <T> EntityWriter<T> writer() {
+        return writer;
     }
 }

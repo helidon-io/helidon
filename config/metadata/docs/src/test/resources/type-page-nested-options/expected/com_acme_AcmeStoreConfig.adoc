@@ -1,0 +1,40 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeStoreConfig
+
+== Description
+
+++++
+Store configuration.
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Description
+
+|[[adbab426b-ivf-index]] xref:{rootdir}/config/com_acme_AcmeIvfIndexConfig.adoc[`ivf-index`]
+|`AcmeIvfIndexConfig`
+|pass:[IVF index]
+
+|[[a4d188c98-json-index]] xref:{rootdir}/config/com_acme_AcmeJsonIndexConfig.adoc[`json-index`]
+|`AcmeJsonIndexConfig`
+|pass:[JSON index]
+
+| `data-source`
+|`String`
+|pass:[Data source]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/config_reference.adoc#a854fed05-store[`store`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

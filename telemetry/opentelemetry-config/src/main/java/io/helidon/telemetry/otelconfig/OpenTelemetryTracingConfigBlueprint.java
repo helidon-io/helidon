@@ -23,18 +23,19 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
+import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.sdk.trace.SpanLimits;
 import io.opentelemetry.sdk.trace.SpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
 
 /**
- * OpenTelemetry tracer settings.
+ * OpenTelemetry tracer settings. Optional values left unspecified in the configuration defer to the OpenTelemetry defaults.
  */
 @Prototype.Configured
 @Prototype.Blueprint(decorator = OpenTelemetryTracingConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(OpenTelemetryTracingConfigSupport.CustomMethods.class)
-interface OpenTelemetryTracingConfigBlueprint extends TypedAttributes {
+interface OpenTelemetryTracingConfigBlueprint {
 
     /**
      * Tracing sampler.
@@ -60,7 +61,7 @@ interface OpenTelemetryTracingConfigBlueprint extends TypedAttributes {
     @Option.Access("")
     @Option.Configured("processors")
     @Option.Singular
-    List<SpanProcessorConfig> processorConfigs();
+    List<ProcessorConfig> processorConfigs();
 
     /**
      * Constructed span processors.
@@ -71,10 +72,18 @@ interface OpenTelemetryTracingConfigBlueprint extends TypedAttributes {
     List<SpanProcessor> processors();
 
     /**
+     * Name/value pairs passed to OpenTelemetry.
+     *
+     * @return typed attribute settings
+     */
+    @Option.Configured
+    Optional<AttributesBuilder> attributes();
+
+    /**
      * Span exporters.
      * <p>
      * The key in the map is a unique name--of the user's choice--for the exporter config settings.
-     * The {@link SpanProcessorConfig#exporters()} config setting for a processor config specifies zero
+     * The {@link ProcessorConfig#exporters()} config setting for a processor config specifies zero
      * or more of these names to associate the exporters built from the exporter configs with the processor
      * built from the processor config.
      *

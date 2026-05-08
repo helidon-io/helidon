@@ -34,8 +34,7 @@ class BigIntegerConverter implements JsonConverter<BigInteger> {
 
     @Override
     public BigInteger deserialize(JsonParser parser) {
-        char[] numberAsArray = parser.readCharArray();
-        return new BigInteger(new String(numberAsArray));
+        return parser.readBigInteger();
     }
 
     @Override
@@ -50,7 +49,7 @@ class BigIntegerConverter implements JsonConverter<BigInteger> {
 
     @Override
     public void serialize(JsonGenerator generator, BigInteger instance, boolean writeNulls) {
-        generator.write(instance.toString());
+        generator.write(instance);
     }
 
     @Override

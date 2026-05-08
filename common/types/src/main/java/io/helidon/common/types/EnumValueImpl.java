@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,8 @@ final class EnumValueImpl implements EnumValue {
         if (!(o instanceof EnumValue enumValue)) {
             return false;
         }
-        return Objects.equals(type, enumValue.type()) && Objects.equals(name, enumValue.name());
+        return Objects.equals(type, enumValue.type())
+               && Objects.equals(name, enumValue.name());
     }
 
     @Override

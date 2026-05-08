@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.stream.Stream;
 import io.helidon.common.configurable.AllowList;
 import io.helidon.common.uri.UriQuery;
 
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -90,32 +89,8 @@ public class RequestedUriDiscoveryContextTest {
     }
 
     @ParameterizedTest
-    @MethodSource("params")
-    @Deprecated(forRemoval = true, since = "4.2.1")
-    void stringAddress(InetSocketAddress remotePeerAddress, AllowList allowList, String expected) throws UnknownHostException {
-        if (!allowList.prototype().allowed().getFirst().equals("localhost")) {
-            Assumptions.abort("IP address filtering is not supported by deprecated api.");
-        }
-
-        var uriInfo = RequestedUriDiscoveryContext.builder()
-                .enabled(true)
-                .trustedProxies(allowList)
-                .build()
-                .uriInfo(remotePeerAddress.toString(),
-                         remotePeerAddress.toString(),
-                         "/path",
-                         ServerRequestHeaders.create(WritableHeaders.create()
-                                                             .add(HeaderNames.FORWARDED,
-                                                                  "by=a.b.c;for=d.e.f;host=helidon.io;proto=https")),
-                         UriQuery.create(URI.create("http://localhost:8088/path")),
-                         true);
-
-        assertEquals(expected, uriInfo.toString());
-    }
-
-    @ParameterizedTest
     @MethodSource("forwardedData")
-    void testForwardedFor(String forwardForValues, String expected) throws UnknownHostException {
+    void testForwardedFor(String forwardForValues, String expected) {
         var headers = WritableHeaders.create()
                 .add(HeaderNames.HOST, "serverinstance")
                 .add(HeaderNames.X_FORWARDED_HOST, "serverpublic")
@@ -130,8 +105,8 @@ public class RequestedUriDiscoveryContextTest {
                 .addDiscoveryType(RequestedUriDiscoveryContext.RequestedUriDiscoveryType.X_FORWARDED)
                 .trustedProxies(AllowList.builder().addAllowed("trustedproxy").build())
                 .build()
-                .uriInfo("trustedproxy/1.2.3.4:443",   // actual host which sent us the request
-                         "localhost/127.0.0.1:443",                 // receiving address
+                .uriInfo(InetSocketAddress.createUnresolved("trustedproxy", 443),   // actual host which sent us the request
+                         InetSocketAddress.createUnresolved("localhost", 443),       // receiving address
                          "/path",
                          ServerRequestHeaders.create(headers),
                          UriQuery.create(URI.create("http://localhost:8080/path")),

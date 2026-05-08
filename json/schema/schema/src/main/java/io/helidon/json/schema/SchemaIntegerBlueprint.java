@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.metadata.hson.Hson;
+import io.helidon.json.JsonObject;
 
 /**
  * Json schema related to the integer numbers.
@@ -78,7 +78,7 @@ interface SchemaIntegerBlueprint extends SchemaItemBlueprint {
     SchemaType schemaType();
 
     @Override
-    default void generate(Hson.Struct.Builder builder) {
+    default void generate(JsonObject.Builder builder) {
         SchemaItemBlueprint.super.generate(builder);
         multipleOf().ifPresent(multipleOf -> builder.set("multipleOf", multipleOf));
         minimum().ifPresent(minimum -> builder.set("minimum", minimum));

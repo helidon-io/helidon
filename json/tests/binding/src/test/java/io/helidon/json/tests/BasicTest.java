@@ -20,7 +20,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -36,17 +37,14 @@ public class BasicTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testSimpleSerialize() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testSimpleSerializeParameterized(BindingMethod bindingMethod) {
         StringWrapper wrapper = new StringWrapper();
         wrapper.setValue("abc");
-        String val = jsonBinding.serialize(wrapper);
+        String val = bindingMethod.serialize(jsonBinding, wrapper);
         assertThat(val, is(EXPECTED_VALUE));
-    }
-
-    @Test
-    public void testSimpleDeserializer() {
-        StringWrapper stringWrapper = jsonBinding.deserialize(EXPECTED_VALUE, StringWrapper.class);
+        StringWrapper stringWrapper = bindingMethod.deserialize(jsonBinding, EXPECTED_VALUE, StringWrapper.class);
         assertEquals("abc", stringWrapper.value);
     }
 
@@ -63,5 +61,4 @@ public class BasicTest {
             this.value = value;
         }
     }
-
 }

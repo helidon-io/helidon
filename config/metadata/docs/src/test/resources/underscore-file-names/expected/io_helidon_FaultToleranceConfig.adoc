@@ -1,0 +1,31 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= io.helidon.FaultToleranceConfig
+
+== Description
+
+++++
+Configuration for <code>fault-tolerance</code>
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Description
+
+| `bulkheads`
+|pass:[Configuration for <code>bulkheads</code>]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/config_reference.adoc#a9950f4db-fault-tolerance[`fault-tolerance`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

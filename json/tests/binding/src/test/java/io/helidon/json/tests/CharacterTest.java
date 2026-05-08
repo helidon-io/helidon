@@ -19,7 +19,8 @@ package io.helidon.json.tests;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -33,33 +34,36 @@ public class CharacterTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testAsciiChar() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testAsciiCharParameterized(BindingMethod bindingMethod) {
         String expected = "\"a\"";
         char c = 'a';
-        String jsonValue = jsonBinding.serialize(c);
+        String jsonValue = bindingMethod.serialize(jsonBinding, c);
         assertThat(jsonValue, is(expected));
 
-        char deserialized = jsonBinding.deserialize(jsonValue, char.class);
+        char deserialized = bindingMethod.deserialize(jsonBinding, jsonValue, char.class);
         assertThat(deserialized, is(c));
     }
 
-    @Test
-    public void testUTF8Char() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testUTF8CharParameterized(BindingMethod bindingMethod) {
         String expected = "\"ř\"";
         char c = 'ř';
-        String jsonValue = jsonBinding.serialize(c);
+        String jsonValue = bindingMethod.serialize(jsonBinding, c);
         assertThat(jsonValue, is(expected));
 
-        char deserialized = jsonBinding.deserialize(jsonValue, char.class);
+        char deserialized = bindingMethod.deserialize(jsonBinding, jsonValue, char.class);
         assertThat(deserialized, is(c));
     }
 
-    @Test
-    public void testUnicodeChar() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testUnicodeCharParameterized(BindingMethod bindingMethod) {
         String jsonValue = "\"\\u0041\"";
 
-        char deserialized = jsonBinding.deserialize(jsonValue, char.class);
+        char deserialized = bindingMethod.deserialize(jsonBinding, jsonValue, char.class);
         assertThat(deserialized, is('A'));
     }
 }

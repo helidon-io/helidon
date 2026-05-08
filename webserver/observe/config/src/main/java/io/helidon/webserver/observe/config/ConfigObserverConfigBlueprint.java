@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,18 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.webserver.observe.ObserverConfigBase;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 
+/**
+ * Configuration of Config Observer.
+ */
 @Prototype.Blueprint
 @Prototype.Configured(root = false, value = "config")
 @Prototype.Provides(ObserveProvider.class)
 interface ConfigObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<ConfigObserver> {
+    /**
+     * Endpoint this observer is available on.
+     *
+     * @return the observer endpoint
+     */
     @Option.Configured
     @Option.Default("config")
     String endpoint();

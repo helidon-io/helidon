@@ -20,7 +20,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -46,56 +47,62 @@ public class HashCollisionTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testNamingCollision() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testNamingCollisionParameterized(BindingMethod bindingMethod) {
         NamingCollision namingCollision = new NamingCollision("value1", "value2");
-        String json = jsonBinding.serialize(namingCollision);
+        String json = bindingMethod.serialize(jsonBinding, namingCollision);
         assertThat(json, is("{\"costarring\":\"value1\",\"liquid\":\"value2\"}"));
 
-        NamingCollision deserialized = jsonBinding.deserialize(json, NamingCollision.class);
+        NamingCollision deserialized = bindingMethod.deserialize(jsonBinding, json, NamingCollision.class);
         assertThat(deserialized, is(namingCollision));
     }
 
-    @Test
-    public void testMixNamingCollisionWithNormal() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testMixNamingCollisionWithNormalParameterized(BindingMethod bindingMethod) {
         MixNamingCollisionWithNormal namingCollision = new MixNamingCollisionWithNormal("value1", "value2", "value3");
-        String json = jsonBinding.serialize(namingCollision);
+        String json = bindingMethod.serialize(jsonBinding, namingCollision);
         assertThat(json, is("{\"costarring\":\"value1\",\"liquid\":\"value2\",\"name\":\"value3\"}"));
 
-        MixNamingCollisionWithNormal deserialized = jsonBinding.deserialize(json, MixNamingCollisionWithNormal.class);
+        MixNamingCollisionWithNormal deserialized =
+                bindingMethod.deserialize(jsonBinding, json, MixNamingCollisionWithNormal.class);
         assertThat(deserialized, is(namingCollision));
     }
 
-    @Test
-    public void testTwoNamingCollisions() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testTwoNamingCollisionsParameterized(BindingMethod bindingMethod) {
         TwoNamingsCollisions namingCollision = new TwoNamingsCollisions("value1", "value2", "value3", "value4");
-        String json = jsonBinding.serialize(namingCollision);
+        String json = bindingMethod.serialize(jsonBinding, namingCollision);
         assertThat(json,
                    is("{\"costarring\":\"value1\",\"liquid\":\"value2\",\"declinate\":\"value3\",\"macallums\":\"value4\"}"));
 
-        TwoNamingsCollisions deserialized = jsonBinding.deserialize(json, TwoNamingsCollisions.class);
+        TwoNamingsCollisions deserialized = bindingMethod.deserialize(jsonBinding, json, TwoNamingsCollisions.class);
         assertThat(deserialized, is(namingCollision));
     }
 
-    @Test
-    public void testNamingCollisionWithPropertyNameChanged() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testNamingCollisionWithPropertyNameChangedParameterized(BindingMethod bindingMethod) {
         NamingCollisionWithPropertyNameChanged namingCollision = new NamingCollisionWithPropertyNameChanged("value1", "value2");
-        String json = jsonBinding.serialize(namingCollision);
+        String json = bindingMethod.serialize(jsonBinding, namingCollision);
         assertThat(json, is("{\"costarring\":\"value1\",\"liquid\":\"value2\"}"));
 
         NamingCollisionWithPropertyNameChanged deserialized =
-                jsonBinding.deserialize(json,
-                                        NamingCollisionWithPropertyNameChanged.class);
+                bindingMethod.deserialize(jsonBinding, json, NamingCollisionWithPropertyNameChanged.class);
         assertThat(deserialized, is(namingCollision));
     }
 
-    @Test
-    public void testNamingCollisionWithFailOnUnknown() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testNamingCollisionWithFailOnUnknownParameterized(BindingMethod bindingMethod) {
         NamingCollisionWithFailOnUnknown namingCollision = new NamingCollisionWithFailOnUnknown("value1", "value2");
-        String json = jsonBinding.serialize(namingCollision);
+        String json = bindingMethod.serialize(jsonBinding, namingCollision);
         assertThat(json, is("{\"costarring\":\"value1\",\"liquid\":\"value2\"}"));
 
-        NamingCollisionWithFailOnUnknown deserialized = jsonBinding.deserialize(json, NamingCollisionWithFailOnUnknown.class);
+        NamingCollisionWithFailOnUnknown deserialized =
+                bindingMethod.deserialize(jsonBinding, json, NamingCollisionWithFailOnUnknown.class);
         assertThat(deserialized, is(namingCollision));
     }
 
@@ -119,5 +126,4 @@ public class HashCollisionTest {
     @Json.FailOnUnknown
     record NamingCollisionWithFailOnUnknown(String costarring, String liquid) {
     }
-
 }

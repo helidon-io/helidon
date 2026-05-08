@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.webserver.http;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.registry.Interception;
@@ -28,11 +29,11 @@ import io.helidon.service.registry.ServiceDescriptor;
 
 /**
  * Container class for types related to HTTP entry points.
- *
- * @deprecated this API is part of incubating features of Helidon. This API may change including backward incompatible changes
+ * <p>
+ * NOTE: this API is part of incubating features of Helidon. This API may change including backward incompatible changes
  *               and full removal. We welcome feedback for incubating features.
  */
-@Deprecated
+@Api.Incubating
 public class HttpEntryPoint {
     /**
      * Interceptor of an HTTP entry point.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
+import static io.helidon.http.HeaderNames.CONNECTION;
 import static io.helidon.http.HeaderNames.CONTENT_LENGTH;
 import static io.helidon.http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;
@@ -87,7 +89,7 @@ class GetTest {
             assertThat(entity, is("Hello"));
             io.helidon.http.Headers headers = response.headers();
             assertThat(headers, hasHeader(CONTENT_LENGTH_5));
-            assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+            assertThat(headers, noHeader(CONNECTION));
         }
     }
 
@@ -101,7 +103,7 @@ class GetTest {
             assertThat(entity, is(BYTES));
             io.helidon.http.Headers headers = response.headers();
             assertThat(headers, hasHeader(HeaderValues.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
-            assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+            assertThat(headers, noHeader(CONNECTION));
         }
     }
 
@@ -116,7 +118,7 @@ class GetTest {
             assertThat(entity, is(BYTES));
             io.helidon.http.Headers headers = response.headers();
             assertThat(headers, hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
-            assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+            assertThat(headers, noHeader(CONNECTION));
         }
 
     }
@@ -135,7 +137,7 @@ class GetTest {
             assertThat("Should contain echoed request header", headers, hasHeader(REQUEST_HEADER_VALUE));
             assertThat("Should contain configured response header", headers, hasHeader(RESPONSE_HEADER_VALUE));
             assertThat(headers, hasHeader(CONTENT_LENGTH_5));
-            assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+            assertThat(headers, noHeader(CONNECTION));
         }
     }
 

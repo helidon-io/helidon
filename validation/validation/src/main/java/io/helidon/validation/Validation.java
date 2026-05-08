@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -568,6 +568,41 @@ public final class Validation {
             int fraction() default -1;
         }
 
+        /**
+         * The value must be a multiple of the specified {@link #value()}.
+         * <p>
+         * The factor must be greater than zero and will be converted to a {@link java.math.BigDecimal}, so it must
+         * match its rules.
+         * <p>
+         * Bytes are considered unsigned values (always between 0 and 255 inclusive).
+         */
+        @Target({
+                ElementType.METHOD, // return type
+                ElementType.PARAMETER,  // parameter of a method
+                ElementType.ANNOTATION_TYPE, // annotation to inherit
+                ElementType.TYPE_USE, // Map<Key, @NotNull Value>
+                ElementType.RECORD_COMPONENT // components of a record
+        })
+        @Validation.Constraint
+        public @interface MultipleOf {
+            /**
+             * Message to return instead of the default one of the validator.
+             * The message can be a string format, where the first (and only) parameter will be the actual value
+             * that is being validated.
+             *
+             * @return message to describe the constraint validation error
+             */
+            java.lang.String message() default "";
+
+            /**
+             * Positive factor. This value will be converted to a {@link java.math.BigDecimal}, so it must match its
+             * rules.
+             *
+             * @return the factor the value must be divisible by
+             */
+            java.lang.String value();
+        }
+
     }
 
     /**
@@ -640,6 +675,37 @@ public final class Validation {
              */
             int value();
         }
+
+        /**
+         * The value must be a multiple of the specified {@link #value()}.
+         * <p>
+         * Bytes are considered unsigned values (always between 0 and 255 inclusive).
+         */
+        @Target({
+                ElementType.METHOD, // return type
+                ElementType.PARAMETER,  // parameter of a method
+                ElementType.ANNOTATION_TYPE, // annotation to inherit
+                ElementType.TYPE_USE, // Map<Key, @NotNull Value>
+                ElementType.RECORD_COMPONENT // components of a record
+        })
+        @Validation.Constraint
+        public @interface MultipleOf {
+            /**
+             * Message to return instead of the default one of the validator.
+             * The message can be a string format, where the first (and only) parameter will be the actual value
+             * that is being validated.
+             *
+             * @return message to describe the constraint validation error
+             */
+            java.lang.String message() default "";
+
+            /**
+             * Positive factor.
+             *
+             * @return the factor the value must be divisible by
+             */
+            int value();
+        }
     }
 
     /**
@@ -709,6 +775,35 @@ public final class Validation {
              * Maximal value.
              *
              * @return max value
+             */
+            long value();
+        }
+
+        /**
+         * The value must be a multiple of the specified {@link #value()}.
+         */
+        @Target({
+                ElementType.METHOD, // return type
+                ElementType.PARAMETER,  // parameter of a method
+                ElementType.ANNOTATION_TYPE, // annotation to inherit
+                ElementType.TYPE_USE, // Map<Key, @NotNull Value>
+                ElementType.RECORD_COMPONENT // components of a record
+        })
+        @Validation.Constraint
+        public @interface MultipleOf {
+            /**
+             * Message to return instead of the default one of the validator.
+             * The message can be a string format, where the first (and only) parameter will be the actual value
+             * that is being validated.
+             *
+             * @return message to describe the constraint validation error
+             */
+            java.lang.String message() default "";
+
+            /**
+             * Positive factor.
+             *
+             * @return the factor the value must be divisible by
              */
             long value();
         }

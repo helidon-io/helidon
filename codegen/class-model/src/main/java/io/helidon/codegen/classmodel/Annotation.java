@@ -15,6 +15,9 @@
  */
 package io.helidon.codegen.classmodel;
 
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,43 +118,73 @@ public final class Annotation extends CommonComponent {
         if (this.commonAnnotation != null) {
             return commonAnnotation;
         }
-        var builder = io.helidon.common.types.Annotation.builder()
-                .typeName(type().genericTypeName());
-
-        for (AnnotationParameter parameter : parameters) {
-            var value = parameter.value();
-            if (value instanceof Annotation annot) {
-                builder.putValue(parameter.name(), annot.toTypesAnnotation());
-            } else {
-                builder.putValue(parameter.name(), parameter.value());
-            }
+        var builder = io.helidon.common.types.Annotation.builder();
+        builder.typeName(type().genericTypeName());
+        for (var parameter : parameters) {
+            var value = toTypesValue(parameter.value());
+            builder.property(parameter.name(), value);
         }
-
         return builder.build();
+    }
+
+    List<AnnotationParameter> parameters() {
+        return parameters;
     }
 
     @Override
     void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ElementKind classType) {
-        writer.write("@" + imports.typeName(type(), includeImport()));
+        boolean multiline = isMultiline(writer, imports, this);
+        writeComponent(writer, multiline, imports);
+    }
+
+    void writeComponent(ModelWriter writer, boolean multiline, ImportOrganizer imports) {
+        var identifier = imports.typeName(type(), includeImport());
+        writer.write("@");
+        writer.write(identifier);
+        writeComponent(writer, multiline, imports, parameters);
+    }
+
+    void writeComponent(ModelWriter writer, boolean multiline, ImportOrganizer imports, List<AnnotationParameter> parameters) {
         if (!parameters.isEmpty()) {
             writer.write("(");
+            if (multiline) {
+                writer.increasePaddingLevel();
+            }
             if (parameters.size() == 1) {
-                AnnotationParameter parameter = parameters.get(0);
-                if (parameter.name().equals("value")) {
-                    parameter.writeValue(writer, imports);
+                var parameter = parameters.getFirst();
+                if ("value".equals(parameter.name())) {
+                    parameter.writeValue(writer, multiline, imports);
                 } else {
-                    parameter.writeComponent(writer, declaredTokens, imports, classType);
+                    if (multiline) {
+                        writer.write("\n");
+                    }
+                    parameter.writeComponent(writer, multiline, imports);
                 }
             } else {
                 boolean first = true;
-                for (AnnotationParameter parameter : parameters) {
+                var it = parameters.iterator();
+                while (it.hasNext()) {
+                    var next = it.next();
                     if (first) {
                         first = false;
-                    } else {
-                        writer.write(", ");
+                        if (multiline) {
+                            writer.write("\n");
+                        }
                     }
-                    parameter.writeComponent(writer, declaredTokens, imports, classType);
+                    var nextMultiline = multiline && isMultiline(writer, imports, next);
+                    next.writeComponent(writer, nextMultiline, imports);
+                    if (it.hasNext()) {
+                        writer.write(",");
+                        if (multiline) {
+                            writer.write("\n");
+                        } else {
+                            writer.write(" ");
+                        }
+                    }
                 }
+            }
+            if (multiline) {
+                writer.decreasePaddingLevel();
             }
             writer.write(")");
         }
@@ -160,7 +193,51 @@ public final class Annotation extends CommonComponent {
     @Override
     void addImports(ImportOrganizer.Builder imports) {
         super.addImports(imports);
-        parameters.forEach(parameter -> parameter.addImports(imports));
+        for (var parameter : parameters) {
+            parameter.addImports(imports);
+        }
+    }
+
+    static boolean isMultiline(ModelWriter writer, ImportOrganizer imports, Object o) {
+        var sw = new StringWriter();
+        var mw = new ModelWriter(sw, "");
+        switch (o) {
+            case Annotation a -> a.writeComponent(mw, false, imports);
+            case AnnotationParameter p -> {
+                if (p.value() instanceof Collection<?> list) {
+                    for (var e : list) {
+                        if (e instanceof Annotation) {
+                            return true;
+                        }
+                        break;
+                    }
+                }
+                p.writeComponent(mw, false, imports);
+            }
+            default -> {
+                return false;
+            }
+        }
+        int lineSize = writer.currentPadding().length() + sw.getBuffer().length();
+        return lineSize > 120;
+    }
+
+    static Object toTypesValue(Object value) {
+        if (value instanceof Collection<?> values) {
+            var list = new ArrayList<>();
+            for (var e : values) {
+                if (e instanceof Annotation a) {
+                    list.add(a.toTypesAnnotation());
+                } else {
+                    list.add(e);
+                }
+            }
+            return list;
+        } else if (value instanceof Annotation a) {
+            return a.toTypesAnnotation();
+        } else {
+            return value;
+        }
     }
 
     /**
@@ -213,23 +290,18 @@ public final class Annotation extends CommonComponent {
         /**
          * Adds annotation parameter.
          *
-         * @param name  annotation parameter name
+         * @param name     annotation parameter name
          * @param property annotation property
          * @return updated builder instance
          */
         public Builder addParameter(String name, AnnotationProperty property) {
             Objects.requireNonNull(property);
-
-            Object value = property.value();
-            Class<?> paramType = value instanceof TypeName
-                    ? Class.class
-                    : value.getClass();
-
-            return addParameter(builder -> builder.name(name)
-                    .type(paramType)
+            var value = property.value();
+            return addParameter(AnnotationParameter.builder()
+                    .name(name)
+                    .type(value instanceof TypeName ? Class.class : value.getClass())
                     .value(value)
-                    .update(it -> property.constantValue().ifPresent(it::constantValue))
-            );
+                    .build());
         }
 
         /**

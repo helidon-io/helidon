@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http.spi;
 
+import io.helidon.common.Api;
 import io.helidon.webserver.http.ErrorHandler;
 
 /**
@@ -25,15 +26,15 @@ import io.helidon.webserver.http.ErrorHandler;
  * Instances of this service discovered by service registry are only used when the whole server is started using it
  * (i.e. Helidon Declarative approach).
  * <p>
- * To manually register an error handle, please use
+ * NOTE: this API is part of preview features of Helidon. This API may still change between minor releases,
+ * but it is intended for supported external use.
+ * <p>
+ * To manually register an error handler, please use
  * {@link io.helidon.webserver.http.HttpRouting.Builder#error(Class, io.helidon.webserver.http.ErrorHandler)}.
  *
  * @param <T> type of the exception handled by the handler
- *
- * @deprecated this API is part of incubating features of Helidon. This API may change including backward incompatible changes
- *               and full removal. We welcome feedback for incubating features.
  */
-@Deprecated
+@Api.Preview
 public interface ErrorHandlerProvider<T extends Throwable> {
     /**
      * Type of the exception to handle.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,22 +22,17 @@ import java.util.Map;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.media.EntityWriter;
-import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.http.media.json.JsonSupport;
+import io.helidon.json.JsonObject;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-
 class InfoService implements HttpService {
-    private static final EntityWriter<JsonObject> WRITER = JsonpSupport.serverResponseWriter();
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
+    private static final EntityWriter<JsonObject> WRITER = JsonSupport.serverResponseWriter();
 
-    private final Map<String, Object> info;
+    private final Map<String, String> info;
 
     InfoService(Map<String, String> info) {
         this.info = Map.copyOf(new HashMap<>(info));
@@ -52,26 +47,29 @@ class InfoService implements HttpService {
     private void namedInfo(ServerRequest req, ServerResponse res) {
         String name = req.path().pathParameters().get("name");
 
-        Object value = info.get(name);
+        String value = info.get(name);
         if (value == null) {
             throw new NotFoundException("Application info value for " + name + " is not defined.");
         } else {
-            JsonObjectBuilder json = JSON.createObjectBuilder()
-                    .add("name", name)
-                    .add("value", String.valueOf(value));
-            write(req, res, json.build());
+            JsonObject json = JsonObject.builder()
+                    .set("name", name)
+                    .set("value", value)
+                    .build();
+            write(req, res, json);
         }
     }
 
     private void info(ServerRequest req, ServerResponse res) {
-        JsonObjectBuilder json = JSON.createObjectBuilder(info);
+        var json = JsonObject.builder();
+
+        info.forEach(json::set);
 
         write(req, res, json.build());
     }
 
     private void write(ServerRequest req, ServerResponse res, JsonObject json) {
         res.header(HeaderValues.X_CONTENT_TYPE_OPTIONS_NOSNIFF);
-        WRITER.write(JsonpSupport.JSON_OBJECT_TYPE,
+        WRITER.write(JsonSupport.JSON_OBJECT_TYPE,
                      json,
                      res.outputStream(),
                      req.headers(),

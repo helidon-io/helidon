@@ -1,0 +1,37 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.AcmeClientsConfig",
+        "standalone": true,
+        "prefix": "clients",
+        "description": "Clients configuration."
+      },
+      {
+        "type": "com.acme.AcmeSqlDataSourceConfig",
+        "standalone": true,
+        "prefix": "data.sources.sql",
+        "description": "SQL data source configuration."
+      },
+      {
+        "type": "com.acme.AcmeMetricsConfig",
+        "standalone": true,
+        "prefix": "metrics",
+        "description": "Metrics configuration."
+      },
+      {
+        "type": "com.acme.AcmeMetricsObserverConfig",
+        "standalone": true,
+        "prefix": "metrics",
+        "description": "Metrics observer configuration."
+      },
+      {
+        "type": "com.acme.AcmeServerConfig",
+        "standalone": true,
+        "prefix": "server",
+        "description": "Server configuration."
+      }
+    ]
+  }
+]

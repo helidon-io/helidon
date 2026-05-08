@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,21 +22,19 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
-import io.helidon.http.HttpMediaType;
-import io.helidon.http.media.EntityReader;
+import io.helidon.http.media.EntityReaderBase;
 
 import jakarta.json.JsonReaderFactory;
 import jakarta.json.JsonStructure;
 
-class JsonpReader<T extends JsonStructure> implements EntityReader<T> {
+class JsonpReader<T extends JsonStructure> extends EntityReaderBase<T> {
     private final JsonReaderFactory readerFactory;
 
-    JsonpReader(JsonReaderFactory readerFactory) {
-        this.readerFactory = readerFactory;
+    JsonpReader(JsonpSupportConfig config) {
+        this.readerFactory = config.readerFactory();
     }
 
     @Override
@@ -59,12 +57,5 @@ class JsonpReader<T extends JsonStructure> implements EntityReader<T> {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    private Charset contentTypeCharset(Headers headers) {
-        return headers.contentType()
-                .flatMap(HttpMediaType::charset)
-                .map(Charset::forName)
-                .orElse(StandardCharsets.UTF_8);
     }
 }

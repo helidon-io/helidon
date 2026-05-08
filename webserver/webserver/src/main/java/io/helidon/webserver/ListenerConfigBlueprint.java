@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,17 +160,6 @@ interface ListenerConfigBlueprint {
     long maxPayloadSize();
 
     /**
-     * Listener receive buffer size.
-     *
-     * @return buffer size in bytes
-     * @deprecated use {@link SocketOptions#socketReceiveBufferSize()} instead
-     * via {@link #connectionOptions()}.
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    @Option.Configured
-    Optional<Integer> receiveBufferSize();
-
-    /**
      * Number of buffers queued for write operations.
      *
      * @return maximal number of queued writes, defaults to 0
@@ -213,16 +202,6 @@ interface ListenerConfigBlueprint {
     Duration shutdownGracePeriod();
 
     /**
-     * Configuration of a connection (established from client against our server).
-     *
-     * @return connection configuration
-     * @deprecated use {@link #connectionOptions()} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    @Option.Configured
-    Optional<ConnectionConfig> connectionConfig();
-
-    /**
      * Listener TLS configuration.
      *
      * @return tls of this configuration
@@ -262,6 +241,7 @@ interface ListenerConfigBlueprint {
     /**
      * Limits the number of connections that can be opened at a single point in time.
      * Defaults to {@code -1}, meaning "unlimited" - what the system allows.
+     * {@code 0} has the same meaning as {@code -1} - unlimited number of connections.
      *
      * @return number of TCP connections that can be opened to this listener, regardless of protocol
      */
@@ -272,6 +252,7 @@ interface ListenerConfigBlueprint {
     /**
      * Limits the number of requests that can be executed at the same time (the number of active virtual threads of requests).
      * Defaults to {@code -1}, meaning "unlimited" - what the system allows.
+     * {@code 0} has the same meaning as {@code -1} - unlimited number of requests.
      * Also make sure that this number is higher than the expected time it takes to handle a single request in your application,
      * as otherwise you may stop in-progress requests.
      * <p>

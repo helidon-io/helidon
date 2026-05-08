@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLParameters;
@@ -48,7 +47,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
-import io.helidon.common.concurrency.limits.NoopSemaphore;
+import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.context.Context;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.task.HelidonTaskExecutor;
@@ -89,7 +88,7 @@ class ServerListener implements ListenerContext {
     private final MediaContext mediaContext;
     private final ContentEncodingContext contentEncodingContext;
     private final Context context;
-    private final Semaphore connectionSemaphore;
+    private final Limit connectionLimit;
     private final Limit requestLimit;
     private final Map<String, ServerConnection> activeConnections = new ConcurrentHashMap<>();
 
@@ -123,9 +122,18 @@ class ServerListener implements ListenerContext {
                     }
                 });
 
-        this.connectionSemaphore = listenerConfig.maxTcpConnections() == -1
-                ? NoopSemaphore.INSTANCE
-                : new Semaphore(listenerConfig.maxTcpConnections());
+        // this instance is the only one waiting on this limit, so queue of 1 is enough
+        // 5 minutes is long enough not to have busy waits
+        if (listenerConfig.maxTcpConnections() == -1 || listenerConfig.maxTcpConnections() == 0) {
+            // unlimited, no need to queue, as we never block
+            this.connectionLimit = FixedLimit.create();
+        } else {
+            this.connectionLimit = FixedLimit.builder()
+                    .queueLength(1)
+                    .queueTimeout(Duration.ofMinutes(5))
+                    .permits(listenerConfig.maxTcpConnections())
+                    .build();
+        }
 
         if (listenerConfig.maxConcurrentRequests() == -1) {
             this.requestLimit = listenerConfig.concurrencyLimit()
@@ -135,6 +143,8 @@ class ServerListener implements ListenerContext {
                     .permits(listenerConfig.maxConcurrentRequests())
                     .build();
         }
+
+        this.connectionLimit.init(socketName);
         this.requestLimit.init(socketName);
 
         this.connectionProviders = ConnectionProviders.create(selectors);
@@ -393,48 +403,52 @@ class ServerListener implements ListenerContext {
         while (running) {
             try {
                 // this must be done before we accept, and the semaphore must be released when connection is finished
-                connectionSemaphore.acquire();
-                // if accept fails itself, we consider it end of story, the listener is broken
-                SocketChannel socket = serverSocket.accept();
+                var outcome = connectionLimit.tryAcquireOutcome(true);
+                if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
+                    LimitAlgorithm.Token token = ((LimitAlgorithm.Outcome.Accepted) outcome).token();
 
-                try {
-                    connectionOptions.configureSocket(socket);
-                    ConnectionHandler handler = new ConnectionHandler(this,
-                                                                      connectionSemaphore,
-                                                                      requestLimit,
-                                                                      connectionProviders,
-                                                                      activeConnections,
-                                                                      socket,
-                                                                      serverChannelId,
-                                                                      router,
-                                                                      tls);
-                    readerExecutor.execute(handler);
-                } catch (RejectedExecutionException e) {
-                    LOGGER.log(ERROR, "Executor rejected handler for new connection", e);
+                    // if accept fails itself, we consider it end of story, the listener is broken
+                    SocketChannel socket = serverSocket.accept();
 
-                    // the socket was never handled
                     try {
-                        socket.close();
-                    } catch (IOException ex) {
-                        LOGGER.log(TRACE, "Failed to close socket that was rejected for execution", e);
-                    }
+                        connectionOptions.configureSocket(socket);
+                        ConnectionHandler handler = new ConnectionHandler(this,
+                                                                          token,
+                                                                          requestLimit,
+                                                                          connectionProviders,
+                                                                          activeConnections,
+                                                                          socket,
+                                                                          serverChannelId,
+                                                                          router,
+                                                                          tls);
+                        readerExecutor.execute(handler);
+                    } catch (RejectedExecutionException e) {
+                        LOGGER.log(ERROR, "Executor rejected handler for new connection", e);
 
-                    // we never started the handler, so we must release the semaphore here
-                    connectionSemaphore.release();
-                } catch (Exception e) {
-                    // we may get an SSL handshake errors, which should only fail one socket, not the listener
-                    LOGGER.log(TRACE, "Failed to handle accepted socket", e);
-                    // the socket was never handled
-                    try {
-                        socket.close();
-                    } catch (IOException ex) {
-                        LOGGER.log(TRACE,
-                                   "Failed to close socket that failed start execution (see previous trace for reason)",
-                                   e);
-                    }
+                        // the socket was never handled
+                        try {
+                            socket.close();
+                        } catch (IOException ex) {
+                            LOGGER.log(TRACE, "Failed to close socket that was rejected for execution", e);
+                        }
 
-                    // we never started the handler, so we must release the semaphore here
-                    connectionSemaphore.release();
+                        // we never started the handler, so we must release the semaphore here
+                        token.dropped();
+                    } catch (Exception e) {
+                        // we may get an SSL handshake errors, which should only fail one socket, not the listener
+                        LOGGER.log(TRACE, "Failed to handle accepted socket", e);
+                        // the socket was never handled
+                        try {
+                            socket.close();
+                        } catch (IOException ex) {
+                            LOGGER.log(TRACE,
+                                       "Failed to close socket that failed start execution (see previous trace for reason)",
+                                       e);
+                        }
+
+                        // we never started the handler, so we must release the semaphore here
+                        token.ignore();
+                    }
                 }
             } catch (AsynchronousCloseException e) {
                 if (inCheckpoint) {
@@ -469,8 +483,17 @@ class ServerListener implements ListenerContext {
         return new ArrayList<>(activeConnections.values());
     }
 
+    // Intended for testing.
+    Thread serverThreads() {
+        return serverThread;
+    }
+
     void suspend() {
         inCheckpoint = true;
+        // Checkpoint suspend is expected to stop the listener thread. The connection-limit wait path
+        // converts interrupts into a rejected outcome, so clear the loop condition first to avoid
+        // re-entering the wait after the interrupt is consumed.
+        running = false;
         suspend(false);
         serverThread = null;
         closeFuture = null;

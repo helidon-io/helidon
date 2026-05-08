@@ -20,7 +20,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,37 +35,44 @@ public class GeneralBuilderSupportTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testBuilderSupport() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBuilderSupportParameterized(BindingMethod bindingMethod) {
         String json = """
                 {
                     "value" : "test"
                 }""";
 
-        TestPojoWithBuilder deserialized = jsonBinding.deserialize(json, TestPojoWithBuilder.class);
+        TestPojoWithBuilder deserialized = bindingMethod.deserialize(jsonBinding, json, TestPojoWithBuilder.class);
         assertThat(deserialized.value(), is("test"));
     }
 
-    @Test
-    public void testBuilderWithNamePrefix() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBuilderWithNamePrefixParameterized(BindingMethod bindingMethod) {
         String json = """
                 {
                     "value" : "test"
                 }""";
 
-        TestPojoWithBuilderNamePrefix deserialized = jsonBinding.deserialize(json, TestPojoWithBuilderNamePrefix.class);
+        TestPojoWithBuilderNamePrefix deserialized = bindingMethod.deserialize(jsonBinding,
+                                                                               json,
+                                                                               TestPojoWithBuilderNamePrefix.class);
         assertThat(deserialized.value(), is("test"));
     }
 
-    @Test
-    public void testBuilderWithDifferentBuildMethod() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBuilderWithDifferentBuildMethodParameterized(BindingMethod bindingMethod) {
         String json = """
                 {
                     "value" : "test",
                     "value2" : "test2"
                 }""";
 
-        TestPojoWithSetterAndBuilder deserialized = jsonBinding.deserialize(json, TestPojoWithSetterAndBuilder.class);
+        TestPojoWithSetterAndBuilder deserialized = bindingMethod.deserialize(jsonBinding,
+                                                                              json,
+                                                                              TestPojoWithSetterAndBuilder.class);
         assertThat(deserialized.value(), is("test"));
         assertThat(deserialized.value2(), is("test2"));
     }
@@ -196,5 +204,4 @@ public class GeneralBuilderSupportTest {
             }
         }
     }
-
 }

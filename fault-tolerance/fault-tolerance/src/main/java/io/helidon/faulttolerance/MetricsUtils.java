@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
@@ -26,6 +27,7 @@ import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 
 import static io.helidon.faulttolerance.FaultTolerance.FT_METRICS_DEFAULT_ENABLED;
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
@@ -46,7 +48,7 @@ class MetricsUtils {
      * @return value of metrics flag
      */
     static boolean defaultEnabled() {
-        return FaultTolerance.config()
+        return Services.get(Config.class)
                 .get(FT_METRICS_DEFAULT_ENABLED)
                 .asBoolean()
                 .orElse(false);

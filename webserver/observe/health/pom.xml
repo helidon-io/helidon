@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webserver.observe</groupId>
         <artifactId>helidon-webserver-observe-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-webserver-observe-health</artifactId>
@@ -32,6 +32,10 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.webserver.observe</groupId>
             <artifactId>helidon-webserver-observe</artifactId>
@@ -45,12 +49,17 @@
             <artifactId>helidon-health</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-service-common</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config.metadata</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>

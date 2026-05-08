@@ -43,6 +43,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.DeclarativeTypes;
 import io.helidon.declarative.codegen.DeclarativeUtils;
 import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.RestExtensionBase;
@@ -83,20 +84,11 @@ Generates:
  */
 class RestServerExtension extends RestExtensionBase implements RegistryCodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(RestServerExtension.class);
-    private static final String REQUEST_PARAM_NAME = "helidonDeclarative__server_req";
-    private static final String RESPONSE_PARAM_NAME = "helidonDeclarative__server_res";
-    private static final String METHOD_RESPONSE_NAME = "helidonDeclarative__response";
+    private static final String REQUEST_PARAM_NAME = "req";
+    private static final String RESPONSE_PARAM_NAME = "res";
+    private static final String METHOD_RESPONSE_NAME = "response";
     private static final List<HttpParameterCodegenProvider> PARAM_PROVIDERS =
-            HelidonServiceLoader.builder(ServiceLoader.load(HttpParameterCodegenProvider.class))
-                    .addService(new ParamProviderHttpEntity())
-                    .addService(new ParamProviderHttpHeader())
-                    .addService(new ParamProviderHttpPathParam())
-                    .addService(new ParamProviderHttpQuery())
-                    .addService(new ParamProviderHttpReqRes())
-                    .addService(new ParamProviderSecurityContext())
-                    .addService(new ParamProviderContext())
-                    .build()
-                    .asList();
+            loadParamProviders(RestServerExtension.class.getClassLoader());
 
     private final RegistryCodegenContext ctx;
 
@@ -116,6 +108,23 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
         for (ServerEndpoint endpoint : endpoints) {
             process(roundContext, endpoint);
         }
+    }
+
+    static List<HttpParameterCodegenProvider> loadParamProviders(ClassLoader classLoader) {
+        return HelidonServiceLoader.builder(ServiceLoader.load(HttpParameterCodegenProvider.class, classLoader))
+                .addService(new ParamProviderHttpEntity())
+                .addService(new ParamProviderHttpHeader())
+                .addService(new ParamProviderHttpPathParam())
+                .addService(new ParamProviderHttpQuery())
+                .addService(new ParamProviderHttpReqRes())
+                .addService(new ParamProviderSecurityContext())
+                .addService(new ParamProviderContext())
+                .build()
+                .asList();
+    }
+
+    private static String userVariableName(String userName) {
+        return "u_" + userName;
     }
 
     private static void addSetupMethod(ClassModel.Builder endpointService, String path) {
@@ -354,6 +363,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .type(generatedType)
                 .addAnnotation(SINGLETON_ANNOTATION)
+                .addAnnotation(DeclarativeTypes.SUPPRESS_API)
                 .addInterface(WebServerCodegenTypes.SERVER_HTTP_FEATURE);
 
         boolean singleton = type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_SINGLETON);
@@ -457,7 +467,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                                     int methodIndex) {
         // parameters
         for (RestMethodParameter parameter : restMethod.parameters()) {
-            String paramName = parameter.name();
+            String paramName = userVariableName(parameter.name());
             method.addContent("var ")
                     .addContent(paramName)
                     .addContent(" = ");
@@ -490,7 +500,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
         if (params.isEmpty()) {
             method.addContentLine(");");
         } else if (params.size() == 1) {
-            method.addContent(params.getFirst().name())
+            method.addContent(userVariableName(params.getFirst().name()))
                     .addContentLine(");");
         } else {
             // more than one parameter, multiline
@@ -500,7 +510,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
             Iterator<RestMethodParameter> iterator = params.iterator();
             while (iterator.hasNext()) {
                 RestMethodParameter next = iterator.next();
-                method.addContent(next.name());
+                method.addContent(userVariableName(next.name()));
                 if (iterator.hasNext()) {
                     method.addContentLine(",");
                 }
@@ -531,7 +541,8 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
 
         // now each header value, header producer, and header parameter
         for (HeaderValue header : restMethod.headers()) {
-            method.addContent("helidonDeclarative__server_res.header(")
+            method.addContent(RESPONSE_PARAM_NAME)
+                    .addContent(".header(")
                     .addContent(HttpFields.ensureHeaderValueConstant(fieldHandler, header))
                     .addContentLine(");");
         }
@@ -541,7 +552,9 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
             method.addContent(headerProducers.get(computedHeader.serviceName()))
                     .addContent(".apply(")
                     .addContent(headerNameConstant)
-                    .addContent(").ifPresent(declarative__it -> helidonDeclarative__server_res.header(declarative__it));");
+                    .addContent(").ifPresent(it -> ")
+                    .addContent(RESPONSE_PARAM_NAME)
+                    .addContent(".header(it));");
         }
 
         method.addContent(RESPONSE_PARAM_NAME)

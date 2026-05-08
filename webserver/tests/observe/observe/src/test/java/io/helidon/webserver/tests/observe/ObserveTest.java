@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,15 @@
 
 package io.helidon.webserver.tests.observe;
 
-import io.helidon.common.config.Config;
-import io.helidon.common.config.GlobalConfig;
+import java.util.logging.Logger;
+
+import io.helidon.config.Config;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServerConfig;
@@ -31,7 +35,6 @@ import io.helidon.webserver.observe.metrics.MetricsObserver;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -47,7 +50,7 @@ class ObserveTest {
 
     @SetUpServer
     static void server(WebServerConfig.Builder server) {
-        Config config = GlobalConfig.config();
+        Config config = Services.get(Config.class);
 
         // quite often we need to pass something to the health check, so this represents a real usage
         healthCheck = new TestHealthCheck("message");
@@ -79,14 +82,16 @@ class ObserveTest {
     void testInfoObserver(WebClient client) {
         JsonObject jsonObject = client.get("/observe/myInfo/name")
                 .requestEntity(JsonObject.class);
-        assertThat("JSON: " + jsonObject, jsonObject.getString("name"), is("name"));
-        assertThat("JSON: " + jsonObject, jsonObject.getString("value"), is("ObserveTest"));
+        assertThat("JSON: " + jsonObject, jsonObject.stringValue("name").orElseThrow(), is("name"));
+        assertThat("JSON: " + jsonObject, jsonObject.stringValue("value").orElseThrow(), is("ObserveTest"));
 
         jsonObject = client.get("/observe/myInfo")
                 .requestEntity(JsonObject.class);
-        assertThat("JSON: " + jsonObject, jsonObject.getString("name"), is("ObserveTest"));
-        assertThat("JSON: " + jsonObject, jsonObject.getString("description"), is("Test for observability features"));
-        assertThat("JSON: " + jsonObject, jsonObject.getString("version"), is("1.0.0"));
+        assertThat("JSON: " + jsonObject, jsonObject.stringValue("name").orElseThrow(), is("ObserveTest"));
+        assertThat("JSON: " + jsonObject,
+                   jsonObject.stringValue("description").orElseThrow(),
+                   is("Test for observability features"));
+        assertThat("JSON: " + jsonObject, jsonObject.stringValue("version").orElseThrow(), is("1.0.0"));
     }
 
     @Test
@@ -118,12 +123,12 @@ class ObserveTest {
 
     @Test
     void testLogObserver(WebClient client) {
-        ClientResponseTyped<JsonObject> response = client.get("/observe/log/loggers")
-                .request(JsonObject.class);
+        ClientResponseTyped<String> response = client.get("/observe/log/loggers")
+                .request(String.class);
 
         assertThat(response.status(), is(Status.OK_200));
-        JsonObject entity = response.entity();
-        assertThat("Entity: " + entity, entity.getJsonArray("levels").getString(0), is("OFF"));
+        String entity = response.entity();
+        assertThat("Entity: " + entity, entity, containsString("\"levels\":[\"OFF\""));
     }
 
     @Test
@@ -133,7 +138,37 @@ class ObserveTest {
 
         assertThat(response.status(), is(Status.OK_200));
         JsonObject entity = response.entity();
-        assertThat("Entity: " + entity, entity.getJsonObject("io.helidon.webserver.ServerListener"), notNullValue());
+        assertThat("Entity: " + entity,
+                   entity.objectValue("io.helidon.webserver.ServerListener").orElse(null),
+                   notNullValue());
+    }
+
+    @Test
+    void testLogObserverSetLevel(WebClient client) {
+        String loggerName = getClass().getName() + ".level";
+        // Keep a strong reference so JUL does not drop this ad hoc logger between requests.
+        Logger logger = Logger.getLogger(loggerName);
+
+        try {
+            ClientResponseTyped<String> response = client.post("/observe/log/loggers/" + loggerName)
+                    .header(HeaderNames.CONTENT_TYPE, "application/json")
+                    .submit("{\"level\":\"WARNING\"}", String.class);
+
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
+
+            ClientResponseTyped<JsonObject> loggerResponse = client.get("/observe/log/loggers/" + loggerName)
+                    .request(JsonObject.class);
+
+            assertThat(loggerResponse.status(), is(Status.OK_200));
+            JsonObject entity = loggerResponse.entity();
+            JsonObject loggerEntity = entity.objectValue(loggerName).orElse(null);
+            assertThat("Entity: " + entity, loggerEntity, notNullValue());
+            assertThat("Entity: " + entity,
+                       loggerEntity.stringValue("configuredLevel").orElse(null),
+                       is("WARNING"));
+        } finally {
+            logger.setLevel(null);
+        }
     }
 
     @Test

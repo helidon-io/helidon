@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@ module io.helidon.config {
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.service.registry;
-    requires transitive io.helidon.common.config;
     requires transitive io.helidon.common.media.type;
+    requires transitive io.helidon.common.mapper;
     requires transitive io.helidon.common;
     requires transitive io.helidon.builder.api;
 
@@ -48,12 +48,6 @@ module io.helidon.config {
 
     provides io.helidon.config.spi.ConfigParser
             with io.helidon.config.PropertiesConfigParser;
-    provides io.helidon.common.config.spi.ConfigProvider
-            with io.helidon.config.HelidonConfigProvider;
     provides io.helidon.config.spi.ConfigMapperProvider
             with io.helidon.config.EnumMapperProvider;
-
-    // needed when running with modules - to make private methods accessible
-    opens io.helidon.config to weld.core.impl, io.helidon.microprofile.cdi;
-
 }

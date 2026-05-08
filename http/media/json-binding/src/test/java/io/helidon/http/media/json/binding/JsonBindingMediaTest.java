@@ -27,9 +27,10 @@ import java.util.Objects;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
-import io.helidon.config.Config;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpException;
 import io.helidon.http.HttpMediaType;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
@@ -41,6 +42,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
 When adding/updating tests in this class, consider if it should be done
@@ -53,19 +55,19 @@ class JsonBindingMediaTest {
     private static final Charset ISO_8859_2 = Charset.forName("ISO-8859-2");
     private static final GenericType<Book> BOOK_TYPE = GenericType.create(Book.class);
     private static final GenericType<List<Book>> BOOK_LIST_TYPE = new GenericType<List<Book>>() { };
-    private final MediaSupport provider;
+    private final MediaSupport support;
 
     JsonBindingMediaTest() {
-        this.provider = JsonBindingSupport.create();
-        provider.init(MediaContext.create());
+        this.support = JsonBindingSupport.create();
+        support.init(MediaContext.create());
     }
 
     @Test
     void testWriteSingle() {
         WritableHeaders<?> headers = WritableHeaders.create();
 
-        MediaSupport.WriterResponse<Book> res = provider.writer(BOOK_TYPE, headers);
-        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
+        MediaSupport.WriterResponse<Book> res = support.writer(BOOK_TYPE, headers);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
@@ -78,7 +80,7 @@ class JsonBindingMediaTest {
         assertThat(result, containsString("\"test-title\""));
 
         // sanity check, parse back to book
-        Book sanity = provider.reader(BOOK_TYPE, headers)
+        Book sanity = support.reader(BOOK_TYPE, headers)
                 .supplier()
                 .get()
                 .read(BOOK_TYPE, new ByteArrayInputStream(os.toByteArray()), headers);
@@ -90,8 +92,8 @@ class JsonBindingMediaTest {
     void testWriteList() {
         WritableHeaders<?> headers = WritableHeaders.create();
 
-        MediaSupport.WriterResponse<List<Book>> res = provider.writer(BOOK_LIST_TYPE, headers);
-        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
+        MediaSupport.WriterResponse<List<Book>> res = support.writer(BOOK_LIST_TYPE, headers);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
@@ -107,7 +109,7 @@ class JsonBindingMediaTest {
         assertThat(result, containsString("\"third\""));
 
         // sanity check, parse back to books
-        List<Book> sanity = provider.reader(BOOK_LIST_TYPE, headers)
+        List<Book> sanity = support.reader(BOOK_LIST_TYPE, headers)
                 .supplier()
                 .get()
                 .read(BOOK_LIST_TYPE, new ByteArrayInputStream(os.toByteArray()), headers);
@@ -120,7 +122,7 @@ class JsonBindingMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(MediaTypes.APPLICATION_JSON);
 
-        MediaSupport.ReaderResponse<Book> res = provider.reader(BOOK_TYPE, requestHeaders);
+        MediaSupport.ReaderResponse<Book> res = support.reader(BOOK_TYPE, requestHeaders);
         assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"utf-8: řžýčň\"}".getBytes(StandardCharsets.UTF_8));
@@ -137,7 +139,7 @@ class JsonBindingMediaTest {
         requestHeaders.contentType(MediaTypes.APPLICATION_XML);
         responseHeaders.contentType(MediaTypes.APPLICATION_JSON);
 
-        MediaSupport.ReaderResponse<Book> res = provider.reader(BOOK_TYPE, requestHeaders, responseHeaders);
+        MediaSupport.ReaderResponse<Book> res = support.reader(BOOK_TYPE, requestHeaders, responseHeaders);
         assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"utf-8: řžýčň\"}".getBytes(StandardCharsets.UTF_8));
@@ -152,7 +154,7 @@ class JsonBindingMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(MediaTypes.APPLICATION_JSON);
 
-        MediaSupport.ReaderResponse<List<Book>> res = provider.reader(BOOK_LIST_TYPE, requestHeaders);
+        MediaSupport.ReaderResponse<List<Book>> res = support.reader(BOOK_LIST_TYPE, requestHeaders);
         assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         InputStream is =
@@ -168,7 +170,7 @@ class JsonBindingMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset(ISO_8859_2));
 
-        MediaSupport.ReaderResponse<Book> res = provider.reader(BOOK_TYPE, requestHeaders);
+        MediaSupport.ReaderResponse<Book> res = support.reader(BOOK_TYPE, requestHeaders);
         assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"is-8859-2: řžýčň\"}".getBytes(ISO_8859_2));
@@ -185,7 +187,7 @@ class JsonBindingMediaTest {
         requestHeaders.contentType(MediaTypes.APPLICATION_XML);
         responseHeaders.contentType(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset(ISO_8859_2));
 
-        MediaSupport.ReaderResponse<Book> res = provider.reader(BOOK_TYPE, requestHeaders, responseHeaders);
+        MediaSupport.ReaderResponse<Book> res = support.reader(BOOK_TYPE, requestHeaders, responseHeaders);
         assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"utf-8: řžýčň\"}".getBytes(ISO_8859_2));
@@ -200,7 +202,7 @@ class JsonBindingMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset(ISO_8859_2));
 
-        MediaSupport.ReaderResponse<List<Book>> res = provider.reader(BOOK_LIST_TYPE, requestHeaders);
+        MediaSupport.ReaderResponse<List<Book>> res = support.reader(BOOK_LIST_TYPE, requestHeaders);
         assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         InputStream is =
@@ -209,6 +211,23 @@ class JsonBindingMediaTest {
                 .read(BOOK_LIST_TYPE, is, requestHeaders);
 
         assertThat(books, hasItems(new Book("čř"), new Book("šň")));
+    }
+
+    @Test
+    void testReadServerWrongCharset() {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        WritableHeaders<?> responseHeaders = WritableHeaders.create();
+        requestHeaders.contentType(MediaTypes.APPLICATION_XML);
+        responseHeaders.contentType(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset("xxxxxxx"));
+
+        MediaSupport.ReaderResponse<Book> res = support.reader(BOOK_TYPE, requestHeaders, responseHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
+
+        InputStream is = new ByteArrayInputStream("{\"title\": \"utf-8: řžýčň\"}".getBytes(ISO_8859_2));
+        var httpException = assertThrows(HttpException.class, () -> res.supplier().get()
+                .read(BOOK_TYPE, is, requestHeaders, responseHeaders));
+
+        assertThat(httpException.status(), is(Status.UNSUPPORTED_MEDIA_TYPE_415));
     }
 
     @Json.Entity

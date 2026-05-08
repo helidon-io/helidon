@@ -23,7 +23,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -37,38 +38,41 @@ public class GenericClassesTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testGenericContainerClass() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testGenericContainerClassParameterized(BindingMethod bindingMethod) {
         Container<String> container = new Container<>();
         container.setValue("hello");
 
         String expected = "{\"value\":\"hello\"}";
-        String json = jsonBinding.serialize(container);
+        String json = bindingMethod.serialize(jsonBinding, container);
         assertThat(json, is(expected));
 
         GenericType<Container<String>> type = new GenericType<>() { };
-        Container<String> deserialized = jsonBinding.deserialize(json, type);
+        Container<String> deserialized = bindingMethod.deserialize(jsonBinding, json, type);
         assertThat(deserialized.getValue(), is("hello"));
     }
 
-    @Test
-    public void testGenericPairClass() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testGenericPairClassParameterized(BindingMethod bindingMethod) {
         Pair<String, Integer> pair = new Pair<>();
         pair.setFirst("key");
         pair.setSecond(42);
 
         String expected = "{\"first\":\"key\",\"second\":42}";
-        String json = jsonBinding.serialize(pair);
+        String json = bindingMethod.serialize(jsonBinding, pair);
         assertThat(json, is(expected));
 
         GenericType<Pair<String, Integer>> type = new GenericType<>() { };
-        Pair<String, Integer> deserialized = jsonBinding.deserialize(json, type);
+        Pair<String, Integer> deserialized = bindingMethod.deserialize(jsonBinding, json, type);
         assertThat(deserialized.getFirst(), is("key"));
         assertThat(deserialized.getSecond(), is(42));
     }
 
-    @Test
-    public void testNestedGenericClasses() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testNestedGenericClassesParameterized(BindingMethod bindingMethod) {
         Container<Pair<String, Integer>> nested = new Container<>();
         Pair<String, Integer> innerPair = new Pair<>();
         innerPair.setFirst("nested");
@@ -76,35 +80,37 @@ public class GenericClassesTest {
         nested.setValue(innerPair);
 
         String expected = "{\"value\":{\"first\":\"nested\",\"second\":123}}";
-        String json = jsonBinding.serialize(nested);
+        String json = bindingMethod.serialize(jsonBinding, nested);
         assertThat(json, is(expected));
 
         GenericType<Container<Pair<String, Integer>>> type = new GenericType<>() { };
-        Container<Pair<String, Integer>> deserialized = jsonBinding.deserialize(json, type);
+        Container<Pair<String, Integer>> deserialized = bindingMethod.deserialize(jsonBinding, json, type);
         assertThat(deserialized.getValue().getFirst(), is("nested"));
         assertThat(deserialized.getValue().getSecond(), is(123));
     }
 
-    @Test
-    public void testGenericTripleClass() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testGenericTripleClassParameterized(BindingMethod bindingMethod) {
         Triple<String, Integer, Boolean> triple = new Triple<>();
         triple.setFirst("test");
         triple.setSecond(100);
         triple.setThird(true);
 
         String expected = "{\"first\":\"test\",\"second\":100,\"third\":true}";
-        String json = jsonBinding.serialize(triple);
+        String json = bindingMethod.serialize(jsonBinding, triple);
         assertThat(json, is(expected));
 
         GenericType<Triple<String, Integer, Boolean>> type = new GenericType<>() { };
-        Triple<String, Integer, Boolean> deserialized = jsonBinding.deserialize(json, type);
+        Triple<String, Integer, Boolean> deserialized = bindingMethod.deserialize(jsonBinding, json, type);
         assertThat(deserialized.getFirst(), is("test"));
         assertThat(deserialized.getSecond(), is(100));
         assertThat(deserialized.getThird(), is(true));
     }
 
-    @Test
-    public void testGenericClassWithMixedFields() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testGenericClassWithMixedFieldsParameterized(BindingMethod bindingMethod) {
         GenericClassWithMixedFields<String> obj = new GenericClassWithMixedFields<>();
         obj.setId("item123");
         obj.setName("Test Item");
@@ -115,19 +121,20 @@ public class GenericClassesTest {
                 + "\"name\":\"Test Item\","
                 + "\"value\":\"generic value\","
                 + "\"tags\":[\"important\",\"featured\"]}";
-        String json = jsonBinding.serialize(obj);
+        String json = bindingMethod.serialize(jsonBinding, obj);
         assertThat(json, is(expected));
 
         GenericType<GenericClassWithMixedFields<String>> type = new GenericType<>() { };
-        GenericClassWithMixedFields<String> deserialized = jsonBinding.deserialize(json, type);
+        GenericClassWithMixedFields<String> deserialized = bindingMethod.deserialize(jsonBinding, json, type);
         assertThat(deserialized.getId(), is("item123"));
         assertThat(deserialized.getName(), is("Test Item"));
         assertThat(deserialized.getValue(), is("generic value"));
         assertThat(deserialized.getTags(), is(List.of("important", "featured")));
     }
 
-    @Test
-    public void testChildClassWithGenericInheritance() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testChildClassWithGenericInheritanceParameterized(BindingMethod bindingMethod) {
         ChildClass child = new ChildClass();
         child.superParentField(42);
         child.secondSuperParentField("inherited value");
@@ -140,10 +147,10 @@ public class GenericClassesTest {
                 + "\"superParentList\":[\"item1\",\"item2\"],"
                 + "\"parentField\":\"parent value\","
                 + "\"childField\":100}";
-        String json = jsonBinding.serialize(child);
+        String json = bindingMethod.serialize(jsonBinding, child);
         assertThat(json, is(expected));
 
-        ChildClass deserialized = jsonBinding.deserialize(json, ChildClass.class);
+        ChildClass deserialized = bindingMethod.deserialize(jsonBinding, json, ChildClass.class);
         assertThat(deserialized.superParentField(), is(42));
         assertThat(deserialized.secondSuperParentField(), is("inherited value"));
         assertThat(deserialized.superParentList(), is(List.of("item1", "item2")));

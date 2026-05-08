@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,14 @@ public final class HttpMediaTypes {
             .mediaType(MediaTypes.APPLICATION_JSON)
             .charset("UTF-8")
             .build();
+
+    /**
+     * application/json media type with no explicit charset.
+     */
+    public static final HttpMediaType JSON = HttpMediaType.builder()
+            .mediaType(MediaTypes.APPLICATION_JSON)
+            .build();
+
     /**
      * Predicate to test if {@link io.helidon.common.media.type.MediaType} is {@code application/json} or has {@code json} suffix.
      */

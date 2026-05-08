@@ -20,7 +20,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -35,114 +36,128 @@ public class BooleanTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testBooleanSerialization() throws Exception {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBooleanSerializationParameterized(BindingMethod bindingMethod) {
         BooleanModel booleanModel = new BooleanModel(true, false);
 
         String expected = "{\"field1\":true,\"field2\":false}";
-        assertThat(jsonBinding.serialize(booleanModel), is(expected));
+        assertThat(bindingMethod.serialize(jsonBinding, booleanModel), is(expected));
     }
 
-    @Test
-    public void testBooleanDeserializationFromBooleanAsStringValue() throws Exception {
-        BooleanModel booleanModel = jsonBinding.deserialize("{\"field1\":\"true\",\"field2\":\"true\"}", BooleanModel.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBooleanDeserializationFromBooleanAsStringValueParameterized(BindingMethod bindingMethod) {
+        BooleanModel booleanModel = bindingMethod.deserialize(jsonBinding,
+                                                              "{\"field1\":\"true\",\"field2\":\"true\"}",
+                                                              BooleanModel.class);
         assertThat(booleanModel.field1, is(true));
         assertThat(booleanModel.field2, is(true));
     }
 
-    @Test
-    public void testBooleanDeserializationFromBooleanRawValue() throws Exception {
-        BooleanModel booleanModel = jsonBinding.deserialize("{\"field1\":false,\"field2\":false}", BooleanModel.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBooleanDeserializationFromBooleanRawValueParameterized(BindingMethod bindingMethod) {
+        BooleanModel booleanModel = bindingMethod.deserialize(jsonBinding,
+                                                              "{\"field1\":false,\"field2\":false}",
+                                                              BooleanModel.class);
         assertThat(booleanModel.field1, is(false));
         assertThat(booleanModel.field2, is(false));
     }
 
-    @Test
-    public void testRawBooleans() {
-        Boolean bool = jsonBinding.deserialize("true", Boolean.class);
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testRawBooleansParameterized(BindingMethod bindingMethod) {
+        Boolean bool = bindingMethod.deserialize(jsonBinding, "true", Boolean.class);
         assertThat(bool, is(true));
-        bool = jsonBinding.deserialize("true", boolean.class);
+        bool = bindingMethod.deserialize(jsonBinding, "true", boolean.class);
         assertThat(bool, is(true));
-        bool = jsonBinding.deserialize("false", Boolean.class);
+        bool = bindingMethod.deserialize(jsonBinding, "false", Boolean.class);
         assertThat(bool, is(false));
-        bool = jsonBinding.deserialize("false", boolean.class);
+        bool = bindingMethod.deserialize(jsonBinding, "false", boolean.class);
         assertThat(bool, is(false));
-        bool = jsonBinding.deserialize("null", Boolean.class);
+        bool = bindingMethod.deserialize(jsonBinding, "null", Boolean.class);
         assertThat(bool, nullValue());
-        bool = jsonBinding.deserialize("null", boolean.class);
+        bool = bindingMethod.deserialize(jsonBinding, "null", boolean.class);
         assertThat(bool, is(false));
 
-        String result = jsonBinding.serialize(true);
+        String result = bindingMethod.serialize(jsonBinding, true);
         assertThat(result, is("true"));
-        result = jsonBinding.serialize(false);
+        result = bindingMethod.serialize(jsonBinding, false);
         assertThat(result, is("false"));
     }
 
-    @Test
-    public void testBooleanArrays() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBooleanArraysParameterized(BindingMethod bindingMethod) {
         boolean[] primitives = {true, false};
         Boolean[] referenceTypes = {true, false};
         String arrayJson = "[true,false]";
 
-        assertThat(JsonBinding.create().serialize(primitives), is(arrayJson));
-        assertThat(JsonBinding.create().serialize(referenceTypes), is(arrayJson));
+        assertThat(bindingMethod.serialize(jsonBinding, primitives), is(arrayJson));
+        assertThat(bindingMethod.serialize(jsonBinding, referenceTypes), is(arrayJson));
 
-        assertThat(jsonBinding.deserialize(arrayJson, boolean[].class), is(primitives));
-        assertThat(jsonBinding.deserialize(arrayJson, Boolean[].class), is(referenceTypes));
+        assertThat(bindingMethod.deserialize(jsonBinding, arrayJson, boolean[].class), is(primitives));
+        assertThat(bindingMethod.deserialize(jsonBinding, arrayJson, Boolean[].class), is(referenceTypes));
     }
 
-    @Test
-    public void testBooleanWithLeadingWhitespace() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBooleanWithLeadingWhitespaceParameterized(BindingMethod bindingMethod) {
         String jsonWithWhitespace = "  true";
-        Boolean result = jsonBinding.deserialize(jsonWithWhitespace, Boolean.class);
+        Boolean result = bindingMethod.deserialize(jsonBinding, jsonWithWhitespace, Boolean.class);
         assertThat(result, is(true));
 
         jsonWithWhitespace = "  false";
-        result = jsonBinding.deserialize(jsonWithWhitespace, Boolean.class);
+        result = bindingMethod.deserialize(jsonBinding, jsonWithWhitespace, Boolean.class);
         assertThat(result, is(false));
     }
 
-    @Test
-    public void testBooleanWithTrailingWhitespace() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBooleanWithTrailingWhitespaceParameterized(BindingMethod bindingMethod) {
         String jsonWithWhitespace = "true  ";
-        Boolean result = jsonBinding.deserialize(jsonWithWhitespace, Boolean.class);
+        Boolean result = bindingMethod.deserialize(jsonBinding, jsonWithWhitespace, Boolean.class);
         assertThat(result, is(true));
 
         jsonWithWhitespace = "false  ";
-        result = jsonBinding.deserialize(jsonWithWhitespace, Boolean.class);
+        result = bindingMethod.deserialize(jsonBinding, jsonWithWhitespace, Boolean.class);
         assertThat(result, is(false));
     }
 
-    @Test
-    public void testBooleanWithTabs() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBooleanWithTabsParameterized(BindingMethod bindingMethod) {
         String jsonWithTabs = "\ttrue\t";
-        Boolean result = jsonBinding.deserialize(jsonWithTabs, Boolean.class);
+        Boolean result = bindingMethod.deserialize(jsonBinding, jsonWithTabs, Boolean.class);
         assertThat(result, is(true));
 
         jsonWithTabs = "\tfalse\t";
-        result = jsonBinding.deserialize(jsonWithTabs, Boolean.class);
+        result = bindingMethod.deserialize(jsonBinding, jsonWithTabs, Boolean.class);
         assertThat(result, is(false));
     }
 
-    @Test
-    public void testBooleanWithNewlines() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBooleanWithNewlinesParameterized(BindingMethod bindingMethod) {
         String jsonWithNewlines = "\ntrue\n";
-        Boolean result = jsonBinding.deserialize(jsonWithNewlines, Boolean.class);
+        Boolean result = bindingMethod.deserialize(jsonBinding, jsonWithNewlines, Boolean.class);
         assertThat(result, is(true));
 
         jsonWithNewlines = "\nfalse\n";
-        result = jsonBinding.deserialize(jsonWithNewlines, Boolean.class);
+        result = bindingMethod.deserialize(jsonBinding, jsonWithNewlines, Boolean.class);
         assertThat(result, is(false));
     }
 
-    @Test
-    public void testBooleanWithMixedWhitespace() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBooleanWithMixedWhitespaceParameterized(BindingMethod bindingMethod) {
         String jsonWithMixedWhitespace = " \t\n true \t\n ";
-        Boolean result = jsonBinding.deserialize(jsonWithMixedWhitespace, Boolean.class);
+        Boolean result = bindingMethod.deserialize(jsonBinding, jsonWithMixedWhitespace, Boolean.class);
         assertThat(result, is(true));
 
         jsonWithMixedWhitespace = " \t\n false \t\n ";
-        result = jsonBinding.deserialize(jsonWithMixedWhitespace, Boolean.class);
+        result = bindingMethod.deserialize(jsonBinding, jsonWithMixedWhitespace, Boolean.class);
         assertThat(result, is(false));
     }
 

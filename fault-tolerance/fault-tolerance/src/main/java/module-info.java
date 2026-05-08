@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,13 @@ module io.helidon.faulttolerance {
 
     requires io.helidon.common;
     requires io.helidon.common.configurable;
-    requires io.helidon.common.config;
     requires io.helidon.builder.api;
+    requires io.helidon.config;
     requires io.helidon.metrics.api;
     requires io.helidon.service.registry;
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.faulttolerance;
 }

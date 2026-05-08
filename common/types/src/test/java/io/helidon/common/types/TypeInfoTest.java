@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 
 class TypeInfoTest {
+    private static final TypeName SOME_TYPE = TypeName.create("io.helidon.SomeType");
+
     @Test
     void testFindInHierarchyInterfaces() {
         TypeName ifaceA = TypeName.create("io.helidon.common.types.test.A");
@@ -96,6 +99,31 @@ class TypeInfoTest {
 
         foundInfo = aInfo.findInHierarchy(classB);
         assertThat(foundInfo, is(Optional.empty()));
+    }
+
+    @Test
+    void defaultsAccessModifier() {
+        TypeInfo build = TypeInfo.builder()
+                .typeName(SOME_TYPE)
+                .kind(ElementKind.CLASS)
+                .build();
+
+        assertThat(build.kind(), is(ElementKind.CLASS));
+        assertThat(build.accessModifier(), is(AccessModifier.PACKAGE_PRIVATE));
+    }
+
+    @Test
+    void supportsElementModifiers() {
+        TypeInfo build = TypeInfo.builder()
+                .addElementModifier(Modifier.ABSTRACT)
+                .addElementModifier(Modifier.STATIC)
+                .accessModifier(AccessModifier.PUBLIC)
+                .typeName(SOME_TYPE)
+                .kind(ElementKind.CLASS)
+                .build();
+
+        assertThat(build.accessModifier(), is(AccessModifier.PUBLIC));
+        assertThat(build.elementModifiers(), contains(Modifier.ABSTRACT, Modifier.STATIC));
     }
 
 }

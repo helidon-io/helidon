@@ -108,7 +108,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         OptionalLong contentLength = responseHeaders.contentLength();
         if (contentLength.isPresent()) {
             this.entityLength = contentLength.getAsLong();
-        } else if (responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        } else if (responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             this.entityLength = ENTITY_LENGTH_CHUNKED;
         }
 
@@ -153,7 +153,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
-                if (headers().contains(HeaderValues.CONNECTION_CLOSE)) {
+                if (headers().containsToken(HeaderValues.CONNECTION_CLOSE)) {
                     connection.closeResource();
                 } else {
                     if (entityFullyRead || entityLength == 0 || consumeUnreadEntity()) {

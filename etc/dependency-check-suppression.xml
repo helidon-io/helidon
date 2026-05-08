@@ -2,43 +2,6 @@
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
 <!-- For information see https://jeremylong.github.io/DependencyCheck/general/suppression.html -->
 
-<!-- False Positive. This CVE is against neo4j not neo4j bolt
--->
-<suppress>
-   <notes><![CDATA[
-   file name: neo4j-bolt-connection-1.0.0.jar
-   file name: neo4j-bolt-connection-netty-1.0.0.jar
-   file name: neo4j-bolt-connection-pooled-1.0.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.neo4j\.bolt/neo4j-bolt-.*@.*$</packageUrl>
-   <cve>CVE-2021-34371</cve>
-</suppress>
-
-<!-- False Positive
-     This CVE is against the GlassFish application server, but is mistakenly being
-     identified in various org.glassfish artifacts
-https://github.com/jeremylong/DependencyCheck/issues/7021
-https://github.com/jeremylong/DependencyCheck/issues/7020
-https://github.com/jeremylong/DependencyCheck/issues/7019
--->
-<suppress>
-   <notes><![CDATA[
-   file name: jakarta.el-4.0.2.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.glassfish.*/(jakarta\.el|jaxb-core|jaxb-runtime|osgi-resource-locator|txw2)@.*$</packageUrl>
-   <cve>CVE-2024-9329</cve>
-</suppress>
-
-<!-- This CVE is against the etcd server. We use the Java client
--->
-<suppress>
-   <notes><![CDATA[
-   file name: etcd4j-2.17.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.mousio/etcd4j@.*$</packageUrl>
-   <cpe>cpe:/a:etcd:etcd</cpe>
-</suppress>
-
 <!-- False positive.
      This CVE is against the H2 web admin console which we do not use
 -->
@@ -104,19 +67,6 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
 </suppress>
 
 <!--
-    This is a FP. We have upgrade jgit to a fixed version, but it is still getting flagged.
-    Probably due to the funky version string used by jgit. See
-    https://github.com/jeremylong/DependencyCheck/issues/5943
--->
-<suppress>
-   <notes><![CDATA[
-   file name: org.eclipse.jgit-6.7.0.202309050840-r.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.eclipse\.jgit/org\.eclipse\.jgit@.*$</packageUrl>
-   <cve>CVE-2023-4759</cve>
-</suppress>
-
-<!--
     These are FPs.
     See https://github.com/jeremylong/DependencyCheck/issues/5973
 -->
@@ -124,52 +74,6 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
     <packageUrl regex="true">^pkg:maven/org\.codehaus\.plexus/plexus\-(cipher|classworlds|component-annotations|interpolation|container-default|sec-dispatcher)@.*$</packageUrl>
     <cve>CVE-2022-4244</cve>
     <cve>CVE-2022-4245</cve>
-</suppress>
-
-<!--
-    False Positives. These CVEs are against the Brave web browser, not brave-opentracing.
--->
-<suppress>
-   <notes><![CDATA[
-   file name: brave-opentracing-1.0.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
-   <cve>CVE-2022-47932</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: brave-opentracing-1.0.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
-   <cve>CVE-2022-47933</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: brave-opentracing-1.0.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
-   <cve>CVE-2022-47934</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: brave-opentracing-1.0.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
-   <cve>CVE-2021-22929</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: brave-opentracing-1.0.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
-   <cve>CVE-2022-30334</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: brave-opentracing-1.0.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
-   <cve>CVE-2023-28360</cve>
 </suppress>
 
 <!-- False Positives. This was identifying Helidon's dbclient mongodb support artifact with MongoDB itself
@@ -180,16 +84,6 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/io\.helidon\.dbclient/helidon\-dbclient\-mongodb@.*$</packageUrl>
    <cpe>cpe:/a:mongodb:mongodb</cpe>
-</suppress>
-
-<!-- False Positives. This was identifying Helidon's mysql support artifact with MySQL itself
- -->
-<suppress>
-   <notes><![CDATA[
-   file name: io.helidon.integrations.db:helidon-integrations-db-mysql:4.0.0-SNAPSHOT
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.db/helidon\-integrations\-db\-mysql@.*$</packageUrl>
-   <cpe>cpe:/a:mysql:mysql</cpe>
 </suppress>
 
 <!-- False Positive.
@@ -230,56 +124,7 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <cve>CVE-2025-30694</cve>
 </suppress>
 
-<!-- False Positive.
-     This CVE is against ChatGPT rendering of SVG images  not the openai4j API
--->
-<suppress>
-   <notes><![CDATA[
-   file name: openai4j-0.23.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/dev\.ai4j/openai4j@.*$</packageUrl>
-   <cve>CVE-2025-43714</cve>
-</suppress>
-
-<!-- False Positive.
-     This CVE is against Nu Html Checker, not hibernate validator.
-     https://github.com/dependency-check/DependencyCheck/issues/8249
--->
-<suppress>
-   <notes><![CDATA[
-   file name: hibernate-validator-cdi-8.0.2.Final.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.hibernate\.validator/hibernate-validator-cdi@.*$</packageUrl>
-   <cve>CVE-2025-15104</cve>
-</suppress>
-
-<!-- False Positive.
-     This CVE is against Neo4J database, not the driver
--->
-<suppress>
-   <notes><![CDATA[
-   file name: neo4j-java-driver-5.28.3.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.neo4j\.driver/neo4j-java-driver@.*$</packageUrl>
-   <cve>CVE-2026-1337</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: neo4j-bolt-connection-1.0.0.jar
-   file name: neo4j-bolt-connection-netty-1.0.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.neo4j\.bolt/neo4j-bolt-connection.*$</packageUrl>
-   <cve>CVE-2026-1337</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j:4.4.0-SNAPSHOT
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j.*$</packageUrl>
-   <cve>CVE-2026-1337</cve>
-</suppress>
-
-<!-- 
+<!--
      This CVE is old and was fixed in Kotlin 1.4.21. The CPE recently changed in NVD.
      Will keep an eye on this to see if the CPE in NVD is bad, or if there is something new.
 -->
@@ -293,5 +138,88 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib.*$</packageUrl>
    <cve>CVE-2020-29582</cve>
 </suppress>
+
+<!-- False Positive.
+   These CVEs are against OpenTelemetry-Go, not Java
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: opentelemetry-proto-1.5.0-alpha.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.proto/opentelemetry-proto@.*$</packageUrl>
+    <cve>CVE-2026-39882</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: opentelemetry-semconv-1.37.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
+    <cve>CVE-2026-29181</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: opentelemetry-semconv-1.37.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
+    <cve>CVE-2026-39883</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: opentelemetry-semconv-1.37.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
+    <cve>CVE-2026-39882</cve>
+</suppress>
+
+<!--
+   These CVEs are against OpenTelemetry dotnet, not Java
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: opentelemetry-proto-1.5.0-alpha.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.proto/opentelemetry-proto@.*$</packageUrl>
+    <cve>CVE-2026-41078</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: opentelemetry-proto-1.5.0-alpha.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.proto/opentelemetry-proto@.*$</packageUrl>
+    <cve>CVE-2026-40894</cve>
+</suppress>
+
+<!-- False Positive.
+     This CVE is against gRPC-Go servers not gRPC Java
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: grpc-core-1.65.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.grpc/grpc.*@.*$</packageUrl>
+   <cve>CVE-2026-33186</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: grpc-protobuf-1.65.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.grpc/grpc-protobuf@.*$</packageUrl>
+   <cve>CVE-2026-33186</cve>
+</suppress>
+
+
+<!--
+  This CVE is fixed in 3.6.1: https://github.com/codehaus-plexus/plexus-utils/releases/tag/plexus-utils-3.6.1
+  But NVD CPE data only states it as fixed in 4.0.3: https://nvd.nist.gov/vuln/detail/CVE-2025-67030
+  I have e-mailed a correction request to NVD. For now we exclude it as a false positive.
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: plexus-utils-3.6.1.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.codehaus\.plexus/plexus-utils@.*$</packageUrl>
+    <cve>CVE-2025-67030</cve>
+</suppress>
+
 
 </suppressions>

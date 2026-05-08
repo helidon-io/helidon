@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.mapper.Value;
 
@@ -133,10 +132,10 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
     public OptionalValue<String> first(String name) {
         List<String> values = decodedQueryParams.get(name);
         if (values == null) {
-            return OptionalValue.create(MapperManager.global(), name, GenericType.STRING, "uri", "query");
+            return OptionalValue.createEmpty(name, "uri", "query");
         }
         String value = values.isEmpty() ? "" : values.iterator().next();
-        return OptionalValue.create(MapperManager.global(), name, value, GenericType.STRING, "uri", "query");
+        return OptionalValue.create(name, value, GenericType.STRING, "uri", "query");
     }
 
     @Override
@@ -173,7 +172,7 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
             throw new NoSuchElementException("Query parameter \"" + name + "\" is not available");
         }
         return values.stream()
-                .map(it -> Value.create(MapperManager.global(), name, it, GenericType.STRING, "uri", "query"))
+                .map(it -> Value.create(name, it, GenericType.STRING, "uri", "query"))
                 .collect(Collectors.toList());
     }
 

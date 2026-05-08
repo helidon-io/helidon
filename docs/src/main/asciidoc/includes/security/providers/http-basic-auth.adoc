@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ ifndef::rootdir[:rootdir: {docdir}/../../..]
 :keywords: helidon, security, basic
 :feature-name: HTTP Basic Authentication Security Provider
 
-HTTP Basic authentication support
+HTTP Basic authentication support for local testing and demos.
+
+NOTE: HTTP Basic authentication is not supported for production use.
 
 ==== Setup
 
@@ -109,4 +111,5 @@ _Warning on security of HTTP Basic Authentication (or lack thereof)_
 Basic authentication uses base64 encoded username and password and passes it over the network. Base64 is only encoding,
  not encryption - so anybody that gets hold of the header value can learn the actual username and password of the user.
 This is a security risk and an attack vector that everybody should be aware of before using HTTP Basic Authentication.
-We recommend using this approach only for testing and demo purposes.
+HTTP Basic authentication is not supported for production use. We recommend it only for local testing and demo
+purposes.

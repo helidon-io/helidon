@@ -72,9 +72,9 @@ class TestMetricsConfig {
 
         OpenTelemetryConfig otelConfig = OpenTelemetryConfig.create(config.get("telemetry"));
 
-        assertThat("Metrics config in OTel config", otelConfig.metricsConfig(), OptionalMatcher.optionalPresent());
+        assertThat("Metrics config in OTel config", otelConfig.metrics(), OptionalMatcher.optionalPresent());
 
-        OpenTelemetryMetricsConfig metricsConfig = otelConfig.metricsConfig().get();
+        OpenTelemetryMetricsConfig metricsConfig = otelConfig.metrics().get();
 
         assertThat("Metric readers", metricsConfig.readers(), hasSize(1));
 

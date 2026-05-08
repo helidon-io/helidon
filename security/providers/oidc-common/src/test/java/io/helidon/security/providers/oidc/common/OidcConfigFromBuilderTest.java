@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,14 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
 
+import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.webserver.WebServer;
+import io.helidon.webclient.api.Proxy;
 
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +45,6 @@ import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_PARAM
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_PARAM_USE;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_REDIRECT;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_REDIRECT_URI;
-import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_RELATIVE_URIS;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_TOKEN_REFRESH_SKEW;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -68,7 +71,7 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 .tokenEndpointUri(URI.create("https://identity.oracle.com/tokens"))
                 .authorizationEndpointUri(URI.create("https://identity.oracle.com/authorization"))
                 .introspectEndpointUri(URI.create("https://identity.oracle.com/introspect"))
-                .relativeUris(true)
+                .webclient(it -> it.relativeUris(true))
                 .build();
     }
 
@@ -94,7 +97,6 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Logout URI", config.logoutUri(), is(DEFAULT_LOGOUT_URI)),
                 () -> assertThat("Use Parameter", config.useParam(), is(DEFAULT_PARAM_USE)),
                 () -> assertThat("Parameter Name", config.paramName(), is(DEFAULT_PARAM_NAME)),
-                () -> assertThat("Relative URIs", config.relativeUris(), is(DEFAULT_RELATIVE_URIS)),
                 () -> assertThat("Use Cookie", config.useCookie(), is(DEFAULT_COOKIE_USE)),
                 () -> assertThat("Use Header", config.useHeader(), is(DEFAULT_HEADER_USE)),
                 () -> assertThat("Base scopes to use", config.baseScopes(), is(DEFAULT_BASE_SCOPES)),
@@ -159,9 +161,11 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 .identityUri(URI.create(baseUri + "/identity"))
                 .clientId("client-id-value")
                 .clientSecret("client-secret-value")
-                .proxyProtocol("http")
-                .proxyHost("localhost")
-                .proxyPort(server.port())
+                .webclient(it -> it.proxy(Proxy.builder()
+                                               .type(Proxy.ProxyType.HTTP)
+                                               .host("localhost")
+                                               .port(server.port())
+                                               .build()))
                 .build();
 
         // 2nd test will simulate relativeUris=true and will fail if URI is absolute
@@ -171,10 +175,12 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 .identityUri(URI.create(baseUri + "/identity"))
                 .clientId("client-id-value")
                 .clientSecret("client-secret-value")
-                .proxyProtocol("http")
-                .proxyHost("localhost")
-                .proxyPort(server.port())
-                .relativeUris(relativeUris[0])
+                .webclient(it -> it.proxy(Proxy.builder()
+                                               .type(Proxy.ProxyType.HTTP)
+                                               .host("localhost")
+                                               .port(server.port())
+                                               .build())
+                        .relativeUris(relativeUris[0]))
                 .build();
         server.stop();
     }
@@ -216,6 +222,105 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
         assertThat(config.checkAudience(), is(false));
     }
 
+    @Test
+    void testHelidonJsonMetadataConfigured() {
+        JsonObject metadata = JsonObject.builder()
+                .set("issuer", "https://identity.oracle.com")
+                .build();
+
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientSecret("top-secret")
+                .clientId("client-id")
+                .oidcMetadataJsonObject(metadata)
+                .build();
+
+        assertAll("Helidon JSON metadata is retained",
+                  () -> assertThat(config.oidcMetadataJsonObject(), is(metadata)),
+                  () -> assertThat(config.oidcMetadataJsonObject().stringValue("issuer").orElse(null),
+                                   is("https://identity.oracle.com")));
+    }
+
+    @Test
+    void testResourceMetadataUsesHelidonJsonHook() {
+        MetadataHookBuilder builder = new MetadataHookBuilder();
+
+        OidcConfig config = builder.identityUri(URI.create("https://identity.oracle.com"))
+                .clientSecret("top-secret")
+                .clientId("client-id")
+                .oidcMetadata(Resource.create("oidc-metadata", "{\"issuer\":\"https://identity.oracle.com\"}"))
+                .build();
+
+        assertAll("Resource metadata must flow through the Helidon JSON override path",
+                  () -> assertThat(builder.metadataHookCalled(), is(true)),
+                  () -> assertThat(builder.capturedMetadata().stringValue("issuer").orElse(null),
+                                   is("https://identity.oracle.com")),
+                  () -> assertThat(config.oidcMetadataJsonObject().stringValue("issuer").orElse(null),
+                                   is("https://identity.oracle.com")));
+    }
+
+    @Test
+    void testWellKnownMetadataAndJwkReadThroughHelidonJson() {
+        JsonObject[] metadataHolder = new JsonObject[1];
+        JsonObject jwk = JsonParser.create("""
+                {
+                    "keys": [
+                        {
+                            "kty": "oct",
+                            "kid": "test-key",
+                            "alg": "HS256",
+                            "key_ops": [
+                                "sign",
+                                "verify"
+                            ],
+                            "k": "FdFYFzERwC2uCBB46pZQi4GG85LujR8obt-KWRBICVQ"
+                        }
+                    ]
+                }
+                """).readJsonObject();
+
+        WebServer server = WebServer.builder()
+                .host("localhost")
+                .routing(routing -> routing
+                        .get("/.well-known/openid-configuration", (req, res) -> res.send(metadataHolder[0]))
+                        .get("/jwk", (req, res) -> res.send(jwk)))
+                .build()
+                .start();
+
+        String baseUri = "http://localhost:" + server.port();
+        metadataHolder[0] = JsonParser.create("""
+                {
+                    "token_endpoint": "%1$s/tokens",
+                    "authorization_endpoint": "%1$s/authorization",
+                    "end_session_endpoint": "%1$s/logout",
+                    "issuer": "%1$s",
+                    "jwks_uri": "%1$s/jwk"
+                }
+                """.formatted(baseUri)).readJsonObject();
+
+        try {
+            OidcConfig config = OidcConfig.builder()
+                    .identityUri(URI.create(baseUri))
+                    .clientSecret("top-secret")
+                    .clientId("client-id")
+                    .build();
+
+            JsonObject jwkJson = config.generalWebClient()
+                    .get()
+                    .uri(URI.create(baseUri + "/jwk"))
+                    .requestEntity(JsonObject.class);
+
+            assertAll("Well known metadata and JWK are loaded using Helidon JSON",
+                      () -> assertThat(config.tokenEndpointUri(), is(URI.create(baseUri + "/tokens"))),
+                      () -> assertThat(config.authorizationEndpointUri(), is(baseUri + "/authorization")),
+                      () -> assertThat(config.issuer(), is(baseUri)),
+                      () -> assertThat(jwkJson.arrayValue("keys").orElseThrow().values().size(), is(1)),
+                      () -> assertThat(config.signJwk().forKeyId("test-key").isPresent(), is(true)));
+        } finally {
+            server.stop();
+        }
+    }
+
     // Stub the Builder class to be able to retrieve the cookie-encryption-password value
     private static class TestOidcConfigBuilder extends OidcConfig.Builder {
 
@@ -231,6 +336,26 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
             cookieEncryptionPasswordValue[0] = String.valueOf(cookieEncryptionPassword);
             super.cookieEncryptionPassword(cookieEncryptionPassword);
             return this;
+        }
+    }
+
+    private static final class MetadataHookBuilder extends OidcConfig.Builder {
+        private boolean metadataHookCalled;
+        private JsonObject capturedMetadata;
+
+        @Override
+        public OidcConfig.Builder oidcMetadataJsonObject(JsonObject metadata) {
+            this.metadataHookCalled = true;
+            this.capturedMetadata = metadata;
+            return super.oidcMetadataJsonObject(metadata);
+        }
+
+        private boolean metadataHookCalled() {
+            return metadataHookCalled;
+        }
+
+        private JsonObject capturedMetadata() {
+            return capturedMetadata;
         }
     }
 }

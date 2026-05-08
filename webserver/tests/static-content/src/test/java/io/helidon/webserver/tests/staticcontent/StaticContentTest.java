@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,8 @@ import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.staticcontent.StaticContentService;
+import io.helidon.webserver.staticcontent.ClasspathHandlerConfig;
+import io.helidon.webserver.staticcontent.StaticContentFeature;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
@@ -43,9 +44,11 @@ class StaticContentTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder routing) {
-        routing.register("/files", StaticContentService.builder("static")
-                        .welcomeFileName("welcome.txt")
-                        .build())
+        routing.register("/files", StaticContentFeature.createService(
+                        ClasspathHandlerConfig.builder()
+                                .location("static")
+                                .welcome("welcome.txt")
+                                .build()))
                 .get("/files/default", (req, res) -> res.send("Nexted"));
     }
 

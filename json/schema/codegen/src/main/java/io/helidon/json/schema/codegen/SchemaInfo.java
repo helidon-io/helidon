@@ -35,11 +35,11 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.metadata.hson.Hson;
+import io.helidon.json.JsonObject;
 
 import static java.util.function.Predicate.not;
 
-record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
+record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
 
     private static final Map<TypeName, TypeName> BOXED_TO_PRIMITIVE = Map.of(
             TypeNames.BOXED_BOOLEAN, TypeNames.PRIMITIVE_BOOLEAN,
@@ -71,7 +71,7 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
                 .className(annotatedTypeName.className() + "__JsonSchema")
                 .build();
 
-        Hson.Struct.Builder schemaBuilder = Hson.structBuilder()
+        JsonObject.Builder schemaBuilder = JsonObject.builder()
                 .set("$schema", "https://json-schema.org/draft/2020-12/schema");
         annotatedType.findAnnotation(SchemaTypes.JSON_SCHEMA_ID)
                 .flatMap(it -> it.stringValue())
@@ -80,7 +80,7 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
         return new SchemaInfo(generatedTypeName, schemaBuilder.build());
     }
 
-    private static void processCommonAnnotations(Hson.Struct.Builder builder, Annotated annotatedType, AtomicBoolean required) {
+    private static void processCommonAnnotations(JsonObject.Builder builder, Annotated annotatedType, AtomicBoolean required) {
         annotatedType.findAnnotation(SchemaTypes.JSON_SCHEMA_TITLE)
                 .flatMap(it -> it.stringValue())
                 .ifPresent(it -> builder.set("title", it));
@@ -90,7 +90,7 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
         annotatedType.findAnnotation(SchemaTypes.JSON_SCHEMA_REQUIRED).ifPresent(it -> required.set(true));
     }
 
-    private static void processIntegerAnnotations(Hson.Struct.Builder builder, Annotated annotatedType, AtomicBoolean required) {
+    private static void processIntegerAnnotations(JsonObject.Builder builder, Annotated annotatedType, AtomicBoolean required) {
         processCommonAnnotations(builder, annotatedType, required);
         builder.set("type", "integer");
         annotatedType.findAnnotation(SchemaTypes.JSON_SCHEMA_INTEGER_MINIMUM)
@@ -110,7 +110,7 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
                 .ifPresent(it -> builder.set("exclusiveMaximum", it));
     }
 
-    private static void processStringAnnotations(Hson.Struct.Builder builder, Annotated annotated, AtomicBoolean required) {
+    private static void processStringAnnotations(JsonObject.Builder builder, Annotated annotated, AtomicBoolean required) {
         builder.set("type", "string");
         processCommonAnnotations(builder, annotated, required);
         annotated.findAnnotation(SchemaTypes.JSON_SCHEMA_STRING_MIN_LENGTH)
@@ -124,7 +124,7 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
                 .ifPresent(it -> builder.set("pattern", it));
     }
 
-    private static void processObject(Hson.Struct.Builder builder,
+    private static void processObject(JsonObject.Builder builder,
                                       TypeInfo annotatedType,
                                       CodegenContext ctx,
                                       AtomicBoolean required) {
@@ -133,7 +133,7 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
         Map<String, List<SchemaObjectProperty>> objectProperties = obtainObjectProperties(annotatedType);
 
         List<String> requiredProperties = new ArrayList<>();
-        Hson.Struct.Builder newBuilder = Hson.structBuilder();
+        JsonObject.Builder newBuilder = JsonObject.builder();
         objectProperties.forEach((name, properties) -> {
             AtomicBoolean requiredProperty = new AtomicBoolean();
             processObjectElement(newBuilder, ctx, properties, name, requiredProperty);
@@ -256,7 +256,7 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
         return properties;
     }
 
-    private static void processObjectElement(Hson.Struct.Builder builder,
+    private static void processObjectElement(JsonObject.Builder builder,
                                              CodegenContext ctx,
                                              List<SchemaObjectProperty> properties,
                                              String name,
@@ -264,7 +264,7 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
         SchemaObjectProperty last = properties.getLast();
         TypeName lastElementTypeName = last.typeName();
         TypeName parameterTypeName = BOXED_TO_PRIMITIVE.getOrDefault(lastElementTypeName, lastElementTypeName);
-        Hson.Struct.Builder newStructBuilder = Hson.structBuilder();
+        JsonObject.Builder newStructBuilder = JsonObject.builder();
         if (INTEGERS.contains(parameterTypeName)) {
             properties.forEach(it -> processIntegerAnnotations(newStructBuilder, it.annotated(), required));
         } else if (NUMBERS.contains(parameterTypeName)) {
@@ -304,7 +304,7 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
         builder.set(name, newStructBuilder.build());
     }
 
-    private static void processNumberAnnotations(Hson.Struct.Builder numberBuilder,
+    private static void processNumberAnnotations(JsonObject.Builder numberBuilder,
                                                  Annotated annotatedType,
                                                  AtomicBoolean required) {
         numberBuilder.set("type", "number");
@@ -326,7 +326,7 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
                 .ifPresent(it -> numberBuilder.set("exclusiveMaximum", it));
     }
 
-    private static void processObjectAnnotations(Hson.Struct.Builder builder, Annotated annotated, AtomicBoolean required) {
+    private static void processObjectAnnotations(JsonObject.Builder builder, Annotated annotated, AtomicBoolean required) {
         processCommonAnnotations(builder, annotated, required);
         annotated.findAnnotation(SchemaTypes.JSON_SCHEMA_OBJECT_MIN_PROPERTIES)
                 .flatMap(it -> it.intValue())
@@ -339,7 +339,7 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
                 .ifPresent(it -> builder.set("additionalProperties", it));
     }
 
-    private static void processArray(Hson.Struct.Builder builder,
+    private static void processArray(JsonObject.Builder builder,
                                      CodegenContext ctx,
                                      Annotated element,
                                      TypeName elementTypeName,
@@ -352,7 +352,7 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
         } else if (typeName.isList() || typeName.isSet()) {
             typeName = typeName.typeArguments().getFirst();
         }
-        Hson.Struct.Builder itemsBuilder = Hson.structBuilder();
+        JsonObject.Builder itemsBuilder = JsonObject.builder();
         TypeName finalTypeName = BOXED_TO_PRIMITIVE.getOrDefault(typeName, typeName);
         if (INTEGERS.contains(finalTypeName)) {
             processIntegerAnnotations(itemsBuilder, element, required);
@@ -386,7 +386,7 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
         }
     }
 
-    private static void processArrayAnnotations(Hson.Struct.Builder arrayBuilder,
+    private static void processArrayAnnotations(JsonObject.Builder arrayBuilder,
                                                 Annotated annotated,
                                                 AtomicBoolean required) {
         processCommonAnnotations(arrayBuilder, annotated, required);

@@ -1,0 +1,34 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.AcmeHelperConfig",
+        "description": "Helper configuration.",
+        "options": [
+          {
+            "key": "enabled",
+            "type": "java.lang.Boolean",
+            "description": "Enabled"
+          },
+          {
+            "key": "nested",
+            "type": "com.acme.AcmeNestedConfig",
+            "description": "Nested"
+          }
+        ]
+      },
+      {
+        "type": "com.acme.AcmeNestedConfig",
+        "description": "Nested configuration.",
+        "options": [
+          {
+            "key": "name",
+            "type": "java.lang.String",
+            "description": "Name"
+          }
+        ]
+      }
+    ]
+  }
+]

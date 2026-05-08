@@ -20,13 +20,11 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.GenericType;
-import io.helidon.common.media.type.MediaType;
 import io.helidon.http.Headers;
-import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
-import io.helidon.http.media.MediaSupport;
+import io.helidon.http.media.MediaSupportBase;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonValue;
 
@@ -36,18 +34,19 @@ import io.helidon.json.JsonValue;
  * This media support adds serialization and deserialization for {@link io.helidon.json.JsonValue}.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class JsonSupport implements MediaSupport, RuntimeType.Api<JsonSupportConfig> {
+public class JsonSupport extends MediaSupportBase<JsonSupportConfig> implements RuntimeType.Api<JsonSupportConfig> {
+    /**
+     * Generic type of this type, as it is required when this media type is used programmatically.
+     */
+    public static final GenericType<JsonObject> JSON_OBJECT_TYPE = GenericType.create(JsonObject.class);
 
-    static final String HELIDON_JSON_TYPE = "json";
+    static final String ID = "json";
 
-    private final String name;
-    private final JsonSupportConfig config;
     private final JsonValueReader reader;
     private final JsonValueWriter writer;
 
     private JsonSupport(JsonSupportConfig config) {
-        this.name = config.name();
-        this.config = config;
+        super(config, ID);
 
         this.reader = new JsonValueReader();
         this.writer = new JsonValueWriter(config);
@@ -91,6 +90,15 @@ public class JsonSupport implements MediaSupport, RuntimeType.Api<JsonSupportCon
     }
 
     /**
+     * Create a JSON reader with default settings.
+     *
+     * @return a reader for {@link io.helidon.json.JsonObject}
+     */
+    public static EntityReader<JsonObject> serverRequestReader() {
+        return new JsonValueReader<>();
+    }
+
+    /**
      * Create a new Helidon JSON support using a configuration consumer.
      *
      * @param consumer the consumer to configure the builder
@@ -103,29 +111,16 @@ public class JsonSupport implements MediaSupport, RuntimeType.Api<JsonSupportCon
     }
 
     @Override
-    public String name() {
-        return name;
-    }
-
-    @Override
-    public String type() {
-        return HELIDON_JSON_TYPE;
-    }
-
-    @Override
     public JsonSupportConfig prototype() {
-        return config;
+        return config();
     }
 
     @Override
     public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
-        if (isSupportedType(type)) {
-            if (requestHeaders.contentType()
-                    .map(this::isMediaTypeSupported)
-                    .orElse(true)) {
-                return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
-            }
+        if (matchesServerRequest(type, requestHeaders)) {
+            return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
         }
+
         return ReaderResponse.unsupported();
     }
 
@@ -133,10 +128,7 @@ public class JsonSupport implements MediaSupport, RuntimeType.Api<JsonSupportCon
     public <T> WriterResponse<T> writer(GenericType<T> type,
                                         Headers requestHeaders,
                                         WritableHeaders<?> responseHeaders) {
-
-        // server response writer
-        // we can write if JSON is accepted and it is our type
-        if (isSupportedType(type) && requestHeaders.isAccepted(config.contentType())) {
+        if (matchesServerResponse(type, requestHeaders, responseHeaders)) {
             return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
         }
 
@@ -147,12 +139,9 @@ public class JsonSupport implements MediaSupport, RuntimeType.Api<JsonSupportCon
     public <T> ReaderResponse<T> reader(GenericType<T> type,
                                         Headers requestHeaders,
                                         Headers responseHeaders) {
-        // client response reader
-        if (isSupportedType(type)) {
-            // if the content type of the response is one we understand, we support it (regardless of accept header)
-            if (responseHeaders.contentType().map(this::isMediaTypeSupported).orElse(true)) {
-                return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
-            }
+
+        if (matchesClientResponse(type, responseHeaders)) {
+            return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
         }
 
         return ReaderResponse.unsupported();
@@ -160,34 +149,20 @@ public class JsonSupport implements MediaSupport, RuntimeType.Api<JsonSupportCon
 
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
-        if (!isSupportedType(type)) {
-            return WriterResponse.unsupported();
+        if (matchesClientRequest(type, requestHeaders)) {
+            return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
         }
-
-        // client request writer
-        var configuredContentType = requestHeaders.contentType();
-
-        if (configuredContentType.isPresent()) {
-            if (isMediaTypeSupported(configuredContentType.get())) {
-                return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
-            }
-            return WriterResponse.unsupported();
-        }
-
-        return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
+        return WriterResponse.unsupported();
     }
 
-    boolean isSupportedType(GenericType<?> type) {
+    @Override
+    protected boolean canSerialize(GenericType<?> type) {
         return JsonValue.class.isAssignableFrom(type.rawType());
     }
 
-    boolean isMediaTypeSupported(HttpMediaType mediaType) {
-        for (MediaType acceptedMediaType : config.acceptedMediaTypes()) {
-            if (mediaType.test(acceptedMediaType)) {
-                return true;
-            }
-        }
-        return false;
+    @Override
+    protected boolean canDeserialize(GenericType<?> type) {
+        return canSerialize(type);
     }
 
     // force to correct generic

@@ -1,0 +1,39 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.AcmeServerConfig",
+        "standalone": true,
+        "prefix": "server",
+        "description": "ACME server configuration.",
+        "options": [
+          {
+            "key": "features",
+            "type": "com.acme.AcmeFeature",
+            "description": "Feature contract",
+            "provider": true
+          }
+        ]
+      },
+      {
+        "type": "com.acme.ZebraFeatureConfig",
+        "standalone": true,
+        "prefix": "alpha",
+        "description": "Alpha implementation.",
+        "provides": [
+          "com.acme.AcmeFeature"
+        ]
+      },
+      {
+        "type": "com.acme.AlphaFeatureConfig",
+        "standalone": true,
+        "prefix": "zeta",
+        "description": "Zeta implementation.",
+        "provides": [
+          "com.acme.AcmeFeature"
+        ]
+      }
+    ]
+  }
+]

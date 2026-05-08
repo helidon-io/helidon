@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package io.helidon.webserver.security;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigException;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 import io.helidon.http.Method;
 import io.helidon.security.ClassToInstanceStore;
 import io.helidon.security.Security;
@@ -47,9 +47,9 @@ class SecurityConfigSupport {
             if (!target.paths().isEmpty()) {
                 return;
             }
-            Optional<Config> configOnBuilder = target.config();
+            var configOnBuilder = target.config();
             if (configOnBuilder.isPresent()) {
-                Config config = configOnBuilder.get().root().get("security.web-server");
+                var config = configOnBuilder.get().root().get("security.web-server");
                 if (config.exists()) {
                     LOGGER.log(System.Logger.Level.WARNING, "Configuration key security.web-server is deprecated,"
                             + " please configure security integration with webserver under server.features.security instead");
@@ -71,7 +71,7 @@ class SecurityConfigSupport {
                 return;
             }
 
-            Optional<Config> config = target.config();
+            var config = target.config();
             if (config.isEmpty()) {
                 throw new ConfigException("SecurityFeature requires either a configured Security, or security registered with"
                                                   + " global context, or configuration instance to construct security");

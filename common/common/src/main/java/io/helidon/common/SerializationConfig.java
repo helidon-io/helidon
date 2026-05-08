@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,7 @@ import io.helidon.metadata.MetadataFile;
  *     <li>{@code full} to enable full tracing (including sizes, depth etc.)</li>
  * </ul>
  */
+@Api.Stable
 public final class SerializationConfig {
     static final String PROP_WRONG_CONFIG_ACTION = "helidon.serialFilter.failure.action";
     static final String PROP_NO_CONFIG_ACTION = "helidon.serialFilter.missing.action";
@@ -344,6 +345,7 @@ public final class SerializationConfig {
      * What action to take if there is no global filter configured,
      * or if the configuration is not according to Helidon expectations.
      */
+    @Api.Stable
     public enum Action {
         /**
          * Fail by throwing an {@link java.lang.IllegalStateException}.
@@ -368,6 +370,7 @@ public final class SerializationConfig {
     /**
      * Deserialization tracing options.
      */
+    @Api.Stable
     public enum TraceOption {
         /**
          * Basic tracing will only trace attempts to deserialize a class, and only once for each class.
@@ -388,6 +391,7 @@ public final class SerializationConfig {
      * You can use system properties defined in the class to modify configuration, in which case you can just use
      * {@link SerializationConfig#configureRuntime()} directly.
      */
+    @Api.Stable
     public static class Builder implements io.helidon.common.Builder<Builder, SerializationConfig> {
         private Action onWrongConfig = configuredAction(PROP_WRONG_CONFIG_ACTION, Action.FAIL);
         private Action onNoConfig = configuredAction(PROP_NO_CONFIG_ACTION, Action.CONFIGURE);

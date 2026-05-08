@@ -1,0 +1,31 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= io.helidon.ConfigReferenceConfig
+
+== Description
+
+++++
+Configuration for <code>config_reference</code>
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Description
+
+| `child`
+|pass:[Configuration for <code>child</code>]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/config_reference.adoc#a1f396e0e-config_reference[`config_reference`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
@@ -92,9 +92,10 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         this.outboundConfig = builder.outboundConfig;
         this.backwardCompatibleEol = builder.backwardCompatibleEol;
 
-        outboundConfig.targets().forEach(target -> target.getConfig().ifPresent(targetConfig -> {
+        outboundConfig.targets().forEach(target -> target.getConfig()
+                .ifPresent(targetConfig -> {
             OutboundTargetDefinition outboundTargetDefinition = targetConfig.get("signature")
-                    .map(OutboundTargetDefinition::create)
+                    .as(OutboundTargetDefinition::create)
                     .get();
             targetKeys.put(target.name(), outboundTargetDefinition);
         }));
@@ -341,11 +342,11 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
             config.get("headers").asList(HttpSignHeader.class).ifPresent(list -> list.forEach(this::addAcceptHeader));
             config.get("optional").asBoolean().ifPresent(this::optional);
             config.get("realm").asString().ifPresent(this::realm);
-            config.get("sign-headers").map(SignedHeadersConfig::create).ifPresent(this::inboundRequiredHeaders);
+            config.get("sign-headers").as(SignedHeadersConfig::create).ifPresent(this::inboundRequiredHeaders);
             outboundConfig = OutboundConfig.create(config);
 
             config.get("inbound.keys")
-                    .mapList(InboundClientDefinition::create)
+                    .asList(InboundClientDefinition::create)
                     .ifPresent(list -> list.forEach(inbound -> inboundKeys.put(inbound.keyId(), inbound)));
 
             config.get("backward-compatible-eol").asBoolean().ifPresent(this::backwardCompatibleEol);

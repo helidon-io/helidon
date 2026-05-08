@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-config</artifactId>
     <name>Helidon Config</name>
@@ -40,11 +40,11 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-config</artifactId>
+            <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common</artifactId>
+            <artifactId>helidon-common-mapper</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -97,6 +97,11 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.testing</groupId>
+            <artifactId>helidon-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -168,6 +173,13 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <environmentVariables>
+                        <JAVA_HOME>${java.home}</JAVA_HOME>
+                        <HELIDON_ENV_TREE_BRANCH_LEAF>tree-leaf</HELIDON_ENV_TREE_BRANCH_LEAF>
+                        <HELIDON_ENV_TREE_BRANCH_CHILD_GRANDCHILD>tree-grandchild</HELIDON_ENV_TREE_BRANCH_CHILD_GRANDCHILD>
+                        <HELIDON_ENV_TREE_BRANCH_UNDERSCORE_LEAF>underscore-leaf</HELIDON_ENV_TREE_BRANCH_UNDERSCORE_LEAF>
+                        <HELIDON_ENV_TREE_BRANCHES_OTHER>boundary-other</HELIDON_ENV_TREE_BRANCHES_OTHER>
+                        <HELIDON_ENV_TREE_SERVICE_dash_FOO_MAX_dash_POOL_dash_SIZE>42</HELIDON_ENV_TREE_SERVICE_dash_FOO_MAX_dash_POOL_dash_SIZE>
+                        <HELIDON_ENV_TREE_SERVICE_dash_FOO_CORE_dash_POOL_dash_SIZE>21</HELIDON_ENV_TREE_SERVICE_dash_FOO_CORE_dash_POOL_dash_SIZE>
                         <simple>unmapped-env-value</simple>
                         <FOO_BAR>mapped-env-value</FOO_BAR>
                         <_underscore>mapped-env-value</_underscore>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,33 @@
 
 package io.helidon.graphql.server;
 
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+
+import io.helidon.common.context.Context;
 
 class ExecutionContextImpl implements ExecutionContext {
     private final AtomicReference<Throwable> currentThrowable = new AtomicReference<>();
+    private final Context context;
 
-    ExecutionContextImpl() {
+    ExecutionContextImpl(Context context) {
+        this.context = context;
+    }
+
+    @Override
+    public void setContextValue(String name, Object value) {
+        context.register(Objects.requireNonNull(name), Objects.requireNonNull(value));
+    }
+
+    @Override
+    public Optional<Object> contextValue(String name) {
+        return context.get(Objects.requireNonNull(name), Object.class);
+    }
+
+    @Override
+    public <T> Optional<T> contextValue(String name, Class<T> type) {
+        return context.get(Objects.requireNonNull(name), Objects.requireNonNull(type));
     }
 
     @Override

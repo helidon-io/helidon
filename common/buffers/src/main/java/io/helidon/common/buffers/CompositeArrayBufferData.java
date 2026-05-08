@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -218,16 +218,35 @@ class CompositeArrayBufferData extends ReadOnlyBufferData implements CompositeBu
     public int lastIndexOf(byte aByte, int length) {
         int index;
         int lengthRemaining = length;
+        int indexPrefix = 0;
+        int lastFullIndex = -1;
 
-        for (int i = data.length - 1; i >= 0; i--) {
-            BufferData datum = data[i];
-            index = datum.lastIndexOf(aByte, Math.min(lengthRemaining, datum.available()));
-            if (index > -1) {
-                return index;
-            }
-            lengthRemaining -= datum.available();
+        for (int i = 0; i < data.length; i++) {
             if (lengthRemaining <= 0) {
                 break;
+            }
+            BufferData datum = data[i];
+            int available = datum.available();
+            if (lengthRemaining <= available) {
+                index = datum.lastIndexOf(aByte, lengthRemaining);
+                if (index > -1) {
+                    return indexPrefix + index;
+                }
+                lastFullIndex = i - 1;
+                break;
+            }
+            lengthRemaining -= available;
+            indexPrefix += available;
+            lastFullIndex = i;
+        }
+
+        for (int i = lastFullIndex; i >= 0; i--) {
+            BufferData datum = data[i];
+            int available = datum.available();
+            indexPrefix -= available;
+            index = datum.lastIndexOf(aByte, available);
+            if (index > -1) {
+                return indexPrefix + index;
             }
         }
         return -1;

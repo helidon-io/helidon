@@ -24,7 +24,7 @@ on:
 
 env:
   MVN_VERSION: 3.9.9
-  JAVA_VERSION: 21
+  JAVA_VERSION: 26
   JAVA_DISTRO: oracle
   MVN_ARGS: |
     -B -e
@@ -57,7 +57,7 @@ jobs:
     needs: [ get-version, validate ]
     strategy:
       matrix:
-        moduleSet: [ core, integrations, others ]
+        moduleSet: [ core, others ]
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     environment: release

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 
 package io.helidon.webserver.websocket;
 
+import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -25,6 +28,7 @@ import java.util.Set;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
@@ -36,6 +40,7 @@ import io.helidon.http.NotFoundException;
 import io.helidon.http.RequestException;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.websocket.WsListener;
@@ -154,16 +159,8 @@ public class WsUpgrader implements Http1Upgrader {
             return null;
         }
 
-        if (!anyOrigin()) {
-            if (headers.contains(HeaderNames.ORIGIN)) {
-                String origin = headers.get(HeaderNames.ORIGIN).get();
-                if (!origins().contains(origin)) {
-                    throw RequestException.builder()
-                            .message("Invalid Origin")
-                            .type(DirectHandler.EventType.FORBIDDEN)
-                            .build();
-                }
-            }
+        if (headers.contains(HeaderNames.ORIGIN)) {
+            validateOrigin(headers, headers.get(HeaderNames.ORIGIN).get());
         }
 
         // invoke user-provided HTTP upgrade handler
@@ -177,18 +174,13 @@ public class WsUpgrader implements Http1Upgrader {
         }
 
         // write switch protocol response including headers from listener
-        DataWriter dataWriter = ctx.dataWriter();
         String switchingProtocols = SWITCHING_PROTOCOL_PREFIX + hash(ctx, wsKey);
-        dataWriter.write(BufferData.create(switchingProtocols.getBytes(US_ASCII)));
-        BufferData separator = BufferData.create(HEADERS_SEPARATOR);
-        dataWriter.write(separator);
-        upgradeHeaders.ifPresent(hs -> {
-            BufferData headerData = BufferData.growing(128);
-            hs.forEach(h -> h.writeHttp1Header(headerData));
-            dataWriter.write(headerData);
-        });
-        dataWriter.write(separator.rewind());
-        dataWriter.flush();
+        BufferData responseData = BufferData.growing(128);
+        responseData.write(switchingProtocols.getBytes(US_ASCII));
+        responseData.write(HEADERS_SEPARATOR);
+        upgradeHeaders.ifPresent(hs -> hs.forEach(h -> h.writeHttp1Header(responseData)));
+        responseData.write(HEADERS_SEPARATOR);
+        writeUpgradeResponse(ctx.dataWriter(), responseData);
 
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE, "Upgraded to websocket version " + version);
@@ -197,12 +189,133 @@ public class WsUpgrader implements Http1Upgrader {
         return WsConnection.create(ctx, prologue, upgradeHeaders.orElse(EMPTY_HEADERS), wsKey, wsListener);
     }
 
+    private static void writeUpgradeResponse(DataWriter dataWriter, BufferData responseData) {
+        try {
+            dataWriter.writeNow(responseData);
+        } catch (SocketWriterException | UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write websocket upgrade response", e);
+        }
+    }
+
     protected boolean anyOrigin() {
         return anyOrigin;
     }
 
     protected Set<String> origins() {
         return origins;
+    }
+
+    /**
+     * Validate the request origin against either the configured allowlist or the request host authority.
+     *
+     * @param headers request headers
+     * @param origin origin header value
+     */
+    private void validateOrigin(WritableHeaders<?> headers, String origin) {
+        if (!anyOrigin()) {
+            if (origins().contains(origin)) {
+                return;
+            }
+        } else if (matchesAuthority(headers, origin)) {
+            return;
+        }
+
+        throw RequestException.builder()
+                .message("Invalid Origin")
+                .type(DirectHandler.EventType.FORBIDDEN)
+                .build();
+    }
+
+    /**
+     * Check whether the origin authority matches the request host authority.
+     *
+     * @param headers request headers
+     * @param origin origin header value
+     * @return {@code true} if the authorities match
+     */
+    private boolean matchesAuthority(WritableHeaders<?> headers, String origin) {
+        URI originUri;
+        try {
+            originUri = new URI(origin);
+        } catch (URISyntaxException e) {
+            return false;
+        }
+
+        if (originUri.getScheme() == null || originUri.getHost() == null) {
+            return false;
+        }
+
+        if (!headers.contains(HeaderNames.HOST)) {
+            return false;
+        }
+
+        String hostHeader = headers.get(HeaderNames.HOST).get();
+        return normalizeOrigin(originUri).equals(normalizeAuthority(hostHeader, originUri.getScheme()));
+    }
+
+    /**
+     * Normalize a host header authority into a lowercase {@code host:port} form.
+     *
+     * @param authority host header value
+     * @param scheme scheme to use for default-port resolution
+     * @return normalized authority
+     */
+    private static String normalizeAuthority(String authority, String scheme) {
+        String host;
+        int port = -1;
+
+        if (authority.startsWith("[")) {
+            int closingBracket = authority.indexOf(']');
+            if (closingBracket < 0) {
+                // malformed bracketed IPv6 authority, fail the later equality check
+                return authority.toLowerCase();
+            }
+            host = authority.substring(1, closingBracket);
+            if (closingBracket + 1 < authority.length()) {
+                port = Integer.parseInt(authority.substring(closingBracket + 2));
+            }
+        } else {
+            int firstColon = authority.indexOf(':');
+            int lastColon = authority.lastIndexOf(':');
+            if (firstColon > -1 && firstColon == lastColon) {
+                host = authority.substring(0, firstColon);
+                port = Integer.parseInt(authority.substring(firstColon + 1));
+            } else {
+                host = authority;
+            }
+        }
+
+        if (port == -1) {
+            port = defaultPort(scheme);
+        }
+
+        return host.toLowerCase() + ":" + port;
+    }
+
+    /**
+     * Normalize an origin URI into a lowercase {@code host:port} form.
+     *
+     * @param originUri parsed origin URI
+     * @return normalized origin authority
+     */
+    private static String normalizeOrigin(URI originUri) {
+        String scheme = originUri.getScheme().toLowerCase();
+        String host = originUri.getHost().toLowerCase();
+        int port = originUri.getPort();
+        if (port == -1) {
+            port = defaultPort(scheme);
+        }
+        return host + ":" + port;
+    }
+
+    /**
+     * Resolve the default port for a scheme.
+     *
+     * @param scheme URI scheme
+     * @return default port for the scheme
+     */
+    private static int defaultPort(String scheme) {
+        return "https".equalsIgnoreCase(scheme) ? 443 : 80;
     }
 
     protected String hash(ConnectionContext ctx, String wsKey) {
@@ -236,5 +349,4 @@ public class WsUpgrader implements Http1Upgrader {
             throw new IllegalStateException("SHA-1 not provided", e);
         }
     }
-
 }

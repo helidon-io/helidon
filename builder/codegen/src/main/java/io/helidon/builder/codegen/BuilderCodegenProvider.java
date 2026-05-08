@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Set;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.codegen.spi.CodegenExtensionProvider;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -29,11 +30,9 @@ import io.helidon.common.types.TypeName;
  */
 public class BuilderCodegenProvider implements CodegenExtensionProvider {
     /**
-     * Public constructor is required for {@link java.util.ServiceLoader}.
-     *
-     * @deprecated please do not use directly
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public BuilderCodegenProvider() {
     }
 

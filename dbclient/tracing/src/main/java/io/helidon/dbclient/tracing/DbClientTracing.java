@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ package io.helidon.dbclient.tracing;
 
 import java.util.Map;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
+import io.helidon.config.Config;
 import io.helidon.dbclient.DbClientServiceBase;
 import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.tracing.Span;
@@ -51,6 +51,7 @@ public class DbClientTracing extends DbClientServiceBase {
         return builder().config(config).build();
     }
 
+
     /**
      * Create a new interceptor to trace requests.
      * @return a new tracing interceptor
@@ -77,7 +78,7 @@ public class DbClientTracing extends DbClientServiceBase {
         }
 
         Context context = serviceContext.context();
-        @SuppressWarnings("resource") Tracer tracer = context.get(Tracer.class).orElseGet(Tracer::global);
+        Tracer tracer = context.get(Tracer.class).orElseGet(Tracer::global);
 
         // now if span context is missing, we build a span without a parent
         Span.Builder<?> spanBuilder = tracer.spanBuilder(serviceContext.statementName());

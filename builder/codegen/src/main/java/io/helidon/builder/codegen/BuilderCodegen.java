@@ -42,7 +42,6 @@ import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassBase;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
-import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.TypeArgument;
 import io.helidon.codegen.spi.CodegenExtension;
@@ -50,7 +49,6 @@ import io.helidon.common.Errors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
-import io.helidon.common.types.Annotations;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -58,7 +56,6 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.metadata.MetadataConstants;
 
-import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
 import static io.helidon.builder.codegen.Types.CONFIG;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_EXTENSION;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_EXTENSIONS;
@@ -229,25 +226,6 @@ class BuilderCodegen implements CodegenExtension {
                 .decreaseContentPadding();
         classModel.addMethod(method);
 
-        // backward compatibility
-        Method.Builder commonMethod = Method.builder()
-                .name("create")
-                .isStatic(true)
-                .returnType(prototype)
-                .addParameter(paramBuilder -> paramBuilder.type(Types.COMMON_CONFIG)
-                        .name("config"))
-                .javadoc(Javadoc.builder()
-                                 .add("Create a new instance from configuration.")
-                                 .returnDescription("a new instance configured from configuration")
-                                 .addParameter("config", "used to configure the new instance")
-                                 .addTag("deprecated", "use {@link #create(" + Types.CONFIG.fqName() + ")}")
-                                 .build())
-                .addContent("return create(")
-                .addContent(Types.CONFIG)
-                .addContentLine(".config(config));")
-                .addAnnotation(Annotations.DEPRECATED);
-        typeArguments.forEach(commonMethod::addGenericArgument);
-        classModel.addMethod(commonMethod);
     }
 
     private static void addCopyBuilderMethod(ClassModel.Builder classModel,
@@ -395,40 +373,19 @@ class BuilderCodegen implements CodegenExtension {
         }
 
         // now we have final prototype info - processed by all extensions, next we start collecting options
-        PrototypeInfo prototypeInfo = fixFactoryMethods(tmpPrototypeInfo, newOptions);
+        PrototypeInfo prototypeInfo = tmpPrototypeInfo;
         // add for validation, but only once we have all the information
         blueprintTypes.add(prototypeInfo);
 
         // now for each provider, add discoverServices builder option (this is required for our code to work)
-        List<OptionInfo> discoverServicesOptions = newOptions.stream()
-                .filter(it -> it.provider().isPresent() || it.registryService())
-                .map(it -> {
-                    boolean defaultValue = it.provider().map(OptionProvider::discoverServices).orElse(true);
-
-                    String name = it.name() + "DiscoverServices";
-                    String setterName = it.setterName() + "DiscoverServices";
-                    String getterName = it.getterName() + "DiscoverServices";
-                    return OptionInfo.builder()
-                            .accessModifier(it.accessModifier())
-                            .description("Service discovery flag for {@link #" + it.getterName()
-                                                 + "()}. If set to {@code true}, services will be discovered from Java service "
-                                                 + "loader, or Helidon ServiceRegistry.")
-                            .paramDescription("whether to enabled automatic service discovery")
-                            .name(name)
-                            .setterName(setterName)
-                            .getterName(getterName)
-                            .builderOptionOnly(true)
-                            .declaredType(TypeNames.PRIMITIVE_BOOLEAN)
-                            .defaultValue(defaultConsumer -> defaultConsumer.addContent(String.valueOf(defaultValue)))
-                            .update(optionBuilder -> copyConfiguredForDiscoverServices(it, optionBuilder))
-                            .update(optionBuilder -> it.deprecation().ifPresent(optionBuilder::deprecation))
-                            .build();
-                })
-                .toList();
+        List<OptionInfo> discoverServicesOptions = discoverServicesOptions(newOptions);
+        List<OptionInfo> existingDiscoverServicesOptions = discoverServicesOptions(existingOptions);
 
         // ensure mutability
         newOptions = new ArrayList<>(newOptions);
         newOptions.addAll(discoverServicesOptions);
+        existingOptions = new ArrayList<>(existingOptions);
+        existingOptions.addAll(existingDiscoverServicesOptions);
         configOption(prototypeInfo, newOptions, existingOptions);
         serviceRegistryOption(prototypeInfo, newOptions);
 
@@ -539,14 +496,13 @@ class BuilderCodegen implements CodegenExtension {
             return;
         }
 
-        // we must add it, for now common config to have backward compatibility
         boolean style = prototypeInfo.recordStyle();
         String getter = style ? "config" : "getConfig";
         String setter = style ? "config" : "setConfig";
 
         newOptions.add(OptionInfo.builder()
                                .name("config")
-                               .declaredType(COMMON_CONFIG)
+                               .declaredType(CONFIG)
                                .getterName(getter)
                                .setterName(setter)
                                .includeInEqualsAndHashCode(false)
@@ -562,14 +518,14 @@ class BuilderCodegen implements CodegenExtension {
         return options.stream()
                 .filter(it -> it.name().equals("config"))
                 .anyMatch(it -> {
-                    // we only support Config, Optional<Config> for both common and config config
+                    // we only support Config and Optional<Config>
                     var optionType = it.declaredType();
-                    if (optionType.equals(CONFIG) || optionType.equals(COMMON_CONFIG)) {
+                    if (optionType.equals(CONFIG)) {
                         return true;
                     }
                     if (optionType.isOptional()) {
                         optionType = optionType.typeArguments().getFirst();
-                        if (optionType.equals(CONFIG) || optionType.equals(COMMON_CONFIG)) {
+                        if (optionType.equals(CONFIG)) {
                             return true;
                         }
                     }
@@ -581,48 +537,6 @@ class BuilderCodegen implements CodegenExtension {
                 });
     }
 
-    @SuppressWarnings({"removal", "deprecation"})
-    private PrototypeInfo fixFactoryMethods(PrototypeInfo tmpPrototypeInfo, List<OptionInfo> newOptions) {
-        // for backward compatibility, we support factory methods of both runtime type and prototype to be mixed
-        // here, as we know all option types, we can separate them
-
-        TypeName prototypeType = tmpPrototypeInfo.prototypeType();
-
-        var builder = PrototypeInfo.builder(tmpPrototypeInfo);
-        List<GeneratedMethod> prototypeFactories = new ArrayList<>(tmpPrototypeInfo.prototypeFactories());
-
-        for (DeprecatedFactoryMethod factoryMethod : tmpPrototypeInfo.deprecatedFactoryMethods()) {
-            // if the factory method is void or does not have one parameter, it is for sure a prototype factory
-            TypedElementInfo method = factoryMethod.method();
-            TypeName returnType = method.typeName();
-
-            if (returnType.unboxed().equals(TypeNames.PRIMITIVE_VOID)
-                    || method.parameterArguments().size() != 1
-                    || Utils.typesEqual(returnType, prototypeType)) {
-                prototypeFactories.add(GeneratedMethods.createFactoryMethod(factoryMethod.declaringType(),
-                                                                            factoryMethod.method(),
-                                                                            List.of()));
-                continue;
-            }
-
-            if (newOptions.stream()
-                    .filter(it -> Utils.typesEqual(returnType, Utils.realType(it.declaredType()))
-                            || Utils.resolvedTypesEqual(returnType, it.declaredType()))
-                    .findAny()
-                    .isEmpty()) {
-
-                // yep, this is a factory method to be generated
-                prototypeFactories.add(GeneratedMethods.createFactoryMethod(factoryMethod.declaringType(),
-                                                                            factoryMethod.method(),
-                                                                            List.of()));
-            }
-        }
-
-        return builder
-                .prototypeFactories(prototypeFactories)
-                .build();
-    }
-
     private void copyConfiguredForDiscoverServices(OptionInfo providerOption, OptionInfo.Builder optionBuilder) {
         if (providerOption.configured().isEmpty()) {
             return;
@@ -632,6 +546,35 @@ class BuilderCodegen implements CodegenExtension {
                 .merge(configured.merge())
                 .configKey(configured.configKey() + "-discover-services")
         );
+    }
+
+    private List<OptionInfo> discoverServicesOptions(List<OptionInfo> optionInfos) {
+        return optionInfos.stream()
+                .filter(it -> it.provider().isPresent() || it.registryService())
+                .map(it -> {
+                    boolean defaultValue = it.provider().map(OptionProvider::discoverServices).orElse(true);
+
+                    String name = it.name() + "DiscoverServices";
+                    String setterName = it.setterName() + "DiscoverServices";
+                    String getterName = it.getterName() + "DiscoverServices";
+                    return OptionInfo.builder()
+                            .accessModifier(it.accessModifier())
+                            .description("Service discovery flag for {@link #" + it.getterName()
+                                                 + "()}. If set to {@code true}, services will be discovered from Java service "
+                                                 + "loader, or Helidon ServiceRegistry.")
+                            .paramDescription("whether to enable automatic service discovery")
+                            .name(name)
+                            .setterName(setterName)
+                            .getterName(getterName)
+                            .builderOptionOnly(true)
+                            .declaredType(TypeNames.PRIMITIVE_BOOLEAN)
+                            .interfaceMethod(it.interfaceMethod())
+                            .defaultValue(defaultConsumer -> defaultConsumer.addContent(String.valueOf(defaultValue)))
+                            .update(optionBuilder -> copyConfiguredForDiscoverServices(it, optionBuilder))
+                            .update(optionBuilder -> it.deprecation().ifPresent(optionBuilder::deprecation))
+                            .build();
+                })
+                .toList();
     }
 
     private OptionInfo mergeOptions(List<OptionInfo> optionInfos) {
@@ -708,6 +651,11 @@ class BuilderCodegen implements CodegenExtension {
                 .accessModifier(prototypeInfo.accessModifier());
 
         typeArguments.forEach(classModel::addGenericArgument);
+
+        if (prototypeInfo.configured().isPresent()) {
+            var schemaGen = new SchemaGenerator(this.ctx);
+            classModel.addAnnotation(schemaGen.type(prototypeInfo, options));
+        }
 
         prototypeInfo.annotations()
                 .forEach(classModel::addAnnotation);

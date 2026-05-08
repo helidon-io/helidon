@@ -16,27 +16,35 @@
 
 package io.helidon.declarative.tests.tracing;
 
-import java.time.Duration;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import io.helidon.service.registry.Service;
 import io.helidon.tracing.Tracer;
-import io.helidon.tracing.providers.jaeger.JaegerTracerBuilder;
+
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 
 @Service.Singleton
 public class TestTracerFactory implements Supplier<Tracer> {
     private final TestSpanExporter exporter = new TestSpanExporter();
+    private final OpenTelemetrySdk openTelemetry = OpenTelemetrySdk.builder()
+            .setTracerProvider(SdkTracerProvider.builder()
+                                       .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+                                       .build())
+            .build();
 
     @Override
     public Tracer get() {
-        return JaegerTracerBuilder.forService("unit-test")
-                .scheduleDelay(Duration.ofMillis(100))
-                .addSpanExporter(exporter)
-                .build();
+        return io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry.create(openTelemetry,
+                                                                                      openTelemetry.getTracer("unit-test"),
+                                                                                      Map.of());
     }
 
     @Service.PreDestroy
     public void shutdown() {
+        openTelemetry.close();
         exporter.close();
     }
 

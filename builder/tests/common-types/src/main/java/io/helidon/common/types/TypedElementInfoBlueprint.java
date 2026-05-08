@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,19 +58,6 @@ interface TypedElementInfoBlueprint extends Annotated {
      * The kind of element (e.g., method, field, etc).
      *
      * @return the element kind
-     * @see io.helidon.common.types.TypeInfo
-     * @deprecated use {@link io.helidon.common.types.TypedElementInfo#kind()} instead
-     */
-    @Option.Required
-    @Option.Deprecated("kind")
-    @Option.Redundant
-    @Deprecated(forRemoval = true, since = "4.1.0")
-    String elementTypeKind();
-
-    /**
-     * The kind of element (e.g., method, field, etc).
-     *
-     * @return the element kind
      * @see io.helidon.common.types.ElementKind
      */
     ElementKind kind();
@@ -98,19 +85,6 @@ interface TypedElementInfoBlueprint extends Annotated {
      */
     @Option.Redundant
     List<TypeName> componentTypes();
-
-    /**
-     * Element modifiers.
-     *
-     * @return element modifiers
-     * @see io.helidon.common.types.TypeInfo
-     * @deprecated use {@link io.helidon.common.types.TypedElementInfo#elementModifiers()} instead
-     */
-    @Option.Singular
-    @Option.Redundant
-    @Option.Deprecated("elementModifiers")
-    @Deprecated(forRemoval = true, since = "4.1.0")
-    Set<String> modifiers();
 
     /**
      * Element modifiers.

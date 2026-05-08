@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package io.helidon.common.types;
 
-import java.util.Locale;
-
 import io.helidon.builder.api.Prototype;
 
 final class TypeInfoSupport {
@@ -25,49 +23,11 @@ final class TypeInfoSupport {
     }
 
     static final class TypeInfoDecorator implements Prototype.BuilderDecorator<TypeInfo.BuilderBase<?, ?>> {
-        @SuppressWarnings("removal") // this method makes sure we are backward compatible
         @Override
         public void decorate(TypeInfo.BuilderBase<?, ?> target) {
-            /*
-            Backward compatibility for deprecated methods.
-             */
-            if (target.kind().isEmpty() && target.typeKind().isPresent()) {
-                target.kind(ElementKind.valueOf(target.typeKind().get().toUpperCase(Locale.ROOT)));
-            }
-            target.typeKind(target.kind().get().toString());
-
             if (target.accessModifier().isEmpty()) {
-                AccessModifier accessModifier = null;
-                for (String modifier : target.modifiers()) {
-                    if (TypeValues.MODIFIER_PUBLIC.equals(modifier)) {
-                        accessModifier = AccessModifier.PUBLIC;
-                        break;
-                    }
-                    if (TypeValues.MODIFIER_PROTECTED.equals(modifier)) {
-                        accessModifier = AccessModifier.PROTECTED;
-                        break;
-                    }
-                    if (TypeValues.MODIFIER_PRIVATE.equals(modifier)) {
-                        accessModifier = AccessModifier.PRIVATE;
-                        break;
-                    }
-                }
-                if (accessModifier == null) {
-                    accessModifier = AccessModifier.PACKAGE_PRIVATE;
-                }
-                target.accessModifier(accessModifier);
+                target.accessModifier(AccessModifier.PACKAGE_PRIVATE);
             }
-            for (String modifier : target.modifiers()) {
-                try {
-                    target.addElementModifier(Modifier.valueOf(modifier.toUpperCase(Locale.ROOT)));
-                } catch (IllegalArgumentException ignored) {
-                    // best effort - we need to skip access modifiers and unknown modifiers
-                }
-            }
-            for (Modifier typeModifier : target.elementModifiers()) {
-                target.addModifier(typeModifier.modifierName());
-            }
-            target.addModifier(target.accessModifier().get().modifierName());
 
             // new methods, simplify for tests
             if (target.rawType().isEmpty()) {

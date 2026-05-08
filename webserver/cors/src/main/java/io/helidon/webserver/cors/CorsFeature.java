@@ -117,21 +117,6 @@ public class CorsFeature implements Weighted, ServerFeature, RuntimeType.Api<Cor
                 .build();
     }
 
-    /**
-     * Create a new CORS feature with custom setup.
-     *
-     * @param config configuration
-     * @return a new configured feature
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    @SuppressWarnings("removal")
-    public static CorsFeature create(io.helidon.common.config.Config config) {
-        return builder()
-                .config(config)
-                .build();
-    }
-
     @Override
     public void setup(ServerFeatureContext featureContext) {
         if (!config.enabled()) {

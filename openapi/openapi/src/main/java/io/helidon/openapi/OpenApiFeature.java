@@ -31,17 +31,15 @@ import java.util.function.Consumer;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.Config;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 import io.helidon.webserver.spi.ServerFeature;
 
 /**
  * Helidon Support for OpenAPI.
  */
-@SuppressWarnings("removal") // CORS support will be removed
 public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeType.Api<OpenApiFeatureConfig> {
 
     static final String OPENAPI_ID = "openapi";
@@ -58,8 +56,6 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
             .toList();
     private final String content;
     private final OpenApiFeatureConfig config;
-    // will be removed, no need to replace with new approach
-    private final CorsEnabledServiceHelper corsService;
     private final OpenApiManager<?> manager;
     private final LazyValue<Object> model;
 
@@ -87,7 +83,6 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         }
         content = defaultContent;
         manager = config.manager().orElseGet(SimpleOpenApiManager::new);
-        corsService = CorsEnabledServiceHelper.create("openapi", config.cors().orElse(null));
         model = LazyValue.create(() -> manager.load(content));
     }
 
@@ -159,7 +154,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         for (String socket : sockets) {
             featureContext.socket(socket)
                     .httpRouting()
-                    .addFeature(new OpenApiHttpFeature(config, manager, model, corsService));
+                    .addFeature(new OpenApiHttpFeature(config, manager, model));
         }
     }
 

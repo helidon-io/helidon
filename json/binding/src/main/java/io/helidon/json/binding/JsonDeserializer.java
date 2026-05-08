@@ -16,6 +16,7 @@
 
 package io.helidon.json.binding;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonParser;
 
 /**
@@ -23,6 +24,7 @@ import io.helidon.json.JsonParser;
  *
  * @param <T> the type this deserializer produces
  */
+@Api.Preview
 public interface JsonDeserializer<T> extends JsonComponent<T> {
 
     /**

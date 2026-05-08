@@ -1,0 +1,26 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeListenerConfig
+
+== Description
+
+++++
+ACME listener configuration.
+++++
+
+// tag::config[]
+== Configuration options
+
+
+This config type has no options.
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/com_acme_AcmeServerConfig.adoc#a01448b27-default-socket[`server.default-socket`]
+* xref:{rootdir}/config/com_acme_AcmeServerConfig.adoc#a9d0cc898-sockets[`server.sockets`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

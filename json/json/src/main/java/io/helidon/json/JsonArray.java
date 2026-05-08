@@ -21,9 +21,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * Represents a JSON array value containing an ordered list of JSON values.
  */
+@Api.Preview
 public final class JsonArray extends JsonValue {
 
     /**
@@ -97,12 +100,24 @@ public final class JsonArray extends JsonValue {
     }
 
     /**
+     * Returns the shared empty JSON array instance.
+     *
+     * @return the empty JSON array
+     */
+    public static JsonArray empty() {
+        return EMPTY_ARRAY;
+    }
+
+    /**
      * Return the JsonValue at the specified index as an Optional.
      *
      * @param index the index of the element to return
      * @return an Optional containing the element at the specified position, or empty if out of bounds
      */
     public Optional<JsonValue> get(int index) {
+        if (index < 0 || index >= jsonValues.size()) {
+            return Optional.empty();
+        }
         return Optional.ofNullable(jsonValues.get(index));
     }
 
@@ -114,6 +129,9 @@ public final class JsonArray extends JsonValue {
      * @return the element at the specified position, or the default value
      */
     public JsonValue get(int index, JsonValue defaultValue) {
+        if (index < 0 || index >= jsonValues.size()) {
+            return defaultValue;
+        }
         JsonValue jsonValue = jsonValues.get(index);
         return jsonValue == null ? defaultValue : jsonValue;
     }

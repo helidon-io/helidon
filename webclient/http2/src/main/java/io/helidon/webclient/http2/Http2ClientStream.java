@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,6 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     private static final System.Logger LOGGER = System.getLogger(Http2ClientStream.class.getName());
     private static final Set<Http2StreamState> NON_CANCELABLE = Set.of(Http2StreamState.CLOSED, Http2StreamState.IDLE);
-    private static final Http2FrameData HTTP2_PING = Http2Ping.create().toFrameData();
 
     private final Http2ClientConnection connection;
     private final Http2Settings serverSettings;
@@ -292,7 +291,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      */
     public void writeHeaders(Http2Headers http2Headers, boolean endOfStream) {
         this.state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, true, endOfStream, true);
-        this.readState = readState.check(http2Headers.httpHeaders().contains(HeaderValues.EXPECT_100)
+        this.readState = readState.check(http2Headers.httpHeaders().containsToken(HeaderValues.EXPECT_100)
                                                  ? ReadState.CONTINUE_100_HEADERS
                                                  : ReadState.HEADERS);
         Http2Flag.HeaderFlags flags;
@@ -346,7 +345,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * Sends PING frame to server. Can be used to check if connection is healthy.
      */
     public void sendPing() {
-        connection.writer().write(HTTP2_PING);
+        connection.writer().write(Http2Ping.create().toFrameData());
     }
 
     /**

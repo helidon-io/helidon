@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -217,7 +217,6 @@ final class MetaConfigFinder {
             }
         }
         // we did not find a config profile, let's create one with the usual suspects
-        // to make things easier, let's try both application.xxx and META-INF/microprofile-config.properties
         ListNode.Builder sourceListBuilder = ListNode.builder();
 
         sourceListBuilder.addObject(ObjectNode.builder().addValue("type", "environment-variables").build())
@@ -261,9 +260,6 @@ final class MetaConfigFinder {
         for (String supportedSuffix : supportedSuffixes) {
             addClasspath(sourceListBuilder, "application", supportedSuffix);
         }
-
-        addClasspath(sourceListBuilder, "META-INF/microprofile-config-" + profileName, "properties");
-        addClasspath(sourceListBuilder, "META-INF/microprofile-config", "properties");
 
         return ConfigSources.create(ObjectNode.builder()
                                             .addList("sources", sourceListBuilder.build())

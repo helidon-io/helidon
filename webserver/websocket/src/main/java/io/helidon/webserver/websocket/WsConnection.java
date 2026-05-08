@@ -16,16 +16,18 @@
 
 package io.helidon.webserver.websocket;
 
+import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Optional;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitException;
 import io.helidon.common.socket.SocketContext;
@@ -34,6 +36,7 @@ import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.websocket.ClientWsFrame;
 import io.helidon.websocket.ServerWsFrame;
@@ -60,10 +63,11 @@ public class WsConnection implements ServerConnection, WsSession {
 
     private final BufferData sendBuffer = BufferData.growing(1024);
     private final DataReader dataReader;
+    private final Lock sendLock = new ReentrantLock();
 
     private ContinuationType recvContinuation = ContinuationType.NONE;
     private boolean sendContinuation;
-    private boolean closeSent;
+    private final AtomicBoolean closeSent = new AtomicBoolean();
 
     private volatile Thread myThread;
     private volatile boolean canRun = true;
@@ -127,21 +131,17 @@ public class WsConnection implements ServerConnection, WsSession {
         return new WsConnection(ctx, prologue, upgradeHeaders, wsKey, wsRoute.listener());
     }
 
-    @SuppressWarnings("removal")
-    @Override
-    public void handle(Semaphore requestSemaphore) {
-        handle(FixedLimit.create(requestSemaphore));
-    }
-
     @Override
     public void handle(Limit limit) {
         myThread = Thread.currentThread();
 
         try {
-            limit.invoke(() -> listener.onOpen(this));
+            limit.run(() -> listener.onOpen(this));
         } catch (LimitException e) {
             close(WsCloseCodes.TRY_AGAIN_LATER, "Too Many Concurrent Requests");
             return;
+        } catch (CloseConnectionException e) {
+            throw e;
         } catch (Exception e) {
             close(WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
             return;
@@ -153,7 +153,7 @@ public class WsConnection implements ServerConnection, WsSession {
             readingNetwork = false;
             lastRequestTimestamp = DateTime.timestamp();
             try {
-                boolean result = limit.invoke(() -> processFrame(frame));
+                boolean result = limit.call(() -> processFrame(frame)).result();
                 if (!result) {
                     lastRequestTimestamp = DateTime.timestamp();
                     return;
@@ -176,33 +176,61 @@ public class WsConnection implements ServerConnection, WsSession {
 
     @Override
     public WsSession send(String text, boolean last) {
-        return send(ServerWsFrame.data(text, last));
+        sendLock.lock();
+        try {
+            return sendLocked(ServerWsFrame.data(text, last));
+        } finally {
+            sendLock.unlock();
+        }
     }
 
     @Override
     public WsSession send(BufferData bufferData, boolean last) {
-        return send(ServerWsFrame.data(bufferData, last));
+        sendLock.lock();
+        try {
+            return sendLocked(ServerWsFrame.data(bufferData, last));
+        } finally {
+            sendLock.unlock();
+        }
     }
 
     @Override
     public WsSession ping(BufferData bufferData) {
-        return send(ServerWsFrame.control(WsOpCode.PING, bufferData));
+        sendLock.lock();
+        try {
+            return sendLocked(ServerWsFrame.control(WsOpCode.PING, bufferData));
+        } finally {
+            sendLock.unlock();
+        }
     }
 
     @Override
     public WsSession pong(BufferData bufferData) {
-        return send(ServerWsFrame.control(WsOpCode.PONG, bufferData));
+        sendLock.lock();
+        try {
+            return sendLocked(ServerWsFrame.control(WsOpCode.PONG, bufferData));
+        } finally {
+            sendLock.unlock();
+        }
     }
 
     @Override
     public WsSession close(int code, String reason) {
-        closeSent = true;
-        byte[] reasonBytes = reason.getBytes(StandardCharsets.UTF_8);
-        BufferData bufferData = BufferData.create(2 + reasonBytes.length);
-        bufferData.writeInt16(code);
-        bufferData.write(reasonBytes);
+        if (!closeSent.compareAndSet(false, true)) {
+            return this;
+        }
 
-        return send(ServerWsFrame.control(WsOpCode.CLOSE, bufferData));
+        sendLock.lock();
+        try {
+            byte[] reasonBytes = reason.getBytes(StandardCharsets.UTF_8);
+            BufferData bufferData = BufferData.create(2 + reasonBytes.length);
+            bufferData.writeInt16(code);
+            bufferData.write(reasonBytes);
+
+            return sendLocked(ServerWsFrame.control(WsOpCode.CLOSE, bufferData));
+        } finally {
+            sendLock.unlock();
+        }
     }
 
     @Override
@@ -284,7 +312,7 @@ public class WsConnection implements ServerConnection, WsSession {
                 }
             }
             listener.onClose(this, status, reason);
-            if (!closeSent) {
+            if (!closeSent.get()) {
                 close(WsCloseCodes.NORMAL_CLOSE, "normal");
             }
             return false;
@@ -307,7 +335,7 @@ public class WsConnection implements ServerConnection, WsSession {
         }
     }
 
-    private WsSession send(ServerWsFrame frame) {
+    private WsSession sendLocked(ServerWsFrame frame) {
         WsOpCode usedCode = frame.opCode();
         if (frame.isPayload()) {
             // check if continuation or set continuation
@@ -344,8 +372,16 @@ public class WsConnection implements ServerConnection, WsSession {
             }
         }
         sendBuffer.write(frame.payloadData());
-        ctx.dataWriter().writeNow(sendBuffer);
+        writeFrame(sendBuffer);
         return this;
+    }
+
+    private void writeFrame(BufferData frameData) {
+        try {
+            ctx.dataWriter().writeNow(frameData);
+        } catch (UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write websocket frame", e);
+        }
     }
 
     private enum ContinuationType {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
@@ -47,6 +48,7 @@ import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.ServerResponseBase;
 import io.helidon.webserver.http.spi.Sink;
@@ -118,7 +120,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             // A 204 response is terminated by the end of the header section; it cannot contain content or trailers
             // ditto for 205, and 304
             if ((headers.contains(HeaderNames.CONTENT_LENGTH) && !headers.contains(HeaderValues.CONTENT_LENGTH_ZERO))
-                         || headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                         || headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
                 status = noEntityInternalError(status);
             }
         }
@@ -143,12 +145,16 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         // either content-length or chunked encoding
         // if content length - make sure to compare it when writing actual entity (streaming and send(entity))
-        if (keepAlive) {
-            headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
-        } else {
+        if (!keepAlive) {
             // we must override even if user sets keep alive, as close was requested
             headers.set(HeaderValues.CONNECTION_CLOSE);
         }
+        /*
+        RFC 9112, Section 9.3. HTTP/1.1 makes persistence the default: if the message is HTTP/1.1 and th
+        ere is no Connection: close, the connection remains persistent after the response. The same section says a se
+        rver that does not support persistent connections must send Connection: close in responses. It does not requi
+        re Connection: keep-alive for normal HTTP/1.1 responses. (rfc-editor.org(https://www.rfc-editor.org/rfc/rfc9112.html))
+         */
 
         // write headers followed by empty line
         writeHeaders(headers, buffer, validateHeaders);
@@ -213,7 +219,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             bytesWritten = bufferData.available();
             isSent = true;
             request.reset();
-            dataWriter.write(bufferData);
+            writeResponse(dataWriter, bufferData, "Failed to write response");
             afterSend();
         } else {
             // we should skip encoders if no data is written (e.g. for GZIP)
@@ -254,7 +260,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
     @Override
     public ServerResponseTrailers trailers() {
-        if (request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER)) {
+        if (request.headers().containsToken(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER)) {
             return trailers;
         }
         throw new IllegalStateException(
@@ -308,31 +314,31 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
         for (SinkProvider<?> p : SINK_PROVIDERS) {
             if (p.supports(sinkType, request)) {
-                try {
-                    return (X) p.create(new SinkProviderContext() {
-                        @Override
-                        public ServerResponse serverResponse() {
-                            return Http1ServerResponse.this;
-                        }
+                return (X) p.create(new SinkProviderContext() {
+                    @Override
+                    public ServerResponse serverResponse() {
+                        return Http1ServerResponse.this;
+                    }
 
-                        @Override
-                        public ConnectionContext connectionContext() {
-                            return Http1ServerResponse.this.ctx;
-                        }
+                    @Override
+                    public ServerRequest serverRequest() {
+                        return Http1ServerResponse.this.request;
+                    }
 
-                        @Override
-                        public Runnable closeRunnable() {
-                            return () -> {
-                                Http1ServerResponse.this.isSent = true;
-                                afterSend();
-                                request.reset();
-                            };
-                        }
-                    });
-                } catch (UnsupportedOperationException e) {
-                    // deprecated - will be removed in 5.x
-                    return (X) p.create(this, this::handleSinkData, this::commit);
-                }
+                    @Override
+                    public ConnectionContext connectionContext() {
+                        return Http1ServerResponse.this.ctx;
+                    }
+
+                    @Override
+                    public Runnable closeRunnable() {
+                        return () -> {
+                            Http1ServerResponse.this.isSent = true;
+                            afterSend();
+                            request.reset();
+                        };
+                    }
+                });
             }
         }
         // Request not acceptable if provider not found
@@ -391,6 +397,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
     }
 
+    private static void writeResponse(DataWriter dataWriter, BufferData bufferData, String message) {
+        try {
+            dataWriter.write(bufferData);
+        } catch (SocketWriterException | UncheckedIOException e) {
+            throw new ServerConnectionException(message, e);
+        }
+    }
+
     private BufferData responseBuffer(byte[] bytes) {
         return responseBuffer(bytes, 0, bytes.length);
     }
@@ -405,9 +419,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
 
         boolean forcedChunkedEncoding = false;
-        headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
 
-        if (headers.contains(HeaderNames.TRANSFER_ENCODING) && headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        if (headers.contains(HeaderNames.TRANSFER_ENCODING) && headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             headers.remove(HeaderNames.CONTENT_LENGTH);
             // chunked enforced (and even if empty entity, will be used)
             forcedChunkedEncoding = true;
@@ -477,6 +490,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             bos.checkResponseHeaders();     // headers can be augmented by encoders
         }
         return outputStreamFilter == null ? encodedOutputStream : outputStreamFilter.apply(encodedOutputStream);
+    }
+
+    boolean keepConnectionOpen() {
+        return keepAlive && !headers.containsToken(HeaderValues.CONNECTION_CLOSE);
     }
 
     private static Status noEntityInternalError(Status status) {
@@ -554,7 +571,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 forcedChunked = true;
             } else {
                 isChunked = !headers.contains(HeaderNames.CONTENT_LENGTH);
-                forcedChunked = headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                forcedChunked = headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED);
             }
         }
 
@@ -613,7 +630,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             this.closed = true;
             boolean sendTrailers =
                     (isChunked || forcedChunked)
-                    && (request.headers().contains(HeaderValues.TE_TRAILERS)
+                    && (request.headers().containsToken(HeaderValues.TE_TRAILERS)
                                 || headers.contains(HeaderNames.TRAILER));
 
             if (firstByte) {
@@ -639,7 +656,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 writeHeaders(trailers, buffer, this.validateHeaders);
                 buffer.write('\r');        // "\r\n" - empty line after headers
                 buffer.write('\n');
-                dataWriter.write(buffer);
+                writeResponse(dataWriter, buffer, "Failed to write response trailers");
             }
 
             responseCloseRunnable.run();
@@ -675,7 +692,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private void terminatingChunk(boolean trailers) {
             BufferData terminatingChunk = BufferData.create(trailers ? TERMINATING_CHUNK_TRAILERS : TERMINATING_CHUNK);
             sendListener.data(ctx, terminatingChunk);
-            dataWriter.write(terminatingChunk);
+            writeResponse(dataWriter, terminatingChunk, "Failed to write terminating chunk");
         }
 
         private void write(BufferData buffer) throws IOException {
@@ -702,7 +719,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                     // write single buffer headers and payload part
                     growing.write(buffer);
                     responseBytesTotal += growing.available();
-                    dataWriter.write(growing);
+                    writeResponse(dataWriter, growing, "Failed to write response");
                 } else {
                     // if not chunked, always write
                     writeContent(buffer);
@@ -718,7 +735,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             if (firstByte) {
-                if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
+                if (request.headers().containsToken(HeaderValues.TE_TRAILERS)) {
                     // proper stream with multiple buffers, write status amd headers
                     headers.add(STREAM_TRAILERS);
                 }
@@ -764,7 +781,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
             sendListener.data(ctx, bufferData);
             responseBytesTotal += bufferData.available();
-            dataWriter.write(bufferData);
+            writeResponse(dataWriter, bufferData, "Failed to write response");
         }
 
         private void sendHeadersAndPrepare() {
@@ -778,7 +795,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                     headers.set(HeaderValues.TRANSFER_ENCODING_CHUNKED);
                 } else {
                     // Add chunked encoding, if it's not part of existing transfer-encoding headers
-                    if (!headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                    if (!headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
                         headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
                     }
                 }
@@ -792,7 +809,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             nonEntityBytes(headers, usedStatus, bufferData, keepAlive, validateHeaders);
             sendListener.data(ctx, bufferData);
             responseBytesTotal += bufferData.available();
-            dataWriter.write(bufferData);
+            writeResponse(dataWriter, bufferData, "Failed to write response headers");
         }
 
         private void writeChunked(BufferData buffer) {
@@ -809,7 +826,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
             sendListener.data(ctx, toWrite);
             responseBytesTotal += toWrite.available();
-            dataWriter.write(toWrite);
+            writeResponse(dataWriter, toWrite, "Failed to write chunked response data");
         }
 
         private void checkContentLength(BufferData ignored) throws IOException {
@@ -825,7 +842,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             checkContentLength(buffer);
             sendListener.data(ctx, buffer);
             responseBytesTotal += buffer.available();
-            dataWriter.write(buffer);
+            writeResponse(dataWriter, buffer, "Failed to write response content");
         }
     }
 
@@ -873,7 +890,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             closingDelegate.closing();     // inform of imminent call to close for last flush
             try {
                 delegate.close();
-            } catch (IOException | UncheckedIOException e) {
+            } catch (IOException | UncheckedIOException | SocketWriterException e) {
                 throw new ServerConnectionException("Failed to close server output stream", e);
             }
         }
@@ -886,7 +903,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             try {
                 flush();
                 closingDelegate.commit();
-            } catch (IOException | UncheckedIOException e) {
+            } catch (IOException | UncheckedIOException | SocketWriterException e) {
                 throw new ServerConnectionException("Failed to flush server output stream", e);
             }
         }

@@ -44,12 +44,23 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                            Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
+        this(http2Client, delegate, method, clientUri, properties, null);
+    }
+
+    private Http2ClientRequestImpl(Http2ClientImpl http2Client,
+                                   FullClientRequest<?> delegate,
+                                   Method method,
+                                   ClientUri clientUri,
+                                   Map<String, String> properties,
+                                   ClientUri redirectSourceUri) {
         super(http2Client.clientConfig(),
                 http2Client.webClient().cookieManager(),
                 Http2Client.PROTOCOL_ID,
                 method,
                 clientUri,
-                properties);
+                null,
+                properties,
+                redirectSourceUri);
 
         this.http2Client = http2Client;
         Http2ClientProtocolConfig protocolConfig = http2Client.protocolConfig();
@@ -61,7 +72,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                            Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
-        this(request.http2Client, request.delegate, method, clientUri, properties);
+        this(request.http2Client, request.delegate, method, clientUri, properties, request.resolvedUri());
 
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
@@ -157,6 +168,10 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
 
     boolean outputStreamRedirect() {
         return outputStreamRedirect;
+    }
+
+    void sanitizeRedirectHeaders(ClientUri requestUri, ClientRequestHeaders requestHeaders) {
+        super.sanitizeRedirectSensitiveHeaders(requestUri, requestHeaders);
     }
 
     Http2ClientResponseImpl invokeEntity(Object entity) {

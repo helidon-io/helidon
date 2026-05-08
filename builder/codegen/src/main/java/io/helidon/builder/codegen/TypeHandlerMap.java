@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ class TypeHandlerMap extends TypeHandlerContainer {
             method.addContentLine(configGet(optionConfigured) + ".detach().asMap().ifPresent(this::" + optionName + ");");
         } else if (optionConfigured.traverse()) {
             method.addContent(configGet(optionConfigured) + ".detach().traverse().filter(")
-                    .addContent(Types.COMMON_CONFIG)
+                    .addContent(Types.CONFIG)
                     .addContent("::hasValue).forEach(node -> "
                                         + optionName + ".put(node.get(\"name\").asString().orElse(node.key().toString()), node");
             generateFromConfig(method);

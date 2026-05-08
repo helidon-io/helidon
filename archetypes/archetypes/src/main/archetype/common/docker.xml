@@ -39,12 +39,6 @@
                                 <include>src/*/resources/META-INF/**/*.mustache</include>
                             </includes>
                         </templates>
-                        <files if="${flavor} == 'mp' &amp;&amp; ${media.json-lib} == 'jackson'">
-                            <directory>files</directory>
-                            <includes>
-                                <include>src/**/native-image/**/resource-config.json</include>
-                            </includes>
-                        </files>
                     </output>
                 </boolean>
                 <boolean id="jlink-image" name="JLink Support"
@@ -146,10 +140,6 @@ mvn package -Pjlink-image -Djlink.image.addClassDataSharingArchive=false
 For more information on available configuration options see the helidon-maven-plugin documentation.
                                 ]]>
                         </value>
-                    </list>
-                    <list key="docker-phase1-options" if="${flavor} == 'mp'">
-                        <value>-Declipselink.weave.skip</value>
-                        <value>-DskipOpenApiGenerate</value>
                     </list>
                 </model>
             </output>

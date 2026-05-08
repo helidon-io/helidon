@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package io.helidon.validation.tests.validation;
 
+import java.math.BigDecimal;
+
 import io.helidon.validation.Validation;
 
 @Validation.Validated
 record ValidatedType(@Validation.String.Pattern(".*test.*") String first,
-                     @Validation.Integer.Min(42) int second) {
+                     @Validation.Integer.Min(42) int second,
+                     @Validation.Number.MultipleOf("0.05") BigDecimal third) {
 
 }

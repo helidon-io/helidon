@@ -1,0 +1,19 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.AcmeCollisionConfig",
+        "standalone": true,
+        "prefix": "config_reference.child",
+        "description": "Collision configuration."
+      },
+      {
+        "type": "com.acme.AcmeNestedCollisionConfig",
+        "standalone": true,
+        "prefix": "config.reference.child",
+        "description": "Nested collision configuration."
+      }
+    ]
+  }
+]

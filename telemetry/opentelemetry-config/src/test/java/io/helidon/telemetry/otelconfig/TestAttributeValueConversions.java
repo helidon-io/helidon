@@ -22,13 +22,8 @@ import java.util.stream.Stream;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.testing.junit5.Testing;
 
 import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.sdk.metrics.export.MetricExporter;
-import io.opentelemetry.sdk.metrics.export.MetricReader;
-import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -94,11 +89,11 @@ class TestAttributeValueConversions {
             .prototype();
 
     static final OpenTelemetryTracingConfig tracingConfig = openTelemetryConfig
-            .tracingConfig()
+            .tracing()
             .get();
 
     static final OpenTelemetryMetricsConfig metricsConfig = openTelemetryConfig
-            .metricsConfig()
+            .metrics()
             .get();
 
     static final Map<AttributeKey<?>, Object> tracingAttrs = tracingConfig.tracingBuilderInfo()

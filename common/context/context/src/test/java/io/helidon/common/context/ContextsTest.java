@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
@@ -205,25 +206,78 @@ class ContextsTest {
                 assertThat(firstLevelContext.get("second", String.class), is(TEST_STRING_OPTIONAL));
             });
 
-            assertThat(myContext.get("global", String.class), is(TEST_STRING_OPTIONAL));
-            assertThat(myContext.get("topLevel", String.class), is(TEST_STRING_OPTIONAL));
-            assertThat(myContext.get("first", String.class), is(TEST_STRING_OPTIONAL));
+            Context restoredContext = Contexts.context().get();
+            assertThat(restoredContext, sameInstance(myContext));
+            assertThat(restoredContext.get("global", String.class), is(TEST_STRING_OPTIONAL));
+            assertThat(restoredContext.get("topLevel", String.class), is(TEST_STRING_OPTIONAL));
+            assertThat(restoredContext.get("first", String.class), is(TEST_STRING_OPTIONAL));
         });
     }
 
     @Test
-    void testClear() {
+    void testContextClearedAfterScope() {
         Context topLevel = Context.create();
         topLevel.register("topLevel", TEST_STRING);
         topLevel.register("first", TEST_STRING);
 
-        Contexts.push(topLevel);
+        Contexts.runInContext(topLevel, () -> {
+            Context myContext = Contexts.context().get();
+            assertThat(myContext.get("topLevel", String.class), is(TEST_STRING_OPTIONAL));
+            assertThat(myContext.get("first", String.class), is(TEST_STRING_OPTIONAL));
+        });
 
-        Context myContext = Contexts.context().get();
-        assertThat(myContext.get("topLevel", String.class), is(TEST_STRING_OPTIONAL));
-        assertThat(myContext.get("first", String.class), is(TEST_STRING_OPTIONAL));
+        assertThat(Contexts.context(), is(Optional.empty()));
+    }
 
-        Contexts.clear();
+    @Test
+    void testContextClearedAfterRunnableException() {
+        Context topLevel = Context.create();
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                       () -> Contexts.runInContext(topLevel, () -> {
+                                                           assertThat(Contexts.context().get(), sameInstance(topLevel));
+                                                           throw new IllegalStateException("expected");
+                                                       }));
+
+        assertThat(exception.getMessage(), is("expected"));
+        assertThat(Contexts.context(), is(Optional.empty()));
+    }
+
+    @Test
+    void testContextRestoredAfterCallableException() {
+        Context topLevel = Context.create();
+        Context firstLevel = Context.create(topLevel);
+
+        Contexts.runInContext(topLevel, () -> {
+            ExecutorException exception = assertThrows(ExecutorException.class,
+                                                       () -> Contexts.runInContext(firstLevel, () -> {
+                                                           assertThat(Contexts.context().get(), sameInstance(firstLevel));
+                                                           throw new Exception("expected");
+                                                       }));
+
+            assertThat(exception.getMessage(), is("Callable.call failed"));
+            assertThat(exception.getCause().getMessage(), is("expected"));
+            assertThat(Contexts.context().get(), sameInstance(topLevel));
+        });
+
+        assertThat(Contexts.context(), is(Optional.empty()));
+    }
+
+    @Test
+    void testContextRestoredAfterCallableWithThrowException() {
+        Context topLevel = Context.create();
+        Context firstLevel = Context.create(topLevel);
+
+        Contexts.runInContext(topLevel, () -> {
+            Exception exception = assertThrows(Exception.class,
+                                               () -> Contexts.runInContextWithThrow(firstLevel, () -> {
+                                                   assertThat(Contexts.context().get(), sameInstance(firstLevel));
+                                                   throw new Exception("expected");
+                                               }));
+
+            assertThat(exception.getMessage(), is("expected"));
+            assertThat(Contexts.context().get(), sameInstance(topLevel));
+        });
 
         assertThat(Contexts.context(), is(Optional.empty()));
     }

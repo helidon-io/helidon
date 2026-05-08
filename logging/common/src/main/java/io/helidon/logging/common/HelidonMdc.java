@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import io.helidon.logging.common.spi.MdcProvider;
  * but also manages its own map of key/supplier pairs. Helidon resolves each lookup using that map
  * if possible, delegating a look-up to the loaded MDC providers only if there is no supplier for a key.
  */
-public class HelidonMdc {
+public final class HelidonMdc {
 
     private static final List<MdcProvider> MDC_PROVIDERS = HelidonServiceLoader
             .builder(ServiceLoader.load(MdcProvider.class)).build().asList();
@@ -44,7 +44,6 @@ public class HelidonMdc {
     private static final ThreadLocal<Map<String, Supplier<String>>> SUPPLIERS = ThreadLocal.withInitial(HashMap::new);
 
     private HelidonMdc() {
-        throw new UnsupportedOperationException("This class cannot be instantiated");
     }
 
     /**

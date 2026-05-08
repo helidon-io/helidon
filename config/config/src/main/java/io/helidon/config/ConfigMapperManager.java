@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,8 @@ class ConfigMapperManager implements ConfigMapper {
 
     @Override
     public <T> T map(Config config, GenericType<T> type) throws MissingValueException, ConfigMappingException {
-        Mapper<?> mapper = mappers.computeIfAbsent(type, theType -> findMapper(theType, config.key()));
+        GenericType<T> supportedType = supportedType(type);
+        Mapper<?> mapper = mappers.computeIfAbsent(supportedType, theType -> findMapper(theType, config.key()));
 
         return cast(type, mapper.apply(config, this), config.key());
     }
@@ -128,6 +129,18 @@ class ConfigMapperManager implements ConfigMapper {
     @SuppressWarnings("unchecked")
     public static <T> Class<T> supportedType(Class<T> type) {
         return (Class<T>) REPLACED_TYPES.getOrDefault(type, type);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static <T> GenericType<T> supportedType(GenericType<T> type) {
+        if (!type.isClass()) {
+            return type;
+        }
+        Class<?> rawType = type.rawType();
+        if (!rawType.isPrimitive()) {
+            return type;
+        }
+        return (GenericType<T>) GenericType.create(supportedType((Class) rawType));
     }
 
     Config simpleConfig(String name, String stringValue) {

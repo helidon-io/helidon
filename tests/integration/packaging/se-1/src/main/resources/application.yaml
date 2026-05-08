@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,18 +20,26 @@ app:
 server:
   port: 7076
   host: 0.0.0.0
+  features:
+    observe:
+      observers:
+        tracing:
+          paths:
+            # The in-process mock OTLP collector must not trace its own export traffic.
+            - path: "/otlp/*"
+              enabled: false
 
 tracing:
   service: "helidon-se"
+  global: false
   protocol: "http"
   host: "localhost"
   port: "${server.port}"
-  api-version: 2
-  # mocked zipkin
-  path: "/zipkin/api/v2/spans"
+  exporter-type: "http/proto"
+  span-processor-type: "simple"
+  # mocked OTLP/HTTP collector
+  path: "/otlp/v1/traces"
 
 client:
   follow-redirects: true
   max-redirects: 5
-  services:
-    tracing:

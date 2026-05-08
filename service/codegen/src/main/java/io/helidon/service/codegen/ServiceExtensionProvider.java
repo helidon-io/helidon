@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.codegen.Option;
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.codegen.spi.InjectCodegenObserverProvider;
@@ -32,7 +33,6 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_DESCRIBE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PER_INSTANCE;
-import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_SCOPE;
 
 /**
@@ -46,11 +46,9 @@ public class ServiceExtensionProvider implements RegistryCodegenExtensionProvide
                     .asList();
 
     /**
-     * Required default constructor for {@link java.util.ServiceLoader}.
-     *
-     * @deprecated only for {@link java.util.ServiceLoader}
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public ServiceExtensionProvider() {
     }
 
@@ -67,8 +65,7 @@ public class ServiceExtensionProvider implements RegistryCodegenExtensionProvide
 
     @Override
     public Set<TypeName> supportedAnnotations() {
-        return Set.of(SERVICE_ANNOTATION_PROVIDER,
-                      SERVICE_ANNOTATION_DESCRIBE,
+        return Set.of(SERVICE_ANNOTATION_DESCRIBE,
                       SERVICE_ANNOTATION_PER_INSTANCE,
                       SERVICE_ANNOTATION_INJECT);
     }

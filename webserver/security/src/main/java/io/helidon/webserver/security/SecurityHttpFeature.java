@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.http.ForbiddenException;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatchers;
@@ -134,14 +134,12 @@ public final class SecurityHttpFeature implements HttpSecurity, HttpFeature, Wei
     }
 
     /**
-     * Create a consumer of routing config to be
-     * {@link io.helidon.webserver.http.HttpRouting.Builder#addFeature(java.util.function.Supplier)  registered} with
-     * web server routing to process security requests.
+     * Create a security HTTP feature.
      * This method configures security and web server integration from a config instance.
      *
      * @param config on the node of the server configuration of security (expects {@code paths} for example),
      *               configuration of security is expected under root node {@code security}
-     * @return routing config consumer
+     * @return security HTTP feature
      */
     public static SecurityHttpFeature create(Config config) {
         return SecurityFeature.builder()

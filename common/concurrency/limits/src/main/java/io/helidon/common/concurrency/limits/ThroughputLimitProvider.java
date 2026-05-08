@@ -18,7 +18,7 @@ package io.helidon.common.concurrency.limits;
 
 import io.helidon.common.Weight;
 import io.helidon.common.concurrency.limits.spi.LimitProvider;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * {@link java.util.ServiceLoader} service provider for {@link ThroughputLimit}

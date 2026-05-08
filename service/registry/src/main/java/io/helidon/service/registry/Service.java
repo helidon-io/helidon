@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
@@ -37,54 +38,6 @@ import io.helidon.common.types.TypeName;
  */
 public final class Service {
     private Service() {
-    }
-
-    /**
-     * A service provider. This is similar to {@link java.util.ServiceLoader} service providers.
-     * <p>
-     * The provider is an implementation of a {@link io.helidon.service.registry.Service.Contract} that is discoverable by
-     * the service registry.
-     * A service provider annotated with this annotation must provide either of:
-     * <ul>
-     *     <li>an accessible no-argument constructor
-     *      (package private is sufficient), and must itself be at least package private</li>
-     *      <li>an accessible constructor with arguments that are all services as well</li>
-     * </ul>
-     *
-     * The support for providing constructor arguments is limited to the following types:
-     * <ul>
-     *     <li>{@code Contract} - obtain an instance of a service providing that contract</li>
-     *     <li>{@code Optional<Contract>} - the other service may not be available</li>
-     *     <li>{@code List<Contract>} - obtain all instances of services providing the contract</li>
-     *     <li>{@code Supplier<Contract>} - and <b>suppliers of all above</b>, to break instantiation chaining, and to support
-     *     cyclic
-     *                  service references, just make sure you call the {@code get} method outside of the constructor</li>
-     * </ul>
-     *
-     * A service provider may implement the contract in two ways:
-     * <ul>
-     *     <li>Direct implementation of interface (or extending an abstract class)</li>
-     *     <li>Implementing a {@link java.util.function.Supplier} of the contract; when using supplier, service registry
-     *     supports the capability to return {@link java.util.Optional} in case the service cannot provide a value; such
-     *     a service will be ignored and only other implementations (with lower weight) would be used. Supplier will be
-     *     called each time the dependency is used, or each time a method on registry is called to request an instance. If the
-     *     provided instance should be singleton-like as well, use {@link io.helidon.common.LazyValue} or
-     *     similar approach to create it once and return the same instance every time</li>
-     * </ul>
-     *
-     * @deprecated use one of the scope annotations instead ({@link io.helidon.service.registry.Service.Singleton},
-     *         {@link io.helidon.service.registry.Service.PerLookup}).
-     */
-    @Documented
-    @Retention(RetentionPolicy.CLASS)
-    @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
-    @Inherited
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    public @interface Provider {
-        /**
-         * Type name of this annotation.
-         */
-        TypeName TYPE = TypeName.create(Provider.class);
     }
 
     /**
@@ -126,11 +79,14 @@ public final class Service {
      * Injections to different scopes are supported, but must be through a {@link java.util.function.Supplier},
      * as we do not provide a proxy mechanism for instances.
      * <p>
-     * Request scope is not started by default. If you want to use request scope, you can add the following
-     * library to your classpath to add support for it:
-     * <ul>
-     *     <li>{@code io.helidon.declarative.webserver:helidon-declarative-webserver-request-scope}</li>
-     * </ul>
+     * Request scope is not enabled by default in the Webserver. To do so, enable the feature
+     * as follows:
+     * <pre>
+     * server:
+     *   features:
+     *     request-scope:
+     *       enabled: true
+     * </pre>
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
@@ -217,7 +173,7 @@ public final class Service {
      * qualified by the same qualifier.
      */
     @Target(ElementType.ANNOTATION_TYPE)
-    @Retention(RetentionPolicy.RUNTIME) // we need this for our CDI integration
+    @Retention(RetentionPolicy.RUNTIME)
     @Documented
     public @interface Qualifier {
     }
@@ -226,7 +182,6 @@ public final class Service {
      * A qualifier that can restrict injection to specifically named instances, or that qualifies services with that name.
      */
     @Qualifier
-    // we need runtime retention policy to correctly handle CDI integration
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD, ElementType.TYPE})
@@ -277,7 +232,7 @@ public final class Service {
 
     /**
      * Indicates the desired startup sequence for a service class.
-     *
+     * <p>
      * Helidon honors run levels only when using one of the start methods on
      * {@link io.helidon.service.registry.ServiceRegistryManager}:
      * <ul>
@@ -509,11 +464,9 @@ public final class Service {
      * <p>
      * This annotation is used by framework developers that need to extend the set of entry points of an
      * application.
-     *
-     * @deprecated this API is part of incubating features of Helidon. This API may change including backward incompatible changes
-     *               and full removal. We welcome feedback for incubating features.
      */
-    @Deprecated
+    @Api.Incubating
+    @Api.Since("4.3.0")
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
     public @interface EntryPoint {

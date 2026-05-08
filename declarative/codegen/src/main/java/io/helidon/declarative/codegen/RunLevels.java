@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ public final class RunLevels {
      */
     public static final double DATA = 25D;
     /**
-     * Messaging and similar (JMS, Kafka).
+     * Messaging and similar (JMS).
      */
     public static final double MESSAGING = 30D;
     /**

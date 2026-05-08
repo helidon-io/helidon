@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,10 @@ import java.sql.ResultSetMetaData;
 import java.sql.Types;
 import java.util.Optional;
 
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.mapper.Value;
 import io.helidon.dbclient.DbColumn;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.Test;
 
@@ -47,7 +48,7 @@ class JdbcColumnTest {
                 .thenReturn(String.class.getName());
 
         JdbcColumn.MetaData metaData = JdbcColumn.MetaData.create(rsmd, 1);
-        DbColumn col = JdbcColumn.create(rs, metaData, MapperManager.global(), 1);
+        DbColumn col = JdbcColumn.create(rs, metaData, Services.get(Mappers.class), 1);
 
         assertThat(col.asOptional(), is(Optional.empty()));
         assertThat(col.as(String.class).asOptional(), is(Optional.empty()));
@@ -69,7 +70,7 @@ class JdbcColumnTest {
                 .thenReturn(String.class.getName());
 
         JdbcColumn.MetaData metaData = JdbcColumn.MetaData.create(rsmd, 1);
-        DbColumn col = JdbcColumn.create(rs, metaData, MapperManager.global(), 1);
+        DbColumn col = JdbcColumn.create(rs, metaData, Services.get(Mappers.class), 1);
 
         assertThat(col.asOptional(), is(Optional.of("value")));
         assertThat(col.get(), is("value"));

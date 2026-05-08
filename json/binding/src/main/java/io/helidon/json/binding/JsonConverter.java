@@ -16,11 +16,14 @@
 
 package io.helidon.json.binding;
 
+import io.helidon.common.Api;
+
 /**
  * A combined JSON serializer and deserializer for a specific type.
  *
  * @param <T> the type this converter handles
  */
+@Api.Preview
 public interface JsonConverter<T> extends JsonDeserializer<T>, JsonSerializer<T> {
 
 }

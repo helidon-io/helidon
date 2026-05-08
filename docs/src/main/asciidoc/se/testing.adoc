@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Usage, Usage>>
 - <<Examples, Examples>>
 - <<Virtual Threads, Virtual Threads>>
+- <<Service Registry, Service Registry>>
 - <<Additional Information, Additional Information>>
 - <<Reference, Reference>>
 
@@ -238,6 +239,31 @@ include::{sourcedir}/se/TestingSnippets.java[tag=snippet_7, indent=0]
 <1> Change pinning threshold from default(20) to 50 milliseconds.
 
 When pinning is detected, test fails with stacktrace pointing to the line of code causing it.
+
+== Service Registry
+
+Tests that use `ServiceRegistry`, or that test components that needs access to it isolated from other test (such as when using
+`Services.get(Config.class)`), or that need instances from the `ServiceRegistry` injected as constructor or method parameters
+can do so by using our testing module.
+
+The JUnit5 testing module ensures that a global service registry is created that will be
+unique for the test class, and that adds an extension that can provide parameters from the `ServiceRegistry`.
+
+Required dependency:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.testing</groupId>
+    <artifactId>helidon-testing-junit5</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+To add the extension to your test class, annotate the class with `@io.helidon.testing.junit5.Testing.Test`.
+In case you use one of the existing testing annotation for server or routing (`@ServerTest`, `@RoutingTest), this is implied.
+
+You can also use `@Service.Named` qualifier on such parameters to only inject the named instance(s).
 
 == Additional Information
 

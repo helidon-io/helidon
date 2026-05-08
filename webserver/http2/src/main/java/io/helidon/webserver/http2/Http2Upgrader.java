@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http2;
 
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -29,6 +30,7 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.spi.ServerConnection;
@@ -97,9 +99,16 @@ public class Http2Upgrader implements Http1Upgrader {
 
         connection.upgradeConnectionData(newPrologue, http2Headers);
         connection.expectPreface();
-        DataWriter dataWriter = ctx.dataWriter();
-        dataWriter.writeNow(BufferData.create(SWITCHING_PROTOCOLS_BYTES));
+        writeUpgradeResponse(ctx.dataWriter());
         return connection;
+    }
+
+    private static void writeUpgradeResponse(DataWriter dataWriter) {
+        try {
+            dataWriter.writeNow(BufferData.create(SWITCHING_PROTOCOLS_BYTES));
+        } catch (UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write HTTP/2 upgrade response", e);
+        }
     }
 
     /**

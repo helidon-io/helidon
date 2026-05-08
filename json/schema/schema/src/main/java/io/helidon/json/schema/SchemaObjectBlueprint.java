@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.metadata.hson.Hson;
+import io.helidon.json.JsonObject;
 
 /**
  * Json schema related to the objects.
@@ -126,7 +126,7 @@ interface SchemaObjectBlueprint extends SchemaItemBlueprint {
     SchemaType schemaType();
 
     @Override
-    default void generate(Hson.Struct.Builder builder) {
+    default void generate(JsonObject.Builder builder) {
         SchemaItemBlueprint.super.generate(builder);
         maxProperties().ifPresent(maxProperties -> builder.set("maxProperties", maxProperties));
         minProperties().ifPresent(minProperties -> builder.set("minProperties", minProperties));
@@ -135,10 +135,10 @@ interface SchemaObjectBlueprint extends SchemaItemBlueprint {
         Set<String> requiredProperties = new HashSet<>();
         Map<String, SchemaItem> properties = properties();
         if (!properties.isEmpty()) {
-            Hson.Struct.Builder objectBuilder = Hson.structBuilder();
+            JsonObject.Builder objectBuilder = JsonObject.builder();
             for (Map.Entry<String, SchemaItem> entry : properties.entrySet()) {
                 SchemaItem schemaItem = entry.getValue();
-                Hson.Struct.Builder itemBuilder = Hson.structBuilder();
+                JsonObject.Builder itemBuilder = JsonObject.builder();
                 schemaItem.generate(itemBuilder);
                 objectBuilder.set(entry.getKey(), itemBuilder.build());
                 if (schemaItem.required()) {

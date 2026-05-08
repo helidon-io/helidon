@@ -28,21 +28,19 @@ import java.util.function.Supplier;
 
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.socket.SocketOptions;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.cors.CrossOriginConfig;
 import io.helidon.http.SetCookie;
 import io.helidon.http.media.MediaContext;
-import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.http.media.json.JsonSupport;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
 import io.helidon.security.util.TokenHandler;
-import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientConfig;
 import io.helidon.webclient.http1.Http1Client;
@@ -95,28 +93,6 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <th>description</th>
  * </tr>
  * <tr>
- *     <td>proxy-protocol</td>
- *     <td>http</td>
- *     <td>Proxy protocol to use when proxy is used.</td>
- * </tr>
- * <tr>
- *     <td>proxy-host</td>
- *     <td>null</td>
- *     <td>Proxy host to use. When defined, triggers usage of proxy for HTTP requests.</td>
- * </tr>
- * <tr>
- *     <td>proxy-port</td>
- *     <td>80</td>
- *     <td>Port of the proxy server to use</td>
- * </tr>
- * <tr>
- *     <td>relative-uris</td>
- *     <td>false</td>
- *     <td>Flag to force the use of relative URIs in all requests. By default,
- *          requests that use the Proxy will have absolute URIs. Set this flag to
- *          true if the host is unable to accept absolute URIs.</td>
- * </tr>
- * <tr>
  *     <td>redirect-uri</td>
  *     <td>/oidc/redirect</td>
  *     <td>URI to register web server component on, used by the OIDC server to
@@ -128,6 +104,12 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>empty string</td>
  *     <td>Audience of the scope required by this application. This is prefixed to
  *          the scope name when requesting scopes from the identity server.</td>
+ * </tr>
+ * <tr>
+ *     <td>webclient.*</td>
+ *     <td>&nbsp;</td>
+ *     <td>WebClient configuration used for outbound calls to the identity server, including proxy and relative-URI
+ *          handling.</td>
  * </tr>
  * <tr>
  *     <td>cookie-use</td>
@@ -205,7 +187,7 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>oidc-metadata.resource</td>
  *     <td>identity-uri/.well-known/openid-configuration</td>
  *     <td>Resource configuration for OIDC Metadata containing endpoints to various identity services, as well as information
- *     about the identity server. See {@link Resource#create(io.helidon.common.config.Config)}</td>
+ *     about the identity server. See {@link Resource#create(io.helidon.config.Config)}</td>
  * </tr>
  * <tr>
  *     <td>token-endpoint-uri</td>
@@ -228,7 +210,7 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>"jwks-uri" in OIDC metadata, or identity-uri/admin/v1/SigningCert/jwk if not available, only needed
  *              when jwt validation is done by us</td>
  *     <td>A resource pointing to JWK with public keys of signing certificates used to validate JWT.
- *     See {@link Resource#create(io.helidon.common.config.Config)}</td>
+ *     See {@link Resource#create(io.helidon.config.Config)}</td>
  * </tr>
  * <tr>
  *     <td>introspect-endpoint-uri</td>
@@ -305,11 +287,6 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>Whether logout support should be enabled. Requires encryption of cookies (and cookies must be used).</td>
  * </tr>
  * <tr>
- *     <td>{@code cors}</td>
- *     <td>&nbsp;</td>
- *     <td>Cross-origin resource sharing settings. See {@link io.helidon.cors.CrossOriginConfig}.</td>
- * </tr>
- * <tr>
  *     <td>{@code force-https-redirects}</td>
  *     <td>&nbsp;</td>
  *     <td>Force https for redirects to identity provider.
@@ -327,7 +304,6 @@ import io.helidon.webclient.tracing.WebClientTracing;
  * </tr>
  * </table>
  */
-@SuppressWarnings("removal")
 public final class OidcConfig extends TenantConfigImpl {
     /**
      * Default name of the header we expect JWT in.
@@ -368,10 +344,6 @@ public final class OidcConfig extends TenantConfigImpl {
     static final int DEFAULT_MAX_REDIRECTS = 5;
     static final boolean DEFAULT_FORCE_HTTPS_REDIRECTS = false;
     static final Duration DEFAULT_TOKEN_REFRESH_SKEW = Duration.ofSeconds(5);
-    static final boolean DEFAULT_RELATIVE_URIS = false;
-    static final int DEFAULT_PROXY_PORT = 80;
-    static final String DEFAULT_PROXY_PROTOCOL = "http";
-    static final String TENANT_IDENT = "name";
     static final String DEFAULT_PARAM_NAME = "accessToken";
     static final String DEFAULT_ID_TOKEN_PARAM_NAME = "id_token";
     static final boolean DEFAULT_PARAM_USE = false;
@@ -390,10 +362,8 @@ public final class OidcConfig extends TenantConfigImpl {
     private final String redirectAttemptParam;
     private final int maxRedirects;
     private final URI postLogoutUri;
-    private final CrossOriginConfig crossOriginConfig;
     private final boolean forceHttpsRedirects;
     private final Duration tokenRefreshSkew;
-    private final boolean relativeUris;
     private final WebClient webClient;
     private final Supplier<WebClientConfig.Builder> webClientBuilderSupplier;
     private final LazyValue<Tenant> defaultTenant;
@@ -428,12 +398,9 @@ public final class OidcConfig extends TenantConfigImpl {
         this.redirectAttemptParam = builder.redirectAttemptParam;
         this.maxRedirects = builder.maxRedirects;
         this.forceHttpsRedirects = builder.forceHttpsRedirects;
-        this.crossOriginConfig = builder.crossOriginConfig;
         this.tokenRefreshSkew = builder.tokenRefreshSkew;
         this.tenantConfigurations = Map.copyOf(builder.tenantConfigurations);
         this.webClient = builder.webClient;
-        this.relativeUris = builder.relativeUris;
-
         this.useParam = builder.useParam;
         this.paramName = builder.paramName;
         this.idTokenParamName = builder.idTokenParamName;
@@ -470,7 +437,7 @@ public final class OidcConfig extends TenantConfigImpl {
     }
 
     /**
-     * Create a new instance from {@link io.helidon.common.config.Config}.
+     * Create a new instance from {@link io.helidon.config.Config}.
      * The config instance has to be on the node containing keys used by this class (e.g. client-id).
      *
      * @param config configuration used to obtain OIDC integration values
@@ -701,33 +668,12 @@ public final class OidcConfig extends TenantConfigImpl {
     }
 
     /**
-     * Cross-origin resource sharing settings.
-     *
-     * @return CORS settings
-     */
-    public CrossOriginConfig crossOriginConfig() {
-        return crossOriginConfig;
-    }
-
-    /**
      * Amount of time access token should be refreshed before its expiration time.
      *
      * @return refresh time skew
      */
     public Duration tokenRefreshSkew() {
         return tokenRefreshSkew;
-    }
-
-    /**
-     * Determines whether to force the use of relative URIs in all requests,
-     * regardless of the presence or absence of proxies or no-proxy lists.
-     *
-     * @return {@code true} if we should use relative URIs
-     * @deprecated this option is now configured on the webclient directly
-     */
-    @Deprecated(since = "4.2.1", forRemoval = true)
-    public boolean relativeUris() {
-        return relativeUris;
     }
 
     /**
@@ -971,7 +917,6 @@ public final class OidcConfig extends TenantConfigImpl {
     /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link OidcConfig}.
      */
-    @SuppressWarnings("removal")
     @Configured(description = "Open ID Connect configuration")
     public static class Builder extends BaseBuilder<Builder, OidcConfig> {
 
@@ -987,12 +932,8 @@ public final class OidcConfig extends TenantConfigImpl {
         private String redirectAttemptParam = DEFAULT_ATTEMPT_PARAM;
         private int maxRedirects = DEFAULT_MAX_REDIRECTS;
         private URI postLogoutUri;
-        private CrossOriginConfig crossOriginConfig;
         private boolean forceHttpsRedirects = DEFAULT_FORCE_HTTPS_REDIRECTS;
         private Duration tokenRefreshSkew = DEFAULT_TOKEN_REFRESH_SKEW;
-        private String proxyHost;
-        private String proxyProtocol = DEFAULT_PROXY_PROTOCOL;
-        private int proxyPort = DEFAULT_PROXY_PORT;
         private WebClient webClient;
         private Supplier<WebClientConfig.Builder> webClientBuilderSupplier;
         private String paramName = DEFAULT_PARAM_NAME;
@@ -1025,7 +966,6 @@ public final class OidcConfig extends TenantConfigImpl {
                 .build();
         private boolean useCookie = DEFAULT_COOKIE_USE;
         private boolean cookieSameSiteDefault = true;
-        private boolean relativeUris = DEFAULT_RELATIVE_URIS;
         private boolean tokenSignatureValidation = true;
         private boolean idTokenSignatureValidation = true;
         private boolean accessTokenIpCheck = true;
@@ -1035,7 +975,7 @@ public final class OidcConfig extends TenantConfigImpl {
                 .addProtocolPreference(Http1Client.PROTOCOL_ID)
                 .mediaContext(MediaContext.builder()
                                       .mediaSupportsDiscoverServices(false)
-                                      .addMediaSupport(JsonpSupport.create(Config.empty()))
+                                      .addMediaSupport(JsonSupport.create())
                                       .build());
 
         protected Builder() {
@@ -1069,7 +1009,7 @@ public final class OidcConfig extends TenantConfigImpl {
                     String identityHost = identityUri().getHost();
                     if (frontendUri != null) {
                         String frontendHost = URI.create(frontendUri).getHost();
-                        if (identityHost.equals(frontendHost)) {
+                        if (identityHost != null && identityHost.equals(frontendHost)) {
                             LOGGER.log(Level.INFO, "As frontend host and identity host are equal, setting Same-Site policy"
                                     + " to Strict this can be overridden using configuration option of OIDC: "
                                     + "\"cookie-same-site\"");
@@ -1081,9 +1021,7 @@ public final class OidcConfig extends TenantConfigImpl {
                 }
             }
 
-            this.webClientBuilderSupplier = () -> webClientBaseBuilder(proxyProtocol,
-                                                                       proxyHost,
-                                                                       proxyPort);
+            this.webClientBuilderSupplier = this::webClientBaseBuilder;
             this.webClient = webClientBuilderSupplier.get().build();
 
             if (!tokenSignatureValidation) {
@@ -1100,21 +1038,9 @@ public final class OidcConfig extends TenantConfigImpl {
             return new OidcConfig(this);
         }
 
-        private WebClientConfig.Builder webClientBaseBuilder(String proxyProtocol,
-                                                             String proxyHost,
-                                                             int proxyPort) {
-            WebClientConfig.Builder toReturn = WebClientConfig.builder()
+        private WebClientConfig.Builder webClientBaseBuilder() {
+            return WebClientConfig.builder()
                     .from(webClientConfigBuilder);
-
-            if (proxyHost != null && toReturn.proxy().isEmpty()) {
-                Proxy.ProxyType proxyType = Proxy.ProxyType.valueOf(proxyProtocol.toUpperCase());
-                toReturn.proxy(Proxy.builder()
-                                       .type(proxyType)
-                                       .host(proxyHost)
-                                       .port(proxyPort)
-                                       .build());
-            }
-            return toReturn;
         }
 
         /**
@@ -1131,14 +1057,6 @@ public final class OidcConfig extends TenantConfigImpl {
             super.config(config);
             // mandatory configuration
             config.get("frontend-uri").asString().ifPresent(this::frontendUri);
-
-            // environment
-            config.get("proxy-protocol")
-                    .asString()
-                    .ifPresent(this::proxyProtocol);
-            config.get("proxy-host").asString().ifPresent(this::proxyHost);
-            config.get("proxy-port").asInt().ifPresent(this::proxyPort);
-            config.get("relative-uris").asBoolean().ifPresent(this::relativeUris);
 
             // token handling
             config.get("query-param-use").asBoolean().ifPresent(this::useParam);
@@ -1181,8 +1099,6 @@ public final class OidcConfig extends TenantConfigImpl {
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("force-https-redirects").asBoolean().ifPresent(this::forceHttpsRedirects);
 
-            config.get("cors").map(CrossOriginConfig::create).ifPresent(this::crossOriginConfig);
-
             config.get("token-refresh-before-expiration").as(Duration.class).ifPresent(this::tokenRefreshSkew);
 
             config.get("token-signature-validation").asBoolean().ifPresent(this::tokenSignatureValidation);
@@ -1215,23 +1131,6 @@ public final class OidcConfig extends TenantConfigImpl {
          */
         public Builder tokenRefreshSkew(Duration tokenRefreshSkew) {
             this.tokenRefreshSkew = tokenRefreshSkew;
-            return this;
-        }
-
-        /**
-         * Assign cross-origin resource sharing settings.
-         *
-         * @param crossOriginConfig cross-origin settings to apply to the redirect endpoint
-         * @return updated builder instance
-         * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
-         *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
-         *  server feature
-         */
-        @SuppressWarnings("removal")
-        @Deprecated(forRemoval = true, since = "4.4.0")
-        @ConfiguredOption(key = "cors")
-        public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
-            this.crossOriginConfig = crossOriginConfig;
             return this;
         }
 
@@ -1288,25 +1187,6 @@ public final class OidcConfig extends TenantConfigImpl {
         @ConfiguredOption("false")
         public Builder forceHttpsRedirects(boolean forceHttpsRedirects) {
             this.forceHttpsRedirects = forceHttpsRedirects;
-            return this;
-        }
-
-        /**
-         * Can be set to {@code true} to force the use of relative URIs in all requests,
-         * regardless of the presence or absence of proxies or no-proxy lists. By default,
-         * requests that use the Proxy will have absolute URIs. Set this flag to {@code true}
-         * if the host is unable to accept absolute URIs.
-         * Defaults to {@value #DEFAULT_RELATIVE_URIS}.
-         *
-         * @param relativeUris relative URIs flag
-         * @return updated builder instance
-         * @deprecated use OIDC webclient configuration instead. See {@link #webclient(Consumer)}
-         */
-        @ConfiguredOption(value = "false", deprecated = true)
-        @Deprecated(since = "4.2.1", forRemoval = true)
-        public Builder relativeUris(boolean relativeUris) {
-            webClientConfigBuilder.relativeUris(relativeUris);
-            this.relativeUris = relativeUris;
             return this;
         }
 
@@ -1386,57 +1266,6 @@ public final class OidcConfig extends TenantConfigImpl {
         @ConfiguredOption("5")
         public Builder maxRedirects(int maxRedirects) {
             this.maxRedirects = maxRedirects;
-            return this;
-        }
-
-        /**
-         * Proxy protocol to use when proxy is used.
-         * Defaults to {@value DEFAULT_PROXY_PROTOCOL}.
-         *
-         * @param protocol protocol to use (such as https)
-         * @return updated builder instance
-         * @deprecated use proxy configuration on the webclient. See {@link #webclient(Consumer)}
-         */
-        @ConfiguredOption(value = DEFAULT_PROXY_PROTOCOL, deprecated = true)
-        @Deprecated(since = "4.2.1", forRemoval = true)
-        public Builder proxyProtocol(String protocol) {
-            this.proxyProtocol = protocol;
-            return this;
-        }
-
-        /**
-         * Proxy host to use. When defined, triggers usage of proxy for HTTP requests.
-         * Setting to empty String has the same meaning as setting to null - disables proxy.
-         *
-         * @param proxyHost host of the proxy
-         * @return updated builder instance
-         * @see #proxyProtocol(String)
-         * @see #proxyPort(int)
-         * @deprecated use proxy configuration on the webclient. See {@link #webclient(Consumer)}
-         */
-        @ConfiguredOption(deprecated = true)
-        @Deprecated(since = "4.2.1", forRemoval = true)
-        public Builder proxyHost(String proxyHost) {
-            if ((proxyHost == null) || proxyHost.isEmpty()) {
-                this.proxyHost = null;
-            } else {
-                this.proxyHost = proxyHost;
-            }
-            return this;
-        }
-
-        /**
-         * Proxy port.
-         * Defaults to {@value DEFAULT_PROXY_PORT}
-         *
-         * @param proxyPort port of the proxy server to use
-         * @return updated builder instance
-         * @deprecated use proxy configuration on the webclient. See {@link #webclient(Consumer)}
-         */
-        @ConfiguredOption("80")
-        @Deprecated(since = "4.2.1", forRemoval = true)
-        public Builder proxyPort(int proxyPort) {
-            this.proxyPort = proxyPort;
             return this;
         }
 

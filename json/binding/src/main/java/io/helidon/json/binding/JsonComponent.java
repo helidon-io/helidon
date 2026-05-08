@@ -16,6 +16,7 @@
 
 package io.helidon.json.binding;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 
 /**
@@ -23,6 +24,7 @@ import io.helidon.common.GenericType;
  *
  * @param <T> type supported by this component
  */
+@Api.Preview
 public interface JsonComponent<T> {
     /**
      * Return the type this component handles.

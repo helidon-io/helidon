@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,16 @@ import java.util.Objects;
  * When creating an {@link io.helidon.common.types.Annotation}, we may need to create an enum value
  * without access to the enumeration.
  * <p>
- * In such a case, you can use this type when calling {@link io.helidon.common.types.Annotation.Builder#putValue(String, Object)}
+ * In such a case, you can use this type when calling
+ * {@link io.helidon.common.types.Annotation.Builder#putProperty(String, AnnotationProperty)}
  */
 public interface EnumValue extends AnnotationProperty.ConstantValue {
+
+    @Override
+    default Object value() {
+        return this;
+    }
+
     /**
      * Create a new enum value, when the enum is not available on classpath.
      *

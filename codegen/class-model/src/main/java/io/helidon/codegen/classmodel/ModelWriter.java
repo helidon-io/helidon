@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 
+import io.helidon.common.types.AnnotationProperty.ConstantValue;
+import io.helidon.common.types.EnumValue;
+import io.helidon.common.types.TypeName;
+
 import static io.helidon.codegen.classmodel.ClassModel.PADDING_TOKEN;
 
 class ModelWriter extends Writer {
@@ -32,34 +36,6 @@ class ModelWriter extends Writer {
     ModelWriter(Writer delegate, String padding) {
         this.delegate = delegate;
         this.padding = padding;
-    }
-
-    void increasePaddingLevel() {
-        paddingLevel++;
-        currentPadding = padding.repeat(paddingLevel);
-    }
-
-    void decreasePaddingLevel() {
-        paddingLevel--;
-        currentPadding = padding.repeat(paddingLevel);
-    }
-
-    void writeLine(String str) {
-        write(str);
-        write("\n");
-    }
-
-    /**
-     * Separator line is line which is completely empty and with no padding.
-     *
-     * @throws IOException If an I/O error occurs
-     */
-    void writeSeparatorLine() {
-        try {
-            delegate.write("\n");
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     @Override
@@ -112,5 +88,144 @@ class ModelWriter extends Writer {
             throw new UncheckedIOException(e);
         }
         return this;
+    }
+
+    String currentPadding() {
+        return currentPadding;
+    }
+
+    void increasePaddingLevel() {
+        paddingLevel++;
+        currentPadding = padding.repeat(paddingLevel);
+    }
+
+    void decreasePaddingLevel() {
+        paddingLevel--;
+        currentPadding = padding.repeat(paddingLevel);
+    }
+
+    void writeLine(String str) {
+        write(str);
+        write("\n");
+    }
+
+    void writeSeparatorLine() {
+        try {
+            delegate.write("\n");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    void writeValue(Number value) {
+        switch (value) {
+            case Long longValue -> writeValue(longValue);
+            case Float floatValue ->  writeValue(floatValue);
+            case Double doubleValue ->  writeValue(doubleValue);
+            case Byte byteValue ->  writeValue(byteValue);
+            case Short shortValue ->  writeValue(shortValue);
+            case Integer intValue -> writeValue(intValue);
+            default -> {
+            }
+        }
+    }
+
+    void writeValue(Long longValue) {
+        write(Long.toString(longValue));
+        write("L");
+    }
+
+    void writeValue(Float floatValue) {
+        write(Float.toString(floatValue));
+        write("F");
+    }
+
+    void writeValue(Double doubleValue) {
+        write(Double.toString(doubleValue));
+        write("D");
+    }
+
+    void writeValue(Byte byteValue) {
+        write("(byte) ");
+        write(Byte.toString(byteValue));
+    }
+
+    void writeValue(Short shortValue) {
+        write("(short) ");
+        write(Short.toString(shortValue));
+    }
+
+    void writeValue(Integer intValue) {
+        write(Integer.toString(intValue));
+    }
+
+    void writeValue(Character character) {
+        write("'");
+        write(escape(character));
+        write("'");
+    }
+
+    void writeValue(String str) {
+        if (str.startsWith("\"") && str.endsWith("\"")) {
+            write(str);
+        } else {
+            write("\"");
+            write(escape(str));
+            write("\"");
+        }
+    }
+
+    void writeValue(ImportOrganizer imports, TypeName typeName) {
+        var valueType = Type.fromTypeName(typeName);
+        var identifier = imports.typeName(valueType, true);
+        write(identifier);
+        write(".class");
+    }
+
+    void writeValue(ImportOrganizer imports, Class<?> clazz) {
+        var valueType = Type.fromTypeName(TypeName.create(clazz));
+        var identifier = imports.typeName(valueType, true);
+        write(identifier);
+        write(".class");
+    }
+
+    void writeValue(ImportOrganizer imports, EnumValue enumValue) {
+        var valueType = Type.fromTypeName(enumValue.type());
+        var identifier = imports.typeName(valueType, true);
+        write(identifier);
+        write(".");
+        write(enumValue.name());
+    }
+
+    void writeValue(ImportOrganizer imports, Enum<?> enumValue) {
+        var valueType = Type.fromTypeName(TypeName.create(enumValue.getClass()));
+        var identifier = imports.typeName(valueType, true);
+        write(identifier);
+        write(".");
+        write(enumValue.name());
+    }
+
+    void writeValue(ImportOrganizer imports, ConstantValue constantValue) {
+        var valueType = Type.fromTypeName(constantValue.type());
+        var identifier = imports.typeName(valueType, true);
+        write(identifier);
+        write(".");
+        write(constantValue.name());
+    }
+
+    private static String escape(String str) {
+        var escaped = str.replace("\\", "\\\\");
+        escaped = escaped.replace("\"", "\\\"");
+        return escaped;
+    }
+
+    private static String escape(Character ch) {
+        return switch (ch) {
+            case '\'' -> "\\'";
+            case '\t' -> "\\t";
+            case '\n' -> "\\n";
+            case '\r' -> "\\r";
+            default -> String.valueOf(ch);
+        };
     }
 }

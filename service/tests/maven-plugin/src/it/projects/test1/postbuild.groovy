@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,41 @@
  * limitations under the License.
  */
 
-import io.helidon.build.common.test.utils.JUnitLauncher
 import io.helidon.service.tests.inject.maven.plugin.ProjectsTestIT
+import org.junit.platform.engine.TestExecutionResult
+import org.junit.platform.testkit.engine.EngineTestKit
 
-//noinspection GroovyAssignabilityCheck,GrUnresolvedAccess
-JUnitLauncher.builder()
-        .select(ProjectsTestIT.class, "test1", String.class)
-        .parameter("basedir", basedir.getAbsolutePath())
-        .reportsDir(basedir)
-        .outputFile(new File(basedir, "test.log"))
-        .suiteId("helidon-service-maven-plugin-it-test1")
-        .suiteDisplayName("Helidon Service Maven Plugin Integration Test 1")
-        .build()
-        .launch()
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectMethod
+
+def currentThread = Thread.currentThread()
+def originalContextClassLoader = currentThread.getContextClassLoader()
+try {
+    currentThread.setContextClassLoader(getClass().getClassLoader())
+
+    //noinspection GroovyAssignabilityCheck,GrUnresolvedAccess
+    def results = EngineTestKit.engine("junit-jupiter")
+            .selectors(selectMethod(ProjectsTestIT.class, "test1"))
+            .execute()
+
+    def allEvents = results.allEvents()
+    def failures = allEvents.stream()
+            .flatMap { event -> event.getPayload(TestExecutionResult.class).stream() }
+            .flatMap { result -> result.getThrowable().stream() }
+            .toList()
+
+    if (!failures.isEmpty()) {
+        throw failures[0]
+    }
+
+    results.testEvents().assertStatistics { stats -> stats
+            .started(1)
+            .succeeded(1)
+            .failed(0)
+            .aborted(0)
+            .skipped(0)
+    }
+
+    true
+} finally {
+    currentThread.setContextClassLoader(originalContextClassLoader)
+}

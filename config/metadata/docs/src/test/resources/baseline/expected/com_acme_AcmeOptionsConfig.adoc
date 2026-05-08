@@ -1,0 +1,44 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeOptionsConfig
+
+== Description
+
+++++
+<code>N/A</code>
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Default Value|Description
+
+|[[a60214083-features]] xref:{rootdir}/config/com_acme_AcmeFeature.adoc[`features`]
+|`List<AcmeFeature>`
+|{nbsp}
+|pass:[Dynamic features]
+
+| `port`
+|`Integer`
+|`8080`
+|pass:[Listen port]
+
+| `host`
+|`String`
+|`localhost`
+|pass:[Listen address]
+
+|===
+
+// end::config[]
+
+
+
+== Dependent Types
+
+* xref:{rootdir}/config/com_acme_AcmeServerConfig.adoc[com.acme.AcmeServerConfig]
+
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
@@ -54,6 +56,9 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.webserver.CloseConnectionException;
+import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 
 import io.grpc.Codec;
@@ -61,6 +66,7 @@ import io.grpc.Compressor;
 import io.grpc.CompressorRegistry;
 import io.grpc.Decompressor;
 import io.grpc.DecompressorRegistry;
+import io.grpc.Drainable;
 import io.grpc.KnownLength;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
@@ -101,6 +107,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private static final int GRPC_HEADER_SIZE = 5;
     private static final int INITIAL_BUFFER_SIZE = 16 * 1024;
 
+    private final ConnectionContext connectionContext;
     private final Http2Headers headers;
     private final Http2StreamWriter streamWriter;
     private final int streamId;
@@ -125,13 +132,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private volatile boolean callCancelled;
     private final AtomicReference<Http2StreamState> currentStreamState = new AtomicReference<>();
 
-    GrpcProtocolHandler(Http2Headers headers,
+    GrpcProtocolHandler(ConnectionContext connectionContext,
+                        Http2Headers headers,
                         Http2StreamWriter streamWriter,
                         int streamId,
                         StreamFlowControl flowControl,
                         Http2StreamState currentStreamState,
                         GrpcRouteHandler<REQ, RES> route,
                         GrpcConfig grpcConfig) {
+        this.connectionContext = connectionContext;
         this.headers = headers;
         this.streamWriter = streamWriter;
         this.streamId = streamId;
@@ -157,12 +166,24 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 methodMetrics.callStarted.increment();
             }
 
-            // initiate server call
-            ServerCallHandler<REQ, RES> callHandler = route.callHandler();
-            listener = callHandler.startCall(serverCall, GrpcHeadersUtil.toMetadata(headers));
-            listener.onReady();
-            bytesReceived = 0L;
+            // Include the GrpcConnectionContext in the gRPC Context so that the gRPC customer
+            // handler can access the peer info and proxy protocol data.
+            var grpcContextImpl = new GrpcConnectionContextImpl(connectionContext);
+            io.grpc.Context.current()
+                .withValue(ServerContextKeys.CONNECTION_CONTEXT, grpcContextImpl)
+                .run(() -> {
+                    // initiate server call
+                    ServerCallHandler<REQ, RES> callHandler = route.callHandler();
+                    listener = callHandler.startCall(serverCall, GrpcHeadersUtil.toMetadata(headers));
+                    listener.onReady();
+                    bytesReceived = 0L;
+                });
+        } catch (CloseConnectionException e) {
+            throw e;
         } catch (Throwable e) {
+            if (isPeerCancellation(e)) {
+                throw new ServerConnectionException("gRPC call cancelled by remote peer", e);
+            }
             LOGGER.log(ERROR, "Failed to initialize grpc protocol handler", e);
             throw e;
         }
@@ -260,7 +281,12 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     methodMetrics.recvMessageSize.record(bytesReceived);
                 }
             }
+        } catch (CloseConnectionException e) {
+            throw e;
         } catch (Exception e) {
+            if (isPeerCancellation(e)) {
+                throw new ServerConnectionException("gRPC call cancelled by remote peer", e);
+            }
             listener.onCancel();
             LOGGER.log(ERROR, "Failed to process grpc request: " + data.debugDataHex(true), e);
         }
@@ -323,6 +349,26 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         return identityCompressor;
     }
 
+    private boolean isPeerCancellation(Throwable throwable) {
+        return callCancelled && Status.fromThrowable(throwable).getCode() == Status.Code.CANCELLED;
+    }
+
+    private void writeHeaders(Http2Headers http2Headers, HeaderFlags flags) {
+        try {
+            streamWriter.writeHeaders(http2Headers, streamId, flags, outboundFlowControl());
+        } catch (UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write grpc response headers", e);
+        }
+    }
+
+    private void writeData(Http2FrameData frameData) {
+        streamWriter.writeData(frameData, outboundFlowControl());
+    }
+
+    private FlowControl.Outbound outboundFlowControl() {
+        return flowControl == null ? FlowControl.Outbound.NOOP : flowControl.outbound();
+    }
+
     private void addNumMessages(int n) {
         numMessages.getAndAdd(n);
     }
@@ -357,7 +403,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         };
     }
 
-    private ServerCall<REQ, RES> createServerCall() {
+    ServerCall<REQ, RES> createServerCall() {
         return new ServerCall<REQ, RES>() {
 
             private long bytesSent;
@@ -387,10 +433,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 // write headers frame
                 Http2Headers http2Headers = Http2Headers.create(writable);
                 http2Headers.status(io.helidon.http.Status.OK_200);
-                streamWriter.writeHeaders(http2Headers,
-                                          streamId,
-                                          HeaderFlags.create(END_OF_HEADERS),
-                                          flowControl.outbound());
+                writeHeaders(http2Headers, HeaderFlags.create(END_OF_HEADERS));
                 headersSent = true;
             }
 
@@ -429,8 +472,10 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                                                                       streamId);
 
                     // write data frame
-                    streamWriter.writeData(new Http2FrameData(header, bufferData), flowControl.outbound());
+                    writeData(new Http2FrameData(header, bufferData));
                     bytesSent += writeLength;
+                } catch (UncheckedIOException e) {
+                    throw new ServerConnectionException("Failed to write grpc response data", e);
                 } catch (IOException e) {
                     listener.onCancel();
                     LOGGER.log(ERROR, "Failed to respond to grpc request: " + route.method(), e);
@@ -458,10 +503,14 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 if (!headersSent) {
                     http2Headers.status(io.helidon.http.Status.OK_200);
                 }
-                streamWriter.writeHeaders(http2Headers,
-                                          streamId,
-                                          HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM),
-                                          flowControl.outbound());
+                try {
+                    writeHeaders(http2Headers, HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM));
+                } catch (CloseConnectionException e) {
+                    callCancelled = true;
+                    currentStreamState.updateAndGet(
+                            current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_LOCAL));
+                    return;
+                }
                 currentStreamState.updateAndGet(
                         current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_LOCAL));
 
@@ -480,7 +529,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             @Override
             public boolean isCancelled() {
-                return currentStreamState.get() == Http2StreamState.CLOSED;
+                return callCancelled || currentStreamState.get() == Http2StreamState.CLOSED;
             }
 
             @Override
@@ -543,7 +592,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
      * knowledge for optimizations. It can also copy a byte array directly on a
      * single read.
      */
-    static class BufferDataInputStream extends InputStream implements KnownLength {
+    static class BufferDataInputStream extends InputStream implements KnownLength, Drainable {
         private final BufferData bufferData;
 
         BufferDataInputStream(BufferData bufferData) {
@@ -552,22 +601,46 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
         @Override
         public int read() {
-            return bufferData.read();
+            // BufferData.read() throws when exhausted; InputStream requires -1 at EOF
+            return bufferData.available() > 0 ? bufferData.read() : -1;
         }
 
         @Override
         public int read(byte[] b) {
-            return bufferData.read(b);
+            // BufferData.read(byte[]) returns 0 when exhausted; InputStream requires -1 at EOF
+            return bufferData.available() == 0 ? -1 : bufferData.read(b);
         }
 
         @Override
         public int read(byte[] b, int off, int len) {
-            return bufferData.read(b, off, len);
+            // BufferData.read(byte[],int,int) returns 0 when exhausted; InputStream requires -1 at EOF
+            return bufferData.available() == 0 ? -1 : bufferData.read(b, off, len);
         }
 
         @Override
         public int available() {
             return bufferData.available();
+        }
+
+        @Override
+        public int drainTo(OutputStream target) {
+            int count = bufferData.available();
+            bufferData.writeTo(target);
+            return count;
+        }
+
+        @Override
+        public long skip(long n) {
+            // advance readPosition directly; avoids the default read()-in-a-loop
+            int toSkip = (int) Math.min(bufferData.available(), n);
+            bufferData.skip(toSkip);
+            return toSkip;
+        }
+
+        @Override
+        public byte[] readAllBytes() {
+            // single exact-size allocation; avoids the default growing-array loop
+            return bufferData.readBytes();
         }
     }
 }

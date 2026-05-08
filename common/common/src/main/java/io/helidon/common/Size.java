@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.Set;
 /**
  * A definition of size in bytes.
  */
+@Api.Stable
 public interface Size {
     /**
      * Empty size - zero bytes.
@@ -155,6 +156,7 @@ public interface Size {
     /**
      * Kind of units, used for printing out the correct unit.
      */
+    @Api.Stable
     enum UnitKind {
         /**
          * The first letter (if two lettered) is lower case, the second is upper case, such ase
@@ -190,6 +192,7 @@ public interface Size {
     /**
      * Units that can be used.
      */
+    @Api.Stable
     enum Unit {
         /**
          * Bytes.

@@ -16,7 +16,8 @@
 
 package io.helidon.json;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -26,12 +27,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Tests for parser state management and error recovery.
  * Covers parser behavior after exceptions, state consistency, and edge cases.
  */
-abstract class ParserStateTest {
+class ParserStateTest {
 
-    @Test
-    public void testParserStateAfterSuccessfulParse() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParserStateAfterSuccessfulParse(ParserMethod parserMethod) {
         String json = "{\"key\": \"value\"}";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json, 64);
 
         JsonObject result = parser.readJsonObject();
         assertThat(result.stringValue("key").orElseThrow(), is("value"));
@@ -40,10 +42,11 @@ abstract class ParserStateTest {
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParserStateAfterSkip() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParserStateAfterSkip(ParserMethod parserMethod) {
         String json = "\"string\" more content";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json, 64);
 
         parser.skip();
         // Parser should be positioned at the space after the skipped value
@@ -51,10 +54,11 @@ abstract class ParserStateTest {
         assertThat(parser.hasNext(), is(true));
     }
 
-    @Test
-    public void testParserStateAfterPartialRead() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParserStateAfterPartialRead(ParserMethod parserMethod) {
         String json = "[1, 2, 3]";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json, 64);
 
         // Start reading array
         // '['
@@ -71,20 +75,22 @@ abstract class ParserStateTest {
         assertThat(secondNumber, is(2));
     }
 
-    @Test
-    public void testParserExceptionContainsPositionInfo() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParserExceptionContainsPositionInfo(ParserMethod parserMethod) {
         String json = "{\"key\": }"; // Missing value
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json, 64);
 
         JsonException exception = assertThrows(JsonException.class, parser::readJsonObject);
         assertThat(exception.getMessage().contains("Error at JSON index"), is(true));
     }
 
-    @Test
-    public void testParserCanContinueAfterNonFatalError() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParserCanContinueAfterNonFatalError(ParserMethod parserMethod) {
         // Test that parser can continue reading valid JSON after encountering some issues
         String json = "[\"valid\", \"also valid\"]";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json, 64);
 
         JsonArray result = parser.readJsonArray();
         assertThat(result.values().size(), is(2));
@@ -92,8 +98,9 @@ abstract class ParserStateTest {
         assertThat(result.get(1, JsonNull.instance()).asString().value(), is("also valid"));
     }
 
-    @Test
-    public void testParserWithDeepNesting() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParserWithDeepNesting(ParserMethod parserMethod) {
         // Create deeply nested JSON to test parser stack limits
         StringBuilder json = new StringBuilder();
         int depth = 100; // Deep nesting
@@ -106,7 +113,7 @@ abstract class ParserStateTest {
             json.append("}");
         }
 
-        JsonParser parser = createParser(json.toString());
+        JsonParser parser = parserMethod.createParser(json.toString());
         JsonObject result = parser.readJsonObject();
 
         // Navigate to the deepest level
@@ -117,8 +124,9 @@ abstract class ParserStateTest {
         assertThat(current.stringValue("level" + (depth - 1)).orElseThrow(), is("deepest value"));
     }
 
-    @Test
-    public void testParserWithLargeArrays() {
+    @ParameterizedTest
+    @EnumSource(value = ParserMethod.class)
+    public void testParserWithLargeArrays(ParserMethod parserMethod) {
         // Create a large array to test parser performance and state management
         StringBuilder json = new StringBuilder();
         json.append("[");
@@ -131,7 +139,7 @@ abstract class ParserStateTest {
         }
         json.append("]");
 
-        JsonParser parser = createParser(json.toString());
+        JsonParser parser = parserMethod.createParser(json.toString());
         JsonArray result = parser.readJsonArray();
 
         assertThat(result.values().size(), is(size));
@@ -140,8 +148,9 @@ abstract class ParserStateTest {
         }
     }
 
-    @Test
-    public void testParserWithVeryLongString() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParserWithVeryLongString(ParserMethod parserMethod) {
         // Create a very long string to test string buffer management
         int length = 10000;
         StringBuilder longString = new StringBuilder();
@@ -151,7 +160,7 @@ abstract class ParserStateTest {
         String content = longString.toString();
         String json = "\"" + content + "\"";
 
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json, 64);
         String result = parser.readString();
 
         assertThat(result.length(), is(length));
@@ -159,10 +168,11 @@ abstract class ParserStateTest {
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParserMixedReadAndSkipOperations() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParserMixedReadAndSkipOperations(ParserMethod parserMethod) {
         String json = "{\"read\": \"this\", \"skip\": [1, 2, 3], \"also_read\": 42}";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json, 64);
 
         assertThat(parser.currentByte(), is((byte) '{'));
         assertThat(parser.nextToken(), is((byte) '"'));
@@ -186,11 +196,12 @@ abstract class ParserStateTest {
         assertThat(value, is(42));
     }
 
-    @Test
-    public void testParserWithUnicodeEdgeCases() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParserWithUnicodeEdgeCases(ParserMethod parserMethod) {
         // Test various Unicode edge cases
         String json = "\"\\u0000\\uFFFF\\uD800\\uDC00\\uDBFF\\uDFFF\"";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json, 64);
         String result = parser.readString();
 
         // Should contain null char, last valid BMP char, and surrogate pairs
@@ -200,17 +211,19 @@ abstract class ParserStateTest {
         // Characters 2-5 should form surrogate pairs
     }
 
-    @Test
-    public void testParserWithMalformedUTF8() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParserWithMalformedUTF8(ParserMethod parserMethod) {
         // Create malformed UTF-8 bytes directly - this test only works with ArrayJsonParser
         // so we'll skip it for now as ArrayJsonParser is package-private
         // In a real scenario, this would be tested with a custom input stream
     }
 
-    @Test
-    public void testParserStateAfterReadOperations() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParserStateAfterReadOperations(ParserMethod parserMethod) {
         String json = "{\"a\": 1, \"b\": \"text\", \"c\": true}";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json, 64);
 
         JsonObject obj = parser.readJsonObject();
 
@@ -223,22 +236,21 @@ abstract class ParserStateTest {
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParserWithEmptyStructures() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParserWithEmptyStructures(ParserMethod parserMethod) {
         // Test various empty structures
-        JsonParser parser1 = createParser("{}");
+        JsonParser parser1 = parserMethod.createParser("{}");
         JsonObject emptyObj = parser1.readJsonObject();
         assertThat(emptyObj.keys().isEmpty(), is(true));
 
-        JsonParser parser2 = createParser("[]");
+        JsonParser parser2 = parserMethod.createParser("[]");
         JsonArray emptyArr = parser2.readJsonArray();
         assertThat(emptyArr.values().isEmpty(), is(true));
 
-        JsonParser parser3 = createParser("\"\"");
+        JsonParser parser3 = parserMethod.createParser("\"\"");
         String emptyStr = parser3.readString();
         assertThat(emptyStr.isEmpty(), is(true));
     }
-
-    abstract JsonParser createParser(String template);
 
 }

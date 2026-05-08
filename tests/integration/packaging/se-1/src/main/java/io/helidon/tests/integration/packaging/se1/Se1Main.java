@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,7 @@
 package io.helidon.tests.integration.packaging.se1;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.Set;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -30,7 +28,9 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.health.HealthObserver;
-import io.helidon.webserver.staticcontent.StaticContentService;
+import io.helidon.webserver.staticcontent.ClasspathHandlerConfig;
+import io.helidon.webserver.staticcontent.FileSystemHandlerConfig;
+import io.helidon.webserver.staticcontent.StaticContentFeature;
 import io.helidon.webserver.websocket.WsRouting;
 
 import static io.helidon.config.ConfigSources.classpath;
@@ -74,8 +74,9 @@ public final class Se1Main {
                         .build())
                 .build();
 
+        Config observeConfig = config.get("server").get("features").get("observe");
         ObserveFeature observe = ObserveFeature.builder()
-                .config(config)
+                .config(observeConfig)
                 .addObserver(health)
                 .build();
 
@@ -116,20 +117,20 @@ public final class Se1Main {
     private static HttpRouting.Builder createRouting(Config config) {
 
         GreetService greetService = new GreetService(config);
-        MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
-        WebClientService webClientService = new WebClientService(config, zipkinService);
+        MockOtlpService otlpService = new MockOtlpService();
+        WebClientService webClientService = new WebClientService(config, otlpService);
 
         Path web = config.get("app.static.path")
                 .as(Path.class)
                 .orElseThrow(() -> new IllegalStateException("app static path is not present"));
 
         return HttpRouting.builder()
-                .register("/static/path", StaticContentService.create(web))
-                .register("/static/classpath", StaticContentService.create("web"))
-                .register("/static/jar", StaticContentService.create("web-jar"))
+                .register("/static/path", StaticContentFeature.createService(FileSystemHandlerConfig.create(web)))
+                .register("/static/classpath", StaticContentFeature.createService(ClasspathHandlerConfig.create("web")))
+                .register("/static/jar", StaticContentFeature.createService(ClasspathHandlerConfig.create("web-jar")))
                 .register("/greet", greetService)
                 .register("/wc", webClientService)
-                .register("/zipkin", zipkinService);
+                .register("/otlp", otlpService);
     }
 
 }

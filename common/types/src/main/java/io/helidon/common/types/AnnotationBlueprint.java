@@ -16,6 +16,7 @@
 
 package io.helidon.common.types;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,7 +54,7 @@ import io.helidon.builder.api.Prototype;
  *     <li>arrays - available as a {@link java.util.List} of values</li>
  * </ul>
  */
-@Prototype.Blueprint(decorator = AnnotationSupport.AnnotationDecorator.class)
+@Prototype.Blueprint(createEmptyPublic = false)
 @Prototype.CustomMethods(AnnotationSupport.class)
 @Prototype.Implement("java.lang.Comparable<Annotation>")
 interface AnnotationBlueprint {
@@ -72,17 +73,6 @@ interface AnnotationBlueprint {
     TypeName typeName();
 
     /**
-     * Key-value map of all the annotation properties.
-     *
-     * @return key-value pairs of all the properties present
-     * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface
-     */
-    @Option.Singular
-    @Deprecated(since = "4.3.0", forRemoval = true)
-    @Option.Redundant
-    Map<String, Object> values();
-
-    /**
      * Properties defined on this annotation.
      *
      * @return properties
@@ -98,6 +88,15 @@ interface AnnotationBlueprint {
     @Option.Redundant
     @Option.Singular
     List<Annotation> metaAnnotations();
+
+    /**
+     * The element used to create this instance.
+     * The type of the object depends on the environment.
+     *
+     * @return originating element
+     */
+    @Option.Redundant
+    Optional<Object> originatingElement();
 
     /**
      * The value property.
@@ -157,7 +156,16 @@ interface AnnotationBlueprint {
      * @return object value
      */
     default Optional<Object> objectValue(String property) {
-        return Optional.ofNullable(properties().get(property).value());
+        AnnotationProperty annotationProperty = properties().get(property);
+        if (annotationProperty == null) {
+            return Optional.empty();
+        }
+
+        Object value = annotationProperty.value();
+        if (value instanceof AnnotationProperty.ConstantValue cv) {
+            return Optional.of(cv.value());
+        }
+        return Optional.ofNullable(value);
     }
 
     /**
@@ -522,6 +530,9 @@ interface AnnotationBlueprint {
 
     /**
      * Typed value of the property "{@code value}".
+     * <p>
+     * NOTE: {classValue} is only available when the target class is on the classpath; do not use this method when within
+     * an annotation processor/codegen, as there is a very good chance the type will not be available.
      *
      * @return value if present
      */
@@ -531,7 +542,10 @@ interface AnnotationBlueprint {
 
     /**
      * Typed value of a named property.
-     *
+     * <p>
+     * NOTE: {classValue} is only available when the target class is on the classpath; do not use this method when within
+     * an annotation processor/codegen, as there is a very good chance the type will not be available.
+
      * @param property name of the annotation property
      * @return value if present
      */
@@ -542,6 +556,9 @@ interface AnnotationBlueprint {
     /**
      * Typed value of the property "{@code value}" that is defined as an array.
      * This will also work for a single values property.
+     * <p>
+     * NOTE: {classValues} is only available when the target class is on the classpath; do not use this method when within
+     * an annotation processor/codegen, as there is a very good chance the type will not be available.
      *
      * @return list of defined values if present
      */
@@ -552,6 +569,9 @@ interface AnnotationBlueprint {
     /**
      * Typed values of a property that is defined as an array.
      * This will also work for a single values property.
+     * <p>
+     * NOTE: {classValues} is only available when the target class is on the classpath; do not use this method when within
+     * an annotation processor/codegen, as there is a very good chance the type will not be available.
      *
      * @param property name of the annotation property
      * @return list of defined values if present
@@ -711,5 +731,18 @@ interface AnnotationBlueprint {
             }
         }
         return false;
+    }
+
+    private Map<String, Object> values() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        for (Map.Entry<String, AnnotationProperty> entry : properties().entrySet()) {
+            Object value = entry.getValue().value();
+            if (value instanceof AnnotationProperty.ConstantValue cv) {
+                result.put(entry.getKey(), cv.value());
+            } else {
+                result.put(entry.getKey(), value);
+            }
+        }
+        return result;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.function.Supplier;
  * Functional interfaces required to complement the {@link java.lang.Runnable}, {@link java.util.concurrent.Callable},
  * and {@link java.util.function.Supplier} to help with checked exceptions in lambdas.
  */
+@Api.Stable
 public final class Functions {
     private Functions() {
     }
@@ -162,6 +163,7 @@ public final class Functions {
      * @param <T> item type
      * @param <E> checked exception type
      */
+    @Api.Stable
     @FunctionalInterface
     public interface CheckedConsumer<T, E extends Throwable> {
         /**
@@ -180,6 +182,7 @@ public final class Functions {
      * @param <U> 2nd item type
      * @param <E> checked exception type
      */
+    @Api.Stable
     @FunctionalInterface
     public interface CheckedBiConsumer<T, U, E extends Throwable> {
 
@@ -200,6 +203,7 @@ public final class Functions {
      * @param <U> output type
      * @param <E> checked exception type
      */
+    @Api.Stable
     @FunctionalInterface
     public interface CheckedFunction<T, U, E extends Throwable> {
 
@@ -218,6 +222,7 @@ public final class Functions {
      *
      * @param <E> checked exception type
      */
+    @Api.Stable
     @FunctionalInterface
     public interface CheckedRunnable<E extends Throwable> {
 
@@ -235,6 +240,7 @@ public final class Functions {
      * @param <T> supplier type
      * @param <E> checked exception type
      */
+    @Api.Stable
     @FunctionalInterface
     public interface CheckedSupplier<T, E extends Throwable> {
 

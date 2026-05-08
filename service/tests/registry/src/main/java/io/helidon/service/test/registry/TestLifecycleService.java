@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.service.registry.Service;
 
-@Service.Provider
+@Service.Singleton
 class TestLifecycleService implements TestLifecycle {
     static final AtomicInteger PRE_DESTROY = new AtomicInteger();
 

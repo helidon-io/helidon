@@ -1,0 +1,10 @@
+
+= Config Types
+
+== Config Types
+
+See the xref:config_reference.adoc[root] type.
+
+* xref:com_acme_AcmeIvfIndexConfig.adoc[com.acme.AcmeIvfIndexConfig]
+* xref:com_acme_AcmeJsonIndexConfig.adoc[com.acme.AcmeJsonIndexConfig]
+* xref:com_acme_AcmeStoreConfig.adoc[com.acme.AcmeStoreConfig]

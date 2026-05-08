@@ -57,7 +57,11 @@ class OpenTelemetryTracer implements RuntimeType.Api<OpenTelemetryTracerConfig>,
 
         if (config.enabled() && config.registerGlobal()) {
             try {
-                GlobalOpenTelemetry.set(config.openTelemetry());
+                // If the OpenTelemetry support library is also present, it has already assigned the global OpenTelemetry
+                // instance. Do not try to do so again.
+                if (!GlobalOpenTelemetry.isSet()) {
+                    GlobalOpenTelemetry.set(config.openTelemetry());
+                }
                 Tracer.global(this);
             } catch (Exception e) {
                 LOGGER.log(System.Logger.Level.WARNING, "Failed to set global OpenTelemetry as requested by tracing settings", e);

@@ -16,8 +16,9 @@
 
 package io.helidon.webserver.observe.tracing;
 
-import io.helidon.common.config.Config;
+import io.helidon.common.Api;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
 import io.helidon.service.registry.Services;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
@@ -26,17 +27,12 @@ import io.helidon.webserver.observe.spi.Observer;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for tracing observe provider.
- *
- * @deprecated this type is only to be used from {@link java.util.ServiceLoader}
  */
-@Deprecated
 public class TracingObserveProvider implements ObserveProvider {
     /**
-     * Default constructor required by {@link java.util.ServiceLoader}. Do not use.
-     *
-     * @deprecated this constructor must be public for {@link java.util.ServiceLoader}
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public TracingObserveProvider() {
     }
 

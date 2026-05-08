@@ -86,7 +86,14 @@ final class TracerProviderHelper {
             throw new IllegalStateException("Use before initialization has completed");
         }
         if (GLOBAL_REGISTRY.get()) {
-            return Services.get(Tracer.class);
+            try {
+                return Services.get(Tracer.class);
+            } catch (RuntimeException e) {
+                GLOBAL_REGISTRY.set(false);
+                LOGGER.log(System.Logger.Level.TRACE,
+                           "Global tracer is not available from the current service registry, falling back to provider tracer",
+                           e);
+            }
         }
         return TRACER_PROVIDER.global();
     }

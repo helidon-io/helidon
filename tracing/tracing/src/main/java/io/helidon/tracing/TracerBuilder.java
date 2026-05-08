@@ -19,7 +19,7 @@ import java.net.URI;
 import java.util.Objects;
 
 import io.helidon.common.Builder;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -98,7 +98,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  *            are of the correct type and contain all methods, even those not inherited from this
  *            interface
  */
-@Configured(description = "Tracer configuration.", ignoreBuildMethod = true)
+@Configured(description = "Tracer configuration.")
 public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tracer> {
     /**
      * Create a new builder for the service name.
@@ -243,22 +243,8 @@ public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tr
      *
      * @param config configuration node of the tracer configuration
      * @return updated builder instance
-     * @deprecated Use {@link #config(io.helidon.config.Config)} instead.
      */
-    @Deprecated(since = "4.4.0", forRemoval = true)
     T config(Config config);
-
-    /**
-     * Load configuration of tracer from configuration of the application.
-     * The configuration keys are specific for each tracer integration and documented
-     * in these integration projects.
-     *
-     * @param config configuration node of the tracer configuration
-     * @return updated builder instance
-     */
-    default T config(io.helidon.config.Config config) {
-        return config((Config) config);
-    }
     /**
      * When enabled, tracing will be sent. If enabled is false, tracing should
      * use a no-op tracer.

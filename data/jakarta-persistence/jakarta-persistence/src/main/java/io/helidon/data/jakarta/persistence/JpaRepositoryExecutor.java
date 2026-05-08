@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,14 +57,12 @@ public interface JpaRepositoryExecutor extends AutoCloseable {
 
     /**
      * Transform query result as {@link java.util.Optional}.
-     * This is Jakarta Persistence 3.1 workaround.
+     * This is Jakarta Persistence 3.1 workaround until this line can use Jakarta Persistence 3.2 item-or-null APIs.
      *
      * @param queryResult the query result as {@link java.util.Optional}
      * @param <T>         type of the result
      * @return query result as {@link java.util.Optional}
-     * @deprecated will be removed with Jakarta Persistence 3.2
      */
-    @Deprecated
     static <T> Optional<T> optionalFromQuery(List<T> queryResult) {
         return queryResult == null || queryResult.isEmpty()
                 ? Optional.empty() : Optional.of(queryResult.getFirst());

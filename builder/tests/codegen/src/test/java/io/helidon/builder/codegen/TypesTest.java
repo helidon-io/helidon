@@ -35,20 +35,22 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Generated;
-import io.helidon.common.config.Config;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.ConfigBuilderSupport;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.config.metadata.ConfiguredValue;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.RegistryBuilderSupport;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 
 import org.hamcrest.CoreMatchers;
-import org.hamcrest.collection.IsEmptyCollection;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -82,7 +84,6 @@ public class TypesTest {
             fields.put(name, declaredField);
         }
 
-        checkField(toCheck, checked, fields, "COMMON_CONFIG", Config.class);
         checkField(toCheck, checked, fields, "CONFIG", io.helidon.config.Config.class);
         checkField(toCheck, checked, fields, "GENERATED", Generated.class);
         checkField(toCheck, checked, fields, "DEPRECATED", Deprecated.class);
@@ -103,7 +104,6 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "PROTOTYPE_CONFIGURED", Prototype.Configured.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_PROVIDES", Prototype.Provides.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_BUILDER", Prototype.Builder.class);
-        checkField(toCheck, checked, fields, "PROTOTYPE_FACTORY_METHOD_DEPRECATED", Prototype.FactoryMethod.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_FACTORY_METHOD_PROTOTYPE", Prototype.PrototypeFactoryMethod.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_FACTORY_METHOD_CONFIG", Prototype.ConfigFactoryMethod.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_FACTORY_METHOD_RUNTIME_TYPE",
@@ -151,7 +151,14 @@ public class TypesTest {
 
         checkField(toCheck, checked, fields, "REGISTRY_BUILDER_SUPPORT", RegistryBuilderSupport.class);
 
-        assertThat(toCheck, IsEmptyCollection.empty());
+        checkField(toCheck, checked, fields, "CONFIGURED", Configured.class);
+        checkField(toCheck, checked, fields, "CONFIGURED_OPTION", ConfiguredOption.class);
+        checkField(toCheck, checked, fields, "CONFIGURED_OPTION_KIND", ConfiguredOption.Kind.class);
+        checkField(toCheck, checked, fields, "CONFIGURED_VALUE", ConfiguredValue.class);
+        checkField(toCheck, checked, fields, "CONFIGURED_PROVIDER", io.helidon.config.ConfiguredProvider.class);
+        checkField(toCheck, checked, fields, "NAMED_SERVICE", io.helidon.config.NamedService.class);
+
+        assertThat(toCheck, is(empty()));
     }
 
     private void checkField(Set<String> namesToCheck,

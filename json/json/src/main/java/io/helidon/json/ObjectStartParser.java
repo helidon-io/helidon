@@ -16,10 +16,16 @@
 
 package io.helidon.json;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
+import io.helidon.common.Api;
+
 /**
  * An implementation of the {@link io.helidon.json.JsonParser} which enforces object start as the current value.
  * Delegates all other calls to the provided JsonParser.
  */
+@Api.Preview
 public final class ObjectStartParser implements JsonParser {
 
     private static final JsonParser OBJECT_START_PARSER = new ForcedObjectStartParser();
@@ -103,11 +109,6 @@ public final class ObjectStartParser implements JsonParser {
     }
 
     @Override
-    public char[] readCharArray() {
-        return parser.readCharArray();
-    }
-
-    @Override
     public char readChar() {
         return parser.readChar();
     }
@@ -148,6 +149,21 @@ public final class ObjectStartParser implements JsonParser {
     }
 
     @Override
+    public BigInteger readBigInteger() {
+        return parser.readBigInteger();
+    }
+
+    @Override
+    public BigDecimal readBigDecimal() {
+        return parser.readBigDecimal();
+    }
+
+    @Override
+    public byte[] readBinary() {
+        return parser.readBinary();
+    }
+
+    @Override
     public boolean checkNull() {
         return parser.checkNull();
     }
@@ -160,6 +176,11 @@ public final class ObjectStartParser implements JsonParser {
     @Override
     public JsonException createException(String message) {
         return parser.createException(message);
+    }
+
+    @Override
+    public JsonException createException(String message, Exception e) {
+        return parser.createException(message, e);
     }
 
     @Override
@@ -252,11 +273,6 @@ public final class ObjectStartParser implements JsonParser {
         }
 
         @Override
-        public char[] readCharArray() {
-            throw new UnsupportedOperationException("This parser allows only currentByte");
-        }
-
-        @Override
         public char readChar() {
             throw new UnsupportedOperationException("This parser allows only currentByte");
         }
@@ -297,6 +313,21 @@ public final class ObjectStartParser implements JsonParser {
         }
 
         @Override
+        public BigInteger readBigInteger() {
+            throw new UnsupportedOperationException("This parser allows only currentByte");
+        }
+
+        @Override
+        public BigDecimal readBigDecimal() {
+            throw new UnsupportedOperationException("This parser allows only currentByte");
+        }
+
+        @Override
+        public byte[] readBinary() {
+            throw new UnsupportedOperationException("This parser allows only currentByte");
+        }
+
+        @Override
         public boolean checkNull() {
             throw new UnsupportedOperationException("This parser allows only currentByte");
         }
@@ -308,6 +339,11 @@ public final class ObjectStartParser implements JsonParser {
 
         @Override
         public JsonException createException(String message) {
+            throw new UnsupportedOperationException("This parser allows only currentByte");
+        }
+
+        @Override
+        public JsonException createException(String message, Exception e) {
             throw new UnsupportedOperationException("This parser allows only currentByte");
         }
 

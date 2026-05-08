@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 
 = Helidon Documentation
 :description: Helidon
-:keywords: helidon, java, microservices, microprofile, documentation
+:keywords: helidon, java, microservices, documentation
 :rootdir: {docdir}/..
 
 
@@ -59,8 +59,6 @@ xref:{rootdir}/about/prerequisites.adoc[Prerequisites and System Requirements]
 
 xref:{rootdir}/about/cli.adoc[Using the Helidon CLI]
 
-xref:{rootdir}/mp/guides/quickstart.adoc[Using the MP Quickstart Guide]
-
 xref:{rootdir}/se/guides/quickstart.adoc[Using the SE Quick Start Guide]
 
 
@@ -72,8 +70,6 @@ xref:{rootdir}/se/guides/quickstart.adoc[Using the SE Quick Start Guide]
 [icon=storage]
 --
 Use the upgrade guides to help you upgrade your existing Helidon applications to the latest version of Helidon.
-
-xref:{rootdir}/mp/guides/upgrade_4x.adoc[Upgrade From Helidon MP 3.x]
 
 xref:{rootdir}/se/guides/upgrade_4x.adoc[Upgrade From Helidon SE 3.x]
 
@@ -88,9 +84,6 @@ xref:{rootdir}/se/guides/upgrade_4x.adoc[Upgrade From Helidon SE 3.x]
 --
 Use these hands-on development tutorials to learn how to generate a small "Hello World!" greeting service that demonstrates some of Helidon's core features.
 
-xref:{rootdir}/mp/guides/mp-tutorial.adoc[Helidon MP Tutorial]
-
-// We do not have an SE application tutorial. So for now point at quickstart.
 xref:{rootdir}/se/guides/quickstart.adoc[Helidon SE Quickstart]
 
 --
@@ -103,8 +96,6 @@ xref:{rootdir}/se/guides/quickstart.adoc[Helidon SE Quickstart]
 Ready for more hands-on learning? Explore the features of Helidon with these quick step-by-step guides.
 
 xref:{rootdir}/se/guides/overview.adoc[SE Guides]
-
-xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
 
 --
 //Advanced SE Features
@@ -161,7 +152,4 @@ YouTube channel: https://youtube.helidon.io
 Stack Overflow tag: https://stackoverflow.com/tags/helidon
 --
 ====
-
-
-
 

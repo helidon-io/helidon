@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,21 +20,17 @@ ifndef::flavor-lc[:flavor-lc: se]
 ifeval::["{flavor-lc}" == "se"]
 :se-flavor:
 endif::[]
-ifeval::["{flavor-lc}" == "mp"]
-:mp-flavor:
-endif::[]
 :feature-name: Micrometer support
 
 //Contains content that is shared between multiple Micrometer pages.
-:keywords: helidon, java, micrometer, integration, se, mp
+:keywords: helidon, java, micrometer, se
 
 == Overview
 
 [NOTE]
 ====
 Micrometer integration is deprecated beginning in Helidon 4.1 and is planned for removal in a future major release. Please use
-ifdef::se-flavor[the link:{rootdir}/se/metrics/metrics.adoc[Helidon neutral metrics API].]
-ifdef::mp-flavor[the link:{rootdir}/mp/metrics/metrics.adoc[Helidon MicroProfile Metrics API implementation and annotations].]
+the link:{rootdir}/se/metrics/metrics.adoc[Helidon neutral metrics API].
 ====
 
 Helidon {h1-prefix} simplifies how you can use Micrometer for application-specific metrics:
@@ -48,40 +44,11 @@ ifdef::se-flavor[]
 creates explicitly or for selecting which built-in Micrometer meter registries
 to use.
 endif::se-flavor[]
-ifdef::mp-flavor[]
-* The Micrometer annotations `@Timed` and `@Counted`.
-endif::mp-flavor[]
 * Configuration to tailor the Prometheus and other Micrometer meter registries.
 
 In Helidon {helidon-version}, Micrometer support is separate from the Helidon {h1-prefix} metrics API and the built-in Helidon metrics.
 
 // end::intro[]
-
-// tag::prereq[]
-include::{rootdir}/includes/dependencies.adoc[]
-
-[source,xml,subs="verbatim,attributes"]
-----
-<dependency>
-    <groupId>io.helidon.integrations.micrometer</groupId>
-ifdef::se-flavor[]
-    <artifactId>helidon-integrations-micrometer</artifactId>
-endif::se-flavor[]
-ifdef::mp-flavor[]
-    <artifactId>helidon-integrations-micrometer-cdi</artifactId>
-endif::mp-flavor[]
-</dependency>
-----
-
-Micrometer supports different types of meter registries which have different output styles and formats.
-Helidon provides built-in support for the Prometheus meter registry.
-To use other meter registry types, you will need to add dependencies for them to your `pom.xml` and, optionally, add
-ifdef::se-flavor[]
-code to your application or add
-endif::se-flavor[]
-configuration to set them up as you wish.
-
-// end::prereq[]
 
 // tag::overriding-intro[]
 ==== Overriding Defaults for Built-in Meter Registry Types
@@ -96,23 +63,14 @@ To use configuration to control the selection and behavior of Helidon's built-in
 include in your configuration (such as `application.yaml`) a `micrometer.builtin-registries` section.
 
 .Enroll Prometheus built-in meter registry using default configuration
-ifdef::se-flavor[]
 [source,yaml]
 ----
 micrometer:
   builtin-registries:
     - type: prometheus
 ----
-endif::[]
-ifdef::mp-flavor[]
-[source,properties]
-----
-micrometer.builtin-registries.0.type=prometheus
-----
-endif::[]
 
 .Enroll Prometheus built-in meter registry with non-default configuration
-ifdef::se-flavor[]
 [source,yaml]
 ----
 micrometer:
@@ -120,14 +78,6 @@ micrometer:
     - type: prometheus
       prefix: myPrefix
 ----
-endif::[]
-ifdef::mp-flavor[]
-[source,properties]
-----
-micrometer.builtin-registries.0.type=prometheus
-micrometer.builtin-registries.0.prefix=myPrefix
-----
-endif::[]
 Note that the first config example is equivalent to the default Helidon Micrometer behavior; Helidon by default supports the Prometheus meter registry.
 
 The configuration keys that are valid for the `builtin-registries` child entries depend on the type of Micrometer meter
@@ -144,8 +94,7 @@ meter registries.
 // tag::accessing-endpoint-intro[]
 === Accessing the Helidon Micrometer Endpoint
 
-ifdef::mp-flavor[Helidon MP Micrometer integration automatically creates]
-ifdef::se-flavor[Your application can easily have Helidon create]
+Your application can easily have Helidon create
 a REST endpoint which clients can access to retrieve Micrometer metrics, by default at the `/micrometer` endpoint.
 
 ifdef::se-flavor[]
@@ -157,9 +106,12 @@ endif::[]
 
 // tag::configuring-endpoint[]
 == Configuration
-You can configure the Helidon Micrometer REST service as you can other built-in Helidon services by adding configuration settings under the `micrometer` top-level key.
+Helidon's Micrometer support is exposed through the Micrometer-backed metrics publishers.
+The generated configuration references below describe the currently supported publisher types.
 
-include::{rootdir}/config/io_helidon_integrations_micrometer_MicrometerFeature.adoc[tag=config,leveloffset=+1]
+include::{rootdir}/config/io_helidon_metrics_providers_micrometer_PrometheusPublisher.adoc[tag=config,leveloffset=+1]
+
+include::{rootdir}/config/io_helidon_metrics_providers_micrometer_OtlpPublisher.adoc[tag=config,leveloffset=+1]
 
 By default, Helidon Micrometer integration exposes the `/micrometer` endpoint.
 You can override the path using
@@ -169,19 +121,11 @@ endif::se-flavor[]
 the `micrometer.web-context` configuration key.
 
 .Overriding the default Micrometer path
-ifdef::se-flavor[]
 [source,yaml]
 ----
 micrometer:
   web-context: my-micrometer
 ----
-endif::[]
-ifdef::mp-flavor[]
-[source,properties]
-----
-micrometer.web-context=my-micrometer
-----
-endif::[]
 
 // end::configuring-endpoint[]
 
@@ -199,4 +143,3 @@ Helidon {flavor-uc} includes an link:{helidon-github-examples-url}/integrations/
 // end::example-apps[]
 
 // end::all-micrometer[]
-

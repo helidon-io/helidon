@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2016, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,44 +23,8 @@ security:
   providers:
     # Configuration of security providers
     - http-basic-auth:
-        # https://tools.ietf.org/html/rfc2617
+        # https://tools.ietf.org/html/rfc7617
         realm: "mic"
-        users:
-          - login: "jack"
-            password: "${CLEAR=jackIsGreat}"
-            roles: ["user", "admin"]
-          - login: "jill"
-            # AES is no longer supported, and this is a test of authentication, not encryption
-            password: "${CLEAR=jungle}"
-            roles: ["user"]
-    - http-digest-auth:
-        realm: "mic"
-        # Algorithm - MD5 is default (and now the only supported)
-        # algorithm: "MD5"
-        # QOP options - auth or empty (fallback to old RFC)
-        # default is auth
-        # qop: ["auth"]
-
-        # Password for protecting nonce values. Should be the same for
-        # services that want to share digest authentication (obviously together with realm)
-        server-secret: "pwd"
-
-        # Timeout of nonce values, defeault is 24 hours
-        # nonce-timeout-millis: 11111111111
-        users:
-          - login: "jack"
-            password: "${CLEAR=jackIsGreat}"
-            roles: ["user", "admin"]
-          - login: "jill"
-            # AES is no longer supported, and this is a test of authentication, not encryption
-            password: "${CLEAR=jungle}"
-            roles: ["user"]
-    - name: "digest_old"
-      http-digest-auth:
-        realm: "mic"
-        type: "DIGEST"
-        # QOP options - auth or empty (fallback to old RFC)
-        qop: []
         users:
           - login: "jack"
             password: "${CLEAR=jackIsGreat}"

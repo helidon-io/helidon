@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webserver.observe</groupId>
         <artifactId>helidon-webserver-observe-telemetry-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-webserver-observe-telemetry-tracing</artifactId>
@@ -64,7 +64,7 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
+            <groupId>io.helidon.config.metadata</groupId>
             <artifactId>helidon-config-metadata</artifactId>
             <optional>true</optional>
         </dependency>

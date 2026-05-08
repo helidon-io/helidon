@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package io.helidon.webclient.grpc.tracing;
 
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.grpc.core.WeightedBag;
 import io.helidon.webclient.grpc.spi.GrpcClientService;
 
@@ -29,14 +29,7 @@ public class GrpcClientTracing implements GrpcClientService {
 
     private final Config config;
 
-    /**
-     * Create an instance from config.
-     *
-     * @param config the config
-     * @deprecated this constructor was left public by accident, please use #create(Config)
-     */
-    @Deprecated(forRemoval = true)
-    public GrpcClientTracing(Config config) {
+    private GrpcClientTracing(Config config) {
         this.config = config;
     }
 

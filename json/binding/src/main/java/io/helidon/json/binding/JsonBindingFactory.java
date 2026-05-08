@@ -18,6 +18,7 @@ package io.helidon.json.binding;
 
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 
 /**
@@ -25,6 +26,7 @@ import io.helidon.common.GenericType;
  *
  * @param <T> the base type this factory handles
  */
+@Api.Preview
 public interface JsonBindingFactory<T> {
     /*
      * This type is used from generated code

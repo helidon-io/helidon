@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package io.helidon.config.metadata.docs;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import io.helidon.config.metadata.model.CmModel;
 import io.helidon.logging.common.LogConfig;
 
 /**
- * Main class to start generating config reference documentation.
+ * Config docs generator entry point.
  */
 public final class Main {
     static {
@@ -34,41 +33,19 @@ public final class Main {
     }
 
     /**
-     * Start generating reference documentation.
+     * Process the config metadata from the classpath and generate the corresponding documentation.
      *
-     * @param args either empty (target path is discovered if possible), or a single parameter - the target path to generate docs
-     * @throws io.helidon.config.metadata.docs.ConfigDocsException in case the path is not correct, or a problem is discovered
-     *                                                             while generating the documentation
+     * @param args a single parameter (the output directory)
      */
     public static void main(String[] args) {
+        if (args.length != 1) {
+            System.err.println("Usage: output_directory");
+            System.exit(1);
+        }
         LogConfig.configureRuntime();
-
-        Path targetPath;
-
-        if (args.length == 0) {
-            targetPath = findReasonablePath();
-        } else if (args.length == 1) {
-            targetPath = Paths.get(args[0]);
-        } else {
-            throw new IllegalArgumentException("This tool can have zero or one parameters "
-                                                       + "(path to generated code). Got " + args.length + " parameters");
-        }
-
-        Path path = targetPath.toAbsolutePath().normalize();
-        ConfigDocs docs = ConfigDocs.create(path);
+        var outputDir = Paths.get(args[0]).toAbsolutePath().normalize();
+        var metadata = CmModel.loadAll(Main.class.getClassLoader());
+        var docs = new CmDocCodegen(outputDir, metadata);
         docs.process();
-    }
-
-    private static Path findReasonablePath() {
-        Path p = Paths.get("docs/src/main/asciidoc/config");
-        if (Files.exists(p) && Files.isDirectory(p)) {
-            return p;
-        }
-        p = Paths.get(".").toAbsolutePath().normalize();
-        if (p.toString().replace('\\', '/').endsWith("config/metadata/docs")) {
-            // we are probably in Helidon repository in config/metadata/docs
-            return p.resolve("../../../docs/src/main/asciidoc/config");
-        }
-        throw new IllegalArgumentException("Cannot discover config asciidoc path, please provide it as a parameter");
     }
 }

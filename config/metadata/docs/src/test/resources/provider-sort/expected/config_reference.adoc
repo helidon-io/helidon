@@ -1,0 +1,16 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= Config Reference
+
+== Config Roots
+
+|===
+|Key|Description
+
+|[[ac6d482f1-server]] xref:{rootdir}/config/com_acme_AcmeServerConfig.adoc[`server`]
+|pass:[Configuration for <code>server</code>]
+
+|===
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

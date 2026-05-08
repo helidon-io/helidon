@@ -20,13 +20,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import io.helidon.common.GenericType;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HtmlEncoder;
 import io.helidon.http.Status;
 import io.helidon.http.media.EntityWriter;
+import io.helidon.http.media.json.JsonSupport;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonObject;
 import io.helidon.webserver.http.Handler;
@@ -34,7 +34,6 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 class HealthHandler implements Handler {
-    static final GenericType<JsonObject> JSON_OBJECT_TYPE = GenericType.create(JsonObject.class);
     private static final System.Logger LOGGER = System.getLogger(HealthHandler.class.getName());
 
     private final EntityWriter<JsonObject> entityWriter;
@@ -88,7 +87,7 @@ class HealthHandler implements Handler {
                 .header(HeaderValues.X_CONTENT_TYPE_OPTIONS_NOSNIFF);
 
         if (details) {
-            entityWriter.write(JSON_OBJECT_TYPE,
+            entityWriter.write(JsonSupport.JSON_OBJECT_TYPE,
                                toJson(status, responses),
                                res.outputStream(),
                                req.headers(),

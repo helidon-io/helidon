@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,11 @@ import java.nio.file.Paths;
  * @see io.helidon.config.ClasspathConfigSource
  * @see ClasspathOverrideSource
  */
-class ClasspathSourceHelper {
+final class ClasspathSourceHelper {
 
     private static final System.Logger LOGGER = System.getLogger(ClasspathSourceHelper.class.getName());
 
     private ClasspathSourceHelper() {
-        throw new AssertionError("Instantiation not allowed.");
     }
 
     static String uid(String resourceName) {

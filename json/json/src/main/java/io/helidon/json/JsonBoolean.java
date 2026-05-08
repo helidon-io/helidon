@@ -16,9 +16,12 @@
 
 package io.helidon.json;
 
+import io.helidon.common.Api;
+
 /**
  * Represents a JSON boolean value (true or false).
  */
+@Api.Preview
 public final class JsonBoolean extends JsonValue {
 
     /**

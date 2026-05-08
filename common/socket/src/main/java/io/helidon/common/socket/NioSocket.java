@@ -123,21 +123,6 @@ public sealed class NioSocket implements HelidonSocket permits TlsNioSocket {
         return delegate.isOpen();
     }
 
-    @SuppressWarnings("removal")
-    @Override
-    public int read(BufferData buffer) {
-        try {
-            if (readBuffer.remaining() == 0) {
-                readBuffer.clear();
-                delegate.read(readBuffer);
-                readBuffer.flip();
-            }
-            return buffer.readFrom(readBuffer);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     @Override
     public void write(BufferData buffer) {
         try {
@@ -145,7 +130,11 @@ public sealed class NioSocket implements HelidonSocket permits TlsNioSocket {
                 writeBuffer.clear();
                 buffer.writeTo(writeBuffer, buffer.available());
                 writeBuffer.flip();
-                delegate.write(writeBuffer);
+                // SocketChannel.write may complete partially, so we must drain the staged bytes before
+                // advancing the source buffer again.
+                while (writeBuffer.hasRemaining()) {
+                    delegate.write(writeBuffer);
+                }
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);

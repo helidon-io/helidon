@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,10 +32,12 @@ module io.helidon.http.media {
 
     requires io.helidon.builder.api;
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.common.media.type;
     requires transitive io.helidon.common;
     requires transitive io.helidon.http;
+    requires io.helidon.config;
 
     exports io.helidon.http.media;
     exports io.helidon.http.media.spi;

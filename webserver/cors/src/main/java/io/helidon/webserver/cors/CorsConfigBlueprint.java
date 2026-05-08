@@ -17,13 +17,11 @@
 package io.helidon.webserver.cors;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
@@ -33,7 +31,6 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 @Prototype.Configured(CorsFeature.CORS_ID)
 @Prototype.Provides(ServerFeatureProvider.class)
 @Prototype.IncludeDefaultMethods
-@Prototype.Annotated("java.lang.SuppressWarnings(\"removal\")")
 interface CorsConfigBlueprint extends Prototype.Factory<CorsFeature>, Weighted {
 
     /**
@@ -98,15 +95,4 @@ interface CorsConfigBlueprint extends Prototype.Factory<CorsFeature>, Weighted {
     default boolean addDefaults() {
         return true;
     }
-
-    /**
-     * Access to config that was used to create this feature.
-     *
-     * @return configuration
-     * @deprecated this method will be removed without a replacement, path based configuration is now handled by
-     *         {@link #paths()}
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    Optional<Config> config();
 }

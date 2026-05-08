@@ -15,15 +15,14 @@
  */
 package io.helidon.codegen.classmodel;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import io.helidon.common.types.Annotation;
 import io.helidon.common.types.AnnotationProperty;
+import io.helidon.common.types.AnnotationProperty.ConstantValue;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.EnumValue;
 import io.helidon.common.types.TypeName;
@@ -35,18 +34,15 @@ public final class AnnotationParameter extends CommonComponent {
 
     private final Set<TypeName> importedTypes;
     private final Object objectValue;
-    private final AnnotationProperty.ConstantValue constantValue;
 
     private AnnotationParameter(Builder builder) {
         super(builder);
-
-        this.objectValue = builder.value;
-        this.constantValue = builder.constantValue;
-        this.importedTypes = resolveImports(builder.value, constantValue);
+        this.objectValue = value(builder.value);
+        this.importedTypes = resolveImports(this);
     }
 
     /**
-     * Create new {@link Builder}.
+     * Create new {@link io.helidon.codegen.classmodel.AnnotationParameter.Builder}.
      *
      * @return new builder instance
      */
@@ -61,155 +57,175 @@ public final class AnnotationParameter extends CommonComponent {
 
     @Override
     void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ElementKind classType) {
-        writer.write(name() + " = ");
-        writeValue(writer, imports);
+        writeComponent(writer, true, imports);
+    }
+
+    void writeComponent(ModelWriter writer, boolean multiline, ImportOrganizer imports) {
+        writer.write(name());
+        writer.write(" = ");
+        writeValue(writer, multiline, imports);
     }
 
     @Override
     void addImports(ImportOrganizer.Builder imports) {
-        importedTypes.forEach(imports::addImport);
-    }
-
-    void writeValue(ModelWriter writer, ImportOrganizer imports) {
-        writer.write(resolveValueToString(imports, type(), objectValue));
+        for (var importedType : importedTypes) {
+            imports.addImport(importedType);
+        }
     }
 
     Object value() {
         return objectValue;
     }
 
-    private Set<TypeName> resolveImports(Object value, AnnotationProperty.ConstantValue constantValue) {
+    void writeValue(ModelWriter writer, boolean multiline, ImportOrganizer imports) {
+        var value = value();
+        switch (value) {
+            case ConstantValue cv -> writer.writeValue(imports, cv);
+            case Enum<?> ev -> writer.writeValue(imports, ev);
+            default -> {
+                var type = type();
+                if (type != null && type.fqTypeName().equals(String.class.getName())) {
+                    writer.writeValue(value.toString());
+                } else if (type != null && type.fqTypeName().equals(Object.class.getName())) {
+                    writer.write(value.toString());
+                } else {
+                    writeValue(writer, multiline, imports, value);
+                }
+            }
+        }
+    }
+
+    void writeValue(ModelWriter writer, boolean multiline, ImportOrganizer imports, Object value) {
+        switch (value) {
+            case TypeName typeName -> writer.writeValue(imports, typeName);
+            case Class<?> clazz -> writer.writeValue(imports, clazz);
+            case EnumValue enumValue -> writer.writeValue(imports, enumValue);
+            case Character character -> writer.writeValue(character);
+            case String str -> writer.writeValue(str);
+            case Number number -> writer.writeValue(number);
+            case Collection<?> list -> writeValue(writer, multiline, imports, list);
+            case Annotation annotation -> annotation.writeComponent(writer, multiline, imports);
+            default -> writer.write(value.toString());
+        }
+    }
+
+    void writeValue(ModelWriter writer, boolean multiline, ImportOrganizer imports, Collection<?> list) {
+        if (list.isEmpty()) {
+            writer.write("{}");
+        } else {
+            if (list.size() == 1) {
+                var it = list.iterator();
+                var e = it.next();
+                if ("value".equals(name()) || isValueType(e)) {
+                    writeValue(writer, multiline, imports, e);
+                    return;
+                }
+            }
+
+            writer.write("{");
+            if (multiline) {
+                writer.increasePaddingLevel();
+                writer.write("\n");
+            }
+            var it = list.iterator();
+            while (it.hasNext()) {
+                var next = it.next();
+                var nextMultiline = multiline && Annotation.isMultiline(writer, imports, next);
+                writeValue(writer, nextMultiline, imports, next);
+                if (it.hasNext()) {
+                    writer.write(",");
+                    if (multiline) {
+                        writer.write("\n");
+                    } else {
+                        writer.write(" ");
+                    }
+                }
+            }
+            if (multiline) {
+                writer.decreasePaddingLevel();
+                writer.write("\n");
+            }
+            writer.write("}");
+        }
+    }
+
+    private static Set<TypeName> resolveImports(Object value) {
         Set<TypeName> imports = new HashSet<>();
-
-        resolveImports(imports, value, constantValue);
-
+        resolveImports(imports, value);
         return imports;
     }
 
-    private void resolveImports(Set<TypeName> imports, Object value, AnnotationProperty.ConstantValue constantValue) {
-        if (constantValue != null) {
-            // we only care about the constant value, as other stuff is ignored during code generation
-            imports.add(constantValue.type());
-            return;
-        }
-        if (value.getClass().isEnum()) {
-            imports.add(TypeName.create(value.getClass()));
-            return;
-        }
+    private static void resolveImports(Set<TypeName> imports, Object value) {
         switch (value) {
-        case TypeName tn -> imports.add(tn);
-        case EnumValue ev -> imports.add(ev.type());
-        case Annotation an -> {
-            imports.add(an.typeName());
-            an.properties()
-                    .values()
-                    .forEach(nestedValue -> resolveImports(imports, nestedValue, nestedValue.constantValue().orElse(null)));
-        }
-        default -> {
-        }
-        }
-    }
-
-    // takes the annotation value objects and converts it to its string representation (as seen in class source)
-    private String resolveValueToString(ImportOrganizer imports, Type type, Object value) {
-        if (constantValue != null) {
-            return imports.typeName(Type.fromTypeName(constantValue.type()), true)
-                    + "." + constantValue.name();
-        }
-
-        Class<?> valueClass = value.getClass();
-        if (valueClass.isEnum()) {
-            return imports.typeName(Type.fromTypeName(TypeName.create(valueClass)), true)
-                    + "." + ((Enum<?>) value).name();
-        }
-        if (type != null && type.fqTypeName().equals(String.class.getName())) {
-            String stringValue = value.toString();
-            if (!stringValue.startsWith("\"") && !stringValue.endsWith("\"")) {
-                return quoteString(stringValue);
+            case AnnotationParameter p -> resolveImports(imports, p.objectValue);
+            case Enum<?> e -> imports.add(TypeName.create(e.getClass()));
+            case ConstantValue cv -> imports.add(cv.type());
+            case TypeName tn -> imports.add(tn);
+            case io.helidon.codegen.classmodel.Annotation an -> {
+                imports.add(an.typeName());
+                for (var e : an.parameters()) {
+                    resolveImports(imports, e);
+                }
             }
-            return stringValue;
+            case io.helidon.common.types.Annotation an -> {
+                imports.add(an.typeName());
+                for (var e : an.properties().values()) {
+                    resolveImports(imports, e.value());
+                }
+            }
+            case Collection<?> list -> {
+                for (var e : list) {
+                    resolveImports(imports, e);
+                }
+            }
+            default -> {
+                // ignore
+            }
         }
-
-        if (type != null && type.fqTypeName().equals(Object.class.getName())) {
-            // we expect this to be "as is" - such as when parsing annotations
-            return value.toString();
-        }
-
-        return switch (value) {
-            case TypeName typeName -> imports.typeName(Type.fromTypeName(typeName), true) + ".class";
-            case EnumValue enumValue -> imports.typeName(Type.fromTypeName(enumValue.type()), true)
-                    + "." + enumValue.name();
-            case Character character -> "'" + escapeCharacter(character) + "'";
-            case Long longValue -> longValue + "L";
-            case Float floatValue -> floatValue + "F";
-            case Double doubleValue -> doubleValue + "D";
-            case Byte byteValue -> "(byte) " + byteValue;
-            case Short shortValue -> "(short) " + shortValue;
-            case Class<?> clazz -> imports.typeName(Type.fromTypeName(TypeName.create(clazz)), true) + ".class";
-            case Annotation annotation -> nestedAnnotationValue(imports, annotation);
-            case List<?> list -> nestedListValue(imports, list);
-            case String str -> str.startsWith("\"") && str.endsWith("\"") ? str : quoteString(str);
-            default -> value.toString();
-        };
-
     }
 
-    private String quoteString(String stringValue) {
-        return "\"" + stringValue.replaceAll("\"", "\\\\\"") + "\"";
-    }
-
-    private String escapeCharacter(Character character) {
-        return switch (character) {
-            case '\'' -> "\\'";
-            case '\t' -> "\\t";
-            case '\n' -> "\\n";
-            case '\r' -> "\\r";
-            default -> String.valueOf(character);
-        };
-    }
-
-    private String nestedListValue(ImportOrganizer imports, List<?> list) {
-        if (list.isEmpty()) {
-            return "{}";
-        }
-        StringBuilder result = new StringBuilder();
-        if (list.size() > 1) {
-            result.append("{");
-        }
-
-        result.append(list.stream()
-                .map(it -> resolveValueToString(imports, null, it))
-                .collect(Collectors.joining(", ")));
-
-        if (list.size() > 1) {
-            result.append("}");
-        }
-        return result.toString();
-    }
-
-    private String nestedAnnotationValue(ImportOrganizer imports, Annotation annotation) {
-        StringBuilder sb = new StringBuilder("@");
-        sb.append(imports.typeName(Type.fromTypeName(annotation.typeName()), true));
-
-        Map<String, AnnotationProperty> values = annotation.properties();
-        if (values.isEmpty()) {
-            return sb.toString();
-        }
-
-        sb.append("(");
-        if (values.size() == 1 && values.containsKey("value")) {
-            sb.append(resolveValueToString(imports, null, values.get("value").value()));
+    private static Object value(Object value) {
+        if (value instanceof Collection<?> values) {
+            var list = new ArrayList<>();
+            for (var e : values) {
+                if (e instanceof io.helidon.common.types.Annotation a) {
+                    list.add(annotation(a));
+                } else {
+                    list.add(e);
+                }
+            }
+            return list;
+        } else if (value instanceof io.helidon.common.types.Annotation a) {
+            return annotation(a);
         } else {
-            values.forEach((key, value) -> {
-                sb.append(key)
-                        .append(" = ")
-                        .append(resolveValueToString(imports, null, value.value()))
-                        .append(", ");
-            });
-            sb.delete(sb.length() - 2, sb.length());
+            return value;
         }
-        sb.append(")");
-        return sb.toString();
+    }
+
+    private static Annotation annotation(io.helidon.common.types.Annotation a) {
+        var builder = Annotation.builder().from(a);
+        for (var entry : a.properties().entrySet()) {
+            var name = entry.getKey();
+            var value = value(entry.getValue().value());
+            builder.addParameter(AnnotationParameter.builder()
+                    .name(name)
+                    .value(value)
+                    .type(value instanceof TypeName ? Class.class : value.getClass())
+                    .build());
+        }
+        return builder.build();
+    }
+
+    private static boolean isValueType(Object o) {
+        return switch (o) {
+            case TypeName ignored -> true;
+            case Class<?> ignored -> true;
+            case EnumValue ignored -> true;
+            case Character ignored -> true;
+            case String ignored -> true;
+            case Number ignored -> true;
+            default -> false;
+        };
     }
 
     /**
@@ -218,7 +234,6 @@ public final class AnnotationParameter extends CommonComponent {
     public static final class Builder extends CommonComponent.Builder<Builder, AnnotationParameter> {
 
         private Object value;
-        private AnnotationProperty.ConstantValue constantValue;
 
         private Builder() {
         }
@@ -243,7 +258,11 @@ public final class AnnotationParameter extends CommonComponent {
          * @return updated builder instance
          */
         public Builder value(Object value) {
-            this.value = Objects.requireNonNull(value);
+            if (value instanceof AnnotationProperty p) {
+                this.value = p.value();
+            } else {
+                this.value = Objects.requireNonNull(value);
+            }
             return this;
         }
 
@@ -260,17 +279,6 @@ public final class AnnotationParameter extends CommonComponent {
         @Override
         public Builder type(Class<?> type) {
             return super.type(type);
-        }
-
-        /**
-         * Configure a constant value, to generate a reference to a constant, rather then explicit value.
-         *
-         * @param constantValue type and constant name
-         * @return updated builder
-         */
-        public Builder constantValue(AnnotationProperty.ConstantValue constantValue) {
-            this.constantValue = constantValue;
-            return this;
         }
     }
 }

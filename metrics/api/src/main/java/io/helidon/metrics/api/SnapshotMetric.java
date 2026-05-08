@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 package io.helidon.metrics.api;
 
 /**
- * A metric that is capable of providing snapshots.
+ * A metric that can provide a {@link LabeledSnapshot} of its current sampled values.
  */
 public interface SnapshotMetric {
     /**
-     * Snapshot of the metric.
+     * Returns a snapshot of the metric's current sampled values.
      *
      * @return snapshot
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,12 @@ package io.helidon.common.testing.http.junit5;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
@@ -55,13 +57,17 @@ public class SocketHttpClient implements AutoCloseable {
 
     private static final String EOL = "\r\n";
     private static final Pattern FIRST_LINE_PATTERN = Pattern.compile("HTTP/\\d+\\.\\d+ (\\d\\d\\d) (.*)");
+    private static final Consumer<Socket> NO_OP_SOCKET_CONFIGURATOR = socket -> {
+    };
     private final String host;
     private final int port;
     private final Duration timeout;
+    private final Consumer<Socket> socketConfigurator;
 
     private Socket socket;
     private boolean connected;
     private BufferedReader socketReader;
+    private InputStream socketInputStream;
 
     /**
      * Create a new client connecting to the specified coordinates.
@@ -71,9 +77,22 @@ public class SocketHttpClient implements AutoCloseable {
      * @param timeout socket timeout
      */
     protected SocketHttpClient(String host, int port, Duration timeout) {
+        this(host, port, timeout, NO_OP_SOCKET_CONFIGURATOR);
+    }
+
+    /**
+     * Create a new client connecting to the specified coordinates.
+     *
+     * @param host host to connect to
+     * @param port port to connect to
+     * @param timeout socket timeout
+     * @param socketConfigurator socket configuration applied before connect
+     */
+    protected SocketHttpClient(String host, int port, Duration timeout, Consumer<Socket> socketConfigurator) {
         this.host = host;
         this.port = port;
         this.timeout = timeout;
+        this.socketConfigurator = socketConfigurator == null ? NO_OP_SOCKET_CONFIGURATOR : socketConfigurator;
     }
 
     /**
@@ -89,6 +108,22 @@ public class SocketHttpClient implements AutoCloseable {
     }
 
     /**
+     * Socket client that allows sending any content with custom socket configuration.
+     *
+     * @param host host to connect to
+     * @param port port to connect to
+     * @param timeout socket timeout
+     * @param socketConfigurator socket configuration applied before connect
+     * @return a new (disconnected) client
+     */
+    public static SocketHttpClient create(String host,
+                                          int port,
+                                          Duration timeout,
+                                          Consumer<Socket> socketConfigurator) {
+        return new SocketHttpClient(host, port, timeout, socketConfigurator);
+    }
+
+    /**
      * Socket client that allows sending any content.
      * Uses localhost and timeout of 5 seconds.
      *
@@ -97,6 +132,18 @@ public class SocketHttpClient implements AutoCloseable {
      */
     public static SocketHttpClient create(int port) {
         return create("localhost", port, Duration.ofSeconds(5));
+    }
+
+    /**
+     * Socket client that allows sending any content.
+     * Uses localhost and timeout of 5 seconds.
+     *
+     * @param port port to connect to
+     * @param socketConfigurator socket configuration applied before connect
+     * @return a new (disconnected) client
+     */
+    public static SocketHttpClient create(int port, Consumer<Socket> socketConfigurator) {
+        return create("localhost", port, Duration.ofSeconds(5), socketConfigurator);
     }
 
     /**
@@ -285,7 +332,7 @@ public class SocketHttpClient implements AutoCloseable {
      */
     public String receive() {
         try {
-            BufferedReader br = socketReader;
+            BufferedReader br = socketReader();
             StringBuilder sb = new StringBuilder();
             String t;
             boolean ending = false;
@@ -355,7 +402,7 @@ public class SocketHttpClient implements AutoCloseable {
         String t;
         while (true) {
             try {
-                t = socketReader.readLine();
+                t = socketReader().readLine();
                 if (t == null) {
                     break;
                 }
@@ -504,6 +551,7 @@ public class SocketHttpClient implements AutoCloseable {
         }
         try {
             connected = false;
+            socketReader = null;
             socket.close();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -533,9 +581,11 @@ public class SocketHttpClient implements AutoCloseable {
             connected = false;
         }
         try {
-            socket = new Socket(host, port);
+            socket = new Socket();
+            socketConfigurator.accept(socket);
+            socket.connect(new InetSocketAddress(host, port), (int) timeout.toMillis());
             socket.setSoTimeout((int) timeout.toMillis());
-            socketReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            socketInputStream = socket.getInputStream();
             connected = true;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -611,7 +661,23 @@ public class SocketHttpClient implements AutoCloseable {
      * @return the reader
      */
     public BufferedReader socketReader() {
+        if (socketReader == null) {
+            socketReader = new BufferedReader(new InputStreamReader(socketInputStream, StandardCharsets.UTF_8));
+        }
         return socketReader;
+    }
+
+    /**
+     * Returns input stream. Should not be called if already using a reader.
+     *
+     * @return socket input stream
+     * @throws java.lang.IllegalStateException if socker reader already created
+     */
+    public InputStream socketInputStream() {
+        if (socketReader != null) {
+            throw new IllegalStateException("Cannot get input stream");
+        }
+        return socketInputStream;
     }
 
     /**

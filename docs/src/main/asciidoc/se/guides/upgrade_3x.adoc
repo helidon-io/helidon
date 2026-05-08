@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -134,9 +134,6 @@ include::{sourcedir}/se/guides/Upgrade3xSnippets.java[tag=snippet_2, indent=0]
 - The custom Helidon OCI clients have been deprecated (link:https://github.com/oracle/helidon/pull/4015[See PR]).
 
 Use the OCI Java SDK instead.
-If you use Helidon MP you can inject OCI SDK clients by adding the dependency `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi`.
-
-NOTE: See xref:{rootdir}/se/integrations/oci.adoc#oci-compatibility[Resolving compatibility issue with OCI SDK] for detailed information on how to work around this issue.
 
 - The MultiPart buffered readers have been deprecated (link:https://github.com/oracle/helidon/pull/4096[See PR]). Use the MultiPart stream readers instead.
 
@@ -251,4 +248,3 @@ More information in the following link:https://github.com/oracle/helidon/issues/
 * `Static content support` in `WebServer` - moved to a separate module. Fully removed from `WebServer` module.
 
 More information in the following link:https://github.com/oracle/helidon/issues/4374[Task].
-

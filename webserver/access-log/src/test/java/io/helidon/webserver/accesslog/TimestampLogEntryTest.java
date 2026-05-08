@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,8 @@ class TimestampLogEntryTest {
         assertThat(value, startsWith("["));
         assertThat(value, CoreMatchers.endsWith("]"));
 
-        // this is as used by Apache HTTP server for common log format
-        DateTimeFormatter defaultPattern = DateTimeFormatter.ofPattern("dd/MMM/YYYY:HH:mm:ss ZZZ");
+        // this is as used by Apache HTTP server for common log format (yyyy = calendar year)
+        DateTimeFormatter defaultPattern = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss ZZZ");
         assertThat(value.substring(1, value.length() - 1), is(defaultPattern.format(TEST_TIME)));
     }
 

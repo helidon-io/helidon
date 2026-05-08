@@ -1,0 +1,21 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.AcmeConfig",
+        "standalone": true,
+        "prefix": "acme",
+        "description": "ACME configuration.",
+        "options": [
+          {
+            "key": "manager",
+            "type": "com.acme.AcmeManager",
+            "description": "Manager contract",
+            "provider": true
+          }
+        ]
+      }
+    ]
+  }
+]

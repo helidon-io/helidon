@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -195,12 +195,9 @@ public interface Context {
         private boolean notGlobal = true;
 
         /**
-         * This constructor was accidentally left public.
-         *
-         * @deprecated use {@link io.helidon.common.context.Context#builder()} instead
+         * Prevent direct instantiation; use {@link io.helidon.common.context.Context#builder()}.
          */
-        @Deprecated(forRemoval = true, since = "4.0.9")
-        public Builder() {
+        private Builder() {
             super();
         }
 

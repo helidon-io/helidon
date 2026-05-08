@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.docs.includes.security.providers;
 
+import io.helidon.http.Http;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SubjectType;
@@ -25,10 +26,6 @@ import io.helidon.security.annotations.Authenticated;
 import io.helidon.security.annotations.Authorized;
 
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.Response;
 
 @SuppressWarnings("ALL")
 class AbacSnippets {
@@ -41,24 +38,20 @@ class AbacSnippets {
 
         // tag::snippet_1[]
         @Authenticated
-        @Path("/abac")
-        public class AbacResource {
-            @GET
+        @Http.Path("/abac")
+        public class AbacEndpoint {
+            @Http.GET
             @Authorized(explicit = true)
             @PolicyStatement("${env.time.year >= 2017 && object.owner == subject.principal.id}")
-            public Response process(@Context SecurityContext context) {
+            public String process(SecurityContext context) {
                 // probably looked up from a database
                 SomeResource res = new SomeResource("user");
                 AuthorizationResponse atzResponse = context.authorize(res);
 
                 if (atzResponse.isPermitted()) {
-                    //do the update
-                    return Response.ok().entity("fine, sir").build();
-                } else {
-                    return Response.status(Response.Status.FORBIDDEN)
-                            .entity(atzResponse.description().orElse("Access not granted"))
-                            .build();
+                    return "fine, sir";
                 }
+                return atzResponse.description().orElse("Access not granted");
             }
         }
         // end::snippet_1[]
@@ -70,8 +63,8 @@ class AbacSnippets {
         @RolesAllowed("user")
         @RoleValidator.Roles(value = "service_role", subjectType = SubjectType.SERVICE)
         @Authenticated
-        @Path("/abac")
-        public class AbacResource {
+        @Http.Path("/abac")
+        public class AbacEndpoint {
         }
         // end::snippet_2[]
     }
@@ -82,8 +75,8 @@ class AbacSnippets {
         @Scope("calendar_read")
         @Scope("calendar_edit")
         @Authenticated
-        @Path("/abac")
-        public class AbacResource {
+        @Http.Path("/abac")
+        public class AbacEndpoint {
         }
         // end::snippet_3[]
     }
@@ -93,8 +86,8 @@ class AbacSnippets {
         // tag::snippet_4[]
         @PolicyStatement("${env.time.year >= 2017}")
         @Authenticated
-        @Path("/abac")
-        public class AbacResource {
+        @Http.Path("/abac")
+        public class AbacEndpoint {
         }
         // end::snippet_4[]
     }

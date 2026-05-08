@@ -1,0 +1,31 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeFeature
+
+== Description
+
+++++
+This type is a provider contract.
+++++
+
+== Implementations
+
+
+|===
+|Key|Description
+
+|xref:{rootdir}/config/com_acme_ZebraFeatureConfig.adoc[`alpha`]
+|pass:[Alpha implementation.]
+
+|xref:{rootdir}/config/com_acme_AlphaFeatureConfig.adoc[`zeta`]
+|pass:[Zeta implementation.]
+
+|===
+
+
+== Usages
+
+* xref:{rootdir}/config/com_acme_AcmeServerConfig.adoc#afc445d1a-features[`server.features`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,10 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -41,15 +41,13 @@ import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
 
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonNumber;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
-import jakarta.json.spi.JsonProvider;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonBoolean;
+import io.helidon.json.JsonNull;
+import io.helidon.json.JsonNumber;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonString;
+import io.helidon.json.JsonValue;
 
 /**
  * Utilities for JWT and JWK parsing.
@@ -61,10 +59,6 @@ public final class JwtUtil {
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder();
     private static final Pattern LOCALE_PATTERN = Pattern.compile("(\\w+)_(\\w+)");
-
-    // Avoid reloading JSON providers. See https://github.com/eclipse-ee4j/jsonp/issues/154
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-    private static final JsonProvider JSON_PROVIDER = JsonProvider.provider();
 
     private JwtUtil() {
     }
@@ -132,10 +126,10 @@ public final class JwtUtil {
      * @throws JwtException in case the key is of invalid content
      */
     public static Optional<List<String>> getStrings(JsonObject json, String key) throws JwtException {
-        return Optional.ofNullable(json.getJsonArray(key))
+        return json.arrayValue(key)
                 .map(it -> {
                     try {
-                        return it.stream().map(it2 -> ((JsonString) it2).getString()).collect(Collectors.toList());
+                        return it.values().stream().map(JsonValue::asString).map(JsonString::value).collect(Collectors.toList());
                     } catch (Exception e) {
                         throw new JwtException("Invalid value. Expecting a string array for key " + key);
                     }
@@ -151,7 +145,10 @@ public final class JwtUtil {
      * @throws JwtException in case the key is of invalid content
      */
     public static Optional<String> getString(JsonObject json, String key) throws JwtException {
-        return Optional.ofNullable(json.getString(key, null));
+        return json.value(key)
+                .filter(JsonString.class::isInstance)
+                .map(JsonValue::asString)
+                .map(JsonString::value);
     }
 
     /**
@@ -242,55 +239,209 @@ public final class JwtUtil {
      * @param claims map to transform from
      * @return resulting map
      */
-    public static Map<String, JsonValue> transformToJson(Map<String, Object> claims) {
+    public static Map<String, JsonValue> transformToJsonValue(Map<String, Object> claims) {
         Map<String, JsonValue> result = new HashMap<>();
 
-        claims.forEach((s, o) -> result.put(s, toJson(o)));
+        claims.forEach((s, o) -> result.put(s, toJsonValue(o)));
 
         return result;
     }
 
     /**
-     * Create a {@link jakarta.json.JsonValue} from an object.
+     * Create a {@link io.helidon.json.JsonValue} from an object.
      * This will use correct types for known primitives, {@link io.helidon.security.jwt.JwtUtil.Address}
      * otherwise it uses String value.
      *
      * @param object object to create json value from
      * @return json value
      */
-    public static JsonValue toJson(Object object) {
+    public static JsonValue toJsonValue(Object object) {
+        JsonValue simpleValue = knownJsonValue(object);
+        if (simpleValue != null) {
+            return simpleValue;
+        }
+        if (object instanceof Collection) {
+            return toJsonArray((Collection<?>) object);
+        }
+        return JsonString.create(String.valueOf(object));
+    }
+
+    private static JsonValue knownJsonValue(Object object) {
         if (object instanceof JsonValue) {
             return (JsonValue) object;
         }
-
         if (object instanceof String) {
-            return JSON_PROVIDER.createValue((String) object);
+            return JsonString.create((String) object);
         }
         if (object instanceof Integer) {
-            return JSON_PROVIDER.createValue((Integer) object);
+            return JsonNumber.create(new BigDecimal((Integer) object));
         }
         if (object instanceof Double) {
-            return JSON_PROVIDER.createValue((Double) object);
+            return JsonNumber.create(BigDecimal.valueOf((Double) object));
         }
         if (object instanceof Long) {
-            return JSON_PROVIDER.createValue((Long) object);
+            return JsonNumber.create(new BigDecimal((Long) object));
         }
         if (object instanceof BigDecimal) {
-            return JSON_PROVIDER.createValue((BigDecimal) object);
+            return JsonNumber.create((BigDecimal) object);
         }
         if (object instanceof BigInteger) {
-            return JSON_PROVIDER.createValue((BigInteger) object);
+            return JsonNumber.create(new BigDecimal((BigInteger) object));
         }
         if (object instanceof Boolean) {
-            return ((Boolean) object) ? JsonValue.TRUE : JsonValue.FALSE;
+            return JsonBoolean.create((Boolean) object);
         }
         if (object instanceof Address) {
-            return ((Address) object).getJson();
+            return ((Address) object).jsonObject();
+        }
+        return null;
+    }
+
+    private static JsonArray toJsonArray(Collection<?> values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.size());
+
+        values.forEach(value -> addJsonArrayValue(jsonValues, value));
+
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(Object[] values) {
+        return toJsonArray(Arrays.asList(values));
+    }
+
+    private static JsonArray toJsonArray(int[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (int value : values) {
+            jsonValues.add(JsonNumber.create((long) value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(long[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (long value : values) {
+            jsonValues.add(JsonNumber.create(value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(double[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (double value : values) {
+            jsonValues.add(JsonNumber.create(value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(boolean[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (boolean value : values) {
+            jsonValues.add(JsonBoolean.create(value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(char[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (char value : values) {
+            jsonValues.add(JsonNumber.create((long) value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(float[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (float value : values) {
+            jsonValues.add(JsonNumber.create((double) value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(byte[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (byte value : values) {
+            jsonValues.add(JsonNumber.create((long) value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonArray toJsonArray(short[] values) {
+        List<JsonValue> jsonValues = new ArrayList<>(values.length);
+        for (short value : values) {
+            jsonValues.add(JsonNumber.create((long) value));
+        }
+        return JsonArray.create(jsonValues);
+    }
+
+    private static JsonObject toJsonObject(Map<?, ?> values) {
+        JsonObject.Builder builder = JsonObject.builder();
+
+        values.forEach((key, value) -> addJsonObjectValue(builder, (String) key, value));
+
+        return builder.build();
+    }
+
+    private static void addJsonArrayValue(List<JsonValue> jsonValues, Object value) {
+        if (value instanceof Optional<?> optionalValue) {
+            optionalValue.ifPresent(it -> jsonValues.add(toNestedJsonValue(it)));
+            return;
+        }
+
+        jsonValues.add(toNestedJsonValue(value));
+    }
+
+    private static void addJsonObjectValue(JsonObject.Builder builder, String key, Object value) {
+        if (value instanceof Optional<?> optionalValue) {
+            optionalValue.ifPresent(it -> builder.set(key, toNestedJsonValue(it)));
+            return;
+        }
+
+        builder.set(key, toNestedJsonValue(value));
+    }
+
+    private static JsonValue toNestedJsonValue(Object object) {
+        if (object == null) {
+            return JsonNull.instance();
+        }
+
+        JsonValue simpleValue = knownJsonValue(object);
+        if (simpleValue != null) {
+            return simpleValue;
         }
         if (object instanceof Collection) {
-            return JSON.createArrayBuilder((Collection<?>) object).build();
+            return toJsonArray((Collection<?>) object);
         }
-        return JSON_PROVIDER.createValue(String.valueOf(object));
+        if (object instanceof Map) {
+            return toJsonObject((Map<?, ?>) object);
+        }
+        if (object instanceof Object[]) {
+            return toJsonArray((Object[]) object);
+        }
+        if (object instanceof int[]) {
+            return toJsonArray((int[]) object);
+        }
+        if (object instanceof long[]) {
+            return toJsonArray((long[]) object);
+        }
+        if (object instanceof double[]) {
+            return toJsonArray((double[]) object);
+        }
+        if (object instanceof boolean[]) {
+            return toJsonArray((boolean[]) object);
+        }
+        if (object instanceof char[]) {
+            return toJsonArray((char[]) object);
+        }
+        if (object instanceof float[]) {
+            return toJsonArray((float[]) object);
+        }
+        if (object instanceof byte[]) {
+            return toJsonArray((byte[]) object);
+        }
+        if (object instanceof short[]) {
+            return toJsonArray((short[]) object);
+        }
+        throw new IllegalArgumentException(String.format("Type %s is not supported.", object.getClass()));
     }
 
     private static Locale toLocale(String locale) {
@@ -305,12 +456,12 @@ public final class JwtUtil {
     }
 
     static Optional<Address> toAddress(JsonObject json, String name) {
-        return Optional.ofNullable(json.getJsonObject(name))
+        return json.objectValue(name)
                 .map(Address::new);
     }
 
     static Optional<List<String>> toScopes(JsonObject json) {
-        if (json.get(Jwt.SCOPE) instanceof JsonArray) {
+        if (json.value(Jwt.SCOPE).filter(it -> it.type() == io.helidon.json.JsonValueType.ARRAY).isPresent()) {
             return getStrings(json, Jwt.SCOPE);
         } else {
             return getString(json, Jwt.SCOPE)
@@ -346,14 +497,14 @@ public final class JwtUtil {
 
     static Optional<Boolean> toBoolean(JsonObject json, String name) {
         if (json.containsKey(name)) {
-            return Optional.of(json.getBoolean(name));
+            return Optional.of(json.booleanValue(name, false));
         }
         return Optional.empty();
     }
 
     static Optional<Instant> toInstant(JsonObject json, String name) {
-        return Optional.ofNullable(json.getJsonNumber(name))
-                .map(JsonNumber::longValue)
+        return json.numberValue(name)
+                .map(BigDecimal::longValue)
                 .map(Instant::ofEpochSecond);
     }
 
@@ -368,19 +519,17 @@ public final class JwtUtil {
      * @return object most correct for the type, or string value if not understood (e.g. json object)
      */
     public static Object toObject(JsonValue jsonValue) {
-        switch (jsonValue.getValueType()) {
+        switch (jsonValue.type()) {
         case ARRAY:
             return jsonValue.toString();
         case OBJECT:
             return jsonValue.toString();
         case STRING:
-            return ((JsonString) jsonValue).getString();
+            return jsonValue.asString().value();
         case NUMBER:
-            return ((JsonNumber) jsonValue).numberValue();
-        case TRUE:
-            return true;
-        case FALSE:
-            return false;
+            return jsonValue.asNumber().bigDecimalValue();
+        case BOOLEAN:
+            return jsonValue.asBoolean().value();
         case NULL:
             return null;
         default:
@@ -449,17 +598,18 @@ public final class JwtUtil {
          *
          * @return Address as a Json object
          */
-        public JsonObject getJson() {
-            JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
+        public JsonObject jsonObject() {
+            JsonObject.Builder objectBuilder = JsonObject.builder();
 
-            formatted.ifPresent(it -> objectBuilder.add("formatted", it));
-            streetAddress.ifPresent(it -> objectBuilder.add("street_address", it));
-            locality.ifPresent(it -> objectBuilder.add("locality", it));
-            region.ifPresent(it -> objectBuilder.add("region", it));
-            postalCode.ifPresent(it -> objectBuilder.add("postal_code", it));
-            country.ifPresent(it -> objectBuilder.add("country", it));
+            formatted.ifPresent(it -> objectBuilder.set("formatted", it));
+            streetAddress.ifPresent(it -> objectBuilder.set("street_address", it));
+            locality.ifPresent(it -> objectBuilder.set("locality", it));
+            region.ifPresent(it -> objectBuilder.set("region", it));
+            postalCode.ifPresent(it -> objectBuilder.set("postal_code", it));
+            country.ifPresent(it -> objectBuilder.set("country", it));
 
             return objectBuilder.build();
         }
+
     }
 }

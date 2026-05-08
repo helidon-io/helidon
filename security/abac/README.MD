@@ -12,4 +12,3 @@ The following table lists validators currently available:
 | [role](role/src/main/java/io/helidon/security/abac/role/RoleValidator.java)      | role-validator    | RolesAllowed, Roles | Checks whether user/service is in role(s) |
 | [scope](scope/src/main/java/io/helidon/security/abac/scope/ScopeValidator.java)     | scope-validator   | Scope       | Checks whether user has the defined scopes | 
 | [policy](policy/src/main/java/io/helidon/security/abac/policy/PolicyValidator.java)    | policy-validator  | PolicyStatement | Evaluates policy statement(s) using a policy executor (SPI) |
-| [policy-el](policy-el/src/main/java/io/helidon/security/abac/policy/el/JavaxElPolicyExecutor.java) | policy-javax-el   | PolicyStatement | Policy executor using Java EE policy expression language (EL) |

@@ -29,6 +29,7 @@ import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.Javadoc;
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotated;
@@ -50,14 +51,12 @@ import static io.helidon.builder.codegen.Types.PROTOTYPE_CONSTANT;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_CUSTOM_METHODS;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY_METHOD_CONFIG;
-import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY_METHOD_DEPRECATED;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY_METHOD_PROTOTYPE;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY_METHOD_RUNTIME_TYPE;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_INCLUDE_DEFAULTS;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_PROTOTYPE_METHOD;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_PROVIDES;
 
-@SuppressWarnings({"deprecation", "removal"})
 final class FactoryPrototypeInfo {
 
     private static final String BLUEPRINT = "Blueprint";
@@ -69,7 +68,6 @@ final class FactoryPrototypeInfo {
     Creates a prototype information from the blueprint.
     This method analyses the class, not options.
      */
-    @SuppressWarnings("removal")
     static PrototypeInfo create(RoundContext ctx, TypeInfo blueprint) {
         Annotation blueprintAnnotation = blueprintAnnotation(blueprint);
 
@@ -118,12 +116,6 @@ final class FactoryPrototypeInfo {
                                                    PROTOTYPE_BUILDER_METHOD,
                                                    FactoryPrototypeInfo::builderMethod));
 
-            // these methods can only be processed once we know all the options
-            prototype.deprecatedFactoryMethods(customMethods(it,
-                                                             errors,
-                                                             PROTOTYPE_FACTORY_METHOD_DEPRECATED,
-                                                             FactoryPrototypeInfo::deprecatedFactory));
-
             prototype.prototypeFactories(customMethods(it,
                                                        errors,
                                                        PROTOTYPE_FACTORY_METHOD_PROTOTYPE,
@@ -145,9 +137,6 @@ final class FactoryPrototypeInfo {
             }
         });
 
-        // also add deprecated factory methods from the blueprint itself (as this was originally supported)
-        addBlueprintDeprecatedFactoryMethods(prototype, blueprint);
-
         copyDefaultMethods(blueprint, prototype, defaultMethodsNotOptions);
 
         return prototype.build();
@@ -162,23 +151,6 @@ final class FactoryPrototypeInfo {
                 .filter(Predicate.not(it -> defaultMethodsPredicate.test(it.elementName())))
                 .filter(it -> !it.hasAnnotation(TypeName.create(Override.class)))
                 .toList();
-    }
-
-    @SuppressWarnings({"removal", "unused"})
-    private static void addBlueprintDeprecatedFactoryMethods(PrototypeInfo.Builder prototype, TypeInfo blueprint) {
-        List<DeprecatedFactoryMethod> deprecatedFactoryMethods = new ArrayList<>(prototype.deprecatedFactoryMethods());
-
-        Errors.Collector errors = Errors.collector();
-        deprecatedFactoryMethods.addAll(customMethods(blueprint,
-                                                      errors,
-                                                      PROTOTYPE_FACTORY_METHOD_DEPRECATED,
-                                                      FactoryPrototypeInfo::deprecatedFactory));
-        Errors collected = errors.collect();
-        if (collected.hasFatal()) {
-            throw new CodegenException("Invalid custom methods or constants: " + collected,
-                                       blueprint.originatingElementValue());
-        }
-        prototype.deprecatedFactoryMethods(deprecatedFactoryMethods);
     }
 
     private static void copyDefaultMethods(TypeInfo blueprint,
@@ -226,11 +198,6 @@ final class FactoryPrototypeInfo {
         ElementSignature signature = prototypeDefaultMethod.signature();
         for (GeneratedMethod prototypeMethod : prototypeInfo.prototypeMethods()) {
             if (prototypeMethod.method().signature().equals(signature)) {
-                return true;
-            }
-        }
-        for (var deprecatedMethod : prototypeInfo.deprecatedFactoryMethods()) {
-            if (deprecatedMethod.method().signature().equals(signature)) {
                 return true;
             }
         }
@@ -285,16 +252,6 @@ final class FactoryPrototypeInfo {
                                                  TypedElementInfo referencedMethod,
                                                  List<Annotation> annotations) {
         return GeneratedMethods.createBuilderMethod(typeName, referencedMethod, annotations);
-    }
-
-    private static DeprecatedFactoryMethod deprecatedFactory(Errors.Collector collector,
-                                                             TypeName typeName,
-                                                             TypedElementInfo referencedMethod,
-                                                             List<Annotation> annotations) {
-        return DeprecatedFactoryMethod.builder()
-                .declaringType(typeName)
-                .method(referencedMethod)
-                .build();
     }
 
     private static GeneratedMethod prototypeFactory(Errors.Collector collector,
@@ -444,8 +401,10 @@ final class FactoryPrototypeInfo {
     }
 
     private static List<Annotation> annotations(Annotated it) {
+        List<Annotation> annotations = new ArrayList<>();
+
         // annotations to be added to generated code
-        return it.findAnnotation(Types.PROTOTYPE_ANNOTATED)
+        it.findAnnotation(Types.PROTOTYPE_ANNOTATED)
                 .flatMap(Annotation::stringValues)
                 .orElseGet(List::of)
                 .stream()
@@ -453,7 +412,25 @@ final class FactoryPrototypeInfo {
                 .filter(Predicate.not(String::isBlank)) // we do not care about blank values
                 .map(io.helidon.codegen.classmodel.Annotation::parse)
                 .map(io.helidon.codegen.classmodel.Annotation::toTypesAnnotation)
-                .toList();
+                .forEach(annotations::add);
+
+        for (var annotation : it.allAnnotations()) {
+            var annotationType = annotation.typeName();
+            List<String> enclosingNames = annotationType.enclosingNames();
+            if (enclosingNames.isEmpty()) {
+                continue;
+            }
+            if (enclosingNames.size() != 1) {
+                continue;
+            }
+            if (Api.class.getSimpleName().equals(enclosingNames.getFirst())
+                    && Api.class.getPackageName().equals(annotationType.packageName())) {
+                // this is an API annotation, add them all (stability, maybe Since) to the generated prototype
+                annotations.add(annotation);
+            }
+        }
+
+        return annotations;
     }
 
     private static Optional<TypeInfo> customMethodsTypeInfo(RoundContext ctx,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.http1;
 
+import io.helidon.common.Api;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.HttpClientSpi;
 import io.helidon.webclient.spi.HttpClientSpiProvider;
@@ -26,8 +27,9 @@ import io.helidon.webclient.spi.HttpClientSpiProvider;
 public class Http1ClientSpiProvider implements HttpClientSpiProvider<Http1ClientProtocolConfig> {
 
     /**
-     * Public constructor required by {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public Http1ClientSpiProvider() {
     }
 

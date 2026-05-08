@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,7 @@ import io.helidon.service.metadata.Descriptors;
  * Support for reading and writing Helidon services to the resource.
  * <p>
  * Helidon replacement for Java {@link java.util.ServiceLoader}.
- * Each service annotated with appropriate annotation
- * ({@link io.helidon.service.codegen.ServiceCodegenTypes#SERVICE_ANNOTATION_PROVIDER})
- * will have a service descriptor generated at build time.
+ * Each supported service or described contract annotation results in a service descriptor generated at build time.
  * <p>
  * The service descriptor is then discoverable at runtime through our own resource in
  * {@value Descriptors#SERVICE_REGISTRY_LOCATION}.

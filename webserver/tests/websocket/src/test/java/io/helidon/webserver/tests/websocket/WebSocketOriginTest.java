@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webserver.tests.websocket;
 
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.WebSocketHandshakeException;
 import java.time.Duration;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,6 +33,7 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.Router;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http1.Http1Config;
 import io.helidon.webserver.http1.Http1ConnectionSelector;
@@ -45,19 +47,23 @@ import io.helidon.webserver.websocket.WsUpgrader;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
 class WebSocketOriginTest {
+    private static final String ALLOWED_ORIGIN = "http://allowed.example";
+    private static final String BLOCKED_ORIGIN = "http://blocked.example";
     private final HttpClient client;
-    private final int port;
+    private final WebServer webServer;
 
-    public WebSocketOriginTest(URI uri) {
+    public WebSocketOriginTest(WebServer webServer) {
         this.client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
-        this.port = uri.getPort();
+        this.webServer = webServer;
     }
 
     @SetUpServer
@@ -65,7 +71,7 @@ class WebSocketOriginTest {
         builder.addConnectionSelector(Http1ConnectionSelector.builder()
                                               .config(Http1Config.create())
                                               .addUpgrader(WsUpgrader.create(WsConfig.builder()
-                                                                                     .addOrigin("WebServerTest")
+                                                                                     .addOrigin(ALLOWED_ORIGIN)
                                                                                      .build()))
                                               .build());
     }
@@ -76,13 +82,84 @@ class WebSocketOriginTest {
                                   .endpoint("/single", WebSocketOriginTest::single));
     }
 
+    /**
+     * Verify that an allowlisted origin is accepted.
+     */
     @Test
     void testSingle() throws ExecutionException, InterruptedException, TimeoutException {
+        int port = webServer.port();
         List<String> received = new LinkedList<>();
         CompletableFuture<Boolean> wsCompleted = new CompletableFuture<>();
 
         java.net.http.WebSocket webSocket = client.newWebSocketBuilder()
-                .header("Origin", "WebServerTest")
+                .header("Origin", ALLOWED_ORIGIN)
+                .buildAsync(URI.create("ws://localhost:" + port + "/single"),
+                            new java.net.http.WebSocket.Listener() {
+                                @Override
+                                public CompletionStage<?> onText(java.net.http.WebSocket webSocket,
+                                                                 CharSequence data,
+                                                                 boolean last) {
+                                    received.add(data.toString());
+                                    wsCompleted.complete(last);
+                                    return wsCompleted;
+                                }
+                            })
+                .get(5, TimeUnit.SECONDS);
+        webSocket.sendText("lower", true);
+        webSocket.sendClose(WsCloseCodes.NORMAL_CLOSE, "finished");
+        Boolean wasLast = wsCompleted.get(5, TimeUnit.SECONDS);
+        assertThat(wasLast, is(true));
+        assertThat(received, hasItem("LOWER"));
+    }
+
+    /**
+     * Verify that a non-allowlisted origin is rejected.
+     */
+    @Test
+    void testRejectedOrigin() {
+        int port = webServer.port();
+        CompletableFuture<java.net.http.WebSocket> future = client.newWebSocketBuilder()
+                .header("Origin", BLOCKED_ORIGIN)
+                .buildAsync(URI.create("ws://localhost:" + port + "/single"),
+                            new java.net.http.WebSocket.Listener() {
+                            });
+
+        ExecutionException exception = assertThrows(ExecutionException.class,
+                                                    () -> future.get(5, TimeUnit.SECONDS));
+        assertThat(exception.getCause(), instanceOf(WebSocketHandshakeException.class));
+        WebSocketHandshakeException handshakeException = (WebSocketHandshakeException) exception.getCause();
+        assertThat(handshakeException.getResponse().statusCode(), is(403));
+    }
+
+    /**
+     * Verify that same-host origins are still rejected when an explicit allowlist is configured.
+     */
+    @Test
+    void testSameHostNotAllowlistedRejected() {
+        int port = webServer.port();
+        CompletableFuture<java.net.http.WebSocket> future = client.newWebSocketBuilder()
+                .header("Origin", "http://localhost:" + port)
+                .buildAsync(URI.create("ws://localhost:" + port + "/single"),
+                            new java.net.http.WebSocket.Listener() {
+                            });
+
+        ExecutionException exception = assertThrows(ExecutionException.class,
+                                                    () -> future.get(5, TimeUnit.SECONDS));
+        assertThat(exception.getCause(), instanceOf(WebSocketHandshakeException.class));
+        WebSocketHandshakeException handshakeException = (WebSocketHandshakeException) exception.getCause();
+        assertThat(handshakeException.getResponse().statusCode(), is(403));
+    }
+
+    /**
+     * Verify that requests without an origin header are allowed.
+     */
+    @Test
+    void testMissingOriginAllowed() throws ExecutionException, InterruptedException, TimeoutException {
+        int port = webServer.port();
+        List<String> received = new LinkedList<>();
+        CompletableFuture<Boolean> wsCompleted = new CompletableFuture<>();
+
+        java.net.http.WebSocket webSocket = client.newWebSocketBuilder()
                 .buildAsync(URI.create("ws://localhost:" + port + "/single"),
                             new java.net.http.WebSocket.Listener() {
                                 @Override

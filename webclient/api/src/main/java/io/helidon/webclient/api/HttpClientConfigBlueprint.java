@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.webclient.api;
 
 import java.net.SocketAddress;
-import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -27,13 +26,13 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
@@ -50,18 +49,6 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 @Prototype.CustomMethods(HttpClientConfigSupport.HttpCustomMethods.class)
 interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     /**
-     * This method is internal only and was used from the builder and will be removed without replacement.
-     * You can easily map ClientUri from config using {@code config.asString().map(ClientUri::create)}.
-     *
-     * @param config config instance
-     * @return client URI mapped
-     */
-    @Deprecated(forRemoval = true, since = "4.3.0")
-    static ClientUri createBaseUri(Config config) {
-        return config.as(URI.class).map(ClientUri::create).orElseThrow();
-    }
-
-    /**
      * Base uri used by the client in all requests.
      *
      * @return base uri of the client requests
@@ -75,6 +62,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return base address of the client requests
      */
+    @Option.Configured
     Optional<SocketAddress> baseAddress();
 
     /**
@@ -136,6 +124,31 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      */
     @Option.Singular
     Set<Header> headers();
+
+    /**
+     * Whether headers sensitive to cross-origin redirects should be filtered before the redirected request is sent.
+     * <p>
+     * When enabled, header names from {@link #redirectSensitiveHeaders()} are stripped on cross-origin redirects.
+     *
+     * @return whether redirect header filtering is enabled
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean filterRedirectHeaders();
+
+    /**
+     * Request header names to strip on cross-origin redirects.
+     * <p>
+     * Header names are matched case-insensitively.
+     * The returned set always contains {@value io.helidon.http.HeaderNames#AUTHORIZATION_NAME},
+     * even if it was not explicitly configured.
+     *
+     * @return sensitive redirect headers
+     */
+    @Option.Configured
+    @Option.Singular
+    @Option.DefaultCode("new @java.util.LinkedHashSet@<>(@java.util.Set@.of(@io.helidon.http.HeaderNames@.AUTHORIZATION))")
+    Set<HeaderName> redirectSensitiveHeaders();
 
     /**
      * Default headers as a headers object. Creates a new instance for each call, so the returned value
@@ -291,4 +304,15 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     @Option.Configured
     @Option.DefaultInt(4096)
     int writeBufferSize();
+
+    /**
+     * Socket lifecycle callbacks. The default implementation does nothing, and
+     * Initializer logic that is called immediately after the client connection is
+     * established, before any TLS or HTTP data is written. The default initializer
+     * does nothing.
+     *
+     * @return The socket listener.
+     */
+    @Option.Default("createNoop()")
+    ConnectionListener connectionListener();
 }

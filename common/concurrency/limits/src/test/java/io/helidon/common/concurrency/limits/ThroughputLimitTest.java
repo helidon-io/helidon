@@ -16,12 +16,9 @@
 
 package io.helidon.common.concurrency.limits;
 
-import org.junit.jupiter.api.Test;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,10 +26,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.hasSize;
 
 public class ThroughputLimitTest {
 
@@ -51,7 +49,7 @@ public class ThroughputLimitTest {
             int index = i;
             threads[i] = new Thread(() -> {
                 try {
-                    limiter.invoke(() -> {
+                    limiter.call(() -> {
                         threadsCdl.countDown();
                         cdl.await(10, TimeUnit.SECONDS);
                         lock.lock();
@@ -102,7 +100,7 @@ public class ThroughputLimitTest {
             int index = i;
             threads[i] = new Thread(() -> {
                 try {
-                    limiter.invoke(() -> {
+                    limiter.call(() -> {
                         threadsCdl.countDown();
                         cdl.await(10, TimeUnit.SECONDS);
                         lock.lock();
@@ -150,7 +148,7 @@ public class ThroughputLimitTest {
             if ((i % 50) == 0) {
                 clock.advance(Duration.ofSeconds(1));
             }
-            limit.invoke(() -> {
+            limit.run(() -> {
             });
         }
     }
@@ -171,7 +169,7 @@ public class ThroughputLimitTest {
             if ((i % 50) == 0) {
                 clock.advance(Duration.ofMillis(1250)); // enough time to clear queue and refill bucket
             }
-            limit.invoke(() -> {
+            limit.run(() -> {
             });
         }
     }
@@ -191,10 +189,30 @@ public class ThroughputLimitTest {
             if ((i % 5) == 0) {
                 clock.advance(Duration.ofSeconds(1));
             }
-            Optional<LimitAlgorithm.Token> token = limit.tryAcquire();
-            assertThat(token, not(Optional.empty()));
-            token.get().success();
+            LimitAlgorithm.Outcome outcome = limit.tryAcquireOutcome();
+            assertThat(outcome.disposition(), is(LimitAlgorithm.Outcome.Disposition.ACCEPTED));
+            ((LimitAlgorithm.Outcome.Accepted) outcome).token().success();
         }
+    }
+
+    @Test
+    public void testDroppedRequestReleasesConcurrentGauge() {
+        TestNanoClock clock = new TestNanoClock();
+
+        ThroughputLimit limiter = ThroughputLimit.builder()
+                .amount(1)
+                .duration(Duration.ofSeconds(1))
+                .clock(clock::getNanos)
+                .build();
+
+        LimitAlgorithm.Outcome.Accepted accepted =
+                (LimitAlgorithm.Outcome.Accepted) limiter.tryAcquireOutcome(true);
+
+        assertThat(limiter.concurrentRequests().get(), is(1));
+
+        accepted.token().dropped();
+
+        assertThat(limiter.concurrentRequests().get(), is(0));
     }
 
     private static class TestNanoClock {

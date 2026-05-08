@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package io.helidon.webclient.http1;
 
-import io.helidon.common.config.Config;
+import io.helidon.common.Api;
+import io.helidon.config.Config;
 import io.helidon.webclient.spi.ProtocolConfigProvider;
 
 /**
@@ -24,9 +25,9 @@ import io.helidon.webclient.spi.ProtocolConfigProvider;
  */
 public class Http1ProtocolConfigProvider implements ProtocolConfigProvider<Http1ClientProtocolConfig> {
     /**
-     * Required to be used by {@link java.util.ServiceLoader}.
-     * @deprecated do not use directly, use Http1ClientProtocol
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public Http1ProtocolConfigProvider() {
     }
 

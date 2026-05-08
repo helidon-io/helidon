@@ -1,0 +1,42 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.AcmeStoreConfig",
+        "standalone": true,
+        "prefix": "store",
+        "description": "Store configuration.",
+        "options": [
+          {
+            "key": "ivf-index",
+            "type": "com.acme.AcmeIvfIndexConfig",
+            "description": "IVF index"
+          },
+          {
+            "key": "json-index",
+            "type": "com.acme.AcmeJsonIndexConfig",
+            "description": "JSON index"
+          },
+          {
+            "key": "data-source",
+            "type": "java.lang.String",
+            "description": "Data source"
+          }
+        ]
+      },
+      {
+        "type": "com.acme.AcmeIvfIndexConfig",
+        "standalone": true,
+        "prefix": "store.ivf-index",
+        "description": "IVF index configuration."
+      },
+      {
+        "type": "com.acme.AcmeJsonIndexConfig",
+        "standalone": true,
+        "prefix": "store.json-index",
+        "description": "JSON index configuration."
+      }
+    ]
+  }
+]

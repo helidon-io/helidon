@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.UnixDomainSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -62,11 +61,12 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     /*
     Specify more fine-grained log levels, to allow printing only what needed
      */
-    protected static final System.Logger LOGGER_REQ_ENTITY = System.getLogger(CLASS_NAME + ".req.entity");
-    protected static final System.Logger LOGGER_REQ_PROLOGUE = System.getLogger(CLASS_NAME + ".req.prologue");
-    protected static final System.Logger LOGGER_REQ_HEADERS = System.getLogger(CLASS_NAME + ".req.headers");
-    protected static final System.Logger LOGGER_RES_STATUS = System.getLogger(CLASS_NAME + ".res.status");
-    protected static final System.Logger LOGGER_RES_HEADERS = System.getLogger(CLASS_NAME + ".res.headers");
+    static final System.Logger LOGGER_REQ_ENTITY = System.getLogger(CLASS_NAME + ".req.entity");
+    static final System.Logger LOGGER_REQ_PROLOGUE = System.getLogger(CLASS_NAME + ".req.prologue");
+    static final System.Logger LOGGER_REQ_HEADERS = System.getLogger(CLASS_NAME + ".req.headers");
+    static final System.Logger LOGGER_RES_STATUS = System.getLogger(CLASS_NAME + ".res.status");
+    static final System.Logger LOGGER_RES_HEADERS = System.getLogger(CLASS_NAME + ".res.headers");
+
     private static final System.Logger LOGGER_RES_ENTITY = System.getLogger(CLASS_NAME + ".res.entity");
 
     private static final Supplier<IllegalArgumentException> INVALID_SIZE_EXCEPTION_SUPPLIER =
@@ -157,6 +157,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         ClientRequestHeaders headers = serviceRequest.headers();
 
         writeBuffer.clear();
+        originalRequest.sanitizeRedirectHeaders(uri, headers);
         prologue(effectiveConnection, writeBuffer, serviceRequest, uri);
         headers.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
 
@@ -185,9 +186,9 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             // https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html which states: "The absoluteURI form is REQUIRED when the
             // request is being made to a proxy."
             String absoluteUri = uri.scheme() + "://" + uri.host() + ":" + uri.port();
-            InetSocketAddress uriAddress = new InetSocketAddress(uri.host(), uri.port());
             String requestUri = proxy == Proxy.noProxy()
-                    || (proxy.type() == Proxy.ProxyType.HTTP && proxy.isNoHosts(uriAddress))
+                    || (proxy.type() == Proxy.ProxyType.HTTP
+                            && proxy.isNoHosts(new InetSocketAddress(uri.host(), uri.port())))
                     || (proxy.type() == Proxy.ProxyType.SYSTEM && !proxy.isUsingSystemProxy(absoluteUri))
                     || clientConfig.relativeUris()
                     ? "" // don't set host details, so it becomes relative URI
@@ -234,7 +235,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         return whenComplete;
     }
 
-    protected WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
+    WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
                                                     ClientConnection connection,
                                                     DataReader reader) {
         Status responseStatus;
@@ -278,9 +279,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             if (encodingSupport.contentDecodingSupported(contentEncoding)) {
                 decoder = encodingSupport.decoder(contentEncoding);
             } else {
-                throw new IllegalStateException("Unsupported content encoding: \n"
-                                                        + BufferData.create(contentEncoding.getBytes(StandardCharsets.UTF_8))
-                        .debugDataHex());
+                decoder = ContentDecoder.NO_OP;
             }
         } else {
             decoder = ContentDecoder.NO_OP;
@@ -289,7 +288,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         if (responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             long length = responseHeaders.contentLength().getAsLong();
             inputStream = new ContentLengthInputStream(helidonSocket, reader, whenComplete, response, length);
-        } else if (responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        } else if (responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             inputStream = new ChunkedInputStream(helidonSocket, reader, whenComplete, response);
         } else {
             // we assume the rest of the connection is entity (valid for HTTP/1.0, HTTP CONNECT method etc.
@@ -308,7 +307,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         }
         if ((
                 responseHeaders.contains(HeaderNames.UPGRADE)
-                        && !responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED))) {
+                        && !responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED))) {
             // this is an upgrade response and there is no entity
             return false;
         }

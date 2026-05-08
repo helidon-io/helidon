@@ -17,19 +17,12 @@
 package io.helidon.common.types;
 
 import java.util.Objects;
-import java.util.Optional;
 
 class AnnotationPropertyImpl implements AnnotationProperty {
     private final Object value;
-    private final ConstantValue constantValue;
 
     AnnotationPropertyImpl(Object value) {
-        this(value, null);
-    }
-
-    AnnotationPropertyImpl(Object value, ConstantValue constantValue) {
         this.value = value;
-        this.constantValue = constantValue;
     }
 
     @Override
@@ -38,16 +31,8 @@ class AnnotationPropertyImpl implements AnnotationProperty {
     }
 
     @Override
-    public Optional<ConstantValue> constantValue() {
-        return Optional.ofNullable(constantValue);
-    }
-
-    @Override
     public String toString() {
-        if (constantValue == null) {
-            return String.valueOf(value);
-        }
-        return constantValue.type().fqName() + "." + constantValue.name();
+        return String.valueOf(value);
     }
 
     @Override

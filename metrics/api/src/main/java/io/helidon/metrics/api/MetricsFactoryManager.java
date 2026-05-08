@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
@@ -40,8 +40,8 @@ import io.helidon.service.registry.Services;
  * resulting metrics factory as the most recent.
  * <p>
  * Invoking {@code getMetricsFactory()} (no argument) <em>before</em> invoking the variant with the
- * {@link io.helidon.common.config.Config} parameter creates and saves a metrics factory using the current
- * {@link io.helidon.common.config.Config}.
+ * {@link io.helidon.config.Config} parameter creates and saves a metrics factory using the current
+ * {@link io.helidon.config.Config}.
  * <p>
  * The {@link #create(Config)} method neither reads nor updates the most-recently used config and factory.
  */
@@ -88,7 +88,7 @@ class MetricsFactoryManager {
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(MetersProvider.class))
                     .asList());
     /**
-     * The metrics {@link io.helidon.common.config.Config} node used to initialize the current metrics factory.
+     * The metrics {@link io.helidon.config.Config} node used to initialize the current metrics factory.
      */
     private static Config metricsConfigNode;
     /**
@@ -108,14 +108,7 @@ class MetricsFactoryManager {
      * @return new metrics factory
      */
     static MetricsFactory getMetricsFactory(Config metricsConfigNode) {
-
-        MetricsFactoryManager.metricsConfigNode = metricsConfigNode;
-
-        MetricsConfig metricsConfig = MetricsConfig.create(metricsConfigNode);
-
-        metricsFactory = access(() -> completeGetInstance(metricsConfig, metricsConfigNode));
-
-        return metricsFactory;
+        return access(() -> createCurrentMetricsFactory(metricsConfigNode));
     }
 
     /**
@@ -127,12 +120,25 @@ class MetricsFactoryManager {
      */
     static MetricsFactory getMetricsFactory() {
         return access(() -> {
-            metricsConfigNode = Objects.requireNonNullElseGet(metricsConfigNode,
-                                                              MetricsFactoryManager::externalMetricsConfig);
-            metricsFactory = Objects.requireNonNullElseGet(metricsFactory,
-                                                           () -> getMetricsFactory(metricsConfigNode));
-            return metricsFactory;
+            return Objects.requireNonNullElseGet(metricsFactory,
+                                                () -> createCurrentMetricsFactory(
+                                                        Objects.requireNonNullElseGet(
+                                                                metricsConfigNode,
+                                                                MetricsFactoryManager::externalMetricsConfig)));
         });
+    }
+
+    /**
+     * Returns the current {@link MetricsFactory}, creating and saving one from the provided root config only if the current
+     * factory is absent.
+     *
+     * @param rootConfig root configuration for resolving the metrics config node when needed
+     * @return current or newly created metrics factory
+     */
+    static MetricsFactory getOrCreateMetricsFactory(Config rootConfig) {
+        return access(() -> Objects.requireNonNullElseGet(metricsFactory,
+                                                          () -> createCurrentMetricsFactory(
+                                                                  selectMetricsConfigNode(rootConfig))));
     }
 
     /**
@@ -156,10 +162,20 @@ class MetricsFactoryManager {
     }
 
     private static Config externalMetricsConfig() {
-        Config currentConfig = Services.get(Config.class);
-        Config serverFeaturesMetricsConfig = currentConfig.get("server.features.observe.observers.metrics");
+        return selectMetricsConfigNode(Services.get(Config.class));
+    }
+
+    private static MetricsFactory createCurrentMetricsFactory(Config metricsConfigNode) {
+        MetricsFactoryManager.metricsConfigNode = metricsConfigNode;
+        MetricsConfig metricsConfig = MetricsConfig.create(metricsConfigNode);
+        metricsFactory = completeGetInstance(metricsConfig, metricsConfigNode);
+        return metricsFactory;
+    }
+
+    private static Config selectMetricsConfigNode(Config rootConfig) {
+        Config serverFeaturesMetricsConfig = rootConfig.get("server.features.observe.observers.metrics");
         if (!serverFeaturesMetricsConfig.exists()) {
-            serverFeaturesMetricsConfig = currentConfig.get("metrics");
+            serverFeaturesMetricsConfig = rootConfig.get(MetricsConfig.METRICS_CONFIG_KEY);
         }
         return serverFeaturesMetricsConfig;
     }

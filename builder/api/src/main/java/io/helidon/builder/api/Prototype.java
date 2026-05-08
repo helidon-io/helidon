@@ -52,6 +52,9 @@ public final class Prototype {
         /**
          * Create an instance of the {@link Prototype}. This method is available on
          * all generated builders for {@link Prototype.Blueprint}.
+         * <p>
+         * Calling this method may update the builder from providers and decorators, so repeated calls may have side
+         * effects such as repeated provider discovery.
          *
          * @return an instance of the setup object created from this builder
          */
@@ -259,7 +262,7 @@ public final class Prototype {
          * Decorate a list of values, when a setter that replaces values is called.
          *
          * @param builder      the target builder being decorated
-         * @param optionValues option values set by the caller of the setter method
+         * @param optionValues option values set by the caller of the setter method, this is a read-only list
          */
         default void decorateSetList(B builder, List<T> optionValues) {
         }
@@ -268,7 +271,7 @@ public final class Prototype {
          * Decorate a list of values, when a setter that adds values is called.
          *
          * @param builder      the target builder being decorated
-         * @param optionValues option values set by the caller of the setter method
+         * @param optionValues option values set by the caller of the setter method, this is a read-only list
          */
         default void decorateAddList(B builder, List<T> optionValues) {
         }
@@ -277,7 +280,7 @@ public final class Prototype {
          * Decorate a set of values, when a setter that replaces values is called.
          *
          * @param builder      the target builder being decorated
-         * @param optionValues option values set by the caller of the setter method
+         * @param optionValues option values set by the caller of the setter method, this is a read-only set
          */
         default void decorateSetSet(B builder, Set<T> optionValues) {
         }
@@ -286,7 +289,7 @@ public final class Prototype {
          * Decorate a set of values, when a setter that adds values is called.
          *
          * @param builder      the target builder being decorated
-         * @param optionValues option values set by the caller of the setter method
+         * @param optionValues option values set by the caller of the setter method, this is a read-only set
          */
         default void decorateAddSet(B builder, Set<T> optionValues) {
         }
@@ -307,33 +310,6 @@ public final class Prototype {
          */
         String[] value();
 
-    }
-
-    /**
-     * Old behavior, kept for backward compatibility:
-     * This annotation must be defined on any static method that should be used as a factory for runtime types from
-     * prototypes, and from configuration on {@link Prototype.Blueprint}.
-     * <p>
-     * This annotation is generated for the following signatures:
-     * <ul>
-     *     <li>{@code static Prototype.Builder Prototype.builder()} - a method that returns a builder that extends
-     *          {@code io.helidon.common.Builder}, that builds the prototype</li>
-     *     <li>{@code static Prototype.Builder Prototype.builder(Prototype)} - a method that returns a builder populated from
-     *          existing prototype instance</li>
-     *     <li>{@code static Prototype create(io.helidon.config.Config config)} - a method that creates a new instance of
-     *          prototype from configuration</li>
-     *     <li>{@code static Prototype create()} - a method that creates a new instance if there are no required fields</li>
-     * </ul>
-     *
-     * @deprecated use {@link io.helidon.builder.api.Prototype.PrototypeFactoryMethod},
-     *         {@link io.helidon.builder.api.Prototype.ConfigFactoryMethod},
-     *         or {@link io.helidon.builder.api.Prototype.RuntimeTypeFactoryMethod} for other types this annotation
-     *         could have been used for in the past
-     */
-    @Target({ElementType.METHOD, ElementType.TYPE})
-    @Retention(RetentionPolicy.CLASS)
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    public @interface FactoryMethod {
     }
 
     /**
@@ -427,7 +403,9 @@ public final class Prototype {
      * <p>
      * These methods can be annotated with:
      * <ul>
-     *     <li>{@link Prototype.FactoryMethod} - to create a static factory method on prototype</li>
+     *     <li>{@link Prototype.PrototypeFactoryMethod} - to create a static factory method on prototype</li>
+     *     <li>{@link Prototype.ConfigFactoryMethod} - to create a config-based factory method for an option</li>
+     *     <li>{@link Prototype.RuntimeTypeFactoryMethod} - to create a runtime type from another prototype</li>
      *     <li>{@link Prototype.BuilderMethod} - to create an additional method on prototype builder, first
      *     parameter is the builder instance, may have additional parameters, must be void</li>
      *     <li>{@link Prototype.PrototypeMethod} - to be added to the prototype interface, first parameter
@@ -440,7 +418,7 @@ public final class Prototype {
         /**
          * Type that implements static methods to be available on the prototype.
          *
-         * @return type with static methods annotated with {@link Prototype.FactoryMethod}
+         * @return type with static methods annotated with supported custom-method annotations
          */
         Class<?> value();
     }
@@ -573,4 +551,3 @@ public final class Prototype {
         Extension[] value();
     }
 }
-

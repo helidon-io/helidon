@@ -22,7 +22,6 @@
 
     <step name="Media Support" optional="true">
         <variables>
-            <text path="media.default-json-lib" if="${flavor} == 'mp'">jsonb</text>
             <text path="media.default-json-lib" if="${flavor} == 'se'">jsonp</text>
         </variables>
         <inputs>
@@ -62,23 +61,10 @@
                                                 <value key="groupId">io.helidon.http.media</value>
                                                 <value key="artifactId">helidon-http-media-jackson</value>
                                             </map>
-                                            <map order="500" if="${flavor} == 'mp'">
-                                                <value key="groupId">org.glassfish.jersey.media</value>
-                                                <value key="artifactId">jersey-media-json-jackson</value>
-                                                <value key="scope">runtime</value>
-                                            </map>
-                                            <map order="500" if="${flavor} == 'mp'">
-                                                <value key="groupId">jakarta.xml.bind</value>
-                                                <value key="artifactId">jakarta.xml.bind-api</value>
-                                            </map>
-                                        </list>
-                                        <list key="initialize-at-build-time" if="${flavor} == 'mp'">
-                                            <value>com.fasterxml.jackson.core</value>
                                         </list>
                                         <list key="module-requires">
                                             <value>com.fasterxml.jackson.annotation</value>
                                             <value>com.fasterxml.jackson.core</value>
-                                            <value if="${flavor} == 'mp'">jakarta.xml.bind</value>
                                         </list>
                                     </model>
                                 </output>
@@ -90,11 +76,6 @@
                                             <map order="500" if="${flavor} != 'se'">
                                                 <value key="groupId">jakarta.json.bind</value>
                                                 <value key="artifactId">jakarta.json.bind-api</value>
-                                            </map>
-                                            <map order="500" if="${flavor} == 'mp'">
-                                                <value key="groupId">org.glassfish.jersey.media</value>
-                                                <value key="artifactId">jersey-media-json-binding</value>
-                                                <value key="scope">runtime</value>
                                             </map>
                                             <map order="500" if="${flavor} == 'se'">
                                                 <value key="groupId">io.helidon.http.media</value>
@@ -131,10 +112,6 @@
                     <output>
                         <model>
                             <list key="dependencies">
-                                <map order="500" if="${flavor} == 'mp'">
-                                    <value key="groupId">org.glassfish.jersey.media</value>
-                                    <value key="artifactId">jersey-media-multipart</value>
-                                </map>
                                 <map order="500" if="${flavor} == 'se'">
                                     <value key="groupId">io.helidon.http.media</value>
                                     <value key="artifactId">helidon-http-media-multipart</value>
@@ -148,9 +125,6 @@
                                 <value>io.helidon.http.media.multipart</value>
                                 <value>io.helidon.webserver.staticcontent</value>
                             </list>
-                            <list key="module-requires" if="${flavor} == 'mp'">
-                                <value>jersey.media.multipart</value>
-                            </list>
                             <list key="module-opens" if="${flavor} == 'se'">
                                 <value>WEB</value>
                             </list>
@@ -158,7 +132,8 @@
                                 <value>io.helidon.http.Status</value>
                                 <value>io.helidon.http.HeaderNames</value>
                                 <value>io.helidon.http.HeaderValues</value>
-                                <value>io.helidon.webserver.staticcontent.StaticContentService</value>
+                                <value>io.helidon.webserver.staticcontent.ClasspathHandlerConfig</value>
+                                <value>io.helidon.webserver.staticcontent.StaticContentFeature</value>
                             </list>
                             <list key="Main-routing-builder" if="${flavor} == 'se'">
                                 <value order="1"><![CDATA[.any("/", (req, res) -> {
@@ -166,9 +141,11 @@
                     res.header(HeaderValues.createCached(HeaderNames.LOCATION, "/ui"));
                     res.send();
                 })
-                .register("/ui", StaticContentService.builder("WEB")
-                        .welcomeFileName("index.html")
-                        .build())
+                .register("/ui", StaticContentFeature.createService(
+                        ClasspathHandlerConfig.builder()
+                                .location("WEB")
+                                .welcome("index.html")
+                                .build()))
                 .register("/api", new FileService())]]></value>
                             </list>
                             <list key="Abstract-tests">
@@ -180,9 +157,6 @@
         }
     }
 ]]></value>
-                            </list>
-                            <list key="module-requires">
-                                <value if="${flavor} == 'mp'">org.jvnet.mimepull</value>
                             </list>
                         </model>
                     </output>

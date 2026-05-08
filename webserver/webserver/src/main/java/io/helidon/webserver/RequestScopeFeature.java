@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,7 +101,7 @@ public class RequestScopeFeature implements ServerFeature {
 
         @Override
         public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
-            try (Scope ignored = startRequestScope(req, res)) {
+            try (Scope _ = startRequestScope(req, res)) {
                 chain.proceed();
             }
         }

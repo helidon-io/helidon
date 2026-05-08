@@ -18,16 +18,22 @@ package io.helidon.json;
 
 import java.io.InputStream;
 import java.io.Reader;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+
+import io.helidon.common.Api;
+
+import static io.helidon.json.JsonParserArray.WHITESPACE_CHARS;
 
 /**
  * A JSON parser interface for parsing JSON data from various sources.
  * <p>
  * The parser operates on a byte-by-byte basis, providing low-level access to
  * JSON tokens and values.
- * </p>
  */
+@Api.Preview
 public interface JsonParser {
 
     /**
@@ -60,7 +66,11 @@ public interface JsonParser {
         if (json.length == 0) {
             throw new JsonException("Empty byte array provided");
         }
-        return new ArrayJsonParser(json);
+        JsonParserArray parser = new JsonParserArray(json);
+        if (WHITESPACE_CHARS[json[0] & 0xff]) {
+            parser.nextToken();
+        }
+        return parser;
     }
 
     /**
@@ -77,11 +87,17 @@ public interface JsonParser {
      */
     static JsonParser create(byte[] json, int start, int length) {
         Objects.requireNonNull(json);
-        if (start < 0 || length < 0 || start > json.length || start + length > json.length) {
+        if (start < 0 || length < 0 || start > json.length || length > json.length - start) {
             throw new JsonException("Invalid start/length: start="
                                             + start + ", length=" + length + ", array length=" + json.length);
+        } else if (length == 0) {
+            throw new JsonException("Empty byte array provided");
         }
-        return new ArrayJsonParser(json, start, length);
+        JsonParserArray parser = new JsonParserArray(json, start, length);
+        if (WHITESPACE_CHARS[json[start] & 0xff]) {
+            parser.nextToken();
+        }
+        return parser;
     }
 
     /**
@@ -97,7 +113,11 @@ public interface JsonParser {
      */
     static JsonParser create(InputStream inputStream) {
         Objects.requireNonNull(inputStream);
-        return new JsonStreamParser(inputStream);
+        JsonParserStream parser = new JsonParserStream(inputStream);
+        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
+            parser.nextToken();
+        }
+        return parser;
     }
 
     /**
@@ -117,7 +137,11 @@ public interface JsonParser {
         if (bufferSize <= 5) {
             throw new IllegalArgumentException("Buffer size must be greater than 5");
         }
-        return new JsonStreamParser(inputStream, bufferSize);
+        JsonParserStream parser = new JsonParserStream(inputStream, bufferSize);
+        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
+            parser.nextToken();
+        }
+        return parser;
     }
 
     /**
@@ -131,6 +155,7 @@ public interface JsonParser {
      * @return a new JsonParser instance
      */
     static JsonParser create(JsonValue value) {
+        Objects.requireNonNull(value);
         return new JsonValueParser(value);
     }
 
@@ -275,17 +300,6 @@ public interface JsonParser {
     int readStringAsHash();
 
     /**
-     * Reads a value as a character array.
-     * <p>
-     * Returns char array based on the type of the JSON value. String quotes are not included.
-     * </p>
-     *
-     * @return character array
-     * @throws JsonException if the json value is not recognized or parsing fails
-     */
-    char[] readCharArray();
-
-    /**
      * Reads a char value from the current position. The value has to start and end with the {@code "}.
      * <p>
      * This method expects the next token to be a string and returns
@@ -357,6 +371,8 @@ public interface JsonParser {
      * Reads a numeric value as a float.
      * <p>
      * This method expects the next token to be a number and converts it to a float.
+     * It also accepts quoted {@code NaN}, {@code Infinity}, and {@code -Infinity}
+     * values emitted by the JSON generator.
      * </p>
      *
      * @return the float value
@@ -368,12 +384,35 @@ public interface JsonParser {
      * Reads a numeric value as a double.
      * <p>
      * This method expects the next token to be a number and converts it to a double.
+     * It also accepts quoted {@code NaN}, {@code Infinity}, and {@code -Infinity}
+     * values emitted by the JSON generator.
      * </p>
      *
      * @return the double value
      * @throws JsonException if parsing fails
      */
     double readDouble();
+
+    /**
+     * Reads a numeric value as {@link BigInteger}.
+     *
+     * @return the big integer value
+     */
+    BigInteger readBigInteger();
+
+    /**
+     * Reads a numeric value as {@link BigDecimal}.
+     *
+     * @return the big decimal value
+     */
+    BigDecimal readBigDecimal();
+
+    /**
+     * Reads a binary value.
+     *
+     * @return the decoded binary value
+     */
+    byte[] readBinary();
 
     /**
      * Checks if the current position contains a null value.
@@ -405,6 +444,15 @@ public interface JsonParser {
      * @return a JsonException
      */
     JsonException createException(String message);
+
+    /**
+     * Create a JsonException with the given message and cause.
+     *
+     * @param message the exception message
+     * @param e the cause
+     * @return a JsonException
+     */
+    JsonException createException(String message, Exception e);
 
     /**
      * Create a JsonException with the given message and found byte information.

@@ -1,0 +1,9 @@
+
+= Config Types
+
+== Config Types
+
+See the xref:config_reference.adoc[root] type.
+
+* xref:com_acme_AcmeHelperConfig.adoc[com.acme.AcmeHelperConfig]
+* xref:com_acme_AcmeNestedConfig.adoc[com.acme.AcmeNestedConfig]

@@ -24,7 +24,6 @@ We have the following implementations currently:
 
 - `Http2UpgradeProvider` - upgrade to HTTP/2 using upgrade
 - `WsUpgradeProvider` - upgrade to WebSocket implementation
-- `TyrusUpgradeProvider` - upgrade to MP Tyrus WebSocket implementation (higher weight than WsUpgradeProvider)
 
 The upgrade provider creates a configured `Http1Upgrader`, which is then used at runtime.
 Upgraders work based on protocol identificator (`h2c`, `websocket`). When more than one for the same protocol is configured,
@@ -42,7 +41,7 @@ provider `configKey()` or `configKeys()` method.
 As all providers are configured on the same leave, each provider should have a descriptive and unique configuration key
 relevant to its purpose.
 
-Example of such configuration (Tyrus and Helidon WebSocket both use `websocket`, as only one of them can be active):
+Example of such configuration:
 
 ```yaml
 server:

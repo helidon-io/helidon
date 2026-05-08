@@ -18,11 +18,13 @@ package io.helidon.json.binding;
 
 import java.lang.reflect.Type;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 
 /**
  * Interface for configuring JSON binding components.
  */
+@Api.Preview
 public interface JsonBindingConfigurator {
     /*
      * This type is used from generated code

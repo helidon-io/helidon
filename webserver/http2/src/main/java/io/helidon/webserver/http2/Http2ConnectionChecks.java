@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.webserver.http2;
 
-import io.helidon.http.http2.Http2ConnectionWriter;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2GoAway;
@@ -28,7 +27,6 @@ class Http2ConnectionChecks {
 
     // No fancy client settings needed for goaway
     private final Http2Settings clientSettings = Http2Settings.builder().build();
-    private final Http2ConnectionWriter writer;
     private final Http2Connection connection;
     private final long rapidResetCheckPeriod;
     private final int maxRapidResets;
@@ -36,10 +34,9 @@ class Http2ConnectionChecks {
     private long rapidResetPeriodStart = 0;
     private long serverSideResetCounter = 0;
 
-    Http2ConnectionChecks(Http2Config http2Config, Http2ConnectionWriter connectionWriter, Http2Connection connection) {
+    Http2ConnectionChecks(Http2Config http2Config, Http2Connection connection) {
         this.rapidResetCheckPeriod = http2Config.rapidResetCheckPeriod().toNanos();
         this.maxRapidResets = http2Config.maxRapidResets();
-        this.writer = connectionWriter;
         this.connection = connection;
     }
 
@@ -79,9 +76,12 @@ class Http2ConnectionChecks {
             LOGGER.log(System.Logger.Level.DEBUG, msg + " Closing connection " + connection + " with GOAWAY");
         }
         Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.ENHANCE_YOUR_CALM, msg);
-        writer.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
-        // Finish to avoid implicit goaway after close
-        connection.finish();
+        try {
+            connection.writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+        } finally {
+            // Finish to avoid implicit GOAWAY after close, even if the peer is already gone.
+            connection.finish();
+        }
         // Avoid further processing changing the connection state
         throw new CloseConnectionException("Enhance your calm.");
     }

@@ -16,8 +16,9 @@
 
 package io.helidon.http.media.json.binding;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.http.media.spi.MediaSupportProvider;
 
@@ -30,21 +31,20 @@ import io.helidon.http.media.spi.MediaSupportProvider;
 public class JsonBindingMediaSupportProvider implements MediaSupportProvider, Weighted {
 
     /**
-     * This class should be only instantiated as part of java {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public JsonBindingMediaSupportProvider() {
-        super();
     }
 
     @Override
     public String configKey() {
-        return JsonBindingSupport.HELIDON_JSON_BINDING_TYPE;
+        return JsonBindingSupport.ID;
     }
 
     @Override
     public MediaSupport create(Config config, String name) {
-        return JsonBindingSupport.create(io.helidon.config.Config.config(config), name);
+        return JsonBindingSupport.create(config, name);
     }
 
     @Override

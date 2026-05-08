@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,26 @@
 
 package io.helidon.security.jwt;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 import io.helidon.common.Errors;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonNull;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonString;
 import io.helidon.security.jwt.jwk.JwkRSA;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link Jwt}.
@@ -110,5 +116,80 @@ public class JwtTest {
         errors = jwtValidator.validate(jwt);
         errors.log(LOGGER);
         errors.checkValid();
+    }
+
+    @Test
+    public void testHelidonJsonApis() {
+        Jwt jwt = Jwt.builder()
+                .algorithm(JwkRSA.ALG_RS256)
+                .headerBuilder(header -> header.addHeaderClaim("custom-header", "header-value"))
+                .addPayloadClaim("custom-claim", "payload-value")
+                .build();
+
+        JsonObject headerJson = jwt.headerJsonObject();
+        JsonObject payloadJson = jwt.payloadJsonObject();
+
+        assertThat(headerJson.stringValue("alg"), is(Optional.of(JwkRSA.ALG_RS256)));
+        assertThat(headerJson.stringValue("custom-header"), is(Optional.of("header-value")));
+        assertThat(payloadJson.stringValue("custom-claim"), is(Optional.of("payload-value")));
+        assertThat(jwt.headerClaimValue("custom-header").map(it -> it.asString().value()),
+                   is(Optional.of("header-value")));
+        assertThat(jwt.payloadClaimValue("custom-claim").map(it -> it.asString().value()),
+                   is(Optional.of("payload-value")));
+        assertThat(jwt.headers().headerClaimsJson().get("custom-header").asString().value(), is("header-value"));
+        assertThat(jwt.payloadClaimsJson().get("custom-claim").asString().value(), is("payload-value"));
+        assertThrows(UnsupportedOperationException.class,
+                     () -> jwt.headers().headerClaimsJson().put("another-header", JsonString.create("another-value")));
+        assertThrows(UnsupportedOperationException.class,
+                     () -> jwt.payloadClaimsJson().put("another-claim", JsonString.create("another-value")));
+
+        Jwt nullClaimJwt = Jwt.builder()
+                .addPayloadClaim("nullable", null)
+                .build();
+
+        assertThat(nullClaimJwt.payloadJsonObject().stringValue("nullable"), is(Optional.of("null")));
+    }
+
+    @Test
+    public void testCollectionClaimsRemainStructured() {
+        Map<String, Object> nestedObject = new LinkedHashMap<>();
+        nestedObject.put("nested", Optional.of("value"));
+        nestedObject.put("ignored", Optional.empty());
+
+        List<Object> claimValues = new ArrayList<>();
+        claimValues.add(nestedObject);
+        claimValues.add(null);
+        claimValues.add(List.of("one", "two"));
+        claimValues.add(Optional.of("present"));
+        claimValues.add(Optional.empty());
+        claimValues.add(new int[] {1, 2});
+
+        Jwt jwt = Jwt.builder()
+                .addPayloadClaim("complex", claimValues)
+                .build();
+
+        JsonArray values = jwt.payloadJsonObject().arrayValue("complex").orElseThrow();
+
+        assertThat(values.values().size(), is(5));
+        assertThat(values.get(0).orElseThrow().asObject().stringValue("nested"), is(Optional.of("value")));
+        assertThat(values.get(0).orElseThrow().asObject().value("ignored"), is(Optional.empty()));
+        assertThat(values.get(1).orElseThrow(), is(JsonNull.instance()));
+        assertThat(values.get(2).orElseThrow().asArray(), is(JsonArray.createStrings(List.of("one", "two"))));
+        assertThat(values.get(3).orElseThrow().asString().value(), is("present"));
+        assertThat(values.get(4).orElseThrow().asArray().get(0).orElseThrow().asNumber().intValue(), is(1));
+        assertThat(values.get(4).orElseThrow().asArray().get(1).orElseThrow().asNumber().intValue(), is(2));
+    }
+
+    @Test
+    public void testOptionalStringClaimsIgnoreNonStringValues() {
+        Jwt jwt = new Jwt(JwtHeaders.builder().build(),
+                          JsonObject.builder()
+                                  .set(Jwt.EMAIL, 42)
+                                  .setNull(Jwt.NICKNAME)
+                                  .build());
+
+        assertThat(jwt.email(), is(Optional.empty()));
+        assertThat(jwt.nickname(), is(Optional.empty()));
+        assertThat(jwt.payloadClaimValue(Jwt.EMAIL).map(it -> it.asNumber().intValue()), is(Optional.of(42)));
     }
 }

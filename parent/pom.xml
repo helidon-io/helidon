@@ -22,7 +22,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon</groupId>
     <artifactId>helidon-parent</artifactId>
-    <version>4.4.0-SNAPSHOT</version>
+    <version>27.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Helidon Parent</name>
@@ -168,7 +168,7 @@
                 <plugin>
                     <groupId>io.helidon.build-tools</groupId>
                     <artifactId>helidon-build-cache-maven-plugin</artifactId>
-                    <version>4.0.23</version>
+                    <version>4.0.26</version>
                 </plugin>
             </plugins>
         </pluginManagement>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ public class MongoDbStatementQuery extends MongoDbStatement<DbStatementQuery> im
             // maybe this is a command?
             try {
                 return new MongoStatement(DbStatementType.COMMAND, statement);
-            } catch (IllegalStateException ignored) {
+            } catch (IllegalStateException _) {
                 // we want to report the original exception
                 throw e;
             }

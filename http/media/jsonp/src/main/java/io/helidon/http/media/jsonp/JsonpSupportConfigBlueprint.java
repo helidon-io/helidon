@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,13 @@
 
 package io.helidon.http.media.jsonp;
 
+import java.util.Set;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.http.HttpMediaType;
+import io.helidon.http.media.MediaSupportConfig;
 import io.helidon.http.media.spi.MediaSupportProvider;
 
 import jakarta.json.JsonReaderFactory;
@@ -26,16 +31,13 @@ import jakarta.json.JsonWriterFactory;
 /**
  * Configuration of the {@link JsonpSupport}.
  */
-@Prototype.Blueprint(decorator = JsonpSupport.Decorator.class)
+@Prototype.Blueprint(decorator = JsonpConfigSupport.Decorator.class)
 @Prototype.Provides(MediaSupportProvider.class)
-interface JsonpSupportConfigBlueprint extends Prototype.Factory<JsonpSupport> {
+@Prototype.Configured(value = JsonpSupport.ID, root = false)
+interface JsonpSupportConfigBlueprint extends MediaSupportConfig, Prototype.Factory<JsonpSupport> {
 
-    /**
-     * Name of the support. Default value is {@code jsonp}.
-     *
-     * @return name of the support
-     */
-    @Option.Default("jsonp")
+    @Option.Default(JsonpSupport.ID)
+    @Override
     String name();
 
     /**
@@ -52,4 +54,27 @@ interface JsonpSupportConfigBlueprint extends Prototype.Factory<JsonpSupport> {
      */
     JsonWriterFactory writerFactory();
 
+    /**
+     * Types accepted by this media support.
+     * When server processes the response, it checks the {@code Accept} header, to choose the right
+     * media support, if there are more supports available for the provided entity object.
+     * <p>
+     * Supported accepted types defaults to {@value io.helidon.common.media.type.MediaTypes#APPLICATION_JSON_VALUE},
+     * and {@value io.helidon.common.media.type.MediaTypes#APPLICATION_JSON_PATCH_JSON_VALUE}.
+     *
+     * @return accepted media types
+     */
+    @Option.DefaultCode("@java.util.Set@.of(@io.helidon.common.media.type.MediaTypes@.APPLICATION_JSON, @io.helidon.common"
+            + ".media.type.MediaTypes@.APPLICATION_JSON_PATCH_JSON, @io.helidon.common.media.type.MediaTypes@.TEXT_PLAIN)")
+    @Override
+    Set<MediaType> acceptedMediaTypes();
+
+    /**
+     * Content type to use if not configured (in response headers for server, and in request headers for client).
+     *
+     * @return content type to use, defaults to {@link io.helidon.http.HttpMediaTypes#JSON}
+     */
+    @Option.DefaultCode("@io.helidon.http.HttpMediaTypes@.JSON")
+    @Override
+    HttpMediaType contentType();
 }

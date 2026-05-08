@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ interface CompilerOptionsBlueprint {
      *
      * @return source version
      */
-    @Option.Default("21")
+    @Option.Default("26")
     String source();
 
     /**
@@ -75,7 +75,7 @@ interface CompilerOptionsBlueprint {
      *
      * @return target version
      */
-    @Option.Default("21")
+    @Option.Default("26")
     String target();
 
     /**

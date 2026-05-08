@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,39 +54,10 @@ public interface IoMulti {
      * {@link OutputStream#write(byte[], int, int)} methods are blocked
      * until downstream request for more data.
      *
-     * @return new {@link Multi} publisher extending {@link OutputStream}
-     * @deprecated Please use {@link #outputStreamMulti()}
-     */
-    @Deprecated(since = "2.0.0", forRemoval = true)
-    static OutputStreamMulti createOutputStream() {
-        return new OutputStreamMulti();
-    }
-
-    /**
-     * Create an {@link java.io.OutputStream} that provides the data written
-     * as a {@link Multi}.
-     * <p>
-     * In case there is no demand,
-     * {@link OutputStream#write(byte[], int, int)} methods are blocked
-     * until downstream request for more data.
-     *
      * @return new {@link OutputStream} implementing {@link Multi}
      */
     static OutputStreamMulti outputStreamMulti() {
         return new OutputStreamMulti();
-    }
-
-    /**
-     * Creates a builder of the {@link java.io.OutputStream} that provides data written
-     * as a {@link io.helidon.common.reactive.Multi}.
-     *
-     * @return the builder
-     * @see #outputStreamMulti()
-     * @deprecated Please use {@link #outputStreamMultiBuilder()}
-     */
-    @Deprecated(since = "2.0.0", forRemoval = true)
-    static OutputStreamMultiBuilder builderOutputStream() {
-        return new OutputStreamMultiBuilder();
     }
 
     /**
@@ -105,47 +76,16 @@ public interface IoMulti {
      * the given {@link InputStream}.
      * <p>
      * {@link InputStream} is trusted not to block on read operations, in case
-     * it can't be assured use builder to specify executor for asynchronous waiting
-     * for blocking reads. {@code IoMulti.builder(is).executor(executorService).build()}.
-     *
-     * @param inputStream the Stream to publish
-     * @return Multi
-     * @throws NullPointerException if {@code stream} is {@code null}
-     * @deprecated please use {@link #multiFromStream(java.io.InputStream)}
-     */
-    @Deprecated(since = "2.0.0", forRemoval = true)
-    static Multi<ByteBuffer> createInputStream(final InputStream inputStream) {
-        return IoMulti.builderInputStream(inputStream)
-                .build();
-    }
-
-    /**
-     * Create a {@link Multi} instance that publishes {@link ByteBuffer}s from
-     * the given {@link InputStream}.
-     * <p>
      * {@link InputStream} is trusted not to block on read operations, in case
      * it can't be assured use builder to specify executor for asynchronous waiting
-     * for blocking reads. {@code IoMulti.builder(is).executor(executorService).build()}.
+     * for blocking reads. {@code IoMulti.multiFromStreamBuilder(is).executor(executorService).build()}.
      *
      * @param inputStream the Stream to publish
      * @return Multi
      */
     static Multi<ByteBuffer> multiFromStream(final InputStream inputStream) {
-        return IoMulti.builderInputStream(inputStream)
+        return IoMulti.multiFromStreamBuilder(inputStream)
                 .build();
-    }
-
-    /**
-     * Creates a builder of the {@link Multi} from supplied {@link java.io.InputStream}.
-     *
-     * @param inputStream the Stream to publish
-     * @return the builder
-     * @deprecated Please use {@link #multiFromStreamBuilder(java.io.InputStream)}
-     */
-    @Deprecated(since = "2.0.0", forRemoval = true)
-    static MultiFromInputStreamBuilder builderInputStream(final InputStream inputStream) {
-        Objects.requireNonNull(inputStream);
-        return new MultiFromInputStreamBuilder(inputStream);
     }
 
     /**

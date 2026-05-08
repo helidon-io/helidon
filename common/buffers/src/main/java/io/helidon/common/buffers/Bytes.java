@@ -114,6 +114,10 @@ public final class Bytes {
      * {@code -} byte.
      */
     public static final byte MINUS_SIGN_BYTE = (byte) '-';
+    /**
+     * {@code .} byte.
+     */
+    public static final byte DOT_BYTE = (byte) '.';
 
     private static final boolean BYTE_ORDER_LE = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
 

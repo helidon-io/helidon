@@ -29,12 +29,12 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.http.media.json.binding {
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires io.helidon.builder.api;
     requires io.helidon.http.media;
+    requires io.helidon.json;
     requires io.helidon.json.binding;
-    requires io.helidon.common.media.type;
-    requires io.helidon.http;
 
     requires transitive io.helidon.config;
 

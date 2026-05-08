@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.builder.test;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.builder.test.testsubjects.Generics;
@@ -41,15 +42,24 @@ class GenericTest {
         builder.addXValue(new ImplOfT("secondXValue"));
         builder.putMappedValue(new ImplOfT("key"), new ImplOfT("value"));
         builder.putMappedValue(new ImplOfT("key2"), new ImplOfT("value2"));
+        builder.fn(new Mapper());
         builder.complicatedValue(new Supply());
 
         Generics<ImplOfT, ImplOfT> generics = builder.build();
 
         assertThat(generics.tValues(), hasItems(new ImplOfT("firstTValue"), new ImplOfT("secondTValue")));
         assertThat(generics.xValues(), hasItems(new ImplOfT("firstXValue"), new ImplOfT("secondXValue")));
+        assertThat(generics.fn().apply(new ImplOfT("source")), is(new ImplOfT("mapped")));
         assertThat(generics.complicatedValue(), not(Optional.empty()));
         assertThat(generics.complicatedValue().get().get(), is(new ImplOfT("supplied")));
         assertThat(generics.mappedValues().size(), is(2));
+    }
+
+    private static class Mapper implements Function<ImplOfT, ImplOfT> {
+        @Override
+        public ImplOfT apply(ImplOfT value) {
+            return new ImplOfT("mapped");
+        }
     }
 
     private static class Supply implements Supplier<ImplOfT> {

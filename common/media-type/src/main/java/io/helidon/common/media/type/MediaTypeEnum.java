@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ enum MediaTypeEnum implements MediaType {
     APPLICATION_SVG_XML("application", "svg+xml"),
     APPLICATION_JSON("application", "json"),
     APPLICATION_JSON_PATCH_JSON("application", "json-patch+json"),
+    APPLICATION_X_JACKSON_SMILE("application", "x-jackson-smile"),
     APPLICATION_STREAM_JSON("application", "stream+json"),
     APPLICATION_FORM_URLENCODED("application", "x-www-form-urlencoded"),
     MULTIPART_FORM_DATA("multipart", "form-data"),

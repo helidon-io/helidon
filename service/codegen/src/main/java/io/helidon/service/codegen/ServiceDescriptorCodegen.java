@@ -76,7 +76,6 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PER_INSTANCE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PER_LOOKUP;
-import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_QUALIFIER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_RUN_LEVEL;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_SCOPE;
@@ -199,6 +198,8 @@ public class ServiceDescriptorCodegen {
                                  .add("Service descriptor for {@link " + serviceTypeName.fqName() + "}.")
                                  .addGenericArgument("T", "type of the service, for extensibility")
                                  .build())
+                .addAnnotation(ServiceCodegenAnnotations.API_INTERNAL)
+                .addAnnotation(ServiceCodegenAnnotations.SUPPRESS_API)
                 // we need to keep insertion order, as constants may depend on each other
                 .sortStaticFields(false);
 
@@ -366,6 +367,8 @@ public class ServiceDescriptorCodegen {
                                  .add("Service descriptor for {@link " + serviceTypeName.fqName() + "}.")
                                  .addGenericArgument("T", "type of the service, for extensibility")
                                  .build())
+                .addAnnotation(ServiceCodegenAnnotations.API_INTERNAL)
+                .addAnnotation(ServiceCodegenAnnotations.SUPPRESS_API)
                 // we need to keep insertion order, as constants may depend on each other
                 .sortStaticFields(false);
 
@@ -639,17 +642,6 @@ public class ServiceDescriptorCodegen {
         }
 
         if (service.hasAnnotation(SERVICE_ANNOTATION_PER_INSTANCE)) {
-            return SERVICE_ANNOTATION_SINGLETON;
-        }
-
-        if (service.hasAnnotation(SERVICE_ANNOTATION_PROVIDER)) {
-            // if supplier, per lookup, otherwise singleton; will be removed once we remove Service.Provider (if we remove it)
-            if (service.interfaceTypeInfo()
-                    .stream()
-                    .map(TypeInfo::typeName)
-                    .anyMatch(TypeNames.SUPPLIER::equals)) {
-                return SERVICE_ANNOTATION_PER_LOOKUP;
-            }
             return SERVICE_ANNOTATION_SINGLETON;
         }
 
@@ -1246,12 +1238,12 @@ public class ServiceDescriptorCodegen {
                                 it.addContent(".addQualifier(qualifier -> qualifier.typeName(")
                                         .addContentCreate(qualifier.typeName().genericTypeName())
                                         .addContentLine(")");
-                                qualifier.values()
+                                qualifier.properties()
                                         .keySet()
                                         .forEach(propertyName -> {
-                                            it.addContent(".putValue(\"")
-                                                    .addContent(propertyName)
-                                                    .addContent("\", ");
+                                            it.addContent(".property(")
+                                                    .addContentLiteral(propertyName)
+                                                    .addContent(", ");
                                             addAnnotationValue(it, qualifier.objectValue(propertyName).get());
                                             it.addContentLine(")");
                                         });
@@ -2342,7 +2334,9 @@ public class ServiceDescriptorCodegen {
                                                                typeName,
                                                                wrapperType,
                                                                "1",
-                                                               ""));
+                                                               ""))
+                .addAnnotation(ServiceCodegenAnnotations.SUPPRESS_API);
+
         service.qualifiers()
                 .forEach(classModel::addAnnotation);
 
@@ -2676,7 +2670,9 @@ public class ServiceDescriptorCodegen {
 
     private String genericTypeConstant(FieldHandler fieldHandler, TypeName typeName) {
         return fieldHandler.constant("GTYPE",
-                                     TypeNames.GENERIC_TYPE,
+                                     TypeName.builder(TypeNames.GENERIC_TYPE)
+                                             .addTypeArgument(typeName.boxed())
+                                             .build(),
                                      ResolvedType.create(typeName),
                                      it -> {
                                          if (typeName.primitive()) {

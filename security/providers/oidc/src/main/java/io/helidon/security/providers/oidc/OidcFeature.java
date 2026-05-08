@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.security.providers.oidc;
 
-import java.io.StringReader;
 import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -33,19 +32,20 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LruCache;
 import io.helidon.common.Weight;
-import io.helidon.common.configurable.LruCache;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
-import io.helidon.cors.CrossOriginConfig;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.EncryptedJwt;
@@ -62,17 +62,11 @@ import io.helidon.security.providers.oidc.common.spi.TenantConfigProvider;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
-import io.helidon.webserver.cors.CorsSupport;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.security.SecurityHttpFeature;
-
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReaderFactory;
 
 import static io.helidon.http.HeaderNames.HOST;
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
@@ -151,8 +145,6 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
  */
 @Weight(800)
 public final class OidcFeature implements HttpFeature {
-    static final JsonReaderFactory JSON_READER_FACTORY = Json.createReaderFactory(Map.of());
-    static final JsonBuilderFactory JSON_BUILDER_FACTORY = Json.createBuilderFactory(Map.of());
     private static final System.Logger LOGGER = System.getLogger(OidcFeature.class.getName());
     private static final String CODE_PARAM_NAME = "code";
     private static final String STATE_PARAM_NAME = "state";
@@ -167,8 +159,6 @@ public final class OidcFeature implements HttpFeature {
     private final OidcCookieHandler tenantCookieHandler;
     private final OidcCookieHandler stateCookieHandler;
     private final boolean enabled;
-    private final CorsSupport corsSupport;
-
     private OidcFeature(Builder builder) {
         this.oidcConfig = builder.oidcConfig;
         this.enabled = builder.enabled;
@@ -178,7 +168,6 @@ public final class OidcFeature implements HttpFeature {
             this.refreshTokenCookieHandler = oidcConfig.refreshTokenCookieHandler();
             this.tenantCookieHandler = oidcConfig.tenantCookieHandler();
             this.stateCookieHandler = oidcConfig.stateCookieHandler();
-            this.corsSupport = prepareCrossOriginSupport(oidcConfig.redirectUri(), oidcConfig.crossOriginConfig());
             this.oidcConfigFinders = List.copyOf(builder.tenantConfigFinders);
             this.oidcConfigFinders.forEach(tenantConfigFinder -> tenantConfigFinder.onChange(tenants::remove));
         } else {
@@ -187,7 +176,6 @@ public final class OidcFeature implements HttpFeature {
             this.refreshTokenCookieHandler = null;
             this.tenantCookieHandler = null;
             this.stateCookieHandler = null;
-            this.corsSupport = null;
             this.oidcConfigFinders = List.of();
         }
     }
@@ -248,14 +236,8 @@ public final class OidcFeature implements HttpFeature {
     @Override
     public void setup(HttpRouting.Builder routing) {
         if (enabled) {
-            if (corsSupport != null) {
-                routing.any(oidcConfig.redirectUri(), corsSupport);
-            }
             routing.get(oidcConfig.redirectUri(), this::processOidcRedirect);
             if (oidcConfig.logoutEnabled()) {
-                if (corsSupport != null) {
-                    routing.any(oidcConfig.logoutUri(), corsSupport);
-                }
                 routing.get(oidcConfig.logoutUri(), this::processLogout);
             }
             routing.any(this::addRequestAsHeader);
@@ -404,11 +386,12 @@ public final class OidcFeature implements HttpFeature {
                          "State cookie needs to be provided upon redirect");
             return;
         }
-        String stateBase64 = new String(Base64.getDecoder().decode(maybeStateCookie.get()), StandardCharsets.UTF_8);
-        JsonObject stateCookie = JSON_READER_FACTORY.createReader(new StringReader(stateBase64)).readObject();
+        String stateCookieJson = new String(Base64.getDecoder().decode(maybeStateCookie.get()), StandardCharsets.UTF_8);
+        JsonObject stateCookie = JsonParser.create(stateCookieJson).readJsonObject();
         //Remove state cookie
         res.headers().addCookie(stateCookieHandler.removeCookie().build());
-        String state = stateCookie.getString("state");
+        String state = stateCookie.stringValue("state")
+                .orElseThrow(() -> new IllegalStateException("JSON field \"state\" must be defined"));
         String queryState = req.query().get("state");
         if (!state.equals(queryState)) {
             processError(res,
@@ -427,7 +410,8 @@ public final class OidcFeature implements HttpFeature {
                 .add("redirect_uri", redirectUri(req, tenantName));
 
         if (oidcConfig.pkceEnabled()) {
-            String verifier = stateCookie.getString("pkceVerifier");
+            String verifier = stateCookie.stringValue("pkceVerifier")
+                    .orElseThrow(() -> new IllegalStateException("JSON field \"pkceVerifier\" must be defined"));
             form.add("code_verifier", verifier);
         }
 
@@ -503,34 +487,39 @@ public final class OidcFeature implements HttpFeature {
                                        String tenantName,
                                        JsonObject stateCookie,
                                        Tenant tenant) {
-        String accessToken = json.getString("access_token");
-        String idToken = json.getString("id_token", null);
-        String refreshToken = json.getString("refresh_token", null);
-        JwtHeaders jwtHeaders = JwtHeaders.parseToken(idToken);
-        TenantConfig tenantConfig = tenant.tenantConfig();
+        String accessToken = json.stringValue("access_token")
+                .orElseThrow(() -> new IllegalStateException("JSON field \"access_token\" must be defined"));
+        Optional<String> idToken = json.stringValue("id_token");
+        Optional<String> refreshToken = json.stringValue("refresh_token");
+        if (idToken.isPresent()) {
+            String idTokenValue = idToken.get();
+            JwtHeaders jwtHeaders = JwtHeaders.parseToken(idTokenValue);
+            TenantConfig tenantConfig = tenant.tenantConfig();
 
-        Jwt idTokenJwt;
-        if (jwtHeaders.encryption().isPresent() && tenantConfig.contentKeyDecryptionKeys().isPresent()) {
-            EncryptedJwt encryptedJwt = EncryptedJwt.parseToken(jwtHeaders, idToken);
-            JwkKeys jwkKeys = tenantConfig.contentKeyDecryptionKeys().get();
-            idTokenJwt = encryptedJwt.decrypt(jwkKeys, jwkKeys.keys().getFirst()).getJwt();
-        } else {
-            idTokenJwt = SignedJwt.parseToken(idToken).getJwt();
-        }
-        String nonceOriginal = stateCookie.getString("nonce");
-        String nonceIdToken = idTokenJwt.nonce()
-                .orElseThrow(() -> new IllegalStateException("Nonce is required to be present in the id token"));
-        if (!nonceIdToken.equals(nonceOriginal)) {
-            throw new IllegalStateException("Original nonce and the one obtained from id token does not match");
+            Jwt idTokenJwt;
+            if (jwtHeaders.encryption().isPresent() && tenantConfig.contentKeyDecryptionKeys().isPresent()) {
+                EncryptedJwt encryptedJwt = EncryptedJwt.parseToken(jwtHeaders, idTokenValue);
+                JwkKeys jwkKeys = tenantConfig.contentKeyDecryptionKeys().get();
+                idTokenJwt = encryptedJwt.decrypt(jwkKeys, jwkKeys.keys().getFirst()).getJwt();
+            } else {
+                idTokenJwt = SignedJwt.parseToken(idTokenValue).getJwt();
+            }
+            String nonceOriginal = stateCookie.stringValue("nonce")
+                    .orElseThrow(() -> new IllegalStateException("JSON field \"nonce\" must be defined"));
+            String nonceIdToken = idTokenJwt.nonce()
+                    .orElseThrow(() -> new IllegalStateException("Nonce is required to be present in the id token"));
+            if (!nonceIdToken.equals(nonceOriginal)) {
+                throw new IllegalStateException("Original nonce and the one obtained from id token does not match");
+            }
         }
 
         //redirect to "originalUri"
-        String originalUri = stateCookie.getString("originalUri", DEFAULT_REDIRECT);
+        String originalUri = stateCookie.stringValue("originalUri", DEFAULT_REDIRECT);
         res.status(Status.TEMPORARY_REDIRECT_307);
         if (oidcConfig.useParam()) {
             originalUri += (originalUri.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + accessToken;
-            if (idToken != null) {
-                originalUri += "&" + encode(oidcConfig.idTokenParamName()) + "=" + idToken;
+            if (idToken.isPresent()) {
+                originalUri += "&" + encode(oidcConfig.idTokenParamName()) + "=" + idToken.get();
             }
             if (!DEFAULT_TENANT_ID.equals(tenantName)) {
                 originalUri += "&" + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
@@ -542,9 +531,9 @@ public final class OidcFeature implements HttpFeature {
 
         if (oidcConfig.useCookie()) {
             try {
-                JsonObject accessTokenJson = JSON_BUILDER_FACTORY.createObjectBuilder()
-                        .add("accessToken", accessToken)
-                        .add("remotePeer", req.remotePeer().host())
+                JsonObject accessTokenJson = JsonObject.builder()
+                        .set("accessToken", accessToken)
+                        .set("remotePeer", req.remotePeer().host())
                         .build();
                 String encodedAccessToken = Base64.getEncoder()
                         .encodeToString(accessTokenJson.toString().getBytes(StandardCharsets.UTF_8));
@@ -555,13 +544,10 @@ public final class OidcFeature implements HttpFeature {
 
                 headers.addCookie(tenantCookieHandler.createCookie(tenantName).build()); //Add tenant name cookie
                 headers.addCookie(tokenCookieHandler.createCookie(encodedAccessToken).build());  //Add token cookie
-                if (refreshToken != null) {
-                    headers.addCookie(refreshTokenCookieHandler.createCookie(refreshToken).build());  //Add refresh token cookie
-                }
-
-                if (idToken != null) {
-                    headers.addCookie(idTokenCookieHandler.createCookie(idToken).build());  //Add token id cookie
-                }
+                //Add refresh token cookie
+                refreshToken.ifPresent(s -> headers.addCookie(refreshTokenCookieHandler.createCookie(s).build()));
+                //Add token id cookie
+                idToken.ifPresent(s -> headers.addCookie(idTokenCookieHandler.createCookie(s).build()));
                 res.send();
 
             } catch (Exception e) {
@@ -645,14 +631,6 @@ public final class OidcFeature implements HttpFeature {
 
         res.status(Status.BAD_REQUEST_400);
         res.send("{\"error\": \"" + error + "\", \"error_description\": \"" + errorDescription + "\"}");
-    }
-
-    private CorsSupport prepareCrossOriginSupport(String path, CrossOriginConfig crossOriginConfig) {
-        return crossOriginConfig == null
-                ? null
-                : CorsSupport.builder()
-                        .addCrossOrigin(path, crossOriginConfig)
-                        .build();
     }
 
     /**

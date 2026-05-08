@@ -24,7 +24,8 @@ import io.helidon.common.GenericType;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -39,47 +40,49 @@ public class ListTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testListSerialization() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testListSerializationParameterized(BindingMethod bindingMethod) {
         List<String> list = List.of("a", "b", "c");
 
         String expected = "[\"a\",\"b\",\"c\"]";
 
-        String json = jsonBinding.serialize(list);
+        String json = bindingMethod.serialize(jsonBinding, list);
         assertThat(json, is(expected));
     }
 
-    @Test
-    public void testListDeserialization() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testListDeserializationParameterized(BindingMethod bindingMethod) {
         List<String> list = List.of("a", "b", "c");
 
         String json = "[\"a\",\"b\",\"c\"]";
 
         GenericType<List<String>> type = new GenericType<>() { };
-        List<String> deserialized = jsonBinding.deserialize(json, type);
+        List<String> deserialized = bindingMethod.deserialize(jsonBinding, json, type);
         assertThat(deserialized, is(list));
     }
 
-    @Test
-    public void testListTypeDeserialization() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testListTypeDeserializationParameterized(BindingMethod bindingMethod) {
         List<String> list = List.of("a", "b", "c");
 
         String json = "[\"a\",\"b\",\"c\"]";
 
         GenericType<List<String>> listType = new GenericType<>() { };
-        List<String> deserialized = jsonBinding.deserialize(json, listType);
+        List<String> deserialized = bindingMethod.deserialize(jsonBinding, json, listType);
         assertThat(deserialized, is(list));
         assertThat(deserialized, instanceOf(ArrayList.class));
 
         GenericType<ArrayList<String>> arrayListType = new GenericType<>() { };
-        deserialized = jsonBinding.deserialize(json, arrayListType);
+        deserialized = bindingMethod.deserialize(jsonBinding, json, arrayListType);
         assertThat(deserialized, is(list));
         assertThat(deserialized, instanceOf(ArrayList.class));
 
         GenericType<LinkedList<String>> linkedListType = new GenericType<>() { };
-        deserialized = jsonBinding.deserialize(json, linkedListType);
+        deserialized = bindingMethod.deserialize(jsonBinding, json, linkedListType);
         assertThat(deserialized, is(list));
         assertThat(deserialized, instanceOf(LinkedList.class));
     }
-
 }

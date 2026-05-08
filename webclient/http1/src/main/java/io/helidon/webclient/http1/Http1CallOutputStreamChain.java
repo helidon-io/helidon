@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -217,7 +217,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             this.clientConfig = clientConfig;
             this.protocolConfig = protocolConfig;
             this.contentLength = headers.contentLength().orElse(-1);
-            this.chunked = contentLength == -1 || headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+            this.chunked = contentLength == -1 || headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED);
             this.request = request;
             this.originalRequest = originalRequest;
             this.lastRequest = originalRequest;
@@ -385,7 +385,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     headers.set(HeaderValues.TRANSFER_ENCODING_CHUNKED);
                 } else {
                     // Add chunked encoding, if it's not part of existing transfer-encoding headers
-                    if (!headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                    if (!headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
                         headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
                     }
                 }
@@ -489,13 +489,14 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 }
                 lastUri = redirectUri;
                 connection.releaseResource();
-                Http1ClientRequestImpl clientRequest = new Http1ClientRequestImpl(originalRequest,
+                Http1ClientRequestImpl clientRequest = new Http1ClientRequestImpl(lastRequest,
                                                                                   method,
                                                                                   redirectUri,
-                                                                                  request.properties());
+                                                                                  lastRequest.properties());
                 Http1ClientResponseImpl response;
                 if (sendEntity) {
                     response = (Http1ClientResponseImpl) clientRequest
+                            .outputStreamRedirect(true)
                             .header(HeaderValues.EXPECT_100)
                             .header(HeaderValues.TRANSFER_ENCODING_CHUNKED)
                             .readTimeout(originalRequest.readContinueTimeout())

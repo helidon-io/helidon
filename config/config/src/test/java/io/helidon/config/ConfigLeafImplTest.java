@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,8 +70,8 @@ public class ConfigLeafImplTest extends AbstractConfigImplTestBase {
         array = ConfigLeafImpl.toArray("large:cheese\\,mushroom,medium:chicken,small:pepperoni");
         assertThat(array, arrayContaining("large:cheese,mushroom", "medium:chicken", "small:pepperoni"));
 
-        array = ConfigLeafImpl.toArray("microservice,microprofile,m\\,f,microservice");
-        assertThat(array, arrayContaining("microservice", "microprofile", "m,f", "microservice"));
+        array = ConfigLeafImpl.toArray("service,profile,m\\,f,service");
+        assertThat(array, arrayContaining("service", "profile", "m,f", "service"));
 
         array = ConfigLeafImpl.toArray(",a,b");
         assertThat(array, arrayContaining("", "a", "b"));

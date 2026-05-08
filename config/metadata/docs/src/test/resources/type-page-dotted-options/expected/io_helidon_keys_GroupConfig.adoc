@@ -1,0 +1,40 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= io.helidon.keys.GroupConfig
+
+== Description
+
+++++
+Configuration for <code>keys.group</code>
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Description
+
+| `enabled`
+|`Boolean`
+|pass:[Group enabled.]
+
+| `name`
+|`String`
+|pass:[Group name.]
+
+|[[a0c02ffff-resource]] xref:{rootdir}/config/com_acme_AcmeResourceConfig.adoc[`resource`]
+|`AcmeResourceConfig`
+|pass:[Grouped resource.]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/com_acme_AcmeKeysConfig.adoc#a0ba0cb88-group[`keys.group`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

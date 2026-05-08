@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,16 +23,20 @@ import io.helidon.common.GenericType;
 import io.helidon.common.Size;
 import io.helidon.common.mapper.spi.MapperProvider;
 import io.helidon.common.mapper.spi.MapperProvider.ProviderResponse;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link io.helidon.common.mapper.Mappers}.
  */
+@Testing.Test
 class MappersTest {
     @Test
     void testUsingServiceLoader() {
@@ -190,6 +194,15 @@ class MappersTest {
     }
 
     @Test
+    void testLookupFromServices() {
+        Mappers first = Services.get(Mappers.class);
+        Mappers second = Services.get(Mappers.class);
+
+        assertSame(first, second, "Repeated mapper lookups should reuse the same service instance");
+        assertThat(first.map("10", String.class, Integer.class), is(10));
+    }
+
+    @Test
     void testExistingValue() {
         // int -> double
         // not double to int
@@ -221,21 +234,38 @@ class MappersTest {
     }
 
     @Test
+    void testExistingValueWithoutExplicitMappers() {
+        Mappers mappers = Services.get(Mappers.class);
+        Value<String> value = Value.create("name", "42");
+        assertThat(value.get(), is("42"));
+
+        Value<Integer> integerValue = value.as(Integer.class);
+        assertThat(integerValue.get(), is(mappers.map("42", GenericType.STRING, GenericType.create(Integer.class))));
+
+        value = integerValue.asString();
+        assertThat(value.get(), is(integerValue.get().toString()));
+
+        Value<String> typedValue = Value.create("typedName", "84", GenericType.STRING);
+        Value<Integer> typedIntegerValue = typedValue.as(Integer.class);
+        assertThat(typedIntegerValue.get(), is(mappers.map("84", GenericType.STRING, GenericType.create(Integer.class))));
+    }
+
+    @Test
+    void testExistingOptionalValueWithoutExplicitMappers() {
+        Mappers mappers = Services.get(Mappers.class);
+        OptionalValue<String> value = OptionalValue.create("name", "42");
+        assertThat(value.get(), is("42"));
+
+        OptionalValue<Integer> integerValue = value.as(Integer.class);
+        assertThat(integerValue.get(), is(mappers.map("42", GenericType.STRING, GenericType.create(Integer.class))));
+
+        value = integerValue.asString();
+        assertThat(value.get(), is(integerValue.get().toString()));
+    }
+
+    @Test
     void testEmptyValue() {
-        // int -> double
-        // not double to int
-
-        Mappers mapperManager = Mappers.builder()
-                .useBuiltInMappers(true)
-                .addMapperProvider((t1, t2, qualifier) -> {
-                    if (t1.equals(Integer.class) && t2.equals(Double.class)) {
-                        return new ProviderResponse(MapperProvider.Support.SUPPORTED, anInt -> ((Integer) anInt).doubleValue());
-                    }
-                    return ProviderResponse.unsupported();
-                })
-                .build();
-
-        OptionalValue<String> value = OptionalValue.create(mapperManager, "name", String.class);
+        OptionalValue<String> value = OptionalValue.createEmpty("name");
         assertThrows(NoSuchElementException.class, value::get);
         assertThat(value.isPresent(), is(false));
         assertThat(value.isEmpty(), is(true));
@@ -255,7 +285,28 @@ class MappersTest {
         assertThat(doubleValue.isPresent(), is(false));
         assertThat(doubleValue.isEmpty(), is(true));
 
-        assertThrows(MapperException.class, () -> doubleValue.as(Integer.class));
+        integerValue = doubleValue.as(Integer.class);
+        assertThrows(NoSuchElementException.class, integerValue::get);
+        assertThat(integerValue.isPresent(), is(false));
+        assertThat(integerValue.isEmpty(), is(true));
+    }
+
+    @Test
+    void testEmptyValueWithoutExplicitMappers() {
+        OptionalValue<String> value = OptionalValue.createEmpty("name");
+        assertThrows(NoSuchElementException.class, value::get);
+        assertThat(value.isPresent(), is(false));
+        assertThat(value.isEmpty(), is(true));
+
+        OptionalValue<Integer> integerValue = value.as(Integer.class);
+        assertThrows(NoSuchElementException.class, integerValue::get);
+        assertThat(integerValue.isPresent(), is(false));
+        assertThat(integerValue.isEmpty(), is(true));
+
+        OptionalValue<String> genericValue = OptionalValue.createEmpty("genericName");
+        assertThrows(NoSuchElementException.class, genericValue::get);
+        assertThat(genericValue.isPresent(), is(false));
+        assertThat(genericValue.isEmpty(), is(true));
     }
 
     @Test
@@ -277,6 +328,38 @@ class MappersTest {
         assertThat(mm.typeCacheSize(), is(1));
     }
 
+    @Test
+    void testQualifierArrayMutationDoesNotCorruptCache() {
+        CountingQualifiedProvider provider = new CountingQualifiedProvider();
+        MappersImpl mm = new MappersImpl(Mappers.builder()
+                                                 .mapperProvidersDiscoverServices(false)
+                                                 .useBuiltInMappers(false)
+                                                 .addMapperProvider(provider)
+                                                 .buildPrototype());
+
+        String[] classQualifiers = {"http", "query"};
+        assertThat(mm.map("value", String.class, String.class, classQualifiers), is("class_value"));
+        assertThat(mm.classCacheSize(), is(1));
+        int classCalls = provider.classCalls();
+
+        classQualifiers[1] = "header";
+
+        assertThat(mm.map("value", String.class, String.class, "http", "query"), is("class_value"));
+        assertThat(mm.classCacheSize(), is(1));
+        assertThat(provider.classCalls(), is(classCalls));
+
+        String[] genericQualifiers = {"http", "query"};
+        assertThat(mm.map("value", GenericType.STRING, GenericType.STRING, genericQualifiers), is("type_value"));
+        assertThat(mm.typeCacheSize(), is(1));
+        int typeCalls = provider.typeCalls();
+
+        genericQualifiers[1] = "header";
+
+        assertThat(mm.map("value", GenericType.STRING, GenericType.STRING, "http", "query"), is("type_value"));
+        assertThat(mm.typeCacheSize(), is(1));
+        assertThat(provider.typeCalls(), is(typeCalls));
+    }
+
     private static class TestProvider implements MapperProvider {
         @Override
         public ProviderResponse mapper(Class<?> sourceClass, Class<?> targetClass, String qualifier) {
@@ -288,4 +371,36 @@ class MappersTest {
             return MapperProvider.super.mapper(sourceType, targetType, qualifier);
         }
     }
+
+    private static class CountingQualifiedProvider implements MapperProvider {
+        private int classCalls;
+        private int typeCalls;
+
+        @Override
+        public ProviderResponse mapper(Class<?> sourceClass, Class<?> targetClass, String qualifier) {
+            classCalls++;
+            if (String.class.equals(sourceClass) && String.class.equals(targetClass) && qualifier.equals("http/query")) {
+                return new ProviderResponse(Support.SUPPORTED, req -> "class_" + req);
+            }
+            return ProviderResponse.unsupported();
+        }
+
+        @Override
+        public ProviderResponse mapper(GenericType<?> sourceType, GenericType<?> targetType, String qualifier) {
+            typeCalls++;
+            if (GenericType.STRING.equals(sourceType) && GenericType.STRING.equals(targetType) && qualifier.equals("http/query")) {
+                return new ProviderResponse(Support.SUPPORTED, req -> "type_" + req);
+            }
+            return ProviderResponse.unsupported();
+        }
+
+        int classCalls() {
+            return classCalls;
+        }
+
+        int typeCalls() {
+            return typeCalls;
+        }
+    }
+
 }

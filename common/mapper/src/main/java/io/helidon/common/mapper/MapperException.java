@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
  */
 package io.helidon.common.mapper;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 
 /**
  * An exception that is thrown when mapping failed to map source to target.
  * This may be either a problem that the mapper was not found (it is not registered) or that the mapping itself failed.
  */
+@Api.Stable
 public class MapperException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 

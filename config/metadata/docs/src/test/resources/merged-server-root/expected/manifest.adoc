@@ -1,0 +1,9 @@
+
+= Config Types
+
+== Config Types
+
+See the xref:config_reference.adoc[root] type.
+
+* xref:com_example_profile_server_Server.adoc[com.example.profile.server.Server]
+* xref:com_example_webserver_WebServer.adoc[com.example.webserver.WebServer]

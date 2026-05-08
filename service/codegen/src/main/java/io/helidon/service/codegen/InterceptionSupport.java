@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -256,6 +256,7 @@ final class InterceptionSupport {
                                                  classType,
                                                  generatedType))
                 .description("Intercepted class implementation, that delegates to the provided instance.")
+                .addAnnotation(ServiceCodegenAnnotations.SUPPRESS_API)
                 .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR,
                                                                classType,
                                                                generatedType,
@@ -356,6 +357,7 @@ final class InterceptionSupport {
                                                  interfaceType,
                                                  generatedType))
                 .description("Intercepted interface implementation, that delegates to the provided instance.")
+                .addAnnotation(ServiceCodegenAnnotations.SUPPRESS_API)
                 .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR,
                                                                interfaceType,
                                                                generatedType,

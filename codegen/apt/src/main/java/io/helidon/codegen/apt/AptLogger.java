@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,15 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
 import io.helidon.codegen.CodegenEvent;
 import io.helidon.codegen.CodegenLogger;
 import io.helidon.codegen.CodegenOptions;
+import io.helidon.common.types.Annotation;
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementInfo;
 
 class AptLogger implements CodegenLogger {
     private final System.Logger logger;
@@ -47,15 +49,12 @@ class AptLogger implements CodegenLogger {
         // we always log to system logger if info or below
         // we only log to messager if info or above
         switch (event.level()) {
-        case TRACE, DEBUG -> logSystem(event);
-        case INFO -> {
-            logSystem(event);
-            logApt(event);
-        }
-        case WARNING, ERROR -> {
-            logApt(event);
-        }
-        default -> logSystem(event);
+            case INFO -> {
+                logSystem(event);
+                logApt(event);
+            }
+            case WARNING, ERROR -> logApt(event);
+            default -> logSystem(event);
         }
     }
 
@@ -87,23 +86,40 @@ class AptLogger implements CodegenLogger {
         for (Object object : objects) {
             if (object instanceof AnnotationMirror mirror) {
                 return mirror;
+            } else if (object instanceof Annotation annot) {
+                var o = annot.originatingElement().orElse(null);
+                if (o instanceof AnnotationMirror mirror) {
+                    return mirror;
+                }
             }
         }
         return null;
     }
 
     private Element findElement(List<Object> objects) {
-        for (Object object : objects) {
-            if (object instanceof Element e) {
-                return e;
+        for (var object : objects) {
+            var element = findElement(object);
+            if (element != null) {
+                return element;
             }
         }
-        for (Object object : objects) {
-            if (object instanceof TypeName t) {
-                TypeElement element = env.getElementUtils().getTypeElement(t.declaredName());
-                if (element != null) {
-                    return element;
-                }
+        return null;
+    }
+
+    private Element findElement(Object orig) {
+        if (orig instanceof Element element) {
+            return element;
+        } else if (orig instanceof TypeName typeName) {
+            return env.getElementUtils().getTypeElement(typeName.declaredName());
+        } else if (orig instanceof TypeInfo typeInfo) {
+            var o = typeInfo.originatingElement().orElse(null);
+            if (o instanceof Element element) {
+                return element;
+            }
+        } else if (orig instanceof TypedElementInfo elementInfo) {
+            var o = elementInfo.originatingElement().orElse(null);
+            if (o instanceof Element element) {
+                return element;
             }
         }
         return null;

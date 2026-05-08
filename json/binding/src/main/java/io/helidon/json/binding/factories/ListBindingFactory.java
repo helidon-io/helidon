@@ -87,7 +87,10 @@ class ListBindingFactory implements JsonBindingFactory<List<?>> {
             }
             generator.writeArrayStart();
             for (Object value : instance) {
-                if (value == null && !writeNulls) {
+                if (value == null) {
+                    if (writeNulls) {
+                        serializer.serializeNull(generator);
+                    }
                     continue;
                 }
                 serializer.serialize(generator, value, writeNulls);

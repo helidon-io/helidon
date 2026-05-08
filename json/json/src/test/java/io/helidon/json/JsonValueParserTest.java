@@ -53,6 +53,37 @@ class JsonValueParserTest {
     }
 
     @Test
+    public void testJsonValueParserWithSpecialDoubleString() {
+        JsonValue original = JsonString.create("NaN");
+        JsonParser parser = JsonParser.create(original);
+
+        assertThat(parser.readJsonValue(), is(original));
+        assertThat(Double.isNaN(parser.readDouble()), is(true));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testJsonValueParserWithSpecialFloatString() {
+        JsonValue original = JsonString.create("-Infinity");
+        JsonParser parser = JsonParser.create(original);
+
+        assertThat(parser.readJsonValue(), is(original));
+        assertThat(parser.readFloat(), is(Float.NEGATIVE_INFINITY));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testJsonValueParserCreateExceptionWithCause() {
+        JsonParser parser = JsonParser.create(JsonString.create("test"));
+        Exception cause = new Exception("boom");
+
+        JsonException exception = parser.createException("message", cause);
+
+        assertThat(exception.getCause(), is(cause));
+        assertThat(exception.getMessage(), is("message"));
+    }
+
+    @Test
     public void testJsonValueParserWithBoolean() {
         JsonValue original = JsonBoolean.TRUE;
         JsonParser parser = JsonParser.create(original);

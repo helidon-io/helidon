@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,60 +17,13 @@
 package io.helidon.scheduling;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
-@SuppressWarnings("removal")
-@Prototype.Blueprint(decorator = FixedRateDecorator.class)
+@Prototype.Blueprint
 @Prototype.Configured
 interface FixedRateConfigBlueprint extends TaskConfigBlueprint, Prototype.Factory<FixedRate> {
-
-    /**
-     * Initial delay of the first invocation. Time unit is by default {@link java.util.concurrent.TimeUnit#SECONDS},
-     * can be specified with
-     * {@link io.helidon.scheduling.FixedRateConfig.Builder#timeUnit(java.util.concurrent.TimeUnit) timeUnit()}.
-     *
-     * @return initial delay value
-     * @deprecated use {@link io.helidon.scheduling.FixedRateConfig#delayBy()} instead
-     */
-    @Option.Configured
-    @Option.Deprecated("delayBy")
-    @Option.Required
-    @Option.Decorator(FixedRateDecorator.InitialDelayDecorator.class)
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    long initialDelay();
-
-    /**
-     * Fixed rate delay between each invocation. Time unit is by default {@link java.util.concurrent.TimeUnit#SECONDS},
-     * can be specified with {@link io.helidon.scheduling.FixedRateConfig.Builder#timeUnit(java.util.concurrent.TimeUnit)}.
-     *
-     * @return delay between each invocation
-     * @deprecated use {@link io.helidon.scheduling.FixedRateConfig#interval()} instead
-     */
-    @Option.Configured
-    @Option.Deprecated("interval")
-    @Option.Required
-    @Option.Decorator(FixedRateDecorator.DelayDecorator.class)
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    long delay();
-
-    /**
-     * {@link java.util.concurrent.TimeUnit TimeUnit} used for interpretation of values provided with
-     * {@link io.helidon.scheduling.FixedRateConfig.Builder#delay(long)}
-     * and {@link io.helidon.scheduling.FixedRateConfig.Builder#initialDelay(long)}.
-     *
-     * @return time unit for interpreting values
-     *         in {@link io.helidon.scheduling.FixedRateConfig.Builder#delay(long)}
-     *         and {@link io.helidon.scheduling.FixedRateConfig.Builder#initialDelay(long)}
-     * @deprecated as duration is used for new options, this option is not needed
-     */
-    @Option.Configured
-    @Option.Default("TimeUnit.SECONDS")
-    @Option.Decorator(FixedRateDecorator.TimeUnitDecorator.class)
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    TimeUnit timeUnit();
 
     /**
      * Initial delay of the first invocation.

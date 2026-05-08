@@ -20,7 +20,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -33,14 +34,15 @@ public class InterfaceAnnotationsTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testJsonbPropertyIfcInheritance() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testJsonbPropertyIfcInheritanceParameterized(BindingMethod bindingMethod) {
         InterfacedPojoB pojo = new InterfacedPojoImpl();
         pojo.setPropertyA("AA");
         pojo.setPropertyB("BB");
 
         String json = "{\"propA\":\"AA\",\"propB\":\"BB\"}";
-        assertEquals(json, jsonBinding.serialize(pojo));
+        assertEquals(json, bindingMethod.serialize(jsonBinding, pojo));
     }
 
     interface InterfacedPojoA {
@@ -90,5 +92,4 @@ public class InterfaceAnnotationsTest {
         }
 
     }
-
 }

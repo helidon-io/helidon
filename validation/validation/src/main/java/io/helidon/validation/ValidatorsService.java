@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,10 +67,13 @@ class ValidatorsService {
     private final ConstraintValidatorProvider numberMinProvider;
     private final ConstraintValidatorProvider numberMaxProvider;
     private final ConstraintValidatorProvider numberDigitsProvider;
+    private final ConstraintValidatorProvider numberMultipleOfProvider;
     private final ConstraintValidatorProvider integerMinProvider;
     private final ConstraintValidatorProvider integerMaxProvider;
+    private final ConstraintValidatorProvider integerMultipleOfProvider;
     private final ConstraintValidatorProvider longMinProvider;
     private final ConstraintValidatorProvider longMaxProvider;
+    private final ConstraintValidatorProvider longMultipleOfProvider;
     private final ConstraintValidatorProvider collectionSizeProvider;
     private final ConstraintValidatorProvider calendarFutureProvider;
     private final ConstraintValidatorProvider calendarFutureOrPresentProvider;
@@ -92,10 +95,13 @@ class ValidatorsService {
             @NamedByType(Validation.Number.Min.class) ConstraintValidatorProvider numberMinProvider,
             @NamedByType(Validation.Number.Max.class) ConstraintValidatorProvider numberMaxProvider,
             @NamedByType(Validation.Number.Digits.class) ConstraintValidatorProvider numberDigitsProvider,
+            @NamedByType(Validation.Number.MultipleOf.class) ConstraintValidatorProvider numberMultipleOfProvider,
             @NamedByType(Validation.Integer.Min.class) ConstraintValidatorProvider integerMinProvider,
             @NamedByType(Validation.Integer.Max.class) ConstraintValidatorProvider integerMaxProvider,
+            @NamedByType(Validation.Integer.MultipleOf.class) ConstraintValidatorProvider integerMultipleOfProvider,
             @NamedByType(Validation.Long.Min.class) ConstraintValidatorProvider longMinProvider,
             @NamedByType(Validation.Long.Max.class) ConstraintValidatorProvider longMaxProvider,
+            @NamedByType(Validation.Long.MultipleOf.class) ConstraintValidatorProvider longMultipleOfProvider,
             @NamedByType(Validation.Boolean.True.class) ConstraintValidatorProvider booleanTrueProvider,
             @NamedByType(Validation.Boolean.False.class) ConstraintValidatorProvider booleanFalseProvider,
             @NamedByType(Validation.Calendar.Future.class) ConstraintValidatorProvider calendarFutureProvider,
@@ -144,10 +150,13 @@ class ValidatorsService {
         this.numberMinProvider = numberMinProvider;
         this.numberMaxProvider = numberMaxProvider;
         this.numberDigitsProvider = numberDigitsProvider;
+        this.numberMultipleOfProvider = numberMultipleOfProvider;
         this.integerMinProvider = integerMinProvider;
         this.integerMaxProvider = integerMaxProvider;
+        this.integerMultipleOfProvider = integerMultipleOfProvider;
         this.longMinProvider = longMinProvider;
         this.longMaxProvider = longMaxProvider;
+        this.longMultipleOfProvider = longMultipleOfProvider;
         this.calendarFutureProvider = calendarFutureProvider;
         this.calendarFutureOrPresentProvider = calendarFutureOrPresentProvider;
         this.calendarPastProvider = calendarPastProvider;
@@ -178,8 +187,8 @@ class ValidatorsService {
     void validateStringLength(ValidationContext ctx, CharSequence value, int minLength, int maxLength) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.String.Length.class))
-                .putValue("min", minLength)
-                .putValue("value", maxLength)
+                .property("min", minLength)
+                .property("value", maxLength)
                 .build();
         ConstraintValidator validator = stringLengthProvider.create(CHAR_SEQUENCE_TYPE, annotation);
         ctx.check(validator, value);
@@ -231,17 +240,26 @@ class ValidatorsService {
     void validateNumberDigits(ValidationContext ctx, Number value, int integerDigits, int fractionDigits) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Digits.class))
-                .putValue("integer", integerDigits)
-                .putValue("fraction", fractionDigits)
+                .property("integer", integerDigits)
+                .property("fraction", fractionDigits)
                 .build();
         ConstraintValidator validator = numberDigitsProvider.create(NUMBER_TYPE, annotation);
+        ctx.check(validator, value);
+    }
+
+    void validateNumberMultipleOf(ValidationContext ctx, Number value, String factor) {
+        Annotation annotation = Annotation.builder()
+                .typeName(TypeName.create(Validation.Number.MultipleOf.class))
+                .value(factor)
+                .build();
+        ConstraintValidator validator = numberMultipleOfProvider.create(NUMBER_TYPE, annotation);
         ctx.check(validator, value);
     }
 
     void validateIntegerMin(ValidationContext ctx, Integer value, int minValue) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.Min.class))
-                .putValue("value", minValue)
+                .property("value", minValue)
                 .build();
         ConstraintValidator validator = integerMinProvider.create(TypeNames.BOXED_INT, annotation);
         ctx.check(validator, value);
@@ -250,16 +268,25 @@ class ValidatorsService {
     void validateIntegerMax(ValidationContext ctx, Object value, int maxValue) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Integer.Max.class))
-                .putValue("value", maxValue)
+                .property("value", maxValue)
                 .build();
         ConstraintValidator validator = integerMaxProvider.create(TypeNames.BOXED_INT, annotation);
+        ctx.check(validator, value);
+    }
+
+    void validateIntegerMultipleOf(ValidationContext ctx, Integer value, int factor) {
+        Annotation annotation = Annotation.builder()
+                .typeName(TypeName.create(Validation.Integer.MultipleOf.class))
+                .property("value", factor)
+                .build();
+        ConstraintValidator validator = integerMultipleOfProvider.create(TypeNames.BOXED_INT, annotation);
         ctx.check(validator, value);
     }
 
     void validateLongMin(ValidationContext ctx, Long value, long minValue) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.Min.class))
-                .putValue("value", minValue)
+                .property("value", minValue)
                 .build();
         ConstraintValidator validator = longMinProvider.create(TypeNames.BOXED_LONG, annotation);
         ctx.check(validator, value);
@@ -268,9 +295,18 @@ class ValidatorsService {
     void validateLongMax(ValidationContext ctx, Long value, long maxValue) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Long.Max.class))
-                .putValue("value", maxValue)
+                .property("value", maxValue)
                 .build();
         ConstraintValidator validator = longMaxProvider.create(TypeNames.BOXED_LONG, annotation);
+        ctx.check(validator, value);
+    }
+
+    void validateLongMultipleOf(ValidationContext ctx, Long value, long factor) {
+        Annotation annotation = Annotation.builder()
+                .typeName(TypeName.create(Validation.Long.MultipleOf.class))
+                .property("value", factor)
+                .build();
+        ConstraintValidator validator = longMultipleOfProvider.create(TypeNames.BOXED_LONG, annotation);
         ctx.check(validator, value);
     }
 
@@ -313,17 +349,17 @@ class ValidatorsService {
     void validateCollectionSize(ValidationContext ctx, Object value, int minSize, int maxSize) {
         Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create(Validation.Collection.Size.class))
-                .putValue("min", minSize)
-                .putValue("value", maxSize)
+                .property("min", minSize)
+                .property("value", maxSize)
                 .build();
         TypeName typeName;
         if (value.getClass().isArray()) {
             typeName = TypeName.create(value.getClass());
         } else {
             typeName = switch (value) {
-                case Map<?, ?> ignored -> TypeNames.MAP;
-                case Set<?> ignored -> TypeNames.SET;
-                case List<?> ignored -> TypeNames.LIST;
+                case Map<?, ?> _ -> TypeNames.MAP;
+                case Set<?> _ -> TypeNames.SET;
+                case List<?> _ -> TypeNames.LIST;
                 default -> throw new ValidationException(
                         "Collection size constraint is only valid on an array, collection, or a "
                                 + "map.");
@@ -339,22 +375,22 @@ class ValidatorsService {
         }
 
         return switch (value) {
-            case Date ignored -> TypeName.create(Date.class);
-            case Calendar ignored -> TypeName.create(Calendar.class);
-            case Instant ignored -> TypeName.create(Instant.class);
-            case LocalDate ignored -> TypeName.create(LocalDate.class);
-            case LocalDateTime ignored -> TypeName.create(LocalDateTime.class);
-            case LocalTime ignored -> TypeName.create(LocalTime.class);
-            case MonthDay ignored -> TypeName.create(MonthDay.class);
-            case OffsetDateTime ignored -> TypeName.create(OffsetDateTime.class);
-            case OffsetTime ignored -> TypeName.create(OffsetTime.class);
-            case Year ignored -> TypeName.create(Year.class);
-            case YearMonth ignored -> TypeName.create(YearMonth.class);
-            case ZonedDateTime ignored -> TypeName.create(ZonedDateTime.class);
-            case HijrahDate ignored -> TypeName.create(HijrahDate.class);
-            case JapaneseDate ignored -> TypeName.create(JapaneseDate.class);
-            case MinguoDate ignored -> TypeName.create(MinguoDate.class);
-            case ThaiBuddhistDate ignored -> TypeName.create(ThaiBuddhistDate.class);
+            case Date _ -> TypeName.create(Date.class);
+            case Calendar _ -> TypeName.create(Calendar.class);
+            case Instant _ -> TypeName.create(Instant.class);
+            case LocalDate _ -> TypeName.create(LocalDate.class);
+            case LocalDateTime _ -> TypeName.create(LocalDateTime.class);
+            case LocalTime _ -> TypeName.create(LocalTime.class);
+            case MonthDay _ -> TypeName.create(MonthDay.class);
+            case OffsetDateTime _ -> TypeName.create(OffsetDateTime.class);
+            case OffsetTime _ -> TypeName.create(OffsetTime.class);
+            case Year _ -> TypeName.create(Year.class);
+            case YearMonth _ -> TypeName.create(YearMonth.class);
+            case ZonedDateTime _ -> TypeName.create(ZonedDateTime.class);
+            case HijrahDate _ -> TypeName.create(HijrahDate.class);
+            case JapaneseDate _ -> TypeName.create(JapaneseDate.class);
+            case MinguoDate _ -> TypeName.create(MinguoDate.class);
+            case ThaiBuddhistDate _ -> TypeName.create(ThaiBuddhistDate.class);
             default -> throw new ValidationException("Invalid type for calendar validation constraint: "
                                                              + value.getClass().getName());
         };

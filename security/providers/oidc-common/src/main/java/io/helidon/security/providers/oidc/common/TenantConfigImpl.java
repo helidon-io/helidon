@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,8 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 
+import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.jwk.JwkKeys;
-
-import jakarta.json.JsonObject;
 
 /**
  * Tenant configuration.
@@ -51,7 +50,7 @@ class TenantConfigImpl implements TenantConfig {
     private final URI logoutEndpointUri;
     private final String scopeAudience;
     private final String serverType;
-    private final JsonObject oidcMetadata;
+    private final JsonObject oidcMetadataJsonObject;
     private final boolean useWellKnown;
     private final String name;
 
@@ -75,7 +74,7 @@ class TenantConfigImpl implements TenantConfig {
         this.clientSecret = builder.clientSecret();
         this.signJwk = builder.signJwk();
         this.contentKeyDecryptionKeys = builder.contentKeyDecryptionKeys();
-        this.oidcMetadata = builder.oidcMetadata();
+        this.oidcMetadataJsonObject = builder.oidcMetadataJsonObject();
         this.useWellKnown = builder.useWellKnown();
 
         if (validateJwtWithJwk) {
@@ -194,8 +193,8 @@ class TenantConfigImpl implements TenantConfig {
     }
 
     @Override
-    public JsonObject oidcMetadata() {
-        return oidcMetadata;
+    public JsonObject oidcMetadataJsonObject() {
+        return oidcMetadataJsonObject;
     }
 
     @Override

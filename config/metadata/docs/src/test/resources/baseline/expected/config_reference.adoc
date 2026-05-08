@@ -1,0 +1,25 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= Config Reference
+
+== Config Roots
+
+|===
+|Key|Description
+
+|[[ad71360ab-data]] xref:{rootdir}/config/io_helidon_DataConfig.adoc[`data`]
+|pass:[Configuration for <code>data</code>]
+
+|[[a9950f4db-fault-tolerance]] xref:{rootdir}/config/io_helidon_FaultToleranceConfig.adoc[`fault-tolerance`]
+|pass:[Configuration for <code>fault-tolerance</code>]
+
+|[[acca9442d-metrics]] xref:{rootdir}/config/io_helidon_MetricsConfig.adoc[`metrics`]
+|pass:[Configuration for <code>metrics</code>]
+
+|[[ac6d482f1-server]] xref:{rootdir}/config/com_acme_AcmeServerConfig.adoc[`server`]
+|pass:[Configuration for <code>server</code>]
+
+|===
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

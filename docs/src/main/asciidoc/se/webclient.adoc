@@ -393,7 +393,7 @@ client:
           resource-path: "client.p12"
 ----
 
-NOTE: The `passphrase` value on the config file can be encrypted if stronger security is required. For more information on how secrets can be encrypted using a master password and store them in a configuration file, please see xref:{rootdir}/mp/security/configuration-secrets.adoc[Configuration Secrets].
+NOTE: The `passphrase` value in the config file can be encrypted if stronger security is required.
 
 In the application code, load the settings from the configuration file.
 
@@ -431,13 +431,7 @@ In order for a service to function, its dependencies need to be added in the app
     <artifactId>helidon-webclient-discovery</artifactId>
     <scope>runtime</scope>
 </dependency>
-<dependency>
-    <groupId>io.helidon.discovery.providers</groupId>
-    <artifactId>helidon-discovery-providers-eureka</artifactId> <!--1-->
-    <scope>runtime</scope>
-</dependency>
 ----
-<1> Backs the `discovery` service with a xref:discovery.adoc#_eureka[Discovery provider based on Netflix's Eureka]
 
 * `metrics`
 +
@@ -676,4 +670,3 @@ include::{rootdir}/config/io_helidon_webclient_context_WebClientContextService.a
 * link:{webclient-javadoc-base-url}.metrics/module-summary.html[Helidon WebClient Metrics Support]
 * link:{webclient-javadoc-base-url}.security/module-summary.html[Helidon WebClient Security Support]
 * link:{webclient-javadoc-base-url}.tracing/module-summary.html[Helidon WebClient Tracing Support]
-

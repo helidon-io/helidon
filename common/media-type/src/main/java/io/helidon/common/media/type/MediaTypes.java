@@ -59,6 +59,10 @@ public final class MediaTypes {
      */
     public static final MediaType APPLICATION_JSON_PATCH_JSON = MediaTypeEnum.APPLICATION_JSON_PATCH_JSON;
     /**
+     * {@code application/x-jackson-smile} media type.
+     */
+    public static final MediaType APPLICATION_X_JACKSON_SMILE = MediaTypeEnum.APPLICATION_X_JACKSON_SMILE;
+    /**
      * {@code application/stream+json} media type.
      */
     public static final MediaType APPLICATION_STREAM_JSON = MediaTypeEnum.APPLICATION_STREAM_JSON;
@@ -163,6 +167,10 @@ public final class MediaTypes {
      * String value of media type: {@value}.
      */
     public static final String APPLICATION_JSON_PATCH_JSON_VALUE = "application/json-patch+json";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_X_JACKSON_SMILE_VALUE = "application/x-jackson-smile";
     /**
      * String value of media type: {@value}.
      */

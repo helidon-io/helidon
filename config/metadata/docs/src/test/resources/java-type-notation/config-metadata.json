@@ -1,0 +1,117 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.AcmeServerConfig",
+        "standalone": true,
+        "prefix": "server",
+        "description": "ACME server configuration.",
+        "options": [
+          {
+            "key": "features",
+            "kind": "LIST",
+            "type": "com.acme.AcmeFeature",
+            "description": "Dynamic features",
+            "provider": true
+          },
+          {
+            "key": "sockets",
+            "kind": "MAP",
+            "type": "com.acme.AcmeListenerConfig",
+            "description": "Sockets"
+          },
+          {
+            "key": "default-socket",
+            "type": "com.acme.AcmeListenerConfig",
+            "description": "Default socket"
+          },
+          {
+            "key": "host",
+            "type": "java.lang.String",
+            "description": "Host"
+          },
+          {
+            "key": "mode",
+            "type": "com.acme.AcmeMode",
+            "description": "Mode",
+            "allowedValues": [
+              {
+                "value": "STRICT",
+                "description": "Strict mode"
+              },
+              {
+                "value": "RELAXED",
+                "description": "Relaxed mode"
+              }
+            ]
+          },
+          {
+            "key": "external-scalar",
+            "type": "com.acme.ExternalScalar",
+            "description": "External scalar"
+          },
+          {
+            "key": "external-listeners",
+            "kind": "LIST",
+            "type": "com.acme.ExternalListener",
+            "description": "Listeners"
+          },
+          {
+            "key": "external-handlers",
+            "kind": "MAP",
+            "type": "com.acme.ExternalHandler",
+            "description": "Handlers"
+          },
+          {
+            "key": "modes",
+            "kind": "LIST",
+            "type": "com.acme.AcmeMode",
+            "description": "Modes",
+            "allowedValues": [
+              {
+                "value": "STRICT",
+                "description": "Strict mode"
+              },
+              {
+                "value": "RELAXED",
+                "description": "Relaxed mode"
+              }
+            ]
+          },
+          {
+            "key": "named-modes",
+            "kind": "MAP",
+            "type": "com.acme.AcmeNamedMode",
+            "description": "Named modes",
+            "allowedValues": [
+              {
+                "value": "STRICT",
+                "description": "Strict mode"
+              },
+              {
+                "value": "RELAXED",
+                "description": "Relaxed mode"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "com.acme.AcmeListenerConfig",
+        "standalone": true,
+        "prefix": "server.sockets",
+        "description": "ACME listener configuration."
+      },
+      {
+        "type": "com.acme.AcmeAuditConfig",
+        "standalone": true,
+        "prefix": "audit",
+        "description": "ACME audit configuration.",
+        "provides": [
+          "com.acme.AcmeFeature"
+        ]
+      }
+    ]
+  }
+]

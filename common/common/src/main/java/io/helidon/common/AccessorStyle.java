@@ -19,6 +19,7 @@ package io.helidon.common;
 /**
  * Accessor styles supported by Helidon modules.
  */
+@Api.Incubating
 public enum AccessorStyle {
 
     /**

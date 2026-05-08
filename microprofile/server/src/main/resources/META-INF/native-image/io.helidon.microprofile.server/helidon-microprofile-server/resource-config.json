@@ -1,7 +1,0 @@
-{
-    "resources": [
-        {
-            "pattern": "org/glassfish/jersey/ext/cdi1x/internal/localization.properties"
-        }
-    ]
-}

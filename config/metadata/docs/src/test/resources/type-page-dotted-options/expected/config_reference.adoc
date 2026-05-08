@@ -1,0 +1,16 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= Config Reference
+
+== Config Roots
+
+|===
+|Key|Description
+
+|[[a2a2a213f-keys]] xref:{rootdir}/config/com_acme_AcmeKeysConfig.adoc[`keys`]
+|pass:[Configuration for <code>keys</code>]
+
+|===
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

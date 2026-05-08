@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
@@ -53,15 +54,16 @@ class GrpcClientTracingInterceptor implements ClientInterceptor {
             @Override
             public void start(Listener<ResT> responseListener, Metadata headers) {
                 LOGGER.log(Level.DEBUG, "Call start; metadata: {0}", headers);
+                var tracer = Services.get(Tracer.class);
                 // Start a new span for the outgoing gRPC client call.
-                var outgoingClientSpanBuilder = Tracer.global()
+                var outgoingClientSpanBuilder = tracer
                         .spanBuilder(method.getServiceName() + "-" + method.getFullMethodName())
                         .kind(Span.Kind.CLIENT);
                 Span.current().ifPresent(parent -> outgoingClientSpanBuilder.parent(parent.context()));
                 outgoingClientSpan = new AtomicReference<>(outgoingClientSpanBuilder.start());
 
                 try {
-                    Tracer.global().inject(outgoingClientSpan.get().context(), null, new GrpcHeaderConsumer(headers));
+                    tracer.inject(outgoingClientSpan.get().context(), null, new GrpcHeaderConsumer(headers));
                     LOGGER.log(Level.DEBUG, "After injecting span context; metadata: {0}", headers);
                     outgoingClientScope = outgoingClientSpan.get().activate();
 

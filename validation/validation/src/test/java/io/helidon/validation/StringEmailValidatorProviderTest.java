@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public class StringEmailValidatorProviderTest {
     public void testCustomMessage() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
                 .typeName(TypeName.create(Validation.String.Email.class))
-                .putValue("message", "Invalid email format")
+                .property("message", "Invalid email format")
                 .build());
 
         var response = validator.check(ctx, "invalid-email");

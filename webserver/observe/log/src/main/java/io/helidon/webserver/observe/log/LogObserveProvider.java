@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package io.helidon.webserver.observe.log;
 
-import io.helidon.common.config.Config;
+import io.helidon.common.Api;
+import io.helidon.config.Config;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
 
@@ -27,17 +28,12 @@ import io.helidon.webserver.observe.spi.Observer;
  *  so changing a log level for a logger may be temporary (in case a garbage collector runs and the reference is not kept
  *  anywhere).
  * In Helidon, most loggers are referenced for the duration of the application, so this should not impact Helidon components.
- *
- * @deprecated only for {@link java.util.ServiceLoader}
  */
-@Deprecated
 public class LogObserveProvider implements ObserveProvider {
     /**
-     * Required for {@link java.util.ServiceLoader}.
-     *
-     * @deprecated only for {@link java.util.ServiceLoader}
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public LogObserveProvider() {
     }
 

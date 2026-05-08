@@ -21,7 +21,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,26 +37,29 @@ public class FailOnUnknownTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testFailOnUnknownDisabled() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testFailOnUnknownDisabledParameterized(BindingMethod bindingMethod) {
         // Without @FailOnUnknown, unknown properties should be ignored
         String json = "{\"knownField\":\"value\",\"unknownField\":\"ignored\"}";
-        NoFailOnUnknown entity = jsonBinding.deserialize(json, NoFailOnUnknown.class);
+        NoFailOnUnknown entity = bindingMethod.deserialize(jsonBinding, json, NoFailOnUnknown.class);
         assertThat(entity.knownField, is("value"));
     }
 
-    @Test
-    public void testFailOnUnknownEnabled() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testFailOnUnknownEnabledParameterized(BindingMethod bindingMethod) {
         // With @FailOnUnknown, unknown properties should cause failure
         String json = "{\"knownField\":\"value\",\"unknownField\":\"should_fail\"}";
-        assertThrows(JsonException.class, () -> jsonBinding.deserialize(json, FailOnUnknownEnabled.class));
+        assertThrows(JsonException.class, () -> bindingMethod.deserialize(jsonBinding, json, FailOnUnknownEnabled.class));
     }
 
-    @Test
-    public void testFailOnUnknownEnabledKnownOnly() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testFailOnUnknownEnabledKnownOnlyParameterized(BindingMethod bindingMethod) {
         // With @FailOnUnknown, but only known properties, should succeed
         String json = "{\"knownField\":\"value\"}";
-        FailOnUnknownEnabled entity = jsonBinding.deserialize(json, FailOnUnknownEnabled.class);
+        FailOnUnknownEnabled entity = bindingMethod.deserialize(jsonBinding, json, FailOnUnknownEnabled.class);
         assertThat(entity.knownField, is("value"));
     }
 

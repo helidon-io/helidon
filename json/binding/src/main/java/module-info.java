@@ -25,10 +25,10 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("JSON object binding")
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"JSON", "Binding"})
-@Features.Incubating
 module io.helidon.json.binding {
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.json;
     requires transitive io.helidon.builder.api;
@@ -37,6 +37,7 @@ module io.helidon.json.binding {
 
     requires io.helidon.config;
     requires io.helidon.common;
+    requires io.helidon.common.buffers;
 
     exports io.helidon.json.binding;
     exports io.helidon.json.binding.converters;

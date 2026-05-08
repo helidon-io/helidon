@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
@@ -48,8 +49,9 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SET_OF_QUALIFIERS;
  */
 public class EventEmitterObserverProvider implements InjectCodegenObserverProvider {
     /**
-     * Public constructor required by {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public EventEmitterObserverProvider() {
     }
 
@@ -124,6 +126,7 @@ public class EventEmitterObserverProvider implements InjectCodegenObserverProvid
                     .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                     .description("Event emitter service for {@link " + eventObject.fqName() + "}.")
                     .addInterface(emitterInterface(eventObject))
+                    .addAnnotation(ServiceCodegenAnnotations.SUPPRESS_API)
                     .addAnnotation(Annotation.create(SERVICE_ANNOTATION_SINGLETON));
 
             // constant for event type

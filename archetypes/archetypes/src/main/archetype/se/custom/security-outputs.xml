@@ -30,7 +30,8 @@
         identity-uri: "https://your-tenant-id.identity.oracle.com"
         # A prefix used for custom scopes
         scope-audience: "http://localhost:7987/test-application"
-        proxy-host: ""
+        webclient:
+          proxy-host: ""
         # Used as a base for redirects back to us (based on Host header now, so no need to explicitly define it)
         # If explicitly defined, will override host header
         # frontend-uri: "http://localhost:7987"
@@ -128,7 +129,7 @@ Edit application.yaml for IdcsMain.java or OidcConfig variable definition for Id
  2. idcs-client-id  : This is obtained from your IDCS application in the IDCS console
  3. idcs-client-secret   : This is obtained from your IDCS application in the IDCS console
  4. frontend-uri : This is the base URL of your application when run, e.g. `http://localhost:7987`
- 5. proxy-host   : Your proxy server if needed
+ 5. webclient.proxy-host   : Your proxy server if needed
  6. scope-audience : This is the scope audience which MUST match the primary audience in the IDCS resource, recommendation is not to have a trailing slash (/)
 
 ## Try the application
@@ -138,127 +139,6 @@ Build and run the application and then try the endpoints:
 1. Open http://localhost:7987/rest/profile in your browser. This should present
  you with a response highlighting your logged in role (null) correctly as you are not logged in
 2. Open `http://localhost:7987/oidc/logout` in your browser. This will log you out from your IDCS and Helidon sessions
-]]>
-                        </value>
-                    </list>
-                </model>
-            </output>
-        </method>
-        <method name="security-google">
-            <output if="${security.atn} contains ['google']">
-                <files>
-                    <directory>files</directory>
-                    <includes>
-                        <include>src/*/resources/**/static.js/google-app.js</include>
-                    </includes>
-                </files>
-                <file source="files/src/main/resources/WEB/google-login.html" target="src/main/resources/WEB/google-login.html"/>
-                <model>
-                    <list key="dependencies">
-                        <map>
-                            <value key="groupId">io.helidon.bundles</value>
-                            <value key="artifactId">helidon-bundles-config</value>
-                        </map>
-                        <map>
-                            <value key="groupId">io.helidon.webserver</value>
-                            <value key="artifactId">helidon-webserver-static-content</value>
-                        </map>
-                    </list>
-                    <list key="Main-helidon-imports">
-                        <value>java.util.Optional</value>
-                    </list>
-                    <list key="Main-helidon-imports">
-                        <value>io.helidon.http.HttpMediaTypes</value>
-                        <value>io.helidon.security.Security</value>
-                        <value>io.helidon.security.SecurityContext</value>
-                        <value>io.helidon.security.Subject</value>
-                        <value>io.helidon.security.providers.google.login.GoogleTokenProvider</value>
-                        <value>io.helidon.webserver.WebServer</value>
-                        <value>io.helidon.webserver.WebServerConfig</value>
-                        <value>io.helidon.webserver.context.ContextFeature</value>
-                        <value>io.helidon.webserver.security.SecurityFeature</value>
-                        <value>io.helidon.webserver.staticcontent.StaticContentService</value>
-                    </list>
-                    <list key="Main-main">
-                        <value><![CDATA[
-        Security googleSecurity = Security.builder()
-                .addProvider(GoogleTokenProvider.builder()
-                        .clientId("your-client-id.apps.googleusercontent.com"))
-                .build();]]>
-                        </value>
-                    </list>
-                    <list key="Main-server-builder">
-                        <value><![CDATA[.featuresDiscoverServices(false)
-                .addFeature(ContextFeature.create())
-                .addFeature(SecurityFeature.builder()
-                                    .security(googleSecurity)
-                                    .build())]]>
-                        </value>
-                    </list>
-                    <list key="Main-routing-builder">
-                        <value><![CDATA[.get("/rest/profile", SecurityFeature.authenticate(),
-                 (req, res) -> {
-                        Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                        res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
-                        res.send("Response from builder based service, you are: \n" + securityContext
-                                .flatMap(SecurityContext::user)
-                                .map(Subject::toString)
-                                .orElse("Security context is null"));
-                        res.next();
-                    })
-                .register(StaticContentService.create("/WEB"))]]>
-                        </value>
-                    </list>
-                    <list key="Main-logging">
-                        <value><![CDATA[
-            System.out.println("Check Google login http://localhost:" + server.port() + "/google-login.html");]]>
-                        </value>
-                    </list>
-                    <list key="security-properties">
-                        <value><![CDATA[    google-client-id: "your-app-id.apps.googleusercontent.com"
-    proxy-host: ""]]>
-                        </value>
-                    </list>
-                    <list key="paths-config-entries">
-                        <value><![CDATA[          - path: "/rest/profile"
-            methods: ["get"]
-            authenticate: true]]>
-                        </value>
-                    </list>
-                    <list key="providers-config-entries">
-                        <value><![CDATA[    - google-login:
-        # Create your own application in Google developer console
-        # Also update the client id configured in header of index.html
-        # Detailed how-to for login button (including links how to create an application):
-        # https://developers.google.com/identity/sign-in/web/sign-in
-        client-id: "your-app-id.apps.googleusercontent.com"
-        # Defaults for Helidon
-        # realm: "helidon"
-        # Configure proxy host if needed
-        proxy-host: ""
-        # proxy-port: 80
-
-        # This is the default for GoogleTokenProvider
-        #token:
-        #  header: "Authorization"
-        # or do not specify - then the whole header is considered to be the token value
-        #  prefix: "bearer "
-        # optional alternative - looking for first matching group
-        #  regexp: "bearer (.*)"
-        #}]]>
-                        </value>
-                    </list>
-                    <list key="readme-sections" >
-                        <value template="mustache"><![CDATA[
-## Try Google login
-
-There is a static web page in src/main/resources/WEB with a page to login to Google.
-
-This example requires a Google client id to run.
-Update the following files with your client id (it should support http://localhost:8080):
-1. src/main/resources/application.yaml - set security.properties.google-client-id or override it in a file in ~/helidon/examples.yaml
-2. src/main/resources/WEB/index.html - update the meta tag in header with name "google-signin-client_id"
-3. src/main/java/io/helidon/security/examples/google/GoogleMain.java - update the client id in builder of provider
 ]]>
                         </value>
                     </list>
@@ -635,7 +515,6 @@ curl -v -u "john:changeit" http://localhost:8080/service1
     </methods>
     <call method="security-abac"/>
     <call method="security-oidc"/>
-    <call method="security-google"/>
     <call method="security-jwt"/>
     <call method="security-signature"/>
     <output>

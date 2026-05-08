@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,9 @@
  */
 package io.helidon.docs.about;
 
+import io.helidon.http.Http;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
-
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
 
 @SuppressWarnings("ALL")
 class IntroductionSnippets {
@@ -38,9 +36,9 @@ class IntroductionSnippets {
     class Snippet2 {
 
         // tag::snippet_2[]
-        @Path("hello")
+        @Http.Path("hello")
         public class HelloWorld {
-            @GET
+            @Http.GET
             public String hello() {
                 return "Hello World";
             }

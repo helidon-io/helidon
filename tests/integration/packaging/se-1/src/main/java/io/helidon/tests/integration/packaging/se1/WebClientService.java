@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,29 +28,33 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
+import io.helidon.tracing.Tracer;
+import io.helidon.tracing.TracerBuilder;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.tracing.WebClientTracing;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-import jakarta.json.JsonValue;
-
 class WebClientService implements HttpService {
     private static final Duration TRACE_TIMEOUT = Duration.ofSeconds(15);
     private static final System.Logger LOGGER = System.getLogger(WebClientService.class.getName());
     private final WebClient client;
-    private final MockZipkinService zipkinService;
+    private final MockOtlpService otlpService;
     private final String context;
 
-    WebClientService(Config config, MockZipkinService zipkinService) {
-        this.zipkinService = zipkinService;
+    WebClientService(Config config, MockOtlpService otlpService) {
+        this.otlpService = otlpService;
         this.context = "http://localhost:" + config.get("server.port").asInt().orElse(7076);
+        Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
         client = WebClient.builder()
                 .baseUri(context)
                 .addHeader(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                 .config(config.get("client"))
+                .servicesDiscoverServices(false)
+                .addService(WebClientTracing.create(tracer))
                 .build();
     }
 
@@ -94,13 +98,13 @@ class WebClientService implements HttpService {
     }
 
     public void testTracedGet() {
-        Single<JsonValue> nextTrace = zipkinService.next();
+        Single<byte[]> nextTrace = otlpService.next();
         Animal animal = client.get()
                 .path("/wc/endpoint")
                 .requestEntity(Animal.class);
 
         assertTrue(animal, a -> "Frank".equals(a.getName()));
-        //Wait for trace arrival to MockZipkin
+        // Wait for trace arrival to the mock OTLP collector.
         nextTrace.await(TRACE_TIMEOUT);
     }
 

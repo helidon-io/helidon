@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import io.helidon.validation.spi.ConstraintValidator;
  * Context of {@link io.helidon.validation.spi.TypeValidator#check(ValidationContext, Object)}, also used to validate
  * constraints using #check(ConstraintValidator, Object).
  */
-@RuntimeType.PrototypedBy(ValidationContextConfig.class)
 public interface ValidationContext extends RuntimeType.Api<ValidationContextConfig> {
     /**
      * Create a new fluent api builder for a {@link ValidationContext}.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,13 @@
  */
 package io.helidon.webserver.tests.sse;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.Duration;
-import java.util.Collections;
+import java.util.List;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.InflaterInputStream;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.Method;
@@ -33,9 +36,11 @@ class SimpleSseClient implements AutoCloseable {
     }
 
     private State state = State.DISCONNECTED;
-    private BufferedReader reader;
     private final String path;
     private final SocketHttpClient client;
+    private String contentEncoding;
+    private InputStream inputStream;
+    private Iterable<String> headers;
 
     public static SimpleSseClient create(int port, String path) {
         return create("localhost", port, path, Duration.ofSeconds(10));
@@ -46,11 +51,16 @@ class SimpleSseClient implements AutoCloseable {
     }
 
     public static SimpleSseClient create(String host, int port, String path, Duration timeout) {
-        return new SimpleSseClient("localhost", port, path, timeout);
+        return new SimpleSseClient("localhost", port, path, List.of(), timeout);
     }
 
-    private SimpleSseClient(String host, int port, String path, Duration timeout) {
+    public static SimpleSseClient create(String host, int port, String path, Iterable<String> headers, Duration timeout) {
+        return new SimpleSseClient("localhost", port, path, headers, timeout);
+    }
+
+    private SimpleSseClient(String host, int port, String path, Iterable<String> headers, Duration timeout) {
         this.path = path;
+        this.headers = headers;
         this.client = SocketHttpClient.create(host, port, timeout);
     }
 
@@ -61,7 +71,7 @@ class SimpleSseClient implements AutoCloseable {
         try {
             String line;
             StringBuilder event = new StringBuilder();
-            while ((line = reader.readLine()) != null) {
+            while ((line = readLine(inputStream)) != null) {
                 if (line.isEmpty()) {
                     return event.toString();
                 }
@@ -98,9 +108,9 @@ class SimpleSseClient implements AutoCloseable {
                            path,
                            "HTTP/1.1",
                            "localhost",
-                           Collections.emptyList(),
+                           headers,
                            null);
-            reader = client.socketReader();
+            inputStream = client.socketInputStream();
             state = State.CONNECTED;
         }
     }
@@ -109,9 +119,18 @@ class SimpleSseClient implements AutoCloseable {
         if (state == State.CONNECTED) {
             try {
                 String line;
-                while ((line = reader.readLine()) != null) {
+                while ((line = readLine(inputStream)) != null) {
                     if (line.isEmpty()) {
                         state = State.HEADERS_READ;
+                        if (contentEncoding != null) {
+                            if ("gzip".equals(contentEncoding)) {
+                                inputStream = new GZIPInputStream(inputStream);
+                            } else if ("deflate".equals(contentEncoding)) {
+                                inputStream = new InflaterInputStream(inputStream);
+                            } else {
+                                throw new UnsupportedOperationException("Unsupported content encoding in response");
+                            }
+                        }
                         return;
                     }
                     line = line.toLowerCase();
@@ -119,6 +138,8 @@ class SimpleSseClient implements AutoCloseable {
                         throw new RuntimeException("Invalid status code in response");
                     } else if (line.contains("content-type") && !line.contains("text/event-stream")) {
                         throw new RuntimeException("Invalid content-type in response");
+                    } else if (line.contains("content-encoding")) {
+                        contentEncoding = line.substring("content-encoding:".length()).trim();
                     }
                 }
                 state = State.ERROR;
@@ -128,5 +149,22 @@ class SimpleSseClient implements AutoCloseable {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    private static String readLine(InputStream in) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        int b;
+        while ((b = in.read()) != -1) {
+            if (b == '\n') {
+                break;
+            }
+            if (b != '\r') {
+                buffer.write(b);
+            }
+        }
+        if (b == -1 && buffer.size() == 0) {
+            return null;
+        }
+        return buffer.toString("UTF-8");
     }
 }

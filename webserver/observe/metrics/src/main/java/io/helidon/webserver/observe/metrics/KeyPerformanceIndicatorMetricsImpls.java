@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,7 +139,7 @@ class KeyPerformanceIndicatorMetricsImpls {
      */
     private static class Extended extends Basic {
 
-        protected static final String LOAD_DESCRIPTION =
+        static final String LOAD_DESCRIPTION =
                 "Measures the total number of in-flight requests over the life of the server";
         private final Gauge inflightRequests;
         private final DeferredRequests deferredRequests;

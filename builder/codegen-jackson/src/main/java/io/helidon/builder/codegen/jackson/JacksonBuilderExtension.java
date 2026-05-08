@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import static io.helidon.builder.codegen.jackson.JacksonTypes.JSON_DESERIALIZE;
 import static io.helidon.builder.codegen.jackson.JacksonTypes.JSON_POJO_BUILDER;
 
 class JacksonBuilderExtension implements BuilderCodegenExtension {
-    public static final String JACKSON_PACKAGE_PREFIX = "com.fasterxml.jackson";
+    static final String JACKSON_PACKAGE_PREFIX = "com.fasterxml.jackson";
     private final boolean serialize;
     private final boolean deserialize;
 
@@ -69,11 +69,11 @@ class JacksonBuilderExtension implements BuilderCodegenExtension {
 
         classModel.addAnnotation(Annotation.builder()
                                          .typeName(JSON_DESERIALIZE)
-                                         .putValue("builder", builderType)
+                                         .property("builder", builderType)
                                          .build());
         classModel.addAnnotation(Annotation.builder()
                                          .typeName(JSON_POJO_BUILDER)
-                                         .putValue("withPrefix", prototypeInfo.recordStyle() ? "" : "set")
+                                         .property("withPrefix", prototypeInfo.recordStyle() ? "" : "set")
                                          .build());
     }
 

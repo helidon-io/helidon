@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class NumberMinValidatorProviderTest {
     public void testValidNumbers() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Min.class))
-                .putValue("value", 10.0)
+                .property("value", 10.0)
                 .build());
 
         // Valid cases - numbers >= min
@@ -63,7 +63,7 @@ public class NumberMinValidatorProviderTest {
     public void testInvalidNumbers() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Min.class))
-                .putValue("value", 10.0)
+                .property("value", 10.0)
                 .build());
 
         // Invalid cases - numbers < min
@@ -80,7 +80,7 @@ public class NumberMinValidatorProviderTest {
     public void testStringNumbers() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Min.class))
-                .putValue("value", 10.0)
+                .property("value", 10.0)
                 .build());
 
         // Valid string numbers
@@ -99,8 +99,8 @@ public class NumberMinValidatorProviderTest {
     public void testCustomMessage() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Min.class))
-                .putValue("value", 10.0)
-                .putValue("message", "Number must be at least 10")
+                .property("value", 10.0)
+                .property("message", "Number must be at least 10")
                 .build());
 
         var response = validator.check(ctx, 5.0);
@@ -113,7 +113,7 @@ public class NumberMinValidatorProviderTest {
     public void testNonNumberValues() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Min.class))
-                .putValue("value", 10.0)
+                .property("value", 10.0)
                 .build());
 
         // Non-number values should fail validation
@@ -126,7 +126,7 @@ public class NumberMinValidatorProviderTest {
     public void testNullValue() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Min.class))
-                .putValue("value", 10.0)
+                .property("value", 10.0)
                 .build());
 
         // Null values should be considered valid (not sent to validator)
@@ -137,7 +137,7 @@ public class NumberMinValidatorProviderTest {
     public void testDifferentNumberTypes() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Min.class))
-                .putValue("value", 10.0)
+                .property("value", 10.0)
                 .build());
 
         // Test different number types
@@ -162,7 +162,7 @@ public class NumberMinValidatorProviderTest {
     public void testEdgeCases() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.Min.class))
-                .putValue("value", 0.0)
+                .property("value", 0.0)
                 .build());
 
         // Edge cases

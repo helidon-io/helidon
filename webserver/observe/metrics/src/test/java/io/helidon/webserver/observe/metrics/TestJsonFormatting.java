@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
+import io.helidon.json.JsonObject;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
@@ -32,7 +33,6 @@ import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -73,16 +73,16 @@ class TestJsonFormatting {
                 .build();
 
         JsonObject jsonOutput = checkAndCast(formatter.format());
-        JsonObject app = jsonOutput.getJsonObject("application");
+        JsonObject app = jsonOutput.objectValue("application").orElseThrow();
         assertThat("Counter 1",
-                   app.getJsonNumber("c1;t1=v1").intValue(),
+                   app.numberValue("c1;t1=v1").orElseThrow().intValue(),
                    is(4));
         assertThat("Counter 2",
-                   app.getJsonNumber("c1").intValue(),
+                   app.numberValue("c1").orElseThrow().intValue(),
                    is(1));
-        JsonObject timerJson = app.getJsonObject("t1");
+        JsonObject timerJson = app.objectValue("t1").orElseThrow();
         assertThat("Timer", timerJson, notNullValue());
-        assertThat("Timer count", timerJson.getJsonNumber("count").intValue(), is(1));
+        assertThat("Timer count", timerJson.numberValue("count").orElseThrow().intValue(), is(1));
     }
 
 
@@ -110,10 +110,10 @@ class TestJsonFormatting {
                 .build();
 
         JsonObject jsonOutput = checkAndCast(formatter.format());
-        JsonObject app = jsonOutput.getJsonObject("application");
-        assertThat("Counter 2", app.getJsonNumber("c2").intValue(), is(1));
+        JsonObject app = jsonOutput.objectValue("application").orElseThrow();
+        assertThat("Counter 2", app.numberValue("c2").orElseThrow().intValue(), is(1));
 
-        assertThat("Timer", app.getJsonObject("t2"), nullValue());
+        assertThat("Timer", app.objectValue("t2").orElse(null), nullValue());
 
     }
 
@@ -139,16 +139,16 @@ class TestJsonFormatting {
         JsonObject jsonOutput = checkAndCast(formatter.format());
         JsonObject metadata = checkAndCast(formatter.formatMetadata());
 
-        JsonObject app = jsonOutput.getJsonObject("application");
-        JsonObject timerJson = app.getJsonObject("timerWithMilliseconds");
-        assertThat("Timer", timerJson.getJsonNumber("elapsedTime").doubleValue(), is(0.256d));
+        JsonObject app = jsonOutput.objectValue("application").orElseThrow();
+        JsonObject timerJson = app.objectValue("timerWithMilliseconds").orElseThrow();
+        assertThat("Timer", timerJson.numberValue("elapsedTime").orElseThrow().doubleValue(), is(0.256d));
 
-        JsonObject metaApp = metadata.getJsonObject("application");
-        JsonObject metaTimerJson = metaApp.getJsonObject("timerWithMilliseconds");
+        JsonObject metaApp = metadata.objectValue("application").orElseThrow();
+        JsonObject metaTimerJson = metaApp.objectValue("timerWithMilliseconds").orElseThrow();
 
         // We did not set the default JSON output units in config, so it should be seconds even though the timer was set
         // to milliseconds.
-        assertThat("Timer units metadata", metaTimerJson.getString("unit"), is("SECONDS"));
+        assertThat("Timer units metadata", metaTimerJson.stringValue("unit").orElseThrow(), is("SECONDS"));
     }
 
     @Test
@@ -177,21 +177,25 @@ class TestJsonFormatting {
         JsonObject jsonOutput = checkAndCast(formatter.format());
         JsonObject metadata = checkAndCast(formatter.formatMetadata());
 
-        JsonObject app = jsonOutput.getJsonObject("application");
-        JsonObject timerWithMicroSecondsJson = app.getJsonObject("timerWithMicroSeconds");
-        JsonObject timerWithNoUnitsJson = app.getJsonObject("timerWithNoUnits");
+        JsonObject app = jsonOutput.objectValue("application").orElseThrow();
+        JsonObject timerWithMicroSecondsJson = app.objectValue("timerWithMicroSeconds").orElseThrow();
+        JsonObject timerWithNoUnitsJson = app.objectValue("timerWithNoUnits").orElseThrow();
 
-        JsonObject metadataApp = metadata.getJsonObject("application");
-        JsonObject metadataTimerWithMicroSecondsJson = metadataApp.getJsonObject("timerWithMicroSeconds");
-        JsonObject metadataTimerWithNoUnitsJson = metadataApp.getJsonObject("timerWithNoUnits");
+        JsonObject metadataApp = metadata.objectValue("application").orElseThrow();
+        JsonObject metadataTimerWithMicroSecondsJson = metadataApp.objectValue("timerWithMicroSeconds").orElseThrow();
+        JsonObject metadataTimerWithNoUnitsJson = metadataApp.objectValue("timerWithNoUnits").orElseThrow();
 
-        assertThat("Timer with explicit microseconds units", timerWithMicroSecondsJson.getJsonNumber("elapsedTime").doubleValue(), is(3256000d));
-        assertThat("Timer with no explicit units", timerWithNoUnitsJson.getJsonNumber("elapsedTime").doubleValue(), is(128d));
+        assertThat("Timer with explicit microseconds units",
+                   timerWithMicroSecondsJson.numberValue("elapsedTime").orElseThrow().doubleValue(),
+                   is(3256000d));
+        assertThat("Timer with no explicit units",
+                   timerWithNoUnitsJson.numberValue("elapsedTime").orElseThrow().doubleValue(),
+                   is(128d));
 
         assertThat("Timer with explicit microseconds metadata units",
-                   metadataTimerWithMicroSecondsJson.getString("unit"), is("MICROSECONDS"));
+                   metadataTimerWithMicroSecondsJson.stringValue("unit").orElseThrow(), is("MICROSECONDS"));
         assertThat("Timer with no explicit units metadata units",
-                   metadataTimerWithNoUnitsJson.getString("unit"), is("MILLISECONDS"));
+                   metadataTimerWithNoUnitsJson.stringValue("unit").orElseThrow(), is("MILLISECONDS"));
 
     }
 

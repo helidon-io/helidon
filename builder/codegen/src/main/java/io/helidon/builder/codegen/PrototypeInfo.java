@@ -254,18 +254,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
     List<GeneratedMethod> builderMethods();
 
     /**
-     * Static factory methods to be added to the prototype, or runtime type factory methods.
-     * <p>
-     * This method exists only for backwards compatibility and will be removed in a future major version.
-     *
-     * @return a list of factory methods declared on the blueprint or a reference custom methods type
-     * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
-     *         {@link #configFactories()} instead, only present for backwards compatibility
-     */
-    @Deprecated(since = "4.4.0", forRemoval = true)
-    List<DeprecatedFactoryMethod> deprecatedFactoryMethods();
-
-    /**
      * Static factory methods to be added to the prototype.
      *
      * @return a list of factory methods to add to the prototype
@@ -302,7 +290,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
     abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends PrototypeInfo>
             implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
-        private final List<DeprecatedFactoryMethod> deprecatedFactoryMethods = new ArrayList<>();
         private final List<FactoryMethod> configFactories = new ArrayList<>();
         private final List<GeneratedMethod> builderMethods = new ArrayList<>();
         private final List<GeneratedMethod> prototypeFactories = new ArrayList<>();
@@ -321,7 +308,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
         private boolean isBuilderMethodsMutated;
         private boolean isConfigFactoriesMutated;
         private boolean isConstantsMutated;
-        private boolean isDeprecatedFactoryMethodsMutated;
         private boolean isInheritedAnnotationsMutated;
         private boolean isPrototypeFactoriesMutated;
         private boolean isPrototypeMethodsMutated;
@@ -390,10 +376,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
                 this.builderMethods.clear();
             }
             addBuilderMethods(prototype.builderMethods());
-            if (!this.isDeprecatedFactoryMethodsMutated) {
-                this.deprecatedFactoryMethods.clear();
-            }
-            addDeprecatedFactoryMethods(prototype.deprecatedFactoryMethods());
             if (!this.isPrototypeFactoriesMutated) {
                 this.prototypeFactories.clear();
             }
@@ -474,13 +456,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
                 }
             } else {
                 builderMethods(builder.builderMethods());
-            }
-            if (this.isDeprecatedFactoryMethodsMutated) {
-                if (builder.isDeprecatedFactoryMethodsMutated) {
-                    addDeprecatedFactoryMethods(builder.deprecatedFactoryMethods());
-                }
-            } else {
-                deprecatedFactoryMethods(builder.deprecatedFactoryMethods());
             }
             if (this.isPrototypeFactoriesMutated) {
                 if (builder.isPrototypeFactoriesMutated) {
@@ -1466,60 +1441,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
         }
 
         /**
-         * Clear all deprecatedFactoryMethods.
-         *
-         * @return updated builder instance
-         * @see #deprecatedFactoryMethods()
-         * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
-         *         {@link #configFactories()} instead, only present for backwards compatibility
-         */
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public BUILDER clearDeprecatedFactoryMethods() {
-            this.isDeprecatedFactoryMethodsMutated = true;
-            this.deprecatedFactoryMethods.clear();
-            return self();
-        }
-
-        /**
-         * Static factory methods to be added to the prototype, or runtime type factory methods.
-         * <p>
-         * This method exists only for backwards compatibility and will be removed in a future major version.
-         *
-         * @param deprecatedFactoryMethods a list of factory methods declared on the blueprint or a reference custom methods type
-         * @return updated builder instance
-         * @see #deprecatedFactoryMethods()
-         * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
-         *         {@link #configFactories()} instead, only present for backwards compatibility
-         */
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public BUILDER deprecatedFactoryMethods(List<? extends DeprecatedFactoryMethod> deprecatedFactoryMethods) {
-            Objects.requireNonNull(deprecatedFactoryMethods);
-            this.isDeprecatedFactoryMethodsMutated = true;
-            this.deprecatedFactoryMethods.clear();
-            this.deprecatedFactoryMethods.addAll(deprecatedFactoryMethods);
-            return self();
-        }
-
-        /**
-         * Static factory methods to be added to the prototype, or runtime type factory methods.
-         * <p>
-         * This method exists only for backwards compatibility and will be removed in a future major version.
-         *
-         * @param deprecatedFactoryMethods a list of factory methods declared on the blueprint or a reference custom methods type
-         * @return updated builder instance
-         * @see #deprecatedFactoryMethods()
-         * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
-         *         {@link #configFactories()} instead, only present for backwards compatibility
-         */
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public BUILDER addDeprecatedFactoryMethods(List<? extends DeprecatedFactoryMethod> deprecatedFactoryMethods) {
-            Objects.requireNonNull(deprecatedFactoryMethods);
-            this.isDeprecatedFactoryMethodsMutated = true;
-            this.deprecatedFactoryMethods.addAll(deprecatedFactoryMethods);
-            return self();
-        }
-
-        /**
          * Clear all prototypeFactories.
          *
          * @return updated builder instance
@@ -2130,20 +2051,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
         }
 
         /**
-         * Static factory methods to be added to the prototype, or runtime type factory methods.
-         * <p>
-         * This method exists only for backwards compatibility and will be removed in a future major version.
-         *
-         * @return a list of factory methods declared on the blueprint or a reference custom methods type
-         * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
-         *         {@link #configFactories()} instead, only present for backwards compatibility
-         */
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        public List<DeprecatedFactoryMethod> deprecatedFactoryMethods() {
-            return deprecatedFactoryMethods;
-        }
-
-        /**
          * Static factory methods to be added to the prototype.
          *
          * @return a list of factory methods to add to the prototype
@@ -2219,7 +2126,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
                     + "constants=" + constants + ","
                     + "prototypeMethods=" + prototypeMethods + ","
                     + "builderMethods=" + builderMethods + ","
-                    + "deprecatedFactoryMethods=" + deprecatedFactoryMethods + ","
                     + "prototypeFactories=" + prototypeFactories + ","
                     + "configFactories=" + configFactories + ","
                     + "runtimeTypeFactories=" + runtimeTypeFactories + ","
@@ -2331,7 +2237,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
             private final Javadoc builderBaseJavadoc;
             private final Javadoc builderJavadoc;
             private final Javadoc javadoc;
-            private final List<DeprecatedFactoryMethod> deprecatedFactoryMethods;
             private final List<FactoryMethod> configFactories;
             private final List<GeneratedMethod> builderMethods;
             private final List<GeneratedMethod> prototypeFactories;
@@ -2377,7 +2282,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
                 this.constants = List.copyOf(builder.constants());
                 this.prototypeMethods = List.copyOf(builder.prototypeMethods());
                 this.builderMethods = List.copyOf(builder.builderMethods());
-                this.deprecatedFactoryMethods = List.copyOf(builder.deprecatedFactoryMethods());
                 this.prototypeFactories = List.copyOf(builder.prototypeFactories());
                 this.configFactories = List.copyOf(builder.configFactories());
                 this.runtimeTypeFactories = List.copyOf(builder.runtimeTypeFactories());
@@ -2491,12 +2395,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
             }
 
             @Override
-            @Deprecated(since = "4.4.0", forRemoval = true)
-            public List<DeprecatedFactoryMethod> deprecatedFactoryMethods() {
-                return deprecatedFactoryMethods;
-            }
-
-            @Override
             public List<GeneratedMethod> prototypeFactories() {
                 return prototypeFactories;
             }
@@ -2545,7 +2443,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
                         + "constants=" + constants + ","
                         + "prototypeMethods=" + prototypeMethods + ","
                         + "builderMethods=" + builderMethods + ","
-                        + "deprecatedFactoryMethods=" + deprecatedFactoryMethods + ","
                         + "prototypeFactories=" + prototypeFactories + ","
                         + "configFactories=" + configFactories + ","
                         + "runtimeTypeFactories=" + runtimeTypeFactories + ","
@@ -2583,7 +2480,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
                         && Objects.equals(constants, other.constants())
                         && Objects.equals(prototypeMethods, other.prototypeMethods())
                         && Objects.equals(builderMethods, other.builderMethods())
-                        && Objects.equals(deprecatedFactoryMethods, other.deprecatedFactoryMethods())
                         && Objects.equals(prototypeFactories, other.prototypeFactories())
                         && Objects.equals(configFactories, other.configFactories())
                         && Objects.equals(runtimeTypeFactories, other.runtimeTypeFactories())
@@ -2614,7 +2510,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
                                     constants,
                                     prototypeMethods,
                                     builderMethods,
-                                    deprecatedFactoryMethods,
                                     prototypeFactories,
                                     configFactories,
                                     runtimeTypeFactories,

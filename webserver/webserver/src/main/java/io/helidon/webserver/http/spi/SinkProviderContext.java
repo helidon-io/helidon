@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.webserver.http.spi;
 
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 /**
@@ -30,6 +31,15 @@ public interface SinkProviderContext {
      * @return the server response
      */
     ServerResponse serverResponse();
+
+    /**
+     * Obtains the server request associated with this context.
+     *
+     * @return the server response
+     */
+    default ServerRequest serverRequest() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     /**
      * Obtains access to the connection context.

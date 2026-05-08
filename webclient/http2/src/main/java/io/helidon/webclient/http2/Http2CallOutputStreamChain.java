@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,6 +109,8 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                                                         Method.GET,
                                                                         redirectUri,
                                                                         outputStream.lastRequest.properties());
+            request.outputStreamRedirect(false);
+            request.readTimeout(outputStream.originalRequest.readTimeout());
             int numberOfRedirects = outputStream.numberOfRedirects;
             Http2ClientResponseImpl clientResponse = RedirectionProcessor.invokeWithFollowRedirects(request,
                                                                                                     numberOfRedirects,
@@ -257,7 +259,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             stream.writeHeaders(http2Headers, false);
             whenSent.complete(request);
 
-            if (headers.contains(HeaderValues.EXPECT_100)) {
+            if (headers.containsToken(HeaderValues.EXPECT_100)) {
                 Status status = stream.waitFor100Continue();
 
                 if (status != Status.CONTINUE_100) {
@@ -307,10 +309,12 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 }
                 lastUri = redirectUri;
                 stream.close();
-                Http2ClientRequestImpl clientRequest = new Http2ClientRequestImpl(originalRequest,
+                Http2ClientRequestImpl clientRequest = new Http2ClientRequestImpl(lastRequest,
                                                                                   method,
                                                                                   redirectUri,
-                                                                                  originalRequest.properties());
+                                                                                  lastRequest.properties());
+                clientRequest.followRedirects(false);
+                clientRequest.readTimeout(originalRequest.readTimeout());
                 try {
                     Http2ClientResponseImpl response;
                     if (sendEntity) {

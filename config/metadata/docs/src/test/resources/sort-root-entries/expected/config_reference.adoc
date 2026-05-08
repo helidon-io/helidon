@@ -1,0 +1,16 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= Config Reference
+
+== Config Roots
+
+|===
+|Key|Description
+
+|[[ad71360ab-data]] xref:{rootdir}/config/io_helidon_DataConfig.adoc[`data`]
+|pass:[Configuration for <code>data</code>]
+
+|===
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

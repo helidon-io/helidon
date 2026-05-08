@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.codegen;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -27,7 +28,7 @@ public class CodegenException extends RuntimeException {
      * Originating element, depends on which codegen implementation is used.
      * For annotation processor, this could be the Element that caused this exception.
      */
-    private final Object originatingElement;
+    private final List<Object> originatingElement;
 
     /**
      * Constructor with a message.
@@ -36,7 +37,7 @@ public class CodegenException extends RuntimeException {
      */
     public CodegenException(String message) {
         super(message);
-        this.originatingElement = null;
+        this.originatingElement = List.of();
     }
 
     /**
@@ -47,30 +48,29 @@ public class CodegenException extends RuntimeException {
      */
     public CodegenException(String message, Throwable cause) {
         super(message, cause);
-        this.originatingElement = null;
+        this.originatingElement = List.of();
     }
 
     /**
      * Constructor with a message and an originating element.
      *
-     * @param message            descriptive message
-     * @param originatingElement element that caused this exception
+     * @param message             descriptive message
+     * @param originatingElements elements that caused this exception
      */
-    public CodegenException(String message, Object originatingElement) {
-        super(message);
-        this.originatingElement = originatingElement;
+    public CodegenException(String message, Object... originatingElements) {
+        this(message, null, originatingElements);
     }
 
     /**
      * Constructor with a message, cause, and an originating element.
      *
-     * @param message            descriptive message
-     * @param cause              throwable triggering this exception
-     * @param originatingElement element that caused this exception
+     * @param message             descriptive message
+     * @param cause               throwable triggering this exception
+     * @param originatingElements element that caused this exception
      */
-    public CodegenException(String message, Throwable cause, Object originatingElement) {
+    public CodegenException(String message, Throwable cause, Object... originatingElements) {
         super(message, cause);
-        this.originatingElement = originatingElement;
+        this.originatingElement = List.of(originatingElements);
     }
 
     /**
@@ -82,7 +82,16 @@ public class CodegenException extends RuntimeException {
      * @return originating element of this exception
      */
     public Optional<Object> originatingElement() {
-        return Optional.ofNullable(originatingElement);
+        return originatingElement.stream().findFirst();
+    }
+
+    /**
+     * Originating elements.
+     *
+     * @return originating elements of this exception
+     */
+    public List<Object> originatingElements() {
+        return originatingElement;
     }
 
     /**
@@ -112,7 +121,7 @@ public class CodegenException extends RuntimeException {
                 .level(level)
                 .message(getMessage())
                 .throwable(this)
-                .update(it -> originatingElement().ifPresent(it::addObject))
+                .update(it -> it.addObjects(originatingElements()))
                 .build();
     }
 }

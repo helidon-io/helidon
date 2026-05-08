@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,10 +67,35 @@ class FollowRedirectTest {
             res.status(Status.TEMPORARY_REDIRECT_307)
                     .header(HeaderNames.LOCATION, "/plain")
                     .send();
+        }).route(Method.PUT, "/redirectKeepMethodThenGet", (req, res) -> {
+            res.status(Status.TEMPORARY_REDIRECT_307)
+                    .header(HeaderNames.LOCATION, "/redirectNoEntityAfterKeepMethod")
+                    .send();
+        }).route(Method.PUT, "/redirectKeepMethodThenRedirectAfterUpload", (req, res) -> {
+            res.status(Status.TEMPORARY_REDIRECT_307)
+                    .header(HeaderNames.LOCATION, "/redirectAfterUploadDelayed")
+                    .send();
         }).route(Method.PUT, "/redirectNoEntity", (req, res) -> {
             res.status(Status.FOUND_302)
                     .header(HeaderNames.LOCATION, "/plain")
                     .send();
+        }).route(Method.PUT, "/redirectNoEntityAfterKeepMethod", (req, res) -> {
+            res.status(Status.FOUND_302)
+                    .header(HeaderNames.LOCATION, "/delayedPlain")
+                    .send();
+        }).route(Method.PUT, "/redirectAfterUploadDelayed", (req, res) -> {
+            try (InputStream in = req.content().inputStream()) {
+                byte[] buffer = new byte[128];
+                while (in.read(buffer) > 0) {
+                    // Do nothing and just drain the entity.
+                }
+                res.status(Status.SEE_OTHER_303)
+                        .header(HeaderNames.LOCATION, "/delayedPlain")
+                        .send();
+            } catch (Exception e) {
+                res.status(INTERNAL_SERVER_ERROR_500)
+                        .send(e.getMessage());
+            }
         }).route(Method.PUT, "/plain", (req, res) -> {
             try (InputStream in = req.content().inputStream()) {
                 byte[] buffer = new byte[128];
@@ -101,6 +126,9 @@ class FollowRedirectTest {
             res.send("Upload completed!" + BUFFER);
         }).route(Method.GET, "/plain", (req, res) -> {
             res.send("GET plain endpoint reached");
+        }).route(Method.GET, "/delayedPlain", (req, res) -> {
+            TimeUnit.MILLISECONDS.sleep(250);
+            res.send("GET delayed endpoint reached");
         }).route(Method.PUT, "/close", (req, res) -> {
             byte[] buffer = new byte[10];
             try (InputStream in = req.content().inputStream()) {
@@ -158,6 +186,36 @@ class FollowRedirectTest {
                 .outputStream(it -> {
                     it.write("0123456789".getBytes(StandardCharsets.UTF_8));
                     it.write("0123456789".getBytes(StandardCharsets.UTF_8));
+                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
+                    it.close();
+                })) {
+            assertThat(response.entity().as(String.class), is(expected));
+        }
+    }
+
+    @Test
+    void testReadTimeoutPreservedAcrossMixedRedirects() {
+        String expected = "GET delayed endpoint reached";
+        try (Http2ClientResponse response = webClient.put()
+                .path("/redirectKeepMethodThenGet")
+                .readContinueTimeout(Duration.ofMillis(50))
+                .readTimeout(Duration.ofSeconds(1))
+                .outputStream(it -> {
+                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
+                    it.close();
+                })) {
+            assertThat(response.entity().as(String.class), is(expected));
+        }
+    }
+
+    @Test
+    void testReadTimeoutPreservedAcrossRedirectAfterUpload() {
+        String expected = "GET delayed endpoint reached";
+        try (Http2ClientResponse response = webClient.put()
+                .path("/redirectKeepMethodThenRedirectAfterUpload")
+                .readContinueTimeout(Duration.ofMillis(50))
+                .readTimeout(Duration.ofSeconds(1))
+                .outputStream(it -> {
                     it.write("0123456789".getBytes(StandardCharsets.UTF_8));
                     it.close();
                 })) {

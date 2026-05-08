@@ -64,6 +64,7 @@ import java.util.function.Consumer;
  *
  * @param <T> the generic type parameter
  */
+@Api.Stable
 public class GenericType<T> implements Type {
     /**
      * Generic type for String.
@@ -124,6 +125,7 @@ public class GenericType<T> implements Type {
      * @return a new builder instance
      * @param <T> the generic type parameter
      */
+    @Api.Incubating
     public static <T> Builder<T> builder() {
         return new Builder<>();
     }
@@ -231,6 +233,7 @@ public class GenericType<T> implements Type {
      *
      * @param <T> the generic type parameter
      */
+    @Api.Incubating
     public static final class Builder<T> implements io.helidon.common.Builder<Builder<T>, GenericType<T>> {
 
         private Class<?> baseType;

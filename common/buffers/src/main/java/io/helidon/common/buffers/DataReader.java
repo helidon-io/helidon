@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,30 +34,7 @@ public class DataReader {
     private DataListener listener;
     private Object context;
 
-    /**
-     * Data reader from a supplier of bytes.
-     *
-     * @param bytesSupplier supplier that can be pulled for more data
-     * @deprecated use {@link #create(java.util.function.Supplier)} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    public DataReader(Supplier<byte[]> bytesSupplier) {
-        this.ignoreLoneEol = false;
-        this.bytesSupplier = bytesSupplier;
-        // we cannot block until data is actually ready to be consumed
-        this.head = new Node(BufferData.EMPTY_BYTES);
-        this.tail = this.head;
-    }
-
-    /**
-     * Data reader from a supplier of bytes.
-     *
-     * @param bytesSupplier supplier that can be pulled for more data
-     * @param ignoreLoneEol ignore LF without CR and CR without LF
-     * @deprecated use {@link #create(java.util.function.Supplier, boolean)} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    public DataReader(Supplier<byte[]> bytesSupplier, boolean ignoreLoneEol) {
+    private DataReader(Supplier<byte[]> bytesSupplier, boolean ignoreLoneEol) {
         this.ignoreLoneEol = ignoreLoneEol;
         this.bytesSupplier = bytesSupplier;
         // we cannot block until data is actually ready to be consumed
@@ -72,7 +49,7 @@ public class DataReader {
      * @return data reader using the provided supplier and treating only {@code CRLF} as a new line
      */
     public static DataReader create(Supplier<byte[]> bytesSupplier) {
-        return new DataReader(bytesSupplier);
+        return new DataReader(bytesSupplier, false);
     }
 
     /**

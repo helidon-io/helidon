@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import io.grpc.Context;
 import io.grpc.Metadata;
 
 /**
- * A collection of common gRPC {@link Context.Key} and
- * {@link Metadata.Key} instances.
+ * A collection of common gRPC {@link Context.Key} and {@link Metadata.Key} instances. Server-specific keys may be
+ * found in the {@code io.helidon.webserver.grpc.ServerContextKeys} class in the {@code helidon-webserver-grpc} module.
  */
 public final class ContextKeys {
     /**

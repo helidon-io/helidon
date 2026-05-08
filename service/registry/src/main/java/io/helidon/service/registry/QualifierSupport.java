@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Objects;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.AnnotationProperty;
 import io.helidon.common.types.TypeName;
 
 /*
@@ -79,7 +80,7 @@ class QualifierSupport {
             TypeName qualifierTypeName = maybeNamed(typeName);
             return Qualifier.builder()
                     .typeName(qualifierTypeName)
-                    .putValue("value", value)
+                    .value(value)
                     .build();
         }
 
@@ -109,7 +110,7 @@ class QualifierSupport {
             TypeName qualifierTypeName = maybeNamed(qualifierType);
             return Qualifier.builder()
                     .typeName(qualifierTypeName)
-                    .putValue("value", value)
+                    .value(value)
                     .build();
         }
 
@@ -125,10 +126,10 @@ class QualifierSupport {
             if (annotation instanceof Qualifier qualifier) {
                 return qualifier;
             }
-            return Qualifier.builder()
-                    .typeName(maybeNamed(annotation.typeName()))
-                    .values(removeEmptyProperties(annotation.values()))
-                    .build();
+            Qualifier.Builder builder = Qualifier.builder()
+                    .typeName(maybeNamed(annotation.typeName()));
+            removeEmptyProperties(annotationValues(annotation)).forEach(builder::property);
+            return builder.build();
         }
 
         /**
@@ -205,6 +206,19 @@ class QualifierSupport {
             result.entrySet().removeIf(entry -> {
                 Object value = entry.getValue();
                 return value instanceof String str && str.isBlank();
+            });
+            return result;
+        }
+
+        private static Map<String, Object> annotationValues(Annotation annotation) {
+            HashMap<String, Object> result = new HashMap<>();
+            annotation.properties().forEach((key, property) -> {
+                Object value = property.value();
+                if (value instanceof AnnotationProperty.ConstantValue cv) {
+                    result.put(key, cv.value());
+                } else {
+                    result.put(key, value);
+                }
             });
             return result;
         }

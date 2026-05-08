@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@
 
 package io.helidon.webserver.tests.sse;
 
+import java.time.Duration;
+import java.util.List;
+
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.sse.SseEvent;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.ServerRequest;
@@ -66,7 +70,11 @@ class SseBaseTest {
                 .add("hello", "world")
                 .build();
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
-            sseSink.emit(SseEvent.create(json));
+            SseEvent event = SseEvent.builder()
+                    .data(json)
+                    .mediaType(MediaTypes.APPLICATION_JSON)
+                    .build();
+            sseSink.emit(event);
         }
     }
 
@@ -87,7 +95,11 @@ class SseBaseTest {
         SseServerTest.HelloWorld json = new SseServerTest.HelloWorld();
         json.setHello("world");
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
-            sseSink.emit(SseEvent.create(json));
+            SseEvent event = SseEvent.builder()
+                    .data(json)
+                    .mediaType(MediaTypes.APPLICATION_JSON)
+                    .build();
+            sseSink.emit(event);
         }
     }
 
@@ -99,10 +111,18 @@ class SseBaseTest {
         jsonb.setHello("world");
 
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            SseEvent eventJsonP = SseEvent.builder()
+                    .data(jsonp)
+                    .mediaType(MediaTypes.APPLICATION_JSON)
+                    .build();
+            SseEvent eventJsonb = SseEvent.builder()
+                    .data(jsonb)
+                    .mediaType(MediaTypes.APPLICATION_JSON)
+                    .build();
             sseSink.emit(SseEvent.create("hello"))
                     .emit(SseEvent.create("world"))
-                    .emit(SseEvent.create(jsonp))
-                    .emit(SseEvent.create(jsonb));
+                    .emit(eventJsonP)
+                    .emit(eventJsonb);
         }
     }
 
@@ -118,8 +138,16 @@ class SseBaseTest {
     }
 
     protected void testSse(String path, String... events) throws Exception {
+        testSse(path, List.of(), events);
+    }
+
+    protected void testSse(String path, Iterable<String> headers, String... events) throws Exception {
         assert webServer != null;
-        try (SimpleSseClient sseClient = SimpleSseClient.create(webServer.port(), path)) {
+        try (SimpleSseClient sseClient = SimpleSseClient.create("localhost",
+                                                                webServer.port(),
+                                                                path,
+                                                                headers,
+                                                                Duration.ofSeconds(10))) {
             for (String e : events) {
                 assertThat(sseClient.nextEvent(), is(e));
             }

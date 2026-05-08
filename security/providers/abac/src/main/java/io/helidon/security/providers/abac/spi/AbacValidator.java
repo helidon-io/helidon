@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import io.helidon.common.Errors;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.providers.abac.AbacAnnotation;
@@ -43,8 +43,8 @@ import io.helidon.security.providers.abac.AbacValidatorConfig;
 public interface AbacValidator<T extends AbacValidatorConfig> {
     /**
      * Provide extension annotations supported by this validator (e.g. {@link jakarta.annotation.security.RolesAllowed}).
-     * Annotations will be collected according to framework in use. For JAX-RS, annotations from application class, resource
-     * class and resource methods will be collected.
+     * Annotations will be collected according to framework in use. For endpoint-style integrations, annotations from the
+     * application layer, endpoint class, and endpoint methods may all be collected.
      * The annotations will be transformed to configuration by {@link #fromAnnotations(EndpointConfig)}.
      *
      * @return Collection of annotations this provider expects.
@@ -63,12 +63,12 @@ public interface AbacValidator<T extends AbacValidatorConfig> {
     /**
      * Key of a configuration entry that maps to this validator's configuration.
      *
-     * @return key in a config {@link io.helidon.common.config.Config}
+     * @return key in a config {@link io.helidon.config.Config}
      */
     String configKey();
 
     /**
-     * Load configuration class instance from {@link io.helidon.common.config.Config}.
+     * Load configuration class instance from configuration.
      *
      * @param config configuration located on the key this validator expects in {@link #configKey()}
      * @return instance of configuration class

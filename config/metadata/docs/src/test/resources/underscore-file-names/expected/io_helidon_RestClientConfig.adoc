@@ -1,0 +1,31 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= io.helidon.RestClientConfig
+
+== Description
+
+++++
+Configuration for <code>rest-client</code>
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Description
+
+| `ssl`
+|pass:[Configuration for <code>ssl</code>]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/config_reference.adoc#a8b6f54c9-rest-client[`rest-client`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

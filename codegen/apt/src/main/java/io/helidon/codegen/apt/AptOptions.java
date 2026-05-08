@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.Option;
 
 class AptOptions implements CodegenOptions {
+    private static final String API_OPTION = "helidon.api";
+
     private final ProcessingEnvironment aptEnv;
 
     AptOptions(ProcessingEnvironment aptEnv) {
@@ -61,9 +63,14 @@ class AptOptions implements CodegenOptions {
         helidonOptions.remove(INDENT_TYPE.name());
         helidonOptions.remove(INDENT_COUNT.name());
         helidonOptions.remove(CREATE_META_INF_SERVICES.name());
+        helidonOptions.removeIf(AptOptions::supportedByOtherHelidonProcessor);
 
         if (!helidonOptions.isEmpty()) {
             throw new CodegenException("Unrecognized/unsupported Helidon option configured: " + helidonOptions);
         }
+    }
+
+    private static boolean supportedByOtherHelidonProcessor(String option) {
+        return API_OPTION.equals(option) || option.startsWith(API_OPTION + ".");
     }
 }

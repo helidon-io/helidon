@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.Option;
@@ -36,6 +37,8 @@ interface GenericsBlueprint<T extends CharSequence & Serializable, X extends T> 
 
     @Option.Singular
     Map<T, X> mappedValues();
+
+    Function<T, X> fn();
 
     Optional<Supplier<? extends T>> complicatedValue();
 }

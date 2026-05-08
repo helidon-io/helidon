@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,9 +89,9 @@ final class ScanAnnotationFactory {
                 .flatMap(Optional::stream)
                 .forEach(builder::addMetaAnnotation);
 
-        return Optional.of(builder.typeName(typeName)
-                                   .values(extractAnnotationValues(ctx, am))
-                                   .build());
+        builder.typeName(typeName);
+        extractAnnotationValues(ctx, am).forEach(builder::property);
+        return Optional.of(builder.build());
     }
 
     /**

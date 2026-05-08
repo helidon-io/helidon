@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,17 +21,15 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
 import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * Test suite annotations.
- *
- * @deprecated this is a feature in progress of development, there may be backward incompatible changes done to it, so please
- *         use with care
+ * Internal test suite annotations support.
  */
-@Deprecated
+@Api.Internal
 public final class TestSuite {
 
     private TestSuite() {
@@ -39,11 +37,8 @@ public final class TestSuite {
 
     /**
      * Test suite annotation.
-     *
-     * @deprecated this is a feature in progress of development, there may be backward incompatible changes done to it, so please
-     *         use with care
      */
-    @Deprecated
+    @Api.Internal
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.TYPE)
     @ExtendWith(SuiteExtension.class)
@@ -60,11 +55,8 @@ public final class TestSuite {
 
     /**
      * After {@link io.helidon.testing.junit5.suite.TestSuite} cleanup method.
-     *
-     * @deprecated this is a feature in progress of development, there may be backward incompatible changes done to it, so please
-     *         use with care
      */
-    @Deprecated
+    @Api.Internal
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     @Inherited
@@ -73,11 +65,9 @@ public final class TestSuite {
 
     /**
      * Before {@link io.helidon.testing.junit5.suite.TestSuite} initialization method.
-     *
-     * @deprecated this is a feature in progress of development, there may be backward incompatible changes done to it, so please
-     *         use with care
      */
-    @Deprecated@Retention(RetentionPolicy.RUNTIME)
+    @Api.Internal
+    @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     @Inherited
     public @interface BeforeSuite {

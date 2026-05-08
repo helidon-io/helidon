@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
+import io.helidon.config.Config;
 import io.helidon.dbclient.spi.DbClientBuilder;
 import io.helidon.dbclient.spi.DbClientProvider;
 import io.helidon.dbclient.spi.DbClientServiceProvider;
@@ -34,7 +34,7 @@ import io.helidon.dbclient.spi.DbMapperProvider;
 public interface DbClient extends AutoCloseable {
 
     /**
-     * Qualifier used for mapping using {@link io.helidon.common.mapper.MapperManager#map(Object, Class, Class, String...)}.
+     * Qualifier used for mapping using {@link io.helidon.common.mapper.Mappers#map(Object, Class, Class, String...)}.
      */
     String MAPPING_QUALIFIER = "dbclient";
 
@@ -246,7 +246,7 @@ public interface DbClient extends AutoCloseable {
          * @param manager mapper manager
          * @return updated builder instance
          */
-        public Builder mapperManager(MapperManager manager) {
+        public Builder mapperManager(Mappers manager) {
             clientBuilder.mapperManager(manager);
             return this;
         }

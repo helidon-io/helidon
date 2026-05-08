@@ -16,7 +16,8 @@
 
 package io.helidon.json;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -26,12 +27,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Tests for JsonParser marking mechanism.
  * Covers mark, resetToMark, and clearMark functionality.
  */
-abstract class MarkingTest {
+class MarkingTest {
 
-    @Test
-    public void testMarkAndResetToMarkWithString() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testMarkAndResetToMarkWithString(ParserMethod parserMethod) {
         String json = "\"test string\"";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         // Mark current position
         parser.mark();
@@ -46,10 +48,11 @@ abstract class MarkingTest {
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testMarkAndResetToMarkWithNumber() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testMarkAndResetToMarkWithNumber(ParserMethod parserMethod) {
         String json = "123.45";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         parser.mark();
         assertThat(parser.readDouble(), is(123.45));
@@ -60,10 +63,11 @@ abstract class MarkingTest {
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testMarkAndResetToMarkWithBoolean() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testMarkAndResetToMarkWithBoolean(ParserMethod parserMethod) {
         String json = "true";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         parser.mark();
         assertThat(parser.readBoolean(), is(true));
@@ -74,10 +78,11 @@ abstract class MarkingTest {
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testMarkAndResetToMarkWithNull() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testMarkAndResetToMarkWithNull(ParserMethod parserMethod) {
         String json = "null";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         parser.mark();
         assertThat(parser.checkNull(), is(true));
@@ -88,10 +93,11 @@ abstract class MarkingTest {
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testMarkAndResetToMarkWithObject() {
+    @ParameterizedTest
+    @EnumSource(value = ParserMethod.class)
+    public void testMarkAndResetToMarkWithObject(ParserMethod parserMethod) {
         String json = "{\"key1\": \"value1\", \"key2\": 42}";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         parser.mark();
 
@@ -108,10 +114,11 @@ abstract class MarkingTest {
         assertThat(result.intValue("key2").orElseThrow(), is(42));
     }
 
-    @Test
-    public void testMarkAndResetToMarkWithArray() {
+    @ParameterizedTest
+    @EnumSource(value = ParserMethod.class)
+    public void testMarkAndResetToMarkWithArray(ParserMethod parserMethod) {
         String json = "[\"item1\", 123, true]";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         parser.mark();
 
@@ -129,10 +136,11 @@ abstract class MarkingTest {
         assertThat(result.get(2, JsonNull.instance()).asBoolean().value(), is(true));
     }
 
-    @Test
-    public void testMarkAndDumpMark() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testMarkAndDumpMark(ParserMethod parserMethod) {
         String json = "\"test\"";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         parser.mark();
         parser.clearMark();
@@ -141,10 +149,11 @@ abstract class MarkingTest {
         assertThrows(IllegalStateException.class, parser::resetToMark);
     }
 
-    @Test
-    public void testMultipleMarksThrowsException() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testMultipleMarksThrowsException(ParserMethod parserMethod) {
         String json = "\"test\"";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         parser.mark();
 
@@ -152,19 +161,21 @@ abstract class MarkingTest {
         assertThrows(IllegalStateException.class, parser::mark);
     }
 
-    @Test
-    public void testResetToMarkWithoutMark() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testResetToMarkWithoutMark(ParserMethod parserMethod) {
         String json = "\"test\"";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         // Reset without mark should throw exception
         assertThrows(IllegalStateException.class, parser::resetToMark);
     }
 
-    @Test
-    public void testResetToMarkAfterDumpMark() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testResetToMarkAfterDumpMark(ParserMethod parserMethod) {
         String json = "\"test\"";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         parser.mark();
         parser.clearMark();
@@ -173,10 +184,11 @@ abstract class MarkingTest {
         assertThrows(IllegalStateException.class, parser::resetToMark);
     }
 
-    @Test
-    public void testMarkAfterResetToMark() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testMarkAfterResetToMark(ParserMethod parserMethod) {
         String json = "\"test\"";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         parser.mark();
         parser.resetToMark();
@@ -186,10 +198,11 @@ abstract class MarkingTest {
         assertThat(parser.readString(), is("test"));
     }
 
-    @Test
-    public void testComplexObjectWithMarkReset() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testComplexObjectWithMarkReset(ParserMethod parserMethod) {
         String json = "{\"users\": [{\"name\": \"Alice\", \"active\": true}, {\"name\": \"Bob\", \"active\": false}]}";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         // Read to a certain point
         assertThat(parser.currentByte(), is((byte) '{'));
@@ -220,10 +233,11 @@ abstract class MarkingTest {
         assertThat(alice.booleanValue("active").orElseThrow(), is(true));
     }
 
-    @Test
-    public void testMarkAndSkip() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testMarkAndSkip(ParserMethod parserMethod) {
         String json = "{\"skipMe\": \"skipped\", \"keepMe\": \"kept\"}";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         assertThat(parser.currentByte(), is((byte) '{'));
         assertThat(parser.nextToken(), is((byte) '"'));
@@ -249,10 +263,11 @@ abstract class MarkingTest {
         assertThat(parser.readString(), is("kept"));
     }
 
-    @Test
-    public void testMarkInMiddleOfTokenReading() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testMarkInMiddleOfTokenReading(ParserMethod parserMethod) {
         String json = "{\"key\": \"value\"}";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         // Start reading object
         assertThat(parser.nextToken(), is((byte) '"'));
@@ -272,10 +287,11 @@ abstract class MarkingTest {
         assertThat(parser.readString(), is("value"));
     }
 
-    @Test
-    public void testMarkResetWithNestedStructures() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testMarkResetWithNestedStructures(ParserMethod parserMethod) {
         String json = "{\"data\": {\"nested\": [1, 2, {\"deep\": \"value\"}]}}";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         // Navigate deep into the structure
         assertThat(parser.nextToken(), is((byte) '"'));
@@ -304,10 +320,11 @@ abstract class MarkingTest {
         assertThat(deep.stringValue("deep").orElseThrow(), is("value"));
     }
 
-    @Test
-    public void testMarkResetWithWhitespace() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testMarkResetWithWhitespace(ParserMethod parserMethod) {
         String json = "{\n  \"key\"  :   \"value\"   \n}";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         // Skip whitespace and start reading
         assertThat(parser.nextToken(), is((byte) '"'));
@@ -327,10 +344,11 @@ abstract class MarkingTest {
         assertThat(parser.readString(), is("value"));
     }
 
-    @Test
-    public void testMarkResetMultipleTimes() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testMarkResetMultipleTimes(ParserMethod parserMethod) {
         String json = "[1, 2, 3, 4, 5]";
-        JsonParser parser = createParser(json);
+        JsonParser parser = parserMethod.createParser(json);
 
         // Mark at beginning
         parser.mark();
@@ -354,7 +372,5 @@ abstract class MarkingTest {
         assertThat(parser.nextToken(), is((byte) '2'));
         assertThat(parser.readInt(), is(2));
     }
-
-    abstract JsonParser createParser(String template);
 
 }

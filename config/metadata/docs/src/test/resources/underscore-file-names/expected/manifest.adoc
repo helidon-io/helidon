@@ -1,0 +1,21 @@
+
+= Config Types
+
+== Config Types
+
+See the xref:config_reference.adoc[root] type.
+
+* xref:com_acme_AcmeBulkheadConfig.adoc[com.acme.AcmeBulkheadConfig]
+* xref:com_acme_AcmeOpenAiAltFeatureConfig.adoc[com.acme.AcmeOpenAiAltFeatureConfig]
+* xref:com_acme_AcmeOpenAiFeatureConfig.adoc[com.acme.AcmeOpenAiFeatureConfig]
+* xref:com_acme_AcmeRestClientSslConfig.adoc[com.acme.AcmeRestClientSslConfig]
+* xref:com_acme_AcmeServerConfig.adoc[com.acme.AcmeServerConfig]
+
+== Provider Types
+
+* xref:com_acme_AcmeFeature.adoc[com.acme.AcmeFeature]
+
+== Synthetic Types
+
+* xref:io_helidon_FaultToleranceConfig.adoc[io.helidon.FaultToleranceConfig]
+* xref:io_helidon_RestClientConfig.adoc[io.helidon.RestClientConfig]

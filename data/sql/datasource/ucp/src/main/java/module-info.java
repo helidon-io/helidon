@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ module io.helidon.data.sql.datasource.ucp {
     requires io.helidon.data;
     requires io.helidon.data.sql.datasource;
     requires transitive io.helidon.data.sql.common;
+    requires static io.helidon.config.metadata;
 
     // Required by com.oracle.database.ucp
     requires com.oracle.database.jdbc;

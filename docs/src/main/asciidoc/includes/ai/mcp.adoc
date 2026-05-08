@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -15,18 +15,18 @@
     limitations under the License.
 
 ///////////////////////////////////////////////////////////////////////////////
-
-== Model Context Protocol (MCP) Server
-
-Helidon provides support for building Model Context Protocol (MCP) servers through a dedicated extension.
-The MCP Server feature is not part of the core Helidon Framework – it is delivered as a separate project hosted in the
-https://github.com/helidon-io/helidon-mcp[helidon-mcp GitHub repository].
-
-=== What is MCP?
+:rootdir: {docdir}/../..
+== Model Context Protocol (MCP)
 
 The https://modelcontextprotocol.io[Model Context Protocol (MCP)] is an open protocol designed to connect AI models with external tools, resources,
 and data sources in a standardized way. An MCP server exposes resources, prompts, and tools that AI clients can
 discover and invoke dynamically, enabling more powerful and context-aware applications.
+
+== MCP Server
+
+Helidon provides support for building Model Context Protocol (MCP) servers through a dedicated extension.
+The MCP Server feature is not part of the core Helidon Framework – it is delivered as a separate project hosted in the
+https://github.com/helidon-io/helidon-mcp[helidon-mcp GitHub repository].
 
 === Helidon MCP Server Extension
 
@@ -39,15 +39,8 @@ Key points:
 * Dedicated documentation: Full usage guides, configuration details, and examples are provided directly in the
   https://github.com/helidon-io/helidon-mcp#documentation[helidon-mcp documentation]
 
-=== Next Steps
-
 To get started:
 
 . Visit the https://github.com/helidon-io/helidon-mcp[helidon-mcp GitHub repository].
 . Follow the setup and usage instructions in the repository’s documentation.
 . Explore how to expose your Helidon resources as MCP tools, prompts, and data sources.
-
-== MCP Client
-
-Helidon includes support for an MCP client through its xref:{rootdir}/se/ai/langchain4j/langchain4j.adoc#_mcp_client[integration with LangChain4j].
-With this integration, you can set up the MCP client using Helidon configuration and plug it directly into your LangChain4j AI services.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package io.helidon.common.mapper;
 
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 
 /**
@@ -36,6 +38,7 @@ import io.helidon.common.GenericType;
  * the underlying class *IF* the generic type represents a simple class (e.g. not a generic type declaration)</li>
  * </ul>
  */
+@Api.Stable
 public interface Mappers extends RuntimeType.Api<MappersConfig> {
     /**
      * Create a new builder to customize configuration of {@link io.helidon.common.mapper.Mappers}.
@@ -123,4 +126,30 @@ public interface Mappers extends RuntimeType.Api<MappersConfig> {
     <SOURCE, TARGET> Optional<Mapper<SOURCE, TARGET>> mapper(GenericType<SOURCE> sourceType,
                                                              GenericType<TARGET> targetType,
                                                              String... qualifiers);
+
+    /**
+     * Map from source to target, also mapping exception to a custom exception type.
+     *
+     * @param source          object to map
+     * @param sourceType      type of the source object (to locate the mapper)
+     * @param targetType      type of the target object (to locate the mapper)
+     * @param exceptionMapper a function to map from {@link io.helidon.common.mapper.MapperException} to your type
+     * @param qualifiers      qualifiers of the usage (such as {@code http-headers, http}, most specific one first)
+     * @param <SOURCE>        type of the source
+     * @param <TARGET>        type of the target
+     * @param <T>             type of the exception produced by {@code exceptionMapper}
+     * @return result of the mapping
+     * @throws T if mapping fails and {@code exceptionMapper} produces an exception
+     */
+    default <SOURCE, TARGET, T extends Throwable> TARGET map(SOURCE source,
+                                                             GenericType<SOURCE> sourceType,
+                                                             GenericType<TARGET> targetType,
+                                                             Function<MapperException, T> exceptionMapper,
+                                                             String... qualifiers) throws T {
+        try {
+            return map(source, sourceType, targetType, qualifiers);
+        } catch (MapperException e) {
+            throw exceptionMapper.apply(e);
+        }
+    }
 }

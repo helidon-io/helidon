@@ -1,0 +1,32 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeServerConfig
+
+== Description
+
+++++
+ACME server configuration.
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Description
+
+|[[afc445d1a-features]] xref:{rootdir}/config/com_acme_AcmeFeature.adoc[`features`]
+|`AcmeFeature`
+|pass:[Feature contract]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/config_reference.adoc#ac6d482f1-server[`server`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

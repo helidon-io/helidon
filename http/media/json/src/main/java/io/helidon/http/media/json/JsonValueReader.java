@@ -22,31 +22,34 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
-import java.util.Optional;
+import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
-import io.helidon.http.HttpMediaType;
-import io.helidon.http.media.EntityReader;
+import io.helidon.http.media.EntityReaderBase;
 import io.helidon.json.JsonParser;
 import io.helidon.json.JsonValue;
 
-class JsonValueReader<T extends JsonValue> implements EntityReader<T> {
+class JsonValueReader<T extends JsonValue> extends EntityReaderBase<T> {
     JsonValueReader() {
     }
 
     @Override
     public T read(GenericType<T> type, InputStream stream, Headers headers) {
-        var charset = contentTypeCharset(headers);
-        return charset.map(it -> read(type, stream, it))
-                .orElseGet(() -> read(type, stream));
+        var charset = findContentTypeCharset(headers);
+        if (charset.isPresent() && !StandardCharsets.UTF_8.equals(charset.get())) {
+            return read(type, stream, charset.get());
+        }
+        return read(type, stream);
     }
 
     @Override
     public T read(GenericType<T> type, InputStream stream, Headers requestHeaders, Headers responseHeaders) {
-        var charset = contentTypeCharset(responseHeaders);
-        return charset.map(it -> read(type, stream, it))
-                .orElseGet(() -> read(type, stream));
+        var charset = findContentTypeCharset(responseHeaders);
+        if (charset.isPresent() && !StandardCharsets.UTF_8.equals(charset.get())) {
+            return read(type, stream, charset.get());
+        }
+        return read(type, stream);
     }
 
     private T read(GenericType<T> type, InputStream in) {
@@ -61,11 +64,5 @@ class JsonValueReader<T extends JsonValue> implements EntityReader<T> {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    private Optional<Charset> contentTypeCharset(Headers headers) {
-        return headers.contentType()
-                .flatMap(HttpMediaType::charset)
-                .map(Charset::forName);
     }
 }

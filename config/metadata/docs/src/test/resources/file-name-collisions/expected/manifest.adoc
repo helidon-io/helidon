@@ -1,0 +1,15 @@
+
+= Config Types
+
+== Config Types
+
+See the xref:config_reference.adoc[root] type.
+
+* xref:com_acme_AcmeCollisionConfig.adoc[com.acme.AcmeCollisionConfig]
+* xref:com_acme_AcmeNestedCollisionConfig.adoc[com.acme.AcmeNestedCollisionConfig]
+
+== Synthetic Types
+
+* xref:io_helidon_ConfigConfig.adoc[io.helidon.ConfigConfig]
+* xref:io_helidon_ConfigReferenceConfig.adoc[io.helidon.ConfigReferenceConfig]
+* xref:io_helidon_config_ReferenceConfig.adoc[io.helidon.config.ReferenceConfig]

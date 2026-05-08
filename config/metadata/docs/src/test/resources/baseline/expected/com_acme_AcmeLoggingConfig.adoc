@@ -1,0 +1,32 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeLoggingConfig
+
+== Description
+
+++++
+ACME Logging configuration
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Description
+
+|[[affacdb29-loggers]] xref:{rootdir}/config/com_acme_AcmeLoggerConfig.adoc[`loggers`]
+|`List<AcmeLoggerConfig>`
+|pass:[Loggers]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/com_acme_AcmeFeature.adoc#a839dca74-logging[`server.features.logging`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

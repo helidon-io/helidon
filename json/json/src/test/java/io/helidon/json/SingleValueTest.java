@@ -16,149 +16,187 @@
 
 package io.helidon.json;
 
+import java.nio.charset.StandardCharsets;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-abstract class SingleValueTest {
+class SingleValueTest {
 
-    @Test
-    public void testParseString() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseString(ParserMethod parserMethod) {
         String expected = "Test String value";
-        JsonParser parser = createParser("\"" + expected + "\"");
+        JsonParser parser = parserMethod.createParser("\"" + expected + "\"");
 
         assertThat(parser.readString(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseByte() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseByte(ParserMethod parserMethod) {
         byte expected = 125;
         String template = "125";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.readByte(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseShort() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseShort(ParserMethod parserMethod) {
         short expected = 12345;
         String template = "12345";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.readShort(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseInt() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseInt(ParserMethod parserMethod) {
         int expected = 1234;
         String template = "1234";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.readInt(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseLong() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseLong(ParserMethod parserMethod) {
         long expected = 123456789123456L;
         String template = "123456789123456";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.readLong(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseDouble() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseDouble(ParserMethod parserMethod) {
         double expected = 123.456e10;
         String template = "123.456e10";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.readDouble(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseFloat() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseFloat(ParserMethod parserMethod) {
         float expected = 123.456e10F;
         String template = "123.456e10";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.readFloat(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseBoolean() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseQuotedDoubleNaN(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"NaN\"");
+
+        assertThat(Double.isNaN(parser.readDouble()), is(true));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseQuotedDoublePositiveInfinity(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"Infinity\"");
+
+        assertThat(parser.readDouble(), is(Double.POSITIVE_INFINITY));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseQuotedDoubleNegativeInfinity(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"-Infinity\"");
+
+        assertThat(parser.readDouble(), is(Double.NEGATIVE_INFINITY));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseQuotedFloatNaN(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"NaN\"");
+
+        assertThat(Float.isNaN(parser.readFloat()), is(true));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseQuotedFloatPositiveInfinity(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"Infinity\"");
+
+        assertThat(parser.readFloat(), is(Float.POSITIVE_INFINITY));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseQuotedFloatNegativeInfinity(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("\"-Infinity\"");
+
+        assertThat(parser.readFloat(), is(Float.NEGATIVE_INFINITY));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseBoolean(ParserMethod parserMethod) {
         boolean expected = true;
         String template = "true";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.readBoolean(), is(expected));
         assertThat(parser.hasNext(), is(false));
 
         expected = false;
         template = "false";
-        parser = createParser(template);
+        parser = parserMethod.createParser(template);
 
         assertThat(parser.readBoolean(), is(expected));
         assertThat(parser.hasNext(), is(false));
     }
 
-    @Test
-    public void testParseNull() {
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testParseNull(ParserMethod parserMethod) {
         String template = "null";
-        JsonParser parser = createParser(template);
+        JsonParser parser = parserMethod.createParser(template);
 
         assertThat(parser.checkNull(), is(true));
         assertThat(parser.hasNext(), is(false));
     }
 
     @Test
-    public void testParseStringCharArray() {
-        String template = "\"myStringValue\"";
-        JsonParser parser = createParser(template);
-        char[] expected = "myStringValue".toCharArray();
+    public void testParseSelectedByteArraySlice() {
+        JsonParser parser = JsonParser.create("x42y".getBytes(StandardCharsets.UTF_8), 1, 2);
 
-        assertThat(parser.readCharArray(), is(expected));
-        assertThat(parser.hasNext(), is(false));
-
-        template = "\"special chars ěščřžýáíé\"";
-        parser = createParser(template);
-        expected = "special chars ěščřžýáíé".toCharArray();
-
-        assertThat(parser.readCharArray(), is(expected));
+        assertThat(parser.readInt(), is(42));
         assertThat(parser.hasNext(), is(false));
     }
 
     @Test
-    public void testParseNumberAsCharArray() {
-        String template = "-123";
-        JsonParser parser = createParser(template);
-        char[] expected = template.toCharArray();
-
-        assertThat(parser.readCharArray(), is(expected));
-        assertThat(parser.hasNext(), is(false));
-
-        template = "123.456";
-        parser = createParser(template);
-        expected = template.toCharArray();
-
-        assertThat(parser.readCharArray(), is(expected));
-        assertThat(parser.hasNext(), is(false));
-
-        template = "-123.456E+10";
-        parser = createParser(template);
-        expected = template.toCharArray();
-
-        assertThat(parser.readCharArray(), is(expected));
-        assertThat(parser.hasNext(), is(false));
+    public void testRejectsEmptyByteArraySlice() {
+        assertThrows(JsonException.class, () -> JsonParser.create(new byte[] {1}, 1, 0));
     }
-
-    abstract JsonParser createParser(String template);
 
 }

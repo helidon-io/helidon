@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,16 +24,12 @@ import java.util.concurrent.TimeUnit;
 /**
  * A semaphore that does nothing.
  * Use {@link #INSTANCE} to get an instance of this semaphore.
- *
- * @deprecated this is only provided for backward compatibility and will be removed, use
- *         {@link FixedLimit#create()} to get unlimited limit
  */
-@Deprecated(forRemoval = true, since = "4.2.0")
-public class NoopSemaphore extends Semaphore {
+class NoopSemaphore extends Semaphore {
     /**
      * Singleton instance to be used whenever needed.
      */
-    public static final Semaphore INSTANCE = new NoopSemaphore();
+    static final Semaphore INSTANCE = new NoopSemaphore();
 
     private NoopSemaphore() {
         super(0);

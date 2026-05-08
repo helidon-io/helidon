@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.telemetry</groupId>
         <artifactId>helidon-telemetry-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-telemetry-opentelemetry-config</artifactId>
@@ -35,6 +35,11 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config.metadata</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -219,7 +224,7 @@
                 <configuration>
                     <!-- Attempt to get the pipeline Windows job to work. -->
                     <reuseForks>false</reuseForks>
-                    
+
                     <properties>
                         <configurationParameters>
                             junit.jupiter.extensions.autodetection.enabled = true

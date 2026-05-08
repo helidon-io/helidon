@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package io.helidon.common.concurrency.limits;
-
-import java.util.Optional;
 
 import io.helidon.common.concurrency.limits.LimitAlgorithm.Outcome;
 
@@ -49,20 +47,6 @@ class LimitAlgorithmOutcomeImpl implements Outcome {
         this.algorithmType = algorithmType;
         this.disposition = disposition;
         this.timing = timing;
-    }
-
-    /**
-     * Creates a new outcome for compatibility with older algorithms.
-     *
-     * @param token token indicating acceptance or rejection of the work item
-     * @return outcome
-     * @deprecated Remove when legacy methods on {@link LimitAlgorithm} are removed.
-     */
-    @Deprecated(since = "4.3.0", forRemoval = true)
-    static Outcome create(Optional<LimitAlgorithm.Token> token) {
-        return token.isPresent()
-                ? new LimitAlgorithmOutcomeImpl.Accepted("unknown", "unknown", token.get(), Timing.UNKNOWN)
-                : new LimitAlgorithmOutcomeImpl("unknown", "unknown", Disposition.REJECTED, Timing.UNKNOWN);
     }
 
     /**
@@ -118,10 +102,11 @@ class LimitAlgorithmOutcomeImpl implements Outcome {
      * @return deferred rejection outcome
      */
     static Outcome deferredRejection(String originName,
-                                                    String algorithmType,
-                                                    long waitStartNanos,
-                                                    long waitEndNanos) {
-        return new Rejected.Deferred(originName, algorithmType, waitStartNanos, waitStartNanos);
+                                     String algorithmType,
+                                     long waitStartNanos,
+                                     long waitEndNanos) {
+        // Preserve the actual rejection end time for deferred-wait reporting.
+        return new Rejected.Deferred(originName, algorithmType, waitStartNanos, waitEndNanos);
     }
 
     @Override

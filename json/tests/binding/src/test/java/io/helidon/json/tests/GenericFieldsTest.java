@@ -25,7 +25,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -40,53 +41,57 @@ public class GenericFieldsTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testClassWithGenericListField() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testClassWithGenericListFieldParameterized(BindingMethod bindingMethod) {
         ClassWithListField obj = new ClassWithListField();
         obj.setName("test");
         obj.setValues(List.of("a", "b", "c"));
 
         String expected = "{\"name\":\"test\",\"values\":[\"a\",\"b\",\"c\"]}";
-        String json = jsonBinding.serialize(obj);
+        String json = bindingMethod.serialize(jsonBinding, obj);
         assertThat(json, is(expected));
 
-        ClassWithListField deserialized = jsonBinding.deserialize(json, ClassWithListField.class);
+        ClassWithListField deserialized = bindingMethod.deserialize(jsonBinding, json, ClassWithListField.class);
         assertThat(deserialized.getName(), is("test"));
         assertThat(deserialized.getValues(), is(List.of("a", "b", "c")));
     }
 
-    @Test
-    public void testClassWithGenericMapField() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testClassWithGenericMapFieldParameterized(BindingMethod bindingMethod) {
         ClassWithMapField obj = new ClassWithMapField();
         obj.setId("123");
         obj.setProperties(Map.of("key1", "value1", "key2", "value2"));
 
         String expected = "{\"id\":\"123\",\"properties\":{\"key1\":\"value1\",\"key2\":\"value2\"}}";
         String expected2 = "{\"id\":\"123\",\"properties\":{\"key2\":\"value2\",\"key1\":\"value1\"}}";
-        String json = jsonBinding.serialize(obj);
+        String json = bindingMethod.serialize(jsonBinding, obj);
         assertThat(json, isOneOf(expected, expected2));
 
-        ClassWithMapField deserialized = jsonBinding.deserialize(json, ClassWithMapField.class);
+        ClassWithMapField deserialized = bindingMethod.deserialize(jsonBinding, json, ClassWithMapField.class);
         assertThat(deserialized.getId(), is("123"));
         assertThat(deserialized.getProperties().get("key1"), is("value1"));
         assertThat(deserialized.getProperties().get("key2"), is("value2"));
     }
 
-    @Test
-    public void testClassWithGenericSetField() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testClassWithGenericSetFieldParameterized(BindingMethod bindingMethod) {
         ClassWithSetField obj = new ClassWithSetField();
         obj.setTitle("example");
         obj.setTags(Set.of("tag1", "tag2", "tag3"));
 
-        String json = jsonBinding.serialize(obj);
+        String json = bindingMethod.serialize(jsonBinding, obj);
 
-        ClassWithSetField deserialized = jsonBinding.deserialize(json, ClassWithSetField.class);
+        ClassWithSetField deserialized = bindingMethod.deserialize(jsonBinding, json, ClassWithSetField.class);
         assertThat(deserialized.getTitle(), is("example"));
         assertThat(deserialized.getTags(), is(Set.of("tag1", "tag2", "tag3")));
     }
 
-    @Test
-    public void testClassWithNestedGenericFields() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testClassWithNestedGenericFieldsParameterized(BindingMethod bindingMethod) {
         String expected = "{\"data\":{\"list\":[\"x\"],\"set\":[1]}}";
         LinkedHashMap<String, Object> map = new LinkedHashMap<>();
         map.put("list", List.of("x"));
@@ -94,13 +99,14 @@ public class GenericFieldsTest {
         ClassWithNestedGenerics obj = new ClassWithNestedGenerics();
         obj.setData(map);
 
-        String json = jsonBinding.serialize(obj);
+        String json = bindingMethod.serialize(jsonBinding, obj);
 
         assertThat(json, is(expected));
     }
 
-    @Test
-    public void testClassWithMixedFieldTypes() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testClassWithMixedFieldTypesParameterized(BindingMethod bindingMethod) {
         ClassWithMixedFields obj = new ClassWithMixedFields();
         obj.setId("user123");
         obj.setName("John Doe");
@@ -113,10 +119,10 @@ public class GenericFieldsTest {
 
         String expected = "{\"id\":\"user123\",\"name\":\"John Doe\",\"age\":30,\"tags\":[\"admin\",\"premium\"],"
                 + "\"settings\":{\"theme\":\"dark\",\"notifications\":\"enabled\"}}";
-        String json = jsonBinding.serialize(obj);
+        String json = bindingMethod.serialize(jsonBinding, obj);
         assertThat(json, is(expected));
 
-        ClassWithMixedFields deserialized = jsonBinding.deserialize(json, ClassWithMixedFields.class);
+        ClassWithMixedFields deserialized = bindingMethod.deserialize(jsonBinding, json, ClassWithMixedFields.class);
         assertThat(deserialized.getId(), is("user123"));
         assertThat(deserialized.getName(), is("John Doe"));
         assertThat(deserialized.getAge(), is(30));

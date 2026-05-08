@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,14 +80,12 @@ public abstract class BaseRepositoryInterfaceGenerator
 
     /**
      * Generate {@code  <T> Optional<T> RepositoryExecutor#optionalFromQuery(List<T>)} call.
-     * This is Jakarta Persistence 3.1 workaround.
+     * This is Jakarta Persistence 3.1 workaround until this line can use Jakarta Persistence 3.2 item-or-null APIs.
      *
      * @param builder      method builder
      * @param content      additional statement content
      * @param executorType repository executor type
-     * @deprecated will be removed with Jakarta Persistence 3.2
      */
-    @Deprecated
     protected static void optionalFromQuery(Method.Builder builder, Consumer<Method.Builder> content, TypeName executorType) {
         builder.addContent(executorType)
                 .addContent(".optionalFromQuery(");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,11 @@
  */
 package io.helidon.testing.junit5.suite;
 
+import io.helidon.common.Api;
+
 /**
- * {@code SuiteStorage} defines API for suite providers to provide suite specific storage
- * shared for all tests running as part of the suite.
- * Storage is available as arguments resolver for the {@link Storage} class.
- *
- * @deprecated this is a feature in progress of development, there may be backward incompatible changes done to it, so please
- *         use with care
+ * Internal marker for suite providers that expose shared {@link Storage} to suite lifecycle callbacks.
  */
-@Deprecated
+@Api.Internal
 public interface SuiteStorage {
 }

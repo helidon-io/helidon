@@ -10,7 +10,7 @@
         "audit": {
             "turn": "on",
             "backend": {
-                "format": "kafka",
+                "format": "json",
                 "host": "my.host:8080"
             }
         },

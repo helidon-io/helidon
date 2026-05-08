@@ -1,0 +1,32 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeMetricsObserverConfig
+
+== Description
+
+++++
+ACME Metrics observer configuration
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Description
+
+| `endpoint`
+|`String`
+|pass:[Observation endpoint]
+
+| `buckets`
+|`List<String>`
+|pass:[Published buckets]
+
+|===
+
+// end::config[]
+
+
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

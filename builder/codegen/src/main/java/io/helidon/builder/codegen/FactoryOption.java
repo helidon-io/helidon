@@ -47,7 +47,6 @@ import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.Types.ARRAY_LIST;
 import static io.helidon.builder.codegen.Types.BUILDER_DESCRIPTION;
-import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
 import static io.helidon.builder.codegen.Types.CONFIG;
 import static io.helidon.builder.codegen.Types.DEPRECATED;
 import static io.helidon.builder.codegen.Types.LINKED_HASH_MAP;
@@ -347,7 +346,6 @@ final class FactoryOption {
         return option.build();
     }
 
-    @SuppressWarnings({"removal", "deprecation"})
     private static void runtimeTypeFactory(RoundContext roundContext,
                                            PrototypeInfo prototypeInfo,
                                            OptionInfo.Builder option,
@@ -380,51 +378,6 @@ final class FactoryOption {
                 if (factory.optionName().orElse(optionName).equals(optionName)) {
                     option.runtimeType(runtimeFactory);
                     return;
-                }
-            }
-        }
-
-        TypeName prototype = prototypeInfo.prototypeType();
-
-        for (DeprecatedFactoryMethod someFactory : prototypeInfo.deprecatedFactoryMethods()) {
-            var referencedMethod = someFactory.method();
-            String methodName = referencedMethod.elementName();
-            TypeName returnType = referencedMethod.typeName();
-
-            if (referencedMethod.parameterArguments().size() != 1) {
-                // not a single parameter
-                continue;
-            }
-
-            if (Utils.typesEqual(returnType, prototype)) {
-                continue;
-            }
-
-            TypeName param = referencedMethod.parameterArguments().getFirst().typeName();
-            if (param.equals(CONFIG) || param.equals(COMMON_CONFIG)) {
-                continue;
-            }
-
-            if (Utils.typesEqual(actualType, returnType)
-                    || resolvedTypesEqual(type, returnType)) {
-                String supportedOption = supportedOptionName(methodName, optionName);
-
-                if (optionName.equals(supportedOption)) {
-                    // matches type and matches option name (or for any option name of this type)
-                    option.runtimeType(rtf -> rtf
-                            .factoryMethod(fm -> fm
-                                    .declaringType(someFactory.declaringType())
-                                    .returnType(returnType)
-                                    .methodName(methodName)
-                                    .parameterType(referencedMethod.parameterArguments().getFirst().typeName())
-                                    .optionName(optionName)
-                            )
-                            .optionBuilder(OptionBuilder.builder()
-                                                   .builderMethodType(param)
-                                                   .builderType(Utils.prototypeBuilderType(param))
-                                                   .build()));
-                    return;
-
                 }
             }
         }
@@ -740,7 +693,6 @@ final class FactoryOption {
         }
     }
 
-    @SuppressWarnings({"removal", "deprecation"})
     private static void configFactoryMethod(RoundContext roundContext,
                                             PrototypeInfo prototypeInfo,
                                             OptionInfo.Builder option,
@@ -765,48 +717,6 @@ final class FactoryOption {
             }
         }
 
-        // check deprecated factories if any match
-        TypeName prototype = prototypeInfo.prototypeType();
-
-        for (DeprecatedFactoryMethod someFactory : prototypeInfo.deprecatedFactoryMethods()) {
-            var referencedMethod = someFactory.method();
-            String methodName = referencedMethod.elementName();
-            TypeName returnType = referencedMethod.typeName();
-
-            if (referencedMethod.parameterArguments().size() != 1) {
-                // not a single parameter
-                continue;
-            }
-            if (typesEqual(returnType, prototype)) {
-                // prototype factory method
-                continue;
-            }
-            TypeName firstParam = referencedMethod.parameterArguments().getFirst().typeName();
-            if (!(firstParam.equals(COMMON_CONFIG) || firstParam.equals(CONFIG))) {
-                // not a config factory
-                continue;
-            }
-            String supportedOptionName = supportedOptionName(methodName, optionName);
-            if (!supportedOptionName.equals(optionName)) {
-                // for some other option
-                continue;
-            }
-            if (!(typesEqual(returnType, actualType) || resolvedTypesEqual(returnType, optionType))) {
-                // wrong return type
-                continue;
-            }
-            // this is a config factory method
-
-            // matches type and matches option name (or for any option name of this type)
-            configured.factoryMethod(fm -> fm
-                    .declaringType(someFactory.declaringType())
-                    .returnType(returnType)
-                    .methodName(methodName)
-                    .parameterType(firstParam)
-                    .optionName(optionName)
-            );
-            return;
-        }
         // first check if there is a factory method on the type itself (i.e. MyType create(Config))
         // and lastly - maybe there is a config factory method on the type
         var actualTypeInfo = roundContext.typeInfo(actualType);
@@ -820,13 +730,13 @@ final class FactoryOption {
                 .filter(it -> Utils.typesEqual(it.typeName(), actualType))
                 .filter(it -> it.parameterArguments().size() == 1)
                 .map(it -> it.parameterArguments().getFirst().typeName())
-                .anyMatch(it -> it.equals(COMMON_CONFIG) || it.equals(CONFIG))) {
+                .anyMatch(CONFIG::equals)) {
             // there is a config factory method on the type
             configured.factoryMethod(fm -> fm
                     .declaringType(actualType)
                     .returnType(actualType)
                     .methodName("create")
-                    .parameterType(COMMON_CONFIG)
+                    .parameterType(CONFIG)
                     .optionName(optionName)
             );
             return;
@@ -860,7 +770,7 @@ final class FactoryOption {
         TypeName actualPrototype;
         if (actualType.packageName().isBlank()) {
             actualPrototype = TypeName.builder(actualType)
-                    .packageName(prototype.packageName())
+                    .packageName(prototypeInfo.prototypeType().packageName())
                     .build();
         } else {
             actualPrototype = actualType;
@@ -896,8 +806,6 @@ final class FactoryOption {
     /*
     Method name is camel case (such as maxInitialLineLength)
     result is kebab-case (such as max-initial-line-length).
-    Note that this same method was created in ConfigUtils in common-config, but since this
-    module should not have any dependencies in it a copy was left here as well.
     */
     private static String toConfigKey(String name) {
         StringBuilder result = new StringBuilder();
@@ -976,15 +884,69 @@ final class FactoryOption {
                 .build();
     }
 
-    // if no package, assume same package as blueprint (generated as part of this annotation round)
+    // Blank-package names are either same-round generated types or type variables.
+    // Keep the latter unqualified and recursively repair the former.
     static TypeName fixEmptyPackage(TypeName typeName, String packageName) {
-        if (typeName.packageName().isBlank()) {
-            // if not package, assume same package as blueprint (generated as part of this annotation round)
-            return TypeName.builder(typeName)
-                    .packageName(packageName)
-                    .build();
+        boolean changed = false;
+        var builder = TypeName.builder(typeName);
+
+        if (typeName.packageName().isBlank() && !preserveEmptyPackage(typeName)) {
+            builder.packageName(packageName);
+            changed = true;
         }
-        return typeName;
+
+        List<TypeName> typeArguments = fixEmptyPackage(typeName.typeArguments(), packageName);
+        if (!typeArguments.equals(typeName.typeArguments())) {
+            builder.typeArguments(typeArguments);
+            changed = true;
+        }
+
+        List<TypeName> lowerBounds = fixEmptyPackage(typeName.lowerBounds(), packageName);
+        if (!lowerBounds.equals(typeName.lowerBounds())) {
+            builder.lowerBounds(lowerBounds);
+            changed = true;
+        }
+
+        List<TypeName> upperBounds = fixEmptyPackage(typeName.upperBounds(), packageName);
+        if (!upperBounds.equals(typeName.upperBounds())) {
+            builder.upperBounds(upperBounds);
+            changed = true;
+        }
+
+        if (typeName.componentType().isPresent()) {
+            TypeName componentType = typeName.componentType().orElseThrow();
+            TypeName fixedComponentType = fixEmptyPackage(componentType, packageName);
+            if (!fixedComponentType.equals(componentType)) {
+                builder.componentType(fixedComponentType);
+                changed = true;
+            }
+        }
+
+        return changed ? builder.build() : typeName;
+    }
+
+    private static List<TypeName> fixEmptyPackage(List<TypeName> typeNames, String packageName) {
+        return typeNames.stream()
+                .map(it -> fixEmptyPackage(it, packageName))
+                .toList();
+    }
+
+    private static boolean preserveEmptyPackage(TypeName typeName) {
+        if (typeName.wildcard()) {
+            return true;
+        }
+        if (!typeName.packageName().isBlank()
+                || !typeName.enclosingNames().isEmpty()
+                || !typeName.typeArguments().isEmpty()) {
+            return false;
+        }
+        if (typeName.generic()) {
+            return true;
+        }
+
+        return typeName.className()
+                .chars()
+                .allMatch(it -> Character.isUpperCase(it) || Character.isDigit(it) || it == '_');
     }
 
     private static TypeName propertyTypeName(PrototypeInfo prototypeInfo, TypedElementInfo element) {
@@ -994,33 +956,7 @@ final class FactoryOption {
                 .flatMap(Annotation::value)
                 .map(TypeName::create)
                 .orElseGet(element::typeName);
-        typeName = fixEmptyPackage(typeName, blueprintPackage);
-
-        if (typeName.typeArguments().size() == 1) {
-            // we may have an Optional, List, Set of the same
-            if (typeName.typeArguments().getFirst().packageName().isBlank()) {
-                return TypeName.builder(typeName)
-                        .typeArguments(List.of(TypeName.builder(typeName.typeArguments().getFirst())
-                                                       .packageName(blueprintPackage)
-                                                       .build()))
-                        .build();
-            }
-            return typeName;
-        }
-        if (typeName.typeArguments().size() == 2) {
-            // and finally a map
-            // we may have an Optional, List, Set of the same
-            if (typeName.typeArguments().get(1).packageName().isBlank()) {
-                return TypeName.builder(typeName)
-                        .typeArguments(List.of(typeName.typeArguments().get(0),
-                                               TypeName.builder(typeName.typeArguments().get(1))
-                                                       .packageName(blueprintPackage)
-                                                       .build()))
-                        .build();
-            }
-            return typeName;
-        }
-        return typeName;
+        return fixEmptyPackage(typeName, blueprintPackage);
     }
 
     private static String setterName(String name, boolean recordStyle) {

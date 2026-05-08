@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.FunctionalCounter;
@@ -52,17 +54,11 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
 
-import jakarta.json.Json;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObjectBuilder;
-
 /**
  * JSON formatter for a meter registry (independent of the underlying registry implementation).
  */
 class JsonFormatter implements MeterRegistryFormatter {
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
     private static final Map<String, String> JSON_ESCAPED_CHARS_MAP = initEscapedCharsMap();
     private static final Pattern JSON_ESCAPED_CHARS_REGEX = Pattern
             .compile(JSON_ESCAPED_CHARS_MAP
@@ -172,12 +168,12 @@ class JsonFormatter implements MeterRegistryFormatter {
             }
         });
 
-        JsonObjectBuilder top = JSON.createObjectBuilder();
+        JsonObject.Builder top = JsonObject.builder();
         if (organizeByScope) {
             meterOutputBuildersByScope.forEach((scope, outputBuilders) -> {
-                JsonObjectBuilder scopeBuilder = JSON.createObjectBuilder();
+                JsonObject.Builder scopeBuilder = JsonObject.builder();
                 outputBuilders.forEach((key, outputBuilder) -> outputBuilder.apply(scopeBuilder));
-                top.add(scope, scopeBuilder);
+                top.set(scope, scopeBuilder.build());
             });
         } else {
             meterOutputBuildersIgnoringScope.forEach((key, outputBuilder) -> outputBuilder.apply(top));
@@ -191,8 +187,8 @@ class JsonFormatter implements MeterRegistryFormatter {
 
         boolean organizeByScope = shouldOrganizeByScope();
 
-        Map<String, Map<String, JsonObjectBuilder>> metadataOutputBuildersByScope = organizeByScope ? new HashMap<>() : null;
-        Map<String, JsonObjectBuilder> metadataOutputBuildersIgnoringScope = organizeByScope ? null : new HashMap<>();
+        Map<String, Map<String, JsonObject.Builder>> metadataOutputBuildersByScope = organizeByScope ? new HashMap<>() : null;
+        Map<String, JsonObject.Builder> metadataOutputBuildersIgnoringScope = organizeByScope ? null : new HashMap<>();
 
         AtomicBoolean isAnyOutput = new AtomicBoolean(false);
 
@@ -201,14 +197,14 @@ class JsonFormatter implements MeterRegistryFormatter {
             if (meterRegistry.isMeterEnabled(name, meter.id().tagsMap(), meter.scope())
                     && matchesName(name)) {
 
-                Map<String, JsonObjectBuilder> metadataOutputBuilderWithinParent =
+                Map<String, JsonObject.Builder> metadataOutputBuilderWithinParent =
                         organizeByScope ? metadataOutputBuildersByScope
                                 .computeIfAbsent(meter.scope().orElse(""),
                                                  ms -> new HashMap<>())
                                 : metadataOutputBuildersIgnoringScope;
 
-                JsonObjectBuilder builderForThisName = metadataOutputBuilderWithinParent
-                        .computeIfAbsent(name, k -> JSON.createObjectBuilder());
+                JsonObject.Builder builderForThisName = metadataOutputBuilderWithinParent
+                        .computeIfAbsent(name, k -> JsonObject.builder());
                 addNonEmpty(builderForThisName, "type", meter.type().typeName());
                 addUnit(meter, builderForThisName);
                 meter.description().ifPresent(d -> addNonEmpty(builderForThisName, "description", d));
@@ -225,31 +221,29 @@ class JsonFormatter implements MeterRegistryFormatter {
                     tagGroups.add(tags);
                 }
                 if (!tagGroups.isEmpty()) {
-                    JsonArrayBuilder tagsOverAllMetricsWithSameName = JSON.createArrayBuilder();
+                    List<JsonArray> tagsOverAllMetricsWithSameName = new ArrayList<>();
                     for (List<String> tagGroup : tagGroups) {
-                        JsonArrayBuilder tagsForMetricBuilder = JSON.createArrayBuilder();
-                        tagGroup.forEach(tagsForMetricBuilder::add);
-                        tagsOverAllMetricsWithSameName.add(tagsForMetricBuilder);
+                        tagsOverAllMetricsWithSameName.add(JsonArray.createStrings(tagGroup));
                     }
-                    builderForThisName.add("tags", tagsOverAllMetricsWithSameName);
+                    builderForThisName.set("tags", JsonArray.create(tagsOverAllMetricsWithSameName));
                     isAnyOutput.set(true);
                 }
             }
         });
-        JsonObjectBuilder top = JSON.createObjectBuilder();
+        JsonObject.Builder top = JsonObject.builder();
         if (organizeByScope) {
             metadataOutputBuildersByScope.forEach((scope, builders) -> {
-                JsonObjectBuilder scopeBuilder = JSON.createObjectBuilder();
-                builders.forEach(scopeBuilder::add);
-                top.add(scope, scopeBuilder);
+                JsonObject.Builder scopeBuilder = JsonObject.builder();
+                builders.forEach((name, builder) -> scopeBuilder.set(name, builder.build()));
+                top.set(scope, scopeBuilder.build());
             });
         } else {
-            metadataOutputBuildersIgnoringScope.forEach(top::add);
+            metadataOutputBuildersIgnoringScope.forEach((name, builder) -> top.set(name, builder.build()));
         }
         return isAnyOutput.get() ? Optional.of(top.build()) : Optional.empty();
     }
 
-    private void addUnit(Meter meter, JsonObjectBuilder builder) {
+    private void addUnit(Meter meter, JsonObject.Builder builder) {
         if (meter instanceof Timer timer) {
             // For timers, we are going to use *some* units for output, so always set the metadata to whatever we decide to use
             // even if the units were not explicitly set on this specific timer.
@@ -297,9 +291,9 @@ class JsonFormatter implements MeterRegistryFormatter {
         return "\\\\" + s;
     }
 
-    private static void addNonEmpty(JsonObjectBuilder builder, String name, String value) {
+    private static void addNonEmpty(JsonObject.Builder builder, String name, String value) {
         if ((null != value) && !value.isEmpty()) {
-            builder.add(name, value);
+            builder.set(name, value);
         }
     }
 
@@ -376,7 +370,7 @@ class JsonFormatter implements MeterRegistryFormatter {
 
         protected abstract void add(Meter meter);
 
-        protected abstract void apply(JsonObjectBuilder builder);
+        protected abstract void apply(JsonObject.Builder builder);
 
         private static MetricOutputBuilder create(Meter meter, MetricsConfig metricsConfig) {
             return meter instanceof Counter
@@ -386,35 +380,35 @@ class JsonFormatter implements MeterRegistryFormatter {
                     : new Structured(meter, metricsConfig);
         }
 
-        private static void addNarrowed(JsonObjectBuilder builder, String nameWithTags, Number number) {
+        private static void addNarrowed(JsonObject.Builder builder, String nameWithTags, Number number) {
             if (number instanceof AtomicInteger v) {
-                builder.add(nameWithTags, v.intValue());
+                builder.set(nameWithTags, v.intValue());
             } else if (number instanceof AtomicLong v) {
-                builder.add(nameWithTags, v.longValue());
+                builder.set(nameWithTags, v.longValue());
             } else if (number instanceof BigDecimal v) {
-                builder.add(nameWithTags, v);
+                builder.set(nameWithTags, v);
             } else if (number instanceof BigInteger v) {
-                builder.add(nameWithTags, v);
+                builder.set(nameWithTags, new BigDecimal(v));
             } else if (number instanceof Byte v) {
-                builder.add(nameWithTags, v);
+                builder.set(nameWithTags, v);
             } else if (number instanceof Double v) {
-                builder.add(nameWithTags, v);
+                builder.set(nameWithTags, v);
             } else if (number instanceof DoubleAccumulator v) {
-                builder.add(nameWithTags, v.doubleValue());
+                builder.set(nameWithTags, v.doubleValue());
             } else if (number instanceof DoubleAdder v) {
-                builder.add(nameWithTags, v.doubleValue());
+                builder.set(nameWithTags, v.doubleValue());
             } else if (number instanceof Float v) {
-                builder.add(nameWithTags, v);
+                builder.set(nameWithTags, v);
             } else if (number instanceof Integer v) {
-                builder.add(nameWithTags, v);
+                builder.set(nameWithTags, v);
             } else if (number instanceof Long v) {
-                builder.add(nameWithTags, v);
+                builder.set(nameWithTags, v);
             } else if (number instanceof LongAccumulator v) {
-                builder.add(nameWithTags, v.longValue());
+                builder.set(nameWithTags, v.longValue());
             } else if (number instanceof LongAdder v) {
-                builder.add(nameWithTags, v.longValue());
+                builder.set(nameWithTags, v.longValue());
             } else if (number instanceof Short v) {
-                builder.add(nameWithTags, v);
+                builder.set(nameWithTags, v);
             }
         }
 
@@ -425,9 +419,9 @@ class JsonFormatter implements MeterRegistryFormatter {
             }
 
             @Override
-            protected void apply(JsonObjectBuilder builder) {
+            protected void apply(JsonObject.Builder builder) {
                 if (meter() instanceof Counter counter) {
-                    builder.add(flatNameAndTags(meter().id()), counter.count());
+                    builder.set(flatNameAndTags(meter().id()), counter.count());
                     return;
                 }
                 if (meter() instanceof io.helidon.metrics.api.Gauge gauge) {
@@ -437,7 +431,7 @@ class JsonFormatter implements MeterRegistryFormatter {
                     return;
                 }
                 if (meter() instanceof FunctionalCounter fCounter) {
-                    builder.add(flatNameAndTags(meter().id()), fCounter.count());
+                    builder.set(flatNameAndTags(meter().id()), fCounter.count());
                     return;
                 }
                 throw new IllegalArgumentException("Attempt to format meter with structured data as flat JSON "
@@ -452,7 +446,7 @@ class JsonFormatter implements MeterRegistryFormatter {
         private static class Structured extends MetricOutputBuilder {
 
             private final List<Meter> children = new ArrayList<>();
-            private final JsonObjectBuilder sameNameBuilder = JSON.createObjectBuilder();
+            private final JsonObject.Builder sameNameBuilder = JsonObject.builder();
             private final MetricsConfig metricsConfig;
 
             Structured(Meter meter, MetricsConfig metricsConfig) {
@@ -472,28 +466,28 @@ class JsonFormatter implements MeterRegistryFormatter {
             }
 
             @Override
-            protected void apply(JsonObjectBuilder builder) {
+            protected void apply(JsonObject.Builder builder) {
                 Meter.Id meterId = meter().id();
                 children.forEach(child -> {
                     Meter.Id childID = child.id();
 
                     if (child instanceof Counter typedChild) {
-                        sameNameBuilder.add(valueId("count", childID), typedChild.count());
+                        sameNameBuilder.set(valueId("count", childID), typedChild.count());
                     } else if (child instanceof DistributionSummary typedChild) {
-                        sameNameBuilder.add(valueId("count", childID), typedChild.count());
-                        sameNameBuilder.add(valueId("max", childID), typedChild.max());
-                        sameNameBuilder.add(valueId("mean", childID), typedChild.mean());
-                        sameNameBuilder.add(valueId("total", childID), typedChild.totalAmount());
+                        sameNameBuilder.set(valueId("count", childID), typedChild.count());
+                        sameNameBuilder.set(valueId("max", childID), typedChild.max());
+                        sameNameBuilder.set(valueId("mean", childID), typedChild.mean());
+                        sameNameBuilder.set(valueId("total", childID), typedChild.totalAmount());
                         addDetails(typedChild.snapshot(), childID, null);
                     } else if (child instanceof Timer typedChild) {
                         TimeUnit timeUnit = TimeUnit.valueOf(timerUnitsToUse(typedChild, metricsConfig));
-                        sameNameBuilder.add(valueId("count", childID), typedChild.count());
-                        sameNameBuilder.add(valueId("max", childID), typedChild.max(timeUnit));
-                        sameNameBuilder.add(valueId("mean", childID), typedChild.mean(timeUnit));
-                        sameNameBuilder.add(valueId("elapsedTime", childID), typedChild.totalTime(timeUnit));
+                        sameNameBuilder.set(valueId("count", childID), typedChild.count());
+                        sameNameBuilder.set(valueId("max", childID), typedChild.max(timeUnit));
+                        sameNameBuilder.set(valueId("mean", childID), typedChild.mean(timeUnit));
+                        sameNameBuilder.set(valueId("elapsedTime", childID), typedChild.totalTime(timeUnit));
                         addDetails(typedChild.snapshot(), childID, timeUnit);
                     } else if (child instanceof FunctionalCounter typedChild) {
-                        sameNameBuilder.add(valueId("count", childID), typedChild.count());
+                        sameNameBuilder.set(valueId("count", childID), typedChild.count());
                     } else if (child instanceof Gauge typedChild) {
                         MetricOutputBuilder.addNarrowed(sameNameBuilder, valueId("value", childID), typedChild.value());
                     } else {
@@ -501,20 +495,20 @@ class JsonFormatter implements MeterRegistryFormatter {
                                                                    + meter().getClass().getName());
                     }
                 });
-                builder.add(meterId.name(), sameNameBuilder);
+                builder.set(meterId.name(), sameNameBuilder.build());
             }
 
             private void addDetails(HistogramSnapshot snapshot, Meter.Id childId, TimeUnit timeUnit) {
                 snapshot.percentileValues().forEach(vap ->
                                                             sameNameBuilder
-                                                                    .add(valueId(percentileName(vap.percentile()),
+                                                                    .set(valueId(percentileName(vap.percentile()),
                                                                                  childId),
                                                                          timeUnit != null
                                                                                  ? vap.value(timeUnit)
                                                                                  : vap.value()));
                 snapshot.histogramCounts().forEach(bucket ->
                                                            sameNameBuilder
-                                                                   .add(valueId(bucketName(timeUnit != null
+                                                                   .set(valueId(bucketName(timeUnit != null
                                                                                                    ? bucket.boundary(timeUnit)
                                                                                                    : bucket.boundary()),
                                                                                 childId),

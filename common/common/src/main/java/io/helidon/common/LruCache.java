@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.function.Supplier;
  * @param <K> type of the keys of the map
  * @param <V> type of the values of the map
  */
+@Api.Stable
 public interface LruCache<K, V> {
     /**
      * Default capacity of the cache: {@value}.

@@ -16,7 +16,6 @@
 
 package io.helidon.codegen.classmodel;
 
-import java.io.IOException;
 import java.io.StringWriter;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -326,46 +325,50 @@ class ParseAnnotationTest {
                 .build();
 
         String text = write(method);
-        String expected = "@ParseAnnotationTest.MyAnnotation(stringValue = \"value1\", "
-                + "booleanValue = true, "
-                + "longValue = 49L, "
-                + "doubleValue = 49.0D, "
-                + "intValue = 49, "
-                + "byteValue = (byte) 49, "
-                + "charValue = 'x', "
-                + "shortValue = (short) 49, "
-                + "floatValue = 49.0F, "
-                + "classValue = String.class, "
-                + "typeValue = String.class, "
-                + "enumValue = ElementType.FIELD, "
-                + "annotationValue = @Target(ElementType.CONSTRUCTOR), "
-                + "lstring = {\"value\\\"1\", \"value2\"}, "
-                + "lboolean = {true, false}, "
-                + "llong = {49L, 50L}, "
-                + "ldouble = {49.0D, 50.0D}, "
-                + "lint = {49, 50}, "
-                + "lbyte = {(byte) 49, (byte) 50}, "
-                + "lchar = {'x', '\\''}, "
-                + "lshort = {(short) 49, (short) 50}, "
-                + "lfloat = {49.0F, 50.0F}, "
-                + "lclass = {String.class, Integer.class}, "
-                + "ltype = {String.class, Integer.class}, "
-                + "lenum = {ElementType.FIELD, ElementType.MODULE}, "
-                + "lannotation = {@Target(ElementType.CONSTRUCTOR), @Target(ElementType.FIELD)}, "
-                + "emptyList = {}, "
-                + "singletonList = \"value\""
-                + ")\npublic void name() {\n"
-                + "}";
+        String expected = """
+                @ParseAnnotationTest.MyAnnotation(
+                    stringValue = "value1",
+                    booleanValue = true,
+                    longValue = 49L,
+                    doubleValue = 49.0D,
+                    intValue = 49,
+                    byteValue = (byte) 49,
+                    charValue = 'x',
+                    shortValue = (short) 49,
+                    floatValue = 49.0F,
+                    classValue = String.class,
+                    typeValue = String.class,
+                    enumValue = ElementType.FIELD,
+                    annotationValue = @Target(ElementType.CONSTRUCTOR),
+                    lstring = {"value\\"1", "value2"},
+                    lboolean = {true, false},
+                    llong = {49L, 50L},
+                    ldouble = {49.0D, 50.0D},
+                    lint = {49, 50},
+                    lbyte = {(byte) 49, (byte) 50},
+                    lchar = {'x', '\\''},
+                    lshort = {(short) 49, (short) 50},
+                    lfloat = {49.0F, 50.0F},
+                    lclass = {String.class, Integer.class},
+                    ltype = {String.class, Integer.class},
+                    lenum = {ElementType.FIELD, ElementType.MODULE},
+                    lannotation = {
+                        @Target(ElementType.CONSTRUCTOR),
+                        @Target(ElementType.FIELD)
+                    },
+                    emptyList = {},
+                    singletonList = "value")
+                public void name() {
+                }""";
 
         assertThat(text, is(expected));
     }
 
     String write(ModelComponent component) {
         ImportOrganizer io = ImportOrganizer.builder()
-                .typeName(ParseAnnotationTest.class.getName())
+                .type(TypeName.create(ParseAnnotationTest.class))
                 .addImport(Override.class)
                 .addImport(Test.class)
-                .addImport(MyAnnotation.class)
                 .addImport(DisplayName.class)
                 .addImport(Target.class)
                 .addImport(Integer.class)
@@ -374,9 +377,10 @@ class ParseAnnotationTest {
                 .addImport(Annotation.class)
                 .addImport(TypeName.class)
                 .addImport(EnumValue.class)
+                .update(component::addImports)
                 .build();
         StringWriter writer = new StringWriter();
-        ModelWriter modelWriter = new ModelWriter(writer, "");
+        ModelWriter modelWriter = new ModelWriter(writer, "    ");
         component.writeComponent(modelWriter,
                                  Set.of(),
                                  io,

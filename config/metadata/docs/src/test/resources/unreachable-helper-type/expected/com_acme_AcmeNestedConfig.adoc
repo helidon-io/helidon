@@ -1,0 +1,28 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeNestedConfig
+
+== Description
+
+++++
+Nested configuration.
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Description
+
+| `name`
+|`String`
+|pass:[Name]
+
+|===
+
+// end::config[]
+
+
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

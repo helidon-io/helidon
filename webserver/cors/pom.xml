@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webserver</groupId>
         <artifactId>helidon-webserver-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-webserver-cors</artifactId>
@@ -38,12 +38,13 @@
             <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
-            <artifactId>helidon-builder-api</artifactId>
-            <groupId>io.helidon.builder</groupId>
+            <groupId>io.helidon.config.metadata</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.cors</groupId>
-            <artifactId>helidon-cors</artifactId>
+            <artifactId>helidon-builder-api</artifactId>
+            <groupId>io.helidon.builder</groupId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>

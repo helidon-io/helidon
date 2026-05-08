@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,36 +17,23 @@
 package io.helidon.security.jwt;
 
 import java.net.URI;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
-import io.helidon.common.Errors;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonNull;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.security.jwt.jwk.Jwk;
-
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
 
 /**
  * JWT token.
@@ -90,8 +77,6 @@ public class Jwt {
     static final String C_HASH = "c_hash";
     static final String NONCE = "nonce";
     static final String SCOPE = "scope";
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /*
      All header information.
@@ -268,14 +253,14 @@ public class Jwt {
         this.issueTime = JwtUtil.toInstant(payloadJson, ISSUED_AT);
         this.notBefore = JwtUtil.toInstant(payloadJson, NOT_BEFORE);
         this.subject = JwtUtil.getString(payloadJson, SUBJECT);
-        JsonValue groups = payloadJson.get(USER_GROUPS);
+        JsonValue groups = payloadJson.value(USER_GROUPS, JsonNull.instance());
         if (groups instanceof JsonArray) {
             this.userGroups = JwtUtil.getStrings(payloadJson, USER_GROUPS);
         } else {
             this.userGroups = JwtUtil.getString(payloadJson, USER_GROUPS).map(List::of);
         }
 
-        JsonValue aud = payloadJson.get(AUDIENCE);
+        JsonValue aud = payloadJson.value(AUDIENCE, JsonNull.instance());
         // support both a single string and an array
         if (aud instanceof JsonArray) {
             this.audience = JwtUtil.getStrings(payloadJson, AUDIENCE);
@@ -315,7 +300,7 @@ public class Jwt {
     private Jwt(Builder builder) {
         // generic stuff
         this.payloadClaims = new HashMap<>();
-        this.payloadClaims.putAll(JwtUtil.transformToJson(builder.payloadClaims));
+        this.payloadClaims.putAll(JwtUtil.transformToJsonValue(builder.payloadClaims));
 
         // headers
         this.headers = builder.headerBuilder.build();
@@ -381,131 +366,6 @@ public class Jwt {
     }
 
     /**
-     * Return a list of validators to validate expiration time, issue time and not-before time.
-     *
-     * By default the time skew allowed is 5 seconds and all fields are optional.
-     *
-     * @return list of validators
-     * @deprecated use {@link JwtValidator.Builder#addDefaultTimeValidators()} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public static List<Validator<Jwt>> defaultTimeValidators() {
-        List<Validator<Jwt>> validators = new LinkedList<>();
-        validators.add(new ExpirationValidator(false));
-        validators.add(new IssueTimeValidator());
-        validators.add(new NotBeforeValidator());
-        return validators;
-    }
-
-    /**
-     * Return a list of validators to validate expiration time, issue time and not-before time.
-     *
-     * @param now            Time that acts as the "now" instant (this allows us to validate if a token was valid at an instant in
-     *                       the past
-     * @param timeSkewAmount time skew allowed when validating (amount - such as 5)
-     * @param timeSkewUnit   time skew allowed when validating (unit - such as {@link ChronoUnit#SECONDS})
-     * @param mandatory      whether the field is mandatory. True for mandatory, false for optional (for all default time
-     *                       validators)
-     * @return list of validators
-     * @deprecated use {@link JwtValidator.Builder#addDefaultTimeValidators(Instant, Duration, boolean)} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public static List<Validator<Jwt>> defaultTimeValidators(Instant now,
-                                                             int timeSkewAmount,
-                                                             ChronoUnit timeSkewUnit,
-                                                             boolean mandatory) {
-        List<Validator<Jwt>> validators = new LinkedList<>();
-        validators.add(new ExpirationValidator(now, timeSkewAmount, timeSkewUnit, mandatory));
-        validators.add(new IssueTimeValidator(now, timeSkewAmount, timeSkewUnit, mandatory));
-        validators.add(new NotBeforeValidator(now, timeSkewAmount, timeSkewUnit, mandatory));
-        return validators;
-    }
-
-    /**
-     * Add validator of issuer to the collection of validators.
-     *
-     * @param validators collection of validators
-     * @param issuer     issuer expected to be in the token
-     * @param mandatory  whether issuer field is mandatory in the token (true - mandatory, false - optional)
-     * @deprecated use {@link JwtValidator.Builder#addIssuerValidator(String, boolean)} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public static void addIssuerValidator(Collection<Validator<Jwt>> validators, String issuer, boolean mandatory) {
-        validators.add(FieldValidator.create(Jwt::issuer, "Issuer", issuer, mandatory));
-    }
-
-    /**
-     * Add validator of audience to the collection of validators.
-     *
-     * @param validators collection of validators
-     * @param audience   audience expected to be in the token, never null
-     * @param mandatory  whether the audience field is mandatory in the token
-     * @deprecated use {@link JwtValidator.Builder#addAudienceValidator(Consumer)} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public static void addAudienceValidator(Collection<Validator<Jwt>> validators, String audience, boolean mandatory) {
-        addAudienceValidator(validators, Set.of(audience), mandatory);
-    }
-
-    /**
-     * Add validator of audience to the collection of validators.
-     *
-     * @param validators collection of validators
-     * @param audience   audience expected to be in the token
-     * @param mandatory  whether the audience field is mandatory in the token
-     * @deprecated use {@link JwtValidator.Builder#addAudienceValidator(Consumer)} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public static void addAudienceValidator(Collection<Validator<Jwt>> validators, Set<String> audience, boolean mandatory) {
-        validators.add((jwt, collector) -> {
-            Optional<List<String>> jwtAudiences = jwt.audience();
-            if (jwtAudiences.isPresent()) {
-                if (audience.stream().anyMatch(jwtAudiences.get()::contains)) {
-                    return;
-                }
-                collector.fatal(jwt, "Audience must contain " + audience + ", yet it is: " + jwtAudiences);
-            } else {
-                if (mandatory) {
-                    collector.fatal(jwt, "Audience is expected to be: " + audience + ", yet no audience in JWT");
-                }
-            }
-
-        });
-    }
-
-    /**
-     * Add validator of max token age to the collection of validators.
-     *
-     * @param validators collection of validators
-     * @param expectedMaxTokenAge max token age since issue time
-     * @param clockSkew clock skew
-     * @param iatRequired whether to fail if iat clam is present
-     * @deprecated use {@link JwtValidator.Builder#addMaxTokenAgeValidator(Consumer)} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public static void addMaxTokenAgeValidator(Collection<Validator<Jwt>> validators,
-                                               Duration expectedMaxTokenAge,
-                                               Duration clockSkew,
-                                               boolean iatRequired) {
-        validators.add((jwt, collector) -> {
-            Optional<Instant> maybeIssueTime = jwt.issueTime();
-            if (maybeIssueTime.isPresent()) {
-                Instant now = Instant.now();
-                Instant issueTime = maybeIssueTime.get().minus(clockSkew);
-                Instant maxValidTime = issueTime.plus(expectedMaxTokenAge).plus(clockSkew);
-                if (issueTime.isBefore(now) && maxValidTime.isAfter(now)) {
-                    return;
-                }
-                collector.fatal(jwt, "Current time need to be between " + issueTime
-                        + " and " + maxValidTime + ", but was " + now);
-            } else if (iatRequired) {
-                collector.fatal(jwt, "Claim iat is required to be present in JWT when validating token max allowed age.");
-            }
-
-        });
-    }
-
-    /**
      * Get a builder to create a JWT.
      *
      * @return new builder
@@ -515,7 +375,12 @@ public class Jwt {
     }
 
     private Map<String, JsonValue> getClaims(JsonObject headerJson) {
-        return Collections.unmodifiableMap(headerJson);
+        Map<String, JsonValue> claims = new HashMap<>();
+        headerJson.keysAsStrings().forEach(key -> claims.put(key,
+                                                             headerJson.value(key)
+                                                                     .orElseThrow(() -> new JwtException(
+                                                                             "Claim \"" + key + "\" is missing"))));
+        return Collections.unmodifiableMap(claims);
     }
 
     /**
@@ -533,8 +398,8 @@ public class Jwt {
      * @param claim name of a claim
      * @return claim value if present
      */
-    public Optional<JsonValue> headerClaim(String claim) {
-        return headers.headerClaim(claim);
+    public Optional<JsonValue> headerClaimValue(String claim) {
+        return headers.headerClaimValue(claim);
     }
 
     /**
@@ -543,7 +408,7 @@ public class Jwt {
      * @param claim name of a claim
      * @return claim value if present
      */
-    public Optional<JsonValue> payloadClaim(String claim) {
+    public Optional<JsonValue> payloadClaimValue(String claim) {
         JsonValue rawValue = payloadClaims.get(claim);
 
         if (claim.equals(AUDIENCE)) {
@@ -557,9 +422,7 @@ public class Jwt {
             return rawValue;
         }
 
-        return JSON.createArrayBuilder()
-                .add(rawValue)
-                .build();
+        return JsonArray.create(rawValue);
     }
 
     /**
@@ -576,7 +439,7 @@ public class Jwt {
      *
      * @return map of payload names to claims
      */
-    public Map<String, JsonValue> payloadClaims() {
+    public Map<String, JsonValue> payloadClaimsJson() {
         return Collections.unmodifiableMap(payloadClaims);
     }
 
@@ -900,8 +763,8 @@ public class Jwt {
      *
      * @return JsonObject for header
      */
-    public JsonObject headerJson() {
-        return headers.headerJson();
+    public JsonObject headerJsonObject() {
+        return headers.headerJsonObject();
     }
 
     /**
@@ -909,554 +772,46 @@ public class Jwt {
      *
      * @return JsonObject for payload
      */
-    public JsonObject payloadJson() {
-        JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
-        payloadClaims.forEach(objectBuilder::add);
+    public JsonObject payloadJsonObject() {
+        JsonObject.Builder objectBuilder = JsonObject.builder();
+        payloadClaims.forEach(objectBuilder::set);
 
         // known payload
-        this.issuer.ifPresent(it -> objectBuilder.add(ISSUER, it));
-        this.expirationTime.ifPresent(it -> objectBuilder.add(EXPIRATION, it.getEpochSecond()));
-        this.issueTime.ifPresent(it -> objectBuilder.add(ISSUED_AT, it.getEpochSecond()));
-        this.notBefore.ifPresent(it -> objectBuilder.add(NOT_BEFORE, it.getEpochSecond()));
-        this.subject.ifPresent(it -> objectBuilder.add(SUBJECT, it));
-        this.userPrincipal.ifPresent(it -> objectBuilder.add(USER_PRINCIPAL, it));
-        this.userGroups.ifPresent(it -> {
-            JsonArrayBuilder jab = JSON.createArrayBuilder();
-            it.forEach(jab::add);
-            objectBuilder.add(USER_GROUPS, jab);
-        });
-        this.audience.ifPresent(it -> {
-            JsonArrayBuilder jab = JSON.createArrayBuilder();
-            it.forEach(jab::add);
-            objectBuilder.add(AUDIENCE, jab);
-        });
-        this.jwtId.ifPresent(it -> objectBuilder.add(JWT_ID, it));
-        this.email.ifPresent(it -> objectBuilder.add(EMAIL, it));
-        this.emailVerified.ifPresent(it -> objectBuilder.add(EMAIL_VERIFIED, it));
-        this.fullName.ifPresent(it -> objectBuilder.add(FULL_NAME, it));
-        this.givenName.ifPresent(it -> objectBuilder.add(GIVEN_NAME, it));
-        this.middleName.ifPresent(it -> objectBuilder.add(MIDDLE_NAME, it));
-        this.familyName.ifPresent(it -> objectBuilder.add(FAMILY_NAME, it));
-        this.locale.ifPresent(it -> objectBuilder.add(LOCALE, it.toLanguageTag()));
-        this.nickname.ifPresent(it -> objectBuilder.add(NICKNAME, it));
-        this.preferredUsername.ifPresent(it -> objectBuilder.add(PREFERRED_USERNAME, it));
-        this.profile.ifPresent(it -> objectBuilder.add(PROFILE, it.toASCIIString()));
-        this.picture.ifPresent(it -> objectBuilder.add(PICTURE, it.toASCIIString()));
-        this.website.ifPresent(it -> objectBuilder.add(WEBSITE, it.toASCIIString()));
-        this.gender.ifPresent(it -> objectBuilder.add(GENDER, it));
-        this.birthday.ifPresent(it -> objectBuilder.add(BIRTHDAY, JwtUtil.toDate(it)));
-        this.timeZone.ifPresent(it -> objectBuilder.add(ZONE_INFO, it.getId()));
-        this.phoneNumber.ifPresent(it -> objectBuilder.add(PHONE_NUMBER, it));
-        this.phoneNumberVerified.ifPresent(it -> objectBuilder.add(PHONE_NUMBER_VERIFIED, it));
-        this.updatedAt.ifPresent(it -> objectBuilder.add(UPDATED_AT, it.getEpochSecond()));
-        this.address.ifPresent(it -> objectBuilder.add(ADDRESS, it.getJson()));
-        this.atHash.ifPresent(it -> objectBuilder.add(AT_HASH, JwtUtil.base64Url(it)));
-        this.cHash.ifPresent(it -> objectBuilder.add(C_HASH, JwtUtil.base64Url(it)));
-        this.nonce.ifPresent(it -> objectBuilder.add(NONCE, it));
+        this.issuer.ifPresent(it -> objectBuilder.set(ISSUER, it));
+        this.expirationTime.ifPresent(it -> objectBuilder.set(EXPIRATION, it.getEpochSecond()));
+        this.issueTime.ifPresent(it -> objectBuilder.set(ISSUED_AT, it.getEpochSecond()));
+        this.notBefore.ifPresent(it -> objectBuilder.set(NOT_BEFORE, it.getEpochSecond()));
+        this.subject.ifPresent(it -> objectBuilder.set(SUBJECT, it));
+        this.userPrincipal.ifPresent(it -> objectBuilder.set(USER_PRINCIPAL, it));
+        this.userGroups.ifPresent(it -> objectBuilder.set(USER_GROUPS, JsonArray.createStrings(it)));
+        this.audience.ifPresent(it -> objectBuilder.set(AUDIENCE, JsonArray.createStrings(it)));
+        this.jwtId.ifPresent(it -> objectBuilder.set(JWT_ID, it));
+        this.email.ifPresent(it -> objectBuilder.set(EMAIL, it));
+        this.emailVerified.ifPresent(it -> objectBuilder.set(EMAIL_VERIFIED, it));
+        this.fullName.ifPresent(it -> objectBuilder.set(FULL_NAME, it));
+        this.givenName.ifPresent(it -> objectBuilder.set(GIVEN_NAME, it));
+        this.middleName.ifPresent(it -> objectBuilder.set(MIDDLE_NAME, it));
+        this.familyName.ifPresent(it -> objectBuilder.set(FAMILY_NAME, it));
+        this.locale.ifPresent(it -> objectBuilder.set(LOCALE, it.toLanguageTag()));
+        this.nickname.ifPresent(it -> objectBuilder.set(NICKNAME, it));
+        this.preferredUsername.ifPresent(it -> objectBuilder.set(PREFERRED_USERNAME, it));
+        this.profile.ifPresent(it -> objectBuilder.set(PROFILE, it.toASCIIString()));
+        this.picture.ifPresent(it -> objectBuilder.set(PICTURE, it.toASCIIString()));
+        this.website.ifPresent(it -> objectBuilder.set(WEBSITE, it.toASCIIString()));
+        this.gender.ifPresent(it -> objectBuilder.set(GENDER, it));
+        this.birthday.ifPresent(it -> objectBuilder.set(BIRTHDAY, JwtUtil.toDate(it)));
+        this.timeZone.ifPresent(it -> objectBuilder.set(ZONE_INFO, it.getId()));
+        this.phoneNumber.ifPresent(it -> objectBuilder.set(PHONE_NUMBER, it));
+        this.phoneNumberVerified.ifPresent(it -> objectBuilder.set(PHONE_NUMBER_VERIFIED, it));
+        this.updatedAt.ifPresent(it -> objectBuilder.set(UPDATED_AT, it.getEpochSecond()));
+        this.address.ifPresent(it -> objectBuilder.set(ADDRESS, it.jsonObject()));
+        this.atHash.ifPresent(it -> objectBuilder.set(AT_HASH, JwtUtil.base64Url(it)));
+        this.cHash.ifPresent(it -> objectBuilder.set(C_HASH, JwtUtil.base64Url(it)));
+        this.nonce.ifPresent(it -> objectBuilder.set(NONCE, it));
 
-        this.scopes.ifPresent(it -> {
-            String scopesString = String.join(" ", it);
-            objectBuilder.add(SCOPE, scopesString);
-        });
+        this.scopes.ifPresent(it -> objectBuilder.set(SCOPE, String.join(" ", it)));
 
         return objectBuilder.build();
-    }
-
-    /**
-     * Validate this JWT against provided validators.
-     * <p>
-     * This method does not work properly upon validation of the {@code crit} JWT header.
-     *
-     * @param validators Validators to validate with. Obtain them through (e.g.) {@link #defaultTimeValidators()}
-     *                   , {@link #addAudienceValidator(Collection, String, boolean)}
-     *                   , {@link #addIssuerValidator(Collection, String, boolean)}
-     * @return errors instance to check if valid and access error messages
-     * @deprecated use {@link JwtValidator#validate(Jwt)} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public Errors validate(List<Validator<Jwt>> validators) {
-        Errors.Collector collector = Errors.collector();
-        validators.forEach(it -> it.validate(this, collector));
-        return collector.collect();
-    }
-
-    /**
-     * Validates all default values.
-     * Values validated:
-     * <ul>
-     * <li>{@link #expirationTime() Expiration time} if defined</li>
-     * <li>{@link #issueTime() Issue time} if defined</li>
-     * <li>{@link #notBefore() Not before time} if defined</li>
-     * <li>{@link #issuer()} Issuer} if defined</li>
-     * <li>{@link #audience() Audience} if defined</li>
-     * </ul>
-     *
-     * @param issuer   validates that this JWT was issued by this issuer. Setting this to non-null value will make
-     *                 issuer claim mandatory
-     * @param audience validates that this JWT was issued for this audience. Setting this to non-null value will make
-     *                 audience claim mandatory
-     * @return errors instance to check for validation result
-     * @deprecated use {@link JwtValidator#validate(Jwt)} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public Errors validate(String issuer, String audience) {
-        return validate(issuer, audience == null ? Set.of() : Set.of(audience));
-    }
-
-    /**
-     * Validates all default values.
-     * Values validated: {@link #validate(String, Set, boolean)}
-     *
-     * @param issuer   validates that this JWT was issued by this issuer. Setting this to non-null value will make
-     *                 issuer claim mandatory
-     * @param audience validates that this JWT was issued for this audience. Setting this to non-null value will make
-     *                 audience claim mandatory
-     * @param checkAudience whether audience claim validation should be executed
-     * @return errors instance to check for validation result
-     * @deprecated use {@link JwtValidator#validate(Jwt)} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public Errors validate(String issuer, String audience, boolean checkAudience) {
-        return validate(issuer, audience == null ? Set.of() : Set.of(audience), checkAudience);
-    }
-
-    /**
-     * Validates all default values.
-     * Values validated:
-     * <ul>
-     * <li>{@link #expirationTime() Expiration time} if defined</li>
-     * <li>{@link #issueTime() Issue time} if defined</li>
-     * <li>{@link #notBefore() Not before time} if defined</li>
-     * <li>{@link #issuer()} Issuer} if defined</li>
-     * <li>{@link #audience() Audience} if defined</li>
-     * </ul>
-     *
-     * @param issuer   validates that this JWT was issued by this issuer. Setting this to non-null value will make
-     *                 issuer claim mandatory
-     * @param audience validates that this JWT was issued for this audience. Setting this to non-null value and with
-     *                 any non-null value in the Set will make audience claim mandatory
-     * @param checkAudience whether audience claim validation should be executed
-     * @return errors instance to check for validation result
-     * @deprecated use {@link JwtValidator#validate(Jwt)} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public Errors validate(String issuer, Set<String> audience, boolean checkAudience) {
-        List<Validator<Jwt>> validators = defaultTimeValidators();
-        if (null != issuer) {
-            addIssuerValidator(validators, issuer, true);
-        }
-        // Audience check is turned on
-        if (checkAudience) {
-            if (null != audience) {
-                audience.stream()
-                        .filter(Objects::nonNull)
-                        .findAny()
-                        .ifPresent(it -> addAudienceValidator(validators, audience, true));
-            }
-        }
-        addUserPrincipalValidator(validators);
-        return validate(validators);
-    }
-
-    /**
-     * Validates all default values.
-     * Audience claim check is not mandatory.
-     * Values validated: {@link #validate(String, Set, boolean)}
-     *
-     * @param issuer   validates that this JWT was issued by this issuer. Setting this to non-null value will make
-     *                 issuer claim mandatory
-     * @param audience validates that this JWT was issued for this audience. Setting this to non-null value and with
-     *                 any non-null value in the Set will make audience claim mandatory
-     * @return errors instance to check for validation result
-     * @deprecated use {@link JwtValidator#validate(Jwt)} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public Errors validate(String issuer, Set<String> audience) {
-        return validate(issuer, audience, true);
-    }
-
-    /**
-     * Adds a validator that makes sure the {@link Jwt#userPrincipal()} is present.
-     *
-     * @param validators validator collection to update
-     * @deprecated use {@link JwtValidator.Builder#addUserPrincipalValidator()} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public static void addUserPrincipalValidator(Collection<Validator<Jwt>> validators) {
-        validators.add(new UserPrincipalValidator());
-    }
-
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    private abstract static class OptionalValidator {
-        private final boolean mandatory;
-
-        OptionalValidator() {
-            this.mandatory = false;
-        }
-
-        OptionalValidator(boolean mandatory) {
-            this.mandatory = mandatory;
-        }
-
-        <T> Optional<T> validate(String name, Optional<T> optional, Errors.Collector collector) {
-            if (mandatory && optional.isEmpty()) {
-                collector.fatal("Field " + name + " is mandatory, yet not defined in JWT");
-            }
-            return optional;
-        }
-    }
-
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    private abstract static class InstantValidator extends OptionalValidator {
-        private final Instant instant;
-        private final long allowedTimeSkewAmount;
-        private final TemporalUnit allowedTimeSkewUnit;
-
-        private InstantValidator() {
-            this.instant = null;
-            this.allowedTimeSkewAmount = 5;
-            this.allowedTimeSkewUnit = ChronoUnit.SECONDS;
-        }
-
-        private InstantValidator(boolean mandatory) {
-            super(mandatory);
-            this.instant = null;
-            this.allowedTimeSkewAmount = 5;
-            this.allowedTimeSkewUnit = ChronoUnit.SECONDS;
-        }
-
-        private InstantValidator(Instant instant, int allowedTimeSkew, TemporalUnit allowedTimeSkewUnit, boolean mandatory) {
-            super(mandatory);
-
-            this.instant = instant;
-            this.allowedTimeSkewAmount = allowedTimeSkew;
-            this.allowedTimeSkewUnit = allowedTimeSkewUnit;
-        }
-
-        Instant latest() {
-            return instant().plus(allowedTimeSkewAmount, allowedTimeSkewUnit);
-        }
-
-        Instant earliest() {
-            return instant().minus(allowedTimeSkewAmount, allowedTimeSkewUnit);
-        }
-
-        Instant instant() {
-            return instant == null ? Instant.now() : instant;
-        }
-    }
-
-    /**
-     * Validator of a string field obtained from a JWT.
-     *
-     * @deprecated use {@link JwtValidator.Builder#addFieldValidator(Consumer)} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public static final class FieldValidator extends OptionalValidator implements Validator<Jwt> {
-        private final Function<Jwt, Optional<String>> fieldAccessor;
-        private final String expectedValue;
-        private final String fieldName;
-
-        private FieldValidator(Function<Jwt, Optional<String>> fieldAccessor,
-                               String fieldName,
-                               String expectedValue,
-                               boolean mandatory) {
-            super(mandatory);
-            this.fieldAccessor = fieldAccessor;
-            this.fieldName = fieldName;
-            this.expectedValue = expectedValue;
-        }
-
-        /**
-         * A generic optional field validator based on a function to get the field.
-         *
-         * @param fieldAccessor function to extract field from JWT
-         * @param name          descriptive name of the field
-         * @param expectedValue value to expect
-         * @return validator instance
-         */
-        public static FieldValidator create(Function<Jwt, Optional<String>> fieldAccessor,
-                                            String name,
-                                            String expectedValue) {
-
-            return create(fieldAccessor, name, expectedValue, false);
-        }
-
-        /**
-         * A generic field validator based on a function to get the field.
-         *
-         * @param fieldAccessor function to extract field from JWT
-         * @param name          descriptive name of the field
-         * @param expectedValue value to expect
-         * @param mandatory     true for mandatory, false for optional
-         * @return validator instance
-         */
-        public static FieldValidator create(Function<Jwt, Optional<String>> fieldAccessor,
-                                            String name,
-                                            String expectedValue,
-                                            boolean mandatory) {
-
-            return new FieldValidator(fieldAccessor, name, expectedValue, mandatory);
-        }
-
-        /**
-         * An optional header field validator.
-         *
-         * @param fieldKey      name of the header claim
-         * @param name          descriptive name of the field
-         * @param expectedValue value to expect
-         * @return validator instance
-         */
-        public static FieldValidator createForHeader(String fieldKey,
-                                                     String name,
-                                                     String expectedValue) {
-
-            return createForHeader(fieldKey, name, expectedValue, false);
-        }
-
-        /**
-         * A header field validator.
-         *
-         * @param fieldKey      name of the header claim
-         * @param name          descriptive name of the field
-         * @param expectedValue value to expect
-         * @param mandatory     whether the field is mandatory or optional
-         * @return validator instance
-         */
-        public static FieldValidator createForHeader(String fieldKey,
-                                                     String name,
-                                                     String expectedValue,
-                                                     boolean mandatory) {
-
-            return create(jwt -> jwt.headerClaim(fieldKey)
-                                  .map(it -> ((JsonString) it).getString()),
-                          name,
-                          expectedValue,
-                          mandatory);
-        }
-
-        /**
-         * An optional payload field validator.
-         *
-         * @param fieldKey      name of the payload claim
-         * @param name          descriptive name of the field
-         * @param expectedValue value to expect
-         * @return validator instance
-         */
-        public static FieldValidator createForPayload(String fieldKey,
-                                                      String name,
-                                                      String expectedValue) {
-
-            return createForPayload(fieldKey, name, expectedValue, false);
-        }
-
-        /**
-         * A payload field validator.
-         *
-         * @param fieldKey      name of the payload claim
-         * @param name          descriptive name of the field
-         * @param expectedValue value to expect
-         * @param mandatory     whether the field is mandatory or optional
-         * @return validator instance
-         */
-        public static FieldValidator createForPayload(String fieldKey,
-                                                      String name,
-                                                      String expectedValue,
-                                                      boolean mandatory) {
-            return create(jwt -> jwt.payloadClaim(fieldKey)
-                                  .map(it -> ((JsonString) it).getString()),
-                          name,
-                          expectedValue,
-                          false);
-        }
-
-        @Override
-        public void validate(Jwt token, Errors.Collector collector) {
-            super.validate(fieldName, fieldAccessor.apply(token), collector)
-                    .ifPresent(it -> {
-                        if (!expectedValue.equals(it)) {
-                            collector.fatal(token,
-                                            "Expected value of field \"" + fieldName + "\" was \"" + expectedValue + "\", but "
-                                                    + "actual value is: \"" + it);
-                        }
-                    });
-        }
-    }
-
-    /**
-     * Validator of issue time claim.
-     *
-     * @deprecated use {@link JwtValidator.Builder#addIssueTimeValidator()} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public static final class IssueTimeValidator extends InstantValidator implements Validator<Jwt> {
-
-        private IssueTimeValidator() {
-        }
-
-        private IssueTimeValidator(Instant now, int allowedTimeSkew, TemporalUnit allowedTimeSkewUnit, boolean mandatory) {
-            super(now, allowedTimeSkew, allowedTimeSkewUnit, mandatory);
-        }
-
-
-        /**
-         * New instance with default values (allowed time skew 5 seconds, optional).
-         *
-         * @return issue time validator with defaults
-         */
-        public static IssueTimeValidator create() {
-            return new IssueTimeValidator();
-        }
-
-        /**
-         * New instance with explicit values.
-         *
-         * @param now                 time to validate against (to be able to validate past tokens)
-         * @param allowedTimeSkew     allowed time skew amount (such as 5)
-         * @param allowedTimeSkewUnit allowed time skew unit (such as {@link ChronoUnit#SECONDS}
-         * @param mandatory           true for mandatory, false for optional
-         * @return configured issue time validator
-         */
-        public static IssueTimeValidator create(Instant now,
-                                                int allowedTimeSkew,
-                                                TemporalUnit allowedTimeSkewUnit,
-                                                boolean mandatory) {
-            return new IssueTimeValidator(now, allowedTimeSkew, allowedTimeSkewUnit, mandatory);
-        }
-
-        @Override
-        public void validate(Jwt token, Errors.Collector collector) {
-            Optional<Instant> issueTime = token.issueTime();
-            issueTime.ifPresent(it -> {
-                // must be issued in the past
-                if (latest().isBefore(it)) {
-                    collector.fatal(token, "Token was not issued in the past: " + it);
-                }
-            });
-            // ensure we fail if mandatory and not present
-            super.validate("issueTime", issueTime, collector);
-        }
-    }
-
-    /**
-     * Validator of expiration claim.
-     *
-     * @deprecated use {@link JwtValidator.Builder#addExpirationValidator()} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public static final class ExpirationValidator extends InstantValidator implements Validator<Jwt> {
-        private ExpirationValidator(boolean mandatory) {
-            super(mandatory);
-        }
-
-        private ExpirationValidator(Instant now, int allowedTimeSkew, TemporalUnit allowedTimeSkewUnit, boolean mandatory) {
-            super(now, allowedTimeSkew, allowedTimeSkewUnit, mandatory);
-        }
-
-        /**
-         * New instance with default values (allowed time skew 5 seconds, optional).
-         *
-         * @return expiration time validator with defaults
-         */
-        public static ExpirationValidator create() {
-            return new ExpirationValidator(false);
-        }
-
-        /**
-         * New instance with default values (allowed time skew 5 seconds).
-         *
-         * @param mandatory if this value is mandatory or not
-         * @return expiration time validator with defaults
-         */
-        public static ExpirationValidator create(boolean mandatory) {
-            return new ExpirationValidator(mandatory);
-        }
-
-        /**
-         * New instance with explicit values.
-         *
-         * @param now                 time to validate against (to be able to validate past tokens)
-         * @param allowedTimeSkew     allowed time skew amount (such as 5)
-         * @param allowedTimeSkewUnit allowed time skew unit (such as {@link ChronoUnit#SECONDS}
-         * @param mandatory           true for mandatory, false for optional
-         * @return expiration time validator
-         */
-        public static ExpirationValidator create(Instant now,
-                                                int allowedTimeSkew,
-                                                TemporalUnit allowedTimeSkewUnit,
-                                                boolean mandatory) {
-            return new ExpirationValidator(now, allowedTimeSkew, allowedTimeSkewUnit, mandatory);
-        }
-
-        @Override
-        public void validate(Jwt token, Errors.Collector collector) {
-            Optional<Instant> expirationTime = token.expirationTime();
-            expirationTime.ifPresent(it -> {
-                if (earliest().isAfter(it)) {
-                    collector.fatal(token, "Token no longer valid, expiration: " + it);
-                }
-                token.issueTime().ifPresent(issued -> {
-                    if (issued.isAfter(it)) {
-                        collector.fatal(token, "Token issue date is after its expiration, "
-                                + "issue: " + it + ", expiration: " + it);
-                    }
-                });
-            });
-            // ensure we fail if mandatory and not present
-            super.validate("expirationTime", expirationTime, collector);
-        }
-    }
-
-    /**
-     * Validator of not before claim.
-     *
-     * @deprecated use {@link JwtValidator.Builder#addNotBeforeValidator()} instead
-     */
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    public static final class NotBeforeValidator extends InstantValidator implements Validator<Jwt> {
-        private NotBeforeValidator() {
-        }
-
-        private NotBeforeValidator(Instant now, int allowedTimeSkew, TemporalUnit allowedTimeSkewUnit, boolean mandatory) {
-            super(now, allowedTimeSkew, allowedTimeSkewUnit, mandatory);
-        }
-
-        /**
-         * New instance with default values (allowed time skew 5 seconds, optional).
-         *
-         * @return not before time validator with defaults
-         */
-        public static NotBeforeValidator create() {
-            return new NotBeforeValidator();
-        }
-
-        /**
-         * New instance with explicit values.
-         *
-         * @param now                 time to validate against (to be able to validate past tokens)
-         * @param allowedTimeSkew     allowed time skew amount (such as 5)
-         * @param allowedTimeSkewUnit allowed time skew unit (such as {@link ChronoUnit#SECONDS}
-         * @param mandatory           true for mandatory, false for optional
-         * @return not before time validator
-         */
-        public static NotBeforeValidator create(Instant now,
-                                                 int allowedTimeSkew,
-                                                 TemporalUnit allowedTimeSkewUnit,
-                                                 boolean mandatory) {
-            return new NotBeforeValidator(now, allowedTimeSkew, allowedTimeSkewUnit, mandatory);
-        }
-
-        @Override
-        public void validate(Jwt token, Errors.Collector collector) {
-            Optional<Instant> notBefore = token.notBefore();
-            notBefore.ifPresent(it -> {
-                if (latest().isBefore(it)) {
-                    collector.fatal(token, "Token not yet valid, not before: " + it);
-                }
-            });
-            // ensure we fail if mandatory and not present
-            super.validate("notBefore", notBefore, collector);
-        }
     }
 
     /**
@@ -2025,17 +1380,4 @@ public class Jwt {
         }
     }
 
-    @Deprecated(since = "4.0.10", forRemoval = true)
-    private static final class UserPrincipalValidator extends OptionalValidator implements Validator<Jwt> {
-
-        private UserPrincipalValidator() {
-            super(true);
-        }
-
-        @Override
-        public void validate(Jwt object, Errors.Collector collector) {
-            super.validate("User Principal", object.userPrincipal(), collector);
-        }
-
-    }
 }

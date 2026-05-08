@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 
 = Helidon SE Config Guide
 :description: Helidon configuration
-:keywords: helidon, configuration, microprofile, guide, SE
+:keywords: helidon, configuration, guide, SE
 :toc:
 :rootdir: {docdir}/../..
 include::{rootdir}/includes/se.adoc[]
@@ -871,4 +871,3 @@ the following:
 Refer to the following references for additional information:
 
 * link:{javadoc-base-url}/index.html?overview-summary.html[Helidon Javadoc]
-

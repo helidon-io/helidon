@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2025 Oracle and/or its affiliates.
+# Copyright (c) 2016, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 security:
   providers:
-    # Http basic and digest authentication
-    # https://tools.ietf.org/html/rfc2617
+    # Http basic authentication
+    # https://tools.ietf.org/html/rfc7617
     - http-basic-auth:
         # If set to true, provider will abstain rather than fail if authentication fails
         # defaults to false
@@ -26,34 +26,6 @@ security:
         # Can be USER or SERVICE
         # defaults to USER
         principal-type: USER
-        users:
-          - login: "jack"
-            password: "${CLEAR=jackIsGreat}"
-            roles: ["user", "admin"]
-          - login: "jill"
-            # master password is "jungle", password is "password"
-            password: "${GCM=3XQ8A1RszE9JbXl+lUnnsX0gakuqjnTyp8YJWIAU1D3SiM2TaSnxd6U0/LjrdJYv}"
-            roles: ["user"]
-    - http-digest-auth:
-        # If set to true, provider will abstain rather than fail if authentication fails
-        # defaults to false
-        optional: true
-        realm: "helidon"
-        # Can be USER or SERVICE
-        # defaults to USER
-        principal-type: USER
-        # Algorithm - MD5 is default (and now the only supported)
-        # algorithm: "MD5"
-        # QOP options - auth or empty (fallback to old RFC)
-        # default is auth
-        # qop: ["auth"]
-        # qop: []
-        # Password for protecting nonce values. Should be the same for
-        # services that want to share digest authentication (obviously together with realm)
-        server-secret: "pwd"
-
-        # Timeout of nonce values, defeault is 24 hours
-        # nonce-timeout-millis: 11111111111
         users:
           - login: "jack"
             password: "${CLEAR=jackIsGreat}"

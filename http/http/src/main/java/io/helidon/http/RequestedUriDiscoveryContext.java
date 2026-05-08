@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.AllowList;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -59,31 +59,6 @@ public interface RequestedUriDiscoveryContext {
      */
     static RequestedUriDiscoveryContext create(Config config) {
         return builder().config(config).build();
-    }
-
-    /**
-     * Creates a {@link io.helidon.common.uri.UriInfo} object for a request based on the discovery settings in the
-     * {@link RequestedUriDiscoveryContext} and the specified request-related information.
-     *
-     * @param remoteAddress remote address from the request
-     * @param localAddress  local address from the request
-     * @param requestPath   path from the request
-     * @param headers       request headers
-     * @param query         query information from the request
-     * @param isSecure      whether the request is secure
-     * @return {@code UriInfo} which reconstructs, as well as possible, the requested URI from the originating client
-     * @deprecated Use
-     *         {@link RequestedUriDiscoveryContext#uriInfo(java.net.SocketAddress, java.net.SocketAddress, String,
-     *         ServerRequestHeaders, io.helidon.common.uri.UriQuery, boolean)}
-     */
-    @Deprecated(forRemoval = true, since = "4.2.1")
-    default UriInfo uriInfo(String remoteAddress,
-                            String localAddress,
-                            String requestPath,
-                            ServerRequestHeaders headers,
-                            UriQuery query,
-                            boolean isSecure) {
-        return UriInfoCompatibilityHelper.uriInfo(this, remoteAddress, localAddress, requestPath, headers, query, isSecure);
     }
 
     /**
@@ -133,7 +108,7 @@ public interface RequestedUriDiscoveryContext {
 
         /**
          * Update the settings from the {@value REQUESTED_URI_DISCOVERY_CONFIG_KEY}
-         * {@link io.helidon.common.config.Config} node within the socket configuration.
+         * {@link io.helidon.config.Config} node within the socket configuration.
          *
          * @param requestedUriDiscoveryConfig requested URI discovery configuration node
          * @return updated builder instance
@@ -146,12 +121,12 @@ public interface RequestedUriDiscoveryContext {
             // in case existing apps happen to use it. Remove as soon as practical.
             requestedUriDiscoveryConfig.get("discoveryTypes")
                     .asList(RequestedUriDiscoveryType.class)
-                    .ifPresent(this::discoveryTypes);
+                    .ifPresent(this::types);
             requestedUriDiscoveryConfig.get("types")
                     .asList(RequestedUriDiscoveryType.class)
                     .ifPresent(this::types);
             requestedUriDiscoveryConfig.get("trusted-proxies")
-                    .map(AllowList::create)
+                    .as(AllowList::create)
                     .ifPresent(this::trustedProxies);
             return this;
         }
@@ -191,18 +166,6 @@ public interface RequestedUriDiscoveryContext {
             this.discoveryTypes.clear();
             this.discoveryTypes.addAll(discoveryTypes);
             return this;
-        }
-
-        /**
-         * Sets the discovery types for requested URI discovery for requests arriving on the socket.
-         *
-         * @param discoveryTypes discovery types to use
-         * @return updated builder
-         * @deprecated Use {@link #types(java.util.List)} instead
-         */
-        @Deprecated(since = "4.0.6", forRemoval = true)
-        public Builder discoveryTypes(List<RequestedUriDiscoveryType> discoveryTypes) {
-            return types(discoveryTypes);
         }
 
         /**

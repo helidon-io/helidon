@@ -20,6 +20,7 @@ import java.util.Collection;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
+import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.Annotation;
 import io.helidon.codegen.classmodel.ClassModel;
@@ -30,6 +31,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
 class JsonCodegen implements CodegenExtension {
+    private static final TypeName GENERATOR = TypeName.create(JsonCodegen.class);
 
     private final CodegenContext ctx;
 
@@ -59,6 +61,14 @@ class JsonCodegen implements CodegenExtension {
             generatedType = convertedTypeInfo.converterType();
             builder = ClassModel.builder()
                     .type(generatedType)
+                    .copyright(CodegenUtil.copyright(GENERATOR,
+                                                     annotatedTypeName,
+                                                     generatedType))
+                    .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR,
+                                                                   annotatedTypeName,
+                                                                   generatedType,
+                                                                   "1",
+                                                                   ""))
                     .addAnnotation(b -> b.type(JsonTypes.SERVICE_REGISTRY_PER_LOOKUP))
                     .addAnnotation(Annotation.builder()
                                            .type(TypeNames.WEIGHT)
@@ -73,7 +83,16 @@ class JsonCodegen implements CodegenExtension {
             generatedType = TypeName.builder()
                     .from(converterTypeName)
                     .build();
-            builder = ClassModel.builder().type(generatedType);
+            builder = ClassModel.builder()
+                    .type(generatedType)
+                    .copyright(CodegenUtil.copyright(GENERATOR,
+                                                     annotatedTypeName,
+                                                     generatedType))
+                    .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR,
+                                                                   annotatedTypeName,
+                                                                   generatedType,
+                                                                   "1",
+                                                                   ""));
             JsonBindingFactoryGenerator.generateBindingFactory(builder, typeInfo, ctx);
         }
 

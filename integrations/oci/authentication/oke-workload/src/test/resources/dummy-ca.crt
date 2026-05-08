@@ -1,4 +1,0 @@
-NOTICE:
-=======
-This file represents a dummy ca.crt that will be used by the AuthenticationMethodOkeWorkload to validate if it can proceed with
-authentication processing.

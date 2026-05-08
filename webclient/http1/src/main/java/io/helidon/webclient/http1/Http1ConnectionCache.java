@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,14 +118,14 @@ class Http1ConnectionCache extends ClientConnectionCache {
     }
 
     private boolean handleKeepAlive(boolean defaultKeepAlive, WritableHeaders<?> headers) {
-        if (headers.contains(HeaderValues.CONNECTION_CLOSE)) {
+        if (headers.containsToken(HeaderValues.CONNECTION_CLOSE)) {
             return false;
         }
         if (defaultKeepAlive) {
             headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
             return true;
         }
-        if (headers.contains(HeaderValues.CONNECTION_KEEP_ALIVE)) {
+        if (headers.containsToken(HeaderValues.CONNECTION_KEEP_ALIVE)) {
             return true;
         }
         headers.set(HeaderValues.CONNECTION_CLOSE);

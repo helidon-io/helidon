@@ -7,7 +7,7 @@ Provide an API to map an arbitrary Java type to another arbitrary Java type.
 ## Mapper API
 
 The API consist of the following classes
-- `MapperManager` - the entry point to mapping of types
+- `Mappers` - the entry point to mapping of types
 - `Mapper` - a class capable of converting one type to another
 - `MapperProvider` - SPI class to support providers loaded through Java Service loader or configured through a builder
 - `MapperException` - `RuntimeException` thrown when a mapping is missing or the mapping itself failed
@@ -49,7 +49,7 @@ Some shortcut methods for common types exist for both the `as` and `get` methods
 
 ### Value Provider
 
-A value provider should support using a custom `MapperManager`, if not provided, it falls back to `MapperManager.global()`.
+A value provider should support using a custom `Mappers`, if not provided, it falls back to `Services.get(Mappers.class)`.
 Each value provider has its own "path" of mapping tags, allowing customization of mapping depending on context.
 
 For example HTTP query parameters would use `List.of("http", "query-param")`, headers would use `List.of("http", "header")`
@@ -73,7 +73,7 @@ The following modules should use this approach:
 - HTTP matrix params
 - 
 
-### Mapper Manager
+### Mappers
 
 Mapping provides tools to map a type to another type.
 
@@ -99,7 +99,7 @@ For `GenericType` parameters, lookup is done as follows:
 The results are cached (so lookup for a defined pair is done only once).
 In case no mapper is found, the result should be cached as well.
 
-The main API class is `MapperManager`.
+The main API class is `Mappers`.
 ```java
 /**
  * Map from source to target.
@@ -124,7 +124,7 @@ The main API class is `MapperManager`.
 <SOURCE, TARGET> TARGET map(SOURCE source, Class<SOURCE> sourceType, Class<TARGET> targetType);
 ```
  
-`MapperManager` can be created using the usual `Builder`:
+`Mappers` can be created using the usual `Builder`:
 ```java
 /**
  * Replace the service loader with the one provided.
@@ -169,7 +169,7 @@ Builder addMapperProvider(MapperProvider provider);
 
 ### Mapper implementation
 `Mapper` is the class doing the actual work of mapping one type to another.
-Mappers are either provided by user when creating the `MapperManager` or obtained
+Mappers are either provided by user when creating the `Mappers` instance or obtained
 from `MapperProvider` services.
 
 `Mapper`:
@@ -268,18 +268,17 @@ Known qualifiers (array of strings):
 
 ## Examples
 
-### Using the MapperManager
-The following example creates the `MapperManager` from Java Service loader
+### Using Mappers
+The following example creates a `Mappers` instance from the default configuration
 ```java
-// creates a mapper manager from system service loader
-MapperManager mm = MapperManager.create();
+Mappers mappers = Mappers.create();
 
 // this will work if a String to Long mapper is configured
-Long longValue = mm.map("1094444", String.class, Long.class);
+Long longValue = mappers.map("1094444", String.class, Long.class);
 
 // this will work if a List<String> to List<Long> mapper is configured
 List<String> stringList = CollectionsHelper.listOf("140", "145");
-List<Long> longList = mm.map(stringList, new GenericType<List<String>>(){}, new GenericType<List<Long>>(){});
+List<Long> longList = mappers.map(stringList, new GenericType<List<String>>(){}, new GenericType<List<Long>>(){});
 ```
 
 ### Creating a MapperProvider

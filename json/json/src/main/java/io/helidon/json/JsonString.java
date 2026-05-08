@@ -16,11 +16,12 @@
 
 package io.helidon.json;
 
-import java.nio.charset.StandardCharsets;
+import io.helidon.common.Api;
 
 /**
  * Represents a JSON string value.
  */
+@Api.Preview
 public final class JsonString extends JsonValue {
 
     private final byte[] buffer;
@@ -51,7 +52,25 @@ public final class JsonString extends JsonValue {
         return new JsonString(value);
     }
 
-    static JsonString create(byte[] buffer, int start, int length) {
+    /**
+     * Create a JsonString from an array of UTF-8 encoded bytes.
+     *
+     * @param value the UTF-8 encoded string bytes
+     * @return a new JsonString
+     */
+    public static JsonString create(byte[] value) {
+        return new JsonString(value, 0, value.length);
+    }
+
+    /**
+     * Create a JsonString from a range within a UTF-8 encoded byte buffer.
+     *
+     * @param buffer the buffer containing the UTF-8 encoded string
+     * @param start the starting offset within the buffer
+     * @param length the number of bytes that belong to the string value
+     * @return a new JsonString
+     */
+    public static JsonString create(byte[] buffer, int start, int length) {
         return new JsonString(buffer, start, length);
     }
 
@@ -72,9 +91,8 @@ public final class JsonString extends JsonValue {
         return resolvedValue;
     }
 
-    String resolveValue() {
-        resolvedValue = new String(buffer, start, length, StandardCharsets.UTF_8);
-        return resolvedValue;
+    private void resolveValue() {
+        resolvedValue = Parsers.decodeJsonString(buffer, start, length);
     }
 
     @Override

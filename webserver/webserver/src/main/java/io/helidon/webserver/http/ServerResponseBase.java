@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -248,7 +248,9 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      */
     protected byte[] entityBytes(byte[] configuredEntity, int position, int length) {
         byte[] entity = configuredEntity;
-        if (contentEncodingContext.contentEncodingEnabled() && length > 0) {
+        if (contentEncodingContext.contentEncodingEnabled()
+                && length > 0
+                && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
             // we want to preserve optimization here, let's create a new byte array
             ByteArrayOutputStream baos = new ByteArrayOutputStream(length);

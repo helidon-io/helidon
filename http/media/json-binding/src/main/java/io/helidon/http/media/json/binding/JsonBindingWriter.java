@@ -21,23 +21,23 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
-import io.helidon.http.media.EntityWriter;
+import io.helidon.http.media.EntityWriterBase;
 import io.helidon.json.binding.JsonBinding;
 
-class JsonBindingWriter<T> implements EntityWriter<T> {
+import static java.util.function.Predicate.not;
+
+class JsonBindingWriter<T> extends EntityWriterBase<T> {
 
     private final JsonBinding jsonBinding;
 
-    JsonBindingWriter(JsonBinding jsonBinding) {
+    JsonBindingWriter(JsonBindingSupportConfig config, JsonBinding jsonBinding) {
+        super(config);
         this.jsonBinding = jsonBinding;
     }
 
@@ -47,28 +47,28 @@ class JsonBindingWriter<T> implements EntityWriter<T> {
                       OutputStream outputStream,
                       Headers requestHeaders,
                       WritableHeaders<?> responseHeaders) {
-        responseHeaders.setIfAbsent(HeaderValues.CONTENT_TYPE_JSON);
+        Optional<OutputStreamWriter> writer = serverResponseContentTypeAndCharset(requestHeaders, responseHeaders)
+                .filter(not(StandardCharsets.UTF_8::equals)) //We don't need writer to be applied for UTF-8
+                .map(it -> new OutputStreamWriter(outputStream, it));
 
-        for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
-            if (acceptedType.test(MediaTypes.APPLICATION_JSON)) {
-                Optional<String> charset = acceptedType.charset();
-                if (charset.isPresent()) {
-                    Charset characterSet = Charset.forName(charset.get());
-                    write(type, object, new OutputStreamWriter(outputStream, characterSet));
-                } else {
-                    write(type, object, outputStream);
-                }
-                return;
-            }
+        if (writer.isPresent()) {
+            write(type, object, writer.get());
+        } else {
+            write(type, object, outputStream);
         }
-
-        write(type, object, outputStream);
     }
 
     @Override
     public void write(GenericType<T> type, T object, OutputStream outputStream, WritableHeaders<?> headers) {
-        headers.setIfAbsent(HeaderValues.CONTENT_TYPE_JSON);
-        write(type, object, outputStream);
+        Optional<OutputStreamWriter> writer = clientRequestContentTypeAndCharset(headers)
+                .filter(not(StandardCharsets.UTF_8::equals)) //We don't need writer to be applied for UTF-8
+                .map(it -> new OutputStreamWriter(outputStream, it));
+
+        if (writer.isPresent()) {
+            write(type, object, writer.get());
+        } else {
+            write(type, object, outputStream);
+        }
     }
 
     private void write(GenericType<T> type, T object, Writer out) {
@@ -82,7 +82,7 @@ class JsonBindingWriter<T> implements EntityWriter<T> {
     private void write(GenericType<T> type, T object, OutputStream out) {
         try (out) {
             jsonBinding.serialize(out, object, type);
-        } catch (IOException e) {
+        }  catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }

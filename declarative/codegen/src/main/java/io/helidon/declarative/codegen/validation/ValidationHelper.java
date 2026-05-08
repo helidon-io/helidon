@@ -182,6 +182,12 @@ final class ValidationHelper {
     }
 
     static boolean needsWork(Collection<TypeName> constraintAnnotations, TypedElementInfo element) {
+        return needsWork(constraintAnnotations, element, true);
+    }
+
+    static boolean needsWork(Collection<TypeName> constraintAnnotations,
+                             TypedElementInfo element,
+                             boolean includeParameters) {
         // the element itself is annotated either with valid or one of the constraints
         // a type parameter is annotated in the same way (only first level)
 
@@ -214,9 +220,11 @@ final class ValidationHelper {
             }
         }
 
-        for (TypedElementInfo param : element.parameterArguments()) {
-            if (needsWork(constraintAnnotations, param)) {
-                return true;
+        if (includeParameters) {
+            for (TypedElementInfo param : element.parameterArguments()) {
+                if (needsWork(constraintAnnotations, param)) {
+                    return true;
+                }
             }
         }
 

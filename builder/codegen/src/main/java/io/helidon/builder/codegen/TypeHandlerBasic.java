@@ -42,7 +42,6 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.Types.CHAR_ARRAY;
-import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
 import static io.helidon.builder.codegen.Types.CONFIG;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_BLUEPRINT;
 import static io.helidon.codegen.CodegenUtil.capitalize;
@@ -200,32 +199,16 @@ class TypeHandlerBasic implements TypeHandler {
 
     @Override
     public void fromBuilderAssignment(ContentBuilder<?> contentBuilder) {
-        if (type().equals(CONFIG) || type().equals(COMMON_CONFIG)) {
+        if (type().equals(CONFIG)) {
             // special handling, must assign to field, to avoid re-configuring
-            if (type().equals(COMMON_CONFIG)) {
-                if (builderGetterOptional()) {
-                    contentBuilder.addContent("this.config = builder.")
-                            .addContent(option().getterName())
-                            .addContent("().map(")
-                            .addContent(CONFIG)
-                            .addContentLine("::config).orElse(this.config);");
-                } else {
-                    contentBuilder.addContentLine("this.config = ")
-                            .addContent(CONFIG)
-                            .addContentLine(".config(builder.")
-                            .addContent(option().getterName())
-                            .addContentLine("());");
-                }
+            if (builderGetterOptional()) {
+                contentBuilder.addContent("this.config = builder.")
+                        .addContent(option().getterName())
+                        .addContentLine("().orElse(this.config);");
             } else {
-                if (builderGetterOptional()) {
-                    contentBuilder.addContent("this.config = builder.")
-                            .addContent(option().getterName())
-                            .addContentLine("().orElse(this.config);");
-                } else {
-                    contentBuilder.addContent("this.config = builder.")
-                            .addContent(option().getterName())
-                            .addContentLine("();");
-                }
+                contentBuilder.addContent("this.config = builder.")
+                        .addContent(option().getterName())
+                        .addContentLine("();");
             }
             return;
         }
@@ -247,24 +230,12 @@ class TypeHandlerBasic implements TypeHandler {
             return;
         }
 
-        if (type().equals(CONFIG) || type().equals(COMMON_CONFIG)) {
+        if (type().equals(CONFIG)) {
             // special handling, must assign to field, to avoid re-configuring
-            if (type().equals(COMMON_CONFIG)) {
-                if (option().declaredType().isOptional()) {
-                    contentBuilder.addContentLine("this.config = prototype.config().map(")
-                            .addContent(CONFIG)
-                            .addContentLine("::config).orElse(null);");
-                } else {
-                    contentBuilder.addContentLine("this.config = ")
-                            .addContent(CONFIG)
-                            .addContentLine(".config(prototype.config());");
-                }
+            if (option().declaredType().isOptional()) {
+                contentBuilder.addContentLine("this.config = prototype.config().orElse(null);");
             } else {
-                if (option().declaredType().isOptional()) {
-                    contentBuilder.addContentLine("this.config = prototype.config().orElse(null);");
-                } else {
-                    contentBuilder.addContentLine("this.config = prototype.config();");
-                }
+                contentBuilder.addContentLine("this.config = prototype.config();");
             }
             return;
         }
@@ -469,7 +440,7 @@ class TypeHandlerBasic implements TypeHandler {
     }
 
     Optional<GeneratedMethod> prepareSetterPrototypeOfRuntimeType(Javadoc getterJavadoc) {
-        if (option().runtimeType().isEmpty() && option.prototypedBy().isEmpty()) {
+        if (option().runtimeType().isEmpty() && option().prototypedBy().isEmpty()) {
             return Optional.empty();
         }
 
@@ -480,8 +451,8 @@ class TypeHandlerBasic implements TypeHandler {
         String methodName;
         TypeName factoryType;
 
-        if (option.prototypedBy().isPresent()) {
-            parameterType = fixPackage(option.prototypedBy().get());
+        if (option().prototypedBy().isPresent()) {
+            parameterType = fixPackage(option().prototypedBy().get());
             methodName = "build";
             factoryType = null;
         } else {
@@ -853,9 +824,9 @@ class TypeHandlerBasic implements TypeHandler {
          */
         var builder = Annotation.builder()
                 .typeName(TypeName.create(Deprecated.class));
-        since.ifPresent(it -> builder.putValue("since", it));
+        since.ifPresent(it -> builder.property("since", it));
         if (forRemoval) {
-            builder.putValue("forRemoval", true);
+            builder.property("forRemoval", true);
         }
 
         method.addAnnotation(builder.build());

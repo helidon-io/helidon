@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * A component is a single "layer" of the application that can trace.
@@ -28,7 +28,6 @@ import io.helidon.common.config.Config;
  *     <li>web-server: webServer adds the root tracing span + two additional spans (content-read and content-write)</li>
  *     <li>security: security adds the overall request security span, a span for authentication ("security:atn"), a span for
  *          authorization "security:atz", and a span for response processing ("security:response")</li>
- *     <li>jax-rs: JAX-RS integration adds spans for overall resource invocation</li>
  * </ul>
  */
 public abstract class ComponentTracingConfig extends Traceable {
@@ -183,7 +182,7 @@ public abstract class ComponentTracingConfig extends Traceable {
         }
 
         /**
-         * Update this builder from {@link io.helidon.common.config.Config}.
+         * Update this builder from configuration.
          *
          * @param config configuration of a traced component
          * @return updated builder instance

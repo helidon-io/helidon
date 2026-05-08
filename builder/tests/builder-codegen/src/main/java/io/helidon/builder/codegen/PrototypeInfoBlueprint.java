@@ -236,18 +236,6 @@ interface PrototypeInfoBlueprint extends Annotated {
     List<GeneratedMethod> builderMethods();
 
     /**
-     * Static factory methods to be added to the prototype, or runtime type factory methods.
-     * <p>
-     * This method exists only for backwards compatibility and will be removed in a future major version.
-     *
-     * @return a list of factory methods declared on the blueprint or a reference custom methods type
-     * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
-     *         {@link #configFactories()} instead, only present for backwards compatibility
-     */
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    List<DeprecatedFactoryMethod> deprecatedFactoryMethods();
-
-    /**
      * Static factory methods to be added to the prototype.
      *
      * @return a list of factory methods to add to the prototype

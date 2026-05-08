@@ -16,11 +16,13 @@
 
 package io.helidon.json.binding;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonParser;
 
 /**
  * Utility class for deserialization operations.
  */
+@Api.Preview
 public final class Deserializers {
     /*
      * This type is used from generated code

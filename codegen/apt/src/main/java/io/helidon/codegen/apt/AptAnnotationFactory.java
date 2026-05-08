@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import io.helidon.common.types.TypeNames;
 /**
  * Factory for annotations.
  */
-@SuppressWarnings("removal")
 final class AptAnnotationFactory {
     private AptAnnotationFactory() {
     }
@@ -85,10 +84,10 @@ final class AptAnnotationFactory {
                 .flatMap(Optional::stream)
                 .forEach(builder::addMetaAnnotation);
 
-        return Optional.of(builder
-                                   .typeName(val)
-                                   .values(extractAnnotationValues(am, elements))
-                                   .build());
+        builder.typeName(val)
+                .originatingElement(am);
+        extractAnnotationValues(am, elements).forEach(builder::property);
+        return Optional.of(builder.build());
     }
 
     /**

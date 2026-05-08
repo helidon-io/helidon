@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -195,24 +195,26 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         } finally {
             getCacheLock.readLock().unlock();
         }
-        if (instance == null) {
-            instance = get(TypeName.create(contract));
+        if (instance != null) {
+            return instance;
+        }
 
-            List<ServiceManager<Object>> serviceManagers = lookupManagers(Lookup.create(contract));
-            // all must be singletons, otherwise cannot cache
-            var onlySingletons = serviceManagers.stream()
-                    .map(ServiceManager::descriptor)
-                    .map(ServiceInfo::scope)
-                    .allMatch(Service.Singleton.TYPE::equals);
+        instance = get(TypeName.create(contract));
 
-            if (onlySingletons) {
-                getCacheLock.writeLock().lock();
-                try {
-                    // we do not care if we write it twice - it is a singleton, it will be the same instance
-                    getCache.put(contract, instance);
-                } finally {
-                    getCacheLock.writeLock().unlock();
-                }
+        List<ServiceManager<Object>> serviceManagers = lookupManagers(Lookup.create(contract));
+        // all must be singletons, otherwise cannot cache
+        var onlySingletons = serviceManagers.stream()
+                .map(ServiceManager::descriptor)
+                .map(ServiceInfo::scope)
+                .allMatch(Service.Singleton.TYPE::equals);
+
+        if (onlySingletons) {
+            getCacheLock.writeLock().lock();
+            try {
+                // we do not care if we write it twice - it is a singleton, it will be the same instance
+                getCache.put(contract, instance);
+            } finally {
+                getCacheLock.writeLock().unlock();
             }
         }
         return instance;

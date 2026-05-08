@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
+@SuppressWarnings("helidon:api:incubating")
 module io.helidon.declarative.tests.http {
     requires io.helidon.http;
     requires io.helidon.common.media.type;
     requires io.helidon.webserver;
     requires io.helidon.service.registry;
-    requires jakarta.json;
     requires io.helidon.config.yaml;
     requires io.helidon.logging.common;
     requires io.helidon.metrics.systemmeters;
@@ -27,6 +27,8 @@ module io.helidon.declarative.tests.http {
     requires io.helidon.webclient.api;
     requires io.helidon.faulttolerance;
     requires io.helidon.metrics.api;
+    requires io.helidon.json.binding;
+    requires io.helidon.json;
 
     // Security related dependencies
     requires io.helidon.security;
@@ -34,9 +36,10 @@ module io.helidon.declarative.tests.http {
     requires io.helidon.security.abac.role;
     requires io.helidon.security.integration.common;
     requires io.helidon.security.annotations;
-    // this module will not be needed in the future, as CORS will be a feature added separately
-    // now included through other modules (observability in this case)
-    requires io.helidon.webserver.cors;
+
+    // required for generated binding
+    requires io.helidon.webserver.context;
+    requires io.helidon.webserver.observe;
 
     exports io.helidon.declarative.tests.http;
 }

@@ -38,6 +38,7 @@ import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
+import static io.helidon.codegen.CodegenUtil.capitalize;
 import static io.helidon.json.codegen.ConvertedTypeInfo.needsResolving;
 import static io.helidon.json.codegen.JsonTypes.BYTES;
 import static java.util.function.Predicate.not;
@@ -191,6 +192,12 @@ class JsonConverterGenerator {
                 .addContent(" defaultSerializer = (")
                 .addContent(serializerType)
                 .addContentLine(") configurator.serializer(instance.getClass());");
+        method.addContentLine("if (defaultSerializer == this) {");
+        method.addContent("throw new ")
+                .addContent(JsonTypes.JSON_BINDING_EXCEPTION)
+                .addContentLine("(\"Obtained the same serializer. "
+                                        + "This would cause an infinite cycle. Type: \" + instance.getClass());");
+        method.addContentLine("}");
         method.addContentLine("defaultSerializer.serialize(generator, instance, writeNulls);");
         if (!first) {
             method.addContent("}");
@@ -625,9 +632,20 @@ class JsonConverterGenerator {
 
         Set<String> createdSerializers = new HashSet<>();
         for (JsonProperty jsonProperty : jsonProperties) {
+            String key = jsonProperty.serializationName().orElseThrow();
+            String keyFieldName = constantName(key) + "_KEY";
+            classBuilder.addField(field -> field.name(keyFieldName)
+                    .type(JsonTypes.JSON_KEY)
+                    .isStatic(true)
+                    .isFinal(true)
+                    .addContent(JsonTypes.JSON_KEY)
+                    .addContent(".create(")
+                    .addContentLiteral(key)
+                    .addContent(")"));
+
             String fieldName = jsonProperty.serializer()
                     .map(serializer -> {
-                        String constantName = constantName(jsonProperty.serializationName().orElseThrow()) + "_SERIALIZER";
+                        String constantName = constantName(key) + "_SERIALIZER";
                         classBuilder.addField(field -> field.name(constantName)
                                 .type(serializer)
                                 .isStatic(true)
@@ -640,7 +658,7 @@ class JsonConverterGenerator {
                         TypeName resolved = type.boxed();
                         String fn;
                         if (!resolved.typeArguments().isEmpty()) {
-                            fn = "serializer" + ensureUpperStart(jsonProperty.serializationName().orElseThrow());
+                            fn = "serializer" + capitalize(jsonProperty.serializationName().orElseThrow());
                         } else {
                             fn = "serializer" + ensureUpperStart(type);
                         }
@@ -670,11 +688,10 @@ class JsonConverterGenerator {
                     .or(jsonProperty::fieldName)
                     .orElseThrow();
 
-            String key = jsonProperty.serializationName().orElseThrow();
             method.addContent(JsonTypes.JSON_SERIALIZERS)
                     .addContentLine(".serialize(generator, " + fieldName + ", "
                                             + "instance." + accessor + ", "
-                                            + "\"" + key + "\", "
+                                            + keyFieldName + ", "
                                             + jsonProperty.nullable() + ");");
         }
         method.addContentLine("generator.writeObjectEnd();");
@@ -779,11 +796,7 @@ class JsonConverterGenerator {
                 method.addContent(originalType).addContent(" instance = new ")
                         .addContent(originalType).addContent("(");
             }
-            String properties = jsonProperties.stream()
-                    .filter(JsonProperty::usedInCreator)
-                    .map(property -> property.deserializationName().orElseThrow() + PROPERTY_NAME_SUFFIX)
-                    .collect(Collectors.joining(", "));
-            method.addContent(properties).addContentLine(");");
+            method.addContent(creatorArguments(converterInfo, creatorInfo)).addContentLine(");");
             for (JsonProperty property : jsonProperties) {
                 if (!property.usedInCreator()) {
                     if (property.directFieldWrite()) {
@@ -993,11 +1006,7 @@ class JsonConverterGenerator {
             } else {
                 method.addContent("new ").addContent(originalType).addContent("(");
             }
-            String properties = jsonProperties.stream()
-                    .filter(JsonProperty::usedInCreator)
-                    .map(property -> property.deserializationName().orElseThrow() + PROPERTY_NAME_SUFFIX)
-                    .collect(Collectors.joining(", "));
-            method.addContent(properties).addContentLine(");");
+            method.addContent(creatorArguments(converterInfo, creatorInfo)).addContentLine(");");
         } else if (hasBuilder) {
             BuilderInfo builderInfo = converterInfo.builderInfo().get();
             method.addContent("return builder.").addContent(builderInfo.buildMethodName()).addContentLine("();");
@@ -1019,12 +1028,13 @@ class JsonConverterGenerator {
                 .map(JsonConverterGenerator::convertToMissingName)
                 .forEach(name -> method.addContent(boolean.class).addContentLine(" " + name + " = true;"));
         if (hasCreator) {
-            for (JsonProperty jsonProperty : jsonProperties) {
-                TypeName type = jsonProperty.deserializationType().orElseThrow();
-                method.addContent(type)
-                        .addContent(" " + jsonProperty.deserializationName().orElseThrow() + PROPERTY_NAME_SUFFIX + " = ")
-                        .addContentLine(DEFAULT_TYPE_VALUES.getOrDefault(type.genericTypeName(), DEFAULT_TYPE_VALUE).get() + ";");
-            }
+            creatorInfo.parameters()
+                    .stream()
+                    .map(parameterName -> creatorProperty(converterInfo, parameterName))
+                    .forEach(jsonProperty -> addPropertyVariable(method, jsonProperty));
+            jsonProperties.stream()
+                    .filter(not(JsonProperty::usedInCreator))
+                    .forEach(jsonProperty -> addPropertyVariable(method, jsonProperty));
         } else if (creatorKind == ElementKind.METHOD) {
             TypeName originalType = converterInfo.objectsGenerics();
             method.addContent(originalType).addContent(" instance = ")
@@ -1040,15 +1050,11 @@ class JsonConverterGenerator {
                 method.addContent("new ").addContent(builder).addContentLine("();");
             }
             for (JsonProperty jsonProperty : jsonProperties) {
-                String deserializationName = jsonProperty.deserializationName().orElseThrow();
                 if (jsonProperty.usedInBuilder()) {
                     //This property is handled by the builder
                     continue;
                 }
-                TypeName type = jsonProperty.deserializationType().orElseThrow();
-                method.addContent(type)
-                        .addContent(" " + deserializationName + PROPERTY_NAME_SUFFIX + " = ")
-                        .addContentLine(DEFAULT_TYPE_VALUES.getOrDefault(type.genericTypeName(), DEFAULT_TYPE_VALUE).get() + ";");
+                addPropertyVariable(method, jsonProperty);
             }
         } else {
             TypeName originalType = converterInfo.objectsGenerics();
@@ -1061,6 +1067,29 @@ class JsonConverterGenerator {
         return jsonProperty.deserializationName()
                 .map(it -> it + MISSING_SUFFIX)
                 .orElseThrow();
+    }
+
+    private static String creatorArguments(ConvertedTypeInfo converterInfo, CreatorInfo creatorInfo) {
+        return creatorInfo.parameters()
+                .stream()
+                .map(parameterName -> creatorProperty(converterInfo, parameterName).deserializationName().orElseThrow()
+                        + PROPERTY_NAME_SUFFIX)
+                .collect(Collectors.joining(", "));
+    }
+
+    private static JsonProperty creatorProperty(ConvertedTypeInfo converterInfo, String parameterName) {
+        JsonProperty property = converterInfo.jsonProperties().get(parameterName);
+        if (property == null) {
+            throw new IllegalStateException("Could not find JSON property for creator parameter: " + parameterName);
+        }
+        return property;
+    }
+
+    private static void addPropertyVariable(Method.Builder method, JsonProperty jsonProperty) {
+        TypeName type = jsonProperty.deserializationType().orElseThrow();
+        method.addContent(type)
+                .addContent(" " + jsonProperty.deserializationName().orElseThrow() + PROPERTY_NAME_SUFFIX + " = ")
+                .addContentLine(DEFAULT_TYPE_VALUES.getOrDefault(type.genericTypeName(), DEFAULT_TYPE_VALUE).get() + ";");
     }
 
     private static String constantName(String propertyName) {
@@ -1159,7 +1188,7 @@ class JsonConverterGenerator {
             valueWritingMethod(jsonProperty, method, hasCreator, hasBuilder, converterFieldName);
         } else {
             //Type contains generics
-            String fieldName = "deserializer" + ensureUpperStart(jsonProperty.deserializationName().orElseThrow());
+            String fieldName = "deserializer" + capitalize(jsonProperty.deserializationName().orElseThrow());
             TypeName fieldType = TypeName.builder(JsonTypes.JSON_DESERIALIZER_TYPE).addTypeArgument(resolvedType).build();
             classBuilder.addField(builder -> builder.name(fieldName)
                     .isVolatile(true)
@@ -1225,17 +1254,7 @@ class JsonConverterGenerator {
         if (index > -1) {
             className = className.substring(index + 1);
         }
-        return ensureUpperStart(className.replaceAll("\\[]", "Array"));
-    }
-
-    private static String ensureUpperStart(String str) {
-        if (Character.isUpperCase(str.charAt(0))) {
-            return str;
-        } else if (str.length() == 1) {
-            return str.toUpperCase();
-        } else {
-            return Character.toUpperCase(str.charAt(0)) + str.substring(1);
-        }
+        return capitalize(className.replaceAll("\\[]", "Array"));
     }
 
     private static int calculateNameHash(String name) {

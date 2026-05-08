@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -72,11 +72,11 @@ security:
 <6> Protection of `/openapi` and all nested paths with `openapi` scope required
 <7> Protection of static content configured on `/static` path with either `user` or `monitor` role required
 
-If you need to use a properties file, such as `microprofile-config.properties`, you
+If you need to use a properties file, such as `application.properties`, you
 can convert the file by using index based numbers for arrays, such as:
 
 [source,properties]
-.microprofile-config.properties
+.application.properties
 ----
 security.providers.0.abac=
 security.providers.1.provider-key.optional=false

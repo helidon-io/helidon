@@ -22,8 +22,11 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.hamcrest.Matcher;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -37,30 +40,41 @@ public class BlueprintIntegrationTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testBlueprintIntegration() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBlueprintIntegrationParameterized(BindingMethod bindingMethod) {
         String expectedJson = "{\"firstName\":\"Test\",\"lastName\":\"Name\"}";
         MyTestPerson expectedPerson = MyTestPerson.builder().firstName("Test").lastName("Name").build();
 
-        String json = jsonBinding.serialize(expectedPerson);
+        String json = bindingMethod.serialize(jsonBinding, expectedPerson);
         assertThat(json, is(expectedJson));
 
-        MyTestPerson actualPerson = jsonBinding.deserialize(json, MyTestPerson.class);
+        MyTestPerson actualPerson = bindingMethod.deserialize(jsonBinding, json, MyTestPerson.class);
+
         assertThat(actualPerson, notNullValue());
+        /*
         assertThat(actualPerson, is(expectedPerson));
+        This fails with
+        Compilation failure
+        [ERROR] error: incompatible types: no instance(s) of type variable(s) T exist so that Matcher<T> conforms to boolean
+         */
+        assertThat(actualPerson, (Matcher<MyTestPerson>)equalTo(expectedPerson));
     }
 
-    @Test
-    public void testBlueprintIntegrationWithOptionalEmpty() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testBlueprintIntegrationWithOptionalEmptyParameterized(BindingMethod bindingMethod) {
         String expectedJson = "{\"firstName\":\"Test\"}";
         MyTestPerson expectedPerson = MyTestPerson.builder().firstName("Test").build();
 
-        String json = jsonBinding.serialize(expectedPerson);
+        String json = bindingMethod.serialize(jsonBinding, expectedPerson);
         assertThat(json, is(expectedJson));
 
-        MyTestPerson actualPerson = jsonBinding.deserialize(json, MyTestPerson.class);
+        MyTestPerson actualPerson = bindingMethod.deserialize(jsonBinding, json, MyTestPerson.class);
+
         assertThat(actualPerson, notNullValue());
-        assertThat(actualPerson, is(expectedPerson));
+        // see above - cannot use assertThat(actualPerson, is(expectedPerson)) due to compiler issue
+        assertThat(actualPerson, (Matcher<MyTestPerson>)equalTo(expectedPerson));
     }
 
     @Prototype.Blueprint
@@ -72,5 +86,4 @@ public class BlueprintIntegrationTest {
         Optional<String> lastName();
 
     }
-
 }

@@ -1,0 +1,38 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeBulkheadConfig
+
+== Description
+
+++++
+ACME Bulkhead configuration
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Default Value|Description
+
+| `limit`
+|`Integer`
+|`10`
+|pass:[Concurrent limit]
+
+| `fair`
+|`Boolean`
+|`false`
+|pass:[Fair queue ordering]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/io_helidon_FaultToleranceConfig.adoc#aece73a3b-bulkheads[`fault-tolerance.bulkheads`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

@@ -1,0 +1,25 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeIvfIndexConfig
+
+== Description
+
+++++
+IVF index configuration.
+++++
+
+// tag::config[]
+== Configuration options
+
+
+This config type has no options.
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/com_acme_AcmeStoreConfig.adoc#adbab426b-ivf-index[`store.ivf-index`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

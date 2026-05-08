@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,16 +52,6 @@ public final class MetadataConstants {
      * File name is: {@value}
      */
     public static final String FEATURE_REGISTRY_FILE = "feature-registry.json";
-    /**
-     * Feature metadata properties.
-     * This file is deprecated, because it cannot be merged.
-     * <p>
-     * File name is: {@value}
-     *
-     * @deprecated Use {@link #FEATURE_REGISTRY_FILE} instead.
-     */
-    @Deprecated(forRemoval = true, since = "4.3.0")
-    public static final String FEATURE_METADATA_FILE = "feature-metadata.properties";
     /**
      * Configuration metadata JSON.
      * <p>

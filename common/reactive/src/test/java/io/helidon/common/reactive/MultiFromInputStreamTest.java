@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public class MultiFromInputStreamTest {
 
         InputStream is = new ByteArrayInputStream(initialArray);
 
-        List<Byte> result = IoMulti.createInputStream(is)
+        List<Byte> result = IoMulti.multiFromStream(is)
                 .flatMapIterable((ByteBuffer b) -> {
                     List<Byte> list = new LinkedList<>();
                     while (b.remaining() > 0) {
@@ -76,7 +76,7 @@ public class MultiFromInputStreamTest {
     @RepeatedTest(value = 20, name = "buffer size {currentRepetition}")
     void longStringTrustedStream(RepetitionInfo repetitionInfo) {
         var bufferSize = repetitionInfo.getCurrentRepetition();
-        longString(is -> IoMulti.builderInputStream(is)
+        longString(is -> IoMulti.multiFromStreamBuilder(is)
                 .byteBufferSize(bufferSize)
                 .build());
     }
@@ -84,7 +84,7 @@ public class MultiFromInputStreamTest {
     @RepeatedTest(value = 20, name = "buffer size {currentRepetition}")
     void longStringNotTrustedStream(RepetitionInfo repetitionInfo) {
         var bufferSize = repetitionInfo.getCurrentRepetition();
-        longString(is -> IoMulti.builderInputStream(is)
+        longString(is -> IoMulti.multiFromStreamBuilder(is)
                 .executor(executorService)
                 .byteBufferSize(bufferSize)
                 .build());

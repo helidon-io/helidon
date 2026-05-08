@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -34,10 +35,10 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 import org.junit.jupiter.api.RepeatedTest;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static io.helidon.http.Status.INTERNAL_SERVER_ERROR_500;
 import static io.helidon.http.Status.OK_200;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
@@ -76,7 +77,7 @@ class KeepAliveTest {
     @RepeatedTest(100)
     void sendWithKeepAlive() {
         try (HttpClientResponse response = testCall(webClient, true, "/plain", OK_200)) {
-            assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+            assertThat(response.headers(), noHeader(HeaderNames.CONNECTION));
         }
 
     }
@@ -84,7 +85,7 @@ class KeepAliveTest {
     @RepeatedTest(100)
     void sendWithoutKeepAlive() {
         try (HttpClientResponse response = testCall(webClient, false, "/plain", OK_200)) {
-            assertThat(response.headers(), not(hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE)));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_CLOSE));
         }
     }
 
@@ -92,7 +93,7 @@ class KeepAliveTest {
     void sendWithKeepAliveExpectKeepAlive() {
         // we attempt to fully consume request entity, if succeeded, we keep connection keep-alive
         try (HttpClientResponse response = testCall(webClient, true, "/close", INTERNAL_SERVER_ERROR_500)) {
-            assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+            assertThat(response.headers(), noHeader(HeaderNames.CONNECTION));
         }
     }
 

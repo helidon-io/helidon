@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public interface ServerConnectionSelector {
     /**
      * Does this selector support current server connection.
      * The same buffer will be sent to
-     * {@link ServerConnection#handle(java.util.concurrent.Semaphore)}
+     * {@link ServerConnection#handle(io.helidon.common.concurrency.limits.Limit)}
      *
      * @param data bytes (with available bytes of at least {@link #bytesToIdentifyConnection()})
      * @return support response

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,26 +70,6 @@ interface TypeInfoBlueprint extends Annotated {
      */
     @Option.Redundant
     Optional<String> description();
-
-    /**
-     * The type element kind.
-     * <p>
-     * Such as
-     * <ul>
-     *     <li>{@value io.helidon.common.types.TypeValues#KIND_INTERFACE}</li>
-     *     <li>{@value io.helidon.common.types.TypeValues#KIND_ANNOTATION_TYPE}</li>
-     *     <li>and other constants on {@link io.helidon.common.types.TypeValues}</li>
-     * </ul>
-     *
-     * @return the type element kind.
-     * @see io.helidon.common.types.TypeValues#KIND_CLASS and other constants on this class prefixed with {@code TYPE}
-     * @deprecated use {@link io.helidon.common.types.TypeInfo#kind()} instead
-     */
-    @Option.Required
-    @Option.Deprecated("kind")
-    @Option.Redundant
-    @Deprecated(forRemoval = true, since = "4.1.0")
-    String typeKind();
 
     /**
      * The kind of this type.
@@ -205,19 +185,6 @@ interface TypeInfoBlueprint extends Annotated {
     @Option.Singular
     @Option.Redundant
     List<TypeInfo> interfaceTypeInfo();
-
-    /**
-     * Element modifiers.
-     *
-     * @return element modifiers
-     * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
-     * @deprecated use {@link io.helidon.common.types.TypeInfo#elementModifiers()} instead
-     */
-    @Option.Singular
-    @Option.Redundant
-    @Option.Deprecated("elementModifiers")
-    @Deprecated(forRemoval = true, since = "4.1.0")
-    Set<String> modifiers();
 
     /**
      * Type modifiers.

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 
 = Helidon Documentation Overview
 :description: Helidon Documentation Sitemap
-:keywords: helidon, java, microservices, microprofile, documentation
+:keywords: helidon, java, microservices, documentation
 :rootdir: {docdir}/..
 
 == Using This Site
@@ -32,7 +32,6 @@ New to Helidon? Start with the xref:{rootdir}/about/introduction.adoc[Helidon Do
 Once you've settled on your preferred programming framework, visit the Helidon flavor sections of this site for more information.
 
 * xref:{rootdir}/se/introduction.adoc[Helidon SE]
-* xref:{rootdir}/mp/introduction.adoc[Helidon MP]
 
 
 === Existing Helidon Users
@@ -42,6 +41,4 @@ Welcome back! The documentation site has a couple of new features that we hope w
 The new xref:{rootdir}/about/introduction.adoc[Helidon Documentation] page offers quick links to some of our most popular topics, including our new training and certification programs.
 
 Check out the xref:{rootdir}/about/intro.adoc[What's New in Helidon 4] for a list of new features and functionality.
-
-
 

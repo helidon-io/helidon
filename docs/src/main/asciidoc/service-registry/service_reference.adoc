@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,21 +32,11 @@ Note: this is a work in progress, not listing the full set of contracts yet!
 [cols="2,1,2,6,5"]
 |===
 |Contract (package, class) |Weight | Module | Description |Qualifiers
-.2+|`io.helidon.common.config`
-`Config`
-|`80`
-|`io.helidon.common.config`
-|Empty config instance
-|N/A
-|`90`
-|`io.helidon.config`
-|Configuration either from meta configuration (config profiles), or from service registry
-|N/A
 |`io.helidon.config`
 `Config`
 |`90`
 |`io.helidon.config`
-|Configuration either from meta configuration (config profiles), or from service registry (same instance that implements `io.helidon.common.config.Config`)
+|Configuration either from meta configuration (config profiles), or from service registry (same instance that implements `io.helidon.config.Config`)
 |N/A
 |`io.helidon.scheduling`
 `TaskManager`

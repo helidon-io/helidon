@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.common.mapper;
 
+import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -24,14 +25,10 @@ import java.util.function.Function;
 import io.helidon.common.GenericType;
 
 class ValueEmpty<T> implements OptionalValue<T> {
-    private final Mappers mapperManager;
-    private final GenericType<T> type;
     private final String name;
     private final String[] qualifiers;
 
-    ValueEmpty(Mappers mapperManager, GenericType<T> type, String name, String[] qualifiers) {
-        this.mapperManager = mapperManager;
-        this.type = type;
+    ValueEmpty(String name, String[] qualifiers) {
         this.name = name;
         this.qualifiers = qualifiers;
     }
@@ -52,21 +49,18 @@ class ValueEmpty<T> implements OptionalValue<T> {
         return (OptionalValue<N>) this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <N> OptionalValue<N> as(Class<N> type) throws MapperException {
-        GenericType<N> wantedType = GenericType.create(type);
-        if (mapperManager.mapper(this.type, wantedType, qualifiers).isPresent()) {
-            return new ValueEmpty<>(mapperManager, wantedType, name, qualifiers);
-        }
-        throw new MapperException(this.type, wantedType, "Cannot find mapper for " + name());
+        // empty value can be mapped to anything, no need to invoke the mappers here
+        return (OptionalValue<N>) this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <N> OptionalValue<N> as(GenericType<N> type) throws MapperException {
-        if (mapperManager.mapper(this.type, type, qualifiers).isPresent()) {
-            return new ValueEmpty<>(mapperManager, type, name, qualifiers);
-        }
-        throw new MapperException(this.type, type, "Cannot find mapper for " + name());
+        // empty value can be mapped to anything, no need to invoke the mappers here
+        return (OptionalValue<N>) this;
     }
 
     @Override
@@ -90,5 +84,12 @@ class ValueEmpty<T> implements OptionalValue<T> {
     @Override
     public int hashCode() {
         return Objects.hash(name);
+    }
+
+    @Override
+    public String toString() {
+        return "<no value>(\"" + name + "\""
+                + (qualifiers.length == 0 ? "" : ", qualifiers: " + Arrays.toString(qualifiers))
+                + ")";
     }
 }

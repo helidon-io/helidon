@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ public class NumberPositiveOrZeroValidatorProviderTest {
     public void testCustomMessage() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
                 .typeName(TypeName.create(Validation.Number.PositiveOrZero.class))
-                .putValue("message", "Number must be positive or zero")
+                .property("message", "Number must be positive or zero")
                 .build());
 
         var response = validator.check(ctx, -1.0);

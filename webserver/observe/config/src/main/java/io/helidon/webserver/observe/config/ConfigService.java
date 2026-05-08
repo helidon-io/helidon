@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,8 @@ import io.helidon.config.ConfigValue;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.media.EntityWriter;
-import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.http.media.json.JsonSupport;
+import io.helidon.json.JsonObject;
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -35,14 +36,8 @@ import io.helidon.webserver.http.SecureHandler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-
 class ConfigService implements HttpService {
-    private static final EntityWriter<JsonObject> WRITER = JsonpSupport.serverResponseWriter();
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
+    private static final EntityWriter<JsonObject> WRITER = JsonSupport.serverResponseWriter();
 
     private final List<Pattern> secretPatterns;
     private final String profile;
@@ -70,10 +65,10 @@ class ConfigService implements HttpService {
 
         ConfigValue<String> value = config.get().get(name).asString();
         if (value.isPresent()) {
-            JsonObjectBuilder json = JSON.createObjectBuilder()
-                    .add("name", name);
+            var json = JsonObject.builder()
+                    .set("name", name);
 
-            json.add("value", obfuscate(name, value.get()));
+            json.set("value", obfuscate(name, value.get()));
             write(req, res, json.build());
         } else {
             throw new NotFoundException("Config value for key: " + name);
@@ -84,16 +79,16 @@ class ConfigService implements HttpService {
         Map<String, String> mapOfValues = new HashMap<>(config.get().asMap()
                                                                 .orElseGet(Map::of));
 
-        JsonObjectBuilder json = JSON.createObjectBuilder();
+        var json = JsonObject.builder();
 
-        mapOfValues.forEach((key, value) -> json.add(key, obfuscate(key, value)));
+        mapOfValues.forEach((key, value) -> json.set(key, obfuscate(key, value)));
 
         write(req, res, json.build());
     }
 
     private void profile(ServerRequest req, ServerResponse res) {
-        JsonObject profile = JSON.createObjectBuilder()
-                .add("name", this.profile)
+        JsonObject profile = JsonObject.builder()
+                .set("name", this.profile)
                 .build();
 
         write(req, res, profile);
@@ -111,7 +106,7 @@ class ConfigService implements HttpService {
 
     private void write(ServerRequest req, ServerResponse res, JsonObject json) {
         res.header(HeaderValues.X_CONTENT_TYPE_OPTIONS_NOSNIFF);
-        WRITER.write(JsonpSupport.JSON_OBJECT_TYPE,
+        WRITER.write(JsonSupport.JSON_OBJECT_TYPE,
                      json,
                      res.outputStream(),
                      req.headers(),

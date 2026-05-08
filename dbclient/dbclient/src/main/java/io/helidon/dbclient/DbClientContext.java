@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package io.helidon.dbclient;
 
 import java.util.List;
 
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 
 /**
  * Helidon database client context.
@@ -27,7 +27,7 @@ import io.helidon.common.mapper.MapperManager;
 public class DbClientContext implements DbContext {
 
     private final DbMapperManager dbMapperManager;
-    private final MapperManager mapperManager;
+    private final Mappers mapperManager;
     private final List<DbClientService> clientServices;
     private final boolean missingMapParametersAsNull;
     private final DbStatements statements;
@@ -64,7 +64,7 @@ public class DbClientContext implements DbContext {
     }
 
     @Override
-    public MapperManager mapperManager() {
+    public Mappers mapperManager() {
         return mapperManager;
     }
 
@@ -112,7 +112,7 @@ public class DbClientContext implements DbContext {
     public abstract static class BuilderBase<B extends BuilderBase<B, T>, T extends DbClientContext> implements io.helidon.common.Builder<B, T> {
 
         private DbMapperManager dbMapperManager;
-        private MapperManager mapperManager;
+        private Mappers mapperManager;
         private List<DbClientService> clientServices = List.of();
         private boolean missingMapParametersAsNull;
         private DbStatements statements;
@@ -141,7 +141,7 @@ public class DbClientContext implements DbContext {
          * @param mapperManager mapper manager
          * @return updated builder instance
          */
-        public B mapperManager(MapperManager mapperManager) {
+        public B mapperManager(Mappers mapperManager) {
             this.mapperManager = mapperManager;
             return identity();
         }

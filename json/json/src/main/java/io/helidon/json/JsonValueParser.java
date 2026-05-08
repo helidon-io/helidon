@@ -16,7 +16,9 @@
 
 package io.helidon.json;
 
-import java.nio.charset.StandardCharsets;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Base64;
 import java.util.Set;
 
 class JsonValueParser implements JsonParser {
@@ -159,18 +161,7 @@ class JsonValueParser implements JsonParser {
 
     @Override
     public int readStringAsHash() {
-        String key = current.asString().value();
-        int fnvHash = ArrayJsonParser.FNV_OFFSET_BASIS;
-        for (byte b : key.getBytes(StandardCharsets.UTF_8)) {
-            fnvHash ^= (b & 0xFF);
-            fnvHash *= ArrayJsonParser.FNV_PRIME;
-        }
-        return fnvHash;
-    }
-
-    @Override
-    public char[] readCharArray() {
-        throw new UnsupportedOperationException();
+        return JsonParserArray.fnv1aHashUtf8(current.asString().value());
     }
 
     @Override
@@ -205,12 +196,37 @@ class JsonValueParser implements JsonParser {
 
     @Override
     public float readFloat() {
-        return (float) current.asNumber().doubleValue();
+        return (float) readDouble();
     }
 
     @Override
     public double readDouble() {
+        if (current.type() == JsonValueType.STRING) {
+            String value = current.asString().value();
+            return switch (value) {
+                case "NaN" -> Double.NaN;
+                case "Infinity", "infinity" -> Double.POSITIVE_INFINITY;
+                case "-Infinity", "-infinity" -> Double.NEGATIVE_INFINITY;
+                default -> throw createException("Invalid double number");
+            };
+        }
         return current.asNumber().doubleValue();
+    }
+
+    @Override
+    public BigInteger readBigInteger() {
+        return current.asNumber().bigDecimalValue().toBigInteger();
+    }
+
+    @Override
+    public BigDecimal readBigDecimal() {
+        return current.asNumber().bigDecimalValue();
+    }
+
+    @Override
+    public byte[] readBinary() {
+        String value = current.asString().value();
+        return Base64.getDecoder().decode(value);
     }
 
     @Override
@@ -263,6 +279,11 @@ class JsonValueParser implements JsonParser {
     @Override
     public JsonException createException(String message) {
         return new JsonException(message);
+    }
+
+    @Override
+    public JsonException createException(String message, Exception e) {
+        return new JsonException(message, e);
     }
 
     @Override

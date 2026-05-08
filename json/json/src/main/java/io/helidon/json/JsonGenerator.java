@@ -18,6 +18,10 @@ package io.helidon.json;
 
 import java.io.OutputStream;
 import java.io.Writer;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
+import io.helidon.common.Api;
 
 /**
  * A JSON generator interface for writing JSON data.
@@ -26,12 +30,11 @@ import java.io.Writer;
  * allowing for efficient writing of large JSON documents without building
  * the entire content in memory first. It supports writing to output streams
  * and writers with automatic JSON formatting.
- * </p>
  * <p>
  * The generator provides fluent method chaining for building JSON structures
  * and handles proper JSON syntax including quotes, commas, and brackets.
- * </p>
  */
+@Api.Preview
 public interface JsonGenerator extends AutoCloseable {
 
     /**
@@ -41,7 +44,18 @@ public interface JsonGenerator extends AutoCloseable {
      * @return new Generator instance
      */
     static JsonGenerator create(OutputStream outputStream) {
-        return new JsonGeneratorOutputStream(outputStream);
+        return create(outputStream, false);
+    }
+
+    /**
+     * Create a {@link JsonGenerator} instance to write to the provided {@link OutputStream}.
+     *
+     * @param outputStream output stream to write to
+     * @param prettyPrint whether to pretty print the generated JSON
+     * @return new Generator instance
+     */
+    static JsonGenerator create(OutputStream outputStream, boolean prettyPrint) {
+        return new JsonGeneratorOutputStream(outputStream, prettyPrint);
     }
 
     /**
@@ -51,7 +65,18 @@ public interface JsonGenerator extends AutoCloseable {
      * @return new Generator instance
      */
     static JsonGenerator create(Writer writer) {
-        return new JsonGeneratorWriter(writer);
+        return create(writer, false);
+    }
+
+    /**
+     * Create a {@link JsonGenerator} instance to write to the provided {@link Writer}.
+     *
+     * @param writer writer to write to
+     * @param prettyPrint whether to pretty print the generated JSON
+     * @return new Generator instance
+     */
+    static JsonGenerator create(Writer writer, boolean prettyPrint) {
+        return new JsonGeneratorWriter(writer, prettyPrint);
     }
 
     /**
@@ -67,6 +92,31 @@ public interface JsonGenerator extends AutoCloseable {
     JsonGenerator writeKey(String key);
 
     /**
+     * Write a key value to the output stream.
+     * <p>
+     * Each key will be automatically enclosed with quotes and a colon appended {@code "key":}.
+     * This method is used for writing JSON object keys and may reuse the precomputed escaped and encoded form.
+     * </p>
+     *
+     * @param key the key value to write
+     * @return this generator for method chaining
+     */
+    default JsonGenerator writeKey(JsonKey key) {
+        return writePrecomputedKey(key);
+    }
+
+    /**
+     * Write a precomputed key value to the output stream.
+     * <p>
+     * This is equivalent to {@link #writeKey(JsonKey)} and is kept as a compatibility alias for existing call sites.
+     * </p>
+     *
+     * @param key the precomputed key value to write
+     * @return this generator for method chaining
+     */
+    JsonGenerator writePrecomputedKey(JsonKey key);
+
+    /**
      * Write a key-value pair with a string value.
      *
      * @param key   the key
@@ -74,6 +124,18 @@ public interface JsonGenerator extends AutoCloseable {
      * @return this generator for method chaining
      */
     JsonGenerator write(String key, String value);
+
+    /**
+     * Write a key-value pair with a string value.
+     *
+     * @param key   the key
+     * @param value the string value
+     * @return this generator for method chaining
+     */
+    default JsonGenerator write(JsonKey key, String value) {
+        writeKey(key);
+        return write(value);
+    }
 
     /**
      * Write a key-value pair with an int value.
@@ -85,6 +147,18 @@ public interface JsonGenerator extends AutoCloseable {
     JsonGenerator write(String key, int value);
 
     /**
+     * Write a key-value pair with an int value.
+     *
+     * @param key   the key
+     * @param value the int value
+     * @return this generator for method chaining
+     */
+    default JsonGenerator write(JsonKey key, int value) {
+        writeKey(key);
+        return write(value);
+    }
+
+    /**
      * Write a key-value pair with a long value.
      *
      * @param key   the key
@@ -92,6 +166,18 @@ public interface JsonGenerator extends AutoCloseable {
      * @return this generator for method chaining
      */
     JsonGenerator write(String key, long value);
+
+    /**
+     * Write a key-value pair with a long value.
+     *
+     * @param key   the key
+     * @param value the long value
+     * @return this generator for method chaining
+     */
+    default JsonGenerator write(JsonKey key, long value) {
+        writeKey(key);
+        return write(value);
+    }
 
     /**
      * Write a key-value pair with a float value.
@@ -103,6 +189,18 @@ public interface JsonGenerator extends AutoCloseable {
     JsonGenerator write(String key, float value);
 
     /**
+     * Write a key-value pair with a float value.
+     *
+     * @param key   the key
+     * @param value the float value
+     * @return this generator for method chaining
+     */
+    default JsonGenerator write(JsonKey key, float value) {
+        writeKey(key);
+        return write(value);
+    }
+
+    /**
      * Write a key-value pair with a double value.
      *
      * @param key   the key
@@ -110,6 +208,18 @@ public interface JsonGenerator extends AutoCloseable {
      * @return this generator for method chaining
      */
     JsonGenerator write(String key, double value);
+
+    /**
+     * Write a key-value pair with a double value.
+     *
+     * @param key   the key
+     * @param value the double value
+     * @return this generator for method chaining
+     */
+    default JsonGenerator write(JsonKey key, double value) {
+        writeKey(key);
+        return write(value);
+    }
 
     /**
      * Write a key-value pair with a boolean value.
@@ -121,6 +231,18 @@ public interface JsonGenerator extends AutoCloseable {
     JsonGenerator write(String key, boolean value);
 
     /**
+     * Write a key-value pair with a boolean value.
+     *
+     * @param key   the key
+     * @param value the boolean value
+     * @return this generator for method chaining
+     */
+    default JsonGenerator write(JsonKey key, boolean value) {
+        writeKey(key);
+        return write(value);
+    }
+
+    /**
      * Write a key-value pair with a char value.
      *
      * @param key   the key
@@ -130,6 +252,60 @@ public interface JsonGenerator extends AutoCloseable {
     JsonGenerator write(String key, char value);
 
     /**
+     * Write a key-value pair with a char value.
+     *
+     * @param key   the key
+     * @param value the char value
+     * @return this generator for method chaining
+     */
+    default JsonGenerator write(JsonKey key, char value) {
+        writeKey(key);
+        return write(value);
+    }
+
+    /**
+     * Write a key-value pair with a {@link BigDecimal} value.
+     *
+     * @param key   the key
+     * @param value the decimal value
+     * @return this generator for method chaining
+     */
+    JsonGenerator write(String key, BigDecimal value);
+
+    /**
+     * Write a key-value pair with a {@link BigDecimal} value.
+     *
+     * @param key   the key
+     * @param value the decimal value
+     * @return this generator for method chaining
+     */
+    default JsonGenerator write(JsonKey key, BigDecimal value) {
+        writeKey(key);
+        return write(value);
+    }
+
+    /**
+     * Write a key-value pair with a {@link BigInteger} value.
+     *
+     * @param key   the key
+     * @param value the big integer value
+     * @return this generator for method chaining
+     */
+    JsonGenerator write(String key, BigInteger value);
+
+    /**
+     * Write a key-value pair with a {@link BigInteger} value.
+     *
+     * @param key   the key
+     * @param value the big integer value
+     * @return this generator for method chaining
+     */
+    default JsonGenerator write(JsonKey key, BigInteger value) {
+        writeKey(key);
+        return write(value);
+    }
+
+    /**
      * Write a key-value pair with a JsonValue.
      *
      * @param key   the key
@@ -137,6 +313,39 @@ public interface JsonGenerator extends AutoCloseable {
      * @return this generator for method chaining
      */
     JsonGenerator write(String key, JsonValue value);
+
+    /**
+     * Write a key-value pair with a JsonValue.
+     *
+     * @param key   the key
+     * @param value the JsonValue
+     * @return this generator for method chaining
+     */
+    default JsonGenerator write(JsonKey key, JsonValue value) {
+        writeKey(key);
+        return write(value);
+    }
+
+    /**
+     * Write a key-value pair with a value in a binary format.
+     *
+     * @param key   the key
+     * @param value the binary data value
+     * @return this generator for method chaining
+     */
+    JsonGenerator writeBinary(String key, byte[] value);
+
+    /**
+     * Write a key-value pair with a value in a binary format.
+     *
+     * @param key   the key
+     * @param value the binary data value
+     * @return this generator for method chaining
+     */
+    default JsonGenerator writeBinary(JsonKey key, byte[] value) {
+        writeKey(key);
+        return writeBinary(value);
+    }
 
     /**
      * Write a string value.
@@ -211,12 +420,36 @@ public interface JsonGenerator extends AutoCloseable {
     JsonGenerator write(char value);
 
     /**
+     * Write a {@link BigDecimal} value.
+     *
+     * @param value the decimal value
+     * @return this generator for method chaining
+     */
+    JsonGenerator write(BigDecimal value);
+
+    /**
+     * Write a {@link BigInteger} value.
+     *
+     * @param value the big integer value
+     * @return this generator for method chaining
+     */
+    JsonGenerator write(BigInteger value);
+
+    /**
      * Write a JsonValue.
      *
      * @param value the JsonValue to write
      * @return this generator for method chaining
      */
     JsonGenerator write(JsonValue value);
+
+    /**
+     * Write a value in a binary format.
+     *
+     * @param value the binary data value
+     * @return this generator for method chaining
+     */
+    JsonGenerator writeBinary(byte[] value);
 
     /**
      * Write a null value.

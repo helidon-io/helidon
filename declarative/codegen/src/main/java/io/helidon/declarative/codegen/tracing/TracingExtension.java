@@ -39,8 +39,8 @@ import static io.helidon.declarative.codegen.tracing.TracingTypes.ANNOTATION_TAG
 import static io.helidon.declarative.codegen.tracing.TracingTypes.ANNOTATION_TRACED;
 
 class TracingExtension implements RegistryCodegenExtension {
-    public static final String DEFAULT_NAME_TEMPLATE = "%1$s.%2$s";
-    public static final String DEFAULT_SPAN_KIND = "INTERNAL";
+    static final String DEFAULT_NAME_TEMPLATE = "%1$s.%2$s";
+    static final String DEFAULT_SPAN_KIND = "INTERNAL";
     static final TypeName GENERATOR = TypeName.create(TracingExtension.class);
     private final RegistryCodegenContext ctx;
 

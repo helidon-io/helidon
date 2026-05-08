@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,13 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
-import io.helidon.common.configurable.LruCache;
+import io.helidon.common.LruCache;
 import io.helidon.common.parameters.Parameters;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
@@ -60,8 +61,6 @@ import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.util.TokenHandler;
 import io.helidon.webclient.api.HttpClientRequest;
-
-import jakarta.json.JsonObject;
 
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
@@ -265,7 +264,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             try (var response = postRequest.submit(formBuilder.build())) {
                 if (response.status().family() == Status.Family.SUCCESSFUL) {
                     JsonObject jsonObject = response.as(JsonObject.class);
-                    String accessToken = jsonObject.getString("access_token");
+                    String accessToken = jsonObject.stringValue("access_token")
+                            .orElseThrow(() -> new IllegalStateException("JSON field \"access_token\" must be defined"));
 
                     Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
                     target.tokenHandler.header(headers, accessToken);
@@ -568,7 +568,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                                         .orElse(true);
                                 TokenHandler handler = outboundTarget.getConfig()
                                         .flatMap(cfg -> cfg.get("outbound-token")
-                                                .map(TokenHandler::create)
+                                                .as(TokenHandler::create)
                                                 .asOptional())
                                         .orElse(defaultTokenHandler);
                                 return new OidcOutboundTarget(propagate, handler);
@@ -590,4 +590,3 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         }
     }
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,21 +65,18 @@ class OpenApiFeatureTest {
                                   .servicesDiscoverServices(false)
                                   .staticFile("src/test/resources/greeting.yml")
                                   .webContext("/openapi-greeting")
-                                  .cors(cors -> cors.enabled(false))
                                   .build())
                 .addFeature(OpenApiFeature.builder()
                                     .servicesDiscoverServices(false)
                                     .staticFile("src/test/resources/time-server.yml")
                                     .webContext("/openapi-time")
                                     .name("openapi-time")
-                                    .cors(cors -> cors.allowOrigins("http://foo.bar", "http://bar.foo"))
                                     .build())
                 .addFeature(OpenApiFeature.builder()
                                     .servicesDiscoverServices(false)
                                     .staticFile("src/test/resources/petstore.yaml")
                                     .webContext("/openapi-petstore")
                                     .name("openapi-petstore")
-                                    .cors(cors -> cors.enabled(false))
                                     .build());
 
     }

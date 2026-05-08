@@ -1,0 +1,19 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.api.MetricsConfig",
+        "standalone": true,
+        "prefix": "metrics",
+        "description": "API metrics configuration."
+      },
+      {
+        "type": "com.acme.metrics.MetricsConfig",
+        "standalone": true,
+        "prefix": "metrics",
+        "description": "Metrics configuration."
+      }
+    ]
+  }
+]

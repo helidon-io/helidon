@@ -28,6 +28,7 @@ import io.helidon.http.HtmlEncoder;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.Status;
 import io.helidon.http.media.EntityWriter;
+import io.helidon.http.media.json.JsonSupport;
 import io.helidon.json.JsonObject;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.ServerRequest;
@@ -84,7 +85,7 @@ class SingleCheckHandler implements Handler {
 
         if (details) {
             try (OutputStream out = res.outputStream()) {
-                entityWriter.write(HealthHandler.JSON_OBJECT_TYPE,
+                entityWriter.write(JsonSupport.JSON_OBJECT_TYPE,
                                    HealthHelper.toJson(check.name(), response),
                                    out,
                                    req.headers(),

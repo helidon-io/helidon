@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 
 package io.helidon.http.media.jsonp;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.http.media.spi.MediaSupportProvider;
 
@@ -27,16 +28,15 @@ import io.helidon.http.media.spi.MediaSupportProvider;
 public class JsonpMediaSupportProvider implements MediaSupportProvider, Weighted {
 
     /**
-     * This class should be only instantiated as part of java {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public JsonpMediaSupportProvider() {
-        super();
     }
 
     @Override
     public String configKey() {
-        return "jsonp";
+        return JsonpSupport.ID;
     }
 
     @Override

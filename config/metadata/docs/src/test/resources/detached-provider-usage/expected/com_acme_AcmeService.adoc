@@ -1,0 +1,24 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeService
+
+== Description
+
+++++
+This type is a provider contract.
+++++
+
+== Implementations
+
+
+|===
+|Key|Description
+
+|xref:{rootdir}/config/com_acme_AcmeAuditServiceConfig.adoc[`audit`]
+|pass:[Audit implementation.]
+
+|===
+
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

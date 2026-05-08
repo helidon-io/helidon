@@ -23,17 +23,17 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Service;
 
 /**
  * Annotations and APIs for type safe WebSocket clients.
  * <p>
  * The type safe WebSocket client is backed by Helidon {@link io.helidon.webclient.websocket.WsClient}.
- *
- * @deprecated this API is part of incubating features of Helidon. This API may change including backward incompatible changes
- *         and full removal. We welcome feedback for incubating features.
+ * <p>
+ * This API is preview and may change between minor releases.
  */
-@Deprecated
+@Api.Preview
 public final class WebSocketClient {
     private WebSocketClient() {
     }
@@ -54,6 +54,7 @@ public final class WebSocketClient {
      * If such a class already exists, there will be a name conflict, use {@link #factoryClassName()} to specify a custom
      * class name in such a case. The factory will always be in the same package as the annotated type.
      */
+    @Api.Preview
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
     @Documented

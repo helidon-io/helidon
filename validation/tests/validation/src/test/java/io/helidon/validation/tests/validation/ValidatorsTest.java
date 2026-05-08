@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -233,6 +233,19 @@ public class ValidatorsTest {
     }
 
     @Test
+    public void testNumberMultipleOf() {
+        var response = Validators.validateMultipleOf(1.10, "0.05");
+        assertThat(response.valid(), is(true));
+
+        response = Validators.validateMultipleOf(1.11, "0.05");
+        assertThat(response.valid(), is(false));
+        assertThat(response.message(), is("1.11 is not a multiple of 0.05"));
+
+        Validators.checkMultipleOf(1.10, "0.05");
+        assertThrows(ValidationException.class, () -> Validators.checkMultipleOf(1.11, "0.05"));
+    }
+
+    @Test
     public void testIntegerMin() {
         var response = Validators.validateMin(10, 5);
         assertThat(response.valid(), is(true));
@@ -259,6 +272,19 @@ public class ValidatorsTest {
     }
 
     @Test
+    public void testIntMultipleOf() {
+        var response = Validators.validateMultipleOf(10, 5);
+        assertThat(response.valid(), is(true));
+
+        response = Validators.validateMultipleOf(11, 5);
+        assertThat(response.valid(), is(false));
+        assertThat(response.message(), is("11 is not a multiple of 5"));
+
+        Validators.checkMultipleOf(10, 5);
+        assertThrows(ValidationException.class, () -> Validators.checkMultipleOf(11, 5));
+    }
+
+    @Test
     public void testLongMin() {
         var response = Validators.validateMin(10L, 5L);
         assertThat(response.valid(), is(true));
@@ -282,6 +308,19 @@ public class ValidatorsTest {
 
         Validators.checkMax(5L, 10L);
         assertThrows(ValidationException.class, () -> Validators.checkMax(15L, 10L));
+    }
+
+    @Test
+    public void testLongMultipleOf() {
+        var response = Validators.validateMultipleOf(10L, 5L);
+        assertThat(response.valid(), is(true));
+
+        response = Validators.validateMultipleOf(11L, 5L);
+        assertThat(response.valid(), is(false));
+        assertThat(response.message(), is("11 is not a multiple of 5"));
+
+        Validators.checkMultipleOf(10L, 5L);
+        assertThrows(ValidationException.class, () -> Validators.checkMultipleOf(11L, 5L));
     }
 
     @Test

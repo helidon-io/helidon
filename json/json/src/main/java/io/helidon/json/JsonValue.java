@@ -19,9 +19,12 @@ package io.helidon.json;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 
+import io.helidon.common.Api;
+
 /**
  * Base class for all JSON value types in Helidon JSON processing.
  */
+@Api.Preview
 public abstract sealed class JsonValue
         permits JsonArray, JsonBoolean, JsonControlValue, JsonNoopValue, JsonNull, JsonNumber, JsonObject, JsonString {
 

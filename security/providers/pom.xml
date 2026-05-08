@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.security</groupId>
         <artifactId>helidon-security-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-project</artifactId>
@@ -35,13 +35,11 @@
         <module>common</module>
         <module>http-auth</module>
         <module>http-sign</module>
-        <module>google-login</module>
         <module>header</module>
         <module>jwt</module>
         <module>abac</module>
         <module>oidc</module>
         <module>idcs-mapper</module>
         <module>oidc-common</module>
-        <module>config-vault</module>
     </modules>
 </project>

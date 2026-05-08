@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,36 +16,23 @@
 package io.helidon.common.context;
 
 import java.util.Optional;
-import java.util.Stack;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
-
-import io.helidon.common.LazyValue;
 
 /**
  * Support for handling {@link io.helidon.common.context.Context} across thread boundaries.
  */
 public final class Contexts {
-    private static final ThreadLocal<Stack<Context>> REGISTRY = ThreadLocal.withInitial(Stack::new);
-    private static final LazyValue<Context> GLOBAL_CONTEXT = LazyValue.create(() -> Context.builder()
+    private static final ScopedValue<Context> REGISTRY = ScopedValue.newInstance();
+    // this is a very small memory overhead, with quite a big impact when a lot of new
+    // contexts are created; It is better to create an instance, than to have a supplier here
+    private static final Context GLOBAL_CONTEXT = Context.builder()
             .id("helidon")
             .global()
-            .build());
+            .build();
 
     private Contexts() {
-    }
-
-    static void clear() {
-        REGISTRY.get().clear();
-    }
-
-    static void push(Context context) {
-        REGISTRY.get().push(context);
-    }
-
-    static Context pop() {
-        return REGISTRY.get().pop();
     }
 
     /**
@@ -54,13 +41,11 @@ public final class Contexts {
      * @return context that is associated with current thread or empty if none is
      */
     public static Optional<Context> context() {
-        Stack<Context> contextStack = REGISTRY.get();
-
-        if (contextStack.isEmpty()) {
+        if (!REGISTRY.isBound()) {
             return Optional.empty();
         }
 
-        return Optional.ofNullable(contextStack.peek());
+        return Optional.ofNullable(REGISTRY.get());
     }
 
     /**
@@ -73,7 +58,7 @@ public final class Contexts {
      * @return global context instance, never null
      */
     public static Context globalContext() {
-        return GLOBAL_CONTEXT.get();
+        return GLOBAL_CONTEXT;
     }
 
     /**
@@ -112,12 +97,7 @@ public final class Contexts {
      * @param runnable runnable to execute in context
      */
     public static void runInContext(Context context, Runnable runnable) {
-        push(context);
-        try {
-            runnable.run();
-        } finally {
-            pop();
-        }
+        ScopedValue.where(REGISTRY, context).run(runnable);
     }
 
     /**
@@ -132,15 +112,12 @@ public final class Contexts {
      *                                          runtime exception
      */
     public static <T> T runInContext(Context context, Callable<T> callable) {
-        push(context);
         try {
-            return callable.call();
+            return ScopedValue.where(REGISTRY, context).call(callable::call);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new ExecutorException("Callable.call failed", e);
-        } finally {
-            pop();
         }
     }
 
@@ -156,11 +133,6 @@ public final class Contexts {
      * @throws java.lang.Exception  If thrown in {@link java.util.concurrent.Callable#call()}
      */
     public static <T> T runInContextWithThrow(Context context, Callable<T> callable) throws Exception {
-        push(context);
-        try {
-            return callable.call();
-        } finally {
-            pop();
-        }
+        return ScopedValue.where(REGISTRY, context).call(callable::call);
     }
 }

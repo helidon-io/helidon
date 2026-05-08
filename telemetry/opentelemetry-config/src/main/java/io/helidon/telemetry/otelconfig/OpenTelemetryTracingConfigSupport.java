@@ -18,9 +18,10 @@ package io.helidon.telemetry.otelconfig;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.SpanLimits;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
@@ -41,14 +42,6 @@ class OpenTelemetryTracingConfigSupport {
 
             var sdkTracerProviderBuilder = SdkTracerProvider.builder();
 
-            var attributesBuilder = Attributes.builder();
-            TypedAttributes.apply(attributesBuilder,
-                                  target.stringAttributes(),
-                                  target.longAttributes(),
-                                  target.doubleAttributes(),
-                                  target.booleanAttributes());
-
-
             target.sampler().ifPresent(sdkTracerProviderBuilder::setSampler);
             target.spanLimits().ifPresent(sdkTracerProviderBuilder::setSpanLimits);
 
@@ -64,7 +57,8 @@ class OpenTelemetryTracingConfigSupport {
             // Exporters are not set on the SDK builder directly; they are used to prepare the processors (above).
 
             errorsCollector.collect().log(LOGGER);
-            target.tracingBuilderInfo(new TracingBuilderInfo(sdkTracerProviderBuilder, attributesBuilder));
+            target.tracingBuilderInfo(new TracingBuilderInfo(sdkTracerProviderBuilder,
+                                                             target.attributes().orElseGet(Attributes::builder)));
         }
 
     }
@@ -75,7 +69,7 @@ class OpenTelemetryTracingConfigSupport {
         }
 
         @Prototype.ConfigFactoryMethod("processorConfigs")
-        static SpanProcessorConfig createProcessorConfigs(Config config) {
+        static ProcessorConfig createProcessorConfigs(Config config) {
             return OtelConfigSupport.createProcessorConfig(config);
         }
 
@@ -92,6 +86,11 @@ class OpenTelemetryTracingConfigSupport {
         @Prototype.ConfigFactoryMethod("exporterConfigs")
         static SpanExporter createExporterConfigs(Config config) {
             return OtlpExporterConfigSupport.CustomMethods.createSpanExporter(config);
+        }
+
+        @Prototype.ConfigFactoryMethod("attributes")
+        static AttributesBuilder createAttributesBuilder(Config config) {
+            return OtelConfigSupport.createAttributesBuilder(config);
         }
 
     }

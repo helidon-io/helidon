@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,48 @@ class Http1HeadersParserTest {
         testHeader(headers, "HeADer", "hv1", "hv2", "hv3");
     }
 
+    @Test
+    void testContainsTokenForRepeatedTransferEncoding() {
+        WritableHeaders<?> headers = headers("""
+                Transfer-Encoding: gzip\r
+                Transfer-Encoding: chunked\r
+                \r
+                """);
+
+        assertThat(headers.values(HeaderNames.TRANSFER_ENCODING), hasItems("gzip", "chunked"));
+        assertThat(headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED), is(true));
+    }
+
+    @Test
+    void testContainsTokenForCommaSeparatedTransferEncoding() {
+        WritableHeaders<?> headers = headers("""
+                Transfer-Encoding: gzip, chunked\r
+                \r
+                """);
+
+        assertThat(headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED), is(true));
+    }
+
+    @ParameterizedTest
+    @MethodSource("tokenizedHeaders")
+    void testContainsTokenForTokenizedHeaders(String rawHeaders, Header expectedHeader) {
+        WritableHeaders<?> headers = headers(rawHeaders);
+
+        assertThat(headers.containsToken(expectedHeader), is(true));
+    }
+
+    @Test
+    void testContainsTokenForRepeatedConnectionValues() {
+        WritableHeaders<?> headers = headers("""
+                Connection: close\r
+                Connection: Upgrade\r
+                \r
+                """);
+
+        assertThat(headers.values(HeaderNames.CONNECTION), hasItems("close", "Upgrade"));
+        assertThat(headers.containsToken(HeaderValues.CONNECTION_CLOSE), is(true));
+    }
+
     @ParameterizedTest
     @MethodSource("headers")
     void testHeadersWithValidationEnabled(String headerName, String headerValue, boolean expectsValid) {
@@ -87,6 +129,11 @@ class Http1HeadersParserTest {
         return Http1HeadersParser.readHeaders(reader, 1024, validate);
     }
 
+    private static WritableHeaders<?> headers(String rawHeaders) {
+        DataReader reader = DataReader.create(() -> rawHeaders.getBytes(StandardCharsets.US_ASCII));
+        return Http1HeadersParser.readHeaders(reader, 1024, true);
+    }
+
     private static Stream<Arguments> headers() {
         return Stream.of(
                 // Invalid header names
@@ -111,6 +158,23 @@ class Http1HeadersParserTest {
                 arguments(VALID_HEADER_NAME, "H\u001ceaderValue1", false),
                 arguments(VALID_HEADER_NAME, "HeaderValue1, Header\u007fValue", false),
                 arguments(VALID_HEADER_NAME, "HeaderValue1\u001f, HeaderValue2", false)
+        );
+    }
+
+    private static Stream<Arguments> tokenizedHeaders() {
+        return Stream.of(
+                arguments("""
+                        Connection: Upgrade, keep-alive\r
+                        \r
+                        """, HeaderValues.CONNECTION_KEEP_ALIVE),
+                arguments("""
+                        Expect: something-else, 100-continue\r
+                        \r
+                        """, HeaderValues.EXPECT_100),
+                arguments("""
+                        Upgrade: h2c, websocket\r
+                        \r
+                        """, HeaderValues.create(HeaderNames.UPGRADE, "websocket"))
         );
     }
 

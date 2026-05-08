@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import io.helidon.common.configurable.Resource;
  */
 @Prototype.Configured
 @Prototype.Blueprint
-@Prototype.CustomMethods(KeystoreKeysBlueprint.CustomMethods.class)
 interface KeystoreKeysBlueprint {
     /**
      * Default keystore type.
@@ -121,22 +120,4 @@ interface KeystoreKeysBlueprint {
     @Option.Configured
     @Option.DefaultBoolean(false)
     boolean trustStore();
-
-    final class CustomMethods {
-        private CustomMethods() {
-        }
-
-        /**
-         * Keystore passphrase.
-         *
-         * @param builder builder to update
-         * @param passphrase new keystore passphrase
-         * @deprecated use {@link #passphrase(String)} instead
-         */
-        @Deprecated(forRemoval = true, since = "4.0.0")
-        @Prototype.BuilderMethod
-        static void keystorePassphrase(KeystoreKeys.BuilderBase<?, ?> builder, String passphrase) {
-            builder.passphrase(passphrase);
-        }
-    }
 }

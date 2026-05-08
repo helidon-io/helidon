@@ -89,6 +89,7 @@ The following features are currently implemented:
 - <<Dec-WebSocket-Server, WebSocket Server>>
 - <<Dec-WebSocket-Client, WebSocket Client>>
 - <<Dec-CORS, WebServer CORS>>
+- <<Dec-Health, Health Checks>>
 
 A Helidon Declarative application should be started using the generated application binding, to ensure no lookup and no reflection.
 The call to `ServiceRegistryManager.start` ensures that all services with a defined `RunLevel` are started, including Helidon WebServer, Scheduled services etc.
@@ -226,8 +227,8 @@ Scheduling allows service methods to be invoked periodically.
 
 Method annotations:
 
-- link:{scheduling-se-javadoc-base-url}/io/helidon/scheduling/Scheduling.Cron.html[`io.helidon.scheduling.Scheduling.Cron`] - execute with schedule defined by a CRON expression
-- link:{scheduling-se-javadoc-base-url}/io/helidon/scheduling/Scheduling.FixedRate.html[`io.helidon.scheduling.Scheduling.FixedRate`] - execute with a fixed interval
+- link:{scheduling-javadoc-base-url}/io/helidon/scheduling/Scheduling.Cron.html[`io.helidon.scheduling.Scheduling.Cron`] - execute with schedule defined by a CRON expression
+- link:{scheduling-javadoc-base-url}/io/helidon/scheduling/Scheduling.FixedRate.html[`io.helidon.scheduling.Scheduling.FixedRate`] - execute with a fixed interval
 
 [source,java]
 .Example of a fixed rate scheduled method
@@ -294,6 +295,7 @@ Constraints for types that extend `java.lang.Number`. These constraints accept a
 - link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Number.Min.html[`io.helidon.validation.Validation.Number.Min`] - the value must be at least the specified minimal value (`>= min`), value is defined as a `String`
 - link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Number.Max.html[`io.helidon.validation.Validation.Number.Max`] - the value must be at most the specified maximal value (`&lt;= max`), value is defined as a `String`
 - link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Number.Digits.html[`io.helidon.validation.Validation.Number.Digits`] - the number must have at most the specified number of integer and fractional digits
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Number.MultipleOf.html[`io.helidon.validation.Validation.Number.MultipleOf`] - the value must be evenly divisible by the specified positive factor, which is defined as a `String`
 
 Constraints for `Integer` data types. These constraints accept `int, long, byte, char, short` and their boxed counterparts.
 `byte` is always converted as an unsigned number, i.e. its values are from `0` to `255` inclusive.
@@ -301,11 +303,13 @@ These are convenience annotation that use `int` data type:
 
 - link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Integer.Min.html[`io.helidon.validation.Validation.Integer.Min`] - the value must be at least the specified minimal value (`>= min`)
 - link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Integer.Max.html[`io.helidon.validation.Validation.Integer.Max`] - the value must be at most the specified maximal value (`&lt;= max`)
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Integer.MultipleOf.html[`io.helidon.validation.Validation.Integer.MultipleOf`] - the value must be evenly divisible by the specified positive integer factor
 
 Constraints for `Long` and `long` data types. No other type is supported:
 
 - link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Long.Min.html[`io.helidon.validation.Validation.Long.Min`] - the value must be at least the specified minimal value (`>= min`)
 - link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Long.Max.html[`io.helidon.validation.Validation.Long.Max`] - the value must be at most the specified maximal value (`&lt;= max`)
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Long.MultipleOf.html[`io.helidon.validation.Validation.Long.MultipleOf`] - the value must be evenly divisible by the specified positive long factor
 
 Constraints for `Boolean` and `boolean` data type. No other type is supported:
 
@@ -599,3 +603,8 @@ include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_18, indent=0]
 <2> Configure headers the script can send to this host
 <3> Configure allowed methods for CORS requests
 <4> Configure max age to be 3 minutes
+
+=== Health Checks [[Dec-Health]]
+
+To add a declarative health check, create a service that implements io.helidon.health.HealthCheck or produces an instance of it.
+The WebServer health observer discovers all such services and uses them to contribute to the health response. Because the lookup is performed only once, you must not use the @Service.PerRequest scope. The recommended scope is @Service.Singleton.

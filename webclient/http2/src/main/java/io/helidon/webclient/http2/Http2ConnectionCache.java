@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
-import io.helidon.common.configurable.LruCache;
+import io.helidon.common.LruCache;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.http1.Http1ClientRequest;
@@ -34,9 +34,7 @@ import io.helidon.webclient.spi.ClientConnectionCache;
  */
 public final class Http2ConnectionCache extends ClientConnectionCache {
     private static final Http2ConnectionCache SHARED = new Http2ConnectionCache(true);
-    private final LruCache<ConnectionKey, Boolean> http2Supported = LruCache.<ConnectionKey, Boolean>builder()
-            .capacity(1000)
-            .build();
+    private final LruCache<ConnectionKey, Boolean> http2Supported = LruCache.create(1000);
     private final Map<ConnectionKey, Http2ClientConnectionHandler> cache = new ConcurrentHashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean();
 

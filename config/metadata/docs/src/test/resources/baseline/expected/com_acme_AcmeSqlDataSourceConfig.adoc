@@ -1,0 +1,38 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeSqlDataSourceConfig
+
+== Description
+
+++++
+ACME SQL data source configuration
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Default Value|Description
+
+| `max-pool-size`
+|`Integer`
+|`20`
+|pass:[Maximum pool size]
+
+| `url`
+|`String`
+|{nbsp}
+|pass:[JDBC URL]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/io_helidon_data_SourcesConfig.adoc#abc978c18-sql[`data.sources.sql`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

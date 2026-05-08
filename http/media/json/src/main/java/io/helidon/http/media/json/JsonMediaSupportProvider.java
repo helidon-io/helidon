@@ -16,6 +16,8 @@
 
 package io.helidon.http.media.json;
 
+import io.helidon.common.Api;
+import io.helidon.config.Config;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.http.media.spi.MediaSupportProvider;
 
@@ -27,21 +29,19 @@ import io.helidon.http.media.spi.MediaSupportProvider;
  */
 public class JsonMediaSupportProvider implements MediaSupportProvider {
     /**
-     * This class should be only instantiated as part of java {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated
+    @Api.Internal
     public JsonMediaSupportProvider() {
-        super();
     }
 
     @Override
     public String configKey() {
-        return JsonSupport.HELIDON_JSON_TYPE;
+        return JsonSupport.ID;
     }
 
-    @SuppressWarnings("removal")
     @Override
-    public MediaSupport create(io.helidon.common.config.Config config, String name) {
+    public MediaSupport create(Config config, String name) {
         return JsonSupportConfig.builder()
                 .name(name)
                 .build();

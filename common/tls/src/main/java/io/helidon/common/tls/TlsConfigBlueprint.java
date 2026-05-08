@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import javax.net.ssl.SSLParameters;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.spi.TlsManagerProvider;
 
 @Prototype.Blueprint(decorator = TlsConfigDecorator.class)
@@ -47,21 +46,6 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      * The default session timeout as defined for unset value in {@link javax.net.ssl.SSLSessionContext#getSessionTimeout()}.
      */
     String DEFAULT_SESSION_TIMEOUT = "PT24H";
-
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    static Optional<PrivateKey> createPrivateKey(Keys config) {
-        return config.privateKey();
-    }
-
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    static List<X509Certificate> createPrivateKeyCertChain(Keys config) {
-        return config.certChain();
-    }
-
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    static List<X509Certificate> createTrust(Keys config) {
-        return config.certs();
-    }
 
     /**
      * Provide a fully configured {@link javax.net.ssl.SSLContext}. If defined, context related configuration

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,19 @@ final class NumberHelper {
             return bd.stripTrailingZeros();
         } else if (number instanceof BigInteger bi) {
             return new BigDecimal(bi);
+        // keep exact decimal text for known JDK number types used by multipleOf checks
         } else if (number instanceof Byte b) {
             return new BigDecimal(b & 0xFF);
+        } else if (number instanceof Short s) {
+            return BigDecimal.valueOf(s.longValue());
+        } else if (number instanceof Integer i) {
+            return BigDecimal.valueOf(i.longValue());
+        } else if (number instanceof Long l) {
+            return BigDecimal.valueOf(l);
+        } else if (number instanceof Float f) {
+            return new BigDecimal(Float.toString(f)).stripTrailingZeros();
+        } else if (number instanceof Double d) {
+            return BigDecimal.valueOf(d).stripTrailingZeros();
         } else {
             return new BigDecimal(String.valueOf(number.doubleValue())).stripTrailingZeros();
         }

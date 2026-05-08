@@ -115,7 +115,7 @@ class ProxyProtocolHandlerTest {
     @Test
     void basicV2TestIPv6() throws IOException {
         String header = V2_PREFIX_2
-                + "20:21:00:0C:"                // version, family/protocol, length
+                + "20:21:00:24:"                // version, family/protocol, length
                 + "AA:AA:BB:BB:CC:CC:DD:DD:"
                 + "AA:AA:BB:BB:CC:CC:DD:DD:"    // source
                 + "AA:AA:BB:BB:CC:CC:DD:DD:"

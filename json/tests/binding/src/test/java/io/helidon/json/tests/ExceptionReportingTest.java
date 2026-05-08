@@ -21,7 +21,8 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,30 +37,34 @@ public class ExceptionReportingTest {
         this.jsonBinding = jsonBinding;
     }
 
-    @Test
-    public void testUnexpectedStringEnd() {
-        assertThrows(JsonException.class, () -> jsonBinding.deserialize("{\"data", TestData.class));
-        assertThrows(JsonException.class, () -> jsonBinding.deserialize("{\"data\":\"something}", TestData.class));
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testUnexpectedStringEndParameterized(BindingMethod bindingMethod) {
+        assertThrows(JsonException.class, () -> bindingMethod.deserialize(jsonBinding, "{\"data", TestData.class));
+        assertThrows(JsonException.class,
+                     () -> bindingMethod.deserialize(jsonBinding, "{\"data\":\"something}", TestData.class));
     }
 
-    @Test
-    public void testUnexpectedJsonValue() {
-        assertThrows(JsonException.class, () -> jsonBinding.deserialize("{\"data\":myValue}", TestData.class));
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testUnexpectedJsonValueParameterized(BindingMethod bindingMethod) {
+        assertThrows(JsonException.class,
+                     () -> bindingMethod.deserialize(jsonBinding, "{\"data\":myValue}", TestData.class));
     }
 
-    @Test
-    public void testTooLargeNumbers() {
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testTooLargeNumbersParameterized(BindingMethod bindingMethod) {
         String testValue = "1".repeat(20);
-        assertThrows(JsonException.class, () -> jsonBinding.deserialize(testValue, byte.class));
-        assertThrows(JsonException.class, () -> jsonBinding.deserialize(testValue, short.class));
-        assertThrows(JsonException.class, () -> jsonBinding.deserialize(testValue, int.class));
-        assertThrows(JsonException.class, () -> jsonBinding.deserialize(testValue, long.class));
-        assertThat(jsonBinding.deserialize(testValue, float.class), is(Float.parseFloat(testValue)));
-        assertThat(jsonBinding.deserialize(testValue, double.class), is(Double.parseDouble(testValue)));
+        assertThrows(JsonException.class, () -> bindingMethod.deserialize(jsonBinding, testValue, byte.class));
+        assertThrows(JsonException.class, () -> bindingMethod.deserialize(jsonBinding, testValue, short.class));
+        assertThrows(JsonException.class, () -> bindingMethod.deserialize(jsonBinding, testValue, int.class));
+        assertThrows(JsonException.class, () -> bindingMethod.deserialize(jsonBinding, testValue, long.class));
+        assertThat(bindingMethod.deserialize(jsonBinding, testValue, float.class), is(Float.parseFloat(testValue)));
+        assertThat(bindingMethod.deserialize(jsonBinding, testValue, double.class), is(Double.parseDouble(testValue)));
     }
 
     @Json.Entity
     record TestData(String data) {
     }
-
 }

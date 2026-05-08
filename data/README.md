@@ -141,5 +141,5 @@ data:
       - data-source: "test"
 ```
 
-This information will be read by `io.helidon.data.sql.testing.SqlTestContainerConfig.configureContainer(io.helidon.common.config.Config, org.testcontainers.containers.JdbcDatabaseContainer<?>)` and a container will be initialized with it.
+This information will be read by `io.helidon.data.sql.testing.SqlTestContainerConfig.configureContainer(io.helidon.config.Config, org.testcontainers.containers.JdbcDatabaseContainer<?>)` and a container will be initialized with it.
 The method returns a `TestContainerHandler` that can be used to start and stop the container, and to get the new mapped port. Its method `setConfig()` can be called to register the config instance with updated port numbers in ServiceRegistry

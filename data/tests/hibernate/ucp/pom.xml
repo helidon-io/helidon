@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.data.tests.hiernate</groupId>
         <artifactId>helidon-data-tests-hiernate-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -30,11 +30,6 @@
     <name>Helidon Data Tests Hibernate UCP DataSource</name>
 
     <dependencies>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-config</artifactId>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
@@ -119,8 +114,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.db</groupId>
-            <artifactId>ojdbc</artifactId>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc17-production</artifactId>
+            <type>pom</type>
             <scope>test</scope>
         </dependency>
         <dependency>

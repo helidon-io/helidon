@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,9 @@ module io.helidon.webserver.grpc {
 
     requires io.helidon.builder.api;
     requires io.helidon.webserver.http2;
-    requires io.helidon.tracing;
-    requires io.helidon.common.config;
+    requires io.helidon.config;
     requires io.helidon.metrics.api;
+    requires io.helidon.webserver;
 
     requires io.grpc;
     requires io.grpc.stub;
@@ -42,6 +42,7 @@ module io.helidon.webserver.grpc {
     requires transitive io.helidon.grpc.core;
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.webserver.grpc;
     exports io.helidon.webserver.grpc.spi;

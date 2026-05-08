@@ -1,0 +1,33 @@
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+= com.acme.AcmeResourceConfig
+
+== Description
+
+++++
+Resource configuration.
+++++
+
+// tag::config[]
+== Configuration options
+
+|===
+|Key|Type|Description
+
+| `location`
+|`String`
+|pass:[Resource location.]
+
+|===
+
+// end::config[]
+
+
+
+== Usages
+
+* xref:{rootdir}/config/io_helidon_keys_GroupConfig.adoc#a0c02ffff-resource[`keys.group.resource`]
+* xref:{rootdir}/config/com_acme_AcmeKeysConfig.adoc#a4de029e9-resource[`keys.resource`]
+
+'''
+See the xref:{rootdir}/config/manifest.adoc[manifest] for all available types.

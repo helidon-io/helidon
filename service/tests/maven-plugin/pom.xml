@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.service.tests</groupId>
         <artifactId>helidon-service-tests-project</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>27.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -32,10 +32,21 @@
     <name>Helidon Service Tests Maven Plugin</name>
     <description>Tests for Maven Plugin</description>
 
+
+    <properties>
+        <!--
+         These libraries need to be upgraded/version managed
+         so we support the latest Java version
+         -->
+        <version.lib.apache-groovy>5.0.4</version.lib.apache-groovy>
+        <version.lib.archetype-common>3.4.1</version.lib.archetype-common>
+        <version.lib.commons-io>2.20.0</version.lib.commons-io>
+    </properties>
+
     <dependencies>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
+            <groupId>io.helidon.common.testing</groupId>
+            <artifactId>helidon-common-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -44,14 +55,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.build-tools.common</groupId>
-            <artifactId>helidon-build-common-test-utils</artifactId>
-            <version>${version.plugin.helidon-build-tools}</version>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-testkit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -61,6 +76,31 @@
             <scope>runtime</scope>
         </dependency>
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.helidon.build-tools.archetype</groupId>
+                <artifactId>helidon-archetype-engine-v2</artifactId>
+                <version>${version.plugin.helidon-build-tools}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.build-tools.common</groupId>
+                <artifactId>helidon-build-common-maven-url-support</artifactId>
+                <version>${version.plugin.helidon-build-tools}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy</artifactId>
+                <version>${version.lib.apache-groovy}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${version.lib.commons-io}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>
@@ -85,8 +125,43 @@
                         </goals>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.groovy</groupId>
+                        <artifactId>groovy</artifactId>
+                        <version>${version.lib.apache-groovy}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.maven.archetype</groupId>
+                        <artifactId>archetype-common</artifactId>
+                        <version>${version.lib.archetype-common}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
-
+    <profiles>
+        <profile>
+            <id>debug-invoker</id>
+            <activation>
+                <property>
+                    <name>env.MAVEN_DEBUG_OPTS</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-invoker-plugin</artifactId>
+                        <configuration>
+                            <environmentVariables>
+                                <!--suppress LongLine -->
+                                <MAVEN_DEBUG_OPTS>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:8001</MAVEN_DEBUG_OPTS>
+                            </environmentVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

@@ -1,0 +1,19 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.example.webserver.WebServer",
+        "standalone": true,
+        "prefix": "server",
+        "description": "WebServer configuration."
+      },
+      {
+        "type": "com.example.profile.server.Server",
+        "standalone": true,
+        "prefix": "server",
+        "description": "Profile server configuration."
+      }
+    ]
+  }
+]

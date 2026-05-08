@@ -39,10 +39,12 @@ import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.DeclarativeTypes;
 import io.helidon.declarative.codegen.DeclarativeUtils;
 import io.helidon.declarative.codegen.DelcarativeConfigSupport;
 import io.helidon.declarative.codegen.http.HttpFields;
@@ -267,6 +269,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
                 .type(generatedType)
                 .addInterface(type.typeName())
                 .addAnnotation(SINGLETON_ANNOTATION)
+                .addAnnotation(DeclarativeTypes.SUPPRESS_API)
                 .addAnnotation(REST_CLIENT_QUALIFIER_INSTANCE);
 
         var constructor = constructor(classModel, endpoint);
@@ -463,6 +466,26 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
         boolean hasResponse = !(
                 method.returnType().equals(TypeNames.BOXED_VOID)
                         || method.returnType().equals(TypeNames.PRIMITIVE_VOID));
+        var returnType = method.returnType();
+        boolean useGenericType;
+        String genericTypeField;
+        if (hasResponse && !returnType.typeArguments().isEmpty() && !returnType.isOptional()) {
+            // we have a return type, and it has type arguments
+            useGenericType = true;
+            TypeName genType = TypeName.builder(TypeNames.GENERIC_TYPE)
+                    .addTypeArgument(returnType)
+                    .build();
+            genericTypeField = fieldHandler.constant("GTYPE", genType, ResolvedType.create(genType), constant -> {
+                constant.addContent("new ")
+                        .addContent(TypeNames.GENERIC_TYPE)
+                        .addContent("<")
+                        .addContent(returnType)
+                        .addContent(">() {}");
+            });
+        } else {
+            useGenericType = false;
+            genericTypeField = null;
+        }
 
         /*
         neither - call request() without any parameters, try with resources
@@ -473,17 +496,27 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
         if (hasEntity && hasResponse) {
             it.addContent("var declarative__response = declarative__builder.submit(")
                     .addContent(method.entityParameter().get().name())
-                    .addContent(", ")
-                    .addContent(method.returnType())
-                    .addContentLine(".class);");
+                    .addContent(", ");
+            if (useGenericType) {
+                it.addContent(genericTypeField);
+            } else {
+                it.addContent(method.returnType())
+                        .addContent(".class");
+            }
+            it.addContentLine(");");
         } else if (hasEntity) {
             it.addContent("try (var declarative__response = declarative__builder.submit(")
                     .addContent(method.entityParameter().get().name())
                     .addContentLine(")) {");
         } else if (hasResponse) {
-            it.addContent("var declarative__response = declarative__builder.request(")
-                    .addContent(method.returnType())
-                    .addContentLine(".class);");
+            it.addContent("var declarative__response = declarative__builder.request(");
+            if (useGenericType) {
+                it.addContent(genericTypeField);
+            } else {
+                it.addContent(method.returnType())
+                        .addContent(".class");
+            }
+            it.addContentLine(");");
         } else {
             it.addContentLine("try (var declarative__response = declarative__builder.request()) {");
         }
@@ -491,9 +524,15 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
         it.addContentLine("var declarative__headers = declarative__builder.headers();");
 
         if (hasResponse) {
-            it.addContent("errorHandling.handle(declarative__uri, declarative__headers, declarative__response, ")
-                    .addContent(method.returnType())
-                    .addContentLine(".class);");
+            if (useGenericType) {
+                it.addContent("errorHandling.handle(declarative__uri, declarative__headers, declarative__response, ")
+                        .addContent(genericTypeField)
+                        .addContentLine(");");
+            } else {
+                it.addContent("errorHandling.handle(declarative__uri, declarative__headers, declarative__response, ")
+                        .addContent(method.returnType())
+                        .addContentLine(".class);");
+            }
         } else {
             it.addContentLine("errorHandling.handle(declarative__uri, declarative__headers, declarative__response);");
         }

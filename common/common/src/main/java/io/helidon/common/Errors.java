@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ import java.util.stream.Collectors;
  * }</pre>
  */
 @SuppressWarnings("WeakerAccess")
+@Api.Stable
 public final class Errors extends LinkedList<Errors.ErrorMessage> {
     private static final Set<StackWalker.Option> WALKER_OPTIONS =
             Set.of(StackWalker.Option.RETAIN_CLASS_REFERENCE);
@@ -195,19 +196,14 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
     /**
      * A collector of {@link ErrorMessage}s. Use method {@link #collect()} to obtain {@link Errors} instance.
      */
+    @Api.Stable
     public static class Collector {
         private final List<ErrorMessage> errors = new LinkedList<>();
         private boolean hasFatal;
         private boolean hasWarning;
         private boolean hasHint;
 
-        /**
-         * This constructor was accidentally left public, it should be private.
-         *
-         * @deprecated please use {@link io.helidon.common.Errors#collector()} instead
-         */
-        @Deprecated(forRemoval = true, since = "4.0.9")
-        public Collector() {
+        private Collector() {
             super();
         }
 
@@ -356,6 +352,7 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
      * Exception used by {@link Errors#checkValid()} thrown in case there are fatal messages.
      * This exception provides access to all the messages of {@link Errors} that created it.
      */
+    @Api.Stable
     public static final class ErrorMessagesException extends RuntimeException {
         /**
          * List of error messages that triggered this exception.
@@ -382,6 +379,7 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
      * Error message with a severity and a source.
      * Used from {@link Errors}.
      */
+    @Api.Stable
     public static class ErrorMessage {
 
         private final Object source;

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,46 +16,34 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Kubernetes on your Desktop
-:description: Running Kubernetes on your desktop.
-:keywords: kubernetes
+= Run Kubernetes Locally for Development
+:description: Running Kubernetes locally
+:keywords: kubernetes, local development, docker desktop, minikube
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/attributes.adoc[]
 
-For development it's often convenient to run Kubernetes on your desktop.
-Two popular ways to do this are with
-https://kubernetes.io/docs/getting-started-guides/minikube/[Kubernetes Minikube]
-or
-https://docs.docker.com/docker-for-mac/kubernetes/[Kubernetes support in Docker
- for Desktop].
+For development, it can be convenient to run Kubernetes locally. A popular option that is used throughout Helidon documentation is https://docs.docker.com/desktop/[Docker Desktop], which includes support for Kubernetes.
 
-In this guide we'll use Docker for Desktop.
+You can also use https://minikube.sigs.k8s.io/docs/[minikube] for local development, though you will have to adapt any Docker Desktop-specific instructions for minikube.
 
-== Install
+For instructions on how to install and configure Docker Desktop for your platform, see the following Docker documentation: 
 
-Install
-https://docs.docker.com/docker-for-mac/install/[Docker for Mac] or
-https://docs.docker.com/docker-for-windows/install/[Docker for Windows].
+* https://docs.docker.com/desktop/setup/install/linux/[Docker Desktop on Linux]
+* https://docs.docker.com/desktop/setup/install/mac-install/[Docker Desktop on macOS]
+* https://docs.docker.com/desktop/setup/install/windows-install/[Docker Desktop on Windows].
 
-Starting with version 18.06 Docker for Desktop includes Kubernetes support.
+After you install Docker Desktop, see https://docs.docker.com/desktop/use-desktop/kubernetes/[Explore the Kubernetes view] in the Docker documentation for guidance on enabling and using Kubernetes in Docker Desktop.
 
-== Enable Kubernetes Support
+NOTE: Docker Desktop for Linux does not include `kubectl` by default. See https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/[Install and Set Up kubectl on Linux] in the Kubernetes documentation.
 
-Enable
-https://docs.docker.com/docker-for-mac/#kubernetes[Kubernetes Support for Mac]
-or
-https://docs.docker.com/docker-for-windows/#kubernetes[Kubernetes Support for
- Windows].
-
-Once Kubernetes installation is complete, make sure you have your context
-set correctly to use docker-for-desktop.
+If you get errors when running `kubectl` commands, make sure the Kubernetes context is set to `docker-desktop`.
 
 [source,bash]
-.Make sure K8s context is set to docker-for-desktop
+.Make sure Kubernetes context is set to docker-desktop
 ----
 kubectl config get-contexts
-kubectl config use-context docker-for-desktop
+kubectl config use-context docker-desktop
 kubectl cluster-info
 kubectl version
 kubectl get nodes

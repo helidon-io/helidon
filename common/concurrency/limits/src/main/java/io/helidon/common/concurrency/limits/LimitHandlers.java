@@ -28,7 +28,10 @@ class LimitHandlers {
     private LimitHandlers() {
     }
 
-    @SuppressWarnings("removal")
+    interface SemaphoreLimit {
+        Semaphore semaphore();
+    }
+
     interface LimiterHandler extends SemaphoreLimit {
         Optional<Token> tryAcquireToken(boolean wait);
     }
@@ -53,7 +56,6 @@ class LimitHandlers {
             return Optional.of(TOKEN);
         }
 
-        @SuppressWarnings("removal")
         @Override
         public Semaphore semaphore() {
             return NoopSemaphore.INSTANCE;

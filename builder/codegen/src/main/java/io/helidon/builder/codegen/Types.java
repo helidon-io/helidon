@@ -25,7 +25,6 @@ import io.helidon.common.Generated;
 import io.helidon.common.types.TypeName;
 
 final class Types {
-    static final TypeName COMMON_CONFIG = TypeName.create("io.helidon.common.config.Config");
     static final TypeName CONFIG = TypeName.create("io.helidon.config.Config");
     static final TypeName GENERATED = TypeName.create(Generated.class);
     static final TypeName DEPRECATED = TypeName.create(Deprecated.class);
@@ -51,7 +50,6 @@ final class Types {
     static final TypeName PROTOTYPE_PROVIDES = TypeName.create("io.helidon.builder.api.Prototype.Provides");
     static final TypeName PROTOTYPE_BUILDER = TypeName.create("io.helidon.builder.api.Prototype.Builder");
     static final TypeName PROTOTYPE_CUSTOM_METHODS = TypeName.create("io.helidon.builder.api.Prototype.CustomMethods");
-    static final TypeName PROTOTYPE_FACTORY_METHOD_DEPRECATED = TypeName.create("io.helidon.builder.api.Prototype.FactoryMethod");
     static final TypeName PROTOTYPE_FACTORY_METHOD_PROTOTYPE = TypeName.create(
             "io.helidon.builder.api.Prototype.PrototypeFactoryMethod");
     static final TypeName PROTOTYPE_FACTORY_METHOD_CONFIG = TypeName.create("io.helidon.builder.api.Prototype"
@@ -99,6 +97,14 @@ final class Types {
     static final TypeName CONFIG_BUILDER_SUPPORT = TypeName.create("io.helidon.config.ConfigBuilderSupport");
 
     static final TypeName REGISTRY_BUILDER_SUPPORT = TypeName.create("io.helidon.service.registry.RegistryBuilderSupport");
+
+    static final TypeName CONFIGURED = TypeName.create("io.helidon.config.metadata.Configured");
+    static final TypeName CONFIGURED_OPTION = TypeName.create("io.helidon.config.metadata.ConfiguredOption");
+    static final TypeName CONFIGURED_OPTION_KIND = TypeName.create("io.helidon.config.metadata.ConfiguredOption.Kind");
+    static final TypeName CONFIGURED_VALUE = TypeName.create("io.helidon.config.metadata.ConfiguredValue");
+
+    static final TypeName CONFIGURED_PROVIDER = TypeName.create("io.helidon.config.ConfiguredProvider");
+    static final TypeName NAMED_SERVICE = TypeName.create("io.helidon.config.NamedService");
 
     private Types() {
     }

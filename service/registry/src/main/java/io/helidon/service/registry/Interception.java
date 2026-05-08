@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import io.helidon.common.Api;
 
 /**
  * Interception annotations and types.
@@ -156,11 +158,9 @@ public final class Interception {
      * Important note: entry point interceptors only trigger for entry points fully managed by Helidon, such as when
      * using Helidon Declarative. This is not triggered when using injection without declarative endpoint (i.e. when setting
      * up WebServer using routing imperatively).
-     *
-     * @deprecated this API is part of incubating features of Helidon. This API may change including backward incompatible changes
-     *               and full removal. We welcome feedback for incubating features.
      */
-    @Deprecated
+    @Api.Incubating
+    @Api.Since("4.3.0")
     @Service.Contract
     public interface EntryPointInterceptor {
         /*

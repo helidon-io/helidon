@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.Errors;
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.Resource;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
@@ -77,6 +77,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
     private final TokenHandler defaultTokenHandler;
     private final JwkKeys verifyKeys;
     private final String expectedAudience;
+    private final String expectedIssuer;
     private final JwkKeys signKeys;
     private final OutboundConfig outboundConfig;
     private final String issuer;
@@ -96,6 +97,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         this.signKeys = builder.signKeys;
         this.issuer = builder.issuer;
         this.expectedAudience = builder.expectedAudience;
+        this.expectedIssuer = builder.expectedIssuer;
         this.verifySignature = builder.verifySignature;
         this.useJwtGroups = builder.useJwtGroups;
 
@@ -115,7 +117,8 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         }
 
         if (!verifySignature) {
-            LOGGER.log(Level.INFO, "JWT Signature validation is disabled. Any JWT will be accepted.");
+            LOGGER.log(Level.INFO,
+                       "JWT signature validation is disabled. JWT claims will still be validated.");
         }
     }
 
@@ -165,29 +168,32 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         }
         if (verifySignature) {
             Errors errors = signedJwt.verifySignature(verifyKeys, defaultJwk);
-            if (errors.isValid()) {
-                Jwt jwt = signedJwt.getJwt();
-                // perform all validations, including expected audience verification
-                JwtValidator.Builder jwtValidatorBuilder = JwtValidator.builder()
-                        .addDefaultTimeValidators()
-                        .addCriticalValidator()
-                        .addUserPrincipalValidator();
-                if (expectedAudience != null) {
-                    jwtValidatorBuilder.addAudienceValidator(expectedAudience);
-                }
-                JwtValidator jwtValidator =  jwtValidatorBuilder.build();
-                Errors validate = jwtValidator.validate(jwt);
-                if (validate.isValid()) {
-                    return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
-                } else {
-                    return failOrAbstain(validate.toString());
-                }
-            } else {
+            if (!errors.isValid()) {
                 return failOrAbstain(errors.toString());
             }
-        } else {
-            return AuthenticationResponse.success(buildSubject(signedJwt.getJwt(), signedJwt));
         }
+
+        Jwt jwt = signedJwt.getJwt();
+        Errors validate = validateJwt(jwt);
+        if (!validate.isValid()) {
+            return failOrAbstain(validate.toString());
+        }
+        return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
+    }
+
+    private Errors validateJwt(Jwt jwt) {
+        JwtValidator.Builder jwtValidatorBuilder = JwtValidator.builder()
+                .addDefaultTimeValidators()
+                .addCriticalValidator()
+                .addUserPrincipalValidator();
+        if (expectedAudience != null) {
+            jwtValidatorBuilder.addAudienceValidator(expectedAudience);
+        }
+        if (expectedIssuer != null) {
+            jwtValidatorBuilder.addIssuerValidator(expectedIssuer);
+        }
+        JwtValidator jwtValidator = jwtValidatorBuilder.build();
+        return jwtValidator.validate(jwt);
     }
 
     private AuthenticationResponse failOrAbstain(String message) {
@@ -248,7 +254,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         builder.name(name)
                 .id(subject);
 
-        jwt.payloadClaims()
+        jwt.payloadClaimsJson()
                 .forEach((key, jsonValue) -> builder.addAttribute(key, JwtUtil.toObject(jsonValue)));
 
         jwt.email().ifPresent(value -> builder.addAttribute("email", value));
@@ -512,7 +518,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
              */
             public Builder config(Config config) {
                 config.get("outbound-token")
-                        .map(TokenHandler::create)
+                        .as(TokenHandler::create)
                         .ifPresent(this::tokenHandler);
 
                 config.get("jwt-kid").asString().ifPresent(this::jwtKid);
@@ -617,6 +623,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         private JwkKeys signKeys;
         private String issuer;
         private String expectedAudience;
+        private String expectedIssuer;
         private boolean useJwtGroups = true;
 
         private Builder() {
@@ -693,7 +700,8 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
          * <p>
          * <b>Make sure your service is properly secured on network level and only
          * accessible from a secure endpoint that provides the JWTs when signature verification
-         * is disabled. If signature verification is disabled, this service will accept <i>ANY</i> JWT</b>
+         * is disabled. If signature verification is disabled, configured claim validation still applies,
+         * but signatures are not checked.</b>
          *
          * @param shouldValidate set to false to disable validation of JWT signatures
          * @return updated builder instance
@@ -813,11 +821,12 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             config.get("propagate").asBoolean().ifPresent(this::propagate);
             config.get("allow-impersonation").asBoolean().ifPresent(this::allowImpersonation);
             config.get("principal-type").asString().map(SubjectType::valueOf).ifPresent(this::subjectType);
-            config.get("atn-token.handler").map(TokenHandler::create).ifPresent(this::atnTokenHandler);
+            config.get("atn-token.handler").as(TokenHandler::create).ifPresent(this::atnTokenHandler);
             Config atnToken = config.get("atn-token");
             if (atnToken.exists()) {
                 verifyKeys(atnToken);
                 atnToken.get("jwt-audience").asString().ifPresent(this::expectedAudience);
+                atnToken.get("jwt-issuer").asString().ifPresent(this::expectedIssuer);
                 atnToken.get("verify-signature").asBoolean().ifPresent(this::verifySignature);
             }
             Config signToken = config.get("sign-token");
@@ -842,6 +851,18 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         }
 
         /**
+         * Issuer expected in inbound JWTs.
+         *
+         * @param issuer issuer string
+         * @return updated builder instance
+         */
+        @ConfiguredOption(key = "atn-token.jwt-issuer")
+        public Builder expectedIssuer(String issuer) {
+            this.expectedIssuer = issuer;
+            return this;
+        }
+
+        /**
          * Claim {@code groups} from JWT will be used to automatically add
          *  groups to current subject (may be used with {@link jakarta.annotation.security.RolesAllowed} annotation).
          *
@@ -855,14 +876,14 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         }
 
         private void verifyKeys(Config config) {
-            config.get("jwk.resource").map(Resource::create).ifPresent(this::verifyJwk);
+            config.get("jwk.resource").as(Resource::create).ifPresent(this::verifyJwk);
         }
 
         private void outbound(Config config) {
             config.get("jwt-issuer").asString().ifPresent(this::issuer);
 
             // jwk is optional, we may be propagating existing token
-            config.get("jwk.resource").map(Resource::create).ifPresent(this::signJwk);
+            config.get("jwk.resource").as(Resource::create).ifPresent(this::signJwk);
         }
     }
 }

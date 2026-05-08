@@ -35,9 +35,9 @@ import io.helidon.common.concurrency.limits.spi.LimitProvider;
 @Prototype.Blueprint
 @Prototype.Configured(value = FixedLimit.TYPE, root = false)
 @Prototype.Provides(LimitProvider.class)
-interface FixedLimitConfigBlueprint extends Prototype.Factory<FixedLimit> {
+interface FixedLimitConfigBlueprint extends Prototype.Factory<FixedLimit>, ClockConfig {
     /**
-     * Number of permit to allow.
+     * Number of permits to allow.
      * Defaults to {@value FixedLimit#DEFAULT_LIMIT}.
      * When set to {@code 0}, we switch to unlimited.
      *
@@ -63,7 +63,7 @@ interface FixedLimitConfigBlueprint extends Prototype.Factory<FixedLimit> {
      * We use {@link java.util.concurrent.Semaphore#getQueueLength()} in the
      * {@link io.helidon.common.concurrency.limits.FixedLimit} implementation.
      * Default value is {@value FixedLimit#DEFAULT_QUEUE_LENGTH}.
-     * If set to {code 0}, there is no queueing.
+     * If set to {@code 0}, there is no queueing.
      *
      * @return number of requests to enqueue
      */
@@ -102,6 +102,7 @@ interface FixedLimitConfigBlueprint extends Prototype.Factory<FixedLimit> {
      *
      * @return supplier of current nanoseconds, defaults to {@link java.lang.System#nanoTime()}
      */
+    @Override
     Optional<Supplier<Long>> clock();
 
     /**

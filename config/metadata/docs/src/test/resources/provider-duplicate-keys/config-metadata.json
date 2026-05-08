@@ -1,0 +1,48 @@
+[
+  {
+    "module": "com.acme",
+    "types": [
+      {
+        "type": "com.acme.AcmeServerConfig",
+        "standalone": true,
+        "prefix": "server",
+        "description": "ACME server configuration.",
+        "options": [
+          {
+            "key": "features",
+            "type": "com.acme.AcmeFeature",
+            "description": "Feature contract",
+            "provider": true
+          }
+        ]
+      },
+      {
+        "type": "com.acme.AcmeAuditConfig",
+        "standalone": true,
+        "prefix": "audit",
+        "description": "Audit implementation.",
+        "provides": [
+          "com.acme.AcmeFeature"
+        ]
+      },
+      {
+        "type": "com.acme.AcmeFileFeatureConfig",
+        "standalone": true,
+        "prefix": "shared",
+        "description": "File implementation.",
+        "provides": [
+          "com.acme.AcmeFeature"
+        ]
+      },
+      {
+        "type": "com.acme.AcmeSocketFeatureConfig",
+        "standalone": true,
+        "prefix": "shared",
+        "description": "Socket implementation.",
+        "provides": [
+          "com.acme.AcmeFeature"
+        ]
+      }
+    ]
+  }
+]
