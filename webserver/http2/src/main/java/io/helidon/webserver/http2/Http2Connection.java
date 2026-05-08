@@ -340,6 +340,11 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         return upgradePrologue;
     }
 
+    // Test seam for timestamp-sensitive connection-idle behavior.
+    void lastRequestTimestamp(ZonedDateTime timestamp) {
+        this.lastRequestTimestamp = timestamp;
+    }
+
     /**
      * Expect connection preface (prior knowledge).
      */
@@ -590,8 +595,19 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
             }
         } else {
+            StreamContext stream = streams.get(streamId);
+            if (stream == null) {
+                if (streamId > lastStreamId) {
+                    String msg = "Received WINDOW_UPDATE for stream " + streamId + " in state IDLE";
+                    Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL, msg);
+                    writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+                }
+                return;
+            }
             try {
-                StreamContext stream = stream(streamId);
+                if (streams.isActive(streamId)) {
+                    this.lastRequestTimestamp = DateTime.timestamp();
+                }
                 stream.stream().windowUpdate(windowUpdate);
             } catch (Http2Exception ignored) {
                 // stream closed
@@ -633,6 +649,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             boolean hasEntity = upgradeHasEntity(upgradeHeaders);
             // we now have all information needed to execute
             Http2ServerStream stream = stream(1).stream();
+            activateStream(1);
             stream.prologue(upgradePrologue);
             stream.headers(upgradeHeaders, !hasEntity);
             upgradeHeaders = null;
@@ -743,6 +760,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         StreamContext streamContext = stream(streamId);
 
         boolean trailers = streamContext.stream().checkHeadersReceivable();
+        boolean newStream = !trailers;
 
         // first frame, expecting continuation
         if (frameHeader.type() == Http2FrameType.HEADERS && !frameHeader.flags(Http2FrameTypes.HEADERS).endOfHeaders()) {
@@ -814,6 +832,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         headers.validateRequest();
         String path = headers.path();
         Method method = headers.method();
+        if (newStream) {
+            activateStream(streamId);
+        }
         HttpPrologue httpPrologue = HttpPrologue.create(FULL_PROTOCOL,
                                                         PROTOCOL,
                                                         PROTOCOL_VERSION,
@@ -833,6 +854,17 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         // we now have all information needed to execute
         ctx.executor()
                 .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
+    }
+
+    private void activateStream(int streamId) {
+        streams.doMaintenance();
+        if (streams.size() + 1 > maxClientConcurrentStreams) {
+            streams.remove(streamId);
+            streams.doMaintenance();
+            throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM,
+                                     "Maximum concurrent streams limit " + maxClientConcurrentStreams + " exceeded");
+        }
+        streams.activate(streamId);
     }
 
     private void discardHeadersForLocallyResetStream(int streamId) {
@@ -894,18 +926,13 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Priority with stream id 0");
         }
 
-        if (http2Priority.streamId() != 0) {
-            try {
-                stream(http2Priority.streamId()); // dependency on another stream, may be created in idle state
-            } catch (Http2Exception ignored) {
-                // this stream is closed, ignore
-            }
+        if (http2Priority.streamId() == frameHeader.streamId()) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Stream depends on itself");
         }
-        StreamContext stream;
-        try {
-            stream = stream(frameHeader.streamId());
-        } catch (Http2Exception ignored) {
-            // this stream is closed, ignore
+
+        StreamContext stream = streams.get(frameHeader.streamId());
+        if (stream == null) {
+            // Priority for idle or closed streams is only a scheduling hint.
             state = State.READ_FRAME;
             return;
         }
@@ -1004,13 +1031,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                     }
                 }
             }
-
-            // 5.1.2 MAX_CONCURRENT_STREAMS limit check - stream error of type PROTOCOL_ERROR or REFUSED_STREAM
-            if (streams.size() + 1 > maxClientConcurrentStreams) {
-                throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM,
-                                         "Maximum concurrent streams limit " + maxClientConcurrentStreams + " exceeded");
-            }
-
             streamContext = new StreamContext(streamId,
                                               http2Config.maxHeaderListSize(),
                                               new Http2ServerStream(ctx,
@@ -1026,7 +1046,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                                     flowControl,
                                                                     connectionChecks));
             streams.put(streamContext);
-            streams.doMaintenance(maxClientConcurrentStreams);
+            streams.doMaintenance();
         }
         // any request for a specific stream is now considered a valid update of connection (ignoring management messages
         // on stream 0)
