@@ -146,5 +146,4 @@ class SemaphoreMetrics {
         }
         queueWaitTimer.record(endWait - startWait, TimeUnit.NANOSECONDS);
     }
-
 }
