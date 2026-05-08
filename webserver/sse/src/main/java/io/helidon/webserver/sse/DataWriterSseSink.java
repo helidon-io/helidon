@@ -96,41 +96,21 @@ class DataWriterSseSink implements SseSink {
         try {
             Optional<String> comment = sseEvent.comment();
             if (comment.isPresent()) {
-                outputStream.write(SSE_COMMENT);
-                outputStream.write(comment.get().getBytes(StandardCharsets.UTF_8));
-                outputStream.write(SSE_NL);
+                byte[] commentBytes = comment.get().getBytes(StandardCharsets.UTF_8);
+                SseFields.writeMultiLineField(outputStream, SSE_COMMENT, commentBytes);
             }
             Optional<String> id = sseEvent.id();
             if (id.isPresent()) {
-                outputStream.write(SSE_ID);
-                outputStream.write(id.get().getBytes(StandardCharsets.UTF_8));
-                outputStream.write(SSE_NL);
+                SseFields.writeSingleLineField(outputStream, SSE_ID, id.get());
             }
             Optional<String> name = sseEvent.name();
             if (name.isPresent()) {
-                outputStream.write(SSE_EVENT);
-                outputStream.write(name.get().getBytes(StandardCharsets.UTF_8));
-                outputStream.write(SSE_NL);
+                SseFields.writeSingleLineField(outputStream, SSE_EVENT, name.get());
             }
             Object data = sseEvent.data();
             if (data != SseEvent.NO_DATA) {
                 MediaType mediaType = sseEvent.mediaType().orElse(MediaTypes.TEXT_PLAIN);
-
-                // is it multi-line string data?
-                if (data instanceof String stringData && stringData.contains("\n")) {
-                    String[] lines = stringData.split("\n");
-                    for (String line : lines) {
-                        outputStream.write(SSE_DATA);
-                        byte[] bytes = serializeData(line, mediaType);
-                        outputStream.write(bytes);
-                        outputStream.write(SSE_NL);
-                    }
-                } else {
-                    outputStream.write(SSE_DATA);
-                    byte[] bytes = serializeData(data, mediaType);
-                    outputStream.write(bytes);
-                    outputStream.write(SSE_NL);
-                }
+                SseFields.writeMultiLineField(outputStream, SSE_DATA, serializeData(data, mediaType));
             }
             outputStream.write(SSE_NL);
 

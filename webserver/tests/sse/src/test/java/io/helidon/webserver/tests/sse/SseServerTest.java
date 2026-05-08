@@ -53,6 +53,8 @@ class SseServerTest extends SseBaseTest {
         rules.get("/sseMixed", SseServerTest::sseMixed);
         rules.get("/sseIdComment", SseServerTest::sseIdComment);
         rules.get("/sseCommentOnly", SseServerTest::sseCommentOnly);
+        rules.get("/sseFieldLineBreaks", SseServerTest::sseFieldLineBreaks);
+        rules.get("/sseDataCarriageReturn", SseServerTest::sseDataCarriageReturn);
     }
 
     @SetUpServer
@@ -131,6 +133,20 @@ class SseServerTest extends SseBaseTest {
     @Test
     void testCommentOnly() throws Exception {
         testSse("/sseCommentOnly", ":This is a comment");
+    }
+
+    @Test
+    void testFieldLineBreaksDoNotCreateNewFields() throws Exception {
+        testSse("/sseFieldLineBreaks",
+                ":comment\n:id:injected-comment\n:data:injected-comment\n:event:injected-comment\n"
+                        + "id:id id:injected-id id:injected-id id:injected-id\n"
+                        + "event:name event:injected-event event:injected-event event:injected-event\n"
+                        + "data:payload");
+    }
+
+    @Test
+    void testDataCarriageReturnDoesNotCreateNewField() throws Exception {
+        testSse("/sseDataCarriageReturn", "data:line\ndata:event:injected-data");
     }
 
     @Test
