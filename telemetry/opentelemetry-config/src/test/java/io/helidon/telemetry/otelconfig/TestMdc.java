@@ -20,19 +20,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import io.helidon.common.testing.junit5.InMemoryLoggingHandler;
 import io.helidon.logging.common.LogConfig;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
-import org.hamcrest.FeatureMatcher;
-import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -70,9 +65,21 @@ class TestMdc {
             LogConfig.initClass();
             TEST_OUTPUT_STREAM.reset();
 
+            assertThat("Log with no OTel support", logMessage("No OTel"),
+                       allOf(containsString("trace= "),
+                             containsString("span= "),
+                             containsString("baggage= ")));
+
+
             var helidonOtel = HelidonOpenTelemetry.create(OpenTelemetryConfig.builder()
                                                                   .service("log-test-service")
                                                                   .buildPrototype());
+
+            assertThat("Log with Otel support but no current context", logMessage("No context"),
+                       allOf(containsString("trace=none"),
+                             containsString("span=none"),
+                             containsString("baggage=none")));
+
 
             var tracer = GlobalOpenTelemetry.getTracer("test");
             var tracerSpan = tracer.spanBuilder("test").startSpan();
@@ -112,6 +119,9 @@ class TestMdc {
             LOGGER.info(message);
             return TEST_OUTPUT_STREAM.toString();
         } finally {
+            for (var handler : LOGGER.getHandlers()) {
+                handler.flush();
+            }
             TEST_OUTPUT_STREAM.reset();
         }
     }
