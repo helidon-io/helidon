@@ -55,6 +55,7 @@ public final class TlsNioSocket extends NioSocket {
     private volatile PeerInfo localPeer;
     private volatile PeerInfo remotePeer;
     private volatile byte[] lastSslSessionId;
+    private volatile byte[] cachedPeerSessionId;
     private volatile Optional<Certificate[]> cachedPeerCerts;
     private volatile Optional<Principal> cachedPeerPrincipal;
 
@@ -210,31 +211,13 @@ public final class TlsNioSocket extends NioSocket {
     }
 
     Optional<Principal> tlsPeerPrincipal() {
-        Optional<Principal> cached = cachedPeerPrincipal;
-        if (cached != null) {
-            return cached;
-        }
-        try {
-            cached = Optional.of(engine.getSession().getPeerPrincipal());
-        } catch (SSLPeerUnverifiedException e) {
-            cached = Optional.empty();
-        }
-        cachedPeerPrincipal = cached;
-        return cached;
+        refreshPeerIdentityCache();
+        return cachedPeerPrincipal;
     }
 
     Optional<Certificate[]> tlsPeerCertificates() {
-        Optional<Certificate[]> cached = cachedPeerCerts;
-        if (cached != null) {
-            return cached;
-        }
-        try {
-            cached = Optional.of(engine.getSession().getPeerCertificates());
-        } catch (SSLPeerUnverifiedException e) {
-            cached = Optional.empty();
-        }
-        cachedPeerCerts = cached;
-        return cached;
+        refreshPeerIdentityCache();
+        return cachedPeerCerts;
     }
 
     Optional<Principal> tlsPrincipal() {
@@ -474,6 +457,33 @@ public final class TlsNioSocket extends NioSocket {
         return ByteBuffer.allocate(proposedCapacity).put(buf.flip());
     }
 
+    private void refreshPeerIdentityCache() {
+        SSLSession session = engine.getSession();
+        byte[] currentSessionId = session.getId();
+        byte[] cachedSessionId = cachedPeerSessionId;
+
+        if (cachedSessionId != null && Arrays.equals(currentSessionId, cachedSessionId)) {
+            return;
+        }
+
+        Optional<Principal> principal;
+        Optional<Certificate[]> certs;
+        try {
+            principal = Optional.of(session.getPeerPrincipal());
+        } catch (SSLPeerUnverifiedException e) {
+            principal = Optional.empty();
+        }
+        try {
+            certs = Optional.of(session.getPeerCertificates());
+        } catch (SSLPeerUnverifiedException e) {
+            certs = Optional.empty();
+        }
+
+        cachedPeerPrincipal = principal;
+        cachedPeerCerts = certs;
+        cachedPeerSessionId = currentSessionId;
+    }
+
     /**
      * Check if TLS renegotiation happened,
      * if so ssl session id would have changed.
@@ -489,6 +499,7 @@ public final class TlsNioSocket extends NioSocket {
         }
 
         lastSslSessionId = currentSessionId;
+        cachedPeerSessionId = null;
         cachedPeerCerts = null;
         cachedPeerPrincipal = null;
         return true;
