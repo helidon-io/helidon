@@ -115,13 +115,4 @@ class TestMdc {
             TEST_OUTPUT_STREAM.reset();
         }
     }
-    static Matcher<LogRecord> withMessage(Matcher<? super String> matcher) {
-        return new FeatureMatcher<LogRecord, String>(matcher, "a log record that ", "containsString") {
-            @Override
-            protected String featureValueOf(LogRecord actual) {
-                return actual.getMessage();
-            }
-        };
-    }
-
 }
