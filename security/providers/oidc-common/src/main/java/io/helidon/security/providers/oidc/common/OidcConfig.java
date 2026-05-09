@@ -1817,7 +1817,7 @@ public final class OidcConfig extends TenantConfigImpl {
          * @param cookieName name of a cookie
          * @return updated builder instance
          */
-        @ConfiguredOption(DEFAULT_REFRESH_COOKIE_NAME)
+        @ConfiguredOption(DEFAULT_STATE_COOKIE_NAME)
         public Builder cookieNameState(String cookieName) {
             this.stateCookieBuilder.cookieName(cookieName);
             return this;
@@ -1958,7 +1958,7 @@ public final class OidcConfig extends TenantConfigImpl {
          * @param clientCredentialsConfig client credentials configuration
          * @return updated builder instance
          */
-        @ConfiguredOption
+        @ConfiguredOption(key = "client-credentials")
         public Builder clientCredentialsConfig(ClientCredentialsConfig clientCredentialsConfig) {
             this.clientCredentialsConfig = Objects.requireNonNull(clientCredentialsConfig);
             return this;
