@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -284,7 +284,10 @@ import jakarta.ws.rs.client.WebTarget;
  *     <td>{@code cookie-encryption-password}</td>
  *     <td>Generated for this service (as a file)</td>
  *     <td>Encryption password to be used for symmetric cipher. Must be the same for all services that are intended
- *     to share a cookie as a form of authentication</td>
+ *     to share a cookie as a form of authentication. If encrypted cookies are enabled and this option and
+ *     {@code cookie-encryption-name} are not configured, Helidon creates or reads a fallback
+ *     {@code .helidon-oidc-secret} file in the current working directory. Existing fallback files must be regular files,
+ *     and on POSIX file systems they must allow only owner read or owner read/write access.</td>
  * </tr>
  * <tr>
  *     <td>{@code cookie-encryption-name}</td>
@@ -1453,6 +1456,10 @@ public final class OidcConfig extends TenantConfigImpl {
         /**
          * Master password for encryption/decryption of cookies. This must be configured to the same value on each microservice
          * using the cookie.
+         * If encrypted cookies are enabled and this method and {@link #cookieEncryptionName(String)} are not used,
+         * Helidon creates or reads a fallback {@code .helidon-oidc-secret} file in the current working directory.
+         * Existing fallback files must be regular files, and on POSIX file systems they must allow only owner read or
+         * owner read/write access.
          *
          * @param cookieEncryptionPassword encryption password
          * @return updated builder

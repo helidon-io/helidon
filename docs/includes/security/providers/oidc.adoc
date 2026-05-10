@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -70,6 +70,22 @@ endpoint of the identity server. If set to false, `401` is returned
 for a JWT
 5. The JWT is stored in a cookie (if cookie support is enabled, which it is by default)
 6. Helidon service redirects to original endpoint (on itself)
+
+==== Cookie Encryption Secret
+
+Some OIDC cookies are encrypted by default.
+For production deployments, configure `cookie-encryption-password` or `cookie-encryption-name` explicitly.
+The same secret or named encryption configuration must be available to every service instance that shares encrypted
+OIDC cookies.
+
+If encrypted cookies are enabled and neither `cookie-encryption-password` nor `cookie-encryption-name` is configured,
+Helidon uses `.helidon-oidc-secret` in the current working directory as a local fallback secret file.
+When Helidon generates that fallback file, it logs a warning.
+This fallback is intended for a single service instance.
+On POSIX file systems, Helidon creates the file with owner read/write permissions only and accepts an existing fallback
+file only when it is a regular file with owner-only read or read/write permissions.
+On non-POSIX file systems, Helidon still rejects symlinks and non-regular existing files, and creates the fallback file
+with an exclusive best-effort create operation.
 
 Helidon obtains a token from request (from cookie, header, or query parameter):
 
