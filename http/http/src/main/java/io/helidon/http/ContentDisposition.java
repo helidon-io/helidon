@@ -61,7 +61,7 @@ public class ContentDisposition implements Header {
             .type("")
             .build();
 
-    private static final Pattern DISPOSITION_PART_PATTERN = Pattern.compile("^(.+?)=\"?(.+?)\"?$");
+    private static final Pattern DISPOSITION_PART_PATTERN = Pattern.compile("^(.+?)=(?:\"((?:\\\\.|[^\"])*)\"|(.*))$");
 
     private final String type;
     private final Map<String, String> parameters;
@@ -106,7 +106,7 @@ public class ContentDisposition implements Header {
                 Matcher matcher = DISPOSITION_PART_PATTERN.matcher(part.trim());
                 if (matcher.matches()) {
                     String name = matcher.group(1);
-                    String value = matcher.group(2);
+                    String value = matcher.group(2) == null ? matcher.group(3) : matcher.group(2);
                     value = value.replace("\\\\", "\\");
                     value = value.replace("\\\"", "\"");
                     value = value.replace("\\;", ";");
@@ -243,14 +243,37 @@ public class ContentDisposition implements Header {
      * Get the value of the {@code filename} parameter that can be used to
      * suggest a filename to be used if the entity is detached and stored in a
      * separate file.
+     * <p>
+     * The value is percent-decoded. Any directory path information in the
+     * parameter is ignored and only the final path segment is returned. An
+     * invalid final segment, such as an empty name, {@code .}, {@code ..}, or a
+     * name containing control characters, causes an {@link IllegalArgumentException}.
+     * </p>
      *
      * @return {@code Optional<String>}, never {@code null}
+     * @throws IllegalArgumentException if the filename is malformed or unsafe
      */
     public Optional<String> filename() {
         String filename = null;
         String value = parameters.get(FILENAME_PARAMETER);
         if (value != null) {
             filename = URLDecoder.decode(value, StandardCharsets.UTF_8);
+            int lastForwardSlash = filename.lastIndexOf('/');
+            int lastBackslash = filename.lastIndexOf('\\');
+            int lastSlash = Math.max(lastForwardSlash, lastBackslash);
+            if (lastSlash >= 0) {
+                filename = filename.substring(lastSlash + 1);
+            }
+            if (filename.isEmpty() || ".".equals(filename) || "..".equals(filename)) {
+                throw new IllegalArgumentException("Invalid filename parameter.");
+            }
+            for (int i = 0; i < filename.length(); i++) {
+                if (Character.isISOControl(filename.charAt(i))) {
+                    throw new IllegalArgumentException("Filename parameter contains a control character at position "
+                                                               + i
+                                                               + ".");
+                }
+            }
         }
         return Optional.ofNullable(filename);
     }

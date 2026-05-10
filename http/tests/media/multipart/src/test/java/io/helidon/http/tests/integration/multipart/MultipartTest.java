@@ -80,6 +80,15 @@ class MultipartTest {
                     }
                     res.send(String.join(",", parts));
                 })
+                .post("/multipart-filename", (req, res) -> {
+                    try {
+                        MultiPart multiPart = req.content().as(MultiPart.class);
+                        ReadablePart first = multiPart.next();
+                        res.send(first.fileName().orElse(""));
+                    } catch (IllegalArgumentException e) {
+                        res.status(Status.BAD_REQUEST_400).send();
+                    }
+                })
                 .post("/multipart-skip", (req, res) -> {
                     MultiPart multiPart = req.content().as(MultiPart.class);
                     ReadablePart first = multiPart.next();
@@ -145,6 +154,75 @@ class MultipartTest {
                 inputStream.transferTo(out);
                 assertThat(out.toString(StandardCharsets.UTF_8), is(SECOND_PART_CONTENT));
             }
+        }
+    }
+
+    @Test
+    void testFileNameWithDirectoryPathUsesOnlyTerminalComponent() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart-filename")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"; filename="%2e%2e%2f%2e%2e%2fetc%2fpasswd"\r
+                            \r
+                            alpha\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("passwd"));
+        }
+    }
+
+    @Test
+    void testFileNameWithControlCharacterRejected() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart-filename")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"; filename="file%0aname.txt"\r
+                            \r
+                            alpha\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
+        }
+    }
+
+    @Test
+    void testFileNameWithEmptyQuotedValueRejected() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart-filename")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"; filename=""\r
+                            \r
+                            alpha\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
+        }
+    }
+
+    @Test
+    void testFileNameWithDotDotFinalSegmentRejected() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart-filename")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"; filename="path%2f%2e%2e"\r
+                            \r
+                            alpha\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
         }
     }
 
