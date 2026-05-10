@@ -267,7 +267,9 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>{@code cookie-encryption-password}</td>
  *     <td>Generated for this service (as a file)</td>
  *     <td>Encryption password to be used for symmetric cipher. Must be the same for all services that are intended
- *     to share a cookie as a form of authentication</td>
+ *     to share a cookie as a form of authentication. If encrypted cookies are enabled and this option and
+ *     {@code cookie-encryption-name} are not configured, Helidon creates or reads a fallback
+ *     {@code .helidon-oidc-secret} file in the current working directory.</td>
  * </tr>
  * <tr>
  *     <td>{@code cookie-encryption-name}</td>
@@ -1391,6 +1393,8 @@ public final class OidcConfig extends TenantConfigImpl {
         /**
          * Master password for encryption/decryption of cookies. This must be configured to the same value on each microservice
          * using the cookie.
+         * If encrypted cookies are enabled and this method and {@link #cookieEncryptionName(String)} are not used,
+         * Helidon creates or reads a fallback {@code .helidon-oidc-secret} file in the current working directory.
          *
          * @param cookieEncryptionPassword encryption password
          * @return updated builder
