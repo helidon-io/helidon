@@ -77,7 +77,11 @@ final class FileService implements HttpService {
 
     private static OutputStream newOutputStream(Path storage, String fname) {
         try {
-            return Files.newOutputStream(storage.resolve(fname),
+            Path file = storage.resolve(fname).normalize();
+            if (!file.getParent().equals(storage)) {
+                throw new IllegalArgumentException("Invalid file name");
+            }
+            return Files.newOutputStream(file,
                                          StandardOpenOption.CREATE,
                                          StandardOpenOption.WRITE,
                                          StandardOpenOption.TRUNCATE_EXISTING);
@@ -121,10 +125,14 @@ final class FileService implements HttpService {
             ReadablePart part = mp.next();
 
             if ("file[]".equals(part.name())) {
-                try (InputStream in = part.inputStream(); OutputStream out = newOutputStream(storage, part.fileName().get())) {
+                try (InputStream in = part.inputStream();
+                        OutputStream out = newOutputStream(storage, part.fileName().get())) {
                     in.transferTo(out);
                 } catch (IOException e) {
                     throw new RuntimeException("Failed to write content", e);
+                } catch (IllegalArgumentException e) {
+                    res.status(BAD_REQUEST_400).send("Invalid file name");
+                    return;
                 }
             }
         }
