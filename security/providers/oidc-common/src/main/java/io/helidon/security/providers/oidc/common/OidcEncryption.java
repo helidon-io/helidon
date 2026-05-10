@@ -99,7 +99,7 @@ final class OidcEncryption {
         String password = UUID.randomUUID().toString();
         try {
             if (posix) {
-                Path tempPath = path.resolveSibling("." + path.getFileName() + "." + UUID.randomUUID() + ".tmp");
+                Path tempPath = path.resolveSibling(path.getFileName() + "." + UUID.randomUUID() + ".tmp");
                 try {
                     ByteBuffer passwordBytes = StandardCharsets.UTF_8.encode(password);
                     Set<StandardOpenOption> options = Set.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
