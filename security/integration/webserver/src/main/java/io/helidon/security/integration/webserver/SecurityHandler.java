@@ -688,7 +688,7 @@ public final class SecurityHandler implements Handler, ProtocolUpgradeHandler {
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler authenticator(String explicitAuthenticator) {
-        return builder(this).authenticator(explicitAuthenticator).build();
+        return builder(this).authenticator(explicitAuthenticator).authenticate(true).build();
     }
 
     /**

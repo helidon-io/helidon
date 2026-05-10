@@ -18,12 +18,20 @@ package io.helidon.security.integration.webserver;
 
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.http.Http;
+import io.helidon.security.AuthenticationResponse;
+import io.helidon.security.Principal;
+import io.helidon.security.ProviderRequest;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
+import io.helidon.security.spi.AuthenticationProvider;
+import io.helidon.security.spi.SynchronousProvider;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.testsupport.TestClient;
+import io.helidon.webserver.testsupport.TestResponse;
 
 import org.junit.jupiter.api.Test;
 
@@ -82,5 +90,47 @@ public class WebSecurityTest {
                 .get();
 
         assertThat(requestedTarget.get(), is("/unit_test?b=2&a=1"));
+    }
+
+    @Test
+    public void testNamedAuthenticatorEnablesAuthentication() throws TimeoutException, InterruptedException {
+        TrackingAuthenticator defaultAuthenticator = new TrackingAuthenticator(false);
+        TrackingAuthenticator namedAuthenticator = new TrackingAuthenticator(true);
+
+        Security security = Security.builder()
+                .addAuthenticationProvider(defaultAuthenticator, "default")
+                .addAuthenticationProvider(namedAuthenticator, "rejector")
+                .build();
+
+        Routing routing = Routing.builder()
+                .register(WebSecurity.create(security))
+                .get("/unit_test",
+                     WebSecurity.enforce().authenticator("rejector"),
+                     (req, res) -> res.send("unexpected"))
+                .build();
+
+        TestResponse response = TestClient.create(routing).path("/unit_test").get();
+
+        assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
+        assertThat(defaultAuthenticator.calls.get(), is(0));
+        assertThat(namedAuthenticator.calls.get(), is(1));
+    }
+
+    private static final class TrackingAuthenticator extends SynchronousProvider implements AuthenticationProvider {
+        private final boolean reject;
+        private final AtomicInteger calls = new AtomicInteger();
+
+        private TrackingAuthenticator(boolean reject) {
+            this.reject = reject;
+        }
+
+        @Override
+        protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
+            calls.incrementAndGet();
+            if (reject) {
+                return AuthenticationResponse.failed("rejector invoked");
+            }
+            return AuthenticationResponse.success(Principal.create("default invoked"));
+        }
     }
 }
