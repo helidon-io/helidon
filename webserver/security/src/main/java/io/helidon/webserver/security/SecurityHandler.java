@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriQuery;
@@ -58,6 +59,7 @@ import io.helidon.tracing.SpanContext;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.http.spi.ProtocolUpgradeHandler;
 
 import static io.helidon.security.AuditEvent.AuditParam.plain;
 
@@ -68,7 +70,7 @@ import static io.helidon.security.AuditEvent.AuditParam.plain;
  */
 // we need to have all fields optional and this is cleaner than checking for null
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityHandlerConfig> {
+public final class SecurityHandler implements Handler, ProtocolUpgradeHandler, RuntimeType.Api<SecurityHandlerConfig> {
     static final String DEFAULT_AUDIT_EVENT_TYPE = "request";
     static final String DEFAULT_AUDIT_MESSAGE_FORMAT = "%3$s %1$s \"%2$s\" %5$s %6$s requested by %4$s";
     private static final System.Logger LOGGER = System.getLogger(SecurityHandler.class.getName());
@@ -266,6 +268,12 @@ public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityH
             combinedHandler.get().processSecurity(securityContext, req, res);
         }
 
+    }
+
+    @Api.Internal
+    @Override
+    public void handleProtocolUpgrade(ServerRequest req, ServerResponse res) {
+        handle(req, res);
     }
 
     @Override

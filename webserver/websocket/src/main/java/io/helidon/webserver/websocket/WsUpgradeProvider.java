@@ -49,6 +49,6 @@ public class WsUpgradeProvider implements Http1UpgradeProvider<WsConfig> {
 
     @Override
     public Http1Upgrader create(WsConfig config, ProtocolConfigs configs) {
-        return new WsUpgrader(config);
+        return WsUpgrader.create(config);
     }
 }

@@ -23,9 +23,11 @@ import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketWriterException;
@@ -36,11 +38,17 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
-import io.helidon.http.NotFoundException;
+import io.helidon.http.Method;
 import io.helidon.http.RequestException;
+import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.http1.spi.Http1RoutedUpgrade;
+import io.helidon.webserver.http1.spi.Http1RoutedUpgrader;
+import io.helidon.webserver.http1.spi.Http1UpgradeResponse;
+import io.helidon.webserver.http1.spi.Http1UpgradeResult;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.websocket.WsListener;
@@ -72,6 +80,7 @@ public class WsUpgrader implements Http1Upgrader {
      * Websocket protocol header name.
      */
     public static final HeaderName EXTENSIONS = HeaderNames.create("Sec-WebSocket-Extensions");
+    private static final HeaderName WS_ACCEPT = HeaderNames.create("Sec-WebSocket-Accept");
 
     /**
      * Switching response prefix.
@@ -97,6 +106,7 @@ public class WsUpgrader implements Http1Upgrader {
     protected static final Header SUPPORTED_VERSION_HEADER = HeaderValues.create(WS_VERSION, SUPPORTED_VERSION);
     static final Headers EMPTY_HEADERS = WritableHeaders.create();
     private static final System.Logger LOGGER = System.getLogger(WsUpgrader.class.getName());
+    private static final Header CONNECTION_UPGRADE = HeaderValues.create(HeaderNames.CONNECTION, "Upgrade");
     private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(US_ASCII);
     private static final int KEY_SUFFIX_LENGTH = KEY_SUFFIX.length;
     private static final Base64.Decoder B64_DECODER = Base64.getDecoder();
@@ -117,7 +127,7 @@ public class WsUpgrader implements Http1Upgrader {
      * @return a new upgrader
      */
     public static WsUpgrader create(WsConfig config) {
-        return new WsUpgrader(config);
+        return new RoutedUpgrader(config);
     }
 
     @Override
@@ -127,14 +137,60 @@ public class WsUpgrader implements Http1Upgrader {
 
     @Override
     public ServerConnection upgrade(ConnectionContext ctx, HttpPrologue prologue, WritableHeaders<?> headers) {
-        String wsKey;
-        if (headers.contains(WS_KEY)) {
-            wsKey = headers.get(WS_KEY).get();
-        } else {
-            // this header is required
+        Optional<PreparedUpgrade> preparedUpgrade = prepareUpgrade(ctx, prologue, headers);
+        if (preparedUpgrade.isEmpty()) {
             return null;
         }
-        // protocol version
+
+        PreparedUpgrade prepared = preparedUpgrade.get();
+        Optional<Headers> upgradeHeaders;
+        WsListener wsListener = prepared.route.listener();
+        try {
+            upgradeHeaders = wsListener.onHttpUpgrade(prologue, headers);
+        } catch (WsUpgradeException e) {
+            LOGGER.log(Level.TRACE, "Websocket upgrade rejected", e);
+            return null;
+        }
+
+        // write switch protocol response including headers from listener
+        ServerResponseHeaders responseHeaders = handshakeHeaders(ctx, prepared.wsKey, upgradeHeaders);
+        BufferData responseData = BufferData.growing(128);
+        responseData.write("HTTP/1.1 101 Switching Protocols\r\n".getBytes(US_ASCII));
+        responseHeaders.forEach(h -> h.writeHttp1Header(responseData));
+        responseData.write(HEADERS_SEPARATOR);
+        writeUpgradeResponse(ctx.dataWriter(), responseData);
+
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, "Upgraded to websocket version " + SUPPORTED_VERSION);
+        }
+
+        return WsConnection.create(ctx, prologue, upgradeHeaders.orElse(EMPTY_HEADERS), prepared.wsKey, wsListener);
+    }
+
+    private Optional<PreparedUpgrade> prepareUpgrade(ConnectionContext ctx,
+                                                     HttpPrologue prologue,
+                                                     Headers headers) {
+        Optional<WsRoute> route = ctx.router().routing(WsRouting.class, WsRouting.empty())
+                .findRouteIfPresent(prologue);
+        if (route.isEmpty()) {
+            return Optional.empty();
+        }
+
+        if (prologue.method() != Method.GET) {
+            throw RequestException.builder()
+                    .type(DirectHandler.EventType.BAD_REQUEST)
+                    .message("WebSocket upgrade must use GET")
+                    .build();
+        }
+
+        if (!headers.contains(WS_KEY)) {
+            throw RequestException.builder()
+                    .type(DirectHandler.EventType.BAD_REQUEST)
+                    .message("Missing Sec-WebSocket-Key header")
+                    .build();
+        }
+        String wsKey = headers.get(WS_KEY).get();
+
         String version;
         if (headers.contains(WS_VERSION)) {
             version = headers.get(WS_VERSION).get();
@@ -150,43 +206,17 @@ public class WsUpgrader implements Http1Upgrader {
                     .build();
         }
 
-        WsRoute route;
-
-        try {
-            route = ctx.router().routing(WsRouting.class, WsRouting.empty())
-                    .findRoute(prologue);
-        } catch (NotFoundException e) {
-            return null;
-        }
-
         if (headers.contains(HeaderNames.ORIGIN)) {
             validateOrigin(headers, headers.get(HeaderNames.ORIGIN).get());
         }
 
-        // invoke user-provided HTTP upgrade handler
-        Optional<Headers> upgradeHeaders;
-        WsListener wsListener = route.listener();
-        try {
-            upgradeHeaders = wsListener.onHttpUpgrade(prologue, headers);
-        } catch (WsUpgradeException e) {
-            LOGGER.log(Level.TRACE, "Websocket upgrade rejected", e);
-            return null;
-        }
+        return Optional.of(new PreparedUpgrade(route.get(), wsKey));
+    }
 
-        // write switch protocol response including headers from listener
-        String switchingProtocols = SWITCHING_PROTOCOL_PREFIX + hash(ctx, wsKey);
-        BufferData responseData = BufferData.growing(128);
-        responseData.write(switchingProtocols.getBytes(US_ASCII));
-        responseData.write(HEADERS_SEPARATOR);
-        upgradeHeaders.ifPresent(hs -> hs.forEach(h -> h.writeHttp1Header(responseData)));
-        responseData.write(HEADERS_SEPARATOR);
-        writeUpgradeResponse(ctx.dataWriter(), responseData);
-
-        if (LOGGER.isLoggable(Level.TRACE)) {
-            LOGGER.log(Level.TRACE, "Upgraded to websocket version " + version);
-        }
-
-        return WsConnection.create(ctx, prologue, upgradeHeaders.orElse(EMPTY_HEADERS), wsKey, wsListener);
+    protected static boolean isWebSocketUpgrade(Headers headers) {
+        return headers.contains(HeaderNames.UPGRADE)
+                && "websocket".equalsIgnoreCase(headers.get(HeaderNames.UPGRADE).get())
+                && headers.containsToken(CONNECTION_UPGRADE);
     }
 
     private static void writeUpgradeResponse(DataWriter dataWriter, BufferData responseData) {
@@ -195,6 +225,15 @@ public class WsUpgrader implements Http1Upgrader {
         } catch (SocketWriterException | UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write websocket upgrade response", e);
         }
+    }
+
+    private ServerResponseHeaders handshakeHeaders(ConnectionContext ctx, String wsKey, Optional<Headers> upgradeHeaders) {
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        upgradeHeaders.ifPresent(responseHeaders::from);
+        responseHeaders.set(HeaderValues.create(HeaderNames.CONNECTION, "Upgrade"));
+        responseHeaders.set(HeaderValues.create(HeaderNames.UPGRADE, "websocket"));
+        responseHeaders.set(HeaderValues.create(WS_ACCEPT, hash(ctx, wsKey)));
+        return responseHeaders;
     }
 
     protected boolean anyOrigin() {
@@ -211,7 +250,7 @@ public class WsUpgrader implements Http1Upgrader {
      * @param headers request headers
      * @param origin origin header value
      */
-    private void validateOrigin(WritableHeaders<?> headers, String origin) {
+    protected void validateOrigin(Headers headers, String origin) {
         if (!anyOrigin()) {
             if (origins().contains(origin)) {
                 return;
@@ -233,7 +272,7 @@ public class WsUpgrader implements Http1Upgrader {
      * @param origin origin header value
      * @return {@code true} if the authorities match
      */
-    private boolean matchesAuthority(WritableHeaders<?> headers, String origin) {
+    private boolean matchesAuthority(Headers headers, String origin) {
         URI originUri;
         try {
             originUri = new URI(origin);
@@ -347,6 +386,65 @@ public class WsUpgrader implements Http1Upgrader {
         } catch (NoSuchAlgorithmException e) {
             ctx.log(LOGGER, Level.ERROR, "SHA-1 must be provided for WebSocket to work", e);
             throw new IllegalStateException("SHA-1 not provided", e);
+        }
+    }
+
+    private final class PreparedUpgrade {
+        private final WsRoute route;
+        private final String wsKey;
+
+        private PreparedUpgrade(WsRoute route, String wsKey) {
+            this.route = route;
+            this.wsKey = wsKey;
+        }
+
+        Http1UpgradeResult upgrade(ConnectionContext ctx,
+                                   HttpPrologue prologue,
+                                   Headers headers,
+                                   Http1UpgradeResponse response) {
+            if (!isWebSocketUpgrade(headers)) {
+                return Http1UpgradeResult.notApplicable();
+            }
+
+            Optional<PreparedUpgrade> finalPrepared = prepareUpgrade(ctx, prologue, headers);
+            if (finalPrepared.isEmpty()) {
+                return Http1UpgradeResult.notApplicable();
+            }
+
+            PreparedUpgrade prepared = finalPrepared.get();
+            Optional<Headers> upgradeHeaders;
+            WsListener wsListener = prepared.route.listener();
+            try {
+                upgradeHeaders = Objects.requireNonNull(wsListener.onHttpUpgrade(prologue, headers));
+            } catch (WsUpgradeException e) {
+                LOGGER.log(Level.TRACE, "Websocket upgrade rejected", e);
+                response.send(Status.BAD_REQUEST_400);
+                return Http1UpgradeResult.responded();
+            }
+
+            response.sendSwitchingProtocols(handshakeHeaders(ctx, prepared.wsKey, upgradeHeaders));
+
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Upgraded to websocket version " + SUPPORTED_VERSION);
+            }
+
+            return Http1UpgradeResult.upgraded(
+                    WsConnection.create(ctx, prologue, upgradeHeaders.orElse(EMPTY_HEADERS), prepared.wsKey, wsListener));
+        }
+    }
+
+    private static final class RoutedUpgrader extends WsUpgrader implements Http1RoutedUpgrader {
+        private RoutedUpgrader(WsConfig wsConfig) {
+            super(wsConfig);
+        }
+
+        @Api.Internal
+        @Override
+        public Optional<Http1RoutedUpgrade> routedUpgrade(ConnectionContext ctx,
+                                                         HttpPrologue prologue,
+                                                         WritableHeaders<?> headers) {
+            return ((WsUpgrader) this).prepareUpgrade(ctx, prologue, headers)
+                    .map(prepared -> (response, requestHeaders) -> prepared.upgrade(ctx, prologue, requestHeaders, response));
         }
     }
 }
