@@ -17,6 +17,7 @@
 package io.helidon.webserver;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -91,9 +92,51 @@ class RequestRouting implements Routing {
                     bareResponse,
                     requestHeaders.acceptedTypes());
 
-            // Jersey needs the raw path (not decoded) so we get that too
-            String path = canonicalize(bareRequest.uri().normalize().getPath());
-            String rawPath = canonicalize(bareRequest.uri().normalize().getRawPath());
+            URI uri = bareRequest.uri();
+            String path;
+            String rawPath;
+            String routingPath = uri.getRawPath();
+            boolean decodedNormalization = false;
+            if (uri.getScheme() == null && uri.getRawAuthority() != null) {
+                routingPath = uri.getRawSchemeSpecificPart();
+                int queryIndex = routingPath.indexOf('?');
+                if (queryIndex >= 0) {
+                    routingPath = routingPath.substring(0, queryIndex);
+                }
+                int fragmentIndex = routingPath.indexOf('#');
+                if (fragmentIndex >= 0) {
+                    routingPath = routingPath.substring(0, fragmentIndex);
+                }
+                decodedNormalization = true;
+            }
+            if (routingPath == null) {
+                routingPath = "";
+            }
+            String pathWithSingleLeadingSlash = collapseLeadingSlashes(routingPath);
+            if (pathWithSingleLeadingSlash.length() != routingPath.length()) {
+                routingPath = pathWithSingleLeadingSlash;
+                decodedNormalization = true;
+            }
+            boolean rawPathParams = PathHelper.hasRawPathParams(routingPath);
+            int percentIndex = routingPath.indexOf('%');
+            while (!decodedNormalization && !rawPathParams && percentIndex >= 0 && percentIndex + 2 < routingPath.length()) {
+                char first = routingPath.charAt(percentIndex + 1);
+                char second = routingPath.charAt(percentIndex + 2);
+                decodedNormalization = first == '2'
+                        && (second == 'e' || second == 'E' || second == 'f' || second == 'F');
+                percentIndex = routingPath.indexOf('%', percentIndex + 1);
+            }
+            if (decodedNormalization) {
+                URI routingUri = URI.create(routingPath);
+                path = rawPathParams
+                        ? canonicalize(collapseLeadingSlashes(routingUri.normalize().getPath()))
+                        : normalizeDecodedPath(routingUri.getPath());
+                rawPath = canonicalize(collapseLeadingSlashes(routingUri.normalize().getRawPath()));
+            } else {
+                URI normalizedUri = uri.normalize();
+                path = canonicalize(collapseLeadingSlashes(normalizedUri.getPath()));
+                rawPath = canonicalize(collapseLeadingSlashes(normalizedUri.getRawPath()));
+            }
 
             Crawler crawler = new Crawler(routes, path, rawPath, bareRequest.method(), bareRequest.version());
             RoutedRequest nextRequests = new RoutedRequest(bareRequest, response, webServer, crawler, errorHandlers,
@@ -121,6 +164,71 @@ class RequestRouting implements Routing {
         return result;
     }
 
+    private static String normalizeDecodedPath(String path) {
+        try {
+            String normalizedPath = new URI(null, null, collapseLeadingSlashes(path), null).normalize().getPath();
+            while (normalizedPath.equals("/..") || normalizedPath.startsWith("/../")) {
+                normalizedPath = normalizedPath.length() == 3 ? "/" : normalizedPath.substring(3);
+            }
+            return canonicalize(normalizedPath);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid request path", e);
+        }
+    }
+
+    private static String collapseLeadingSlashes(String path) {
+        if (path == null || !path.startsWith("//")) {
+            return path;
+        }
+        int firstNonSlash = 2;
+        while (firstNonSlash < path.length() && path.charAt(firstNonSlash) == '/') {
+            firstNonSlash++;
+        }
+        return "/" + path.substring(firstNonSlash);
+    }
+
+    private static String remainingPart(String path,
+                                        String pathWithoutParams,
+                                        String remainingPartWithoutParams,
+                                        boolean encodedSemicolon) {
+        int matchedLength = "/".equals(remainingPartWithoutParams)
+                ? pathWithoutParams.length()
+                : pathWithoutParams.length() - remainingPartWithoutParams.length();
+        int pathIndex = 0;
+        int pathWithoutParamsIndex = 0;
+        boolean pathParam = false;
+        while (pathIndex < path.length() && pathWithoutParamsIndex < matchedLength) {
+            char ch = path.charAt(pathIndex);
+            switch (ch) {
+            case ';':
+                pathParam = true;
+                break;
+            case '%':
+                if (encodedSemicolon && PathHelper.isEncodedSemicolon(path, pathIndex)) {
+                    pathParam = true;
+                    pathIndex += 2;
+                } else if (!pathParam) {
+                    pathWithoutParamsIndex++;
+                }
+                break;
+            case '/':
+                pathParam = false;
+                pathWithoutParamsIndex++;
+                break;
+            default:
+                if (!pathParam) {
+                    pathWithoutParamsIndex++;
+                }
+                break;
+            }
+            pathIndex++;
+        }
+        while (pathIndex < path.length() && path.charAt(pathIndex) != '/') {
+            pathIndex++;
+        }
+        return pathIndex == path.length() ? "/" : path.substring(pathIndex);
+    }
+
     /**
      * Fire event, that new {@link WebServer} is created.
      *
@@ -141,11 +249,19 @@ class RequestRouting implements Routing {
         private final Request.Path contextPath;
         private final String path;
         private final String rawPath;
+        private final boolean pathParams;
+        private final boolean rawPathParams;
         private final Http.RequestMethod method;
         private final Http.Version version;
 
         private volatile int index = -1;
         private volatile Crawler subCrawler;
+        private String pathWithoutParams;
+        private String pathWithoutParamsBeforeNormalization;
+        private String rawPathWithoutParams;
+        private String decodedRawPathWithoutParams;
+        private Boolean pathParamsFallbackAllowed;
+        private boolean pathWithoutParamsNormalized;
 
         /**
          * Creates new instance.
@@ -162,6 +278,8 @@ class RequestRouting implements Routing {
             this.routes = routes;
             this.path = path;
             this.rawPath = rawPath;
+            this.pathParams = path.indexOf(';') >= 0;
+            this.rawPathParams = PathHelper.hasRawPathParams(rawPath);
             this.contextPath = contextPath;
             this.method = method;
             this.version = version;
@@ -204,25 +322,46 @@ class RequestRouting implements Routing {
                     if (route.accepts(method)) {
                         if (route instanceof HandlerRoute hr) {
                             PathMatcher.Result match = hr.match(path);
+                            if (match.matches() && (pathParams || rawPathParams)) {
+                                boolean checkedFallback = false;
+                                boolean matchedFallback = false;
+                                if (rawPathParams) {
+                                    String rawPathWithoutParams = rawPathWithoutParams();
+                                    if (!rawPathWithoutParams.equals(rawPath)) {
+                                        checkedFallback = true;
+                                        matchedFallback = hr.match(decodedRawPathWithoutParams(rawPathWithoutParams))
+                                                .matches();
+                                    }
+                                }
+                                if (!matchedFallback && pathParamsFallbackAllowed()) {
+                                    String pathWithoutParams = pathWithoutParams();
+                                    if (!pathWithoutParams.equals(path)) {
+                                        checkedFallback = true;
+                                        matchedFallback = hr.match(pathWithoutParams).matches();
+                                    }
+                                }
+                                if (checkedFallback && !matchedFallback) {
+                                    match = PathPattern.NOT_MATCHED_RESULT;
+                                }
+                            }
+                            if (!match.matches() && rawPathParams) {
+                                String rawPathWithoutParams = rawPathWithoutParams();
+                                if (!rawPathWithoutParams.equals(rawPath)) {
+                                    match = hr.match(decodedRawPathWithoutParams(rawPathWithoutParams));
+                                }
+                            }
+                            if (!match.matches() && pathParamsFallbackAllowed()) {
+                                match = hr.match(pathWithoutParams());
+                            }
                             if (match.matches() && hr.matchVersion(version)) {
                                 if (protocolUpgrade && !(hr.handler() instanceof ProtocolUpgradeHandler)) {
                                     continue;
                                 }
                                 return new Item(hr, Request.Path.create(contextPath, path, rawPath, match.params()));
                             }
-                        } else if (route instanceof RouteList rl) {
-                            PathMatcher.PrefixResult prefixMatch = rl.prefixMatch(path);
-                            PathMatcher.PrefixResult rawPrefixMatch = rl.prefixMatch(rawPath);
-                            if (prefixMatch.matches()) {
-                                subCrawler = new Crawler(rl,
-                                                         Request.Path.create(contextPath, path, rawPath, prefixMatch.params()),
-                                                         prefixMatch.remainingPart(),
-                                                         rawPrefixMatch.remainingPart(),
-                                                         method,
-                                                         version);
-                                // do "continue" in order to not log the failure message bellow
-                                continue;
-                            }
+                        } else if (route instanceof RouteList rl && routeListMatched(rl)) {
+                            // do "continue" in order to not log the failure message bellow
+                            continue;
                         }
 
                         LOGGER.finest(() -> "Route candidate '" + route + "' doesn't match path: " + path);
@@ -232,6 +371,187 @@ class RequestRouting implements Routing {
                 }
             }
             return null;
+        }
+
+        private boolean routeListMatched(RouteList rl) {
+            PathMatcher.PrefixResult prefixMatch = rl.prefixMatch(path);
+            String remainingPart = prefixMatch.remainingPart();
+            String rawPathToMatch = rawPath;
+            String rawPathWithoutParams = null;
+            String rawRemainingPartFromFallback = null;
+            if (prefixMatch.matches() && (pathParams || rawPathParams)) {
+                boolean checkedFallback = false;
+                boolean matchedFallback = false;
+                if (rawPathParams) {
+                    rawPathWithoutParams = rawPathWithoutParams();
+                    if (!rawPathWithoutParams.equals(rawPath)) {
+                        checkedFallback = true;
+                        String decodedRawPathWithoutParams = decodedRawPathWithoutParams(rawPathWithoutParams);
+                        matchedFallback = rl.prefixMatch(decodedRawPathWithoutParams).matches();
+                    }
+                }
+                if (!matchedFallback && pathParamsFallbackAllowed()) {
+                    String pathWithoutParams = pathWithoutParams();
+                    if (!pathWithoutParams.equals(path)) {
+                        checkedFallback = true;
+                        matchedFallback = rl.prefixMatch(pathWithoutParams).matches();
+                    }
+                }
+                if (checkedFallback && !matchedFallback) {
+                    prefixMatch = PathPattern.NOT_MATCHED_RESULT;
+                    remainingPart = prefixMatch.remainingPart();
+                }
+            }
+            if (!prefixMatch.matches() && rawPathParams) {
+                rawPathWithoutParams = rawPathWithoutParams();
+                if (!rawPathWithoutParams.equals(rawPath)) {
+                    String decodedRawPathWithoutParams = decodedRawPathWithoutParams(rawPathWithoutParams);
+                    prefixMatch = rl.prefixMatch(decodedRawPathWithoutParams);
+                    if (prefixMatch.matches()) {
+                        PathMatcher.PrefixResult rawStrippedPrefixMatch = rl.prefixMatch(rawPathWithoutParams);
+                        String remainingPartWithoutParams = rawStrippedPrefixMatch.matches()
+                                ? rawStrippedPrefixMatch.remainingPart()
+                                : prefixMatch.remainingPart();
+                        if (!rawStrippedPrefixMatch.matches() && !"/".equals(remainingPartWithoutParams)) {
+                            int rawSuffixIndex = rawPathWithoutParams.indexOf('/');
+                            boolean found = false;
+                            while (rawSuffixIndex >= 0) {
+                                String rawSuffix = rawPathWithoutParams.substring(rawSuffixIndex);
+                                if (remainingPartWithoutParams.equals(URI.create(rawSuffix).getPath())) {
+                                    remainingPartWithoutParams = rawSuffix;
+                                    found = true;
+                                    break;
+                                }
+                                rawSuffixIndex = rawPathWithoutParams.indexOf('/', rawSuffixIndex + 1);
+                            }
+                            if (!found) {
+                                remainingPart = prefixMatch.remainingPart();
+                                rawRemainingPartFromFallback = remainingPart;
+                            }
+                        }
+                        if (rawRemainingPartFromFallback == null) {
+                            rawRemainingPartFromFallback = remainingPart(rawPath, rawPathWithoutParams,
+                                                                         remainingPartWithoutParams, true);
+                            remainingPart = URI.create(rawRemainingPartFromFallback).getPath();
+                        }
+                    }
+                }
+            }
+            if (!prefixMatch.matches() && pathParamsFallbackAllowed()) {
+                String pathWithoutParams = pathWithoutParams();
+                prefixMatch = rl.prefixMatch(pathWithoutParams);
+                if (prefixMatch.matches()) {
+                    remainingPart = pathWithoutParamsNormalized
+                            ? remainingPart(path, pathWithoutParamsBeforeNormalization, prefixMatch.remainingPart(), false)
+                            : remainingPart(path, pathWithoutParams, prefixMatch.remainingPart(), false);
+                }
+            }
+            if (prefixMatch.matches()) {
+                PathMatcher.PrefixResult rawPrefixMatch = rl.prefixMatch(rawPathToMatch);
+                boolean rawPrefixMatchedWithoutParams = false;
+                if (!rawPrefixMatch.matches() && rawPathParams) {
+                    rawPathWithoutParams = rawPathWithoutParams();
+                    rawPathToMatch = rawPathWithoutParams;
+                    rawPrefixMatch = rl.prefixMatch(rawPathToMatch);
+                    rawPrefixMatchedWithoutParams = rawPrefixMatch.matches();
+                }
+                String rawRemainingPart = rawRemainingPartFromFallback;
+                if (rawRemainingPart == null) {
+                    rawRemainingPart = rawPrefixMatch.matches()
+                            ? rawPrefixMatchedWithoutParams
+                                    ? remainingPart(rawPath, rawPathWithoutParams, rawPrefixMatch.remainingPart(), true)
+                                    : rawPrefixMatch.remainingPart()
+                            : rawPathWithoutParams == null
+                                    ? remainingPart
+                                    : remainingPart(rawPath,
+                                                    rawPathWithoutParams,
+                                                    PathHelper.extractRawPathParams(remainingPart),
+                                                    true);
+                }
+                subCrawler = new Crawler(rl,
+                                         Request.Path.create(contextPath, path, rawPath, prefixMatch.params()),
+                                         remainingPart,
+                                         rawRemainingPart,
+                                         method,
+                                         version);
+                return true;
+            }
+            return false;
+        }
+
+        private boolean pathParamsFallbackAllowed() {
+            if (!pathParams) {
+                return false;
+            }
+            if (!rawPathParams) {
+                return true;
+            }
+            Boolean allowed = pathParamsFallbackAllowed;
+            if (allowed == null) {
+                int segmentStart = rawPath.startsWith("/") ? 1 : 0;
+                allowed = false;
+                while (segmentStart < rawPath.length()) {
+                    int segmentEnd = rawPath.indexOf('/', segmentStart);
+                    if (segmentEnd < 0) {
+                        segmentEnd = rawPath.length();
+                    }
+                    int paramStart = segmentEnd;
+                    int semicolon = rawPath.indexOf(';', segmentStart);
+                    if (semicolon >= 0 && semicolon < paramStart) {
+                        paramStart = semicolon;
+                    }
+                    int percentIndex = rawPath.indexOf('%', segmentStart);
+                    while (percentIndex >= 0 && percentIndex < paramStart) {
+                        if (PathHelper.isEncodedSemicolon(rawPath, percentIndex)) {
+                            paramStart = percentIndex;
+                            break;
+                        }
+                        percentIndex = rawPath.indexOf('%', percentIndex + 1);
+                    }
+                    if (paramStart < segmentEnd) {
+                        String decodedSegmentName = URI.create("/" + rawPath.substring(segmentStart, paramStart))
+                                .getPath()
+                                .substring(1);
+                        if (".".equals(decodedSegmentName) || "..".equals(decodedSegmentName)) {
+                            allowed = true;
+                            break;
+                        }
+                    }
+                    segmentStart = segmentEnd + 1;
+                }
+                pathParamsFallbackAllowed = allowed;
+            }
+            return allowed;
+        }
+
+        private String pathWithoutParams() {
+            String pathWithoutParams = this.pathWithoutParams;
+            if (pathWithoutParams == null) {
+                String extractedPathWithoutParams = PathHelper.extractPathParams(path);
+                pathWithoutParamsBeforeNormalization = extractedPathWithoutParams;
+                pathWithoutParams = normalizeDecodedPath(extractedPathWithoutParams);
+                pathWithoutParamsNormalized = !pathWithoutParams.equals(extractedPathWithoutParams);
+                this.pathWithoutParams = pathWithoutParams;
+            }
+            return pathWithoutParams;
+        }
+
+        private String rawPathWithoutParams() {
+            String rawPathWithoutParams = this.rawPathWithoutParams;
+            if (rawPathWithoutParams == null) {
+                rawPathWithoutParams = PathHelper.extractRawPathParams(rawPath);
+                this.rawPathWithoutParams = rawPathWithoutParams;
+            }
+            return rawPathWithoutParams;
+        }
+
+        private String decodedRawPathWithoutParams(String rawPathWithoutParams) {
+            String decodedRawPathWithoutParams = this.decodedRawPathWithoutParams;
+            if (decodedRawPathWithoutParams == null) {
+                decodedRawPathWithoutParams = normalizeDecodedPath(URI.create(rawPathWithoutParams).getPath());
+                this.decodedRawPathWithoutParams = decodedRawPathWithoutParams;
+            }
+            return decodedRawPathWithoutParams;
         }
 
         /**

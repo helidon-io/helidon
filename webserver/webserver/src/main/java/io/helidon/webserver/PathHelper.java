@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,21 +53,50 @@ class PathHelper {
      * @return path with path params removed.
      */
     static String extractPathParams(String path) {
-        // Avoid conversion for the common case of no params
-        if (!path.contains(";")) {
+        return extractPathParams(path, false);
+    }
+
+    static String extractRawPathParams(String path) {
+        return extractPathParams(path, true);
+    }
+
+    static boolean hasRawPathParams(String path) {
+        return path.indexOf(';') >= 0 || hasEncodedSemicolon(path);
+    }
+
+    private static String extractPathParams(String path, boolean encodedSemicolon) {
+        if (path.indexOf(';') < 0 && (!encodedSemicolon || !hasEncodedSemicolon(path))) {
             return path;
         }
 
         // Skip over any param paths
         State state = State.NORMAL;
         int n = path.length();
-        StringBuilder builder = new StringBuilder(n);
+        StringBuilder builder = null;
         for (int i = 0; i < n; i++) {
             char ch = path.charAt(i);
             switch (ch) {
                 case ';':
                     if (state == State.NORMAL) {
+                        if (builder == null) {
+                            builder = new StringBuilder(n);
+                            builder.append(path, 0, i);
+                        }
                         state = State.PATH_PARAM;
+                    }
+                    break;
+                case '%':
+                    if (encodedSemicolon && state != State.QUERY_PARAM && isEncodedSemicolon(path, i)) {
+                        if (builder == null) {
+                            builder = new StringBuilder(n);
+                            builder.append(path, 0, i);
+                        }
+                        state = State.PATH_PARAM;
+                        i += 2;
+                    } else if (state != State.PATH_PARAM) {
+                        if (builder != null) {
+                            builder.append(ch);
+                        }
                     }
                     break;
                 case '/':
@@ -75,19 +104,42 @@ class PathHelper {
                         throw new IllegalStateException("Unexpected state " + state);
                     }
                     state = State.NORMAL;
-                    builder.append(ch);
+                    if (builder != null) {
+                        builder.append(ch);
+                    }
                     break;
                 case '?':
                     state = State.QUERY_PARAM;
-                    builder.append(ch);
+                    if (builder != null) {
+                        builder.append(ch);
+                    }
                     break;
                 default:
-                    if (state != State.PATH_PARAM) {
+                    if (state != State.PATH_PARAM && builder != null) {
                         builder.append(ch);
                     }
                     break;
             }
         }
-        return canonicalize(builder.toString());
+        return builder == null ? path : canonicalize(builder.toString());
+    }
+
+    private static boolean hasEncodedSemicolon(String path) {
+        int index = path.indexOf('%');
+        while (index >= 0) {
+            if (isEncodedSemicolon(path, index)) {
+                return true;
+            }
+            index = path.indexOf('%', index + 1);
+        }
+        return false;
+    }
+
+    static boolean isEncodedSemicolon(String path, int index) {
+        if (index + 2 >= path.length()) {
+            return false;
+        }
+        return path.charAt(index + 1) == '3'
+                && (path.charAt(index + 2) == 'b' || path.charAt(index + 2) == 'B');
     }
 }

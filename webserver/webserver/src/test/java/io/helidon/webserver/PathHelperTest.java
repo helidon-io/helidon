@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webserver;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.webserver.PathHelper.extractPathParams;
+import static io.helidon.webserver.PathHelper.extractRawPathParams;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -40,5 +41,8 @@ class PathHelperTest {
         assertThat(extractPathParams(";"), is("/"));
         assertThat(extractPathParams(";/admin/"), is("/admin"));
         assertThat(extractPathParams("/admin;a=b?b=c"), is("/admin?b=c"));
+        assertThat(extractPathParams("/admin%3Ba=b/list%3Bc=d"), is("/admin%3Ba=b/list%3Bc=d"));
+        assertThat(extractRawPathParams("/admin%3Ba=b/list%3Bc=d"), is("/admin/list"));
+        assertThat(extractRawPathParams("/admin%3ba=b/list%3bc=d%3be=f"), is("/admin/list"));
     }
 }
