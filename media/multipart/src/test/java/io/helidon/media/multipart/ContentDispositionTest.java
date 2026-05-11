@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,11 +131,59 @@ public class ContentDispositionTest {
     }
 
     @Test
+    public void testFilenameWithDirectoryPathUsesOnlyTerminalComponent() {
+        ContentDisposition cd = ContentDisposition.parse("inline; filename=%2e%2e%2f%2e%2e%2fetc%2fpasswd");
+        assertThat(cd.type(), is(equalTo("inline")));
+        assertThat(cd.filename().isPresent(), is(equalTo(true)));
+        assertThat(cd.filename().get(), is(equalTo("passwd")));
+        assertThat(cd.parameters(), is(notNullValue()));
+        assertThat(cd.parameters().size(), is(equalTo(1)));
+    }
+
+    @Test
+    public void testFilenameWithEncodedBackslashUsesOnlyTerminalComponent() {
+        ContentDisposition cd = ContentDisposition.parse("inline; filename=%2e%2e%5c%2e%2e%5cpasswd");
+        assertThat(cd.type(), is(equalTo("inline")));
+        assertThat(cd.filename().isPresent(), is(equalTo(true)));
+        assertThat(cd.filename().get(), is(equalTo("passwd")));
+        assertThat(cd.parameters(), is(notNullValue()));
+        assertThat(cd.parameters().size(), is(equalTo(1)));
+    }
+
+    @Test
+    public void testFilenameWithControlCharacterRejected() {
+        ContentDisposition cd = ContentDisposition.parse("inline; filename=file%0aname.txt");
+        assertThrows(IllegalArgumentException.class, cd::filename);
+    }
+
+    @Test
+    public void testFilenameWithEmptyQuotedValueRejected() {
+        ContentDisposition cd = ContentDisposition.parse("inline; filename=\"\"");
+        assertThrows(IllegalArgumentException.class, cd::filename);
+    }
+
+    @Test
+    public void testFilenameWithEmptyFinalSegmentRejected() {
+        ContentDisposition cd = ContentDisposition.parse("inline; filename=path%2f");
+        assertThrows(IllegalArgumentException.class, cd::filename);
+    }
+
+    @Test
+    public void testFilenameWithDotFinalSegmentRejected() {
+        ContentDisposition dot = ContentDisposition.parse("inline; filename=%2e");
+        ContentDisposition dotDot = ContentDisposition.parse("inline; filename=%2e%2e");
+        ContentDisposition pathDotDot = ContentDisposition.parse("inline; filename=path%2f%2e%2e");
+        assertThrows(IllegalArgumentException.class, dot::filename);
+        assertThrows(IllegalArgumentException.class, dotDot::filename);
+        assertThrows(IllegalArgumentException.class, pathDotDot::filename);
+    }
+
+    @Test
     public void testFilenameWithBackslash() {
         ContentDisposition cd = ContentDisposition.parse("inline; filename=\"C:\\index.html\"");
         assertThat(cd.type(), is(equalTo("inline")));
         assertThat(cd.filename().isPresent(), is(equalTo(true)));
-        assertThat(cd.filename().get(), is(equalTo("C:\\index.html")));
+        assertThat(cd.filename().get(), is(equalTo("index.html")));
         assertThat(cd.parameters(), is(notNullValue()));
         assertThat(cd.parameters().size(), is(equalTo(1)));
     }
@@ -158,6 +206,21 @@ public class ContentDispositionTest {
         assertThat(cd.name().get(), is(equalTo("bar")));
         assertThat(cd.parameters(), is(notNullValue()));
         assertThat(cd.parameters().size(), is(equalTo(1)));
+    }
+
+    @Test
+    public void testCaseInsensitiveParameterNames() {
+        ContentDisposition cd = ContentDisposition.parse("form-data; NaMe=user; "
+                + "FileName=%2e%2e%2fetc%2fpasswd; SIZE=128");
+        assertThat(cd.type(), is(equalTo("form-data")));
+        assertThat(cd.name().isPresent(), is(equalTo(true)));
+        assertThat(cd.name().get(), is(equalTo("user")));
+        assertThat(cd.filename().isPresent(), is(equalTo(true)));
+        assertThat(cd.filename().get(), is(equalTo("passwd")));
+        assertThat(cd.size().isPresent(), is(equalTo(true)));
+        assertThat(cd.size().getAsLong(), is(equalTo(128L)));
+        assertThat(cd.parameters(), is(notNullValue()));
+        assertThat(cd.parameters().size(), is(equalTo(3)));
     }
 
     @Test

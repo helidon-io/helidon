@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
 
@@ -40,6 +41,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -487,6 +489,75 @@ public class MultiPartDecoderTest {
             boolean b = testSubscriber.complete.orTimeout(200, TimeUnit.MILLISECONDS).join();
             assertThat(b, is(equalTo(true)));
         } catch(CompletionException error) {
+            assertThat(error, is(nullValue()));
+        }
+    }
+
+    @Test
+    public void testFilenameWithDirectoryPathUsesOnlyTerminalComponent() {
+        String boundary = "boundary";
+        final byte[] chunk1 = ("--" + boundary + "\n"
+                + "Content-Disposition: form-data; name=\"file[]\"; filename=\"%2e%2e%2f%2e%2e%2fetc%2fpasswd\"\n"
+                + "\n"
+                + "body 1\n"
+                + "--" + boundary + "--").getBytes();
+
+        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.INFINITE, part -> {
+            assertThat(part.headers().contentType(), is(MediaType.APPLICATION_OCTET_STREAM));
+            assertThat(part.headers().contentDisposition().filename().orElse(null), is("passwd"));
+            part.drain();
+        });
+        partsPublisher(boundary, chunk1).subscribe(testSubscriber);
+        try {
+            boolean b = testSubscriber.complete.orTimeout(200, TimeUnit.MILLISECONDS).join();
+            assertThat(b, is(equalTo(true)));
+        } catch (CompletionException error) {
+            assertThat(error, is(nullValue()));
+        }
+    }
+
+    @Test
+    public void testMixedCaseFilenameWithDirectoryPathUsesOnlyTerminalComponent() {
+        String boundary = "boundary";
+        final byte[] chunk1 = ("--" + boundary + "\n"
+                + "Content-Disposition: form-data; name=\"file[]\"; Filename=\"%2e%2e%2f%2e%2e%2fetc%2fpasswd\"\n"
+                + "\n"
+                + "body 1\n"
+                + "--" + boundary + "--").getBytes();
+
+        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.INFINITE, part -> {
+            assertThat(part.headers().contentType(), is(MediaType.APPLICATION_OCTET_STREAM));
+            assertThat(part.headers().contentDisposition().filename().orElse(null), is("passwd"));
+            part.drain();
+        });
+        partsPublisher(boundary, chunk1).subscribe(testSubscriber);
+        try {
+            boolean b = testSubscriber.complete.orTimeout(200, TimeUnit.MILLISECONDS).join();
+            assertThat(b, is(equalTo(true)));
+        } catch (CompletionException error) {
+            assertThat(error, is(nullValue()));
+        }
+    }
+
+    @Test
+    public void testUnsafeFilenameDoesNotFailPartCreation() {
+        String boundary = "boundary";
+        final byte[] chunk1 = ("--" + boundary + "\n"
+                + "Content-Disposition: form-data; name=\"file[]\"; filename=\"file%0aname.txt\"\n"
+                + "\n"
+                + "body 1\n"
+                + "--" + boundary + "--").getBytes();
+
+        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.INFINITE, part -> {
+            assertThat(part.headers().contentType(), is(MediaType.APPLICATION_OCTET_STREAM));
+            assertThrows(IllegalArgumentException.class, () -> part.headers().contentDisposition().filename());
+            part.drain();
+        });
+        partsPublisher(boundary, chunk1).subscribe(testSubscriber);
+        try {
+            boolean b = testSubscriber.complete.orTimeout(200, TimeUnit.MILLISECONDS).join();
+            assertThat(b, is(equalTo(true)));
+        } catch (CompletionException error) {
             assertThat(error, is(nullValue()));
         }
     }

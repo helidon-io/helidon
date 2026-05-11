@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -107,14 +108,37 @@ public final class ContentDisposition {
      * Get the value of the {@code filename} parameter that can be used to
      * suggest a filename to be used if the entity is detached and stored in a
      * separate file.
+     * <p>
+     * The value is percent-decoded. Any directory path information in the
+     * parameter is ignored and only the final path segment is returned. An
+     * invalid final segment, such as an empty name, {@code .}, {@code ..}, or a
+     * name containing control characters, causes an {@link IllegalArgumentException}.
+     * </p>
      *
      * @return {@code Optional<String>}, never {@code null}
+     * @throws IllegalArgumentException if the filename is malformed or unsafe
      */
     public Optional<String> filename() {
         String filename = null;
         String value = parameters.get(FILENAME_PARAMETER);
         if (value != null) {
             filename = URLDecoder.decode(value, StandardCharsets.UTF_8);
+            int lastForwardSlash = filename.lastIndexOf('/');
+            int lastBackslash = filename.lastIndexOf('\\');
+            int lastSlash = Math.max(lastForwardSlash, lastBackslash);
+            if (lastSlash >= 0) {
+                filename = filename.substring(lastSlash + 1);
+            }
+            if (filename.isEmpty() || ".".equals(filename) || "..".equals(filename)) {
+                throw new IllegalArgumentException("Invalid filename parameter.");
+            }
+            for (int i = 0; i < filename.length(); i++) {
+                if (Character.isISOControl(filename.charAt(i))) {
+                    throw new IllegalArgumentException("Filename parameter contains a control character at position "
+                                                               + i
+                                                               + ".");
+                }
+            }
         }
         return Optional.ofNullable(filename);
     }
@@ -214,13 +238,13 @@ public final class ContentDisposition {
         Objects.requireNonNull(input, "Parameter 'input' is null!");
         Tokenizer tokenizer = new Tokenizer(input.trim());
         try {
-            String type = tokenizer.consumeToken(TOKEN_MATCHER).toLowerCase();
+            String type = tokenizer.consumeToken(TOKEN_MATCHER).toLowerCase(Locale.ROOT);
             Map<String, String> parameters = new HashMap<>();
             while (tokenizer.hasMore()) {
                 tokenizer.consumeTokenIfPresent(LINEAR_WHITE_SPACE);
                 tokenizer.consumeCharacter(';');
                 tokenizer.consumeTokenIfPresent(LINEAR_WHITE_SPACE);
-                String attribute = tokenizer.consumeToken(TOKEN_MATCHER);
+                String attribute = tokenizer.consumeToken(TOKEN_MATCHER).toLowerCase(Locale.ROOT);
                 tokenizer.consumeCharacter('=');
                 final String value;
                 if ('"' == tokenizer.previewChar()) {

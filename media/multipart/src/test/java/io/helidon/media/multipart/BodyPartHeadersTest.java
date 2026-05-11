@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,16 @@ public class BodyPartHeadersTest {
     public void testDefaultContentTypeForFile() {
         ReadableBodyPartHeaders headers = ReadableBodyPartHeaders.builder()
                 .header("Content-Disposition", "form-data; filename=foo")
+                .build();
+        assertThat(headers.contentType(), is(notNullValue()));
+        assertThat(headers.contentType(),
+                is(equalTo(MediaType.APPLICATION_OCTET_STREAM)));
+    }
+
+    @Test
+    public void testDefaultContentTypeForFileWithMixedCaseParameter() {
+        ReadableBodyPartHeaders headers = ReadableBodyPartHeaders.builder()
+                .header("Content-Disposition", "form-data; Filename=foo")
                 .build();
         assertThat(headers.contentType(), is(notNullValue()));
         assertThat(headers.contentType(),

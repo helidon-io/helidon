@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,8 +50,9 @@ public interface BodyPartHeaders extends Headers {
      * @return MediaType, never {@code null}
      */
     default MediaType defaultContentType() {
-        return contentDisposition().filename()
-                .map(fname -> MediaType.APPLICATION_OCTET_STREAM)
-                .orElse(MediaType.TEXT_PLAIN);
+        if (contentDisposition().parameters().containsKey("filename")) {
+            return MediaType.APPLICATION_OCTET_STREAM;
+        }
+        return MediaType.TEXT_PLAIN;
     }
 }
