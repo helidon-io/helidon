@@ -73,6 +73,22 @@ a small cookie instead. Set it to `NONE` to disable redirect attempt counting an
 `redirect-attempt-param` value is used as the cookie name prefix when the `COOKIE` strategy is used; the full cookie
 name also includes a tenant and original URI hash.
 
+==== Cookie Encryption Secret
+
+Some OIDC cookies are encrypted by default.
+For production deployments, configure `cookie-encryption-password` or `cookie-encryption-name` explicitly.
+The same secret or named encryption configuration must be available to every service instance that shares encrypted
+OIDC cookies.
+
+If encrypted cookies are enabled and neither `cookie-encryption-password` nor `cookie-encryption-name` is configured,
+Helidon uses `.helidon-oidc-secret` in the current working directory as a local fallback secret file.
+When Helidon generates that fallback file, it logs a warning.
+This fallback is intended for a single service instance.
+On POSIX file systems, Helidon creates the file with owner read/write permissions only and accepts an existing fallback
+file only when it is a regular file with owner-only read or read/write permissions.
+On non-POSIX file systems, Helidon still rejects symlinks and non-regular existing files, and creates the fallback file
+with an exclusive best-effort create operation.
+
 Helidon obtains a token from request (from cookie, header, or query parameter):
 
 1. Token is parsed as a singed JWT

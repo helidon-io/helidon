@@ -286,7 +286,9 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>{@code cookie-encryption-password}</td>
  *     <td>Generated for this service (as a file)</td>
  *     <td>Encryption password to be used for symmetric cipher. Must be the same for all services that are intended
- *     to share a cookie as a form of authentication</td>
+ *     to share a cookie as a form of authentication. If encrypted cookies are enabled and this option and
+ *     {@code cookie-encryption-name} are not configured, Helidon creates or reads a fallback
+ *     {@code .helidon-oidc-secret} file in the current working directory.</td>
  * </tr>
  * <tr>
  *     <td>{@code cookie-encryption-name}</td>
@@ -1563,7 +1565,9 @@ public final class OidcConfig extends TenantConfigImpl {
          * @param cookieEncryptionName name of the encryption configuration in security used to encrypt/decrypt cookies
          * @return updated builder
          */
-        @ConfiguredOption
+        @ConfiguredOption(description = "Name of the encryption configuration available through Security encryption. "
+                + "If configured and encryption is enabled for any cookie, Security must be registered in the global "
+                + "or current context.")
         public Builder cookieEncryptionName(String cookieEncryptionName) {
             this.tokenCookieBuilder.encryptionName(cookieEncryptionName);
             this.idTokenCookieBuilder.encryptionName(cookieEncryptionName);
@@ -1576,11 +1580,16 @@ public final class OidcConfig extends TenantConfigImpl {
         /**
          * Master password for encryption/decryption of cookies. This must be configured to the same value on each microservice
          * using the cookie.
+         * If encrypted cookies are enabled and this method and {@link #cookieEncryptionName(String)} are not used,
+         * Helidon creates or reads a fallback {@code .helidon-oidc-secret} file in the current working directory.
          *
          * @param cookieEncryptionPassword encryption password
          * @return updated builder
          */
-        @ConfiguredOption
+        @ConfiguredOption(description = "Master password for encryption/decryption of cookies. Configure the same value "
+                + "on each service that shares encrypted cookies. If encrypted cookies are enabled and neither this "
+                + "option nor cookie-encryption-name is configured, Helidon creates or reads .helidon-oidc-secret in "
+                + "the current working directory.")
         public Builder cookieEncryptionPassword(char[] cookieEncryptionPassword) {
             this.tokenCookieBuilder.encryptionPassword(cookieEncryptionPassword);
             this.idTokenCookieBuilder.encryptionPassword(cookieEncryptionPassword);
