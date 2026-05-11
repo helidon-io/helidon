@@ -172,8 +172,18 @@ public final class UriEncoding {
                 continue;
             }
             if (!isPercentEncoded(string, i, len)) {
-                sb.append(c);
-                if (++i >= len) {
+                int malformedEnd = Math.min(i + 3, len);
+                while (i < malformedEnd) {
+                    c = string.charAt(i);
+                    if (c == '[') {
+                        betweenBrackets = true;
+                    } else if (betweenBrackets && c == ']') {
+                        betweenBrackets = false;
+                    }
+                    sb.append(c);
+                    i++;
+                }
+                if (i >= len) {
                     break;
                 }
                 c = string.charAt(i);

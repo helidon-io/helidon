@@ -69,10 +69,14 @@ class UriQueryTest {
         assertAll(
                 () -> assertThat(UriQuery.create("value=%2G").get("value"), is("%2G")),
                 () -> assertThat(UriQuery.create("value=%G2").get("value"), is("%G2")),
+                () -> assertThat(UriQuery.create("value=%+1").get("value"), is("%+1")),
                 () -> assertThat(UriQuery.create("%2G=value").get("%2G"), is("value")),
+                () -> assertThat(UriQuery.create("%+1=value").get("%+1"), is("value")),
                 () -> assertThat(writeableQuery("value=%2G").get("value"), is("%2G")),
                 () -> assertThat(writeableQuery("value=%G2").get("value"), is("%G2")),
-                () -> assertThat(writeableQuery("%G2=value").get("%G2"), is("value")));
+                () -> assertThat(writeableQuery("value=%+1").get("value"), is("%+1")),
+                () -> assertThat(writeableQuery("%G2=value").get("%G2"), is("value")),
+                () -> assertThat(writeableQuery("%+1=value").get("%+1"), is("value")));
     }
 
     @Test
