@@ -305,6 +305,36 @@ class Http2HeadersTest {
     }
 
     @Test
+    void testRejectsOverflowingIndexedHeader() {
+        String hexEncoded = "ff ff ff ff ff 08";
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+
+        Http2Exception exception = assertThrows(Http2Exception.class, () -> headers(hexEncoded, dynamicTable));
+
+        assertThat(exception.code(), is(Http2ErrorCode.COMPRESSION));
+    }
+
+    @Test
+    void testRejectsTruncatedIndexedHeader() {
+        String hexEncoded = "ff 80";
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+
+        Http2Exception exception = assertThrows(Http2Exception.class, () -> headers(hexEncoded, dynamicTable));
+
+        assertThat(exception.code(), is(Http2ErrorCode.COMPRESSION));
+    }
+
+    @Test
+    void testRejectsTooLongIndexedHeader() {
+        String hexEncoded = "ff 80 80 80 80 80 00";
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+
+        Http2Exception exception = assertThrows(Http2Exception.class, () -> headers(hexEncoded, dynamicTable));
+
+        assertThat(exception.code(), is(Http2ErrorCode.COMPRESSION));
+    }
+
+    @Test
     void testRejectsTruncatedStringLength() {
         String hexEncoded = "40 ff";
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
