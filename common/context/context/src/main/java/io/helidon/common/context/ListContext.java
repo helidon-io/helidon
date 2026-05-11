@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,15 +128,17 @@ class ListContext implements Context {
         T get();
 
         Class<T> getType();
+
+        default boolean isRegisteredInstance(Object instance) {
+            return false;
+        }
     }
 
     private static class ClassifiedRegistry {
         private final ReadWriteLock lock = new ReentrantReadWriteLock();
         private final List<RegisteredItem<?>> content = new ArrayList<>();
 
-        // we actually want to do an instance equality
-        @SuppressWarnings("ObjectEquality")
-        private void registerItem(RegisteredItem<?> item, boolean register) {
+        private void registerItem(RegisteredItem<?> item) {
             Lock l = lock.writeLock();
             try {
                 Class<?> c = item.getType();
@@ -148,8 +150,21 @@ class ListContext implements Context {
                         break;
                     }
                 }
-                if (register) {
-                    content.add(item);
+                content.add(item);
+            } finally {
+                l.unlock();
+            }
+        }
+
+        private void unregisterInstance(Object instance) {
+            Lock l = lock.writeLock();
+            try {
+                l.lock();
+                for (int i = content.size() - 1; i >= 0; i--) {
+                    RegisteredItem<?> reg = content.get(i);
+                    if (reg.isRegisteredInstance(instance)) {
+                        content.remove(i);
+                    }
                 }
             } finally {
                 l.unlock();
@@ -158,18 +173,18 @@ class ListContext implements Context {
 
         <T> void register(T instance) {
             Objects.requireNonNull(instance, "Parameter 'instance' is null!");
-            registerItem(new RegisteredInstance<>(instance), true);
+            registerItem(new RegisteredInstance<>(instance));
         }
 
         void unregister(Object instance) {
             Objects.requireNonNull(instance, "Parameter 'instance' is null!");
-            registerItem(new RegisteredInstance<>(instance), false);
+            unregisterInstance(instance);
         }
 
         <T> void supply(Class<T> type, Supplier<T> supplier) {
             Objects.requireNonNull(type, "Parameter 'type' is null!");
             Objects.requireNonNull(supplier, "Parameter 'supplier' is null!");
-            registerItem(new RegisteredSupplier<>(type, supplier), true);
+            registerItem(new RegisteredSupplier<>(type, supplier));
         }
 
         <T> T get(Class<T> type) {
@@ -208,6 +223,12 @@ class ListContext implements Context {
         public Class<T> getType() {
             return type;
         }
+
+        @Override
+        @SuppressWarnings("ObjectEquality")
+        public boolean isRegisteredInstance(Object instance) {
+            return value.isLoaded() && value.get() == instance;
+        }
     }
 
     private static class RegisteredInstance<T> implements RegisteredItem<T> {
@@ -226,6 +247,12 @@ class ListContext implements Context {
         @SuppressWarnings("unchecked")
         public Class<T> getType() {
             return (Class<T>) instance.getClass();
+        }
+
+        @Override
+        @SuppressWarnings("ObjectEquality")
+        public boolean isRegisteredInstance(Object instance) {
+            return this.instance == instance;
         }
 
         @Override

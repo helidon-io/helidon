@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.common.context;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -92,10 +93,17 @@ public interface Context {
     /**
      * Remove an instance registration from the context.
      *
+     * <p>The default implementation does nothing. Context instances created by this API remove registrations whose
+     * stored instance is the same object as the parameter. Object equality is not used. If the same object was
+     * registered more than once, all matching registrations are removed. A supplied registration can be matched by
+     * instance only after its supplier has been resolved.
+     *
      * @param instance an instance to remove from context
      * @param <T> type of the instance
+     * @throws NullPointerException if the instance is {@code null}
      */
     default <T> void unregister(T instance) {
+        Objects.requireNonNull(instance, "Parameter 'instance' is null!");
         // do nothing by default for backward compatibility
     }
 
@@ -138,11 +146,19 @@ public interface Context {
     /**
      * Remove an instance registration from the context.
      *
+     * <p>The default implementation does nothing. Context instances created by this API remove registrations whose
+     * stored instance is the same object as the parameter. Object equality is not used. If the same object was
+     * registered more than once for the classifier, all matching registrations are removed. A supplied registration
+     * can be matched by instance only after its supplier has been resolved.
+     *
      * @param classifier an additional registered instance classifier
      * @param instance an instance to remove from context
      * @param <T> type of the instance
+     * @throws NullPointerException if the classifier or instance is {@code null}
      */
     default <T> void unregister(Object classifier, T instance) {
+        Objects.requireNonNull(classifier, "Parameter 'classifier' is null!");
+        Objects.requireNonNull(instance, "Parameter 'instance' is null!");
         // do nothing by default for backward compatibility
     }
 
