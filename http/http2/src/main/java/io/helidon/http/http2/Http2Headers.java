@@ -1108,31 +1108,35 @@ public class Http2Headers {
                 return new HeaderApproach(false, true, true, true, 0);
             }
 
-            // name and value from index - 0b1xxxxxxx
-            if ((value & 0b10000000) != 0) {
-                int indexPart = data.readHpackInt(value, 7);
-                return new HeaderApproach(false, false, false, false, indexPart);
-            }
+            try {
+                // name and value from index - 0b1xxxxxxx
+                if ((value & 0b10000000) != 0) {
+                    int indexPart = data.readHpackInt(value, 7);
+                    return new HeaderApproach(false, false, false, false, indexPart);
+                }
 
-            // name from index, literal value, index - 0b01xxxxxx
-            if ((value & 0b11000000) == 0b01000000) {
-                int indexPart = data.readHpackInt(value, 6);
-                return new HeaderApproach(true, false, false, true, indexPart);
-            }
+                // name from index, literal value, index - 0b01xxxxxx
+                if ((value & 0b11000000) == 0b01000000) {
+                    int indexPart = data.readHpackInt(value, 6);
+                    return new HeaderApproach(true, false, false, true, indexPart);
+                }
 
-            // dynamic table size update
-            if ((value & 0b11100000) == 0b00100000) {
-                int size = data.readHpackInt(value, 5);
-                return new HeaderApproach(size);
-            }
+                // dynamic table size update
+                if ((value & 0b11100000) == 0b00100000) {
+                    int size = data.readHpackInt(value, 5);
+                    return new HeaderApproach(size);
+                }
 
-            if ((value & 0b11110000) == 0) {
-                int indexPart = data.readHpackInt(value, 4);
-                return new HeaderApproach(false, false, false, true, indexPart);
-            }
-            if ((value & 0b11110000) == 0b00010000) {
-                int indexPart = data.readHpackInt(value, 4);
-                return new HeaderApproach(false, true, false, true, indexPart);
+                if ((value & 0b11110000) == 0) {
+                    int indexPart = data.readHpackInt(value, 4);
+                    return new HeaderApproach(false, false, false, true, indexPart);
+                }
+                if ((value & 0b11110000) == 0b00010000) {
+                    int indexPart = data.readHpackInt(value, 4);
+                    return new HeaderApproach(false, true, false, true, indexPart);
+                }
+            } catch (IllegalArgumentException e) {
+                throw new Http2Exception(Http2ErrorCode.COMPRESSION, "Invalid HPACK integer", e);
             }
 
             throw new Http2Exception(Http2ErrorCode.COMPRESSION,

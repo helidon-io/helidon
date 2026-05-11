@@ -510,16 +510,26 @@ public interface BufferData {
         //System.out.println("Original value " + Integer.toBinaryString(originalValue) + " has more than one byte, carry on: "
         // + value);
         int shiftBy = 0;
+        long longValue = value;
         while (true) {
+            if (shiftBy > 28) {
+                throw new IllegalArgumentException("HPACK integer exceeds supported range");
+            }
+            if (available() == 0) {
+                throw new IllegalArgumentException("Truncated HPACK integer");
+            }
             int next = read();
             //System.out.println("Read additional byte " + Integer.toBinaryString(next));
-            value += (next & 0b01111111) << shiftBy; // add all valid bits to the number and continue next cycle
+            // add all valid bits to the number and continue next cycle
+            longValue += (long) (next & 0b01111111) << shiftBy;
+            if (longValue > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("HPACK integer exceeds supported range");
+            }
             shiftBy += 7; // the next iteration must be shifted by 7 additional bits
 
             if ((next & 0b10000000) == 0) {
                 // last byte
-                //System.out.println("Resolved values to " + value);
-                return value;
+                return (int) longValue;
             }
         }
     }
