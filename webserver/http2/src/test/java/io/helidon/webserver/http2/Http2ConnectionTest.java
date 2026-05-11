@@ -19,11 +19,17 @@ package io.helidon.webserver.http2;
 import java.io.UncheckedIOException;
 import java.net.SocketException;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.HelidonSocket;
+import io.helidon.common.socket.SocketWriter;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.http2.Http2Ping;
+import io.helidon.http.http2.Http2StreamState;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
@@ -33,6 +39,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -68,6 +76,55 @@ class Http2ConnectionTest {
     }
 
     @Test
+    void pingAckWrapsSocketWriterExceptionFromSmartWriter() {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        SocketWriter writer = smartFailingWriter(executor);
+        try {
+            ConnectionContext ctx = http2Context(writer);
+            Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
+            connection.pendingPing(Http2Ping.create());
+
+            ServerConnectionException exception = assertThrows(ServerConnectionException.class,
+                                                               connection::writePingAck);
+
+            assertAll(
+                    () -> assertThat(exception.getCause(), instanceOf(SocketWriterException.class)),
+                    () -> assertThat(exception.getCause().getCause(), instanceOf(UncheckedIOException.class)),
+                    () -> assertThat(exception.getCause().getCause().getCause(), instanceOf(SocketException.class))
+            );
+        } finally {
+            writer.close();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void streamRunnableInterruptsConnectionThreadOnSocketWriterException() {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        doThrow(new SocketWriterException()).when(stream).run();
+        when(stream.streamId()).thenReturn(1);
+        when(stream.streamState()).thenReturn(Http2StreamState.CLOSED);
+        streams.put(new Http2Connection.StreamContext(1, 8192, stream));
+
+        boolean previouslyInterrupted = Thread.interrupted();
+        try {
+            new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run();
+            streams.doMaintenance(0);
+
+            assertAll(
+                    () -> assertThat(Thread.currentThread().isInterrupted(), is(true)),
+                    () -> assertThat(streams.get(1), is(nullValue()))
+            );
+        } finally {
+            Thread.interrupted();
+            if (previouslyInterrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    @Test
     void closeConnectionWrapsUncheckedIOException() {
         DataWriter writer = mock(DataWriter.class);
         doThrow(new UncheckedIOException(new SocketException("Broken pipe")))
@@ -94,5 +151,24 @@ class Http2ConnectionTest {
                 () -> assertThat(exception.getCause(), instanceOf(UncheckedIOException.class)),
                 () -> assertThat(exception.getCause().getCause(), instanceOf(SocketException.class))
         );
+    }
+
+    private static ConnectionContext http2Context(DataWriter writer) {
+        ConnectionContext ctx = mock(ConnectionContext.class);
+        when(ctx.router()).thenReturn(Router.empty());
+        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
+        when(ctx.dataWriter()).thenReturn(writer);
+        when(ctx.dataReader()).thenReturn(mock(DataReader.class));
+        return ctx;
+    }
+
+    private static SocketWriter smartFailingWriter(ExecutorService executor) {
+        HelidonSocket socket = mock(HelidonSocket.class);
+        when(socket.socketId()).thenReturn("test");
+        when(socket.childSocketId()).thenReturn("child");
+        doThrow(new UncheckedIOException(new SocketException("Broken pipe")))
+                .when(socket)
+                .write(any(BufferData.class));
+        return SocketWriter.create(executor, socket, 2, true);
     }
 }

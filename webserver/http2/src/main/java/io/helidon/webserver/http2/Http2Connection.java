@@ -911,9 +911,10 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         UNKNOWN
     }
 
-    private record StreamRunnable(Http2ConnectionStreams streams,
-                                  Http2ServerStream stream,
-                                  Thread handlerThread) implements Runnable {
+    // Package-private for deterministic tests of writer-thread failure handling.
+    record StreamRunnable(Http2ConnectionStreams streams,
+                          Http2ServerStream stream,
+                          Thread handlerThread) implements Runnable {
 
         @Override
         public void run() {
