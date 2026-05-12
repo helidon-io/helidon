@@ -70,6 +70,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @ServerTest
 public class UnixDomainSocketTest {
     private static final String LOGICAL_HOST = "service.example";
+    private static final String LOGICAL_AUTHORITY = LOGICAL_HOST + ":443";
     private static final String LOGICAL_BASE_URI = "https://" + LOGICAL_HOST;
 
     private static Path socketPath;
@@ -176,20 +177,20 @@ public class UnixDomainSocketTest {
                                    .address(address)
                                    .path("/h2")
                                    .request(String.class),
-                           LOGICAL_HOST,
+                           LOGICAL_AUTHORITY,
                            LOGICAL_HOST);
             assertResponse(http1Client.get()
                                    .address(address)
                                    .keepAlive(false)
                                    .path("/test")
                                    .request(String.class),
-                           LOGICAL_HOST,
+                           LOGICAL_AUTHORITY,
                            LOGICAL_HOST);
             assertResponse(http2Client.get()
                                    .address(address)
                                    .path("/h2")
                                    .request(String.class),
-                           LOGICAL_HOST,
+                           LOGICAL_AUTHORITY,
                            LOGICAL_HOST);
         } finally {
             http2Client.closeResource();
