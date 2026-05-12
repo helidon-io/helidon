@@ -795,7 +795,7 @@ public class Http2Headers {
         MAX_FORWARDS(47, HeaderNames.MAX_FORWARDS),
         PROXY_AUTHENTICATE(48, HeaderNames.PROXY_AUTHENTICATE),
         PROXY_AUTHORIZATION(49, HeaderNames.PROXY_AUTHORIZATION),
-        RANGE(50, HeaderNames.CONTENT_LOCATION),
+        RANGE(50, HeaderNames.RANGE),
         REFERER(51, HeaderNames.REFERER),
         REFRESH(52, HeaderNames.REFRESH),
         RETRY_AFTER(53, HeaderNames.RETRY_AFTER),
