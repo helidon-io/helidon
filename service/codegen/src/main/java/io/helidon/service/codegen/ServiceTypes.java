@@ -49,6 +49,9 @@ final class ServiceTypes {
         if (type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER)) {
             return true;
         }
+        if (type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_DESCRIBE)) {
+            return true;
+        }
         if (type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_PER_INSTANCE)) {
             return true;
         }

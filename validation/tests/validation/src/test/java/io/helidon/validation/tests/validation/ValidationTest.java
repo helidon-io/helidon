@@ -20,7 +20,13 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.types.TypeName;
+import io.helidon.service.registry.FactoryType;
+import io.helidon.service.registry.Lookup;
+import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.testing.junit5.Testing;
 import io.helidon.validation.ConstraintViolation.Location;
 import io.helidon.validation.ConstraintViolation.PathElement;
@@ -41,10 +47,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class ValidationTest {
     private final ValidatedService service;
     private final InterfaceConstrainedService interfaceConstrainedService;
+    private final SupplierProvidedService supplierProvidedService;
+    private final ServiceRegistry registry;
 
-    public ValidationTest(ValidatedService service, InterfaceConstrainedService interfaceConstrainedService) {
+    public ValidationTest(ValidatedService service,
+                          InterfaceConstrainedService interfaceConstrainedService,
+                          SupplierProvidedService supplierProvidedService,
+                          ServiceRegistry registry) {
         this.service = service;
         this.interfaceConstrainedService = interfaceConstrainedService;
+        this.supplierProvidedService = supplierProvidedService;
+        this.registry = registry;
     }
 
     @Test
@@ -64,6 +77,53 @@ public class ValidationTest {
 
         assertThat(result.violations(), hasSize(1));
         assertThat(result.violations().getFirst().message(), containsString("is blank"));
+    }
+
+    @Test
+    public void testSupplierProvidedSameSignatureConstraint() {
+        var result = assertThrows(ValidationException.class, supplierProvidedService::get);
+
+        assertThat(result.violations(), hasSize(1));
+        assertThat(result.violations().getFirst().message(), containsString("is blank"));
+    }
+
+    @Test
+    public void testInjectionPointFactoryUsesCustomizedFirst() {
+        Lookup factoryLookup = Lookup.builder()
+                .addContract(IpFactoryProvidedService.class)
+                .addFactoryType(FactoryType.INJECTION_POINT)
+                .build();
+        @SuppressWarnings("unchecked")
+        Service.InjectionPointFactory<IpFactoryProvidedService> factory = registry.get(factoryLookup);
+
+        Lookup providedLookup = Lookup.builder()
+                .addContract(IpFactoryProvidedService.class)
+                .build();
+
+        assertThat(factory.first(providedLookup).orElseThrow().get().value(), is("first"));
+        assertThat(factory.list(providedLookup).getFirst().get().value(), is("list"));
+    }
+
+    @Test
+    public void testQualifiedFactoryUsesCustomizedFirst() {
+        Lookup factoryLookup = Lookup.builder()
+                .serviceType(QualifiedFactoryProvidedServiceProvider.class)
+                .addFactoryType(FactoryType.QUALIFIED)
+                .build();
+        @SuppressWarnings("unchecked")
+        Service.QualifiedFactory<QualifiedFactoryProvidedService, QualifiedFactoryQualifier> factory =
+                registry.get(factoryLookup);
+
+        Qualifier qualifier = Qualifier.create(QualifiedFactoryQualifier.class, "test");
+        Lookup providedLookup = Lookup.builder()
+                .addContract(QualifiedFactoryProvidedService.class)
+                .addQualifier(qualifier)
+                .build();
+        GenericType<QualifiedFactoryProvidedService> providedType =
+                GenericType.create(QualifiedFactoryProvidedService.class);
+
+        assertThat(factory.first(qualifier, providedLookup, providedType).orElseThrow().get().value(), is("first"));
+        assertThat(factory.list(qualifier, providedLookup, providedType).getFirst().get().value(), is("list"));
     }
 
     @Test

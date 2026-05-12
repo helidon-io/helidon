@@ -2548,7 +2548,13 @@ public class ServiceDescriptorCodegen {
                                                 DescribedService service,
                                                 Optional<InterceptedTypeGenerator.MethodDefinition> firstMethod,
                                                 Optional<InterceptedTypeGenerator.MethodDefinition> listMethod) {
-        if (listMethod.isPresent()) {
+        if (firstMethod.isPresent()) {
+            content.addContent("return helidonInject__delegate.")
+                    .addContent(firstMethod.get().delegateName())
+                    .addContentLine("(lookup);");
+            return;
+        }
+        if (listMethod.isPresent() && !factoryMethodCustomized(service, "first", SERVICE_LOOKUP)) {
             // Raw first(...) may still dispatch to the intercepted list(...) override from the provider implementation.
             content.addContent(listQualifiedInstanceType(service))
                     .addContent(" helidonInject__list = helidonInject__delegate.")
@@ -2562,8 +2568,7 @@ public class ServiceDescriptorCodegen {
             return;
         }
         content.addContent("return helidonInject__delegate.")
-                .addContent(firstMethod.map(InterceptedTypeGenerator.MethodDefinition::delegateName).orElse("first"))
-                .addContentLine("(lookup);");
+                .addContentLine("first(lookup);");
     }
 
     private void injectionPointFactoryListBody(ContentBuilder<?> content,
@@ -2619,7 +2624,7 @@ public class ServiceDescriptorCodegen {
                 .addContentLine(" lookup,")
                 .addContent(genericProvidedType)
                 .addContentLine(" type) {");
-        qualifiedFactoryFirstBody(content, service, firstMethod, listMethod);
+        qualifiedFactoryFirstBody(content, service, genericProvidedType, firstMethod, listMethod);
         content.addContentLine("}")
                 .decreaseContentPadding()
                 .addContentLine();
@@ -2645,9 +2650,17 @@ public class ServiceDescriptorCodegen {
 
     private void qualifiedFactoryFirstBody(ContentBuilder<?> content,
                                            DescribedService service,
+                                           TypeName genericProvidedType,
                                            Optional<InterceptedTypeGenerator.MethodDefinition> firstMethod,
                                            Optional<InterceptedTypeGenerator.MethodDefinition> listMethod) {
-        if (listMethod.isPresent()) {
+        if (firstMethod.isPresent()) {
+            content.addContent("return helidonInject__delegate.")
+                    .addContent(firstMethod.get().delegateName())
+                    .addContentLine("(qualifier, lookup, type);");
+            return;
+        }
+        if (listMethod.isPresent()
+                && !factoryMethodCustomized(service, "first", SERVICE_QUALIFIER, SERVICE_LOOKUP, genericProvidedType)) {
             // Raw first(...) may still dispatch to the intercepted list(...) override from the provider implementation.
             content.addContent(listQualifiedInstanceType(service))
                     .addContent(" helidonInject__list = helidonInject__delegate.")
@@ -2661,8 +2674,7 @@ public class ServiceDescriptorCodegen {
             return;
         }
         content.addContent("return helidonInject__delegate.")
-                .addContent(firstMethod.map(InterceptedTypeGenerator.MethodDefinition::delegateName).orElse("first"))
-                .addContentLine("(qualifier, lookup, type);");
+                .addContentLine("first(qualifier, lookup, type);");
     }
 
     private void qualifiedFactoryListBody(ContentBuilder<?> content,

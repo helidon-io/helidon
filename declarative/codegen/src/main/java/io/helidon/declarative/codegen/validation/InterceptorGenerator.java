@@ -141,7 +141,7 @@ class InterceptorGenerator {
                 .filter(Predicate.not(ElementInfoPredicates::isPrivate))
                 .filter(Predicate.not(ElementInfoPredicates::isStatic))
                 .forEach(element -> {
-                    String target = type.typeName().fqName() + "." + element.signature().text();
+                    String target = elementTarget(type, element);
                     if (generatedMethodTargets.contains(target)) {
                         return;
                     }
@@ -167,6 +167,9 @@ class InterceptorGenerator {
         if (type.kind() != ElementKind.INTERFACE) {
             return false;
         }
+        if (!type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_CONTRACT)) {
+            return false;
+        }
 
         List<TypedElementInfo> elementsWithValidation = type.elementInfo()
                 .stream()
@@ -183,6 +186,9 @@ class InterceptorGenerator {
     private boolean isService(TypeInfo type) {
         // must be annotated with @Service.Provider, or @Service.Scope
         if (type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER)) {
+            return true;
+        }
+        if (type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_DESCRIBE)) {
             return true;
         }
         if (type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_PER_INSTANCE)) {
@@ -229,7 +235,7 @@ class InterceptorGenerator {
                 .addAnnotation(DeclarativeTypes.SINGLETON_ANNOTATION)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED,
-                                                 typeName.fqName() + "." + element.signature().text()))
+                                                 elementTarget(interceptedType, element)))
                 .addInterface(ServiceCodegenTypes.INTERCEPTION_ELEMENT_INTERCEPTOR);
 
         Constructor.Builder constructor = Constructor.builder()
@@ -384,5 +390,11 @@ class InterceptorGenerator {
                                      localVariableName);
 
         proceedMethod.addContentLine("}");
+    }
+
+    private String elementTarget(TypeInfo type, TypedElementInfo element) {
+        return element.enclosingType()
+                .orElse(type.typeName())
+                .fqName() + "." + element.signature().text();
     }
 }

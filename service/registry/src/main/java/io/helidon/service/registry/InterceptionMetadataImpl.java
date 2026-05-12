@@ -112,7 +112,9 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
                                                                   TypedElementInfo element) {
         // need to find all interceptors for the providers (ordered by weight)
         List<ServiceManager<Interception.Interceptor>> allInterceptors = registry.interceptors();
-        String elementSignature = descriptor.serviceType().fqName() + "." + element.signature().text();
+        String elementSignature = element.enclosingType()
+                .orElse(descriptor.serviceType())
+                .fqName() + "." + element.signature().text();
 
         List<Supplier<Interception.Interceptor>> result = new ArrayList<>();
 

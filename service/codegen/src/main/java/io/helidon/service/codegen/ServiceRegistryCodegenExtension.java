@@ -285,7 +285,7 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
         serviceContracts.addContracts(contracts, new HashSet<>(), serviceType);
 
         List<TypedElementInfo> elements = new ArrayList<>();
-        Set<ElementSignature> signatures = new HashSet<>();
+        Set<ElementKey> signatures = new HashSet<>();
         addEffectiveElements(elements, signatures, TypedElements.gatherElements(ctx, contracts, serviceType));
 
         ServiceTypes.FactoryInfo factoryInfo = ServiceTypes.factoryInfo(serviceContracts, serviceType);
@@ -303,22 +303,22 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
     }
 
     private void addEffectiveElements(List<TypedElementInfo> elements,
-                                      Set<ElementSignature> signatures,
+                                      Set<ElementKey> signatures,
                                       List<TypedElements.ElementMeta> elementMetas) {
         for (TypedElements.ElementMeta elementMeta : elementMetas) {
             TypedElementInfo element = elementMeta.effectiveElement();
-            if (signatures.add(element.signature())) {
+            if (signatures.add(ElementKey.create(element))) {
                 elements.add(element);
             }
         }
     }
 
     private void addEffectiveMethodElements(List<TypedElementInfo> elements,
-                                            Set<ElementSignature> signatures,
+                                            Set<ElementKey> signatures,
                                             List<TypedElements.ElementMeta> elementMetas) {
         for (TypedElements.ElementMeta elementMeta : elementMetas) {
             TypedElementInfo element = elementMeta.effectiveElement();
-            if (element.kind() == ElementKind.METHOD && signatures.add(element.signature())) {
+            if (element.kind() == ElementKind.METHOD && signatures.add(ElementKey.create(element))) {
                 elements.add(element);
             }
         }
@@ -503,5 +503,14 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
                                  Predicate<TypeName> supportedAnnotationsPredicate,
                                  Set<TypeName> supportedMetaAnnotations,
                                  boolean supportsServiceContractAnnotations) {
+    }
+
+    private record ElementKey(TypeName owner, ElementSignature signature) {
+        static ElementKey create(TypedElementInfo element) {
+            return new ElementKey(element.enclosingType()
+                                          .map(TypeName::genericTypeName)
+                                          .orElse(TypeNames.OBJECT),
+                                  element.signature());
+        }
     }
 }
