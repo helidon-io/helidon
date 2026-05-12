@@ -172,7 +172,7 @@ public final class UriEncoding {
                 continue;
             }
             if (!isPercentEncoded(string, i, len)) {
-                int malformedEnd = Math.min(i + 3, len);
+                int malformedEnd = malformedPercentEnd(string, i, len);
                 while (i < malformedEnd) {
                     c = string.charAt(i);
                     if (c == '[') {
@@ -230,6 +230,16 @@ public final class UriEncoding {
         return index + 2 < len
                 && isHexCharacter(string.charAt(index + 1))
                 && isHexCharacter(string.charAt(index + 2));
+    }
+
+    private static int malformedPercentEnd(String string, int index, int len) {
+        int end = Math.min(index + 3, len);
+        for (int i = index + 1; i < end; i++) {
+            if (string.charAt(i) == '%') {
+                return i;
+            }
+        }
+        return end;
     }
 
     private static void appendUTF8EncodedCharacter(StringBuilder sb, int codePoint) {

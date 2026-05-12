@@ -43,6 +43,7 @@ class UriEncodingTest {
                 () -> assertThat(decodeUri("%2G"), is("%2G")),
                 () -> assertThat(decodeUri("%G2"), is("%G2")),
                 () -> assertThat(decodeUri("%+1"), is("%+1")),
+                () -> assertThat(decodeUri("%G%41"), is("%GA")),
                 () -> assertThat(decodeUri("%41%2G%42"), is("A%2GB")),
                 () -> assertThat(decodeUri("prefix%G2suffix"), is("prefix%G2suffix")));
     }
