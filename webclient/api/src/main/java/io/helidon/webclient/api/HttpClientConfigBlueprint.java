@@ -59,6 +59,10 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     /**
      * Base address used by the client in all requests.
      * This may be either an Inet address or a UNIX domain socket address.
+     * <p>
+     * A UNIX domain socket address overrides only the physical transport. The request URI resolved against
+     * {@link #baseUri()} or an absolute request URI still provides the logical HTTP authority used for the
+     * {@code Host} header, HTTP/2 {@code :authority}, SNI, and endpoint identification.
      *
      * @return base address of the client requests
      */
@@ -243,6 +247,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     /**
      * Maximal size of the connection cache for a single connection key.
      * A connection key is formed by the scheme, host, port, TLS configuration, DNS resolver, DNS address lookup, and proxy.
+     * For UNIX domain socket transports, the key also includes the socket path and does not include proxy configuration.
      * <p>
      * For most HTTP protocols, we may cache connections to various endpoints for keep alive (or stream reuse in case of HTTP/2).
      * This option limits the size. Setting this number lower than the "usual" number of target services will cause connections

@@ -16,12 +16,27 @@
 
 package io.helidon.webclient.grpc.tests;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.UnixDomainSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Locale;
+import java.util.regex.Pattern;
+
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SSLParameters;
+
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
+
+import io.helidon.common.configurable.Resource;
+import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionListener;
@@ -35,16 +50,15 @@ import io.helidon.webserver.grpc.ServerContextKeys;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.UnixDomainSocketAddress;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class GrpcProxyProtocolTest {
+    private static final String LOGICAL_HOST = "service.example";
+    private static final String LOGICAL_AUTHORITY = LOGICAL_HOST + ":8443";
+    private static final String BASE_AUTHORITY = "base.example:9443";
+
     @TempDir
     public Path tempDir;
 
@@ -241,6 +255,39 @@ public class GrpcProxyProtocolTest {
         server.stop();
     }
 
+    @Test
+    public void testTlsOverUdsUsesLogicalAuthority() throws IOException {
+        Files.createDirectories(tempDir);
+        var bindAddress = UnixDomainSocketAddress.of(tempDir.resolve("tls-uds.socket"));
+
+        var server = WebServer.builder()
+            .tls(serverTls())
+            .bindAddress(bindAddress)
+            .addRouting(GrpcRouting.builder()
+                .unary(Strings.getDescriptor(), "StringService", "Upper", GrpcProxyProtocolTest::upper))
+            .build();
+        server.start();
+
+        GrpcClient grpcClient = GrpcClient.create(b -> b
+            .config(Config.create().get("grpc-client"))
+            .tls(clientTls())
+            .baseUri(URI.create("https://" + BASE_AUTHORITY))
+            .clientUriSupplier(ClientUriSuppliers.SingleSupplier.create(ClientUri.create()
+                .scheme("https")
+                .host(LOGICAL_HOST)
+                .port(8443)
+                .path("/")))
+            .baseAddress(bindAddress));
+        var service = StringServiceGrpc.newBlockingStub(grpcClient.channel());
+        var response = service.upper(Strings.StringMessage.newBuilder()
+                                             .setText("hello")
+                                             .build());
+
+        assertThat(response.getText(), is("HELLO"));
+
+        server.stop();
+    }
+
     private ConnectionListener v1Listener(String proxyHeader) {
         return ConnectionListener.createWriteOnConnect(proxyHeader.getBytes(StandardCharsets.UTF_8));
     }
@@ -280,5 +327,40 @@ public class GrpcProxyProtocolTest {
         }
         streamObserver.onNext(response.build());
         streamObserver.onCompleted();
+    }
+
+    private static void upper(Strings.StringMessage req, StreamObserver<Strings.StringMessage> streamObserver) {
+        streamObserver.onNext(Strings.StringMessage.newBuilder()
+                                      .setText(req.getText().toUpperCase(Locale.ROOT))
+                                      .build());
+        streamObserver.onCompleted();
+    }
+
+    private static Tls serverTls() {
+        SSLParameters parameters = new SSLParameters();
+        parameters.setSNIMatchers(List.of(SNIHostName.createSNIMatcher(Pattern.quote(LOGICAL_HOST))));
+
+        return Tls.builder()
+                .sslParameters(parameters)
+                .privateKey(key -> key
+                        .keystore(store -> store
+                                .passphrase("changeit")
+                                .keystore(Resource.create("uds-server.p12"))))
+                .privateKeyCertChain(key -> key
+                        .keystore(store -> store
+                                .trustStore(true)
+                                .passphrase("changeit")
+                                .keystore(Resource.create("uds-server.p12"))))
+                .build();
+    }
+
+    private static Tls clientTls() {
+        return Tls.builder()
+                .trust(trust -> trust
+                        .keystore(store -> store
+                                .passphrase("changeit")
+                                .trustStore(true)
+                                .keystore(Resource.create("uds-client.p12"))))
+                .build();
     }
 }

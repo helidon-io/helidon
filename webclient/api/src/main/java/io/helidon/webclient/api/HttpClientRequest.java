@@ -203,9 +203,9 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                     connection.closeResource();
                 } else {
                     clientSpiCache.put(endpointKey, protocolSpi.spi());
-                    property(WebClientRequestProperties.PROTOCOL_PROBE_CONNECTION, Boolean.TRUE.toString());
-                    connection(connection);
-                    return protocolSpi.spi().clientRequest(this, resolvedUri);
+                    ClientRequest<?> clientRequest = protocolSpi.spi().clientRequest(this, resolvedUri);
+                    clientRequest.connection(connection);
+                    return clientRequest;
                 }
             } else {
                 if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {

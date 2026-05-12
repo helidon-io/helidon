@@ -265,12 +265,11 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                 engine.setUseClientMode(true);
                 engine.setSSLParameters(sslParameters(engine.getSSLParameters()));
 
+                TlsNioSocket tlsSocket = TlsNioSocket.client(this.channel, engine, this.channelId);
+                startTlsHandshake(tlsSocket);
                 if (LOGGER.isLoggable(TRACE)) {
                     debugTls(engine, channelId);
                 }
-
-                TlsNioSocket tlsSocket = TlsNioSocket.client(this.channel, engine, this.channelId);
-                startTlsHandshake(tlsSocket);
                 this.socket = tlsSocket;
             } else {
                 this.socket = NioSocket.client(this.channel, this.channelId);

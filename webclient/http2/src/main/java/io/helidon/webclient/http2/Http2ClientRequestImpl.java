@@ -170,6 +170,10 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         return outputStreamRedirect;
     }
 
+    boolean ownsExplicitConnection() {
+        return delegate != null && delegate.connection().isEmpty() && connection().isPresent();
+    }
+
     void sanitizeRedirectHeaders(ClientUri requestUri, ClientRequestHeaders requestHeaders) {
         super.sanitizeRedirectSensitiveHeaders(requestUri, requestHeaders);
     }

@@ -31,6 +31,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -87,6 +88,7 @@ public class Http2ClientConnection {
     private final Http2ConnectionWriter writer;
     private final DataReader reader;
     private final DataWriter dataWriter;
+    private final Consumer<Http2ClientConnection> closeListener;
     private final Semaphore pingPongSemaphore = new Semaphore(0);
     private final AtomicLong pingIdSequence = new AtomicLong();
     private final Http2ClientConfig clientConfig;
@@ -99,6 +101,13 @@ public class Http2ClientConnection {
     private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
 
     Http2ClientConnection(Http2ClientImpl http2Client, ClientConnection connection) {
+        this(http2Client, connection, it -> {
+        });
+    }
+
+    Http2ClientConnection(Http2ClientImpl http2Client,
+                          ClientConnection connection,
+                          Consumer<Http2ClientConnection> closeListener) {
         this.protocolConfig = http2Client.protocolConfig();
         this.clientConfig = http2Client.clientConfig();
         this.connectionFlowControl = ConnectionFlowControl.clientBuilder(this::writeWindowsUpdate)
@@ -111,6 +120,7 @@ public class Http2ClientConnection {
         this.dataWriter = connection.writer();
         this.reader = connection.reader();
         this.writer = new Http2ConnectionWriter(connection.helidonSocket(), connection.writer(), List.of());
+        this.closeListener = closeListener;
     }
 
     /**
@@ -122,10 +132,19 @@ public class Http2ClientConnection {
      * @return an HTTP2 client connection
      */
     public static Http2ClientConnection create(Http2ClientImpl http2Client,
-                                        ClientConnection connection,
-                                        boolean sendSettings) {
+                                               ClientConnection connection,
+                                               boolean sendSettings) {
 
-        Http2ClientConnection h2conn = new Http2ClientConnection(http2Client, connection);
+        return create(http2Client, connection, sendSettings, it -> {
+        });
+    }
+
+    static Http2ClientConnection create(Http2ClientImpl http2Client,
+                                        ClientConnection connection,
+                                        boolean sendSettings,
+                                        Consumer<Http2ClientConnection> closeListener) {
+
+        Http2ClientConnection h2conn = new Http2ClientConnection(http2Client, connection, closeListener);
         h2conn.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
 
         return h2conn;
@@ -266,7 +285,11 @@ public class Http2ClientConnection {
      * Closes this connection.
      */
     public void close() {
-        this.goAway(0, Http2ErrorCode.NO_ERROR, "Closing connection");
+        try {
+            this.goAway(0, Http2ErrorCode.NO_ERROR, "Closing connection");
+        } catch (Throwable e) {
+            ctx.log(LOGGER, TRACE, "Failed to send HTTP/2 GOAWAY before closing connection.", e);
+        }
         if (state.getAndSet(State.CLOSED) != State.CLOSED) {
             try {
                 handleTask.cancel(true);
@@ -274,6 +297,8 @@ public class Http2ClientConnection {
                 connection.closeResource();
             } catch (Throwable e) {
                 ctx.log(LOGGER, TRACE, "Failed to close HTTP/2 connection.", e);
+            } finally {
+                closeListener.accept(this);
             }
         }
     }
@@ -559,7 +584,7 @@ public class Http2ClientConnection {
     }
 
     private void goAway(int streamId, Http2ErrorCode errorCode, String msg) {
-        if (State.OPEN == state.getAndSet(State.GO_AWAY)) {
+        if (state.compareAndSet(State.OPEN, State.GO_AWAY)) {
             Http2Settings http2Settings = Http2Settings.create();
             Http2GoAway frame = new Http2GoAway(streamId, errorCode, msg);
             writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()));
