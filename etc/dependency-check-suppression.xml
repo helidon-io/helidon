@@ -56,6 +56,55 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
    <cve>CVE-2025-15599</cve>
 </suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-3.13.0.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <cve>CVE-2026-41240</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-3.13.0.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-41238</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-3.13.0.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-41239</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-3.13.0.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <vulnerabilityName>GHSA-39q2-94rc-95cp</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-3.13.0.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <vulnerabilityName>GHSA-cj63-jhhr-wcxv</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-3.13.0.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <vulnerabilityName>GHSA-cjmm-f4jc-qw8r</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-3.13.0.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <vulnerabilityName>GHSA-h8r8-wccr-v5f2</vulnerabilityName>
+</suppress>
 
 
 <!--
@@ -413,6 +462,24 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib.*$</packageUrl>
    <cve>CVE-2020-29582</cve>
+</suppress>
+
+<!-- False Positive.
+     This CVE is against Prometheus server, not simple client
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: simpleclient-0.9.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient@.*$</packageUrl>
+   <cve>CVE-2026-42154</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient_common-0.9.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_common@.*$</packageUrl>
+    <cve>CVE-2026-42154</cve>
 </suppress>
 
 
