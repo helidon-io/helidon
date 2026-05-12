@@ -27,10 +27,10 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SecureDirectoryStream;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -273,7 +273,7 @@ class CachedHandlerTest {
     }
 
     @Test
-    void testSecureFallbackRejectsNestedPathWithoutSecureDirectoryStream(@TempDir Path tempDir) throws IOException {
+    void testNioFallbackServesNestedPathWithoutSecureDirectoryStream(@TempDir Path tempDir) throws IOException {
         URI zipUri = URI.create("jar:" + tempDir.resolve("content.zip").toUri());
         try (FileSystem fileSystem = FileSystems.newFileSystem(zipUri, Map.of("create", "true"))) {
             Path root = fileSystem.getPath("/root");
@@ -286,10 +286,10 @@ class CachedHandlerTest {
                 assertThat(stream, not(instanceOf(SecureDirectoryStream.class)));
             }
 
-            assertThrows(NoSuchFileException.class,
-                         () -> FileBasedContentHandler.attributes(nestedResource, false, root));
-            assertThrows(NoSuchFileException.class,
-                         () -> FileBasedContentHandler.newByteChannel(nestedResource, false, root).close());
+            BasicFileAttributes attributes = FileBasedContentHandler.attributes(nestedResource, false, root);
+            assertThat(attributes.isRegularFile(), is(true));
+            byte[] bytes = FileBasedContentHandler.readAllBytes(nestedResource, false, root);
+            assertThat(new String(bytes, StandardCharsets.UTF_8), is("Nested content"));
         }
     }
 

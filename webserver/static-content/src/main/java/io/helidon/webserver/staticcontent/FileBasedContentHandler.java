@@ -158,10 +158,12 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
             }
         }
 
-        if (relative.getNameCount() > 1) {
-            throw new NoSuchFileException(path.toString());
+        Path fallbackPath = validatedFallbackPath(path, secureRoot);
+        try {
+            return Files.newByteChannel(fallbackPath, READ_NOFOLLOW_OPTIONS);
+        } catch (IllegalArgumentException | UnsupportedOperationException e) {
+            return Files.newByteChannel(fallbackPath, READ_OPTIONS);
         }
-        return Files.newByteChannel(path, READ_NOFOLLOW_OPTIONS);
     }
 
     static BasicFileAttributes attributes(Path path, boolean followLinks, Path secureRoot) throws IOException {
@@ -198,10 +200,12 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
             }
         }
 
-        if (relative.getNameCount() > 1) {
-            throw new NoSuchFileException(path.toString());
+        Path fallbackPath = validatedFallbackPath(path, secureRoot);
+        try {
+            return Files.readAttributes(fallbackPath, BasicFileAttributes.class, NOFOLLOW_LINK_OPTIONS);
+        } catch (IllegalArgumentException | UnsupportedOperationException e) {
+            return Files.readAttributes(fallbackPath, BasicFileAttributes.class);
         }
-        return Files.readAttributes(path, BasicFileAttributes.class, NOFOLLOW_LINK_OPTIONS);
     }
 
     private static void validateSecureRoot(Path secureRoot) throws IOException {
@@ -223,6 +227,14 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
             throw new NoSuchFileException(path.toString());
         }
         return relative;
+    }
+
+    private static Path validatedFallbackPath(Path path, Path secureRoot) throws IOException {
+        Path realPath = path.toRealPath();
+        if (!realPath.startsWith(secureRoot)) {
+            throw new NoSuchFileException(path.toString());
+        }
+        return realPath;
     }
 
     Optional<MediaType> findCustomMediaType(String fileName) {
