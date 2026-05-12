@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -249,6 +249,15 @@ class Http2HeadersTest {
         headerRecord = dynamicTable.get(Http2Headers.StaticHeader.MAX_INDEX + 3);
         assertThat(headerRecord.headerName(), is(Http2Headers.AUTHORITY_NAME));
         assertThat(headerRecord.value(), is("www.example.com"));
+    }
+
+    @Test
+    void testStaticRangeHeaderName() {
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Headers requestHeaders = headers("b2", dynamicTable).httpHeaders();
+
+        assertThat(requestHeaders.contains(HeaderNames.RANGE), is(true));
+        assertThat(requestHeaders.contains(HeaderNames.CONTENT_LOCATION), is(false));
     }
 
     private Http2Headers headers(String hexEncoded, DynamicTable dynamicTable) {

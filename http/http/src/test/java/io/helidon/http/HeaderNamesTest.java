@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,6 +120,18 @@ class HeaderNamesTest {
         assertThat(custom1.defaultCase(), is("My-Custom-Header"));
         assertThat(custom2.lowerCase(), is("my-custom-header"));
         assertThat(custom2.defaultCase(), is("my-custom-header"));
+    }
+
+    @Test
+    void testContentLocationHeaderName() {
+        HeaderName contentLocation = HeaderNames.CONTENT_LOCATION;
+
+        assertAll(
+                () -> assertThat(HeaderNames.CONTENT_LOCATION_NAME, is("Content-Location")),
+                () -> assertThat(contentLocation.defaultCase(), is("Content-Location")),
+                () -> assertThat(contentLocation.lowerCase(), is("content-location")),
+                () -> assertThat(HeaderNames.create("Content-Location"), equalTo(contentLocation))
+        );
     }
 
     @Test
