@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -949,7 +949,7 @@ public final class Http {
          * The <code>{@value}</code> header name.
          * An alternate location for the returned data.
          */
-        public static final String CONTENT_LOCATION = "aa";
+        public static final String CONTENT_LOCATION = "Content-Location";
         /**
          * The <code>{@value}</code> header name.
          * Where in a full body message this partial message belongs.
