@@ -130,6 +130,24 @@
    <cpe>cpe:/a:sun:openjdk</cpe>
 </suppress>
 
+<!-- False Positive.
+     This CVE is against gRPC-Go servers not gRPC Java
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: grpc-core-1.65.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.grpc/grpc.*@.*$</packageUrl>
+   <cve>CVE-2026-33186</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: grpc-protobuf-1.65.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.grpc/grpc-protobuf@.*$</packageUrl>
+   <cve>CVE-2026-33186</cve>
+</suppress>
+
 <!-- grpc -->
 <!-- This was applying the version of opentracing-grpc to grpc
      which triggered CVEs for older versions of grpc and grpc-js
@@ -292,6 +310,18 @@
    <cve>CVE-2023-4759</cve>
 </suppress>
 
+<!-- False Positive.
+     jgit-6.10.1 has the fix for CVE-2025-4949. See
+     https://projects.eclipse.org/projects/technology.jgit/releases/6.10.1
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: org.eclipse.jgit-6.10.1.202505221210-r.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.eclipse\.jgit/org\.eclipse\.jgit@.*$</packageUrl>
+   <cve>CVE-2025-4949</cve>
+</suppress>
+
 <!--
     False Positives. These CVEs are against the Brave web browser, not brave-opentracing.
 -->
@@ -336,6 +366,18 @@
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
    <cve>CVE-2023-28360</cve>
+</suppress>
+
+
+<!-- False Positive.
+     FP against prometheus server (not prometheus simple client)
+ -->
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient-0.9.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient@.*$</packageUrl>
+    <cve>CVE-2026-42154</cve>
 </suppress>
 
 
