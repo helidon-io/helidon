@@ -54,6 +54,10 @@
             <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing</artifactId>
         </dependency>
@@ -137,6 +141,11 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
