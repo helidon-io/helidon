@@ -25,18 +25,83 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
 </suppress>
 
 <!--
-    This CVE is against DOMPurify brought in by javascript in the smallrye UI component.
+    These CVEs are against DOMPurify brought in by javascript in the smallrye UI component.
     In 4.x we made this component "provided". We can't do that in 2.x and 3.x due to compatiblity concerns.
     Also, this is primarily a developer feature and not intended for a production runtime.
 -->
-
 <suppress>
-   <notes><![CDATA[
-   file name: smallrye-open-api-ui-2.0.26.jar: swagger-ui-bundle.js
-   ]]></notes>
-   <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
-   <vulnerabilityName>CVE-2024-45801</vulnerabilityName>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-2.0.26.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <cve>CVE-2024-48910</cve>
 </suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-2.0.26.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <cve>CVE-2024-47875</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-2.0.26.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <cve>CVE-2024-45801</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-2.0.26.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <cve>CVE-2025-26791</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-2.0.26.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <cve>CVE-2026-41240</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-2.0.26.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <vulnerabilityName>GHSA-39q2-94rc-95cp</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-2.0.26.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <vulnerabilityName>GHSA-cj63-jhhr-wcxv</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-2.0.26.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <vulnerabilityName>GHSA-cjmm-f4jc-qw8r</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-2.0.26.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <vulnerabilityName>GHSA-h8r8-wccr-v5f2</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: smallrye-open-api-ui-2.0.26.jar: swagger-ui-bundle.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-41239</vulnerabilityName>
+</suppress>
+
+
+
 
 <!-- This CVE is against the etcd server. We ship a Java client -->
 <suppress>
@@ -236,6 +301,24 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <packageUrl regex="true">^pkg:maven/io\.grpc/grpc.*@.*$</packageUrl>
    <cve>CVE-2024-11407</cve>
 </suppress>
+<!-- False Positive.
+     This CVE is against gRPC-Go servers not gRPC Java
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: grpc-core-1.65.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.grpc/grpc.*@.*$</packageUrl>
+   <cve>CVE-2026-33186</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: grpc-protobuf-1.65.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.grpc/grpc-protobuf@.*$</packageUrl>
+   <cve>CVE-2026-33186</cve>
+</suppress>
+
 
 
 <!-- False Positive.
@@ -305,6 +388,18 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib.*$</packageUrl>
    <cve>CVE-2020-29582</cve>
 </suppress>
+
+<!-- False Positive.
+     Another FP against prometheus server (not prometheus simple client)
+ -->
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient-0.16.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient.*@.*$</packageUrl>
+    <cve>CVE-2026-42154</cve>
+</suppress>
+
 
 
 </suppressions>
