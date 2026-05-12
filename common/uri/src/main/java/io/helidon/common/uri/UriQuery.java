@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ public interface UriQuery extends Parameters {
     /**
      * Create a new HTTP query from the query string.
      * This method does not validate the raw query against specification.
+     * Malformed percent-encoded sequences are preserved literally when parameter names and values are decoded.
+     * Use {@link #create(String, boolean) create(query, true)} for strict query validation.
      *
      * @param query raw query string
      * @return HTTP query instance
