@@ -26,9 +26,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -267,7 +267,7 @@ class CachedHandlerTest {
     }
 
     @Test
-    void testSecureFallbackRejectsNestedPathWithoutSecureDirectoryStream(@TempDir Path tempDir) throws IOException {
+    void testNioFallbackServesNestedPathWithoutSecureDirectoryStream(@TempDir Path tempDir) throws IOException {
         URI zipUri = URI.create("jar:" + tempDir.resolve("content.zip").toUri());
         try (FileSystem fileSystem = FileSystems.newFileSystem(zipUri, Map.of("create", "true"))) {
             Path root = fileSystem.getPath("/root");
@@ -278,10 +278,10 @@ class CachedHandlerTest {
 
             assertThat(StaticContentTestSupport.supportsSecureDirectoryStream(root), is(false));
 
-            assertThrows(NoSuchFileException.class,
-                         () -> FileBasedContentHandler.attributes(nestedResource, false, root));
-            assertThrows(NoSuchFileException.class,
-                         () -> FileBasedContentHandler.newByteChannel(nestedResource, false, root).close());
+            BasicFileAttributes attributes = FileBasedContentHandler.attributes(nestedResource, false, root);
+            assertThat(attributes.isRegularFile(), is(true));
+            byte[] bytes = FileBasedContentHandler.readAllBytes(nestedResource, false, root);
+            assertThat(new String(bytes, StandardCharsets.UTF_8), is("Nested content"));
         }
     }
 
@@ -352,15 +352,9 @@ class CachedHandlerTest {
                         .build());
         handler.beforeStart();
 
-        if (StaticContentTestSupport.supportsSecureDirectoryStream(root)) {
-            assertThat("Plain file in cached directory should be cached in memory",
-                       handler.cacheInMemory("dir/resource.txt"),
-                       optionalPresent());
-        } else {
-            assertThat("Plain file in cached directory should fail closed without secure directory traversal",
-                       handler.cacheInMemory("dir/resource.txt"),
-                       optionalEmpty());
-        }
+        assertThat("Plain file in cached directory should be cached in memory",
+                   handler.cacheInMemory("dir/resource.txt"),
+                   optionalPresent());
         assertThat("Symlink child in cached directory should not be cached in memory",
                    handler.cacheInMemory("dir/link.txt"),
                    optionalEmpty());

@@ -148,19 +148,13 @@ class StaticContentConfigTest {
     }
 
     @Test
-    void testFileSystemNested() throws IOException {
-        Path root = Paths.get("./src/test/resources/web").toAbsolutePath().normalize();
-        Status expectedStatus = StaticContentTestSupport.supportsSecureDirectoryStream(root)
-                ? Status.OK_200
-                : Status.FORBIDDEN_403;
+    void testFileSystemNested() {
         try (Http1ClientResponse response = testClient.get("/path/nested/resource.txt")
                 .request()) {
 
-            assertThat(response.status(), is(expectedStatus));
-            if (Status.OK_200.equals(expectedStatus)) {
-                assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
-                assertThat(response.as(String.class), is("Nested content"));
-            }
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
+            assertThat(response.as(String.class), is("Nested content"));
         }
     }
 

@@ -215,35 +215,25 @@ class StaticContentTest {
     }
 
     @Test
-    void testFileSystemNested() throws IOException {
-        Status expectedStatus = StaticContentTestSupport.supportsSecureDirectoryStream(staticRoot)
-                ? Status.OK_200
-                : Status.FORBIDDEN_403;
+    void testFileSystemNested() {
         try (Http1ClientResponse response = testClient.get("/path/nested/resource.txt")
                 .request()) {
 
-            assertThat(response.status(), is(expectedStatus));
-            if (Status.OK_200.equals(expectedStatus)) {
-                assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
-                assertThat(response.as(String.class), is("Nested content"));
-            }
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
+            assertThat(response.as(String.class), is("Nested content"));
         }
     }
 
 
     @Test
-    void testFileSystemNestedBackwardComp() throws IOException {
-        Status expectedStatus = StaticContentTestSupport.supportsSecureDirectoryStream(staticRoot)
-                ? Status.OK_200
-                : Status.FORBIDDEN_403;
+    void testFileSystemNestedBackwardComp() {
         try (Http1ClientResponse response = testClient.get("/backward-comp/path/nested/resource.txt")
                 .request()) {
 
-            assertThat(response.status(), is(expectedStatus));
-            if (Status.OK_200.equals(expectedStatus)) {
-                assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
-                assertThat(response.as(String.class), is("Nested content"));
-            }
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
+            assertThat(response.as(String.class), is("Nested content"));
         }
     }
 
