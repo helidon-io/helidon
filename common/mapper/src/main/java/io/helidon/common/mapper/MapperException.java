@@ -30,8 +30,17 @@ import io.helidon.common.GenericType;
 public class MapperException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
+    /**
+     * Type of the source value in the failed mapping attempt.
+     */
     private final GenericType<?> sourceType;
+    /**
+     * Type of the requested mapping target in the failed mapping attempt.
+     */
     private final GenericType<?> targetType;
+    /**
+     * Detail describing why the mapping failed.
+     */
     private final String detail;
 
     /**
