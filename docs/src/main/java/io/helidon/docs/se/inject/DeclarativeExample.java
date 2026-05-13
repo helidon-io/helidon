@@ -147,6 +147,7 @@ public class DeclarativeExample {
     // end::snippet_7[]
 
     // tag::snippet_7b[]
+    @Service.Contract
     interface ValidatedServiceContract {
         String process(@Validation.String.NotBlank String value);
     }

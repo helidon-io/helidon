@@ -16,8 +16,10 @@
 
 package io.helidon.validation.tests.validation;
 
+import io.helidon.service.registry.Service;
 import io.helidon.validation.Validation;
 
+@Service.Contract
 interface QualifiedFactoryFirstOnlyProvidedService {
     String validate(@Validation.String.NotBlank String value);
 }

@@ -22,6 +22,7 @@ import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Service;
 import io.helidon.validation.Validation;
 
+@Service.Contract
 interface InjectionPointFactoryFirstOnlyDirectContract {
     @Validation.NotNull
     Optional<Service.QualifiedInstance<InjectionPointFactoryFirstOnlyProvidedService>> first(Lookup lookup);
