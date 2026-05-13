@@ -16,10 +16,44 @@
 
 package io.helidon.validation.tests.validation;
 
-import io.helidon.service.registry.Service;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import io.helidon.validation.Validation;
 
-@Service.Contract
 interface InterfaceConstrainedService {
     String validate(@Validation.String.NotBlank String value);
+
+    default String validateDefault(@Validation.String.NotBlank String value) {
+        return value;
+    }
+
+    List<String> validateList(List<@Validation.String.NotBlank String> values);
+
+    List<List<String>> validateNestedList(List<List<@Validation.String.NotBlank String>> values);
+
+    Map<String, String> validateMap(Map<@Validation.String.NotBlank String, @Validation.String.NotBlank String> values);
+
+    Map<List<String>, String> validateNestedMapKey(Map<List<@Validation.String.NotBlank String>, String> values);
+
+    Map<String, List<String>> validateNestedMapValue(Map<String, List<@Validation.String.NotBlank String>> values);
+
+    Optional<String> validateOptional(Optional<@Validation.String.NotBlank String> value);
+
+    @TypeUseNotBlank String[] validateArray(@TypeUseNotBlank String[] values);
+
+    List<Integer> validateIntegerList(List<@Validation.Integer.Min(10) Integer> values);
+
+    List<@Validation.String.NotBlank String> invalidNames();
+
+    int validateMinimum(@Validation.Integer.Min(10) int value);
+
+    String validateShared(@Validation.String.NotBlank String value);
+
+    String validateDuplicate(@Validation.String.NotBlank String value);
+
+    List<String> validateCustomStringList(@CustomConstraint List<String> values);
+
+    List<Integer> validateCustomIntegerList(@CustomConstraint List<Integer> values);
 }

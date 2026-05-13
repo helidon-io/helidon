@@ -167,9 +167,6 @@ class InterceptorGenerator {
         if (type.kind() != ElementKind.INTERFACE) {
             return false;
         }
-        if (!type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_CONTRACT)) {
-            return false;
-        }
 
         List<TypedElementInfo> elementsWithValidation = type.elementInfo()
                 .stream()
@@ -326,7 +323,7 @@ class InterceptorGenerator {
                           fieldHandler,
                           element,
                           "RETURN_VALUE",
-                          "interception__res");
+                          returnValueLocal(proceedMethod, element));
             // leave method on response
             proceedMethod.addContentLine("}");
         }
@@ -343,12 +340,48 @@ class InterceptorGenerator {
         return true;
     }
 
+    private String returnValueLocal(Method.Builder proceedMethod, TypedElementInfo element) {
+        if (!returnValueNeedsWork(element)) {
+            return "interception__res";
+        }
+        if (ElementInfoPredicates.isVoid(element)) {
+            throw new CodegenException("Validation annotations cannot constrain a void method return value.",
+                                       element.originatingElementValue());
+        }
+
+        proceedMethod.addContent("var validation__return = (")
+                .addContent(element.typeName())
+                .addContentLine(") interception__res;");
+        return "validation__return";
+    }
+
+    private boolean returnValueNeedsWork(TypedElementInfo element) {
+        if (element.hasAnnotation(VALIDATION_VALID) || metaAnnotated(element, VALIDATION_VALID)) {
+            return true;
+        }
+        if (ValidationHelper.needsWork(constraintAnnotations, element.annotations())) {
+            return true;
+        }
+        for (TypeName constraintAnnotation : constraintAnnotations) {
+            if (element.hasAnnotation(constraintAnnotation)) {
+                return true;
+            }
+        }
+
+        return ValidationHelper.needsWork(constraintAnnotations, element.typeName());
+    }
+
     private void addValidators(TypeName generatedType,
                                Method.Builder proceedMethod,
                                FieldHandler fieldHandler,
                                TypedElementInfo element,
                                String location,
                                String localVariableName) {
+        var validationContext = ValidationHelper.validationContext(generatedType,
+                                                                   constraintAnnotations,
+                                                                   proceedMethod,
+                                                                   fieldHandler,
+                                                                   element);
         proceedMethod.addContent("try (var scope__" + location.toLowerCase(Locale.ROOT) + " = validation__ctx.scope(")
                 .addContent(CONSTRAINT_VIOLATION_LOCATION)
                 .addContent(".")
@@ -367,21 +400,14 @@ class InterceptorGenerator {
 
         // we must honor order of declaration on the element
         for (Annotation annotation : ValidationHelper.findConstraintAnnotations(constraintAnnotations, element)) {
-            addValidationOfConstraint(generatedType,
-                                      fieldHandler,
-                                      proceedMethod,
+            addValidationOfConstraint(validationContext,
                                       annotation,
                                       location,
-                                      element,
+                                      element.typeName(),
                                       localVariableName);
         }
 
-        addValidationOfTypeArguments(generatedType,
-                                     constraintAnnotations,
-                                     proceedMethod,
-                                     fieldHandler,
-                                     element,
-                                     localVariableName);
+        addValidationOfTypeArguments(validationContext, localVariableName);
 
         proceedMethod.addContentLine("}");
     }

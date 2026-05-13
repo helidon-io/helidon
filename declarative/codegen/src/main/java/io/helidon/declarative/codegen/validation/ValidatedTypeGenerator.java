@@ -488,13 +488,13 @@ class ValidatedTypeGenerator {
                 .addContentLine(")) {");
 
         TypeName typeName = element.typeName();
+        var validationContext = ValidationHelper.validationContext(generatedType,
+                                                                   constraintAnnotations,
+                                                                   checkMethod,
+                                                                   fieldHandler,
+                                                                   element);
 
-        addValidationOfTypeArguments(generatedType,
-                                     constraintAnnotations,
-                                     checkMethod,
-                                     fieldHandler,
-                                     element,
-                                     "value");
+        addValidationOfTypeArguments(validationContext, "value");
 
         if (element.hasAnnotation(VALIDATION_VALID)) {
 
@@ -505,12 +505,10 @@ class ValidatedTypeGenerator {
 
         // we must honor order of declaration on the element
         for (Annotation annotation : ValidationHelper.findConstraintAnnotations(constraintAnnotations, element)) {
-            addValidationOfConstraint(generatedType,
-                                      fieldHandler,
-                                      checkMethod,
+            addValidationOfConstraint(validationContext,
                                       annotation,
                                       location,
-                                      element,
+                                      typeName,
                                       "value");
         }
 

@@ -59,7 +59,10 @@ class ValidationExtension implements RegistryCodegenExtension {
 
     private boolean isConstraintAnnotation(TypeName typeName) {
         return roundContextTypeInfo(typeName)
-                .map(it -> it.hasAnnotation(VALIDATION_CONSTRAINT))
+                .map(it -> it.hasAnnotation(VALIDATION_CONSTRAINT)
+                        || it.annotations()
+                                .stream()
+                                .anyMatch(annotation -> annotation.hasMetaAnnotation(VALIDATION_CONSTRAINT)))
                 .orElse(true);
     }
 
