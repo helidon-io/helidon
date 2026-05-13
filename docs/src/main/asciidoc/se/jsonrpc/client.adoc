@@ -98,7 +98,9 @@ JSON binding. See xref:{rootdir}/se/jsonrpc/server.adoc[JSON-RPC Server] for
 more information on these types.
 
 NOTE: Custom types used with Helidon JSON binding must be annotated with
-`@Json.Entity` and compiled with the Helidon JSON annotation processor.
+`@Json.Entity` and compiled with the Helidon JSON annotation processor. See
+xref:{rootdir}/se/json/json.adoc#_enabling_code_generation[Enabling Code
+Generation] for the Maven annotation processor setup.
 
 === Batch Requests
 

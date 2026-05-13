@@ -27,10 +27,11 @@ import io.helidon.json.JsonValue;
 public interface JsonRpcParams {
 
     /**
-     * Create an instance from a JSON value.
+     * Create an instance from JSON-RPC params.
      *
-     * @param params the value
+     * @param params the object or array value
      * @return a new instance of this class
+     * @throws IllegalArgumentException if params is not a JSON object or array
      */
     static JsonRpcParams create(JsonValue params) {
         return new JsonRpcParamsImpl(params);

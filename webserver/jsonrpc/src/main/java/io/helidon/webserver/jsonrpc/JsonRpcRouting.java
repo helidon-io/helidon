@@ -169,7 +169,7 @@ public class JsonRpcRouting implements HttpService {
                                     JsonRpcHandlers handlers,
                                     Map<String, JsonRpcHandler> handlersMap,
                                     JsonRpcErrorHandler errorHandler) throws Exception {
-        int size = jsonArray.values().size();
+        int size = jsonArray.size();
         if (size == 0) {
             sendInvalidRequest(res);
             return;

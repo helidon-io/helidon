@@ -18,6 +18,8 @@ package io.helidon.jsonrpc.core;
 import java.time.Duration;
 
 import io.helidon.json.JsonArray;
+import io.helidon.json.JsonBoolean;
+import io.helidon.json.JsonNull;
 import io.helidon.json.JsonNumber;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonString;
@@ -27,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class JsonRpcCoreTest {
 
@@ -50,6 +53,29 @@ public class JsonRpcCoreTest {
         assertThat(objectParams.getString("when"), is("NOW"));
         assertThat(params.when(), is("NOW"));
         assertThat(params.duration(), is(Duration.ZERO));
+
+        JsonRpcParams arrayParams = JsonRpcParams.create(JsonArray.create(JsonString.create("NOW"),
+                                                                          JsonString.create("PT0S")));
+
+        assertThat(arrayParams.getString(0), is("NOW"));
+        assertThat(arrayParams.getString(1), is("PT0S"));
+    }
+
+    @Test
+    void testParamsRejectScalarValues() {
+        assertThat(assertThrows(IllegalArgumentException.class,
+                                () -> JsonRpcParams.create(JsonNumber.create(1))).getMessage(),
+                   is("JSON-RPC params must be a JSON object or array"));
+        assertThat(assertThrows(IllegalArgumentException.class,
+                                () -> JsonRpcParams.create(JsonString.create("one"))).getMessage(),
+                   is("JSON-RPC params must be a JSON object or array"));
+        assertThat(assertThrows(IllegalArgumentException.class,
+                                () -> JsonRpcParams.create(JsonBoolean.TRUE)).getMessage(),
+                   is("JSON-RPC params must be a JSON object or array"));
+        assertThat(assertThrows(IllegalArgumentException.class,
+                                () -> JsonRpcParams.create(JsonNull.instance())).getMessage(),
+                   is("JSON-RPC params must be a JSON object or array"));
+        assertThrows(NullPointerException.class, () -> JsonRpcParams.create(null));
     }
 
     @Test

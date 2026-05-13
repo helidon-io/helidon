@@ -30,7 +30,6 @@ import io.helidon.http.Status;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonObject;
-import io.helidon.json.JsonValue;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.spi.Source;
@@ -51,16 +50,17 @@ class JsonRpcClientBatchResponseImpl implements JsonRpcClientBatchResponse {
 
     @Override
     public int size() {
-        return asJsonArray().values().size();
+        return asJsonArray().size();
     }
 
     @Override
     public JsonRpcClientResponse get(int index) {
         if (responses == null) {
-            List<JsonValue> jsonValues = asJsonArray().values();
-            responses = new ArrayList<>(jsonValues.size());
-            for (JsonValue jsonValue : jsonValues) {
-                JsonObject object = jsonValue.asObject();
+            JsonArray array = asJsonArray();
+            int size = array.size();
+            responses = new ArrayList<>(size);
+            for (int i = 0; i < size; i++) {
+                JsonObject object = array.get(i).orElseThrow().asObject();
                 responses.add(new JsonRpcClientResponseImpl(delegate, object));
             }
         }
@@ -69,13 +69,12 @@ class JsonRpcClientBatchResponseImpl implements JsonRpcClientBatchResponse {
 
     @Override
     public Iterator<JsonRpcClientResponse> iterator() {
-        List<JsonValue> jsonValues = asJsonArray().values();
         return new Iterator<>() {
             private int index = 0;
 
             @Override
             public boolean hasNext() {
-                return jsonValues.size() > index;
+                return size() > index;
             }
 
             @Override

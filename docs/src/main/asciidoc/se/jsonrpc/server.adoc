@@ -102,7 +102,9 @@ include::{sourcedir}/se/jsonrpc/ServerSnippets.java[tag=snippet_3, indent=0]
 
 NOTE: Custom types used during serialization and deserialization must be
 annotated with `@Json.Entity` and compiled with the Helidon JSON annotation
-processor.
+processor. See
+xref:{rootdir}/se/json/json.adoc#_enabling_code_generation[Enabling Code
+Generation] for the Maven annotation processor setup.
 
 == Configuration
 

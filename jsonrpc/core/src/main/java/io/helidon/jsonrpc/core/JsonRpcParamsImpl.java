@@ -32,9 +32,6 @@ class JsonRpcParamsImpl implements JsonRpcParams {
 
     JsonRpcParamsImpl(JsonValue params) {
         this.params = Objects.requireNonNull(params);
-        if (params.type() != JsonValueType.OBJECT && params.type() != JsonValueType.ARRAY) {
-            throw new IllegalArgumentException("JSON-RPC params must be a JSON object or array");
-        }
     }
 
     @Override
