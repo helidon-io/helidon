@@ -44,7 +44,6 @@ module io.helidon.webclient.api {
     requires io.helidon.common.resumable;
     requires io.helidon.service.registry;
     requires io.helidon.common.task;
-    requires jdk.net;
 
     exports io.helidon.webclient.api;
     exports io.helidon.webclient.spi;
