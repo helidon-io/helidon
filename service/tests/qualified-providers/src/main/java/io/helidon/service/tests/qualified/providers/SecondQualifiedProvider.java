@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import io.helidon.service.registry.Service;
 import io.helidon.service.registry.Service.QualifiedFactory;
 import io.helidon.service.registry.Service.QualifiedInstance;
 
-@Service.Singleton
+@Service.PerLookup
 class SecondQualifiedProvider implements QualifiedFactory<QualifiedContract, SecondQualifier> {
     private final Map<String, QualifiedContract> values = Map.of("first", new QualifiedContractImpl("first"),
                                                                  "second", new QualifiedContractImpl("second"));

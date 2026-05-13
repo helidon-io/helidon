@@ -321,6 +321,12 @@ public final class ServiceCodegenTypes {
             TypeName.create("io.helidon.service.registry.GeneratedService.SupplierFactoryInterceptionWrapper");
     /**
      * {@link io.helidon.common.types.TypeName} for
+     * {@code io.helidon.service.registry.GeneratedService.OptionalSupplierFactoryInterceptionWrapper}.
+     */
+    public static final TypeName INTERCEPT_G_WRAPPER_OPTIONAL_SUPPLIER_FACTORY =
+            TypeName.create("io.helidon.service.registry.GeneratedService.OptionalSupplierFactoryInterceptionWrapper");
+    /**
+     * {@link io.helidon.common.types.TypeName} for
      * {@code io.helidon.service.registry.GeneratedService.ServicesFactoryInterceptionWrapper}.
      */
     public static final TypeName INTERCEPT_G_WRAPPER_SERVICES_FACTORY =

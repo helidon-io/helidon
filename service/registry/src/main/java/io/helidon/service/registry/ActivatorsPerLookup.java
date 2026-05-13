@@ -150,6 +150,11 @@ final class ActivatorsPerLookup {
                 return Optional.empty();
             }
 
+            if (requestedProvider(lookup, FactoryType.QUALIFIED)) {
+                T instance = serviceInstance.get(currentPhase);
+                return Optional.of(List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers())));
+            }
+
             return lookup.qualifiers()
                     .stream()
                     .filter(it -> this.supportedQualifier.equals(it.typeName()))

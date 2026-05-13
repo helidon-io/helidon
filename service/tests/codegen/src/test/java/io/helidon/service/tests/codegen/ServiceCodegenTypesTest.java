@@ -173,6 +173,8 @@ class ServiceCodegenTypesTest {
         // generated interception types
         checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_SUPPLIER_FACTORY",
                    GeneratedService.SupplierFactoryInterceptionWrapper.class);
+        checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_OPTIONAL_SUPPLIER_FACTORY",
+                   GeneratedService.OptionalSupplierFactoryInterceptionWrapper.class);
         checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_SERVICES_FACTORY",
                    GeneratedService.ServicesFactoryInterceptionWrapper.class);
         checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_IP_FACTORY",

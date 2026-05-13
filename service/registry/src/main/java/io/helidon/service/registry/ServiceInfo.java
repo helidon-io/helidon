@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,8 +65,8 @@ public interface ServiceInfo extends Weighted {
     }
 
     /**
-     * Set of contracts the described service implements directly. If the service is not a factory,
-     * this set is empty.
+     * Set of contracts that identify the factory provider itself. These contracts are distinct from contracts of services
+     * provided by the factory. If the service is not a factory, this set is empty.
      *
      * @return set of factory contracts
      */
