@@ -262,7 +262,11 @@ class Http2ServerStream implements Runnable, Http2Stream {
             writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
             streams.remove(this.streamId);
             Http2RstStream rst = new Http2RstStream(Http2ErrorCode.PROTOCOL);
-            writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+            try {
+                writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+            } catch (SocketWriterException | UncheckedIOException e) {
+                throw new ServerConnectionException("Failed to write reset stream", e);
+            }
             connectionAttackVectorMetrics.madeYouResetCheck(streamId);
 
             try {
