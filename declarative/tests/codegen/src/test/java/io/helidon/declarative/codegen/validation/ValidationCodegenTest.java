@@ -27,6 +27,7 @@ import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.GenericType;
 import io.helidon.common.Generated;
 import io.helidon.common.types.Annotation;
+import io.helidon.service.codegen.ServiceCodegenTypes;
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
@@ -51,6 +52,17 @@ public class ValidationCodegenTest {
             Service.class,
             Prototype.class
     );
+
+    @Test
+    void testValidationProviderUsesServiceContractTrigger() {
+        var provider = new ValidationExtensionProvider();
+
+        assertThat(provider.supportsServiceContractAnnotations(), is(true));
+        assertThat(provider.supportedAnnotations().contains(ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER), is(false));
+        assertThat(provider.supportedAnnotations().contains(ServiceCodegenTypes.SERVICE_ANNOTATION_PER_INSTANCE), is(false));
+        assertThat(provider.supportedAnnotations().contains(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT), is(false));
+        assertThat(provider.supportedMetaAnnotations().contains(ServiceCodegenTypes.SERVICE_ANNOTATION_SCOPE), is(false));
+    }
 
     @Test
     void testFieldValidation() throws IOException {
@@ -437,7 +449,7 @@ public class ValidationCodegenTest {
     }
 
     @Test
-    void testNonServiceInterfaceMethodConstraintRequiresValidated() {
+    void testPlainInterfaceMethodConstraintDoesNotRequireValidated() {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
@@ -455,9 +467,270 @@ public class ValidationCodegenTest {
                 .compile();
 
         String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(Files.exists(result.sourceOutput()
+                                        .resolve("com/example/DefaultApi__ValidationInterceptor_0.java")),
+                   is(false));
+        assertThat(Files.exists(result.sourceOutput()
+                                        .resolve("com/example/DefaultApi__Validated.java")),
+                   is(false));
+    }
+
+    @Test
+    void testInterfaceStaticMethodParameterConstraintRequiresValidated() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("DefaultApi.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        public interface DefaultApi {
+                            static String validate(@Validation.String.NotBlank String name) {
+                                return name;
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(false));
         assertThat(diagnostics, containsString(ValidationTypes.VALIDATION_VALIDATED.fqName()
                                                       + " annotation is required on non-service type"));
+    }
+
+    @Test
+    void testInterfacePrivateMethodParameterConstraintRequiresValidated() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("DefaultApi.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        public interface DefaultApi {
+                            private String validate(@Validation.String.NotBlank String name) {
+                                return name;
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString(ValidationTypes.VALIDATION_VALIDATED.fqName()
+                                                      + " annotation is required on non-service type"));
+    }
+
+    @Test
+    void testMetaAnnotatedContractConstraintTriggersServiceProcessing() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("CustomConstraint.java", """
+                        package com.example;
+
+                        import java.lang.annotation.ElementType;
+                        import java.lang.annotation.Target;
+
+                        import io.helidon.validation.Validation;
+
+                        @Target(ElementType.PARAMETER)
+                        @Validation.String.NotBlank
+                        public @interface CustomConstraint {
+                        }
+                        """)
+                .addSource("DefaultApi.java", """
+                        package com.example;
+
+                        public interface DefaultApi {
+                            String validate(@CustomConstraint String name);
+                        }
+                        """)
+                .addSource("DefaultApiImpl.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.Singleton
+                        class DefaultApiImpl implements DefaultApi {
+                            @Override
+                            public String validate(String name) {
+                                return name;
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(Files.exists(result.sourceOutput()
+                                        .resolve("com/example/DefaultApiImpl__ValidationInterceptor_0.java")),
+                   is(true));
+    }
+
+    @Test
+    void testNestedConstraintUsesAnnotatedTypeForValidatorProvider() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("DefaultApiImpl.java", """
+                        package com.example;
+
+                        import java.util.List;
+
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.validation.Validation;
+
+                        @Service.Singleton
+                        class DefaultApiImpl {
+                            void validate(@Validation.Integer.Min(10) Long count,
+                                          List<@Validation.Integer.Min(10) Integer> values) {
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        var interceptor = result.sourceOutput()
+                .resolve("com/example/DefaultApiImpl__ValidationInterceptor_0.java");
+        assertThat(Files.exists(interceptor), is(true));
+        var content = Files.readString(interceptor, StandardCharsets.UTF_8);
+        assertThat(content, containsString(".packageName(\"java.lang\")"));
+        assertThat(content, containsString(".className(\"Long\")"));
+        assertThat(content, containsString(".className(\"Integer\")"));
+    }
+
+    @Test
+    void testVoidMethodReturnConstraintFailsClearly() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("DefaultApi.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.validation.Validation;
+
+                        @Service.Singleton
+                        class DefaultApi {
+                            @Validation.NotNull
+                            void reset() {
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("Validation annotations cannot constrain a void method return value."));
+        assertThat(diagnostics, not(containsString("(void)")));
+    }
+
+    @Test
+    void testLowerBoundValidTypeUseCompiles() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("ValidatedType.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        @Validation.Validated
+                        record ValidatedType(@Validation.String.NotBlank String name) {
+                        }
+                        """)
+                .addSource("DefaultApiImpl.java", """
+                        package com.example;
+
+                        import java.util.List;
+
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.validation.Validation;
+
+                        @Service.Singleton
+                        class DefaultApiImpl {
+                            void validate(List<? super @Validation.Valid ValidatedType> values) {
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        var interceptor = result.sourceOutput()
+                .resolve("com/example/DefaultApiImpl__ValidationInterceptor_0.java");
+        assertThat(Files.exists(interceptor), is(true));
+        var content = Files.readString(interceptor, StandardCharsets.UTF_8);
+        assertThat(content, containsString("instanceof ValidatedType validation__valid"));
+        assertThat(content, containsString(".check(validation__ctx, validation__valid"));
+        assertThat(content, not(containsString(".check(validation__ctx, validation__element")));
+    }
+
+    @Test
+    void testSameSignatureInterfaceConstraintsAreMerged() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("LowApi.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        interface LowApi {
+                            String validate(@Validation.Integer.Min(1) int count);
+                        }
+                        """)
+                .addSource("HighApi.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        interface HighApi {
+                            String validate(@Validation.Integer.Min(10) int count);
+                        }
+                        """)
+                .addSource("DefaultApiImpl.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.Singleton
+                        class DefaultApiImpl implements LowApi, HighApi {
+                            @Override
+                            public String validate(int count) {
+                                return String.valueOf(count);
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        var interceptor = result.sourceOutput().resolve("com/example/DefaultApiImpl__ValidationInterceptor_0.java");
+        assertThat(Files.exists(interceptor), is(true));
+
+        var content = Files.readString(interceptor, StandardCharsets.UTF_8);
+        assertThat(content.lines().filter(it -> it.contains("validation__ctx.check(")).count(), is(2L));
     }
 
     @Test

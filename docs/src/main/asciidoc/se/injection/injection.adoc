@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -570,6 +570,9 @@ link:{service-registry-base-url}/io/helidon/service/registry/Interception.Delega
 However, keep in mind that usage of this annotation doesn’t add the ability to intercept constructor calls.
 To enable interception, this annotation must be present on the class that the factory produces.
 While it is not required on interfaces, it will still work correctly if applied there.
+If the produced type is an interface, Helidon can generate the required delegation wrapper for registry-managed factories
+without `@Interception.Delegate` on the produced implementation class. This is the path used by declarative validation
+when method constraints are declared on service interfaces.
 
 If you need to enable interception for classes using delegation, you should make sure about the following:
 

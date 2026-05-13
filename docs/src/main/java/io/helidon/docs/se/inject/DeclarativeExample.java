@@ -146,6 +146,20 @@ public class DeclarativeExample {
     }
     // end::snippet_7[]
 
+    // tag::snippet_7b[]
+    interface ValidatedServiceContract {
+        String process(@Validation.String.NotBlank String value);
+    }
+
+    @Service.Singleton
+    static class ContractValidatedService implements ValidatedServiceContract {
+        @Override
+        public String process(String value) {
+            return value;
+        }
+    }
+    // end::snippet_7b[]
+
     // tag::snippet_8[]
     @Validation.NotNull
     @Validation.String.NotBlank
