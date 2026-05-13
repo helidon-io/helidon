@@ -106,12 +106,11 @@ class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
             if (emptyOptionalResponse(response)) {
                 return (T) Optional.empty();
             }
-            ReadableEntity readableEntity = response.entity();
-            if (response.status() == Status.NOT_FOUND_404) {
-                readableEntity.consume();
+            if (response.status().code() == Status.NOT_FOUND_404.code()) {
                 response.close();
                 return (T) Optional.empty();
             }
+            ReadableEntity readableEntity = response.entity();
             if (!readableEntity.hasEntity()) {
                 response.close();
                 return (T) Optional.empty();

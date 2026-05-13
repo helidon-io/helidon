@@ -80,9 +80,8 @@ class DefaultErrorHandling implements RestClient.ErrorHandling {
                                                                 ClientRequestHeaders requestHeaders,
                                                                 ClientResponseTyped<?> response,
                                                                 GenericType<?> type) {
-            if (Optional.class.equals(type.rawType()) 
-                    && response.status() == Status.NOT_FOUND_404) {
-
+            if (Optional.class.equals(type.rawType())
+                    && response.status().code() == Status.NOT_FOUND_404.code()) {
                 return Optional.empty();
             }
             return Optional.of(new HttpException("Failed when invoking a client call to " + requestUri

@@ -226,13 +226,15 @@ class DeclarativeHttpTest {
         assertThat(present.isPresent(), is(true));
         assertThat(present.orElseThrow(), is(expected));
 
-        var rawEmpty = client.get("/greet/optional/empty").request();
-        assertThat(rawEmpty.status(), is(Status.NO_CONTENT_204));
+        try (var rawEmpty = client.get("/greet/optional/empty").request()) {
+            assertThat(rawEmpty.status(), is(Status.NO_CONTENT_204));
+        }
         Optional<JsonObject> empty = typedClient.optionalMessageEmpty();
         assertThat(empty.isEmpty(), is(true));
 
-        var rawNotFound = client.get("/greet/optional/not-found").request();
-        assertThat(rawNotFound.status(), is(Status.NOT_FOUND_404));
+        try (var rawNotFound = client.get("/greet/optional/not-found").request()) {
+            assertThat(rawNotFound.status(), is(Status.NOT_FOUND_404));
+        }
         Optional<JsonObject> notFound = typedClient.optionalMessageNotFound();
         assertThat(notFound.isEmpty(), is(true));
     }
