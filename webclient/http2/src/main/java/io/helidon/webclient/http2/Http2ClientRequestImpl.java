@@ -77,6 +77,9 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
         tls(request.tls());
+        if (sameOrigin(request.resolvedUri(), clientUri)) {
+            request.address().ifPresent(this::address);
+        }
 
         this.priority(request.priority);
         this.priorKnowledge(request.priorKnowledge);
@@ -176,6 +179,12 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
 
     void sanitizeRedirectHeaders(ClientUri requestUri, ClientRequestHeaders requestHeaders) {
         super.sanitizeRedirectSensitiveHeaders(requestUri, requestHeaders);
+    }
+
+    private static boolean sameOrigin(ClientUri sourceUri, ClientUri targetUri) {
+        return sourceUri.scheme().equalsIgnoreCase(targetUri.scheme())
+                && sourceUri.host().equalsIgnoreCase(targetUri.host())
+                && sourceUri.port() == targetUri.port();
     }
 
     Http2ClientResponseImpl invokeEntity(Object entity) {
