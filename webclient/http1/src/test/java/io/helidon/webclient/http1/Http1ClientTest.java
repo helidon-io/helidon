@@ -16,15 +16,25 @@
 
 package io.helidon.webclient.http1;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.StandardProtocolFamily;
 import java.net.URI;
+import java.net.UnixDomainSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -52,10 +62,13 @@ import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.api.ClientConnection;
+import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.api.WebClient;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -302,6 +315,32 @@ class Http1ClientTest {
                 System.clearProperty("http.proxyPort");
                 System.clearProperty("http.nonProxyHosts");
             }
+        }
+    }
+
+    @Test
+    void testUnixDomainSocketUsesRelativeUriAndNoProxyConnectionHeader(@TempDir Path tempDir) throws Exception {
+        UnixDomainSocketAddress address = UnixDomainSocketAddress.of(tempDir.resolve("helidon-http1-test.sock"));
+        WebClient webClient = WebClient.builder()
+                .shareConnectionCache(false)
+                .protocolPreference(List.of(Http1Client.PROTOCOL_ID))
+                .build();
+        try (RawHttp1CaptureServer server = RawHttp1CaptureServer.start(address)) {
+            HttpClientRequest request = webClient.put("http://" + TARGET_HOST + ":1111" + TARGET_URI_PATH)
+                    .address(address)
+                    .proxy(createHttpProxyBuilder().build());
+
+            try (HttpClientResponse response = request.submit("Sending Something")) {
+                CapturedHttp1Request capturedRequest = server.awaitRequest();
+
+                assertThat(response.status(), is(Status.OK_200));
+                StringTokenizer st = new StringTokenizer(capturedRequest.prologue(), " ");
+                st.nextToken();
+                assertThat(st.nextToken(), is(TARGET_URI_PATH));
+                assertThat(capturedRequest.hasHeader("Proxy-Connection"), is(false));
+            }
+        } finally {
+            webClient.closeResource();
         }
     }
 
@@ -874,6 +913,84 @@ header.writeHttp1Header(entityBuffer);
             }
         }
 
+    }
+
+    private record CapturedHttp1Request(String prologue, List<String> headerLines) {
+        boolean hasHeader(String headerName) {
+            String headerPrefix = headerName + ":";
+            return headerLines.stream()
+                    .anyMatch(line -> line.regionMatches(true, 0, headerPrefix, 0, headerPrefix.length()));
+        }
+    }
+
+    private record RawHttp1CaptureServer(ServerSocketChannel channel,
+                                         CompletableFuture<CapturedHttp1Request> request) implements AutoCloseable {
+        static RawHttp1CaptureServer start(UnixDomainSocketAddress address) throws IOException {
+            ServerSocketChannel server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+            server.bind(address);
+            CompletableFuture<CapturedHttp1Request> request = CompletableFuture.supplyAsync(() -> {
+                try (SocketChannel socket = server.accept()) {
+                    CapturedHttp1Request captured = readRequest(socket);
+                    writeResponse(socket);
+                    return captured;
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                } finally {
+                    try {
+                        server.close();
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+            });
+            return new RawHttp1CaptureServer(server, request);
+        }
+
+        CapturedHttp1Request awaitRequest() throws Exception {
+            return request.get(5, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void close() {
+            try {
+                channel.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        private static CapturedHttp1Request readRequest(SocketChannel socket) throws IOException {
+            ByteArrayOutputStream rawRequest = new ByteArrayOutputStream();
+            ByteBuffer buffer = ByteBuffer.allocate(1024);
+            while (socket.read(buffer) >= 0) {
+                buffer.flip();
+                while (buffer.hasRemaining()) {
+                    rawRequest.write(buffer.get());
+                }
+                String rawRequestText = new String(rawRequest.toByteArray(), StandardCharsets.US_ASCII);
+                if (rawRequestText.contains("\r\n\r\n")) {
+                    return parse(rawRequestText);
+                }
+                buffer.clear();
+            }
+            throw new IllegalStateException("HTTP/1 request headers were not complete");
+        }
+
+        private static CapturedHttp1Request parse(String rawRequestText) {
+            int headerEnd = rawRequestText.indexOf("\r\n\r\n");
+            String[] headerLines = rawRequestText.substring(0, headerEnd).split("\r\n");
+            return new CapturedHttp1Request(headerLines[0], Arrays.asList(headerLines).subList(1, headerLines.length));
+        }
+
+        private static void writeResponse(SocketChannel socket) throws IOException {
+            ByteBuffer response = ByteBuffer.wrap(("HTTP/1.1 200 OK\r\n"
+                    + "Connection: close\r\n"
+                    + "Content-Length: 0\r\n"
+                    + "\r\n").getBytes(StandardCharsets.US_ASCII));
+            while (response.hasRemaining()) {
+                socket.write(response);
+            }
+        }
     }
 
     private static class FakeSocket implements HelidonSocket {
