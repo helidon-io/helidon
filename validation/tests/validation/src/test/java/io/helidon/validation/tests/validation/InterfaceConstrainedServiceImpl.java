@@ -16,12 +16,108 @@
 
 package io.helidon.validation.tests.validation;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import io.helidon.service.registry.Service;
+import io.helidon.validation.Validation;
 
 @Service.Singleton
-class InterfaceConstrainedServiceImpl implements InterfaceConstrainedService {
+class InterfaceConstrainedServiceImpl
+        implements UnconstrainedInterfaceConstrainedService,
+                   InterfaceConstrainedService,
+                   LowerMinimumInterfaceConstrainedService,
+                   GenericInterfaceConstrainedService<String>,
+                   OrderedGenericInterfaceConstrainedService<String, Integer>,
+                   ChildGenericInterfaceConstrainedService<String> {
     @Override
     public String validate(String value) {
+        return value;
+    }
+
+    @Override
+    public List<String> validateList(List<String> values) {
+        return values;
+    }
+
+    @Override
+    public List<List<String>> validateNestedList(List<List<String>> values) {
+        return values;
+    }
+
+    @Override
+    public Map<String, String> validateMap(Map<String, String> values) {
+        return values;
+    }
+
+    @Override
+    public Map<List<String>, String> validateNestedMapKey(Map<List<String>, String> values) {
+        return values;
+    }
+
+    @Override
+    public Map<String, List<String>> validateNestedMapValue(Map<String, List<String>> values) {
+        return values;
+    }
+
+    @Override
+    public Optional<String> validateOptional(Optional<String> value) {
+        return value;
+    }
+
+    @Override
+    public String[] validateArray(String[] values) {
+        return values;
+    }
+
+    @Override
+    public List<Integer> validateIntegerList(List<Integer> values) {
+        return values;
+    }
+
+    @Override
+    public List<String> invalidNames() {
+        return List.of("");
+    }
+
+    @Override
+    public int validateMinimum(@Validation.Integer.Min(1) int value) {
+        return value;
+    }
+
+    @Override
+    public String validateShared(String value) {
+        return value;
+    }
+
+    @Override
+    public String validateDuplicate(@Validation.String.NotBlank String value) {
+        return value;
+    }
+
+    @Override
+    public List<String> validateCustomStringList(List<String> values) {
+        return values;
+    }
+
+    @Override
+    public List<Integer> validateCustomIntegerList(List<Integer> values) {
+        return values;
+    }
+
+    @Override
+    public String validateGeneric(String value) {
+        return value;
+    }
+
+    @Override
+    public Integer validateOrderedGeneric(String key, Integer value) {
+        return value;
+    }
+
+    @Override
+    public String validateInheritedGeneric(String value) {
         return value;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.validation.tests.validation;
 
+import java.util.List;
+
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Service;
@@ -29,13 +31,15 @@ import io.helidon.validation.spi.ConstraintValidatorProvider;
 public class CustomConstraintValidatorProvider implements ConstraintValidatorProvider {
     @Override
     public ConstraintValidator create(TypeName typeName, Annotation constraintAnnotation) {
-        return new CustomValidator(constraintAnnotation);
+        return new CustomValidator(typeName, constraintAnnotation);
     }
 
     private static class CustomValidator implements ConstraintValidator {
+        private final TypeName typeName;
         private final Annotation annotation;
 
-        private CustomValidator(Annotation annotation) {
+        private CustomValidator(TypeName typeName, Annotation annotation) {
+            this.typeName = typeName;
             this.annotation = annotation;
         }
 
@@ -47,6 +51,15 @@ public class CustomConstraintValidatorProvider implements ConstraintValidatorPro
 
             if (value instanceof String str) {
                 if (str.equals("good")) {
+                    return ValidatorResponse.create();
+                }
+            }
+            if (value instanceof List<?> values) {
+                String resolvedName = typeName.resolvedName();
+                if (resolvedName.equals("java.util.List<java.lang.String>") && values.equals(List.of("good"))) {
+                    return ValidatorResponse.create();
+                }
+                if (resolvedName.equals("java.util.List<java.lang.Integer>") && values.equals(List.of(42))) {
                     return ValidatorResponse.create();
                 }
             }
