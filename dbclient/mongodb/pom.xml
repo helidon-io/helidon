@@ -38,6 +38,10 @@
             <artifactId>helidon-common-mapper</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-sync</artifactId>
         </dependency>
