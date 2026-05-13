@@ -191,6 +191,26 @@ public sealed class NioSocket implements HelidonSocket permits TlsNioSocket {
         }
     }
 
+    /**
+     * Read from the underlying socket/channel in non-blocking mode.
+     * The original blocking mode is restored before this method returns.
+     *
+     * @param buffer buffer to read to
+     * @return number of bytes read
+     * @throws IOException in case of an I/O error
+     */
+    protected int readNonBlocking(ByteBuffer buffer) throws IOException {
+        boolean blocking = delegate.isBlocking();
+        try {
+            delegate.configureBlocking(false);
+            return delegate.read(buffer);
+        } finally {
+            if (delegate.isOpen()) {
+                delegate.configureBlocking(blocking);
+            }
+        }
+    }
+
     SocketAddress localSocketAddress() {
         try {
             return delegate.getLocalAddress();

@@ -115,10 +115,12 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
             return httpClientSpi.spi().clientRequest(this, resolvedUri);
         }
 
+        String transportKey = transportKey();
         LoomClient.EndpointKey endpointKey = new LoomClient.EndpointKey(resolvedUri.scheme(),
                                                                         resolvedUri.authority(),
+                                                                        transportKey,
                                                                         tls(),
-                                                                        proxy());
+                                                                        transportKey == null ? proxy() : Proxy.noProxy());
         Optional<HttpClientSpi> spi = clientSpiCache.get(endpointKey);
         if (spi.isPresent()) {
             /*
@@ -181,6 +183,8 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                                                                      tls(),
                                                                      tcpProtocolIds,
                                                                      unixSocketAddress,
+                                                                     resolvedUri.host(),
+                                                                     resolvedUri.port(),
                                                                      conn -> false,
                                                                      conn -> {
                                                                      });
@@ -199,8 +203,9 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                     connection.closeResource();
                 } else {
                     clientSpiCache.put(endpointKey, protocolSpi.spi());
-                    connection(connection);
-                    return protocolSpi.spi().clientRequest(this, resolvedUri);
+                    ClientRequest<?> clientRequest = protocolSpi.spi().clientRequest(this, resolvedUri);
+                    clientRequest.connection(connection);
+                    return clientRequest;
                 }
             } else {
                 if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
@@ -223,5 +228,13 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
 
         throw new IllegalArgumentException("Cannot handle request to " + resolvedUri + ", did not discover any HTTP version "
                                                    + "willing to handle it. HTTP versions supported: " + clients.keySet());
+    }
+
+    private String transportKey() {
+        return address()
+                .filter(UnixDomainSocketAddress.class::isInstance)
+                .map(UnixDomainSocketAddress.class::cast)
+                .map(address -> "unix:" + address.getPath())
+                .orElse(null);
     }
 }

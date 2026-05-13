@@ -23,7 +23,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
@@ -50,8 +49,6 @@ import static io.helidon.http.HeaderNames.CONTENT_ENCODING;
 import static io.helidon.webclient.api.ClientRequestBase.USER_AGENT_HEADER;
 
 abstract class Http2CallChainBase implements WebClientService.Chain {
-    private static final Tls NO_TLS = Tls.builder().enabled(false).build();
-
     private final Http2ClientImpl http2Client;
     private final HttpClientConfig clientConfig;
     private final Http2ClientRequestImpl clientRequest;
@@ -129,7 +126,9 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         } catch (StreamTimeoutException e){
             //This request was waiting for 100 Continue, but it was very likely not supported by the server.
             //Do not remove connection from the cache in that case.
-            if (!clientRequest().outputStreamRedirect()) {
+            if (!clientRequest().outputStreamRedirect()
+                    && (clientRequest.connection().isEmpty()
+                            || Http2ClientConnectionHandler.ownsExplicitConnection(clientRequest))) {
                 http2Client.connectionCache().remove(connectionKey);
             }
             throw e;
@@ -258,14 +257,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     }
 
     private ConnectionKey connectionKey(WebClientServiceRequest serviceRequest) {
-        ClientUri uri = serviceRequest.uri();
-        return ConnectionKey.create(uri.scheme(),
-                                    uri.host(),
-                                    uri.port(),
-                                    "https".equals(uri.scheme()) ? clientRequest.tls() : NO_TLS,
-                                    clientConfig.dnsResolver(),
-                                    clientConfig.dnsAddressLookup(),
-                                    clientRequest.proxy());
+        return Http2ConnectionKeys.create(serviceRequest.uri(), clientRequest, clientConfig);
     }
 
     private static final class LogHeaderConsumer implements Consumer<Header> {

@@ -43,7 +43,7 @@ module io.helidon.webclient.api {
     requires transitive io.helidon.http;
     requires io.helidon.common.resumable;
     requires io.helidon.service.registry;
-    requires jdk.net;
+    requires io.helidon.common.task;
 
     exports io.helidon.webclient.api;
     exports io.helidon.webclient.spi;
@@ -53,5 +53,5 @@ module io.helidon.webclient.api {
     uses io.helidon.webclient.spi.WebClientServiceProvider;
     uses io.helidon.webclient.spi.ProtocolConfigProvider;
     uses io.helidon.webclient.spi.HttpClientSpiProvider;
-	
+
 }

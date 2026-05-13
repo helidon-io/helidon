@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.http2;
 
+import java.net.UnixDomainSocketAddress;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
@@ -40,6 +41,7 @@ import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.TcpClientConnection;
+import io.helidon.webclient.api.UnixDomainSocketClientConnection;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
@@ -47,6 +49,7 @@ import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.http1.UpgradeResponse;
 import io.helidon.webclient.http2.Http2ConnectionAttemptResult.Result;
 
+import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
 
 // a representation of a single remote endpoint
@@ -75,19 +78,32 @@ class Http2ClientConnectionHandler {
 
     void close() {
         // this is to prevent concurrent modification (connections remove themselves from the map)
-        Set<Http2ClientConnection> toClose = new HashSet<>(allConnections.keySet());
+        Set<Http2ClientConnection> toClose;
+        synchronized (allConnections) {
+            toClose = new HashSet<>(allConnections.keySet());
+        }
         toClose.forEach(Http2ClientConnection::close);
         Http2ClientConnection active = this.activeConnection.getAndSet(null);
         if (active != null) {
             active.close();
         }
         this.allConnections.clear();
+        this.h2ConnByConn.clear();
     }
 
     Http2ConnectionAttemptResult newStream(Http2ClientImpl http2Client,
                                            Http2ClientRequestImpl request,
                                            ClientUri initialUri,
                                            Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
+
+        Optional<ClientConnection> maybeConnection = request.connection();
+        if (maybeConnection.isPresent()) {
+            return explicitConnection(http2Client,
+                                      request,
+                                      initialUri,
+                                      http1EntityHandler,
+                                      maybeConnection.get());
+        }
 
         return switch (result.get()) {
             case HTTP_1 -> http1(http2Client, request, initialUri, http1EntityHandler);
@@ -146,27 +162,27 @@ class Http2ClientConnectionHandler {
                 } else {
                     alpn = List.of(Http2Client.PROTOCOL_ID, Http1Client.PROTOCOL_ID);
                 }
-                ClientConnection tcpClientConnection = connectClient(webClient, alpn);
-                if (tcpClientConnection.helidonSocket().protocolNegotiated()) {
-                    if (Http2Client.PROTOCOL_ID.equals(tcpClientConnection.helidonSocket().protocol())) {
+                ClientConnection clientConnection = connectClient(webClient, request, initialUri, alpn);
+                if (clientConnection.helidonSocket().protocolNegotiated()) {
+                    if (Http2Client.PROTOCOL_ID.equals(clientConnection.helidonSocket().protocol())) {
                         result.set(Result.HTTP_2);
                         // this should always be true
-                        Http2ClientConnection connection = Http2ClientConnection.create(http2Client,
-                                                                                        tcpClientConnection,
-                                                                                        true);
+                        Http2ClientConnection connection = createHttp2Connection(http2Client,
+                                                                                 clientConnection,
+                                                                                 true);
                         allConnections.put(connection, true);
-                        h2ConnByConn.put(tcpClientConnection, connection);
+                        h2ConnByConn.put(clientConnection, connection);
                         this.activeConnection.set(connection);
                         return http2(http2Client, request, initialUri);
                     } else {
                         result.set(Result.HTTP_1);
-                        request.connection(tcpClientConnection);
+                        request.connection(clientConnection);
                         return http1(http2Client, request, initialUri, http1EntityHandler);
                     }
                 } else {
                     // this should not really happen, as H2 is depending on ALPN, but let's support it anyway, and hope we can
                     // do this later
-                    request.connection(tcpClientConnection);
+                    request.connection(clientConnection);
                 }
             }
 
@@ -186,9 +202,9 @@ class Http2ClientConnectionHandler {
                     .upgrade("h2c");
             if (upgradeResponse.isUpgraded()) {
                 result.set(Result.HTTP_2);
-                Http2ClientConnection conn = Http2ClientConnection.create(http2Client,
-                                                                          upgradeResponse.connection(),
-                                                                          false);
+                Http2ClientConnection conn = createHttp2Connection(http2Client,
+                                                                   upgradeResponse.connection(),
+                                                                   false);
                 activeConnection.set(conn);
                 return http2(http2Client, request, initialUri);
             } else {
@@ -200,6 +216,63 @@ class Http2ClientConnectionHandler {
         } finally {
             lock.unlock();
         }
+    }
+
+    private Http2ConnectionAttemptResult explicitConnection(Http2ClientImpl http2Client,
+                                                            Http2ClientRequestImpl request,
+                                                            ClientUri initialUri,
+                                                            Function<Http1ClientRequest,
+                                                                    Http1ClientResponse> http1EntityHandler,
+                                                            ClientConnection clientConnection) {
+        if (clientConnection.helidonSocket().protocolNegotiated()
+                && !Http2Client.PROTOCOL_ID.equals(clientConnection.helidonSocket().protocol())) {
+            return http1(http2Client, request, initialUri, http1EntityHandler);
+        }
+        return http2ExplicitConnection(http2Client, request, clientConnection);
+    }
+
+    private Http2ConnectionAttemptResult http2ExplicitConnection(Http2ClientImpl http2Client,
+                                                                 Http2ClientRequestImpl request,
+                                                                 ClientConnection clientConnection) {
+        try {
+            lock.lockInterruptibly();
+        } catch (InterruptedException e) {
+            throw new IllegalStateException("Interrupted", e);
+        }
+        try {
+            boolean ownsExplicitConnection = ownsExplicitConnection(request);
+            Http2ClientConnection connection = ownsExplicitConnection ? h2ConnByConn.get(clientConnection) : null;
+            if (connection != null && connection.closed()) {
+                removeConnection(connection);
+                connection = null;
+            }
+            if (connection == null) {
+                try {
+                    connection = createHttp2Connection(http2Client, clientConnection, true);
+                } catch (RuntimeException | Error e) {
+                    if (ownsExplicitConnection) {
+                        closeClientConnection(clientConnection);
+                    }
+                    throw e;
+                }
+                if (ownsExplicitConnection) {
+                    h2ConnByConn.put(clientConnection, connection);
+                }
+            }
+            if (ownsExplicitConnection) {
+                result.set(Result.HTTP_2);
+                allConnections.put(connection, true);
+                activeConnection.set(connection);
+            }
+
+            return new Http2ConnectionAttemptResult(Result.HTTP_2, connection.createStream(request), null);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    static boolean ownsExplicitConnection(Http2ClientRequestImpl request) {
+        return request.ownsExplicitConnection();
     }
 
     private String settingsForUpgrade(Http2ClientProtocolConfig protocolConfig) {
@@ -223,7 +296,7 @@ class Http2ClientConnectionHandler {
     }
 
     private Http1ClientRequest http1Request(WebClient webClient, Http2ClientRequestImpl request, ClientUri initialUri) {
-        return webClient.client(Http1Client.PROTOCOL)
+        Http1ClientRequest http1Request = webClient.client(Http1Client.PROTOCOL)
                 .method(request.method())
                 .uri(initialUri)
                 .keepAlive(request.keepAlive())
@@ -234,6 +307,9 @@ class Http2ClientConnectionHandler {
                 .proxy(request.proxy())
                 .maxRedirects(request.maxRedirects())
                 .followRedirects(request.followRedirects());
+        request.connection().ifPresent(http1Request::connection);
+        request.address().ifPresent(http1Request::address);
+        return http1Request;
     }
 
     private Http2ClientConnection createConnection(Http2ClientImpl http2Client,
@@ -247,18 +323,18 @@ class Http2ClientConnectionHandler {
         if (maybeConnection.isPresent()) {
             // TLS is ignored (we cannot do a TLS negotiation on a connected connection)
             // we cannot cache this connection, it will be a one-off
-            usedConnection = Http2ClientConnection.create(http2Client, maybeConnection.get(), true);
+            usedConnection = createHttp2Connection(http2Client, maybeConnection.get(), true);
         } else {
             ClientConnection connection;
 
             // we know that this is HTTP/2 capable server - still need to support all three (prior, upgrade, alpn)
             if (request.tls().enabled() && "https".equals(requestUri.scheme())) {
-                connection = connectClient(webClient, List.of(Http2Client.PROTOCOL_ID));
-                usedConnection = Http2ClientConnection.create(http2Client, connection, true);
+                connection = connectClient(webClient, request, requestUri, List.of(Http2Client.PROTOCOL_ID));
+                usedConnection = createHttp2Connection(http2Client, connection, true);
             } else {
                 if (request.priorKnowledge()) {
-                    connection = connectClient(webClient, List.of(Http2Client.PROTOCOL_ID));
-                    usedConnection = Http2ClientConnection.create(http2Client, connection, true);
+                    connection = connectClient(webClient, request, requestUri, List.of(Http2Client.PROTOCOL_ID));
+                    usedConnection = createHttp2Connection(http2Client, connection, true);
                 } else {
                     // attempt an upgrade to HTTP/2
                     UpgradeResponse upgradeResponse = http1Request(webClient, request, requestUri)
@@ -269,7 +345,7 @@ class Http2ClientConnectionHandler {
                     if (upgradeResponse.isUpgraded()) {
                         result.set(Result.HTTP_2);
                         connection = upgradeResponse.connection();
-                        usedConnection = Http2ClientConnection.create(http2Client, connection, false);
+                        usedConnection = createHttp2Connection(http2Client, connection, false);
                     } else {
                         try (HttpClientResponse response = upgradeResponse.response()) {
                             if (LOGGER.isLoggable(TRACE)) {
@@ -294,7 +370,50 @@ class Http2ClientConnectionHandler {
         return usedConnection;
     }
 
-    private ClientConnection connectClient(WebClient webClient, List<String> alpn) {
+    private Http2ClientConnection createHttp2Connection(Http2ClientImpl http2Client,
+                                                        ClientConnection clientConnection,
+                                                        boolean sendSettings) {
+        return Http2ClientConnection.create(http2Client, clientConnection, sendSettings, this::removeConnection);
+    }
+
+    private void removeConnection(Http2ClientConnection connection) {
+        synchronized (h2ConnByConn) {
+            h2ConnByConn.values().removeIf(it -> it == connection);
+        }
+        allConnections.remove(connection);
+        activeConnection.compareAndSet(connection, null);
+    }
+
+    private static void closeClientConnection(ClientConnection clientConnection) {
+        try {
+            clientConnection.closeResource();
+        } catch (RuntimeException e) {
+            LOGGER.log(DEBUG, "Failed to close internally created HTTP/2 probe connection", e);
+        }
+    }
+
+    private ClientConnection connectClient(WebClient webClient,
+                                           Http2ClientRequestImpl request,
+                                           ClientUri uri,
+                                           List<String> alpn) {
+        var address = request.address();
+        if (address.isPresent() && address.get() instanceof UnixDomainSocketAddress udsAddress) {
+            return UnixDomainSocketClientConnection.create(webClient,
+                                                          connectionKey.tls(),
+                                                          alpn,
+                                                          udsAddress,
+                                                          uri.host(),
+                                                          uri.port(),
+                                                          connection -> false,
+                                                          connection -> {
+                                                              Http2ClientConnection h2conn = h2ConnByConn.remove(
+                                                                      connection);
+                                                              if (h2conn != null) {
+                                                                  allConnections.remove(h2conn);
+                                                              }
+                                                          })
+                    .connect();
+        }
         return TcpClientConnection.create(webClient,
                                           connectionKey,
                                           alpn,

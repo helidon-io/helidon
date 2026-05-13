@@ -45,6 +45,7 @@ public final class TlsNioSocket extends NioSocket {
     private final Lock handshakeLock = new ReentrantLock();
     private final SSLEngine engine;
     private final ByteBuffer myAppData;
+    private final ByteBuffer emptyHandshakeData = ByteBuffer.allocate(0);
 
     private int unwrapRemaining;
     private ByteBuffer peerAppData;
@@ -55,6 +56,9 @@ public final class TlsNioSocket extends NioSocket {
     private volatile PeerInfo localPeer;
     private volatile PeerInfo remotePeer;
     private volatile byte[] lastSslSessionId;
+    private volatile boolean initialHandshakeComplete;
+    private volatile boolean idle;
+    private boolean peerAppDataReady;
 
     private TlsNioSocket(SocketChannel delegate, SSLEngine sslEngine, String channelId, String serverChannelId) {
         super(delegate, channelId, serverChannelId);
@@ -150,7 +154,10 @@ public final class TlsNioSocket extends NioSocket {
     @Override
     public byte[] get() {
         try {
-            peerAppData.clear();
+            idle = false;
+            if (!peerAppDataReady) {
+                peerAppData.clear();
+            }
 
             while (peerAppData.position() == 0) {
                 SSLEngineResult result = receiveAndUnwrap();
@@ -162,8 +169,10 @@ public final class TlsNioSocket extends NioSocket {
                 }
 
                 SSLEngineResult.HandshakeStatus handshakeStatus = result.getHandshakeStatus();
-                if (handshakeStatus != SSLEngineResult.HandshakeStatus.FINISHED
-                        && handshakeStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
+                if (handshakeFinished(handshakeStatus)) {
+                    initialHandshakeComplete = true;
+                }
+                if (!handshakeFinished(handshakeStatus)) {
                     doHandshake(handshakeStatus);
                 }
             }
@@ -179,6 +188,7 @@ public final class TlsNioSocket extends NioSocket {
 
     @Override
     public void write(BufferData buffer) {
+        idle = false;
         // Handshake/closure and normal writes reuse the same TLS staging buffers.
         handshakeLock.lock();
         try {
@@ -190,9 +200,21 @@ public final class TlsNioSocket extends NioSocket {
         }
     }
 
+    /**
+     * Complete the initial TLS handshake.
+     */
+    public void handshake() {
+        try {
+            ensureHandshakeBeforeWrite();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     @Override
     public void close() {
         try {
+            idle = false;
             engine.closeOutbound();
             doClosure();
         } catch (IOException e) {
@@ -226,6 +248,24 @@ public final class TlsNioSocket extends NioSocket {
         return Optional.ofNullable(engine.getSession().getLocalCertificates());
     }
 
+    @Override
+    public void idle() {
+        idle = true;
+    }
+
+    @Override
+    public boolean isConnected() {
+        if (closed || !super.isConnected()) {
+            return false;
+        }
+        try {
+            return !staleIdleDataAvailable();
+        } catch (RuntimeException e) {
+            closed = true;
+            return false;
+        }
+    }
+
     void doClosure() throws IOException {
         try {
             handshakeLock.lock();
@@ -242,6 +282,76 @@ public final class TlsNioSocket extends NioSocket {
                     && !(st == SSLEngineResult.Status.OK && hs == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING));
         } finally {
             handshakeLock.unlock();
+        }
+    }
+
+    private boolean staleIdleDataAvailable() {
+        if (!idle) {
+            return false;
+        }
+
+        handshakeLock.lock();
+        try {
+            if (!idle) {
+                return false;
+            }
+            if (closed) {
+                return true;
+            }
+
+            peerAppData.clear();
+            if (unwrapRemaining > 0) {
+                peerNetData.compact();
+                peerNetData.flip();
+                unwrapRemaining = 0;
+                return unwrapIdleDataAvailable();
+            }
+
+            peerNetData.clear();
+            int read = readNonBlocking(peerNetData);
+            if (read == 0) {
+                return false;
+            }
+            if (read < 0) {
+                closed = true;
+                return true;
+            }
+
+            peerNetData.flip();
+            return unwrapIdleDataAvailable();
+        } catch (IOException e) {
+            closed = true;
+            return true;
+        } finally {
+            handshakeLock.unlock();
+        }
+    }
+
+    private boolean unwrapIdleDataAvailable() throws SSLException {
+        while (true) {
+            SSLEngineResult result = engine.unwrap(peerNetData, peerAppData);
+            SSLEngineResult.Status status = result.getStatus();
+            if (status == SSLEngineResult.Status.CLOSED) {
+                closed = true;
+                return true;
+            }
+            if (status == SSLEngineResult.Status.BUFFER_UNDERFLOW) {
+                closed = true;
+                return true;
+            }
+            if (status == SSLEngineResult.Status.BUFFER_OVERFLOW) {
+                peerAppData = reallocate(peerAppData, engine.getSession().getApplicationBufferSize(), true);
+                continue;
+            }
+
+            unwrapRemaining = peerNetData.remaining();
+            if (peerAppData.position() > 0) {
+                closed = true;
+                return true;
+            }
+            if (!peerNetData.hasRemaining()) {
+                return false;
+            }
         }
     }
 
@@ -297,6 +407,7 @@ public final class TlsNioSocket extends NioSocket {
     }
 
     private byte[] appBytes() {
+        peerAppDataReady = false;
         peerAppData.flip();
         byte[] result = new byte[peerAppData.remaining()];
         peerAppData.get(result);
@@ -308,7 +419,6 @@ public final class TlsNioSocket extends NioSocket {
         SSLEngineResult.HandshakeStatus status = handshakeStatus;
         try {
             handshakeLock.lock();
-            myAppData.clear();
 
             while (status != SSLEngineResult.HandshakeStatus.FINISHED
                     && status != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
@@ -323,9 +433,8 @@ public final class TlsNioSocket extends NioSocket {
                     }
                     // fall through to wrap
                 case NEED_WRAP:
-                    myAppData.clear();
-                    myAppData.flip();
-                    result = wrapAndSend(myAppData, false);
+                    emptyHandshakeData.clear();
+                    result = wrapAndSend(emptyHandshakeData, false);
                     break;
                 case NEED_UNWRAP:
                     peerAppData.clear();
@@ -337,12 +446,20 @@ public final class TlsNioSocket extends NioSocket {
 
                 status = result.getHandshakeStatus();
             }
+            initialHandshakeComplete = true;
+            if (peerAppData.position() > 0) {
+                peerAppDataReady = true;
+            }
         } finally {
             handshakeLock.unlock();
         }
     }
 
     private void doWrite(BufferData buffer) throws IOException {
+        if (buffer.consumed()) {
+            return;
+        }
+        ensureHandshakeBeforeWrite();
         while (!buffer.consumed()) {
             myAppData.clear();
             buffer.writeTo(myAppData, buffer.available());
@@ -362,6 +479,32 @@ public final class TlsNioSocket extends NioSocket {
                 }
             }
         }
+    }
+
+    private void ensureHandshakeBeforeWrite() throws IOException {
+        if (initialHandshakeComplete) {
+            return;
+        }
+
+        handshakeLock.lock();
+        try {
+            if (initialHandshakeComplete) {
+                return;
+            }
+            SSLEngineResult.HandshakeStatus status = engine.getHandshakeStatus();
+            if (status == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
+                engine.beginHandshake();
+                status = engine.getHandshakeStatus();
+            }
+            doHandshake(status);
+        } finally {
+            handshakeLock.unlock();
+        }
+    }
+
+    private static boolean handshakeFinished(SSLEngineResult.HandshakeStatus status) {
+        return status == SSLEngineResult.HandshakeStatus.FINISHED
+                || status == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
     }
 
     private SSLEngineResult wrapAndSend(ByteBuffer appData, boolean ignoreClose) throws SSLException {

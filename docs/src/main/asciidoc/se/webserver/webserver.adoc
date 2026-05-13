@@ -185,6 +185,25 @@ server:
             resource-path: "chain.pem"
 ----
 
+==== Configuring TLS over Unix Domain Sockets
+
+TLS can be combined with a Unix domain socket listener by configuring `bind-address` with a
+`unix:/path/to/socket` address and configuring `tls` as usual. Unix domain socket listeners use the
+NIO socket-channel transport, so keep `use-nio` set to `true`, which is the default.
+
+[source,yaml]
+.WebServer TLS over Unix domain socket configuration in `application.yaml`
+----
+server:
+  bind-address: "unix:/var/run/service.sock"
+  tls:
+    private-key:
+      keystore:
+        passphrase: "password"
+        resource:
+          resource-path: "server.p12"
+----
+
 === Configuration Options
 
 include::{rootdir}/config/io_helidon_webserver_WebServer.adoc[leveloffset=+2,tag=config]
