@@ -23,6 +23,7 @@ import java.util.Optional;
 import io.helidon.common.GenericType;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.service.registry.Service;
 
 @Service.Singleton
@@ -79,6 +80,10 @@ class DefaultErrorHandling implements RestClient.ErrorHandling {
                                                                 ClientRequestHeaders requestHeaders,
                                                                 ClientResponseTyped<?> response,
                                                                 GenericType<?> type) {
+            if (Optional.class.equals(type.rawType())
+                    && response.status().code() == Status.NOT_FOUND_404.code()) {
+                return Optional.empty();
+            }
             return Optional.of(new HttpException("Failed when invoking a client call to " + requestUri
                                                          + ", status: " + response.status(),
                                                  response.status()));
