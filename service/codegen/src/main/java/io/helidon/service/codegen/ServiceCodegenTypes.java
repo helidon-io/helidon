@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -323,6 +323,12 @@ public final class ServiceCodegenTypes {
      */
     public static final TypeName INTERCEPT_G_WRAPPER_SUPPLIER_FACTORY =
             TypeName.create("io.helidon.service.registry.GeneratedService.SupplierFactoryInterceptionWrapper");
+    /**
+     * {@link io.helidon.common.types.TypeName} for
+     * {@code io.helidon.service.registry.GeneratedService.OptionalSupplierFactoryInterceptionWrapper}.
+     */
+    public static final TypeName INTERCEPT_G_WRAPPER_OPTIONAL_SUPPLIER_FACTORY =
+            TypeName.create("io.helidon.service.registry.GeneratedService.OptionalSupplierFactoryInterceptionWrapper");
     /**
      * {@link io.helidon.common.types.TypeName} for
      * {@code io.helidon.service.registry.GeneratedService.ServicesFactoryInterceptionWrapper}.

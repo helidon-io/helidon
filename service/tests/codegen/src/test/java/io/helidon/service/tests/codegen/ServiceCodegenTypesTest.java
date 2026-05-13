@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -176,6 +176,8 @@ class ServiceCodegenTypesTest {
         // generated interception types
         checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_SUPPLIER_FACTORY",
                    GeneratedService.SupplierFactoryInterceptionWrapper.class);
+        checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_OPTIONAL_SUPPLIER_FACTORY",
+                   GeneratedService.OptionalSupplierFactoryInterceptionWrapper.class);
         checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_SERVICES_FACTORY",
                    GeneratedService.ServicesFactoryInterceptionWrapper.class);
         checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_IP_FACTORY",
