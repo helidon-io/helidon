@@ -53,7 +53,6 @@ import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2GoAway;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2HuffmanDecoder;
-import io.helidon.http.http2.Http2LoggingFrameListener;
 import io.helidon.http.http2.Http2Ping;
 import io.helidon.http.http2.Http2Priority;
 import io.helidon.http.http2.Http2RstStream;
@@ -81,8 +80,8 @@ public class Http2ClientConnection {
     private static final Http2Headers EMPTY_INBOUND_HEADERS = Http2Headers.create(WritableHeaders.create());
     private static final Http2Stream DROPPED_INBOUND_HEADERS_STREAM = new DroppedInboundHeadersStream();
 
-    private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
-    private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
+    private final Http2FrameListener sendListener;
+    private final Http2FrameListener recvListener;
     private final LockingStreamIdSequence streamIdSeq = LockingStreamIdSequence.create();
     private final ReadWriteLock streamsLock = new ReentrantReadWriteLock();
     // streams may be accessed from connection thread, or stream thread, must be guarded by the above lock
@@ -128,6 +127,8 @@ public class Http2ClientConnection {
         this.protocolConfig = http2Client.protocolConfig();
         this.clientConfig = http2Client.clientConfig();
         this.pendingInboundHeaders = new PendingInboundHeaders(protocolConfig.maxHeaderListSize());
+        this.sendListener = http2Client.sendListener();
+        this.recvListener = http2Client.recvListener();
         this.connectionFlowControl = ConnectionFlowControl.clientBuilder(this::writeWindowsUpdate)
                 .maxFrameSize(protocolConfig.maxFrameSize())
                 .initialWindowSize(protocolConfig.initialWindowSize())
@@ -295,7 +296,9 @@ public class Http2ClientConnection {
                 ctx,
                 config,
                 clientConfig,
-                streamIdSeq);
+                streamIdSeq,
+                sendListener,
+                recvListener);
         return stream;
     }
 
@@ -355,8 +358,8 @@ public class Http2ClientConnection {
         }
     }
 
-    boolean closed() {
-        return state.get().closed() || (protocolConfig.ping() && !ping());
+    boolean closed(Http2ClientProtocolConfig protocolConfig) {
+        return state.get().closed() || (protocolConfig.ping() && !ping(protocolConfig));
     }
 
     /**
@@ -364,6 +367,10 @@ public class Http2ClientConnection {
      * This method tracks a single in-flight health-check ping per connection.
      */
     boolean ping() {
+        return ping(protocolConfig);
+    }
+
+    boolean ping(Http2ClientProtocolConfig protocolConfig) {
         long pingId = pingIdSequence.incrementAndGet();
         Http2Ping ping = Http2Ping.create(pingData(pingId));
         Http2FrameData frameData = ping.toFrameData();
@@ -568,6 +575,10 @@ public class Http2ClientConnection {
         Http2FrameHeader frameHeader = Http2FrameHeader.create(frameHeaderBuffer);
         frameHeader.type().checkLength(frameHeader.length());
         BufferData data = readFrameData(frameHeader);
+        return handle(frameHeader, data);
+    }
+
+    boolean handle(Http2FrameHeader frameHeader, BufferData data) {
         int streamId = frameHeader.streamId();
         validateFrameStreamId(frameHeader, streamId);
         validateHeaderContinuation(frameHeader, streamId);
@@ -878,8 +889,14 @@ public class Http2ClientConnection {
 
         Http2Headers headers = decodeInboundHeaders(headerStream, headerFrames);
         beforeDeliverInboundHeaders(headerStream, headers, endOfStream);
+        try {
+            headerStream.inboundHeaders(headers, endOfStream);
+        } catch (Http2Exception e) {
+            headerStream.close();
+            headerStream.reset(e.code());
+            throw e;
+        }
         recvListener.headers(ctx, streamId, headers);
-        headerStream.inboundHeaders(headers, endOfStream);
         return true;
     }
 

@@ -34,6 +34,7 @@ class StreamBuffer {
     private final Queue<InboundItem> buffer = new ArrayDeque<>();
     private final Http2ClientStream stream;
     private final int streamId;
+    private volatile RuntimeException failure;
 
     StreamBuffer(Http2ClientStream stream, int streamId) {
         this.stream = stream;
@@ -41,6 +42,10 @@ class StreamBuffer {
     }
 
     InboundItem poll(Duration timeout) {
+        RuntimeException failure = this.failure;
+        if (failure != null) {
+            throw failure;
+        }
         try {
             // Block deque thread when queue is empty
             // avoid CPU burning
@@ -52,6 +57,10 @@ class StreamBuffer {
         }
         try {
             streamLock.lock();
+            failure = this.failure;
+            if (failure != null) {
+                throw failure;
+            }
             return buffer.poll();
         } finally {
             streamLock.unlock();
@@ -73,6 +82,18 @@ class StreamBuffer {
         } finally {
             streamLock.unlock();
             // Release deque threads
+            dequeSemaphore.release();
+        }
+    }
+
+    void fail(RuntimeException failure) {
+        try {
+            streamLock.lock();
+            if (this.failure == null) {
+                this.failure = failure;
+            }
+        } finally {
+            streamLock.unlock();
             dequeSemaphore.release();
         }
     }

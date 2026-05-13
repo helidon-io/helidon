@@ -140,29 +140,40 @@ public interface Header extends Value<String> {
         String name = name();
         // validate that header name only contains valid characters
         HttpToken.validate(name);
-        // Validate header value
-        validateValue(name, values());
+        if (valueCount() == 1) {
+            validateValue(name, get(), 0);
+            return;
+        }
+        // Validate header values as if joined by ", ", but without allocating the joined String.
+        boolean firstValue = true;
+        int position = 0;
+        for (String value : allValues()) {
+            if (firstValue) {
+                firstValue = false;
+            } else {
+                position += 2;
+            }
+            position = validateValue(name, value, position);
+        }
     }
 
-    // validate header value based on https://www.rfc-editor.org/rfc/rfc7230#section-3.2 and throws IllegalArgumentException
-    // if invalid.
-    private static void validateValue(String name, String value) throws IllegalArgumentException {
-        char[] vChars = value.toCharArray();
-        int vLength = vChars.length;
-        for (int i = 0; i < vLength; i++) {
-            char vChar = vChars[i];
-            if (i == 0) {
+    private static int validateValue(String name, String value, int position) {
+        int length = value.length();
+        for (int i = 0; i < length; i++) {
+            char vChar = value.charAt(i);
+            if (position == 0) {
                 if (vChar < '!' || vChar == '\u007f') {
                     throw new IllegalArgumentException("First character of the header value is invalid"
                                                                + " for header '" + name + "'");
                 }
-            } else {
-                if (vChar < ' ' && vChar != '\t' || vChar == '\u007f') {
-                    throw new IllegalArgumentException("Character at position " + (i + 1) + " of the header value is invalid"
-                                                               + " for header '" + name + "'");
-                }
+            } else if (vChar < ' ' && vChar != '\t' || vChar == '\u007f') {
+                throw new IllegalArgumentException("Character at position " + (position + 1)
+                                                           + " of the header value is invalid"
+                                                           + " for header '" + name + "'");
             }
+            position++;
         }
+        return position;
     }
 
     private void writeHeader(BufferData buffer, byte[] nameBytes, byte[] valueBytes) {

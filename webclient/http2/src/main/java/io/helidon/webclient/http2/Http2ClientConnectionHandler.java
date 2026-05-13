@@ -134,7 +134,9 @@ class Http2ClientConnectionHandler {
         }
         try {
             // read/write lock to obtain a stream or create a new connection
-            Http2ClientConnection conn = activeConnection.updateAndGet(c -> c != null && c.closed() ? null : c);
+            Http2ClientConnection conn = activeConnection.updateAndGet(c -> c != null && c.closed(http2Client.protocolConfig())
+                    ? null
+                    : c);
             Http2ClientStream stream;
             if (conn == null) {
                 conn = createConnection(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
@@ -346,7 +348,9 @@ class Http2ClientConnectionHandler {
                 activeConnection.set(connection);
             }
 
-            return new Http2ConnectionAttemptResult(Result.HTTP_2, connection.createStream(request), null);
+            return new Http2ConnectionAttemptResult(Result.HTTP_2,
+                                                    connection.createStream(request),
+                                                    null);
         } finally {
             lock.unlock();
         }

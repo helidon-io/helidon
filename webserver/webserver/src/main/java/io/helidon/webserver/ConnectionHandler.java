@@ -513,8 +513,8 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             Iterator<ServerConnectionSelector> iterator = providerCandidates.iterator();
             if (!iterator.hasNext()) {
                 helidonSocket.log(LOGGER, DEBUG, "Could not find a suitable connection provider. "
-                                + "initial connection buffer (may be empty if no providers exist):\n%s",
-                        currentBuffer.debugDataHex(false));
+                                + "initial connection buffer bytes=%d",
+                        currentBuffer.available());
                 return null;
             }
 
@@ -557,8 +557,8 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                 helidonSocket.log(LOGGER,
                         DEBUG,
                         "Could not find a suitable connection provider. "
-                                + "initial connection buffer (may be empty if no providers exist):\n%s",
-                        currentBuffer.debugDataHex(true));
+                                + "initial connection buffer bytes=%d",
+                        currentBuffer.available());
 
                 return null;
             }

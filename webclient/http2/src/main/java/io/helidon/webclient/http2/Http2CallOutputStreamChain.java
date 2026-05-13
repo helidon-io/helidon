@@ -40,12 +40,13 @@ import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
 import static io.helidon.webclient.http2.RedirectionProcessor.checkRedirectHeaders;
-import static java.lang.System.Logger.Level.TRACE;
 
 class Http2CallOutputStreamChain extends Http2CallChainBase {
     private static final System.Logger LOGGER = System.getLogger(Http2CallOutputStreamChain.class.getName());
+
     private final CompletableFuture<WebClientServiceRequest> whenSent;
     private final ClientRequest.OutputStreamHandler streamHandler;
+    private final Http2ClientImpl client;
 
     Http2CallOutputStreamChain(Http2ClientImpl http2Client,
                                Http2ClientRequestImpl http2ClientRequest,
@@ -59,6 +60,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                        http1Request -> http1Request.outputStream(streamHandler),
                                        false));
 
+        this.client = http2Client;
         this.whenSent = whenSent;
         this.streamHandler = streamHandler;
     }
@@ -68,7 +70,8 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                                  ClientRequestHeaders headers,
                                                  Http2ClientStream stream) {
         boolean interrupted = false;
-        ClientOutputStream outputStream = new ClientOutputStream(stream,
+        ClientOutputStream outputStream = new ClientOutputStream(client,
+                                                                 stream,
                                                                  headers,
                                                                  clientConfig(),
                                                                  serviceRequest,
@@ -92,9 +95,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             throw new IllegalStateException("Output stream was not closed in handler");
         }
 
-        Http2Headers responseHeaders = outputStream.stream.readHeaders();
-        stream.ctx().log(LOGGER, TRACE, "client received status %n%s", responseHeaders.status());
-        stream.ctx().log(LOGGER, TRACE, "client received headers %n%s", responseHeaders.httpHeaders());
+        Http2Headers responseHeaders = readHeaders(outputStream.stream);
 
         if (clientRequest().followRedirects()
                 && RedirectionProcessor.redirectionStatusCode(responseHeaders.status())) {
@@ -149,18 +150,21 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         private boolean closed;
         private boolean interrupted;
         private int numberOfRedirects = 0;
+        private final Http2ClientImpl client;
         private Http2ClientStream stream;
         private Http2ClientRequestImpl lastRequest;
         private Http2ClientResponseImpl response;
         private WebClientServiceResponse serviceResponse;
 
-        private ClientOutputStream(Http2ClientStream stream,
+        private ClientOutputStream(Http2ClientImpl client,
+                                   Http2ClientStream stream,
                                    WritableHeaders<?> headers,
                                    HttpClientConfig clientConfig,
                                    WebClientServiceRequest request,
                                    Http2ClientRequestImpl originalRequest,
                                    CompletableFuture<WebClientServiceRequest> whenSent,
                                    CompletableFuture<WebClientServiceResponse> whenComplete) {
+            this.client = client;
             this.stream = stream;
             this.headers = headers;
             this.clientConfig = clientConfig;
@@ -206,9 +210,6 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             if (noData) {
                 sendHeader();
             }
-            if (LOGGER.isLoggable(TRACE)) {
-                stream.ctx().log(LOGGER, System.Logger.Level.TRACE, "send data%n%s", TERMINATING.debugDataHex());
-            }
             stream.writeData(TERMINATING, true);
             super.close();
         }
@@ -241,9 +242,6 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                               + ", but you are writing additional " + (bytesWritten - contentLength) + " "
                                               + "bytes");
             }
-            if (LOGGER.isLoggable(TRACE)) {
-                stream.ctx().log(LOGGER, System.Logger.Level.TRACE, "send data:%n%s", buffer.debugDataHex());
-            }
             stream.writeData(buffer, false);
         }
 
@@ -252,22 +250,19 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 headers.set(HeaderValues.EXPECT_100);
             }
 
-            if (LOGGER.isLoggable(TRACE)) {
-                stream.ctx().log(LOGGER, System.Logger.Level.TRACE, "send headers:%n%s", headers);
-            }
             Http2Headers http2Headers = prepareHeaders(request.method(),
                                                        ClientRequestHeaders.create(headers),
                                                        request.uri());
+
             stream.writeHeaders(http2Headers, false);
             whenSent.complete(request);
 
             if (headers.containsToken(HeaderValues.EXPECT_100)) {
-                Status status = stream.waitFor100Continue();
+                Status status = waitFor100Continue(stream);
 
                 if (status != Status.CONTINUE_100) {
-                    Http2Headers responseHeaders = stream.readHeaders();
+                    Http2Headers responseHeaders = readHeaders(stream);
                     Status responseStatus = responseHeaders.status();
-                    stream.ctx().log(LOGGER, TRACE, "client received headers %n%s", responseHeaders);
 
                     if (RedirectionProcessor.redirectionStatusCode(responseStatus) && originalRequest.followRedirects()) {
                         checkRedirectHeaders(responseHeaders);

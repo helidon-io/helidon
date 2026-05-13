@@ -29,10 +29,12 @@ import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.LogFormatter;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
@@ -198,7 +200,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     }
 
     protected WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest, Http2ClientStream stream) {
-        Http2Headers headers = stream.readHeaders();
+        Http2Headers headers = readHeaders(stream);
 
         ClientResponseHeaders responseHeaders = ClientResponseHeaders.create(headers.httpHeaders());
         this.responseStatus = headers.status();
@@ -228,6 +230,29 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
 
         response.set(serviceResponse);
         return serviceResponse;
+    }
+
+    static Http2Headers readHeaders(Http2ClientStream stream) {
+        try {
+            return stream.readHeaders();
+        } catch (Http2Exception e) {
+            resetAndClose(stream, e);
+            throw e;
+        }
+    }
+
+    static Status waitFor100Continue(Http2ClientStream stream) {
+        try {
+            return stream.waitFor100Continue();
+        } catch (Http2Exception e) {
+            resetAndClose(stream, e);
+            throw e;
+        }
+    }
+
+    private static void resetAndClose(Http2ClientStream stream, Http2Exception e) {
+        stream.close();
+        stream.reset(e.code());
     }
 
     private static ContentDecoder contentDecoder(ClientResponseHeaders responseHeaders, HttpClientConfig clientConfig) {
@@ -289,7 +314,8 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         public void accept(Header httpHeader) {
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                 LOGGER.log(System.Logger.Level.DEBUG,
-                           "HTTP/2 request contains wrong header, removing {0}", httpHeader);
+                           "HTTP/2 request contains wrong header, removing {0}",
+                           LogFormatter.escape(httpHeader.name()));
             }
         }
     }

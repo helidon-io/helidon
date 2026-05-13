@@ -20,30 +20,25 @@ import java.time.Duration;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.Size;
+import io.helidon.http.HttpConfig;
 import io.helidon.webclient.spi.ProtocolConfig;
 
 /**
- * HTTP/2 client protocol configuration.
+ * Configuration of an HTTP/2 client.
  */
 @Prototype.Blueprint(decorator = Http2ClientConfigSupport.ProtocolConfigDecorator.class)
 @Prototype.Configured
 @Prototype.IncludeDefaultMethods("maxBufferedEntitySize")
-interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
-    /**
-     * Type of this protocol.
-     *
-     * @return protocol type
-     */
+interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig, HttpConfig {
     @Override
     default String type() {
         return Http2ProtocolProvider.CONFIG_KEY;
     }
 
     /**
-     * Name of this protocol.
+     * Name of this protocol configuration.
      *
-     * @return protocol name
+     * @return protocol configuration name
      */
     @Option.Configured
     @Option.Default(Http2ProtocolProvider.CONFIG_KEY)
@@ -93,16 +88,6 @@ interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
     long maxHeaderListSize();
 
     /**
-     * Configure the maximum size allowed for an entity that can be explicitly
-     * buffered by the application by calling {@link io.helidon.http.media.ReadableEntity#buffer}.
-     *
-     * @return maximum size for a buffered entity
-     */
-    @Option.Configured
-    @Option.Default("64 KB")
-    Size maxBufferedEntitySize();
-
-    /**
      * Configure INITIAL_WINDOW_SIZE setting for new HTTP/2 connections.
      * Sends to the server the size of the largest frame payload client is willing to receive.
      * Defaults to {@value io.helidon.http.http2.WindowSize#DEFAULT_WIN_SIZE}.
@@ -141,4 +126,5 @@ interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
     @Option.Configured
     @Option.Default("PT0.5S")
     Duration pingTimeout();
+
 }

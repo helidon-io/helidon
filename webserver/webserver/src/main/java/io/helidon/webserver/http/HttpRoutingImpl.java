@@ -28,6 +28,7 @@ import io.helidon.common.Weights;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.LogFormatter;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.RequestException;
 import io.helidon.http.Status;
@@ -202,7 +203,7 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
                 next.handler().handle(request, response);
                 if (response.shouldReroute()) {
                     if (response.isSent()) {
-                        LOGGER.log(System.Logger.Level.WARNING, "Request to " + request.prologue()
+                        LOGGER.log(System.Logger.Level.WARNING, "Request to " + safePrologue(request.prologue())
                                 + " in inconsistent state. Request to re-route, but response was already sent. Ignoring "
                                 + "reroute.");
                         return RoutingResult.FINISH;
@@ -214,7 +215,7 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
                 }
                 if (response.isNexted()) {
                     if (response.isSent()) {
-                        LOGGER.log(System.Logger.Level.WARNING, "Request to " + request.prologue()
+                        LOGGER.log(System.Logger.Level.WARNING, "Request to " + safePrologue(request.prologue())
                                 + " in inconsistent state. Request to next, but response was already sent. "
                                 + "Ignoring next().");
                         return RoutingResult.FINISH;
@@ -229,7 +230,7 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
                 // user must send a response within the current thread
                 LOGGER.log(System.Logger.Level.WARNING,
                            "A route MUST call either send, reroute, or next on ServerResponse on the request thread. "
-                                   + "Neither of these was called for request: " + request.prologue()
+                                   + "Neither of these was called for request: " + safePrologue(request.prologue())
                                    + "; Handler: " + next.handler());
 
                 throw RequestException.builder()
@@ -312,7 +313,7 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
                 handler.handle(request, response);
                 if (response.shouldReroute()) {
                     if (response.isSent()) {
-                        LOGGER.log(System.Logger.Level.WARNING, "Request to " + request.prologue()
+                        LOGGER.log(System.Logger.Level.WARNING, "Request to " + safePrologue(request.prologue())
                                 + " in inconsistent state. Request to re-route, but response was already sent. Ignoring "
                                 + "reroute.");
                         result = Http1UpgradeResult.responded();
@@ -326,7 +327,7 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
                 }
                 if (response.isNexted()) {
                     if (response.isSent()) {
-                        LOGGER.log(System.Logger.Level.WARNING, "Request to " + request.prologue()
+                        LOGGER.log(System.Logger.Level.WARNING, "Request to " + safePrologue(request.prologue())
                                 + " in inconsistent state. Request to next, but response was already sent. "
                                 + "Ignoring next().");
                         result = Http1UpgradeResult.responded();
@@ -342,7 +343,7 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
                 LOGGER.log(System.Logger.Level.WARNING,
                            "A protocol upgrade policy route MUST call either send, reroute, or next on ServerResponse "
                                    + "on the request thread. Neither of these was called for request: "
-                                   + request.prologue() + "; Handler: " + next.handler());
+                                   + safePrologue(request.prologue()) + "; Handler: " + next.handler());
 
                 throw RequestException.builder()
                         .message("Internal Server Error")
@@ -529,5 +530,11 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
         public Builder copy() {
             throw new UnsupportedOperationException("This builder should only be used internally by Helidon and never copied");
         }
+    }
+
+    private static String safePrologue(HttpPrologue prologue) {
+        return prologue.method()
+                + " " + LogFormatter.escape(prologue.uriPath().rawPath())
+                + " " + prologue.protocol() + "/" + prologue.protocolVersion();
     }
 }

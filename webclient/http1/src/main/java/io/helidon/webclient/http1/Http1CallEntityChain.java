@@ -28,8 +28,6 @@ import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
-import static java.lang.System.Logger.Level.TRACE;
-
 class Http1CallEntityChain extends Http1CallChainBase {
 
     private final CompletableFuture<WebClientServiceRequest> whenSent;
@@ -58,7 +56,11 @@ class Http1CallEntityChain extends Http1CallChainBase {
             headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, entity.length));
         }
 
-        writeHeaders(connection, headers, writeBuffer, protocolConfig().validateRequestHeaders());
+        writeHeaders(connection,
+                     headers,
+                     writeBuffer,
+                     protocolConfig().validateRequestHeaders(),
+                     sendListener());
         // we have completed writing the headers
         whenSent.complete(serviceRequest);
 
@@ -68,10 +70,8 @@ class Http1CallEntityChain extends Http1CallChainBase {
         writer.write(writeBuffer);
         writer.flush();
 
-        if (entity.length > 0 && LOGGER_REQ_ENTITY.isLoggable(TRACE)) {
-            connection.helidonSocket()
-                    .log(LOGGER_REQ_ENTITY, TRACE, "client sent entity buffer %n%s",
-                         BufferData.create(entity).debugDataHex(true));
+        if (entity.length > 0 && sendListener().enabled()) {
+            sendListener().data(connection.helidonSocket(), entity, 0, entity.length);
         }
 
         return readResponse(serviceRequest, connection, reader);

@@ -33,6 +33,7 @@ import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
+import io.helidon.http.LogFormatter;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
@@ -373,11 +374,10 @@ public class Http2Headers {
         } catch (IllegalArgumentException e) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, e.getMessage(), e);
         }
-        if (headers.contains(HeaderNames.TE)) {
+            if (headers.contains(HeaderNames.TE)) {
             List<String> values = headers.all(HeaderNames.TE, List::of);
             if (!values.equals(List.of(TRAILERS))) {
-                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "te in headers with other value than trailers: \n"
-                        + BufferData.create(values.toString()).debugDataHex());
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "te in headers with other value than trailers");
             }
         }
         if (!pseudoHeaders.hasScheme()) {
@@ -592,18 +592,19 @@ public class Http2Headers {
                 try {
                     name = readString(huffman, data);
                 } catch (IllegalArgumentException e) {
-                    throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received a header with"
-                            + " non ASCII character(s)\n" + data.debugDataHex(true));
+                    throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                             "Received a header with non ASCII character(s)");
                 }
                 if (!(name.toLowerCase(Locale.ROOT).equals(name))) {
                     throw new Http2Exception(Http2ErrorCode.PROTOCOL,
-                                             "Received a header with uppercase letters\n"
-                                                     + BufferData.create(name).debugDataHex());
+                                             "Received a header with uppercase letters: "
+                                                     + LogFormatter.escape(name));
                 }
                 if (name.charAt(0) == ':') {
                     throw new Http2Exception(Http2ErrorCode.PROTOCOL,
-                                             "Received invalid pseudo-header field (or explicit value instead of indexed)\n"
-                                                     + BufferData.create(name).debugDataHex());
+                                             "Received invalid pseudo-header field "
+                                                     + "(or explicit value instead of indexed): "
+                                                     + LogFormatter.escape(name));
                 }
                 headerName = HeaderNames.create(name);
             } else {
@@ -650,17 +651,8 @@ public class Http2Headers {
                 }
             } else {
                 if (headerName == null || value == null) {
-                    String tHeaderName = headerName == null ? "null" : headerName.lowerCase();
-                    String tValue = value == null
-                            ? "null"
-                            : BufferData.create(value.getBytes(StandardCharsets.US_ASCII))
-                                    .debugDataHex();
-
                     throw new Http2Exception(Http2ErrorCode.COMPRESSION,
-                                             "Failed to get name or value. Name: "
-                                                     + tHeaderName
-                                                     + ", value "
-                                                     + tValue);
+                                             "Failed to get header name or value");
                 }
             }
 
@@ -1157,7 +1149,8 @@ public class Http2Headers {
                     if (!hasValue) {
                         // this is garbage, cannot "never index" a header that is already indexed
                         if (LOGGER.isLoggable(DEBUG)) {
-                            LOGGER.log(DEBUG, "Never index on field with indexed value: " + headerName + ": " + value);
+                            LOGGER.log(DEBUG, "Never index on field with indexed value: "
+                                    + LogFormatter.escape(headerName.defaultCase()));
                         }
 
                         hasValue = true;
@@ -1172,7 +1165,8 @@ public class Http2Headers {
                     // index and name from index
                     if (!hasValue) {
                         if (LOGGER.isLoggable(DEBUG)) {
-                            LOGGER.log(DEBUG, "Index on field with indexed value: " + headerName + ": " + value);
+                            LOGGER.log(DEBUG, "Index on field with indexed value: "
+                                    + LogFormatter.escape(headerName.defaultCase()));
                         }
                         hasValue = true;
                     }

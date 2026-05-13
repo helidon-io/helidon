@@ -18,8 +18,11 @@ package io.helidon.webclient.http2;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,6 +30,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -37,6 +44,7 @@ import io.helidon.common.tls.Tls;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
+import io.helidon.http.http2.Http2LoggingFrameListener;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
@@ -48,6 +56,7 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -57,7 +66,9 @@ import static io.helidon.http.Method.GET;
 import static io.helidon.http.Method.POST;
 import static io.helidon.http.Method.PUT;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 @ServerTest
 class Http2WebClientTest {
@@ -66,6 +77,7 @@ class Http2WebClientTest {
     private static final HeaderName SERVER_CUSTOM_HEADER_NAME = HeaderNames.create("server-custom-header");
     private static final HeaderName SERVER_HEADER_FROM_PARAM_NAME = HeaderNames.create("header-from-param");
     private static final HeaderName CLIENT_USER_AGENT_HEADER_NAME = HeaderNames.create("client-user-agent");
+    private static final String CLIENT_SEND_LOGGER_NAME = Http2LoggingFrameListener.class.getName() + ".cl-send";
     private static ExecutorService executorService;
     private static int plainPort;
     private static int tlsPort;
@@ -272,6 +284,94 @@ class Http2WebClientTest {
                        is(custHeaderValue));
             assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).get(),
                        is("test-post"));
+        }
+    }
+
+    @Test
+    void sharedCachedConnectionUsesCurrentClientStreamLogConfig() {
+        Logger logger = Logger.getLogger(CLIENT_SEND_LOGGER_NAME);
+        Level previousLevel = logger.getLevel();
+        boolean previousUseParentHandlers = logger.getUseParentHandlers();
+        List<String> messages = new CopyOnWriteArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                messages.add(record.getMessage());
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+
+        handler.setLevel(Level.ALL);
+        logger.addHandler(handler);
+        logger.setUseParentHandlers(false);
+        logger.setLevel(Level.FINER);
+
+        try {
+            String baseUri = "http://127.0.0.1:" + plainPort + "/versionspecific";
+            Http2Client unsafeClient = Http2Client.builder()
+                    .shareConnectionCache(true)
+                    .baseUri(baseUri)
+                    .protocolConfig(it -> it.priorKnowledge(true)
+                            .log(log -> log.unsafeRawData(true)))
+                    .build();
+            try (Http2ClientResponse response = unsafeClient.method(POST)
+                    .queryParam("custQueryParam", "warmup")
+                    .header(CLIENT_CUSTOM_HEADER_NAME, "warmup")
+                    .submit("warmup")) {
+                assertThat(response.status(), is(Status.OK_200));
+            }
+            messages.clear();
+
+            Http2Client safeClient = Http2Client.builder()
+                    .shareConnectionCache(true)
+                    .baseUri(baseUri)
+                    .protocolConfig(it -> it.priorKnowledge(true))
+                    .build();
+            try (Http2ClientResponse response = safeClient.method(POST)
+                    .queryParam("custQueryParam", "submit")
+                    .header(CLIENT_CUSTOM_HEADER_NAME, "submit")
+                    .header(HeaderNames.AUTHORIZATION, "Bearer safe-client-token")
+                    .submit("safe-client-body")) {
+                assertThat(response.status(), is(Status.OK_200));
+            }
+
+            String submitMessages = String.join("\n", messages);
+            assertThat(submitMessages, containsString(":method: POST"));
+            assertThat(submitMessages, containsString(":path: /versionspecific"));
+            assertThat(submitMessages, containsString("Authorization: <redacted>"));
+            assertThat(submitMessages, not(containsString("Bearer safe-client-token")));
+            assertThat(submitMessages, not(containsString("safe-client-body")));
+            messages.clear();
+
+            try (Http2ClientResponse response = safeClient.method(POST)
+                    .queryParam("custQueryParam", "output-stream")
+                    .header(CLIENT_CUSTOM_HEADER_NAME, "output-stream")
+                    .header(HeaderNames.AUTHORIZATION, "Bearer safe-stream-token")
+                    .outputStream(out -> {
+                        out.write("safe-stream-body".getBytes(StandardCharsets.UTF_8));
+                        out.close();
+                    })) {
+                assertThat(response.status(), is(Status.OK_200));
+            }
+
+            String outputStreamMessages = String.join("\n", messages);
+            assertThat(outputStreamMessages, containsString(":method: POST"));
+            assertThat(outputStreamMessages, containsString(":path: /versionspecific"));
+            assertThat(outputStreamMessages, containsString("Authorization: <redacted>"));
+            assertThat(outputStreamMessages, not(containsString("Bearer safe-stream-token")));
+            assertThat(outputStreamMessages, not(containsString("safe-stream-body")));
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previousLevel);
+            logger.setUseParentHandlers(previousUseParentHandlers);
+            handler.close();
         }
     }
 

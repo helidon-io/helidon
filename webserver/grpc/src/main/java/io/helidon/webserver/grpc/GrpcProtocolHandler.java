@@ -288,7 +288,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 throw new ServerConnectionException("gRPC call cancelled by remote peer", e);
             }
             listener.onCancel();
-            LOGGER.log(ERROR, "Failed to process grpc request: " + data.debugDataHex(true), e);
+            LOGGER.log(ERROR, "Failed to process grpc request, data bytes: " + data.available(), e);
         }
     }
 

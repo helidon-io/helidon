@@ -26,7 +26,9 @@ import io.helidon.http.BadRequestException;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
+import io.helidon.http.HttpPrologue;
 import io.helidon.http.InternalServerException;
+import io.helidon.http.LogFormatter;
 import io.helidon.http.RequestException;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
@@ -145,9 +147,12 @@ public final class ErrorHandlers {
                                         RequestException e) {
         // we are only interested in resetting the streams, headers are at the discretion of the error handler
         if (!response.resetStream()) {
+            HttpPrologue prologue = request.prologue();
             ctx.log(LOGGER, System.Logger.Level.WARNING,
                     "Request failed: %s, cannot send error response, as response already sent",
-                    e, request.prologue());
+                    e, prologue.method()
+                            + " " + LogFormatter.escape(prologue.uriPath().rawPath())
+                            + " " + prologue.protocol() + "/" + prologue.protocolVersion());
             throw new CloseConnectionException(
                     "Cannot send response of an error handler, status and headers already written");
         }

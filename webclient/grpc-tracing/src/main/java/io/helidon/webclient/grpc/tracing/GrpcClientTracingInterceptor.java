@@ -20,6 +20,7 @@ import java.lang.System.Logger.Level;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import io.helidon.service.registry.Services;
 import io.helidon.tracing.HeaderConsumer;
@@ -53,7 +54,9 @@ class GrpcClientTracingInterceptor implements ClientInterceptor {
 
             @Override
             public void start(Listener<ResT> responseListener, Metadata headers) {
-                LOGGER.log(Level.DEBUG, "Call start; metadata: {0}", headers);
+                if (LOGGER.isLoggable(Level.DEBUG)) {
+                    LOGGER.log(Level.DEBUG, "Call start; metadata keys: {0}", loggableMetadata(headers));
+                }
                 var tracer = Services.get(Tracer.class);
                 // Start a new span for the outgoing gRPC client call.
                 var outgoingClientSpanBuilder = tracer
@@ -64,7 +67,9 @@ class GrpcClientTracingInterceptor implements ClientInterceptor {
 
                 try {
                     tracer.inject(outgoingClientSpan.get().context(), null, new GrpcHeaderConsumer(headers));
-                    LOGGER.log(Level.DEBUG, "After injecting span context; metadata: {0}", headers);
+                    if (LOGGER.isLoggable(Level.DEBUG)) {
+                        LOGGER.log(Level.DEBUG, "After injecting span context; metadata keys: {0}", loggableMetadata(headers));
+                    }
                     outgoingClientScope = outgoingClientSpan.get().activate();
 
                     super.start(responseListener, headers);
@@ -100,6 +105,13 @@ class GrpcClientTracingInterceptor implements ClientInterceptor {
                 }
             }
         };
+    }
+
+    static String loggableMetadata(Metadata metadata) {
+        return metadata.keys()
+                .stream()
+                .sorted()
+                .collect(Collectors.joining(", ", "[", "]"));
     }
 
     private record GrpcHeaderConsumer(Metadata metadata) implements HeaderConsumer {

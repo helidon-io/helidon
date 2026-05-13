@@ -25,6 +25,7 @@ module io.helidon.http {
     requires io.helidon.service.registry;
 
     requires transitive io.helidon.common.buffers;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.common.mapper;
     requires transitive io.helidon.common.media.type;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
@@ -124,8 +123,7 @@ class ReasonPhraseTest {
                                             .header(HeaderNames.create(CUSTOM_STATUS_LINE), statusLine)
                                             .request());
 
-        MatcherAssert.assertThat(e.getMessage(),
-                                 startsWith("HTTP Response did not contain HTTP status line. Line: HTTP/1.0 or HTTP/1.1"));
+        MatcherAssert.assertThat(e.getMessage(), is("HTTP Response did not contain status code"));
     }
 
     private static void startMockServer() {
