@@ -22,6 +22,7 @@ import java.net.SocketTimeoutException;
 import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
@@ -30,11 +31,16 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.buffers.BufferData;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
+import io.helidon.common.socket.TlsNioSocket;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -57,6 +63,7 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -271,6 +278,99 @@ public class UnixDomainSocketTest {
 
     @Test
     @Timeout(value = 10, unit = TimeUnit.SECONDS)
+    public void http1TlsUnixSocketReusesConnection() {
+        Path path = newSocketPath("helidon-tls-http1-cache");
+        UnixDomainSocketAddress address = UnixDomainSocketAddress.of(path);
+        AtomicInteger connectCount = new AtomicInteger();
+        AtomicReference<SocketChannel> connectedChannel = new AtomicReference<>();
+        WebServer server = startTlsServer(address, "Hello Secure World!", "Hello Secure HTTP/2!");
+        Http1Client http1Client = Http1Client.builder()
+                .shareConnectionCache(false)
+                .baseUri(LOGICAL_BASE_URI)
+                .tls(clientTls())
+                .connectionListener(new ConnectionListener() {
+                    @Override
+                    public void socketConnected(ConnectedSocketInfo socketInfo) {
+                    }
+
+                    @Override
+                    public void socketChannelConnected(ConnectedSocketChannelInfo socketInfo) {
+                        connectedChannel.set(socketInfo.socketChannel());
+                        connectCount.incrementAndGet();
+                    }
+                })
+                .build();
+        try {
+            assertResponse(http1Client.get()
+                                   .address(address)
+                                   .path("/test")
+                                   .request(String.class),
+                           "Hello Secure World!",
+                           LOGICAL_HOST);
+            assertResponse(http1Client.get()
+                                   .address(address)
+                                   .path("/test")
+                                   .request(String.class),
+                           "Hello Secure World!",
+                           LOGICAL_HOST);
+
+            assertThat(connectedChannel.get(), notNullValue());
+            assertThat(connectCount.get(), is(1));
+        } finally {
+            http1Client.closeResource();
+            server.stop();
+        }
+    }
+
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
+    public void http1TlsUnixSocketDiscardsRemotelyClosedConnection() throws Exception {
+        Path path = newSocketPath("helidon-tls-http1-stale-cache");
+        UnixDomainSocketAddress address = UnixDomainSocketAddress.of(path);
+        CountDownLatch firstConnectionClosed = new CountDownLatch(1);
+        AtomicInteger connectCount = new AtomicInteger();
+        RawTlsHttp1Server server = rawTlsHttp1Server(address, firstConnectionClosed);
+        Http1Client http1Client = Http1Client.builder()
+                .shareConnectionCache(false)
+                .baseUri(LOGICAL_BASE_URI)
+                .tls(clientTls())
+                .connectionListener(new ConnectionListener() {
+                    @Override
+                    public void socketConnected(ConnectedSocketInfo socketInfo) {
+                    }
+
+                    @Override
+                    public void socketChannelConnected(ConnectedSocketChannelInfo socketInfo) {
+                        connectCount.incrementAndGet();
+                    }
+                })
+                .build();
+        try {
+            assertResponse(http1Client.get()
+                                   .address(address)
+                                   .path("/test")
+                                   .request(String.class),
+                           "First response",
+                           LOGICAL_HOST);
+            assertThat(firstConnectionClosed.await(5, TimeUnit.SECONDS), is(true));
+            assertResponse(http1Client.get()
+                                   .address(address)
+                                   .path("/test")
+                                   .request(String.class),
+                           "Second response",
+                           LOGICAL_HOST);
+
+            assertThat(connectCount.get(), is(2));
+            server.await();
+        } finally {
+            http1Client.closeResource();
+            server.close();
+            Files.deleteIfExists(path);
+        }
+    }
+
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
     public void stalledTlsUnixHandshakeHonorsReadTimeout() throws Exception {
         Path path = newSocketPath("helidon-stalled-tls-socket");
         AtomicReference<SocketChannel> connectedChannel = new AtomicReference<>();
@@ -354,6 +454,98 @@ public class UnixDomainSocketTest {
                 })
                 .build()
                 .start();
+    }
+
+    private static RawTlsHttp1Server rawTlsHttp1Server(UnixDomainSocketAddress address,
+                                                       CountDownLatch firstConnectionClosed) throws IOException {
+        ServerSocketChannel server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+        server.bind(address);
+        AtomicReference<SocketChannel> accepted = new AtomicReference<>();
+        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+            try {
+                handleRawTlsHttp1Request(server, accepted, "First response", firstConnectionClosed);
+                handleRawTlsHttp1Request(server, accepted, "Second response", null);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            } finally {
+                try {
+                    server.close();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+        });
+        return new RawTlsHttp1Server(server, accepted, future);
+    }
+
+    private static void handleRawTlsHttp1Request(ServerSocketChannel server,
+                                                 AtomicReference<SocketChannel> accepted,
+                                                 String entity,
+                                                 CountDownLatch connectionClosed) throws IOException {
+        try (SocketChannel channel = server.accept()) {
+            accepted.set(channel);
+            TlsNioSocket socket = TlsNioSocket.server(channel,
+                                                      serverTls().sslContext().createSSLEngine(),
+                                                      "listener",
+                                                      "server");
+            socket.handshake();
+            readRawHttp1Headers(socket);
+            byte[] entityBytes = entity.getBytes(US_ASCII);
+            socket.write(BufferData.create("HTTP/1.1 200 OK\r\n"
+                                                   + "Content-Length: " + entityBytes.length + "\r\n"
+                                                   + "\r\n"));
+            socket.write(BufferData.create(entityBytes));
+            socket.close();
+        } finally {
+            accepted.set(null);
+            if (connectionClosed != null) {
+                connectionClosed.countDown();
+            }
+        }
+    }
+
+    private record RawTlsHttp1Server(ServerSocketChannel channel,
+                                     AtomicReference<SocketChannel> accepted,
+                                     CompletableFuture<Void> future) implements AutoCloseable {
+        void await() throws Exception {
+            future.get(5, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void close() throws Exception {
+            if (future.isDone()) {
+                return;
+            }
+            channel.close();
+            SocketChannel acceptedChannel = accepted.get();
+            if (acceptedChannel != null) {
+                acceptedChannel.close();
+            }
+            try {
+                await();
+            } catch (ExecutionException e) {
+                if (!closedByTest(e)) {
+                    throw e;
+                }
+            }
+        }
+
+        private static boolean closedByTest(ExecutionException e) {
+            Throwable cause = e.getCause();
+            return cause instanceof UncheckedIOException unchecked
+                    && unchecked.getCause() instanceof ClosedChannelException;
+        }
+    }
+
+    private static void readRawHttp1Headers(TlsNioSocket socket) {
+        StringBuilder request = new StringBuilder();
+        while (request.indexOf("\r\n\r\n") < 0) {
+            byte[] data = socket.get();
+            if (data == null) {
+                fail("Connection closed before reading HTTP/1 headers");
+            }
+            request.append(new String(data, US_ASCII));
+        }
     }
 
     private static WebServer startTlsAuthorityServer(UnixDomainSocketAddress address) {

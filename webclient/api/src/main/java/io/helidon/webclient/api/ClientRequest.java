@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.SocketAddress;
 import java.net.URI;
+import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.List;
 import java.util.function.Consumer;
@@ -96,9 +97,10 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * Note that if UNIX domain socket address is configured, all other address configuration is ignored.
      * This includes if it is configured as a base address on the client.
      * <p>
-     * The socket address overrides the physical transport only. The request URI, resolved against the client base URI,
-     * still provides the logical HTTP authority. For TLS over a UNIX domain socket, the resolved URI host and port are
-     * used for SNI and endpoint identification, while the UNIX domain socket path is used only for transport.
+     * An {@link java.net.InetSocketAddress} updates the logical URI host and port. A {@link UnixDomainSocketAddress}
+     * overrides the physical transport only, so the request URI, resolved against the client base URI, still provides
+     * the logical HTTP authority. For TLS over a UNIX domain socket, the resolved URI host and port are used for SNI
+     * and endpoint identification, while the UNIX domain socket path is used only for transport.
      *
      * @param socketAddress socket address to use, this will override any other address configuration
      * @return updated request

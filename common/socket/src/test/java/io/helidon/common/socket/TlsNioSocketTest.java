@@ -171,11 +171,75 @@ class TlsNioSocketTest {
         assertArrayEquals(new byte[] {'S'}, socket.get());
     }
 
+    @Test
+    void idleDetectsBufferedTlsClose() throws Exception {
+        BlockingSocketChannel channel = new BlockingSocketChannel(new byte[] {0x17, 0x15});
+        SSLEngine engine = mock(SSLEngine.class);
+        SSLSession session = mock(SSLSession.class);
+        AtomicBoolean responseReturned = new AtomicBoolean();
+
+        when(engine.getSession()).thenReturn(session);
+        when(engine.getHandshakeStatus()).thenReturn(SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING);
+        when(session.getPacketBufferSize()).thenReturn(8);
+        when(session.getApplicationBufferSize()).thenReturn(8);
+        when(engine.unwrap(any(ByteBuffer.class), any(ByteBuffer.class))).thenAnswer(invocation -> {
+            ByteBuffer src = invocation.getArgument(0);
+            ByteBuffer dst = invocation.getArgument(1);
+
+            if (responseReturned.compareAndSet(false, true)) {
+                src.get();
+                dst.put((byte) 'R');
+                return new SSLEngineResult(SSLEngineResult.Status.OK,
+                                           SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING,
+                                           1,
+                                           1);
+            }
+
+            src.get();
+            return new SSLEngineResult(SSLEngineResult.Status.CLOSED,
+                                       SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING,
+                                       1,
+                                       0);
+        });
+
+        TlsNioSocket socket = TlsNioSocket.client(channel, engine, "client");
+
+        assertArrayEquals(new byte[] {'R'}, socket.get());
+        socket.idle();
+
+        assertFalse(socket.isConnected());
+        assertTrue(channel.blockingModeRestored());
+    }
+
+    @Test
+    void idleDiscardsPartialTlsRecord() throws Exception {
+        BlockingSocketChannel channel = new BlockingSocketChannel(new byte[] {0x15});
+        SSLEngine engine = mock(SSLEngine.class);
+        SSLSession session = mock(SSLSession.class);
+
+        when(engine.getSession()).thenReturn(session);
+        when(engine.getHandshakeStatus()).thenReturn(SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING);
+        when(session.getPacketBufferSize()).thenReturn(8);
+        when(session.getApplicationBufferSize()).thenReturn(8);
+        when(engine.unwrap(any(ByteBuffer.class), any(ByteBuffer.class)))
+                .thenReturn(new SSLEngineResult(SSLEngineResult.Status.BUFFER_UNDERFLOW,
+                                                SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING,
+                                                0,
+                                                0));
+
+        TlsNioSocket socket = TlsNioSocket.client(channel, engine, "client");
+        socket.idle();
+
+        assertFalse(socket.isConnected());
+        assertTrue(channel.blockingModeRestored());
+    }
+
     private static final class BlockingSocketChannel extends SocketChannel {
         private final CountDownLatch writeStarted = new CountDownLatch(1);
         private final CountDownLatch allowWriteToFinish = new CountDownLatch(1);
         private final byte[] readableBytes;
         private int readPosition;
+        private boolean blockingModeRestored = true;
 
         private BlockingSocketChannel() {
             this(null);
@@ -192,6 +256,10 @@ class TlsNioSocketTest {
 
         void allowWriteToFinish() {
             allowWriteToFinish.countDown();
+        }
+
+        boolean blockingModeRestored() {
+            return blockingModeRestored;
         }
 
         @Override
@@ -314,6 +382,7 @@ class TlsNioSocketTest {
 
         @Override
         protected void implConfigureBlocking(boolean block) throws IOException {
+            blockingModeRestored = block;
         }
     }
 }

@@ -203,7 +203,14 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
 
     @Override
     public boolean isConnected() {
-        return !closed && channel != null && channel.isConnected();
+        if (closed || channel == null || socket == null || !channel.isConnected() || !channel.isOpen()) {
+            return false;
+        }
+        if (!socket.isConnected()) {
+            closeResource();
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -369,4 +376,5 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
             LOGGER.log(TRACE, "Failed to close a timed out client socket channel", e);
         }
     }
+
 }

@@ -57,6 +57,7 @@ public final class TlsNioSocket extends NioSocket {
     private volatile PeerInfo remotePeer;
     private volatile byte[] lastSslSessionId;
     private volatile boolean initialHandshakeComplete;
+    private volatile boolean idle;
     private boolean peerAppDataReady;
 
     private TlsNioSocket(SocketChannel delegate, SSLEngine sslEngine, String channelId, String serverChannelId) {
@@ -153,6 +154,7 @@ public final class TlsNioSocket extends NioSocket {
     @Override
     public byte[] get() {
         try {
+            idle = false;
             if (!peerAppDataReady) {
                 peerAppData.clear();
             }
@@ -186,6 +188,7 @@ public final class TlsNioSocket extends NioSocket {
 
     @Override
     public void write(BufferData buffer) {
+        idle = false;
         // Handshake/closure and normal writes reuse the same TLS staging buffers.
         handshakeLock.lock();
         try {
@@ -211,6 +214,7 @@ public final class TlsNioSocket extends NioSocket {
     @Override
     public void close() {
         try {
+            idle = false;
             engine.closeOutbound();
             doClosure();
         } catch (IOException e) {
@@ -244,6 +248,24 @@ public final class TlsNioSocket extends NioSocket {
         return Optional.ofNullable(engine.getSession().getLocalCertificates());
     }
 
+    @Override
+    public void idle() {
+        idle = true;
+    }
+
+    @Override
+    public boolean isConnected() {
+        if (closed || !super.isConnected()) {
+            return false;
+        }
+        try {
+            return !staleIdleDataAvailable();
+        } catch (RuntimeException e) {
+            closed = true;
+            return false;
+        }
+    }
+
     void doClosure() throws IOException {
         try {
             handshakeLock.lock();
@@ -260,6 +282,76 @@ public final class TlsNioSocket extends NioSocket {
                     && !(st == SSLEngineResult.Status.OK && hs == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING));
         } finally {
             handshakeLock.unlock();
+        }
+    }
+
+    private boolean staleIdleDataAvailable() {
+        if (!idle) {
+            return false;
+        }
+
+        handshakeLock.lock();
+        try {
+            if (!idle) {
+                return false;
+            }
+            if (closed) {
+                return true;
+            }
+
+            peerAppData.clear();
+            if (unwrapRemaining > 0) {
+                peerNetData.compact();
+                peerNetData.flip();
+                unwrapRemaining = 0;
+                return unwrapIdleDataAvailable();
+            }
+
+            peerNetData.clear();
+            int read = readNonBlocking(peerNetData);
+            if (read == 0) {
+                return false;
+            }
+            if (read < 0) {
+                closed = true;
+                return true;
+            }
+
+            peerNetData.flip();
+            return unwrapIdleDataAvailable();
+        } catch (IOException e) {
+            closed = true;
+            return true;
+        } finally {
+            handshakeLock.unlock();
+        }
+    }
+
+    private boolean unwrapIdleDataAvailable() throws SSLException {
+        while (true) {
+            SSLEngineResult result = engine.unwrap(peerNetData, peerAppData);
+            SSLEngineResult.Status status = result.getStatus();
+            if (status == SSLEngineResult.Status.CLOSED) {
+                closed = true;
+                return true;
+            }
+            if (status == SSLEngineResult.Status.BUFFER_UNDERFLOW) {
+                closed = true;
+                return true;
+            }
+            if (status == SSLEngineResult.Status.BUFFER_OVERFLOW) {
+                peerAppData = reallocate(peerAppData, engine.getSession().getApplicationBufferSize(), true);
+                continue;
+            }
+
+            unwrapRemaining = peerNetData.remaining();
+            if (peerAppData.position() > 0) {
+                closed = true;
+                return true;
+            }
+            if (!peerNetData.hasRemaining()) {
+                return false;
+            }
         }
     }
 

@@ -21,8 +21,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.Api;
@@ -38,20 +38,34 @@ import static java.lang.System.Logger.Level.TRACE;
 @Api.Internal
 public final class DeadlineGuard implements AutoCloseable {
     private static final System.Logger LOGGER = System.getLogger(DeadlineGuard.class.getName());
-    private static final ScheduledExecutorService EXECUTOR = defaultExecutor();
     private static final Runnable EMPTY_RUNNABLE = () -> {
     };
+    private static final AtomicLong THREAD_COUNTER = new AtomicLong();
 
     private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
     private final AtomicReference<Throwable> timeoutActionFailure = new AtomicReference<>();
 
     private final ScheduledFuture<?> future;
+    private final Thread thread;
 
     private DeadlineGuard() {
         this.future = null;
+        this.thread = null;
     }
 
-    private DeadlineGuard(ScheduledExecutorService executor, Runnable timeoutAction, Runnable timeoutClaimed, Duration timeout) {
+    private DeadlineGuard(Runnable timeoutAction, Runnable timeoutClaimed, Duration timeout) {
+        this.future = null;
+        this.thread = Thread.ofVirtual()
+                .name("helidon-deadline-guard-" + THREAD_COUNTER.incrementAndGet())
+                .inheritInheritableThreadLocals(false)
+                .start(() -> this.timeoutAfterSleep(timeoutAction, timeoutClaimed, timeout));
+    }
+
+    private DeadlineGuard(ScheduledExecutorService executor,
+                          Runnable timeoutAction,
+                          Runnable timeoutClaimed,
+                          Duration timeout) {
+        this.thread = null;
         this.future = executor.schedule(() -> this.timeout(timeoutAction, timeoutClaimed),
                                         timeoutNanos(timeout),
                                         TimeUnit.NANOSECONDS);
@@ -67,7 +81,7 @@ public final class DeadlineGuard implements AutoCloseable {
      * @return active deadline guard
      */
     public static DeadlineGuard create(Duration timeout, Runnable timeoutAction) {
-        return create(timeout, timeoutAction, EXECUTOR);
+        return create(timeout, timeoutAction, EMPTY_RUNNABLE);
     }
 
     // Intended for testing: allows deterministic executor injection.
@@ -92,6 +106,19 @@ public final class DeadlineGuard implements AutoCloseable {
         return new DeadlineGuard(executor, timeoutAction, timeoutClaimed, timeout);
     }
 
+    // Intended for testing: observes when the timeout task has won the guard.
+    static DeadlineGuard create(Duration timeout, Runnable timeoutAction, Runnable timeoutClaimed) {
+        Objects.requireNonNull(timeout, "timeout");
+        Objects.requireNonNull(timeoutAction, "timeoutAction");
+        Objects.requireNonNull(timeoutClaimed, "timeoutClaimed");
+
+        if (timeout.isZero() || timeout.isNegative()) {
+            return new DeadlineGuard();
+        }
+
+        return new DeadlineGuard(timeoutAction, timeoutClaimed, timeout);
+    }
+
     /**
      * Whether this guard's timeout elapsed and its timeout action was invoked.
      *
@@ -110,12 +137,21 @@ public final class DeadlineGuard implements AutoCloseable {
         return Optional.ofNullable(timeoutActionFailure.get());
     }
 
+    // Intended for testing: exposes the default timeout worker for close-cancellation verification.
+    Thread timeoutThread() {
+        return thread;
+    }
+
     @Override
     public void close() {
         if (state.compareAndSet(State.OPEN, State.CLOSED)) {
             ScheduledFuture<?> scheduled = future;
             if (scheduled != null) {
                 scheduled.cancel(false);
+            }
+            Thread timeoutThread = thread;
+            if (timeoutThread != null) {
+                timeoutThread.interrupt();
             }
         }
     }
@@ -126,17 +162,6 @@ public final class DeadlineGuard implements AutoCloseable {
         } catch (ArithmeticException e) {
             return Long.MAX_VALUE;
         }
-    }
-
-    private static ScheduledThreadPoolExecutor defaultExecutor() {
-        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(
-                1,
-                Thread.ofPlatform()
-                        .daemon()
-                        .name("helidon-deadline-guard-", 1)
-                        .factory());
-        executor.setRemoveOnCancelPolicy(true);
-        return executor;
     }
 
     private void timeout(Runnable timeoutAction, Runnable timeoutClaimed) {
@@ -150,6 +175,16 @@ public final class DeadlineGuard implements AutoCloseable {
             timeoutActionFailure.compareAndSet(null, t);
             LOGGER.log(TRACE, "Deadline guard timeout action failed", t);
         }
+    }
+
+    private void timeoutAfterSleep(Runnable timeoutAction, Runnable timeoutClaimed, Duration timeout) {
+        try {
+            TimeUnit.NANOSECONDS.sleep(timeoutNanos(timeout));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
+        timeout(timeoutAction, timeoutClaimed);
     }
 
     private enum State {

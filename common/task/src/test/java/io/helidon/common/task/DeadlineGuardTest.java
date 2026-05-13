@@ -25,9 +25,35 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class DeadlineGuardTest {
+
+    @Test
+    void defaultCreateInvokesTimeoutActionAfterTimeout() throws Exception {
+        CountDownLatch invoked = new CountDownLatch(1);
+
+        try (DeadlineGuard guard = DeadlineGuard.create(Duration.ofMillis(10), invoked::countDown)) {
+            assertThat(invoked.await(5, TimeUnit.SECONDS), is(true));
+            assertThat(guard.timedOut(), is(true));
+        }
+    }
+
+    @Test
+    void defaultCloseCancelsTimeoutAction() throws Exception {
+        AtomicBoolean invoked = new AtomicBoolean();
+
+        DeadlineGuard guard = DeadlineGuard.create(Duration.ofDays(1), () -> invoked.set(true));
+        Thread timeoutThread = guard.timeoutThread();
+        assertThat(timeoutThread, notNullValue());
+        guard.close();
+        timeoutThread.join(TimeUnit.SECONDS.toMillis(5));
+
+        assertThat(guard.timedOut(), is(false));
+        assertThat(invoked.get(), is(false));
+        assertThat(timeoutThread.isAlive(), is(false));
+    }
 
     @Test
     void invokesTimeoutActionAfterTimeout() throws Exception {

@@ -74,8 +74,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
 
         boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
         Tls effectiveTls = HTTPS.equals(uri.scheme()) ? tls : NO_TLS;
-        // TlsNioSocket does not monitor idle remote closes, so TLS/UDS connections must not be returned to the cache.
-        if (keepAlive && !effectiveTls.enabled()) {
+        if (keepAlive) {
             return keepAliveUnixDomainConnection(http1Client, effectiveTls, uri, address);
         } else {
             return UnixDomainSocketClientConnection.create(http1Client.webClient(),
