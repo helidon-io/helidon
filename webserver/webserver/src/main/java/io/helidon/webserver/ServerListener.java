@@ -33,13 +33,16 @@ import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Timer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 
 import javax.net.ssl.SSLParameters;
 
@@ -51,6 +54,7 @@ import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.context.Context;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.task.HelidonTaskExecutor;
+import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
@@ -98,6 +102,10 @@ class ServerListener implements ListenerContext {
     private volatile ServerSocketChannel serverSocket;
     private volatile Thread serverThread;
     private volatile CompletableFuture<Void> closeFuture;
+    private volatile Runnable beforeReaderExecutorTerminate = () -> {
+    };
+    private volatile Runnable beforeSharedExecutorAwait = () -> {
+    };
 
     @SuppressWarnings("unchecked")
     ServerListener(String socketName,
@@ -248,11 +256,80 @@ class ServerListener implements ListenerContext {
             return;
         }
         running = false;
-        suspend(true);
-        router.afterStop();
+        Throwable failure = stopResources();
+        try {
+            router.afterStop();
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
+        }
+        LifecycleFailures.throwIfFailed(failure, "Failed to stop listener " + socketName);
     }
 
-    private void suspend(boolean shutdownExecutors) {
+    private Throwable stopResources() {
+        Throwable failure = null;
+        try {
+            // Stop listening for connections
+            ServerSocketChannel localServerSocket = serverSocket;
+            if (localServerSocket != null) {
+                localServerSocket.close();
+                if (configuredAddress instanceof UnixDomainSocketAddress udsa) {
+                    try {
+                        // UNIX socket files are created automatically, but they are not deleted when the channel is closed
+                        Files.deleteIfExists(udsa.getPath());
+                    } catch (IOException e) {
+                        LOGGER.log(WARNING, "Failed to delete UNIX socket file " + udsa.getPath().toAbsolutePath(), e);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.log(INFO, "Exception thrown on socket close", e);
+        }
+
+        try {
+            // Stop handling any new requests on all active connections
+            failure = LifecycleFailures.add(failure, closeActiveConnections(false));
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
+        }
+
+        try {
+            // Shutdown reader executor
+            shutdownReaderExecutor();
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
+        }
+
+        try {
+            // Shutdown shared executor
+            shutdownSharedExecutor();
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
+        }
+
+        try {
+            // Interrupt and close any active connections
+            failure = LifecycleFailures.add(failure, closeActiveConnections(true));
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
+        }
+
+        Thread localServerThread = serverThread;
+        if (localServerThread != null) {
+            localServerThread.interrupt();
+        }
+        CompletableFuture<Void> localCloseFuture = closeFuture;
+        if (localCloseFuture != null) {
+            try {
+                localCloseFuture.join();
+            } catch (RuntimeException | Error e) {
+                failure = LifecycleFailures.add(failure, e);
+            }
+        }
+
+        return failure;
+    }
+
+    private void suspendForCheckpoint() {
         try {
             // Stop listening for connections
             serverSocket.close();
@@ -266,28 +343,6 @@ class ServerListener implements ListenerContext {
             }
             // Stop handling any new requests on all active connections
             activeConnections().forEach(connection -> connection.close(false));
-            if (shutdownExecutors) {
-                // Shutdown reader executor
-                readerExecutor.terminate(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
-                if (!readerExecutor.isTerminated()) {
-                    LOGGER.log(DEBUG, "Some tasks in reader executor did not terminate gracefully");
-                    readerExecutor.forceTerminate();
-                }
-
-                // Shutdown shared executor
-                try {
-                    sharedExecutor.shutdown();
-                    boolean done = sharedExecutor.awaitTermination(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
-                    if (!done) {
-                        List<Runnable> running = sharedExecutor.shutdownNow();
-                        if (!running.isEmpty()) {
-                            LOGGER.log(DEBUG, running.size() + " tasks in shared executor did not terminate gracefully");
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    // falls through
-                }
-            }
             // Interrupt and close any active connections
             activeConnections().forEach(connection -> connection.close(true));
         } catch (IOException e) {
@@ -298,11 +353,29 @@ class ServerListener implements ListenerContext {
     }
 
     void start() {
-        router.beforeStart();
-        startIt();
+        start(() -> false);
+    }
+
+    void start(BooleanSupplier cancelled) {
+        boolean lifecycleStarted = false;
+        try {
+            checkCancelledStartup(cancelled);
+            router.beforeStart();
+            lifecycleStarted = true;
+            checkCancelledStartup(cancelled);
+            startIt(cancelled);
+        } catch (RuntimeException | Error e) {
+            rollbackFailedStart(e, lifecycleStarted);
+            throw e;
+        }
     }
 
     private void startIt() {
+        startIt(() -> false);
+    }
+
+    private void startIt(BooleanSupplier cancelled) {
+        checkCancelledStartup(cancelled);
         try {
             if (configuredAddress instanceof UnixDomainSocketAddress) {
                 serverSocket = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
@@ -316,56 +389,64 @@ class ServerListener implements ListenerContext {
             listenerConfig.configureSocket(serverSocket);
 
             serverSocket.bind(configuredAddress, listenerConfig.backlog());
+            checkCancelledStartup(cancelled);
             this.connectedPort = serverSocket.getLocalAddress() instanceof InetSocketAddress ias ? ias.getPort() : -1;
+
+            String serverChannelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(serverSocket));
+
+            running = true;
+
+            if (LOGGER.isLoggable(INFO)) {
+                if (configuredAddress instanceof InetSocketAddress inetAddress) {
+                    String format;
+                    if (tls.enabled()) {
+                        format = "[%s] https://%s:%s bound for socket '%s'";
+                    } else {
+                        format = "[%s] http://%s:%s bound for socket '%s'";
+                    }
+                    LOGGER.log(INFO, String.format(format,
+                                                   serverChannelId,
+                                                   inetAddress.getHostString(),
+                                                   connectedPort,
+                                                   socketName));
+                } else {
+                    String format;
+                    if (tls.enabled()) {
+                        format = "[%s] %s bound for secure socket '%s'";
+                    } else {
+                        format = "[%s] %s bound for socket '%s'";
+                    }
+                    LOGGER.log(INFO, String.format(format,
+                                                   serverChannelId,
+                                                   configuredAddress,
+                                                   socketName));
+                }
+
+
+                if (LOGGER.isLoggable(TRACE)) {
+                    if (listenerConfig.writeQueueLength() <= 1) {
+                        LOGGER.log(System.Logger.Level.TRACE, "[" + serverChannelId + "] direct writes");
+                    } else {
+                        LOGGER.log(System.Logger.Level.TRACE,
+                                   "[" + serverChannelId + "] async writes, queue length: "
+                                           + listenerConfig.writeQueueLength());
+                    }
+                    if (tls.enabled()) {
+                        debugTls(serverChannelId, tls);
+                    }
+                }
+            }
+
+            serverThread.start();
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to start server", e);
         }
+    }
 
-        String serverChannelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(serverSocket));
-
-        running = true;
-
-        if (LOGGER.isLoggable(INFO)) {
-            if (configuredAddress instanceof InetSocketAddress inetAddress) {
-                String format;
-                if (tls.enabled()) {
-                    format = "[%s] https://%s:%s bound for socket '%s'";
-                } else {
-                    format = "[%s] http://%s:%s bound for socket '%s'";
-                }
-                LOGGER.log(INFO, String.format(format,
-                                               serverChannelId,
-                                               inetAddress.getHostString(),
-                                               connectedPort,
-                                               socketName));
-            } else {
-                String format;
-                if (tls.enabled()) {
-                    format = "[%s] %s bound for secure socket '%s'";
-                } else {
-                    format = "[%s] %s bound for socket '%s'";
-                }
-                LOGGER.log(INFO, String.format(format,
-                                               serverChannelId,
-                                               configuredAddress,
-                                               socketName));
-            }
-
-
-            if (LOGGER.isLoggable(TRACE)) {
-                if (listenerConfig.writeQueueLength() <= 1) {
-                    LOGGER.log(System.Logger.Level.TRACE, "[" + serverChannelId + "] direct writes");
-                } else {
-                    LOGGER.log(System.Logger.Level.TRACE,
-                               "[" + serverChannelId + "] async writes, queue length: " + listenerConfig.writeQueueLength());
-                }
-                if (tls.enabled()) {
-                    debugTls(serverChannelId, tls);
-                }
-            }
+    private void checkCancelledStartup(BooleanSupplier cancelled) {
+        if (cancelled.getAsBoolean()) {
+            throw new IllegalStateException("Listener startup cancelled " + socketName);
         }
-
-        serverThread.start();
     }
 
     boolean hasTls() {
@@ -395,6 +476,110 @@ class ServerListener implements ListenerContext {
                 + "Want client auth: " + sslParameters.getWantClientAuth();
 
         LOGGER.log(TRACE, message);
+    }
+
+    private void rollbackFailedStart(Throwable startupFailure, boolean lifecycleStarted) {
+        running = false;
+        suppressCleanupFailure(startupFailure, this::closeServerSocketOnFailure);
+        suppressCleanupFailure(startupFailure, this::shutdownReaderExecutor);
+        suppressCleanupFailure(startupFailure, this::shutdownSharedExecutor);
+        if (lifecycleStarted) {
+            suppressCleanupFailure(startupFailure, router::afterStop);
+        }
+    }
+
+    private static void suppressCleanupFailure(Throwable startupFailure, Runnable cleanup) {
+        try {
+            cleanup.run();
+        } catch (RuntimeException | Error e) {
+            LifecycleFailures.add(startupFailure, e);
+        }
+    }
+
+    private void closeServerSocketOnFailure() {
+        ServerSocketChannel localServerSocket = serverSocket;
+        if (localServerSocket == null) {
+            return;
+        }
+        boolean bound = false;
+        try {
+            bound = localServerSocket.getLocalAddress() != null;
+        } catch (IOException e) {
+            LOGGER.log(DEBUG, "Failed to check server socket binding after failed start", e);
+        }
+        try {
+            localServerSocket.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to close server socket after failed start", e);
+        } finally {
+            serverSocket = null;
+            connectedPort = -1;
+        }
+        if (bound && configuredAddress instanceof UnixDomainSocketAddress udsa) {
+            try {
+                Files.deleteIfExists(udsa.getPath());
+            } catch (IOException e) {
+                LOGGER.log(WARNING, "Failed to delete UNIX socket file " + udsa.getPath().toAbsolutePath(), e);
+            }
+        }
+    }
+
+    private void shutdownReaderExecutor() {
+        Throwable failure = null;
+        try {
+            beforeReaderExecutorTerminate.run();
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
+        }
+        readerExecutor.terminate(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
+        if (Thread.currentThread().isInterrupted()) {
+            failure = LifecycleFailures.add(failure,
+                                            new IllegalStateException("Interrupted while shutting down listener reader executor "
+                                                                              + "for " + socketName));
+        }
+        if (!readerExecutor.isTerminated()) {
+            LOGGER.log(DEBUG, "Some tasks in reader executor did not terminate gracefully");
+            try {
+                readerExecutor.forceTerminate();
+            } catch (RuntimeException | Error e) {
+                failure = LifecycleFailures.add(failure, e);
+            }
+        }
+        LifecycleFailures.throwIfFailed(failure, "Failed to shut down listener reader executor for " + socketName);
+    }
+
+    private void shutdownSharedExecutor() {
+        Throwable failure = null;
+        sharedExecutor.shutdown();
+        try {
+            beforeSharedExecutorAwait.run();
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
+        }
+        try {
+            boolean done = sharedExecutor.awaitTermination(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
+            if (!done) {
+                forceShutdownSharedExecutor();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            IllegalStateException interrupted =
+                    new IllegalStateException("Interrupted while shutting down listener executor for " + socketName, e);
+            try {
+                forceShutdownSharedExecutor();
+            } catch (RuntimeException | Error shutdownFailure) {
+                interrupted.addSuppressed(shutdownFailure);
+            }
+            failure = LifecycleFailures.add(failure, interrupted);
+        }
+        LifecycleFailures.throwIfFailed(failure, "Failed to shut down listener executor for " + socketName);
+    }
+
+    private void forceShutdownSharedExecutor() {
+        List<Runnable> running = sharedExecutor.shutdownNow();
+        if (!running.isEmpty()) {
+            LOGGER.log(DEBUG, running.size() + " tasks in shared executor did not terminate gracefully");
+        }
     }
 
     private void listen() {
@@ -483,9 +668,41 @@ class ServerListener implements ListenerContext {
         return new ArrayList<>(activeConnections.values());
     }
 
+    private Throwable closeActiveConnections(boolean interrupt) {
+        Throwable failure = null;
+        for (ServerConnection connection : activeConnections()) {
+            try {
+                connection.close(interrupt);
+            } catch (RuntimeException | Error e) {
+                failure = LifecycleFailures.add(failure, e);
+            }
+        }
+        return failure;
+    }
+
     // Intended for testing.
     Thread serverThreads() {
         return serverThread;
+    }
+
+    // Intended for testing.
+    void activeConnection(String id, ServerConnection connection) {
+        activeConnections.put(id, connection);
+    }
+
+    // Intended for testing.
+    Future<?> readerTask(InterruptableTask<?> task) {
+        return readerExecutor.execute(task);
+    }
+
+    // Intended for testing.
+    void beforeReaderExecutorTerminate(Runnable beforeReaderExecutorTerminate) {
+        this.beforeReaderExecutorTerminate = Objects.requireNonNull(beforeReaderExecutorTerminate);
+    }
+
+    // Intended for testing.
+    void beforeSharedExecutorAwait(Runnable beforeSharedExecutorAwait) {
+        this.beforeSharedExecutorAwait = Objects.requireNonNull(beforeSharedExecutorAwait);
     }
 
     void suspend() {
@@ -494,7 +711,7 @@ class ServerListener implements ListenerContext {
         // converts interrupts into a rejected outcome, so clear the loop condition first to avoid
         // re-entering the wait after the interrupt is consumed.
         running = false;
-        suspend(false);
+        suspendForCheckpoint();
         serverThread = null;
         closeFuture = null;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,15 +70,21 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      * The start will fail on a server that is shut down, or that failed to start.
      * In such cases, create a new instance of WebServer.
      *
+     * If startup fails, all started channels are shut down before the failure is propagated.
+     * Additional cleanup failures may be attached as suppressed exceptions.
+     *
      * @return a started server
-     * @throws IllegalStateException when startup fails, in such a case all channels are shut down
+     * @throws IllegalStateException if startup or startup cleanup fails
      */
     WebServer start();
 
     /**
      * Attempt to gracefully shutdown the server.
+     * All channels are asked to stop even when one fails. If shutdown fails, the server is marked as stopped before
+     * the failure is propagated. Additional shutdown failures may be attached as suppressed exceptions.
      *
      * @return a stopped server
+     * @throws RuntimeException if shutdown cleanup fails
      * @see #start()
      */
     WebServer stop();

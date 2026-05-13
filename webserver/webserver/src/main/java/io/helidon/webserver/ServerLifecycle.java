@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,14 @@ package io.helidon.webserver;
 public interface ServerLifecycle {
     /**
      * Before server start.
+     * If this method throws an exception, server startup fails and the server attempts startup cleanup.
      */
     default void beforeStart() {
     }
 
     /**
      * After server start.
+     * If this method throws an exception, server startup fails and the server attempts startup cleanup.
      *
      * @param webServer the {@link WebServer} that was started
      */
@@ -36,6 +38,8 @@ public interface ServerLifecycle {
 
     /**
      * After server stop.
+     * Exceptions thrown by this method fail {@link WebServer#stop()} after listener cleanup has been attempted.
+     * If this method is invoked during startup cleanup, exceptions may fail {@link WebServer#start()}.
      */
     default void afterStop() {
     }
