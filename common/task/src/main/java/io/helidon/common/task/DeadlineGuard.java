@@ -19,8 +19,8 @@ package io.helidon.common.task;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.Api;
@@ -36,7 +36,10 @@ import static java.lang.System.Logger.Level.TRACE;
 @Api.Internal
 public final class DeadlineGuard implements AutoCloseable {
     private static final System.Logger LOGGER = System.getLogger(DeadlineGuard.class.getName());
-    private static final AtomicLong THREAD_COUNTER = new AtomicLong();
+    private static final ThreadFactory THREAD_FACTORY = Thread.ofVirtual()
+            .name("helidon-deadline-guard-", 1)
+            .inheritInheritableThreadLocals(false)
+            .factory();
 
     private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
     private final AtomicReference<Throwable> timeoutActionFailure = new AtomicReference<>();
@@ -50,10 +53,9 @@ public final class DeadlineGuard implements AutoCloseable {
         if (timeout.isZero() || timeout.isNegative()) {
             this.thread = null;
         } else {
-            this.thread = Thread.ofVirtual()
-                    .name("helidon-deadline-guard-" + THREAD_COUNTER.incrementAndGet())
-                    .inheritInheritableThreadLocals(false)
-                    .start(() -> this.timeoutAfterSleep(timeoutAction, timeout));
+            Thread timeoutThread = THREAD_FACTORY.newThread(() -> this.timeoutAfterSleep(timeoutAction, timeout));
+            this.thread = timeoutThread;
+            timeoutThread.start();
         }
     }
 
