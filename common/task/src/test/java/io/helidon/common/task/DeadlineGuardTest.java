@@ -18,20 +18,18 @@ package io.helidon.common.task;
 
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class DeadlineGuardTest {
 
     @Test
-    void defaultCreateInvokesTimeoutActionAfterTimeout() throws Exception {
+    void invokesTimeoutActionAfterTimeout() throws Exception {
         CountDownLatch invoked = new CountDownLatch(1);
 
         try (DeadlineGuard guard = DeadlineGuard.create(Duration.ofMillis(10), invoked::countDown)) {
@@ -41,117 +39,48 @@ class DeadlineGuardTest {
     }
 
     @Test
-    void defaultCloseCancelsTimeoutAction() throws Exception {
-        AtomicBoolean invoked = new AtomicBoolean();
+    void closeCancelsTimeoutAction() throws Exception {
+        CountDownLatch invoked = new CountDownLatch(1);
 
-        DeadlineGuard guard = DeadlineGuard.create(Duration.ofDays(1), () -> invoked.set(true));
-        Thread timeoutThread = guard.timeoutThread();
-        assertThat(timeoutThread, notNullValue());
+        DeadlineGuard guard = DeadlineGuard.create(Duration.ofMillis(100), invoked::countDown);
         guard.close();
-        timeoutThread.join(TimeUnit.SECONDS.toMillis(5));
 
         assertThat(guard.timedOut(), is(false));
-        assertThat(invoked.get(), is(false));
-        assertThat(timeoutThread.isAlive(), is(false));
-    }
-
-    @Test
-    void invokesTimeoutActionAfterTimeout() throws Exception {
-        ScheduledThreadPoolExecutor executor = executor();
-        try {
-            CountDownLatch invoked = new CountDownLatch(1);
-
-            try (DeadlineGuard guard = DeadlineGuard.create(Duration.ofMillis(10), invoked::countDown, executor)) {
-                assertThat(invoked.await(5, TimeUnit.SECONDS), is(true));
-                assertThat(guard.timedOut(), is(true));
-            }
-        } finally {
-            executor.shutdownNow();
-        }
-    }
-
-    @Test
-    void closeCancelsTimeoutAction() {
-        ScheduledThreadPoolExecutor executor = executor();
-        try {
-            AtomicBoolean invoked = new AtomicBoolean();
-
-            DeadlineGuard guard = DeadlineGuard.create(Duration.ofDays(1), () -> invoked.set(true), executor);
-            guard.close();
-
-            assertThat(guard.timedOut(), is(false));
-            assertThat(invoked.get(), is(false));
-            assertThat(executor.getQueue().isEmpty(), is(true));
-        } finally {
-            executor.shutdownNow();
-        }
+        assertThat(invoked.await(300, TimeUnit.MILLISECONDS), is(false));
     }
 
     @Test
     void timeoutStateIsPublishedWhenTimeoutWins() throws Exception {
-        ScheduledThreadPoolExecutor executor = executor();
+        CountDownLatch timeoutActionStarted = new CountDownLatch(1);
+        CountDownLatch releaseTimeoutAction = new CountDownLatch(1);
+        DeadlineGuard guard = DeadlineGuard.create(Duration.ofMillis(10),
+                                                   () -> {
+                                                       timeoutActionStarted.countDown();
+                                                       try {
+                                                           releaseTimeoutAction.await();
+                                                       } catch (InterruptedException e) {
+                                                           Thread.currentThread().interrupt();
+                                                       }
+                                                   });
         try {
-            CountDownLatch timeoutClaimed = new CountDownLatch(1);
-            CountDownLatch releaseTimeoutClaim = new CountDownLatch(1);
-            CountDownLatch timeoutActionStarted = new CountDownLatch(1);
-            CountDownLatch releaseTimeoutAction = new CountDownLatch(1);
-
-            DeadlineGuard guard = DeadlineGuard.create(Duration.ofNanos(1),
-                                                       () -> {
-                                                           timeoutActionStarted.countDown();
-                                                           try {
-                                                               releaseTimeoutAction.await();
-                                                           } catch (InterruptedException e) {
-                                                               Thread.currentThread().interrupt();
-                                                           }
-                                                       },
-                                                       executor,
-                                                       () -> {
-                                                           timeoutClaimed.countDown();
-                                                           try {
-                                                               releaseTimeoutClaim.await();
-                                                           } catch (InterruptedException e) {
-                                                               Thread.currentThread().interrupt();
-                                                           }
-                                                       });
-
-            try {
-                assertThat(timeoutClaimed.await(5, TimeUnit.SECONDS), is(true));
-                assertThat(guard.timedOut(), is(true));
-                releaseTimeoutClaim.countDown();
-                assertThat(timeoutActionStarted.await(5, TimeUnit.SECONDS), is(true));
-                guard.close();
-                assertThat(guard.timedOut(), is(true));
-            } finally {
-                releaseTimeoutClaim.countDown();
-                releaseTimeoutAction.countDown();
-                guard.close();
-            }
+            assertThat(timeoutActionStarted.await(5, TimeUnit.SECONDS), is(true));
+            assertThat(guard.timedOut(), is(true));
+            guard.close();
+            assertThat(guard.timedOut(), is(true));
         } finally {
-            executor.shutdownNow();
+            releaseTimeoutAction.countDown();
+            guard.close();
         }
     }
 
     @Test
     void zeroTimeoutDoesNotScheduleTimeoutAction() {
-        ScheduledThreadPoolExecutor executor = executor();
-        try {
-            AtomicBoolean invoked = new AtomicBoolean();
+        AtomicBoolean invoked = new AtomicBoolean();
 
-            try (DeadlineGuard guard = DeadlineGuard.create(Duration.ZERO, () -> invoked.set(true), executor)) {
-                assertThat(guard.timedOut(), is(false));
-            }
-
-            assertThat(invoked.get(), is(false));
-            assertThat(executor.getQueue().isEmpty(), is(true));
-        } finally {
-            executor.shutdownNow();
+        try (DeadlineGuard guard = DeadlineGuard.create(Duration.ZERO, () -> invoked.set(true))) {
+            assertThat(guard.timedOut(), is(false));
         }
-    }
 
-    private static ScheduledThreadPoolExecutor executor() {
-        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
-        executor.setRemoveOnCancelPolicy(true);
-        return executor;
+        assertThat(invoked.get(), is(false));
     }
 }
