@@ -104,6 +104,7 @@ public final class ConnectionKey {
                                                        DnsResolver dnsResolver,
                                                        DnsAddressLookup dnsAddressLookup,
                                                        UnixDomainSocketAddress address) {
+        UnixDomainSocketAddress socketAddress = Objects.requireNonNull(address, "address");
         return new ConnectionKey(Objects.requireNonNull(scheme, "scheme"),
                                  Objects.requireNonNull(host, "host"),
                                  port,
@@ -111,7 +112,7 @@ public final class ConnectionKey {
                                  Objects.requireNonNull(dnsResolver, "dnsResolver"),
                                  Objects.requireNonNull(dnsAddressLookup, "dnsAddressLookup"),
                                  Proxy.noProxy(),
-                                 Transport.unixDomainSocket(Objects.requireNonNull(address, "address")));
+                                 new Transport("unix", socketAddress.getPath().toString()));
     }
 
     /**
@@ -215,40 +216,6 @@ public final class ConnectionKey {
                 + ']';
     }
 
-    private static final class Transport {
-        private final String type;
-        private final String value;
-
-        private Transport(String type, String value) {
-            this.type = type;
-            this.value = value;
-        }
-
-        static Transport unixDomainSocket(UnixDomainSocketAddress address) {
-            return new Transport("unix", address.getPath().toString());
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == this) {
-                return true;
-            }
-            if (obj == null || obj.getClass() != this.getClass()) {
-                return false;
-            }
-            Transport that = (Transport) obj;
-            return Objects.equals(this.type, that.type)
-                    && Objects.equals(this.value, that.value);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(type, value);
-        }
-
-        @Override
-        public String toString() {
-            return "Transport[type=" + type + ", value=" + value + "]";
-        }
+    private record Transport(String type, String value) {
     }
 }
