@@ -41,6 +41,8 @@ public class MultiPartSupport implements MediaSupport {
      */
     public static final String DEFAULT_BOUNDARY = "[^._.^]==>boundary<==[^._.^]";
 
+    static final int DEFAULT_MAX_PARTS = 1000;
+
     private static final System.Logger LOGGER = System.getLogger(MultiPartSupport.class.getName());
     private static final HttpMediaType DEFAULT_HTTP_MEDIA_TYPE = HttpMediaType.create(MediaTypes.MULTIPART_FORM_DATA)
             .withParameter("boundary", DEFAULT_BOUNDARY);
