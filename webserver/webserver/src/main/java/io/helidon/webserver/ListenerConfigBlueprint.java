@@ -239,11 +239,13 @@ interface ListenerConfigBlueprint {
     SocketOptions connectionOptions();
 
     /**
-     * Limits the number of connections that can be opened at a single point in time.
+     * Limits the number of connection permits that this listener may reserve before accepting sockets.
+     * A permit is acquired before each accept attempt and released after the accepted connection finishes,
+     * or immediately if the accepted socket cannot be configured or submitted to the connection executor.
      * Defaults to {@code -1}, meaning "unlimited" - what the system allows.
      * {@code 0} has the same meaning as {@code -1} - unlimited number of connections.
      *
-     * @return number of TCP connections that can be opened to this listener, regardless of protocol
+     * @return pre-accept TCP connection admission capacity for this listener, regardless of protocol
      */
     @Option.Configured
     @Option.DefaultInt(-1)
