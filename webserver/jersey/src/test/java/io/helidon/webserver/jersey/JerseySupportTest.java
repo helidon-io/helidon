@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,17 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.URI;
+import java.net.Socket;
+import java.net.SocketException;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.common.http.HttpRequest;
 import jakarta.ws.rs.ProcessingException;
@@ -41,7 +48,9 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
 
 /**
  * The JerseySupportTest.
@@ -239,6 +248,26 @@ public class JerseySupportTest {
     }
 
     @Test
+    public void responseConnectionClose() throws Exception {
+        try (Socket socket = new Socket("localhost", JerseyExampleMain.INSTANCE.webServer(true).port())) {
+            socket.setSoTimeout(10000);
+            PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(),
+                                                                        StandardCharsets.UTF_8));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(),
+                                                                             StandardCharsets.UTF_8));
+
+            sendRequest(writer, "/jersey/first/response/connection-close");
+
+            String response = receive(reader);
+            Map<String, String> headers = headersFromResponse(response);
+            assertThat(headers, hasEntry(equalToIgnoringCase("Connection"), is("close")));
+            assertThat(headers, hasEntry(equalToIgnoringCase("X-My_Header"), is("foo")));
+            assertThat(entityFromResponse(response), is("close"));
+            assertConnectionIsClosed(writer, reader);
+        }
+    }
+
+    @Test
     public void simpleGetNotFound() {
         Response response = get("jersey/first/non-existent-resource");
 
@@ -423,5 +452,75 @@ public class JerseySupportTest {
             }
         }
     }
-}
 
+    private static void sendRequest(PrintWriter writer, String path) {
+        writer.print("GET " + path + " HTTP/1.1\r\n");
+        writer.print("Host: 127.0.0.1\r\n");
+        writer.print("\r\n");
+        writer.flush();
+    }
+
+    private static void assertConnectionIsClosed(PrintWriter writer, BufferedReader reader) throws IOException {
+        sendRequest(writer, "/jersey/first/hello");
+        try {
+            assertThat(receive(reader), is(""));
+        } catch (SocketException e) {
+            // The socket can close before or during the second read.
+        }
+    }
+
+    private static Map<String, String> headersFromResponse(String response) {
+        int index = response.indexOf("\n\n");
+        if (index < 0) {
+            throw new AssertionError("Missing end of headers in response!");
+        }
+        String[] lines = response.substring(0, index).split("\\n");
+        Map<String, String> result = new HashMap<>(lines.length - 1);
+        for (int i = 1; i < lines.length; i++) {
+            int headerSeparator = lines[i].indexOf(':');
+            if (headerSeparator < 0) {
+                throw new AssertionError("Header without colon: " + lines[i]);
+            }
+            result.put(lines[i].substring(0, headerSeparator).trim(),
+                       lines[i].substring(headerSeparator + 1).trim());
+        }
+        return result;
+    }
+
+    private static String entityFromResponse(String response) {
+        int index = response.indexOf("\n\n");
+        if (index < 0) {
+            throw new AssertionError("Missing end of headers in response!");
+        }
+        return response.substring(index + 2);
+    }
+
+    private static String receive(BufferedReader reader) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        String line;
+        boolean ending = false;
+        int contentLength = -1;
+        while ((line = reader.readLine()) != null) {
+            if (line.toLowerCase().startsWith("content-length")) {
+                int colon = line.indexOf(':');
+                contentLength = Integer.parseInt(line.substring(colon + 1).trim());
+            }
+            sb.append(line).append("\n");
+            if ("".equals(line) && contentLength >= 0) {
+                char[] content = new char[contentLength];
+                int read = reader.read(content);
+                if (read > 0) {
+                    sb.append(content, 0, read);
+                }
+                break;
+            }
+            if (ending && "".equals(line)) {
+                break;
+            }
+            if (!ending && "0".equals(line)) {
+                ending = true;
+            }
+        }
+        return sb.toString();
+    }
+}

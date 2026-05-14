@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,7 @@ class BareResponseImpl implements BareResponse {
     private CompletableFuture<ChannelFutureListener> requestEntityAnalyzed;
     private BackpressureStrategy backpressureStrategy;
     private final long backpressureBufferSize;
+    private volatile boolean closeAfterResponse;
 
     // Accessed by writeStatusHeaders(status, headers) method
     /*
@@ -220,9 +221,12 @@ class BareResponseImpl implements BareResponse {
 
         // Add keep alive header as per:
         // http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
-        // if response Connection header is set explicitly to close, we can ignore the following
-        if (!keepAlive || HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(response.headers().get(HttpHeaderNames.CONNECTION))) {
+        if (HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(response.headers().get(HttpHeaderNames.CONNECTION))) {
+            closeAfterResponse = true;
+            originalEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
+        } else if (!keepAlive) {
             response.headers().remove(HttpHeaderNames.CONNECTION);
+            closeAfterResponse = true;
             originalEntityAnalyzed.complete(ChannelFutureListener.CLOSE);
         } else {
             if (!requestContext.requestCompleted()) {
@@ -322,8 +326,9 @@ class BareResponseImpl implements BareResponse {
             return;
         }
         requestEntityAnalyzed = requestEntityAnalyzed.thenApply(listener -> {
+            ChannelFutureListener closeAction = closeAfterResponse ? ChannelFutureListener.CLOSE : listener;
             requestContext.runInScope(() -> {
-                if (ChannelFutureListener.CLOSE.equals(listener)) {
+                if (ChannelFutureListener.CLOSE.equals(closeAction)) {
                     if (LOGGER.isLoggable(Level.FINEST)) {
                         LOGGER.finest(log("Closing with an empty buffer; keep-alive: false", channel));
                     }
@@ -333,9 +338,9 @@ class BareResponseImpl implements BareResponse {
                     }
                     channel.read();
                 }
-                writeLastContent(throwable, listener);
+                writeLastContent(throwable, closeAction);
             });
-            return listener;
+            return closeAction;
         });
     }
 

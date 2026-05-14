@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,6 +105,15 @@ public class JerseyExampleResource {
     @Path("noentity")
     public Response noEntity() {
         return Response.ok().build();
+    }
+
+    @GET
+    @Path("response/connection-close")
+    public Response responseConnectionClose() {
+        return Response.ok("close")
+                .header("Connection", "close")
+                .header("X-My_Header", "foo")
+                .build();
     }
 
     @GET

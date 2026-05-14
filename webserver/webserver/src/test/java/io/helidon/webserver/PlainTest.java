@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -147,6 +147,11 @@ public class PlainTest {
                             } else {
                                 res.send("abcd");
                             }
+                        })
+                        .get("/response-connection-close", (req, res) -> {
+                            res.headers().put(Http.Header.CONNECTION, "close");
+                            res.headers().put("X-My_Header", "foo");
+                            res.send("close");
                         })
                         .get("/multi", (req, res) -> {
                             res.send(Multi.just("test 1", "test 2", "test 3")
@@ -465,6 +470,20 @@ public class PlainTest {
         Map<String, String> headers = headersFromResponse(s);
         assertThat(headers, not(hasKey(equalToIgnoringCase("connection"))));
         assertThat(entityFromResponse(s, false), is("9\nIt works!\n0\n\n"));
+    }
+
+    @Test
+    public void testResponseConnectionCloseHeader() throws Exception {
+        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+            s.request(Http.Method.GET, "/response-connection-close", null);
+
+            String response = s.receive();
+            Map<String, String> headers = headersFromResponse(response);
+            assertThat(headers, hasEntry(equalToIgnoringCase(Http.Header.CONNECTION), is("close")));
+            assertThat(headers, hasEntry(equalToIgnoringCase("X-My_Header"), is("foo")));
+            assertThat(entityFromResponse(response, false), is("5\nclose\n0\n\n"));
+            SocketHttpClient.assertConnectionIsClosed(s);
+        }
     }
 
     @Test
