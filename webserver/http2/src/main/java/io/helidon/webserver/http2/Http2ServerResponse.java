@@ -35,6 +35,7 @@ import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.media.EntityWriter;
@@ -52,6 +53,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private final ServerResponseTrailers trailers;
     private final Http2ServerRequest request;
     private final Http2ServerStream stream;
+    private final boolean validateResponseHeaders;
 
     private boolean isSent;
     private boolean streamingEntity;
@@ -62,11 +64,13 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private String streamResult = null;
 
     Http2ServerResponse(Http2ServerStream stream,
-                        Http2ServerRequest request) {
+                        Http2ServerRequest request,
+                        boolean validateResponseHeaders) {
         super(stream.connectionContext(), request);
         this.ctx = stream.connectionContext();
         this.request = request;
         this.stream = stream;
+        this.validateResponseHeaders = validateResponseHeaders;
         this.headers = ServerResponseHeaders.create();
         this.trailers = ServerResponseTrailers.create();
     }
@@ -152,7 +156,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
             beforeSend();
 
-            http2Headers.validateResponse();
+            validateResponse(http2Headers);
             bytesWritten += stream.writeHeadersWithData(http2Headers, actualLength,
                                                         BufferData.create(actualBytes, actualPosition, actualLength),
                                                         !sendTrailers);
@@ -318,6 +322,19 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         return headers.contains(HeaderNames.TRAILER);
     }
 
+    private void validateResponse(Http2Headers http2Headers) {
+        http2Headers.validateResponse();
+        if (validateResponseHeaders) {
+            for (var header : http2Headers.httpHeaders()) {
+                try {
+                    header.validate();
+                } catch (IllegalArgumentException e) {
+                    throw new Http2Exception(Http2ErrorCode.PROTOCOL, e.getMessage(), e);
+                }
+            }
+        }
+    }
+
     private static class BlockingOutputStream extends OutputStream {
 
         private final Http2ServerRequest request;
@@ -455,7 +472,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
             Http2Headers http2Headers = Http2Headers.create(headers);
             http2Headers.status(status);
-            http2Headers.validateResponse();
+            response.validateResponse(http2Headers);
 
             // at this moment, we must send headers
             if (contentLength == 0) {
@@ -470,7 +487,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
             Http2Headers http2Headers = Http2Headers.create(headers);
             http2Headers.status(status);
-            http2Headers.validateResponse();
+            response.validateResponse(http2Headers);
 
             bytesWritten += stream.writeHeaders(http2Headers, false);
         }

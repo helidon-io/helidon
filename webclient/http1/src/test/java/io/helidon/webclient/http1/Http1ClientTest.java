@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -28,6 +29,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
@@ -43,9 +48,11 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.Http1HeadersParser;
+import io.helidon.http.HttpLogConfig;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http1.Http1LoggingConnectionListener;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
@@ -64,6 +71,7 @@ import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -74,6 +82,8 @@ class Http1ClientTest {
     public static final String VALID_HEADER_NAME = "Valid-Header-Name";
     public static final String BAD_HEADER_PATH = "/badHeader";
     public static final String HEADER_NAME_VALUE_DELIMETER = "->";
+    public static final String PROXY_HOST = "http://www-proxy-hqdc.us.oracle.com";
+    public static final String PROXY_PORT = "80";
     private static final Header REQ_CHUNKED_HEADER = HeaderValues.create(
             HeaderNames.create("X-Req-Chunked"), "true");
     private static final Header REQ_EXPECT_100_HEADER_NAME = HeaderValues.create(
@@ -86,15 +96,7 @@ class Http1ClientTest {
     private static final int dummyPort = 1234;
     private static final String TARGET_HOST = "www.oracle.com";
     private static final String TARGET_URI_PATH = "/test";
-    public static final String PROXY_HOST = "http://www-proxy-hqdc.us.oracle.com";
-    public static final String PROXY_PORT = "80";
-
-    private enum RelativeUrisValue {
-        TRUE, FALSE, DEFAULT
-    }
-    private enum ProxyConfiguration {
-        UNSET, NO_PROXY, HTTP, HTTP_SET_NO_PROXY_HOST, SYSTEM_UNSET, SYSTEM_SET_PROXY, SYSTEM_SET_PROXY_AND_NON_PROXY_HOST
-    }
+    private static final String CLIENT_SEND_LOGGER_NAME = Http1LoggingConnectionListener.class.getName() + ".cl-send";
 
     @Test
     void testMaxHeaderSizeFail() {
@@ -149,6 +151,129 @@ class Http1ClientTest {
         assertThat(response.entity().as(String.class), is("Sending Something"));
         assertThat(connection.releaseCount(), is(1));
         assertThat(connection.closeCount(), is(0));
+    }
+
+    @Test
+    void testRequestHeaderLoggingRedactsUnsafeValues() {
+        Logger logger = Logger.getLogger(CLIENT_SEND_LOGGER_NAME);
+        Level previousLevel = logger.getLevel();
+        boolean previousUseParentHandlers = logger.getUseParentHandlers();
+        List<String> messages = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                messages.add(record.getMessage());
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+
+        handler.setLevel(Level.ALL);
+        logger.addHandler(handler);
+        logger.setUseParentHandlers(false);
+        logger.setLevel(Level.FINER);
+
+        try {
+            Http1LoggingConnectionListener listener = Http1LoggingConnectionListener.create(HttpLogConfig.create(),
+                                                                                            "cl-send");
+            Headers headers = WritableHeaders.create()
+                    .add(HeaderNames.AUTHORIZATION, "Bearer secret-token")
+                    .add(HeaderNames.COOKIE, "session=secret-cookie")
+                    .add(HeaderNames.create("X-Safe"), "first\r\nForged: value")
+                    .add(HeaderNames.CONTENT_TYPE, "text/plain");
+
+            Http1CallChainBase.writeHeaders(new FakeHttp1ClientConnection(),
+                                            headers,
+                                            BufferData.growing(128),
+                                            false,
+                                            listener);
+
+            assertThat(messages.size(), is(1));
+            String message = messages.getFirst();
+            assertThat(message, containsString("Authorization: <redacted>"));
+            assertThat(message, containsString("Cookie: <redacted>"));
+            assertThat(message, containsString("Content-Type: text/plain"));
+            assertThat(message, not(containsString("Bearer secret-token")));
+            assertThat(message, not(containsString("session=secret-cookie")));
+            assertThat(message, not(containsString("\r")));
+            assertThat(message, not(containsString("\nForged:")));
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previousLevel);
+            logger.setUseParentHandlers(previousUseParentHandlers);
+            handler.close();
+        }
+    }
+
+    @Test
+    void testRequestHeaderLoggingReportsRawValuesWhenUnsafeEnabled() {
+        Logger logger = Logger.getLogger(CLIENT_SEND_LOGGER_NAME);
+        Level previousLevel = logger.getLevel();
+        boolean previousUseParentHandlers = logger.getUseParentHandlers();
+        List<String> messages = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                messages.add(record.getMessage());
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+
+        handler.setLevel(Level.ALL);
+        logger.addHandler(handler);
+        logger.setUseParentHandlers(false);
+        logger.setLevel(Level.FINER);
+
+        try {
+            Http1LoggingConnectionListener listener = Http1LoggingConnectionListener.create(HttpLogConfig.builder()
+                                                                                                    .unsafeRawData(true)
+                                                                                                    .build(),
+                                                                                            "cl-send");
+            Headers headers = WritableHeaders.create()
+                    .add(HeaderNames.AUTHORIZATION, "Bearer secret-token")
+                    .add(HeaderNames.COOKIE, "session=secret-cookie");
+
+            Http1CallChainBase.writeHeaders(new FakeHttp1ClientConnection(),
+                                            headers,
+                                            BufferData.growing(128),
+                                            false,
+                                            listener);
+
+            assertThat(messages.size(), is(1));
+            String message = messages.getFirst();
+            assertThat(message, containsString("Authorization: Bearer secret-token"));
+            assertThat(message, containsString("Cookie: session=secret-cookie"));
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previousLevel);
+            logger.setUseParentHandlers(previousUseParentHandlers);
+            handler.close();
+        }
+    }
+
+    @Test
+    void testProtocolLogConfigUsed() {
+        Http1ClientConfig config = Http1ClientConfig.builder()
+                .protocolConfig(it -> it.log(log -> log.sendLog(false)
+                        .receiveLog(false)))
+                .buildPrototype();
+        Http1ClientImpl client = new Http1ClientImpl(null, config);
+
+        assertThat(client.sendListener().enabled(), is(false));
+        assertThat(client.recvListener().enabled(), is(false));
     }
 
     @Test
@@ -250,32 +375,37 @@ class Http1ClientTest {
 
     @ParameterizedTest
     @MethodSource("relativeUris")
-    void testRelativeUris(ProxyConfiguration proxyConfig, RelativeUrisValue relativeUris, boolean outputStream, String requestUri, String expectedUriStart) {
+    void testRelativeUris(ProxyConfiguration proxyConfig,
+                          RelativeUrisValue relativeUris,
+                          boolean outputStream,
+                          String requestUri,
+                          String expectedUriStart) {
         Proxy proxy = null;
         switch (proxyConfig) {
-        case UNSET -> {} // proxy is already initialized to null which is the goal of this condition, so no-op
+        case UNSET -> {
+        } // proxy is already initialized to null which is the goal of this condition, so no-op
         case NO_PROXY -> proxy = Proxy.noProxy();
-            case HTTP -> proxy = createHttpProxyBuilder().build();
-            case HTTP_SET_NO_PROXY_HOST -> proxy = createHttpProxyBuilder().addNoProxy(TARGET_HOST).build();
-            case SYSTEM_UNSET -> proxy = Proxy.create();
-            case SYSTEM_SET_PROXY -> {
-                proxy = Proxy.create();
-                System.setProperty("http.proxyHost", PROXY_HOST);
-                System.setProperty("http.proxyPort", PROXY_PORT);
-            }
-            case SYSTEM_SET_PROXY_AND_NON_PROXY_HOST -> {
-                proxy = Proxy.create();
-                System.setProperty("http.proxyHost", PROXY_HOST);
-                System.setProperty("http.proxyPort", PROXY_PORT);
-                System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1|10.*.*.*|*.example.com|etc|" + TARGET_HOST);
-            }
+        case HTTP -> proxy = createHttpProxyBuilder().build();
+        case HTTP_SET_NO_PROXY_HOST -> proxy = createHttpProxyBuilder().addNoProxy(TARGET_HOST).build();
+        case SYSTEM_UNSET -> proxy = Proxy.create();
+        case SYSTEM_SET_PROXY -> {
+            proxy = Proxy.create();
+            System.setProperty("http.proxyHost", PROXY_HOST);
+            System.setProperty("http.proxyPort", PROXY_PORT);
+        }
+        case SYSTEM_SET_PROXY_AND_NON_PROXY_HOST -> {
+            proxy = Proxy.create();
+            System.setProperty("http.proxyHost", PROXY_HOST);
+            System.setProperty("http.proxyPort", PROXY_PORT);
+            System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1|10.*.*.*|*.example.com|etc|" + TARGET_HOST);
+        }
         }
 
         Http1Client client;
         switch (relativeUris) {
-            case TRUE -> client = Http1Client.builder().relativeUris(true).build();
-            case FALSE -> client = Http1Client.builder().relativeUris(false).build();
-            default -> client = Http1Client.create();   // Don't set relativeUris and accept whatever is the default
+        case TRUE -> client = Http1Client.builder().relativeUris(true).build();
+        case FALSE -> client = Http1Client.builder().relativeUris(false).build();
+        default -> client = Http1Client.create();   // Don't set relativeUris and accept whatever is the default
         }
         FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
         Http1ClientRequest request = proxy != null ? client.put(requestUri).proxy(proxy) : client.put(requestUri);
@@ -293,15 +423,15 @@ class Http1ClientTest {
 
         // Clear proxy system properties that were set
         switch (proxyConfig) {
-            case SYSTEM_SET_PROXY -> {
-                System.clearProperty("http.proxyHost");
-                System.clearProperty("http.proxyPort");
-            }
-            case SYSTEM_SET_PROXY_AND_NON_PROXY_HOST -> {
-                System.clearProperty("http.proxyHost");
-                System.clearProperty("http.proxyPort");
-                System.clearProperty("http.nonProxyHosts");
-            }
+        case SYSTEM_SET_PROXY -> {
+            System.clearProperty("http.proxyHost");
+            System.clearProperty("http.proxyPort");
+        }
+        case SYSTEM_SET_PROXY_AND_NON_PROXY_HOST -> {
+            System.clearProperty("http.proxyHost");
+            System.clearProperty("http.proxyPort");
+            System.clearProperty("http.nonProxyHosts");
+        }
         }
     }
 
@@ -632,6 +762,14 @@ class Http1ClientTest {
         );
     }
 
+    private enum RelativeUrisValue {
+        TRUE, FALSE, DEFAULT
+    }
+
+    private enum ProxyConfiguration {
+        UNSET, NO_PROXY, HTTP, HTTP_SET_NO_PROXY_HOST, SYSTEM_UNSET, SYSTEM_SET_PROXY, SYSTEM_SET_PROXY_AND_NON_PROXY_HOST
+    }
+
     private static class FakeHttp1ClientConnection implements ClientConnection {
         private final DataReader clientReader;
         private final DataWriter clientWriter;
@@ -862,7 +1000,7 @@ class Http1ClientTest {
             resHeaders.add(HeaderNames.CONTENT_LENGTH, Integer.toString(entitySize));
             BufferData entityBuffer = BufferData.growing(128);
             for (Header header : resHeaders) {
-header.writeHttp1Header(entityBuffer);
+                header.writeHttp1Header(entityBuffer);
             }
             entityBuffer.write(Bytes.CR_BYTE);
             entityBuffer.write(Bytes.LF_BYTE);

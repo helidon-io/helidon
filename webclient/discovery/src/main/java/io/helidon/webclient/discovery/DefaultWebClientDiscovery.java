@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,7 +97,13 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
             .thenComparing(Entry::getValue)
             .reversed());
         this.discoveryNames = unmodifiableList(l);
-        LOGGER.log(DEBUG, "Discovery names: {0}", this.discoveryNames);
+        if (LOGGER.isLoggable(DEBUG)) {
+            LOGGER.log(DEBUG,
+                       "Discovery names: {0}",
+                       this.discoveryNames.stream()
+                               .map(it -> new SimpleEntry<>(safeUri(it.getKey()), it.getValue()))
+                               .toList());
+        }
     }
 
 
@@ -121,36 +127,60 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
     @Override // WebClientDiscovery (WebClientService)
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
         ClientUri clientUri = request.uri();
-        LOGGER.log(DEBUG, "Initial ClientUri: {0}", clientUri);
+        if (LOGGER.isLoggable(DEBUG)) {
+            LOGGER.log(DEBUG, "Initial ClientUri: {0}", safeUri(clientUri));
+        }
 
         DiscoveryRequest discoveryRequest = DiscoveryRequest.of(this.discoveryNames, clientUri).orElse(null);
         if (discoveryRequest == null) {
-            LOGGER.log(DEBUG, "No discovery needed for {0}", clientUri);
+            if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG, "No discovery needed for {0}", safeUri(clientUri));
+            }
             return chain.proceed(request);
         }
-        LOGGER.log(DEBUG, "DiscoveryRequest: {0}", discoveryRequest);
+        if (LOGGER.isLoggable(DEBUG)) {
+            LOGGER.log(DEBUG,
+                       "DiscoveryRequest: name={0}, defaultUri={1}, extraPath={2}",
+                       discoveryRequest.discoveryName(),
+                       safeUri(discoveryRequest.defaultUri()),
+                       escapeLogValue(discoveryRequest.extraPath()));
+        }
 
         URI discoveredUri = this.prototype()
             .discovery()
             .uris(discoveryRequest.discoveryName(), discoveryRequest.defaultUri())
             .getFirst()
             .uri();
-        LOGGER.log(DEBUG, "URI discovered for {0}: {1}", discoveryRequest.discoveryName(), discoveredUri);
+
+        if (LOGGER.isLoggable(DEBUG)) {
+            LOGGER.log(DEBUG, "URI discovered for {0}: {1}", discoveryRequest.discoveryName(), safeUri(discoveredUri));
+        }
 
         // (Edge case. Eureka in particular does not contractually guarantee whether a URI it returns will be opaque or
         // not. An opaque URI could conceivably be OK in some possible worlds, but ClientUri doesn't handle opaque
         // URIs. Just skip it.)
         if (discoveredUri.isOpaque()) {
-            LOGGER.log(DEBUG, "Discarding discovered opaque URI {0}; ClientUri does not support opaque URIs", discoveredUri);
+            if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG,
+                           "Discarding discovered opaque URI {0}; ClientUri does not support opaque URIs",
+                           safeUri(discoveredUri));
+            }
             return chain.proceed(request);
         }
 
         // Resolve the extra path against the discovered URI, deliberately using fully defined
         // java.net.URI#resolve(String) semantics (which reifies RFC 2396 semantics
         // (https://www.rfc-editor.org/rfc/rfc2396#section-5.2)).
-        LOGGER.log(DEBUG, "Resolving {0} against {1}", discoveryRequest.extraPath(), discoveredUri);
+        if (LOGGER.isLoggable(DEBUG)) {
+            LOGGER.log(DEBUG,
+                       "Resolving {0} against {1}",
+                       escapeLogValue(discoveryRequest.extraPath()),
+                       safeUri(discoveredUri));
+        }
         discoveredUri = discoveredUri.resolve(discoveryRequest.extraPath());
-        LOGGER.log(DEBUG, "Resolution result: {0}", discoveredUri);
+        if (LOGGER.isLoggable(DEBUG)) {
+            LOGGER.log(DEBUG, "Resolution result: {0}", safeUri(discoveredUri));
+        }
 
         // Install (raw) path, (possibly) new scheme, host, and port.  Deliberately leave existing query and fragment
         // alone.
@@ -168,7 +198,9 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
             clientUri.port(discoveredPort);
         }
 
-        LOGGER.log(DEBUG, "Final ClientUri: {0}", clientUri);
+        if (LOGGER.isLoggable(DEBUG)) {
+            LOGGER.log(DEBUG, "Final ClientUri: {0}", safeUri(clientUri));
+        }
         return chain.proceed(request);
     }
 
@@ -234,6 +266,49 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
         return ClientUri.create(u).toUri();
     }
 
+    private static String safeUri(ClientUri clientUri) {
+        String path = clientUri.path().rawPath();
+        if (path.isEmpty()) {
+            path = "/";
+        }
+        return clientUri.scheme() + "://" + clientUri.host() + ":" + clientUri.port() + escapeLogValue(path);
+    }
+
+    private static String safeUri(URI uri) {
+        if (uri.isOpaque()) {
+            return uri.getScheme() + ":<opaque>";
+        }
+        String path = uri.getRawPath();
+        if (path == null || path.isEmpty()) {
+            path = "/";
+        }
+        return uri.getScheme() + "://" + uri.getHost() + ":" + uri.getPort() + escapeLogValue(path);
+    }
+
+    private static String escapeLogValue(String value) {
+        StringBuilder builder = new StringBuilder(value.length());
+        for (int i = 0; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            switch (ch) {
+            case '\r' -> builder.append("\\r");
+            case '\n' -> builder.append("\\n");
+            case '\t' -> builder.append("\\t");
+            case '\\' -> builder.append("\\\\");
+            default -> {
+                if (Character.isISOControl(ch)) {
+                    builder.append("\\u");
+                    String hex = Integer.toHexString(ch);
+                    builder.repeat("0", 4 - hex.length());
+                    builder.append(hex);
+                } else {
+                    builder.append(ch);
+                }
+            }
+            }
+        }
+        return builder.toString();
+    }
+
 
     /*
      * Inner and nested classes.
@@ -274,7 +349,12 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
                     // Relativization "failed"; see
                     // https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/URI.html#relativize(java.net.URI). No
                     // problem; we just didn't match this particular prefix. Carry on to the next one.
-                    LOGGER.log(DEBUG, "Ignoring {0} because it does not prefix {1}", prefixUri, uriInfoUri);
+                    if (LOGGER.isLoggable(DEBUG)) {
+                        LOGGER.log(DEBUG,
+                                   "Ignoring {0} because it does not prefix {1}",
+                                   safeUri(prefixUri),
+                                   safeUri(uriInfoUri));
+                    }
                     continue;
                 }
                 // We matched a prefix and now have the raw materials to query Discovery. Return early.

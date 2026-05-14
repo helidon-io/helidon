@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,13 @@
 
 package io.helidon.webclient.http2;
 
+import java.util.List;
+
 import io.helidon.common.uri.UriQueryWriteable;
+import io.helidon.http.HttpLogConfig;
 import io.helidon.http.Method;
+import io.helidon.http.http2.Http2FrameListener;
+import io.helidon.http.http2.Http2LoggingFrameListener;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
@@ -34,6 +39,8 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
     private final Http2ClientProtocolConfig protocolConfig;
     private final Http2ConnectionCache connectionCache;
     private final Http2ConnectionCache clientCache;
+    private final Http2FrameListener sendListener;
+    private final Http2FrameListener recvListener;
 
     Http2ClientImpl(WebClient webClient, Http2ClientConfig clientConfig) {
         this.webClient = webClient;
@@ -45,6 +52,18 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
         } else {
             this.connectionCache = Http2ConnectionCache.create();
             this.clientCache = connectionCache;
+        }
+
+        HttpLogConfig log = protocolConfig.log();
+        if (log.receiveLog()) {
+            recvListener = Http2LoggingFrameListener.create(log, "cl-recv");
+        } else {
+            recvListener = Http2FrameListener.create(List.of());
+        }
+        if (log.sendLog()) {
+            sendListener = Http2LoggingFrameListener.create(log, "cl-send");
+        } else {
+            sendListener = Http2FrameListener.create(List.of());
         }
     }
 
@@ -122,5 +141,13 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
 
     Http2ConnectionCache connectionCache(){
         return connectionCache;
+    }
+
+    Http2FrameListener sendListener() {
+        return sendListener;
+    }
+
+    Http2FrameListener recvListener() {
+        return recvListener;
     }
 }

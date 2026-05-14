@@ -16,6 +16,16 @@
 
 package io.helidon.webserver.tests.observe;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
@@ -168,6 +178,78 @@ class ObserveTest {
                        is("WARNING"));
         } finally {
             logger.setLevel(null);
+        }
+    }
+
+    @Test
+    void testLogObserverStreamDoesNotIncludeTraceRecords(WebClient client) throws Exception {
+        String loggerName = getClass().getName() + ".stream." + Long.toHexString(System.nanoTime());
+        Logger logger = Logger.getLogger(loggerName);
+        Logger root = Logger.getLogger("");
+        Level previousRootLevel = root.getLevel();
+        Handler[] rootHandlers = root.getHandlers();
+        Level[] previousHandlerLevels = new Level[rootHandlers.length];
+        for (int i = 0; i < rootHandlers.length; i++) {
+            previousHandlerLevels[i] = rootHandlers[i].getLevel();
+            rootHandlers[i].setLevel(Level.FINEST);
+        }
+        root.setLevel(Level.FINEST);
+
+        ClientResponseTyped<InputStream> streamResponse = null;
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        String infoToken = loggerName + ".info";
+        String debugToken = loggerName + ".debug";
+        String traceToken = loggerName + ".trace";
+        String rawToken = loggerName + ".raw";
+        String endToken = loggerName + ".end";
+
+        try {
+            streamResponse = client.get("/observe/log")
+                    .request(InputStream.class);
+            assertThat(streamResponse.status(), is(Status.OK_200));
+            InputStream stream = streamResponse.entity();
+            Future<String> receivedFuture = executor.submit(() -> {
+                StringBuilder received = new StringBuilder();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    received.append(line)
+                            .append('\n');
+                    if (line.contains(endToken)) {
+                        return received.toString();
+                    }
+                }
+                return received.toString();
+            });
+
+            ClientResponseTyped<String> response = client.post("/observe/log/loggers/" + loggerName)
+                    .header(HeaderNames.CONTENT_TYPE, "application/json")
+                    .submit("{\"level\":\"FINEST\"}", String.class);
+
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
+
+            logger.info(infoToken);
+            logger.fine(debugToken);
+            logger.finer(traceToken);
+            logger.finest(rawToken);
+            logger.info(endToken);
+
+            String received = receivedFuture.get(10, TimeUnit.SECONDS);
+            assertThat(received, containsString(infoToken));
+            assertThat(received, containsString(debugToken));
+            assertThat(received, containsString(endToken));
+            assertThat(received, not(containsString(traceToken)));
+            assertThat(received, not(containsString(rawToken)));
+        } finally {
+            logger.setLevel(null);
+            if (streamResponse != null) {
+                streamResponse.close();
+            }
+            root.setLevel(previousRootLevel);
+            for (int i = 0; i < rootHandlers.length; i++) {
+                rootHandlers[i].setLevel(previousHandlerLevels[i]);
+            }
+            executor.shutdownNow();
         }
     }
 

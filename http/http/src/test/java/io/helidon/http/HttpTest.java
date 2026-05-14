@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.http;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.hamcrest.CoreMatchers;
@@ -69,6 +70,23 @@ class HttpTest {
         }
     }
 
+    @Test
+    void testHeaderValidationMultipleValues() {
+        HeaderValues.create("Valid-Header-Name", "first", " second").validate();
+        HeaderValues.create("Valid-Header-Name", "", " second").validate();
+
+        Header header = HeaderValues.create("Valid-Header-Name", "first", "second\u001f");
+        Assertions.assertThrows(IllegalArgumentException.class, header::validate);
+    }
+
+    @Test
+    void testHeaderValidationSingleValueDoesNotMaterializeAllValues() {
+        new SingleValueHeader("Valid-Header-Value").validate();
+
+        Header header = new SingleValueHeader(" Header-Value");
+        Assertions.assertThrows(IllegalArgumentException.class, header::validate);
+    }
+
     private static Stream<Arguments> headers() {
         return Stream.of(
                 // Valid headers
@@ -88,5 +106,21 @@ class HttpTest {
                 arguments("[\\HeaderName]", "Valid-Header-Value", false),
                 arguments("@Header,Name;", "Valid-Header-Value", false)
         );
+    }
+
+    private static final class SingleValueHeader extends HeaderValueBase {
+        private SingleValueHeader(String value) {
+            super(HeaderNames.ACCEPT, false, false, value);
+        }
+
+        @Override
+        public List<String> allValues() {
+            throw new AssertionError("Single value validation should not materialize allValues()");
+        }
+
+        @Override
+        public int valueCount() {
+            return 1;
+        }
     }
 }

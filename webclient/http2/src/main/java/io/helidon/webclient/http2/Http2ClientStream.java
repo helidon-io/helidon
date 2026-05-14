@@ -39,7 +39,6 @@ import io.helidon.http.http2.Http2FrameListener;
 import io.helidon.http.http2.Http2FrameType;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
-import io.helidon.http.http2.Http2LoggingFrameListener;
 import io.helidon.http.http2.Http2Ping;
 import io.helidon.http.http2.Http2Priority;
 import io.helidon.http.http2.Http2RstStream;
@@ -69,8 +68,8 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private final Duration timeout;
     private final Http2ClientConfig http2ClientConfig;
     private final LockingStreamIdSequence streamIdSeq;
-    private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
-    private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
+    private final Http2FrameListener sendListener;
+    private final Http2FrameListener recvListener;
     private final Http2Settings settings = Http2Settings.create();
     private final AtomicBoolean reservationReleased = new AtomicBoolean();
     private final ReentrantLock inboundStateLock = new ReentrantLock();
@@ -95,13 +94,34 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                                 SocketContext ctx,
                                 Http2StreamConfig http2StreamConfig,
                                 Http2ClientConfig http2ClientConfig,
-                                LockingStreamIdSequence streamIdSeq) {
+                                LockingStreamIdSequence streamIdSeq,
+                                Http2FrameListener sendListener,
+                                Http2FrameListener recvListener) {
         this.connection = connection;
         this.serverSettings = serverSettings;
         this.ctx = ctx;
         this.timeout = http2StreamConfig.readTimeout();
         this.http2ClientConfig = http2ClientConfig;
         this.streamIdSeq = streamIdSeq;
+        this.sendListener = sendListener;
+        this.recvListener = recvListener;
+    }
+
+    protected Http2ClientStream(Http2ClientConnection connection,
+                                Http2Settings serverSettings,
+                                SocketContext ctx,
+                                Http2StreamConfig http2StreamConfig,
+                                Http2ClientConfig http2ClientConfig,
+                                LockingStreamIdSequence streamIdSeq,
+                                Http2ClientImpl http2Client) {
+        this(connection,
+             serverSettings,
+             ctx,
+             http2StreamConfig,
+             http2ClientConfig,
+             streamIdSeq,
+             http2Client.sendListener(),
+             http2Client.recvListener());
     }
 
     @Override
@@ -137,8 +157,12 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                                                       false,
                                                       false,
                                                       false));
-
-        throw new RuntimeException("Reset of " + streamId + " stream received!");
+        close();
+        StreamBuffer buffer = this.buffer;
+        if (buffer != null) {
+            buffer.fail(new Http2Exception(rstStream.errorCode(), "Reset of " + streamId + " stream received"));
+        }
+        return false;
     }
 
     @Override
@@ -226,10 +250,19 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * Cancels this client stream.
      */
     public void cancel() {
+        reset(Http2ErrorCode.CANCEL);
+    }
+
+    /**
+     * Resets this client stream.
+     *
+     * @param errorCode HTTP/2 error code to send
+     */
+    void reset(Http2ErrorCode errorCode) {
         if (NON_CANCELABLE.contains(state)) {
             return;
         }
-        Http2RstStream rstStream = new Http2RstStream(Http2ErrorCode.CANCEL);
+        Http2RstStream rstStream = new Http2RstStream(errorCode);
         Http2FrameData frameData = rstStream.toFrameData(settings, streamId, Http2Flag.NoFlags.create());
         Http2StreamState nextState = Http2StreamState.checkAndGetState(this.state,
                                                                        Http2FrameType.RST_STREAM,
@@ -406,6 +439,10 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * @param endOfStream  end of stream marker
      */
     public void writeHeaders(Http2Headers http2Headers, boolean endOfStream) {
+        http2Headers.validateRequest();
+        if (protocolConfig().validateRequestHeaders()) {
+            validateRegularHeaders(http2Headers.httpHeaders());
+        }
         inboundStateLock.lock();
         try {
             updateState(Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, true, endOfStream, true));
@@ -429,7 +466,6 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             // §5.1.1 - The identifier of a newly established stream MUST be numerically
             //          greater than all streams that the initiating endpoint has opened or reserved.
             this.streamId = streamIdSeq.lockAndNext();
-            this.connection.updateLastStreamId(streamId);
             this.buffer = new StreamBuffer(this, streamId);
 
             this.flowControl = connection.flowControl().createStreamFlowControl(
@@ -438,6 +474,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                     WindowSize.DEFAULT_MAX_FRAME_SIZE);
             // this must be done after we create the flow control, as it may be used from another thread
             this.connection.addStream(streamId, this);
+            this.connection.updateLastStreamId(streamId);
 
             sendListener.headers(ctx, streamId, http2Headers);
             // First call to the server-starting stream, needs to be increasing sequence of odd numbers
@@ -466,6 +503,8 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                                                                                                   : 0),
                                                                streamId);
         Http2FrameData frameData = new Http2FrameData(frameHeader, entityBytes);
+        sendListener.frameHeader(ctx, streamId, frameHeader);
+        sendListener.frame(ctx, streamId, entityBytes);
         write(frameData, frameData.header().flags(Http2FrameTypes.DATA).endOfStream());
     }
 
@@ -510,6 +549,10 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      */
     public SocketContext ctx() {
         return ctx;
+    }
+
+    Http2ClientProtocolConfig protocolConfig() {
+        return http2ClientConfig.protocolConfig();
     }
 
     /**
@@ -589,6 +632,12 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             // thread still decodes them to keep HPACK state aligned for other streams.
             if (closed) {
                 return;
+            }
+            if (readState == ReadState.CONTINUE_100_HEADERS || readState == ReadState.HEADERS) {
+                headers.validateResponse();
+                if (protocolConfig().validateResponseHeaders()) {
+                    validateRegularHeaders(headers.httpHeaders());
+                }
             }
             switch (readState) {
             case CONTINUE_100_HEADERS -> continue100Locked(headers, endOfStream);
@@ -680,6 +729,16 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         readState = readState.check(ReadState.END);
         hasEntity = false;
         trailers.complete(headers.httpHeaders());
+    }
+
+    private static void validateRegularHeaders(Headers headers) {
+        for (var header : headers) {
+            try {
+                header.validate();
+            } catch (IllegalArgumentException e) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, e.getMessage(), e);
+            }
+        }
     }
 
     private void write(Http2FrameData frameData, boolean endOfStream) {

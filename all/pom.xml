@@ -1061,6 +1061,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.http</groupId>
+            <artifactId>helidon-http-http1</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http</groupId>
             <artifactId>helidon-http-http2</artifactId>
         </dependency>
         <dependency>

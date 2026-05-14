@@ -16,17 +16,16 @@
 
 package io.helidon.webserver.observe.log;
 
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -52,16 +51,16 @@ import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.SecureHandler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-import io.helidon.webserver.http1.Http1LoggingConnectionListener;
 
 class LogService implements HttpService {
     private static final EntityWriter<JsonObject> WRITER = JsonSupport.serverResponseWriter();
     private static final EntityReader<JsonObject> READER = JsonSupport.serverRequestReader();
     private static final String DEFAULT_IDLE_STRING = "%\n";
+    private static final ThreadLocal<Boolean> LOG_STREAM_WRITE = new ThreadLocal<>();
 
     private final LogManager logManager;
     private final Logger root;
-    private final Map<Object, Consumer<String>> listeners = Collections.synchronizedMap(new IdentityHashMap<>());
+    private final Map<Object, Consumer<String>> listeners = new ConcurrentHashMap<>();
     private final AtomicBoolean logHandlingInitialized = new AtomicBoolean();
     private final boolean permitAll;
     private final boolean logStreamEnabled;
@@ -122,17 +121,17 @@ class LogService implements HttpService {
         // we do not care if the offer fails, it means the consumer is slow and will miss some lines
         listeners.put(req, q::offer);
 
-        try (OutputStreamWriter out = new OutputStreamWriter(res.outputStream(), logStreamCharset)) {
-
+        OutputStreamWriter out = null;
+        try {
+            out = new OutputStreamWriter(res.outputStream(), logStreamCharset);
             while (true) {
                 try {
                     String poll = q.poll(logStreamIdleTimeout.toMillis(), TimeUnit.MILLISECONDS);
                     if (poll == null) {
                         // check if we are still alive
-                        out.write(logStreamIdleString);
-                        out.flush();
+                        writeLogStream(out, logStreamIdleString, true);
                     } else {
-                        out.write(poll);
+                        writeLogStream(out, poll, false);
                     }
                 } catch (InterruptedException e) {
                     // interrupted - we should finish
@@ -141,6 +140,32 @@ class LogService implements HttpService {
             }
         } finally {
             listeners.remove(req);
+            if (out != null) {
+                closeLogStream(out);
+            }
+        }
+    }
+
+    // Package-private so tests can verify loop prevention without depending on protocol-specific logger names.
+    static void writeLogStream(OutputStreamWriter out, String message, boolean flush) throws IOException {
+        LOG_STREAM_WRITE.set(true);
+        try {
+            out.write(message);
+            if (flush) {
+                out.flush();
+            }
+        } finally {
+            LOG_STREAM_WRITE.remove();
+        }
+    }
+
+    // Package-private so tests can verify close-time flush loop prevention.
+    static void closeLogStream(OutputStreamWriter out) throws IOException {
+        LOG_STREAM_WRITE.set(true);
+        try {
+            out.close();
+        } finally {
+            LOG_STREAM_WRITE.remove();
         }
     }
 
@@ -252,37 +277,36 @@ class LogService implements HttpService {
                      res.headers());
     }
 
-    private static class LogMessageFilter implements Filter {
+    // Package-private so tests can verify loop prevention without depending on protocol-specific logger names.
+    static class LogMessageFilter implements Filter {
         private final Formatter formatter;
         private final Filter filter;
         private final Map<Object, Consumer<String>> listeners;
-        private final Set<LoggerAndLevel> excludedLoggers;
 
         LogMessageFilter(Formatter formatter, Filter filter, Map<Object, Consumer<String>> listeners) {
             this.formatter = formatter;
             this.filter = filter;
             this.listeners = listeners;
-
-            excludedLoggers = Set.of(new LoggerAndLevel(Http1LoggingConnectionListener.class.getName() + ".send", Level.FINER),
-                                     new LoggerAndLevel(Http1LoggingConnectionListener.class.getName() + ".send", Level.FINE));
         }
 
         @Override
         public boolean isLoggable(LogRecord record) {
             boolean result = filter == null || filter.isLoggable(record);
 
-            if (result) {
-                // now we have a problem that when tracing of HTTP is enabled, we create an infinite loop
-                // so we will not send data related to network traffic itself over to listeners
-                if (!excludedLoggers.contains(new LoggerAndLevel(record.getLoggerName(), record.getLevel()))) {
-                    fire(formatter.format(record));
-                }
+            if (result
+                    && record.getLevel().intValue() >= Level.FINE.intValue()
+                    && !Boolean.TRUE.equals(LOG_STREAM_WRITE.get())) {
+                // Log records emitted while writing the stream are caused by this endpoint's own response.
+                fire(formatter.format(record));
             }
 
             return result;
         }
 
         private void fire(String message) {
+            if (listeners.isEmpty()) {
+                return;
+            }
             listeners.values().forEach(it -> {
                 try {
                     it.accept(message);
@@ -291,8 +315,5 @@ class LogService implements HttpService {
                 }
             });
         }
-    }
-
-    private record LoggerAndLevel(String logger, Level level) {
     }
 }

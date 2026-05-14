@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,13 @@
 
 package io.helidon.webclient.http1;
 
+import java.util.List;
+
+import io.helidon.http.HttpLogConfig;
+import io.helidon.http.LogFormatter;
 import io.helidon.http.Method;
+import io.helidon.http.http1.Http1ConnectionListener;
+import io.helidon.http.http1.Http1LoggingConnectionListener;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
@@ -29,6 +35,9 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
     private final Http1ClientProtocolConfig protocolConfig;
     private final Http1ConnectionCache connectionCache;
     private final Http1ConnectionCache clientCache;
+    private final Http1ConnectionListener recvListener;
+    private final Http1ConnectionListener sendListener;
+    private final LogFormatter logFormatter;
 
     Http1ClientImpl(WebClient webClient, Http1ClientConfig clientConfig) {
         this.webClient = webClient;
@@ -41,6 +50,22 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
             this.connectionCache = Http1ConnectionCache.create();
             this.clientCache = connectionCache;
         }
+
+        HttpLogConfig logConfig = protocolConfig.log();
+        if (logConfig.receiveLog()) {
+            this.recvListener = Http1LoggingConnectionListener.create(logConfig,
+                                                                      "cl-recv");
+        } else {
+            this.recvListener = Http1ConnectionListener.create(List.of());
+        }
+        if (logConfig.sendLog()) {
+            this.sendListener = Http1LoggingConnectionListener.create(logConfig,
+                                                                      "cl-send");
+        } else {
+            this.sendListener = Http1ConnectionListener.create(List.of());
+        }
+
+        this.logFormatter = LogFormatter.create(logConfig);
     }
 
     @Override
@@ -97,6 +122,18 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
         if (clientCache != null) {
             this.clientCache.closeResource();
         }
+    }
+
+    Http1ConnectionListener recvListener() {
+        return recvListener;
+    }
+
+    Http1ConnectionListener sendListener() {
+        return sendListener;
+    }
+
+    LogFormatter logFormatter() {
+        return logFormatter;
     }
 
     WebClient webClient() {

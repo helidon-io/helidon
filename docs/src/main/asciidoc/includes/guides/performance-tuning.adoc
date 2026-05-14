@@ -76,6 +76,8 @@ server:
       validate-request-headers: true|false
       validate-response-headers: true|false
       validate-path: true|false
-      recv-log: true|false
-      send-log: true|false
+      log:
+        recv-log: true|false
+        send-log: true|false
+        log-safe-headers: [content-type, content-length]
 ----

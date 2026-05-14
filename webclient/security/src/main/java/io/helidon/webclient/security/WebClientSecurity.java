@@ -204,7 +204,7 @@ public class WebClientSecurity implements WebClientService {
             ClientRequestHeaders clientHeaders = request.headers();
             for (Map.Entry<String, List<String>> entry : newHeaders.entrySet()) {
                 if (LOGGER.isLoggable(Level.TRACE)) {
-                    LOGGER.log(Level.TRACE, "    + Header: " + entry.getKey() + ": " + entry.getValue());
+                    LOGGER.log(Level.TRACE, "    + Header value(s) redacted");
                 }
 
                 //replace existing

@@ -114,10 +114,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
     private void trySend100(boolean drain) {
         if (!continueImmediately && expectContinue && !drain) {
             BufferData buffer = BufferData.create(Http1Connection.CONTINUE_100);
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                ctx.log(LOGGER, System.Logger.Level.DEBUG, "send: status %s", Status.CONTINUE_100);
-                ctx.log(LOGGER, System.Logger.Level.DEBUG, "send %n%s", buffer.debugDataHex());
-            }
+            ctx.log(LOGGER, System.Logger.Level.DEBUG, "send: status %s", Status.CONTINUE_100.codeText());
             try {
                 ctx.dataWriter().writeNow(buffer);
             } catch (SocketWriterException | UncheckedIOException e) {

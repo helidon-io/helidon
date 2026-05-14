@@ -140,8 +140,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final HttpRouting routing;
     private final Http2Headers.DynamicTable requestDynamicTable;
     private final Http2HuffmanDecoder requestHuffman;
-    private final Http2FrameListener receiveFrameListener = // Http2FrameListener.create(List.of());
-            Http2FrameListener.create(List.of(new Http2LoggingFrameListener("recv")));
+    private final Http2FrameListener receiveFrameListener;
     private final Http2ConnectionWriter connectionWriter;
     private final List<Http2SubProtocolSelector> subProviders;
     private final DataReader reader;
@@ -181,9 +180,15 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 .update(builder -> settingsUpdate(http2Config, builder))
                 .add(Http2Setting.ENABLE_PUSH, false)
                 .build();
+        var log = http2Config.log();
+        this.receiveFrameListener = log.receiveLog()
+                ? Http2FrameListener.create(List.of(Http2LoggingFrameListener.create(log, "recv")))
+                : Http2FrameListener.create(List.of());
         this.connectionWriter = new Http2ConnectionWriter(ctx,
                                                           ctx.dataWriter(),
-                                                          List.of(new Http2LoggingFrameListener("send")));
+                                                          log.sendLog()
+                                                                  ? List.of(Http2LoggingFrameListener.create(log, "send"))
+                                                                  : List.of());
         this.connectionChecks = new Http2ConnectionChecks(http2Config, this);
         this.subProviders = subProviders;
         this.requestDynamicTable = Http2Headers.DynamicTable.create(
@@ -452,7 +457,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         byte[] bytes = new byte[PREFACE_LENGTH];
         preface.read(bytes);
         if (!Http2Util.isPreface(bytes)) {
-            throw new IllegalStateException("Invalid HTTP/2 connection preface: \n" + preface.debugDataHex(true));
+            throw new IllegalStateException("Invalid HTTP/2 connection preface");
         }
         ctx.log(LOGGER, TRACE, "Processed preface data");
         state = State.READ_FRAME;
@@ -830,6 +835,17 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
 
         headers.validateRequest();
+        if (http2Config.validateRequestHeaders()) {
+            for (var header : headers.httpHeaders()) {
+                if (!SERVER_CONTROLLED_REQUEST_HEADERS.contains(header.headerName())) {
+                    try {
+                        header.validate();
+                    } catch (IllegalArgumentException e) {
+                        throw new Http2Exception(Http2ErrorCode.PROTOCOL, e.getMessage(), e);
+                    }
+                }
+            }
+        }
         String path = headers.path();
         Method method = headers.method();
         if (newStream) {
@@ -972,9 +988,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         receiveFrameListener.frame(ctx, 0, go);
         state = State.FINISHED;
         if (go.errorCode() != Http2ErrorCode.NO_ERROR) {
-            ctx.log(LOGGER, DEBUG, "Received go away. Error code: %s, message: %s",
-                    go.errorCode(),
-                    go.details());
+            ctx.log(LOGGER, DEBUG, "Received go away. Error code: %s", go.errorCode());
         }
     }
 

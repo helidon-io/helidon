@@ -51,6 +51,7 @@ public class ConnectionConfigTest {
         assertThat(http1Config.validateRequestHeaders(), is(true));
         assertThat(http1Config.validateResponseHeaders(), is(true));
         assertThat(http1Config.sendKeepAliveHeader(), is(true));
+        assertThat(http1Config.log().unsafeRawData(), is(false));
 
         http1Config = http1Configs.get("other");
         assertThat(http1Config.maxPrologueLength(), is(81));
@@ -59,6 +60,12 @@ public class ConnectionConfigTest {
         assertThat(http1Config.validateRequestHeaders(), is(false));
         assertThat(http1Config.validateResponseHeaders(), is(false));
         assertThat(http1Config.sendKeepAliveHeader(), is(false));
+        assertThat(http1Config.log().unsafeRawData(), is(false));
+        assertThat(Http1Config.builder()
+                           .log(it -> it.unsafeRawData(true))
+                           .build()
+                           .log()
+                           .unsafeRawData(), is(true));
     }
 
 }

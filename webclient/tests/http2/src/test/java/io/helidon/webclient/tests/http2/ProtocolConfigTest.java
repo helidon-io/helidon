@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.webclient.tests.http2;
 
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -59,9 +60,30 @@ class ProtocolConfigTest {
 
         Http2ClientProtocolConfig http2cast = (Http2ClientProtocolConfig) http2Config;
         assertThat(http2cast.priorKnowledge(), is(true));
+        assertThat(http2cast.validateResponseHeaders(), is(false));
+        assertThat(http2cast.log().unsafeRawData(), is(false));
+        assertThat(Http2ClientProtocolConfig.create().log().unsafeRawData(), is(false));
+        assertThat(Http2ClientProtocolConfig.builder()
+                           .log(it -> it.unsafeRawData(true))
+                           .build()
+                           .log()
+                           .unsafeRawData(), is(true));
+        Config http2LogConfig = Config.create(ConfigSources.create(Map.of("log.send-log", "false")));
+        Http2ClientProtocolConfig configuredHttp2 = Http2ClientProtocolConfig.create(http2LogConfig);
+        assertThat(configuredHttp2.log().sendLog(), is(false));
 
         Http1ClientProtocolConfig http1cast = (Http1ClientProtocolConfig) http1Config;
         assertThat(http1cast.maxHeaderSize(), is(20000));
         assertThat(http1cast.validateRequestHeaders(), is(false));
+        assertThat(http1cast.log().unsafeRawData(), is(false));
+        assertThat(Http1ClientProtocolConfig.create().log().unsafeRawData(), is(false));
+        assertThat(Http1ClientProtocolConfig.builder()
+                           .log(it -> it.unsafeRawData(true))
+                           .build()
+                           .log()
+                           .unsafeRawData(), is(true));
+        Config http1LogConfig = Config.create(ConfigSources.create(Map.of("log.recv-log", "false")));
+        Http1ClientProtocolConfig configuredHttp1 = Http1ClientProtocolConfig.create(http1LogConfig);
+        assertThat(configuredHttp1.log().receiveLog(), is(false));
     }
 }

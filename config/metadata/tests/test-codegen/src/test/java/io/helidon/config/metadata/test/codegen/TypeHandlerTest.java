@@ -86,6 +86,85 @@ class TypeHandlerTest {
     }
 
     @Test
+    void testAnnotationInherits() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(Configured.class)
+                .addClasspath(Builder.class)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeBaseConfig.java", """
+                        package com.acme;
+
+                        import io.helidon.config.metadata.Configured;
+                        import io.helidon.config.metadata.ConfiguredOption;
+
+                        /**
+                         * Base configuration.
+                         */
+                        interface AcmeBaseConfig {
+                            @Configured
+                            interface Builder extends io.helidon.common.Builder<Builder, AcmeBaseConfig> {
+                                /**
+                                 * Base host.
+                                 *
+                                 * @param host host
+                                 * @return updated builder
+                                 */
+                                @ConfiguredOption
+                                Builder host(String host);
+                            }
+                        }
+                        """)
+                .addSource("AcmeChildConfig.java", """
+                        package com.acme;
+
+                        import io.helidon.config.metadata.Configured;
+
+                        /**
+                         * Child configuration.
+                         */
+                        interface AcmeChildConfig {
+                            @Configured(inherits = AcmeBaseConfig.class)
+                            interface Builder extends io.helidon.common.Builder<Builder, AcmeChildConfig> {
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(result.success(), is(true));
+
+        var schema = result.classOutput().resolve(CmModel.LOCATION);
+        assertThat(Files.exists(schema), is(true));
+
+        var actual = formatJson(Files.readString(schema));
+        assertThat(actual, is(formatJson("""
+                [
+                    {
+                        "module": "unnamed module",
+                        "types": [
+                            {
+                                "type": "com.acme.AcmeBaseConfig",
+                                "description": "Base configuration",
+                                "options": [
+                                    {
+                                        "key": "host",
+                                        "description": "Base host"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "com.acme.AcmeChildConfig",
+                                "description": "Child configuration",
+                                "inherits": [
+                                    "com.acme.AcmeBaseConfig"
+                                ]
+                            }
+                        ]
+                    }
+                ]""")));
+    }
+
+    @Test
     void testExternalBuilderTargetType() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()

@@ -42,6 +42,7 @@ module io.helidon.webserver {
     requires transitive io.helidon.common.security;
     requires transitive io.helidon.common.socket;
     requires transitive io.helidon.common.tls;
+    requires transitive io.helidon.http.http1;
     requires transitive io.helidon.config;
     requires transitive io.helidon.http.encoding;
     requires transitive io.helidon.http.media;

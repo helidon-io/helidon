@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,7 +193,7 @@ public final class Http1Prologue {
         int currentIndex = 0;
         int nextSpace = nextSpace(prologueBytes, currentIndex);
         if (nextSpace == -1) {
-            throw badRequest("Invalid prologue, missing space " + reader.debugDataHex(), "", "", "", "");
+            throw badRequest("Invalid prologue, missing space", "", "", "", "");
         }
         method = readMethod(prologueBytes, currentIndex, nextSpace);
         currentIndex = nextSpace + 1; // continue after the space
@@ -203,7 +203,7 @@ public final class Http1Prologue {
         */
         nextSpace = nextSpace(prologueBytes, currentIndex);
         if (nextSpace == -1) {
-            throw badRequest("Invalid prologue, missing space " + reader.debugDataHex(), method.text(), "", "", "");
+            throw badRequest("Invalid prologue, missing space", method.text(), "", "", "");
         }
         path = new String(prologueBytes, currentIndex, (nextSpace - currentIndex), StandardCharsets.US_ASCII);
         currentIndex = nextSpace + 1; // continue after the space

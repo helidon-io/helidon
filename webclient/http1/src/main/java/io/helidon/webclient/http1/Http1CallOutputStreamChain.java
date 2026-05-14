@@ -35,17 +35,17 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.Http1HeadersParser;
+import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http1.Http1ConnectionListener;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientConfig;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
-
-import static java.lang.System.Logger.Level.TRACE;
 
 class Http1CallOutputStreamChain extends Http1CallChainBase {
     private final Http1ClientImpl http1Client;
@@ -76,8 +76,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                                                             reader,
                                                                             writeBuffer,
                                                                             headers,
-                                                                            http1Client.clientConfig(),
-                                                                            http1Client.protocolConfig(),
+                                                                            http1Client,
                                                                             serviceRequest,
                                                                             originalRequest(),
                                                                             whenSent,
@@ -122,9 +121,12 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             }
             throw e;
         }
-        connection.helidonSocket().log(LOGGER_RES_STATUS, TRACE, "client received status %n%s", responseStatus);
+
+        recvListener().status(connection.helidonSocket(), responseStatus);
+
         ClientResponseHeaders responseHeaders = readHeaders(reader);
-        connection.helidonSocket().log(LOGGER_RES_HEADERS, TRACE, "client received headers %n%s", responseHeaders);
+
+        recvListener().headers(connection.helidonSocket(), responseHeaders);
 
         if (originalRequest().followRedirects()
                 && RedirectionProcessor.redirectionStatusCode(responseStatus)) {
@@ -144,7 +146,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             Http1ClientResponseImpl clientResponse = RedirectionProcessor.invokeWithFollowRedirects(request,
                                                                                                     1,
                                                                                                     BufferData.EMPTY_BYTES);
-            return createServiceResponse(clientConfig(),
+            return createServiceResponse(http1Client,
                                          serviceRequest,
                                          clientResponse.connection(),
                                          clientResponse.connection().reader(),
@@ -153,7 +155,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                          whenComplete());
         }
 
-        return createServiceResponse(clientConfig(),
+        return createServiceResponse(http1Client,
                                      serviceRequest,
                                      connection,
                                      reader,
@@ -177,6 +179,9 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         private final Http1ClientRequestImpl originalRequest;
         private final CompletableFuture<WebClientServiceRequest> whenSent;
         private final CompletableFuture<WebClientServiceResponse> whenComplete;
+        private final Http1ClientImpl http1Client;
+        private final Http1ConnectionListener sendListener;
+        private final Http1ConnectionListener recvListener;
         private final HttpClientConfig clientConfig;
         private final Http1ClientProtocolConfig protocolConfig;
         private final WritableHeaders<?> headers;
@@ -202,8 +207,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                              DataReader reader,
                                              BufferData prologue,
                                              WritableHeaders<?> headers,
-                                             HttpClientConfig clientConfig,
-                                             Http1ClientProtocolConfig protocolConfig,
+                                             Http1ClientImpl http1Client,
                                              WebClientServiceRequest request,
                                              Http1ClientRequestImpl originalRequest,
                                              CompletableFuture<WebClientServiceRequest> whenSent,
@@ -214,8 +218,9 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             this.reader = reader;
             this.headers = headers;
             this.prologue = prologue;
-            this.clientConfig = clientConfig;
-            this.protocolConfig = protocolConfig;
+            this.http1Client = http1Client;
+            this.clientConfig = http1Client.clientConfig();
+            this.protocolConfig = http1Client.protocolConfig();
             this.contentLength = headers.contentLength().orElse(-1);
             this.chunked = contentLength == -1 || headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED);
             this.request = request;
@@ -223,6 +228,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             this.lastRequest = originalRequest;
             this.whenSent = whenSent;
             this.whenComplete = whenComplete;
+            this.sendListener = http1Client.sendListener();
+            this.recvListener = http1Client.recvListener();
         }
 
         @Override
@@ -286,9 +293,9 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     sendPrologueAndHeader();
                 }
                 BufferData terminating = BufferData.create(TERMINATING_CHUNK);
-                if (LOGGER_REQ_ENTITY.isLoggable(System.Logger.Level.TRACE)) {
-                    ctx.log(LOGGER_REQ_ENTITY, System.Logger.Level.TRACE, "send data%n%s", terminating.debugDataHex());
-                }
+
+                sendListener.data(ctx, terminating);
+
                 writer.write(terminating);
             } else if (contentLength > 0) {
                 if (contentLength != bytesWritten) {
@@ -317,7 +324,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 return serviceResponse;
             }
 
-            return createServiceResponse(clientConfig,
+            return createServiceResponse(http1Client,
                                          request,
                                          response.connection(),
                                          response.connection().reader(),
@@ -350,9 +357,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             toWrite.write(Bytes.CR_BYTE);
             toWrite.write(Bytes.LF_BYTE);
 
-            if (LOGGER_REQ_ENTITY.isLoggable(System.Logger.Level.TRACE)) {
-                ctx.log(LOGGER_REQ_ENTITY, System.Logger.Level.TRACE, "send data:%n%s", toWrite.debugDataHex());
-            }
+            sendListener.data(ctx, toWrite);
             writer.write(toWrite);
         }
 
@@ -363,9 +368,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                               + ", but you are writing additional " + (bytesWritten - contentLength) + " "
                                               + "bytes");
             }
-            if (LOGGER_REQ_ENTITY.isLoggable(System.Logger.Level.TRACE)) {
-                ctx.log(LOGGER_REQ_ENTITY, System.Logger.Level.TRACE, "send data:%n%s", buffer.debugDataHex());
-            }
+
+            sendListener.data(ctx, buffer);
             writer.write(buffer);
         }
 
@@ -396,14 +400,23 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             // which in turn can result in a delay when TCP_NO_DELAY is false
             BufferData buffer = BufferData.growing(512);
             buffer.write(prologue);
-            if (LOGGER_REQ_PROLOGUE.isLoggable(System.Logger.Level.TRACE)) {
-                ctx.log(LOGGER_REQ_PROLOGUE, System.Logger.Level.TRACE, "send prologue: %n%s", prologue.debugDataHex());
-            }
-            if (LOGGER_REQ_HEADERS.isLoggable(System.Logger.Level.TRACE)) {
-                ctx.log(LOGGER_REQ_HEADERS, System.Logger.Level.TRACE, "send headers:%n%s", headers);
+
+            if (sendListener.enabled()) {
+                var uri = request.uri();
+                sendListener.prologue(ctx, HttpPrologue.create("HTTP/1.1",
+                                                               "HTTP",
+                                                               "1.1",
+                                                               request.method(),
+                                                               uri.path(),
+                                                               uri.query(),
+                                                               uri.fragment()));
             }
 
-            writeHeaders(connection, headers, buffer, protocolConfig.validateRequestHeaders());
+            writeHeaders(connection,
+                         headers,
+                         buffer,
+                         protocolConfig.validateRequestHeaders(),
+                         sendListener);
             writer.write(buffer);
 
             whenSent.complete(request);
@@ -415,7 +428,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     writer.flush();     // flush before a read
                     connection.readTimeout(originalRequest.readContinueTimeout());
                     responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
-                    connection.helidonSocket().log(LOGGER_RES_STATUS, TRACE, "recv status: %n%s", responseStatus);
+
+                    recvListener.status(connection.helidonSocket(), responseStatus);
                 } catch (UncheckedIOException ignored) {
                     // we assume this is a timeout exception, if the socket got closed, next read will throw appropriate exception
                     // we treat this as receiving 100-Continue
@@ -438,10 +452,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     WritableHeaders<?> responseHeaders = Http1HeadersParser.readHeaders(reader,
                                                                                         protocolConfig.maxHeaderSize(),
                                                                                         protocolConfig.validateResponseHeaders());
-                    connection.helidonSocket().log(LOGGER_RES_HEADERS,
-                                                   TRACE,
-                                                   "client received headers %n%s",
-                                                   responseHeaders);
+                    recvListener.headers(connection.helidonSocket(), responseHeaders);
 
                     if (RedirectionProcessor.redirectionStatusCode(responseStatus) && originalRequest.followRedirects()) {
                         // redirect as needed
@@ -452,7 +463,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     } else {
                         //OS changed its state to interrupted, that means other usage of this OS will result in NOOP actions.
                         this.interrupted = true;
-                        this.serviceResponse = createServiceResponse(clientConfig,
+                        this.serviceResponse = createServiceResponse(http1Client,
                                                                      request,
                                                                      connection,
                                                                      reader,

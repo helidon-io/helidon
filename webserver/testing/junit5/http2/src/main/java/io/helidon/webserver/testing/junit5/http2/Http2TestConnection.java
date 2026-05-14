@@ -263,7 +263,7 @@ public class Http2TestConnection implements AutoCloseable {
 
         Http2GoAway goAway = Http2GoAway.create(frame.data());
         assertThat(goAway.errorCode(), is(errorCode));
-        assertThat(frame.data().readString(frame.data().available()), is(message));
+        assertThat(goAway.details(), is(message));
         return frame;
     }
 

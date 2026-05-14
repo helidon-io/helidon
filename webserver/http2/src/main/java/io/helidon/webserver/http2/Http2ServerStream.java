@@ -329,7 +329,10 @@ class Http2ServerStream implements Runnable, Http2Stream {
         } catch (SocketWriterException | UncheckedIOException e) {
             throw e;
         } catch (CloseConnectionException e) {
-            Http2RstStream rst = new Http2RstStream(Http2ErrorCode.STREAM_CLOSED);
+            Http2ErrorCode errorCode = e.getCause() instanceof Http2Exception h2Exception
+                    ? h2Exception.code()
+                    : Http2ErrorCode.STREAM_CLOSED;
+            Http2RstStream rst = new Http2RstStream(errorCode);
             writer.write(rst.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
             // no sense in throwing an exception, as this is invoked from an executor service directly
         } catch (RequestException e) {
@@ -649,7 +652,9 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                                    outcome,
                                                                    ctx.listenerContext().config().maxPayloadSize(),
                                                                    http2Config.maxBufferedEntitySize().toBytes());
-            Http2ServerResponse response = new Http2ServerResponse(this, request);
+            Http2ServerResponse response = new Http2ServerResponse(this,
+                                                                   request,
+                                                                   http2Config.validateResponseHeaders());
 
             try {
 

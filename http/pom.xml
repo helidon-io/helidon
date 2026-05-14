@@ -40,6 +40,7 @@
     <modules>
         <module>encoding</module>
         <module>http</module>
+        <module>http1</module>
         <module>http2</module>
         <module>media</module>
         <module>sse</module>

@@ -148,7 +148,7 @@ class EmptyFrameCntTest {
                 BufferData data = reader.readBuffer(frameHeader.length());
                 if (frameHeader.type() == Http2FrameType.GO_AWAY) {
                     Http2GoAway http2GoAway = Http2GoAway.create(data);
-                    gotGoAway.complete(http2GoAway.errorCode().name() + " - " + new String(data.readBytes()));
+                    gotGoAway.complete(http2GoAway.errorCode().name() + " - " + http2GoAway.details());
                     break;
                 }
             }
