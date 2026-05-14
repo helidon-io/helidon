@@ -133,6 +133,24 @@ class OidcFeatureTest {
     void testLogoutRejectsInvalidState() throws Exception {
         String state = "probe%0d%0aX-Reproducer:%20injected";
         String injectedHeader = "X-Reproducer: injected";
+        String response = logoutResponse(state);
+
+        assertThat(response, startsWith("HTTP/1.1 400"));
+        assertThat(response, not(containsString("\r\n" + injectedHeader + "\r\n")));
+    }
+
+    @Test
+    void testLogoutEncodesStateValue() throws Exception {
+        String state = "ok%26post_logout_redirect_uri%3Dhttps%3A%2F%2Fexample.test%2Falternate";
+        String response = logoutResponse(state);
+
+        assertThat(response, startsWith("HTTP/1.1 307"));
+        assertThat(response,
+                   containsString("&state=ok%26post_logout_redirect_uri%3Dhttps%3A%2F%2Fexample.test%2Falternate\r\n"));
+        assertThat(response, not(containsString("&state=ok&post_logout_redirect_uri=https://example.test/alternate")));
+    }
+
+    private static String logoutResponse(String state) throws Exception {
         OidcConfig oidcConfig = OidcConfig.builder()
                 .clientId("id")
                 .clientSecret("secret")
@@ -171,10 +189,7 @@ class OidcFeatureTest {
             socket.shutdownOutput();
 
             InputStream input = socket.getInputStream();
-            String response = new String(input.readAllBytes(), StandardCharsets.ISO_8859_1);
-
-            assertThat(response, startsWith("HTTP/1.1 400"));
-            assertThat(response, not(containsString("\r\n" + injectedHeader + "\r\n")));
+            return new String(input.readAllBytes(), StandardCharsets.ISO_8859_1);
         } finally {
             server.stop();
         }

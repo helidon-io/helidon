@@ -316,15 +316,16 @@ public final class OidcFeature implements HttpFeature {
         OptionalValue<String> state = req.query().first(STATE_PARAM_NAME);
         String stateQuery = null;
         if (state.isPresent()) {
-            stateQuery = "&" + STATE_PARAM_NAME + "=" + state.get();
+            String stateValue = state.get();
             try {
-                HeaderValues.create(HeaderNames.LOCATION, stateQuery).validate();
+                HeaderValues.create(HeaderNames.LOCATION, "&" + STATE_PARAM_NAME + "=" + stateValue).validate();
             } catch (IllegalArgumentException e) {
                 LOGGER.log(Level.TRACE, "Invalid OIDC logout state query parameter", e);
                 res.status(Status.BAD_REQUEST_400)
                         .send();
                 return;
             }
+            stateQuery = "&" + STATE_PARAM_NAME + "=" + encode(stateValue);
         }
 
         String encryptedIdToken = idTokenCookie.get();
