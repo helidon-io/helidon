@@ -342,4 +342,25 @@ class MultipartTest {
             assertThat(response.as(String.class), is("1:first:\nalpha,second:beta"));
         }
     }
+
+    @Test
+    void testTooManyPartsRejected() {
+        StringBuilder payload = new StringBuilder(96 * 1001);
+        for (int i = 0; i < 1001; i++) {
+            payload.append("--boundary001\r\n")
+                    .append("Content-Disposition: form-data; name=\"part-")
+                    .append(i)
+                    .append("\"\r\n")
+                    .append("Content-Length: 0\r\n\r\n\r\n");
+        }
+        payload.append("--boundary001--\r\n");
+
+        try (var response = client.method(Method.POST)
+                .path("/multipart")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit(payload.toString().getBytes(StandardCharsets.US_ASCII))) {
+
+            assertThat(response.status(), is(Status.REQUEST_ENTITY_TOO_LARGE_413));
+        }
+    }
 }

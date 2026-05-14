@@ -24,6 +24,8 @@ import java.util.NoSuchElementException;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.http.Http1HeadersParser;
+import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.MediaContext;
 
@@ -80,6 +82,9 @@ class MultiPartImpl extends MultiPart {
 
         String probablyBoundary = dataReader.readAsciiString(newLine);
         if (probablyBoundary.equals(boundary)) {
+            if (index == MultiPartSupport.DEFAULT_MAX_PARTS) {
+                throw new HttpException("Maximum multipart part count exceeded", Status.REQUEST_ENTITY_TOO_LARGE_413);
+            }
             dataReader.skip(2); // skip the new line after boundary
             WritableHeaders<?> headers = Http1HeadersParser.readHeaders(dataReader, 1024, true);
             next = new ReadablePartNoLength(context, headers, dataReader, index++, boundary, endBoundary);
