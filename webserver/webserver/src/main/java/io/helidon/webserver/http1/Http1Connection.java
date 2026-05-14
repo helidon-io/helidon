@@ -285,6 +285,15 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         currentEntitySizeRead = 0;
     }
 
+    // Package-private for deterministic tests of immediate 100-Continue writer failures.
+    void writeContinue() {
+        try {
+            writer.writeNow(BufferData.create(CONTINUE_100));
+        } catch (SocketWriterException | UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write continue", e);
+        }
+    }
+
     /**
      * Only accept protocol upgrades if no entity is present. Otherwise, a successful
      * upgrade may result in the request entity interpreted as part of the new protocol
@@ -550,11 +559,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         // Expect: 100-continue
         if (headers.containsToken(HeaderValues.EXPECT_100)) {
             if (this.http1Config.continueImmediately()) {
-                try {
-                    writer.writeNow(BufferData.create(CONTINUE_100));
-                } catch (UncheckedIOException e) {
-                    throw new ServerConnectionException("Failed to write continue", e);
-                }
+                writeContinue();
             }
             expectContinue = true;
         }

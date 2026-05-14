@@ -31,6 +31,7 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitException;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.DateTime;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
@@ -379,7 +380,7 @@ public class WsConnection implements ServerConnection, WsSession {
     private void writeFrame(BufferData frameData) {
         try {
             ctx.dataWriter().writeNow(frameData);
-        } catch (UncheckedIOException e) {
+        } catch (SocketWriterException | UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write websocket frame", e);
         }
     }
