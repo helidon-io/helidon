@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.webserver.http.HttpFeature;
@@ -33,11 +34,13 @@ import io.helidon.webserver.spi.ServerFeature;
  */
 public class ConfigObserver implements Observer, RuntimeType.Api<ConfigObserverConfig> {
     private final ConfigObserverConfig config;
-    private final List<Pattern> patterns;
+    private final List<Pattern> secretPatterns;
+    private final List<Pattern> safeKeyPatterns;
 
-    private ConfigObserver(ConfigObserverConfig config, List<Pattern> patterns) {
+    private ConfigObserver(ConfigObserverConfig config, List<Pattern> secretPatterns, List<Pattern> safeKeyPatterns) {
         this.config = config;
-        this.patterns = patterns;
+        this.secretPatterns = secretPatterns;
+        this.safeKeyPatterns = safeKeyPatterns;
     }
 
     /**
@@ -56,11 +59,16 @@ public class ConfigObserver implements Observer, RuntimeType.Api<ConfigObserverC
      * @return a new observer
      */
     public static ConfigObserver create(ConfigObserverConfig config) {
-        List<Pattern> patterns = config.secrets()
+        List<Pattern> secretPatterns = Stream.concat(ConfigObserverConfigDefaults.SECRETS.stream(),
+                                                     config.secrets().stream())
+                .distinct()
+                .map(it -> Pattern.compile(it, Pattern.CASE_INSENSITIVE))
+                .toList();
+        List<Pattern> safeKeyPatterns = config.safeKeys()
                 .stream()
                 .map(it -> Pattern.compile(it, Pattern.CASE_INSENSITIVE))
                 .toList();
-        return new ConfigObserver(config, patterns);
+        return new ConfigObserver(config, secretPatterns, safeKeyPatterns);
     }
 
     /**
@@ -104,7 +112,12 @@ public class ConfigObserver implements Observer, RuntimeType.Api<ConfigObserverC
         if (config.enabled()) {
             for (HttpRouting.Builder routing : observeEndpointRouting) {
                 // register the service itself
-                routing.addFeature(new ConfigHttpFeature(endpoint, patterns, findProfile(), config.permitAll()));
+                routing.addFeature(new ConfigHttpFeature(endpoint,
+                                                         secretPatterns,
+                                                         safeKeyPatterns,
+                                                         findProfile(),
+                                                         config.permitAll(),
+                                                         config.unsafeValues()));
             }
         } else {
             for (HttpRouting.Builder builder : observeEndpointRouting) {
@@ -132,20 +145,29 @@ public class ConfigObserver implements Observer, RuntimeType.Api<ConfigObserverC
 
     private static class ConfigHttpFeature implements HttpFeature {
         private final String endpoint;
-        private final List<Pattern> patterns;
+        private final List<Pattern> secretPatterns;
+        private final List<Pattern> safeKeyPatterns;
         private final String profile;
         private final boolean permitAll;
+        private final boolean unsafeValues;
 
-        private ConfigHttpFeature(String endpoint, List<Pattern> patterns, String profile, boolean permitAll) {
+        private ConfigHttpFeature(String endpoint,
+                                  List<Pattern> secretPatterns,
+                                  List<Pattern> safeKeyPatterns,
+                                  String profile,
+                                  boolean permitAll,
+                                  boolean unsafeValues) {
             this.endpoint = endpoint;
-            this.patterns = patterns;
+            this.secretPatterns = secretPatterns;
+            this.safeKeyPatterns = safeKeyPatterns;
             this.profile = profile;
             this.permitAll = permitAll;
+            this.unsafeValues = unsafeValues;
         }
 
         @Override
         public void setup(HttpRouting.Builder routing) {
-            routing.register(endpoint, new ConfigService(patterns, profile, permitAll));
+            routing.register(endpoint, new ConfigService(secretPatterns, safeKeyPatterns, profile, permitAll, unsafeValues));
         }
     }
 }
