@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,6 +132,13 @@ public class VaultRestApi extends RestApiBase {
      * @param <B> type of builder that subclasses this class
      */
     public static class BuilderBase<B extends BuilderBase<B>> extends RestApi.Builder<B, VaultRestApi> {
+        /**
+         * Create a new builder base instance.
+         */
+        public BuilderBase() {
+            super.webClientBuilder(builder -> builder.addRedirectSensitiveHeader("X-Vault-Token"));
+        }
+
         @Override
         protected VaultRestApi doBuild() {
             return new VaultRestApi(this);
