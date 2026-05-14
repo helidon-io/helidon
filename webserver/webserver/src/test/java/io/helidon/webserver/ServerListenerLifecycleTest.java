@@ -546,6 +546,82 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
+    void webServerSuspendFailureStopsAllListenersAndPreservesCleanupFailure() {
+        LifecycleService defaultService = new LifecycleService("default");
+        LifecycleService adminService = new LifecycleService("admin", true);
+        LifecycleService monitorService = new LifecycleService("monitor");
+        LoomServer server = (LoomServer) WebServer.builder()
+                .shutdownHook(false)
+                .port(0)
+                .routing(routing -> routing.register(defaultService))
+                .putSocket("admin", listener -> listener.port(0)
+                        .routing(routing -> routing.register(adminService)))
+                .putSocket("monitor", listener -> listener.port(0)
+                        .routing(routing -> routing.register(monitorService)))
+                .build()
+                .start();
+
+        try {
+            ServerListener listener = server.listener(WebServer.DEFAULT_SOCKET_NAME);
+            assertThat(listener, notNullValue());
+            listener.activeConnection("failing",
+                                      new ThrowingCloseConnection(new AtomicInteger(), "suspend close failed"));
+
+            RuntimeException failure = assertThrows(RuntimeException.class, server::suspend);
+
+            assertThat(failure.getMessage(), is("suspend close failed"));
+            assertThat(server.isRunning(), is(false));
+            assertThat(suppressedContainsMessage(failure, "afterStop failed admin"), is(true));
+            assertThat(defaultService.afterStops(), is(1));
+            assertThat(adminService.afterStops(), is(1));
+            assertThat(monitorService.afterStops(), is(1));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    @EnabledOnOs(OS.LINUX)
+    void webServerResumeFailureStopsAllListenersAndPreservesCleanupFailure(@TempDir Path tempDir) throws Exception {
+        LifecycleService defaultService = new LifecycleService("default");
+        LifecycleService adminService = new LifecycleService("admin");
+        LifecycleService monitorService = new LifecycleService("monitor", true);
+        Path socketPath = tempDir.resolve("admin.sock");
+        LoomServer server = (LoomServer) WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .routing(routing -> routing.register(defaultService))
+                .putSocket("admin", listener -> listener
+                        .bindAddress(UnixDomainSocketAddress.of(socketPath))
+                        .routing(routing -> routing.register(adminService)))
+                .putSocket("monitor", listener -> listener
+                        .address(InetAddress.getLoopbackAddress())
+                        .port(0)
+                        .routing(routing -> routing.register(monitorService)))
+                .build()
+                .start();
+
+        try {
+            server.suspend();
+            Files.writeString(socketPath, "existing");
+
+            RuntimeException failure = assertThrows(RuntimeException.class, server::resume);
+
+            assertThat(failure, instanceOf(UncheckedIOException.class));
+            assertThat(containsMessage(failure, "Failed to start server"), is(true));
+            assertThat(server.isRunning(), is(false));
+            assertThat(suppressedContainsMessage(failure, "afterStop failed monitor"), is(true));
+            assertThat(defaultService.afterStops(), is(1));
+            assertThat(adminService.afterStops(), is(1));
+            assertThat(monitorService.afterStops(), is(1));
+            assertThat(Files.readString(socketPath), is("existing"));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
     void shutdownHandlerStopFailureStopsAllListeners() {
         LifecycleService defaultService = new LifecycleService("default", true);
         LifecycleService adminService = new LifecycleService("admin", true);
@@ -600,6 +676,15 @@ class ServerListenerLifecycleTest {
         return cause != null && containsMessage(cause, message);
     }
 
+    private static boolean suppressedContainsMessage(Throwable failure, String message) {
+        for (Throwable suppressed : failure.getSuppressed()) {
+            if (containsMessage(suppressed, message)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static void stopUntilStopped(WebServer server) {
         for (int i = 0; i < 3 && server.isRunning(); i++) {
             try {
@@ -647,7 +732,11 @@ class ServerListenerLifecycleTest {
         }
     }
 
-    private record ThrowingCloseConnection(AtomicInteger closeCalls) implements ServerConnection {
+    private record ThrowingCloseConnection(AtomicInteger closeCalls, String message) implements ServerConnection {
+        private ThrowingCloseConnection(AtomicInteger closeCalls) {
+            this(closeCalls, "connection close failed");
+        }
+
         @Override
         public void handle(io.helidon.common.concurrency.limits.Limit limit) {
         }
@@ -660,7 +749,7 @@ class ServerListenerLifecycleTest {
         @Override
         public void close(boolean interrupt) {
             closeCalls.incrementAndGet();
-            throw new IllegalStateException("connection close failed");
+            throw new IllegalStateException(message);
         }
     }
 

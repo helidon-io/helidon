@@ -317,6 +317,8 @@ In this example, the `GET` handler matches requests to `/hello/subpath`.
 Your `HttpService` can interpose on the server lifecycle by overriding the `beforeStart`, `afterStart`, and `afterStop` methods.
 Failures from `beforeStart` or `afterStart` fail `WebServer.start()` after startup cleanup, and failures from
 `afterStop` fail `WebServer.stop()` after listener cleanup. Cleanup failures may be attached as suppressed exceptions.
+If `afterStop` runs during suspend or resume failure cleanup, its failure may be suppressed on the original suspend or resume
+failure.
 [source,java]
 .Helidon 4.x server lifecycle
 ----

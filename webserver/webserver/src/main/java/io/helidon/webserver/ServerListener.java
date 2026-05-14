@@ -252,10 +252,11 @@ class ServerListener implements ListenerContext {
     }
 
     void stop() {
-        if (!running) {
+        if (!running && !inCheckpoint) {
             return;
         }
         running = false;
+        inCheckpoint = false;
         Throwable failure = stopResources();
         try {
             router.afterStop();
@@ -267,23 +268,8 @@ class ServerListener implements ListenerContext {
 
     private Throwable stopResources() {
         Throwable failure = null;
-        try {
-            // Stop listening for connections
-            ServerSocketChannel localServerSocket = serverSocket;
-            if (localServerSocket != null) {
-                localServerSocket.close();
-                if (configuredAddress instanceof UnixDomainSocketAddress udsa) {
-                    try {
-                        // UNIX socket files are created automatically, but they are not deleted when the channel is closed
-                        Files.deleteIfExists(udsa.getPath());
-                    } catch (IOException e) {
-                        LOGGER.log(WARNING, "Failed to delete UNIX socket file " + udsa.getPath().toAbsolutePath(), e);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            LOGGER.log(INFO, "Exception thrown on socket close", e);
-        }
+        // Stop listening for connections
+        closeServerSocketForStop();
 
         try {
             // Stop handling any new requests on all active connections
@@ -314,10 +300,13 @@ class ServerListener implements ListenerContext {
         }
 
         Thread localServerThread = serverThread;
+        CompletableFuture<Void> localCloseFuture = closeFuture;
         if (localServerThread != null) {
             localServerThread.interrupt();
+            if (localServerThread.getState() == Thread.State.NEW && localCloseFuture != null) {
+                localCloseFuture.complete(null);
+            }
         }
-        CompletableFuture<Void> localCloseFuture = closeFuture;
         if (localCloseFuture != null) {
             try {
                 localCloseFuture.join();
@@ -501,12 +490,7 @@ class ServerListener implements ListenerContext {
         if (localServerSocket == null) {
             return;
         }
-        boolean bound = false;
-        try {
-            bound = localServerSocket.getLocalAddress() != null;
-        } catch (IOException e) {
-            LOGGER.log(DEBUG, "Failed to check server socket binding after failed start", e);
-        }
+        boolean bound = serverSocketBound(localServerSocket, "Failed to check server socket binding after failed start");
         try {
             localServerSocket.close();
         } catch (IOException e) {
@@ -515,7 +499,41 @@ class ServerListener implements ListenerContext {
             serverSocket = null;
             connectedPort = -1;
         }
-        if (bound && configuredAddress instanceof UnixDomainSocketAddress udsa) {
+        if (bound) {
+            deleteUnixSocketFile();
+        }
+    }
+
+    private void closeServerSocketForStop() {
+        ServerSocketChannel localServerSocket = serverSocket;
+        if (localServerSocket == null) {
+            return;
+        }
+        boolean bound = serverSocketBound(localServerSocket, "Failed to check server socket binding before stop");
+        try {
+            localServerSocket.close();
+        } catch (IOException e) {
+            LOGGER.log(INFO, "Exception thrown on socket close", e);
+        } finally {
+            serverSocket = null;
+            connectedPort = -1;
+        }
+        if (bound) {
+            deleteUnixSocketFile();
+        }
+    }
+
+    private boolean serverSocketBound(ServerSocketChannel localServerSocket, String debugMessage) {
+        try {
+            return localServerSocket.getLocalAddress() != null;
+        } catch (IOException e) {
+            LOGGER.log(DEBUG, debugMessage, e);
+            return false;
+        }
+    }
+
+    private void deleteUnixSocketFile() {
+        if (configuredAddress instanceof UnixDomainSocketAddress udsa) {
             try {
                 Files.deleteIfExists(udsa.getPath());
             } catch (IOException e) {
