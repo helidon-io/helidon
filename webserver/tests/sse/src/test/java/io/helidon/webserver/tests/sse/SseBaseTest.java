@@ -37,6 +37,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class SseBaseTest {
     private static volatile CountDownLatch delayedLatch = new CountDownLatch(0);
+    private static volatile CountDownLatch flushLatch = new CountDownLatch(0);
 
     private final WebServer webServer;
 
@@ -54,6 +55,10 @@ class SseBaseTest {
 
     static void delayedLatch(CountDownLatch latch) {
         delayedLatch = latch;
+    }
+
+    static void flushLatch(CountDownLatch latch) {
+        flushLatch = latch;
     }
 
     static void sseString1(ServerRequest req, ServerResponse res) {
@@ -76,6 +81,14 @@ class SseBaseTest {
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
             delayedLatch.await(10, TimeUnit.SECONDS);
             sseSink.emit(SseEvent.create("delayed"));
+        }
+    }
+
+    static void sseFlush(ServerRequest req, ServerResponse res) throws InterruptedException {
+        try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            sseSink.emit(SseEvent.create("first"));
+            flushLatch.await(10, TimeUnit.SECONDS);
+            sseSink.emit(SseEvent.create("second"));
         }
     }
 

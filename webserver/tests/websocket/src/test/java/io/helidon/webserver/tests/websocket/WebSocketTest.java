@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
-import io.helidon.websocket.WsCloseCodes;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.websocket.WsRouting;
+import io.helidon.websocket.WsCloseCodes;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,6 +66,12 @@ class WebSocketTest {
     static void router(Router.RouterBuilder<?> router) {
         service = new EchoService();
         router.addRouting(WsRouting.builder().endpoint("/echo", service));
+    }
+
+    @SetUpServer
+    static void server(WebServerConfig.Builder server) {
+        server.writeQueueLength(2);
+        server.smartAsyncWrites(true);
     }
 
     @BeforeEach

@@ -23,15 +23,16 @@ import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.http.HeaderValues.ACCEPT_JSON;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
@@ -46,10 +47,17 @@ class SseServerTest extends SseBaseTest {
         rules.get("/sseString1", SseServerTest::sseString1);
         rules.get("/sseString2", SseServerTest::sseString2);
         rules.get("/sseDelayed", SseServerTest::sseDelayed);
+        rules.get("/sseFlush", SseServerTest::sseFlush);
         rules.get("/sseJson1", SseServerTest::sseJson1);
         rules.get("/sseJson2", SseServerTest::sseJson2);
         rules.get("/sseMixed", SseServerTest::sseMixed);
         rules.get("/sseIdComment", SseServerTest::sseIdComment);
+    }
+
+    @SetUpServer
+    static void server(WebServerConfig.Builder server) {
+        server.writeQueueLength(2);
+        server.smartAsyncWrites(true);
     }
 
     @Test
@@ -70,15 +78,31 @@ class SseServerTest extends SseBaseTest {
                                                                 webServer().port(),
                                                                 "/sseDelayed",
                                                                 Duration.ofSeconds(10))) {
-            long start = System.nanoTime();
             sseClient.awaitHeaders();
-            long elapsedMillis = Duration.ofNanos(System.nanoTime() - start).toMillis();
 
-            assertThat(elapsedMillis, lessThan(500L));
             delayedLatch.countDown();
             assertThat(sseClient.nextEvent(), is("data:delayed"));
         } finally {
+            delayedLatch.countDown();
             SseBaseTest.delayedLatch(new CountDownLatch(0));
+        }
+    }
+
+    @Test
+    void testSseFlushesEachEvent() throws Exception {
+        CountDownLatch flushLatch = new CountDownLatch(1);
+        SseBaseTest.flushLatch(flushLatch);
+        try (SimpleSseClient sseClient = SimpleSseClient.create("localhost",
+                                                                webServer().port(),
+                                                                "/sseFlush",
+                                                                Duration.ofSeconds(10))) {
+            assertThat(sseClient.nextEvent(), is("data:first"));
+
+            flushLatch.countDown();
+            assertThat(sseClient.nextEvent(), is("data:second"));
+        } finally {
+            flushLatch.countDown();
+            SseBaseTest.flushLatch(new CountDownLatch(0));
         }
     }
 

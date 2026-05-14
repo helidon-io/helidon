@@ -23,6 +23,7 @@ import java.util.List;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpPrologue;
@@ -106,7 +107,7 @@ public class Http2Upgrader implements Http1Upgrader {
     private static void writeUpgradeResponse(DataWriter dataWriter) {
         try {
             dataWriter.writeNow(BufferData.create(SWITCHING_PROTOCOLS_BYTES));
-        } catch (UncheckedIOException e) {
+        } catch (SocketWriterException | UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write HTTP/2 upgrade response", e);
         }
     }
