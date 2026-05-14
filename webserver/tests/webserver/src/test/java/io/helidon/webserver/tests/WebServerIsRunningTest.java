@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WebServerIsRunningTest {
 
@@ -48,7 +49,8 @@ class WebServerIsRunningTest {
         WebServerConfig.Builder builder = WebServer.builder()
                 .routing(rb -> rb.get("/", (req, res) -> { }));
         builder.tls(tls);
-        WebServer server = builder.build().start();
+        WebServer server = builder.build();
+        assertThrows(IllegalStateException.class, server::start);
         assertThat(server.isRunning(), is(false));
     }
 }
