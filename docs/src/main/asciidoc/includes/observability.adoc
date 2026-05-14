@@ -148,7 +148,11 @@ Configuration observability defines the following endpoints:
 |Returns specified by `name` configuration value
 |===
 
-NOTE: All secrets and passwords are obfuscated with "*" characters.
+By default, configuration observability includes values only for keys that match the configured `safe-keys`
+regular expression patterns. Values for all other keys are obfuscated with "*" characters.
+Keys matching the built-in or configured `secrets` patterns are always obfuscated.
+Set `unsafe-values` to `true` to restore the previous behavior and include all values except those matching
+`secrets` patterns.
 // end::configuration-observability-endpoint[]
 
 ==== Health Observability

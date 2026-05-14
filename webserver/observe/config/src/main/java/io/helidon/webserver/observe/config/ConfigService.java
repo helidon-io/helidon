@@ -16,14 +16,14 @@
 
 package io.helidon.webserver.observe.config;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.media.EntityWriter;
@@ -38,16 +38,26 @@ import io.helidon.webserver.http.ServerResponse;
 
 class ConfigService implements HttpService {
     private static final EntityWriter<JsonObject> WRITER = JsonSupport.serverResponseWriter();
+    private static final String OBFUSCATED_VALUE = "*********";
 
     private final List<Pattern> secretPatterns;
+    private final List<Pattern> safeKeyPatterns;
     private final String profile;
     private final boolean permitAll;
+    private final boolean unsafeValues;
+    private final ConcurrentMap<String, Boolean> obfuscatedKeys = new ConcurrentHashMap<>();
     private final LazyValue<Config> config = LazyValue.create(() -> Services.get(Config.class));
 
-    ConfigService(List<Pattern> secretPatterns, String profile, boolean permitAll) {
+    ConfigService(List<Pattern> secretPatterns,
+                  List<Pattern> safeKeyPatterns,
+                  String profile,
+                  boolean permitAll,
+                  boolean unsafeValues) {
         this.secretPatterns = secretPatterns;
+        this.safeKeyPatterns = safeKeyPatterns;
         this.profile = profile;
         this.permitAll = permitAll;
+        this.unsafeValues = unsafeValues;
     }
 
     @Override
@@ -63,12 +73,13 @@ class ConfigService implements HttpService {
     private void value(ServerRequest req, ServerResponse res) {
         String name = req.path().pathParameters().get("name");
 
-        ConfigValue<String> value = config.get().get(name).asString();
-        if (value.isPresent()) {
+        Config valueConfig = config.get().get(name);
+        if (valueConfig.hasValue()) {
+            String key = Config.Key.unescapeName(valueConfig.key().toString());
             var json = JsonObject.builder()
                     .set("name", name);
 
-            json.set("value", obfuscate(name, value.get()));
+            json.set("value", value(key, () -> valueConfig.asString().get()));
             write(req, res, json.build());
         } else {
             throw new NotFoundException("Config value for key: " + name);
@@ -76,12 +87,20 @@ class ConfigService implements HttpService {
     }
 
     private void values(ServerRequest req, ServerResponse res) {
-        Map<String, String> mapOfValues = new HashMap<>(config.get().asMap()
-                                                                .orElseGet(Map::of));
-
         var json = JsonObject.builder();
+        Config root = config.get();
 
-        mapOfValues.forEach((key, value) -> json.set(key, obfuscate(key, value)));
+        if (root.isLeaf()) {
+            String key = Config.Key.unescapeName(root.key().toString());
+            json.set(key, value(key, () -> root.asString().get()));
+        } else {
+            root.traverse()
+                    .filter(Config::hasValue)
+                    .forEach(node -> {
+                        String key = Config.Key.unescapeName(node.key().toString());
+                        json.set(key, value(key, () -> node.asString().get()));
+                    });
+        }
 
         write(req, res, json.build());
     }
@@ -94,14 +113,30 @@ class ConfigService implements HttpService {
         write(req, res, profile);
     }
 
-    private String obfuscate(String key, String value) {
+    private String value(String key, Supplier<String> valueSupplier) {
+        return obfuscatedKeys.computeIfAbsent(key, this::shouldObfuscate)
+                ? OBFUSCATED_VALUE
+                : valueSupplier.get();
+    }
+
+    private boolean shouldObfuscate(String key) {
         for (Pattern pattern : secretPatterns) {
             if (pattern.matcher(key).matches()) {
-                return "*********";
+                return true;
             }
         }
 
-        return value;
+        if (unsafeValues) {
+            return false;
+        }
+
+        for (Pattern pattern : safeKeyPatterns) {
+            if (pattern.matcher(key).matches()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void write(ServerRequest req, ServerResponse res, JsonObject json) {

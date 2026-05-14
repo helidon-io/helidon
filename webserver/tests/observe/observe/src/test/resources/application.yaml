@@ -22,10 +22,32 @@ observe:
       permit-all: true
       endpoint: "myConfig"
       # as config replaces list values, we need to configure it here again
-      secrets: ["app.some-secret-text", ".*password"]
+      secrets: ["app.some-secret-text", "app[.]safe-secret-text", ".*password"]
+      safe-keys: ["app[.]text", "app[.]safe-secret-text"]
+
+unsafe-config-observer:
+  permit-all: true
+  endpoint: "unsafeConfig"
+  unsafe-values: true
+  secrets: ["app[.]other-sensitive-value", "app[.]api[.]key"]
+
+server:
+  features:
+    observe:
+      endpoint: "/observe"
 
 app:
   some-secret-text: "should not be seen"
   some-password: "should not be seen"
   DB_PASSWORD: "should not be seen"
+  other-sensitive-value: "should not be seen"
+  api~1key: "should not be seen"
   text: "should be seen"
+  safe-secret-text: "should not be seen"
+
+db:
+  url: "${GCM=bQPPs+e2i4Sry7xB3MJWUPCnGWzx69Rgs6kskDIq8LRSJFonZ1NDlLhVhZBhtwpVdNlDa9qQSw==}"
+
+security.config:
+  require-encryption: false
+  aes.insecure-passphrase: "myMasterPasswordForEncryption"
