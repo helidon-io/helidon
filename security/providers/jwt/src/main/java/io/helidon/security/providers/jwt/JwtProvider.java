@@ -695,6 +695,15 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             if (verifySignature && (null == verifyKeys)) {
                 throw new JwtException("Failed to extract verify JWK from configuration");
             }
+            if (authenticate
+                    && !verifySignature
+                    && (expectedIssuer == null
+                    || expectedIssuer.isBlank()
+                    || expectedAudience == null
+                    || expectedAudience.isBlank())) {
+                throw new JwtException("Expected issuer and audience must be configured when JWT signature validation"
+                                               + " is disabled");
+            }
             return new JwtProvider(this);
         }
 

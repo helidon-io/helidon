@@ -40,6 +40,7 @@ import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
 import io.helidon.security.jwt.Jwt;
+import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.JwkEC;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -55,6 +56,7 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -494,6 +496,161 @@ public class JwtProviderTest {
         when(atnRequest.env()).thenReturn(se);
 
         AuthenticationResponse authenticationResponse = provider.authenticate(atnRequest);
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+    }
+
+    @Test
+    @DisplayName("RSA Invalid Signature: verify-signature = false without expected claims")
+    public void testInvalidSignatureWithoutExpectedClaimsRejected() {
+        assertThrows(JwtException.class, () -> JwtProvider.builder()
+                .verifySignature(false)
+                .build());
+        assertThrows(JwtException.class, () -> JwtProvider.builder()
+                .verifySignature(false)
+                .expectedIssuer("jwt.example.com")
+                .build());
+
+        JwtProvider.Builder builder = JwtProvider.builder()
+                .verifySignature(false);
+        builder.expectedAudience("audience.application.id");
+        assertThrows(JwtException.class, builder::build);
+
+        JwtProvider.Builder blankIssuerBuilder = JwtProvider.builder()
+                .verifySignature(false)
+                .expectedIssuer(" ");
+        blankIssuerBuilder.expectedAudience("audience.application.id");
+        assertThrows(JwtException.class, blankIssuerBuilder::build);
+
+        JwtProvider.Builder blankAudienceBuilder = JwtProvider.builder()
+                .verifySignature(false)
+                .expectedIssuer("jwt.example.com");
+        blankAudienceBuilder.expectedAudience(" ");
+        assertThrows(JwtException.class, blankAudienceBuilder::build);
+    }
+
+    @Test
+    @DisplayName("RSA Invalid Signature: verify-signature = false without authentication")
+    public void testInvalidSignatureWithoutExpectedClaimsAllowedWhenAuthenticationDisabled() {
+        JwtProvider provider = JwtProvider.create(providersConfig.get("jwt-no-authentication"));
+
+        ProviderRequest atnRequest = mock(ProviderRequest.class);
+        SecurityEnvironment se = SecurityEnvironment.builder()
+                .header("Authorization", "bearer " + WRONG_TOKEN)
+                .build();
+        when(atnRequest.env()).thenReturn(se);
+        assertThat(provider.authenticate(atnRequest).status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
+
+        Subject subject = Subject.create(Principal.builder()
+                                         .id("user1-id")
+                                         .name("user1")
+                                         .build());
+        SecurityContext context = Mockito.mock(SecurityContext.class);
+        when(context.user()).thenReturn(Optional.of(subject));
+        ProviderRequest request = mock(ProviderRequest.class);
+        when(request.securityContext()).thenReturn(context);
+        SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
+                .path("/rsa")
+                .transport("http")
+                .targetUri(URI.create("http://localhost:8080/rsa"))
+                .build();
+
+        assertThat(provider.isOutboundSupported(request, outboundEnv, EndpointConfig.create()), is(true));
+
+        OutboundSecurityResponse response = provider.outboundSecurity(request, outboundEnv, EndpointConfig.create());
+        String signedToken = response.requestHeaders().get("Authorization").get(0);
+        signedToken = signedToken.substring("bearer ".length());
+        SignedJwt signedJwt = SignedJwt.parseToken(signedToken);
+        signedJwt.verifySignature(verifyKeys).checkValid();
+        assertThat(signedJwt.getJwt().issuer(), is(Optional.of("jwt.example.com")));
+        assertThat(signedJwt.getJwt().audience(), is(Optional.of(List.of("audience.application.id"))));
+    }
+
+    @Test
+    @DisplayName("RSA Invalid Signature: verify-signature = false with expected claims")
+    public void testInvalidSignatureWithExpectedClaims() {
+        JwtProvider.Builder builder = JwtProvider.builder()
+                .verifySignature(false)
+                .expectedIssuer("jwt.example.com");
+        builder.expectedAudience("audience.application.id");
+        JwtProvider provider = builder.build();
+
+        Instant now = Instant.now();
+        Jwt jwt = Jwt.builder()
+                .subject("user1-id")
+                .preferredUsername("user1")
+                .issuer("jwt.example.com")
+                .algorithm(JwkRSA.ALG_RS256)
+                .keyId("verify-rsa")
+                .issueTime(now)
+                .notBefore(now.minus(1, ChronoUnit.MINUTES))
+                .expirationTime(now.plus(1, ChronoUnit.HOURS))
+                .addAudience("audience.application.id")
+                .build();
+
+        SignedJwt signedJwt = SignedJwt.sign(jwt, signKeys.forKeyId("sign-rsa").orElseThrow());
+        String signedToken = signedJwt.tokenContent();
+        int lastDot = signedToken.lastIndexOf('.') + 1;
+        signedToken = signedToken.substring(0, lastDot) + Base64.getEncoder().encodeToString("invalidSignature".getBytes());
+
+        assertThat("Should not be valid signature", SignedJwt.parseToken(signedToken).verifySignature(verifyKeys).isValid(),
+                   is(false));
+
+        ProviderRequest atnRequest = mock(ProviderRequest.class);
+        SecurityEnvironment se = SecurityEnvironment.builder()
+                .header("Authorization", "bearer " + signedToken)
+                .build();
+        when(atnRequest.env()).thenReturn(se);
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(atnRequest);
+
+        authenticationResponse.user()
+                .map(Subject::principal)
+                .ifPresentOrElse(atnPrincipal -> {
+                    assertThat(atnPrincipal.id(), is("user1-id"));
+                    assertThat(atnPrincipal.getName(), is("user1"));
+                }, () -> fail("User must be present in response"));
+    }
+
+    @Test
+    @DisplayName("RSA Invalid Signature: verify-signature = false with wrong audience")
+    public void testInvalidSignatureWithWrongAudienceRejected() {
+        JwtProvider.Builder builder = JwtProvider.builder()
+                .verifySignature(false)
+                .expectedIssuer("jwt.example.com");
+        builder.expectedAudience("audience.application.id");
+        JwtProvider provider = builder.build();
+
+        Instant now = Instant.now();
+        Jwt jwt = Jwt.builder()
+                .subject("user1-id")
+                .preferredUsername("user1")
+                .issuer("jwt.example.com")
+                .algorithm(JwkRSA.ALG_RS256)
+                .keyId("verify-rsa")
+                .issueTime(now)
+                .notBefore(now.minus(1, ChronoUnit.MINUTES))
+                .expirationTime(now.plus(1, ChronoUnit.HOURS))
+                .addAudience("unexpected.application.id")
+                .build();
+
+        SignedJwt signedJwt = SignedJwt.sign(jwt, signKeys.forKeyId("sign-rsa").orElseThrow());
+        String signedToken = signedJwt.tokenContent();
+        int lastDot = signedToken.lastIndexOf('.') + 1;
+        signedToken = signedToken.substring(0, lastDot) + Base64.getEncoder().encodeToString("invalidSignature".getBytes());
+
+        assertThat("Should not be valid signature", SignedJwt.parseToken(signedToken).verifySignature(verifyKeys).isValid(),
+                   is(false));
+
+        ProviderRequest atnRequest = mock(ProviderRequest.class);
+        SecurityEnvironment se = SecurityEnvironment.builder()
+                .header("Authorization", "bearer " + signedToken)
+                .build();
+        when(atnRequest.env()).thenReturn(se);
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(atnRequest);
+
+        assertThat(authenticationResponse.service(), is(Optional.empty()));
+        assertThat(authenticationResponse.user(), is(Optional.empty()));
         assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.FAILURE));
     }
 
