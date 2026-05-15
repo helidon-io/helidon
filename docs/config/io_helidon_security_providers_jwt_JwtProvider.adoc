@@ -67,16 +67,23 @@ This type provides the following service implementations:
 |`atn-token.handler` |xref:{rootdir}/config/io_helidon_security_util_TokenHandler.adoc[TokenHandler] |{nbsp} |Token handler to extract username from request.
 |`atn-token.jwk.resource` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |JWK resource used to verify JWTs created by other parties.
 |`atn-token.jwt-audience` |string |{nbsp} |Audience expected in inbound JWTs.
+ Required when `authenticate` is `true` and `atn-token.verify-signature` is `false`.
 |`atn-token.jwt-issuer` |string |{nbsp} |Issuer expected in inbound JWTs.
+ Required when `authenticate` is `true` and `atn-token.verify-signature` is `false`.
 |`atn-token.verify-signature` |boolean |`true` |Configure whether to verify signatures.
  Signatures verification is enabled by default. You can configure the provider
  not to verify signatures.
+ If this is `false` and `authenticate` is `true`, both `atn-token.jwt-issuer`
+ and `atn-token.jwt-audience` must be configured.
 
  <b>Make sure your service is properly secured on network level and only
  accessible from a secure endpoint that provides the JWTs when signature verification
  is disabled. If signature verification is disabled, configured claim validation still applies,
  but signatures are not checked.</b>
 |`authenticate` |boolean |`true` |Whether to authenticate requests.
+ Set to `false` for outbound-only providers that should not authenticate inbound requests.
+ For outbound-only providers without verification keys, also set `atn-token.verify-signature`
+ to `false`.
 |`optional` |boolean |`false` |Whether authentication is required.
  By default, request will fail if the username cannot be extracted.
  If set to false, request will process and this provider will abstain.

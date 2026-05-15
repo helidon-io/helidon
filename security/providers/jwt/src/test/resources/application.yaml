@@ -101,3 +101,18 @@ jwt-no-verification:
         outbound-token:
           header: "Authorization"
           format: "bearer %1$s"
+jwt-no-authentication:
+  authenticate: false
+  # Inbound authentication is intentionally disabled for this provider.
+  atn-token:
+    verify-signature: false
+  sign-token:
+    jwk.resource.resource-path: "sign-jwk.json"
+    jwt-issuer: "jwt.example.com"
+    outbound:
+      - name: "rsa"
+        paths:
+          - "/rsa"
+        jwk-kid: "sign-rsa"
+        jwt-kid: "verify-rsa"
+        jwt-audience: "audience.application.id"

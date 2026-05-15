@@ -24,6 +24,9 @@ security:
         optional: true
         # If set to false, no authentication will be attempted
         # If set to false and this is the default provider, authentication will not work
+        # Set to false for outbound-only providers that should not authenticate inbound requests
+        # For outbound-only providers without verification keys, also set
+        # atn-token.verify-signature to false
         # defaults to true
         authenticate: true
         # If set to true, identity will be propagated further using the configured header and format
@@ -43,9 +46,16 @@ security:
             url: "http://url/of/jwk"
             content-plain: "{}"
             content: "base64"
-          # optional expected issuer of inbound JWTs
+          # Whether to verify inbound JWT signatures
+          # If set to false while authenticate is true, atn-token.jwt-issuer and
+          # atn-token.jwt-audience are both required
+          # defaults to true
+          verify-signature: true
+          # expected issuer of inbound JWTs
+          # Required when authenticate is true and verify-signature is false
           jwt-issuer: "issuer.of.JWT"
-          # optional expected audience of inbound JWTs
+          # expected audience of inbound JWTs
+          # Required when authenticate is true and verify-signature is false
           jwt-audience: "audience"
           handler:
             # name of header to extract token from (see providers-common module for all options), defaults to "Authorization"
