@@ -325,6 +325,21 @@ public final class OidcFeature implements HttpFeature {
             return;
         }
 
+        OptionalValue<String> state = req.query().first(STATE_PARAM_NAME);
+        String stateQuery = null;
+        if (state.isPresent()) {
+            String stateValue = state.get();
+            try {
+                HeaderValues.create(HeaderNames.LOCATION, "&" + STATE_PARAM_NAME + "=" + stateValue).validate();
+            } catch (IllegalArgumentException e) {
+                LOGGER.log(Level.TRACE, "Invalid OIDC logout state query parameter", e);
+                res.status(Status.BAD_REQUEST_400)
+                        .send();
+                return;
+            }
+            stateQuery = "&" + STATE_PARAM_NAME + "=" + encode(stateValue);
+        }
+
         String encryptedIdToken = idTokenCookie.get();
 
         try {
@@ -334,8 +349,9 @@ public final class OidcFeature implements HttpFeature {
                                                          + idToken
                                                          + "&post_logout_redirect_uri=" + postLogoutUri(req));
 
-            req.query().first("state")
-                    .ifPresent(it -> sb.append("&state=").append(it));
+            if (stateQuery != null) {
+                sb.append(stateQuery);
+            }
 
             ServerResponseHeaders headers = res.headers();
             headers.addCookie(tokenCookieHandler.removeCookie().build());

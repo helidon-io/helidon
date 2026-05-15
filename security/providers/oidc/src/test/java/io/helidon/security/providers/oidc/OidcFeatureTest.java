@@ -16,6 +16,9 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -61,6 +64,7 @@ import org.mockito.Mockito;
 import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.COOKIE;
 import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.NONE;
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -132,6 +136,72 @@ class OidcFeatureTest {
                                                        .build())
                                     .build())
             .build();
+
+    @Test
+    void testLogoutRejectsInvalidState() throws Exception {
+        String state = "probe%0d%0aX-Reproducer:%20injected";
+        String injectedHeader = "X-Reproducer: injected";
+        String response = logoutResponse(state);
+
+        assertThat(response, startsWith("HTTP/1.1 400"));
+        assertThat(response, not(containsString("\r\n" + injectedHeader + "\r\n")));
+    }
+
+    @Test
+    void testLogoutEncodesStateValue() throws Exception {
+        String state = "ok%26post_logout_redirect_uri%3Dhttps%3A%2F%2Fexample.test%2Falternate";
+        String response = logoutResponse(state);
+
+        assertThat(response, startsWith("HTTP/1.1 307"));
+        assertThat(response,
+                   containsString("&state=ok%26post_logout_redirect_uri%3Dhttps%3A%2F%2Fexample.test%2Falternate\r\n"));
+        assertThat(response, not(containsString("&state=ok&post_logout_redirect_uri=https://example.test/alternate")));
+    }
+
+    private static String logoutResponse(String state) throws Exception {
+        OidcConfig oidcConfig = OidcConfig.builder()
+                .clientId("id")
+                .clientSecret("secret")
+                .identityUri(URI.create("http://idp.example.test/identity"))
+                .tokenEndpointUri(URI.create("http://idp.example.test/token"))
+                .authorizationEndpointUri(URI.create("http://idp.example.test/authorize"))
+                .logoutEndpointUri(URI.create("http://idp.example.test/logout"))
+                .signJwk(JwkKeys.builder().build())
+                .oidcMetadataWellKnown(false)
+                .logoutEnabled(true)
+                .logoutUri("/oidc/logout")
+                .postLogoutUri(URI.create("/logged-out"))
+                .cookieEncryptionEnabled(false)
+                .cookieEncryptionEnabledIdToken(false)
+                .cookieEncryptionEnabledTenantName(false)
+                .cookieEncryptionEnabledRefreshToken(false)
+                .cookieEncryptionEnabledState(false)
+                .build();
+
+        WebServer server = WebServer.builder()
+                .port(0)
+                .addRouting(HttpRouting.builder()
+                                    .addFeature(OidcFeature.create(oidcConfig)))
+                .build()
+                .start();
+
+        try (Socket socket = new Socket("127.0.0.1", server.port())) {
+            socket.setSoTimeout(5000);
+            OutputStream output = socket.getOutputStream();
+            output.write(("GET /oidc/logout?state=" + state + " HTTP/1.1\r\n"
+                    + "Host: 127.0.0.1:" + server.port() + "\r\n"
+                    + "Cookie: " + oidcConfig.idTokenCookieHandler().cookieName() + "=dummy-id-token\r\n"
+                    + "Connection: close\r\n"
+                    + "\r\n").getBytes(StandardCharsets.US_ASCII));
+            output.flush();
+            socket.shutdownOutput();
+
+            InputStream input = socket.getInputStream();
+            return new String(input.readAllBytes(), StandardCharsets.ISO_8859_1);
+        } finally {
+            server.stop();
+        }
+    }
 
     @Test
     void testRedirectAttemptNoParams() {
