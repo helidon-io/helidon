@@ -16,6 +16,7 @@
 
 package io.helidon.json;
 
+import java.math.BigInteger;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,77 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JsonObjectBuilderTest {
+
+    @Test
+    void shouldSetAdditionalNumericValues() {
+        BigInteger bigInteger = new BigInteger("123456789012345678901234567890");
+        String expectedJson = "{\"positiveByte\":7,"
+                + "\"negativeByte\":-7,"
+                + "\"narrowedByte\":-7,"
+                + "\"short\":1024,"
+                + "\"long\":1234567890123,"
+                + "\"float\":1.25,"
+                + "\"bigInteger\":123456789012345678901234567890}";
+
+        JsonObject result = JsonObject.builder()
+                .set("positiveByte", (byte) 7)
+                .set("negativeByte", (byte) -7)
+                .set("narrowedByte", (byte) 249)
+                .set("short", (short) 1024)
+                .set("long", 1234567890123L)
+                .set("float", 1.25F)
+                .set("bigInteger", bigInteger)
+                .build();
+
+        assertThat(result.toString(), is(expectedJson));
+        assertThat(result.byteValue("positiveByte").orElseThrow(), is((byte) 7));
+        assertThat(result.byteValue("negativeByte").orElseThrow(), is((byte) -7));
+        assertThat(result.byteValue("narrowedByte").orElseThrow(), is((byte) -7));
+        assertThat(result.shortValue("short").orElseThrow(), is((short) 1024));
+        assertThat(result.longValue("long").orElseThrow(), is(1234567890123L));
+        assertThat(result.floatValue("float").orElseThrow(), is(1.25F));
+        assertThat(result.bigIntegerValue("bigInteger").orElseThrow(), is(bigInteger));
+    }
+
+    @Test
+    void shouldRoundTripAdditionalNumericValuesAsJsonValue() {
+        BigInteger bigInteger = new BigInteger("123456789012345678901234567890");
+        JsonObject original = JsonObject.builder()
+                .set("positiveByte", (byte) 7)
+                .set("negativeByte", (byte) -7)
+                .set("narrowedByte", (byte) 249)
+                .set("short", (short) 1024)
+                .set("long", 1234567890123L)
+                .set("float", 1.25F)
+                .set("bigInteger", bigInteger)
+                .build();
+
+        JsonParser parser = JsonParser.create(original.toString());
+        JsonValue parsedValue = parser.readJsonValue();
+        assertThat(parsedValue.type(), is(JsonValueType.OBJECT));
+
+        JsonObject parsedObject = parsedValue.asObject();
+        assertThat(parsedObject.byteValue("positiveByte").orElseThrow(), is((byte) 7));
+        assertThat(parsedObject.byteValue("negativeByte").orElseThrow(), is((byte) -7));
+        assertThat(parsedObject.byteValue("narrowedByte").orElseThrow(), is((byte) -7));
+        assertThat(parsedObject.shortValue("short").orElseThrow(), is((short) 1024));
+        assertThat(parsedObject.longValue("long").orElseThrow(), is(1234567890123L));
+        assertThat(parsedObject.floatValue("float").orElseThrow(), is(1.25F));
+        assertThat(parsedObject.bigIntegerValue("bigInteger").orElseThrow(), is(bigInteger));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    void shouldReturnDefaultAdditionalNumericValues() {
+        JsonObject object = JsonObject.builder().build();
+        BigInteger bigInteger = new BigInteger("123456789012345678901234567890");
+
+        assertThat(object.byteValue("byte", (byte) 7), is((byte) 7));
+        assertThat(object.shortValue("short", (short) 1024), is((short) 1024));
+        assertThat(object.longValue("long", 1234567890123L), is(1234567890123L));
+        assertThat(object.floatValue("float", 1.25F), is(1.25F));
+        assertThat(object.bigIntegerValue("bigInteger", bigInteger), is(bigInteger));
+    }
 
     @Test
     void shouldAcceptSubtypeListsForArrayValues() {
