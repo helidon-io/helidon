@@ -109,6 +109,15 @@ public final class JsonArray extends JsonValue {
     }
 
     /**
+     * Return the number of values in this array.
+     *
+     * @return array size
+     */
+    public int size() {
+        return jsonValues.size();
+    }
+
+    /**
      * Return the JsonValue at the specified index as an Optional.
      *
      * @param index the index of the element to return

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,10 @@ import java.util.List;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderNames;
+import io.helidon.json.JsonArray;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
-
-import jakarta.json.JsonArray;
-import jakarta.json.JsonArrayBuilder;
-
-import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
 
 /**
  * An implementation of a JSON-RPC client batch request.
@@ -48,7 +44,6 @@ class JsonRpcClientBatchRequestImpl implements JsonRpcClientBatchRequest {
         return new JsonRpcClientRequestImpl(http1Client, rpcMethod, this);
     }
 
-
     @Override
     public JsonRpcClientBatchResponse submit() {
         HttpClientResponse res = delegate.header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_JSON_VALUE)
@@ -59,9 +54,9 @@ class JsonRpcClientBatchRequestImpl implements JsonRpcClientBatchRequest {
 
     @Override
     public JsonArray asJsonArray() {
-        JsonArrayBuilder arrayBuilder = JSON_BUILDER_FACTORY.createArrayBuilder();
-        requests.forEach(request -> arrayBuilder.add(request.asJsonObject()));
-        return  arrayBuilder.build();
+        return JsonArray.create(requests.stream()
+                                        .map(JsonRpcClientRequest::asJsonObject)
+                                        .toList());
     }
 
     void add(JsonRpcClientRequest request) {
