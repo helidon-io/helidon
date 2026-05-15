@@ -17,6 +17,7 @@
 package io.helidon.json;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -571,6 +572,34 @@ public final class JsonObject extends JsonValue {
         }
 
         /**
+         * Sets a byte value for the specified key.
+         *
+         * @param key the key to set
+         * @param value the byte value to set
+         * @return this builder for method chaining
+         */
+        public Builder set(String key, byte value) {
+            Objects.requireNonNull(key, "key cannot be null");
+
+            values.put(key, JsonNumber.create(value));
+            return this;
+        }
+
+        /**
+         * Sets a short value for the specified key.
+         *
+         * @param key the key to set
+         * @param value the short value to set
+         * @return this builder for method chaining
+         */
+        public Builder set(String key, short value) {
+            Objects.requireNonNull(key, "key cannot be null");
+
+            values.put(key, JsonNumber.create(value));
+            return this;
+        }
+
+        /**
          * Sets an int value for the specified key.
          *
          * @param key the key to set
@@ -593,6 +622,21 @@ public final class JsonObject extends JsonValue {
          */
         public Builder set(String key, long value) {
             Objects.requireNonNull(key, "key cannot be null");
+
+            values.put(key, JsonNumber.create(new BigDecimal(value)));
+            return this;
+        }
+
+        /**
+         * Sets a BigInteger value for the specified key.
+         *
+         * @param key the key to set
+         * @param value the BigInteger value to set
+         * @return this builder for method chaining
+         */
+        public Builder set(String key, BigInteger value) {
+            Objects.requireNonNull(key, "key cannot be null");
+            Objects.requireNonNull(value, "value cannot be null");
 
             values.put(key, JsonNumber.create(new BigDecimal(value)));
             return this;

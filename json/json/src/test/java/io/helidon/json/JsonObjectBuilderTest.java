@@ -16,6 +16,8 @@
 
 package io.helidon.json;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,23 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JsonObjectBuilderTest {
+
+    @Test
+    void shouldSetAdditionalNumericValues() {
+        BigInteger bigInteger = new BigInteger("123456789012345678901234567890");
+
+        JsonObject result = JsonObject.builder()
+                .set("byte", (byte) 7)
+                .set("short", (short) 1024)
+                .set("bigInteger", bigInteger)
+                .build();
+
+        assertThat(result.toString(),
+                   is("{\"byte\":7,\"short\":1024,\"bigInteger\":123456789012345678901234567890}"));
+        assertThat(result.numberValue("byte").orElseThrow(), is(new BigDecimal("7")));
+        assertThat(result.numberValue("short").orElseThrow(), is(new BigDecimal("1024")));
+        assertThat(result.numberValue("bigInteger").orElseThrow(), is(new BigDecimal(bigInteger)));
+    }
 
     @Test
     void shouldAcceptSubtypeListsForArrayValues() {
