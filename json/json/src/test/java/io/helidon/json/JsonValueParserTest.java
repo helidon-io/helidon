@@ -126,7 +126,7 @@ class JsonValueParserTest {
         JsonParser parser = JsonParser.create(original);
 
         JsonArray result = parser.readJsonArray();
-        assertThat(result.values().size(), is(3));
+        assertThat(result.size(), is(3));
         assertThat(result.get(0, JsonNull.instance()).asString().value(), is("item1"));
         assertThat(result.get(1, JsonNull.instance()).asNumber().intValue(), is(123));
         assertThat(result.get(2, JsonNull.instance()).asBoolean().value(), is(true));
@@ -298,7 +298,7 @@ class JsonValueParserTest {
         JsonObject result = parser.readJsonObject();
         JsonArray users = result.arrayValue("users").orElseThrow();
 
-        assertThat(users.values().size(), is(2));
+        assertThat(users.size(), is(2));
 
         JsonObject alice = users.get(0, JsonNull.instance()).asObject();
         assertThat(alice.stringValue("name").orElseThrow(), is("Alice"));

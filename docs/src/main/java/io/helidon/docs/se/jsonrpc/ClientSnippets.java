@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.docs.se.jsonrpc;
 import java.time.Duration;
 import java.util.Optional;
 
+import io.helidon.json.binding.Json;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
@@ -89,7 +90,7 @@ class ClientSnippets {
                 // successful start!
             }
             Optional<JsonRpcResult> result1 = batchRes.get(1).result();
-            if (result0.get().as(StartStopResult.class).status().equals("STOPPED")) {
+            if (result1.get().as(StartStopResult.class).status().equals("STOPPED")) {
                 // successful stop!
             }
         }
@@ -97,9 +98,11 @@ class ClientSnippets {
     }
 
     // tag::snippet_6[]
+    @Json.Entity
     public record StartStopParams(String when, Duration duration) {
     }
 
+    @Json.Entity
     public record StartStopResult(String status) {
     }
     // end::snippet_6[]
