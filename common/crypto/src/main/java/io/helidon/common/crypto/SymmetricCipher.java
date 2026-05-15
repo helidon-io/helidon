@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,6 +97,7 @@ public class SymmetricCipher implements CommonCipher {
     private final char[] password;
     private final int keySize;
     private final int numberOfIterations;
+    private final byte[] additionalAuthenticatedData;
 
     private SymmetricCipher(Builder builder) {
         this.algorithm = builder.algorithm;
@@ -104,6 +105,7 @@ public class SymmetricCipher implements CommonCipher {
         this.password = builder.password;
         this.keySize = builder.keySize;
         this.numberOfIterations = builder.numberOfIterations;
+        this.additionalAuthenticatedData = builder.additionalAuthenticatedData;
     }
 
     /**
@@ -284,6 +286,9 @@ public class SymmetricCipher implements CommonCipher {
             SECURE_RANDOM.get().nextBytes(salt);
             byte[] key = PasswordKeyDerivation.deriveKey(password, salt, numberOfIterations, keySize);
             Cipher cipher = cipher(algorithm, provider, key, null, Cipher.ENCRYPT_MODE);
+            if (additionalAuthenticatedData != null) {
+                cipher.updateAAD(additionalAuthenticatedData);
+            }
             byte[] iv = cipher.getIV();
             outputStream.writeBytes(salt);
             dataOutputStream.writeInt(iv.length);
@@ -304,9 +309,15 @@ public class SymmetricCipher implements CommonCipher {
             int ivSize = dataInputStream.readInt();
             byte[] iv = inputStream.readNBytes(ivSize);
             byte[] key = PasswordKeyDerivation.deriveKey(password, salt, numberOfIterations, keySize);
-            return decrypt(algorithm, provider, key, iv, Base64Value.create(inputStream.readAllBytes()));
+            Cipher cipher = cipher(algorithm, provider, key, createAlgorithmParameter(algorithm, iv), Cipher.DECRYPT_MODE);
+            if (additionalAuthenticatedData != null) {
+                cipher.updateAAD(additionalAuthenticatedData);
+            }
+            return Base64Value.create(cipher.doFinal(inputStream.readAllBytes()));
         } catch (EOFException e) {
             throw new CryptoException("Encrypted value is not valid", e);
+        } catch (IllegalBlockSizeException | BadPaddingException e) {
+            throw new CryptoException("Failed to decrypt the message", e);
         } catch (IOException e) {
             throw new CryptoException("An error occurred while message decryption", e);
         }
@@ -322,6 +333,7 @@ public class SymmetricCipher implements CommonCipher {
         private Integer numberOfIterations = 10000;
         private Integer keySize = 256;
         private char[] password;
+        private byte[] additionalAuthenticatedData;
 
         private Builder() {
         }
@@ -385,6 +397,21 @@ public class SymmetricCipher implements CommonCipher {
          */
         public Builder numberOfIterations(int numberOfIterations) {
             this.numberOfIterations = numberOfIterations;
+            return this;
+        }
+
+        /**
+         * Set additional authenticated data for authenticated encryption algorithms.
+         * <p>
+         * The configured data is authenticated, but not encrypted. The same value must be configured for decryption.
+         * This is supported by authenticated encryption algorithms, such as {@link #ALGORITHM_AES_GCM}.
+         *
+         * @param additionalAuthenticatedData additional authenticated data
+         * @return updated builder instance
+         */
+        public Builder additionalAuthenticatedData(byte[] additionalAuthenticatedData) {
+            Objects.requireNonNull(additionalAuthenticatedData, "Additional authenticated data cannot be null");
+            this.additionalAuthenticatedData = additionalAuthenticatedData.clone();
             return this;
         }
 

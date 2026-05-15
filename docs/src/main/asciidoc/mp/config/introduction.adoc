@@ -204,7 +204,7 @@ For more information, see xref:{rootdir}/mp/security/configuration-secrets.adoc[
 .Example of encrypted secrets
 ----
 # Password encrypted using a master password
-client_secret=${GCM=mYRkg+4Q4hua1kvpCCI2hg==}
+client_secret=${ENC=AQAJJYB...}
 # Password encrypted using public key (there are length limits when using RSA)
 client_secret_pke=${RSA=mYRkg+4Q4hua1kvpCCI2hg==}
 # Password in clear text, can be used in development

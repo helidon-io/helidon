@@ -49,6 +49,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-buffers</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-crypto</artifactId>
         </dependency>
         <dependency>
