@@ -741,6 +741,15 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             if (verifySignature && (null == verifyKeys)) {
                 throw new JwtException("Failed to extract verify JWK from configuration");
             }
+            if (authenticate
+                    && !verifySignature
+                    && (expectedIssuer == null
+                    || expectedIssuer.isBlank()
+                    || expectedAudience == null
+                    || expectedAudience.isBlank())) {
+                throw new JwtException("Expected issuer and audience must be configured when JWT signature validation"
+                                               + " is disabled");
+            }
             return new JwtProvider(this);
         }
 
@@ -801,19 +810,22 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         }
 
         /**
-         * Configure whether to verify signatures.
+         * Configure whether to verify inbound JWT signatures.
          * Signatures verification is enabled by default. You can configure the provider
          * not to verify signatures.
          * <p>
          * <b>Make sure your service is properly secured on network level and only
          * accessible from a secure endpoint that provides the JWTs when signature verification
          * is disabled. If signature verification is disabled, configured claim validation still applies,
-         * but signatures are not checked.</b>
+         * but signatures are not checked. When authentication is enabled, expected issuer and audience
+         * must be configured.</b>
          *
          * @param shouldValidate set to false to disable validation of JWT signatures
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "atn-token.verify-signature", value = "true")
+        @ConfiguredOption(key = "atn-token.verify-signature", value = "true",
+                          description = "Whether to verify inbound JWT signatures. If set to false while authentication"
+                                  + " is enabled, atn-token.jwt-issuer and atn-token.jwt-audience are required.")
         public Builder verifySignature(boolean shouldValidate) {
             this.verifySignature = shouldValidate;
             return this;
@@ -963,21 +975,27 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
 
         /**
          * Audience expected in inbound JWTs.
+         * Required when authentication is enabled and signature verification is disabled.
          *
          * @param audience audience string
          */
-        @ConfiguredOption(key = "atn-token.jwt-audience")
+        @ConfiguredOption(key = "atn-token.jwt-audience",
+                          description = "Audience expected in inbound JWTs. Required when authentication is enabled"
+                                  + " and signature verification is disabled.")
         public void expectedAudience(String audience) {
             this.expectedAudience = audience;
         }
 
         /**
          * Issuer expected in inbound JWTs.
+         * Required when authentication is enabled and signature verification is disabled.
          *
          * @param issuer issuer string
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "atn-token.jwt-issuer")
+        @ConfiguredOption(key = "atn-token.jwt-issuer",
+                          description = "Issuer expected in inbound JWTs. Required when authentication is enabled"
+                                  + " and signature verification is disabled.")
         public Builder expectedIssuer(String issuer) {
             this.expectedIssuer = issuer;
             return this;
