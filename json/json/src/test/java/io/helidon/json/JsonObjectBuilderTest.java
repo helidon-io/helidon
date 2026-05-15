@@ -33,12 +33,14 @@ class JsonObjectBuilderTest {
         BigInteger bigInteger = new BigInteger("123456789012345678901234567890");
         String expectedJson = "{\"positiveByte\":7,"
                 + "\"negativeByte\":-7,"
+                + "\"narrowedByte\":-7,"
                 + "\"short\":1024,"
                 + "\"bigInteger\":123456789012345678901234567890}";
 
         JsonObject result = JsonObject.builder()
                 .set("positiveByte", (byte) 7)
                 .set("negativeByte", (byte) -7)
+                .set("narrowedByte", (byte) 249)
                 .set("short", (short) 1024)
                 .set("bigInteger", bigInteger)
                 .build();
@@ -46,8 +48,33 @@ class JsonObjectBuilderTest {
         assertThat(result.toString(), is(expectedJson));
         assertThat(result.numberValue("positiveByte").orElseThrow(), is(new BigDecimal("7")));
         assertThat(result.numberValue("negativeByte").orElseThrow(), is(new BigDecimal("-7")));
+        assertThat(result.numberValue("narrowedByte").orElseThrow(), is(new BigDecimal("-7")));
         assertThat(result.numberValue("short").orElseThrow(), is(new BigDecimal("1024")));
         assertThat(result.numberValue("bigInteger").orElseThrow(), is(new BigDecimal(bigInteger)));
+    }
+
+    @Test
+    void shouldRoundTripAdditionalNumericValuesAsJsonValue() {
+        BigInteger bigInteger = new BigInteger("123456789012345678901234567890");
+        JsonObject original = JsonObject.builder()
+                .set("positiveByte", (byte) 7)
+                .set("negativeByte", (byte) -7)
+                .set("narrowedByte", (byte) 249)
+                .set("short", (short) 1024)
+                .set("bigInteger", bigInteger)
+                .build();
+
+        JsonParser parser = JsonParser.create(original.toString());
+        JsonValue parsedValue = parser.readJsonValue();
+        assertThat(parsedValue.type(), is(JsonValueType.OBJECT));
+
+        JsonObject parsedObject = parsedValue.asObject();
+        assertThat(parsedObject.numberValue("positiveByte").orElseThrow(), is(new BigDecimal("7")));
+        assertThat(parsedObject.numberValue("negativeByte").orElseThrow(), is(new BigDecimal("-7")));
+        assertThat(parsedObject.numberValue("narrowedByte").orElseThrow(), is(new BigDecimal("-7")));
+        assertThat(parsedObject.numberValue("short").orElseThrow(), is(new BigDecimal("1024")));
+        assertThat(parsedObject.numberValue("bigInteger").orElseThrow(), is(new BigDecimal(bigInteger)));
+        assertThat(parser.hasNext(), is(false));
     }
 
     @Test
