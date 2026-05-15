@@ -483,12 +483,18 @@ class LoomServer implements WebServer, Resumable {
         try {
             lifecycleLock.lockInterruptibly();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted during snapshot checkpoint.", e);
         }
         try {
             if (running.get()) {
-                for (ServerListener listener : listeners.values()) {
-                    listener.suspend();
+                try {
+                    for (ServerListener listener : listeners.values()) {
+                        listener.suspend();
+                    }
+                } catch (RuntimeException | Error e) {
+                    stopAfterResumableFailure(e);
+                    throw e;
                 }
             }
         } finally {
@@ -502,12 +508,18 @@ class LoomServer implements WebServer, Resumable {
         try {
             lifecycleLock.lockInterruptibly();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted during snapshot restore.", e);
         }
         try {
             if (running.get()) {
-                for (ServerListener listener : listeners.values()) {
-                    listener.resume();
+                try {
+                    for (ServerListener listener : listeners.values()) {
+                        listener.resume();
+                    }
+                } catch (RuntimeException | Error e) {
+                    stopAfterResumableFailure(e);
+                    throw e;
                 }
             }
         } finally {
@@ -518,6 +530,16 @@ class LoomServer implements WebServer, Resumable {
                 + now + " milliseconds. "
                 + ResumableSupport.get().uptimeSinceResume() + " milliseconds since JVM snapshot restore. "
                 + "Java " + Runtime.version());
+    }
+
+    private void stopAfterResumableFailure(Throwable failure) {
+        try {
+            stopIt();
+        } catch (RuntimeException | Error e) {
+            if (failure != e) {
+                failure.addSuppressed(e);
+            }
+        }
     }
 
     private static final class ListenerFuture {

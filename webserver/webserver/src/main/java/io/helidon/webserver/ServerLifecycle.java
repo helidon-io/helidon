@@ -40,6 +40,8 @@ public interface ServerLifecycle {
      * After server stop.
      * Exceptions thrown by this method fail {@link WebServer#stop()} after listener cleanup has been attempted.
      * If this method is invoked during startup cleanup, exceptions may fail {@link WebServer#start()}.
+     * If this method is invoked during suspend or resume failure cleanup, exceptions may be suppressed on the original
+     * suspend or resume failure.
      */
     default void afterStop() {
     }
