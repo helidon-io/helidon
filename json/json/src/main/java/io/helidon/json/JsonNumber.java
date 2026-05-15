@@ -17,6 +17,7 @@
 package io.helidon.json;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import io.helidon.common.Api;
 
@@ -102,6 +103,24 @@ public final class JsonNumber extends JsonValue {
     }
 
     /**
+     * Return the byte value of this JsonNumber.
+     *
+     * @return the byte value
+     */
+    public byte byteValue() {
+        return bigDecimalValue().byteValue();
+    }
+
+    /**
+     * Return the short value of this JsonNumber.
+     *
+     * @return the short value
+     */
+    public short shortValue() {
+        return bigDecimalValue().shortValue();
+    }
+
+    /**
      * Return the int value of this JsonNumber.
      *
      * @return the int value
@@ -117,6 +136,24 @@ public final class JsonNumber extends JsonValue {
      */
     public long longValue() {
         return bigDecimalValue().longValue();
+    }
+
+    /**
+     * Return the float value of this JsonNumber.
+     *
+     * @return the float value
+     */
+    public float floatValue() {
+        return bigDecimalValue().floatValue();
+    }
+
+    /**
+     * Return the BigInteger value of this JsonNumber.
+     *
+     * @return the BigInteger value
+     */
+    public BigInteger bigIntegerValue() {
+        return bigDecimalValue().toBigInteger();
     }
 
     /**
