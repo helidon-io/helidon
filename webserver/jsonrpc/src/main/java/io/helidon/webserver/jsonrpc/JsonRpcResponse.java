@@ -68,8 +68,11 @@ public interface JsonRpcResponse extends ServerResponse {
     JsonRpcResponse result(JsonValue result);
 
     /**
-     * Set a result as an arbitrary object that can be mapped to JSON. This
-     * method serializes the parameter using Helidon JSON binding.
+     * Set a result from an object that can be mapped to a JSON object by
+     * Helidon JSON binding.
+     * <p>
+     * Custom Java types passed to this method should be annotated with
+     * {@code io.helidon.json.binding.Json.Entity}.
      *
      * @param object the object
      * @return this response
