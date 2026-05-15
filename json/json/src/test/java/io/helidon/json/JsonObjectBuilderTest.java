@@ -31,16 +31,21 @@ class JsonObjectBuilderTest {
     @Test
     void shouldSetAdditionalNumericValues() {
         BigInteger bigInteger = new BigInteger("123456789012345678901234567890");
+        String expectedJson = "{\"positiveByte\":7,"
+                + "\"negativeByte\":-7,"
+                + "\"short\":1024,"
+                + "\"bigInteger\":123456789012345678901234567890}";
 
         JsonObject result = JsonObject.builder()
-                .set("byte", (byte) 7)
+                .set("positiveByte", (byte) 7)
+                .set("negativeByte", (byte) -7)
                 .set("short", (short) 1024)
                 .set("bigInteger", bigInteger)
                 .build();
 
-        assertThat(result.toString(),
-                   is("{\"byte\":7,\"short\":1024,\"bigInteger\":123456789012345678901234567890}"));
-        assertThat(result.numberValue("byte").orElseThrow(), is(new BigDecimal("7")));
+        assertThat(result.toString(), is(expectedJson));
+        assertThat(result.numberValue("positiveByte").orElseThrow(), is(new BigDecimal("7")));
+        assertThat(result.numberValue("negativeByte").orElseThrow(), is(new BigDecimal("-7")));
         assertThat(result.numberValue("short").orElseThrow(), is(new BigDecimal("1024")));
         assertThat(result.numberValue("bigInteger").orElseThrow(), is(new BigDecimal(bigInteger)));
     }
