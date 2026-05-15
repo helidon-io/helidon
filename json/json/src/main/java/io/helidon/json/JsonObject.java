@@ -223,6 +223,68 @@ public final class JsonObject extends JsonValue {
     }
 
     /**
+     * Return the byte value associated with the specified key as an Optional.
+     *
+     * @param key the key to look up
+     * @return an Optional containing the byte value, or empty if the key is not present
+     */
+    public Optional<Byte> byteValue(String key) {
+        ensureResolvedKeys();
+        JsonValue jsonValue = content.get(key);
+        if (jsonValue == null) {
+            return Optional.empty();
+        }
+        return Optional.of(jsonValue.asNumber().byteValue());
+    }
+
+    /**
+     * Return the byte value associated with the specified key, or the default value if the key is not present.
+     *
+     * @param key the key to look up
+     * @param defaultValue the value to return if the key is not present
+     * @return the byte value associated with the key, or the default value
+     */
+    public byte byteValue(String key, byte defaultValue) {
+        ensureResolvedKeys();
+        JsonValue jsonValue = content.get(key);
+        if (jsonValue == null) {
+            return defaultValue;
+        }
+        return jsonValue.asNumber().byteValue();
+    }
+
+    /**
+     * Return the short value associated with the specified key as an Optional.
+     *
+     * @param key the key to look up
+     * @return an Optional containing the short value, or empty if the key is not present
+     */
+    public Optional<Short> shortValue(String key) {
+        ensureResolvedKeys();
+        JsonValue jsonValue = content.get(key);
+        if (jsonValue == null) {
+            return Optional.empty();
+        }
+        return Optional.of(jsonValue.asNumber().shortValue());
+    }
+
+    /**
+     * Return the short value associated with the specified key, or the default value if the key is not present.
+     *
+     * @param key the key to look up
+     * @param defaultValue the value to return if the key is not present
+     * @return the short value associated with the key, or the default value
+     */
+    public short shortValue(String key, short defaultValue) {
+        ensureResolvedKeys();
+        JsonValue jsonValue = content.get(key);
+        if (jsonValue == null) {
+            return defaultValue;
+        }
+        return jsonValue.asNumber().shortValue();
+    }
+
+    /**
      * Return the integer value associated with the specified key as an Optional.
      *
      * @param key the key to look up
@@ -254,6 +316,68 @@ public final class JsonObject extends JsonValue {
     }
 
     /**
+     * Return the long value associated with the specified key as an Optional.
+     *
+     * @param key the key to look up
+     * @return an Optional containing the long value, or empty if the key is not present
+     */
+    public Optional<Long> longValue(String key) {
+        ensureResolvedKeys();
+        JsonValue jsonValue = content.get(key);
+        if (jsonValue == null) {
+            return Optional.empty();
+        }
+        return Optional.of(jsonValue.asNumber().longValue());
+    }
+
+    /**
+     * Return the long value associated with the specified key, or the default value if the key is not present.
+     *
+     * @param key the key to look up
+     * @param defaultValue the value to return if the key is not present
+     * @return the long value associated with the key, or the default value
+     */
+    public long longValue(String key, long defaultValue) {
+        ensureResolvedKeys();
+        JsonValue jsonValue = content.get(key);
+        if (jsonValue == null) {
+            return defaultValue;
+        }
+        return jsonValue.asNumber().longValue();
+    }
+
+    /**
+     * Return the float value associated with the specified key as an Optional.
+     *
+     * @param key the key to look up
+     * @return an Optional containing the float value, or empty if the key is not present
+     */
+    public Optional<Float> floatValue(String key) {
+        ensureResolvedKeys();
+        JsonValue jsonValue = content.get(key);
+        if (jsonValue == null) {
+            return Optional.empty();
+        }
+        return Optional.of(jsonValue.asNumber().floatValue());
+    }
+
+    /**
+     * Return the float value associated with the specified key, or the default value if the key is not present.
+     *
+     * @param key the key to look up
+     * @param defaultValue the value to return if the key is not present
+     * @return the float value associated with the key, or the default value
+     */
+    public float floatValue(String key, float defaultValue) {
+        ensureResolvedKeys();
+        JsonValue jsonValue = content.get(key);
+        if (jsonValue == null) {
+            return defaultValue;
+        }
+        return jsonValue.asNumber().floatValue();
+    }
+
+    /**
      * Return the double value associated with the specified key as an Optional.
      *
      * @param key the key to look up
@@ -282,6 +406,37 @@ public final class JsonObject extends JsonValue {
             return defaultValue;
         }
         return jsonValue.asNumber().doubleValue();
+    }
+
+    /**
+     * Return the BigInteger value associated with the specified key as an Optional.
+     *
+     * @param key the key to look up
+     * @return an Optional containing the BigInteger value, or empty if the key is not present
+     */
+    public Optional<BigInteger> bigIntegerValue(String key) {
+        ensureResolvedKeys();
+        JsonValue jsonValue = content.get(key);
+        if (jsonValue == null) {
+            return Optional.empty();
+        }
+        return Optional.of(jsonValue.asNumber().bigIntegerValue());
+    }
+
+    /**
+     * Return the BigInteger value associated with the specified key, or the default value if the key is not present.
+     *
+     * @param key the key to look up
+     * @param defaultValue the value to return if the key is not present
+     * @return the BigInteger value associated with the key, or the default value
+     */
+    public BigInteger bigIntegerValue(String key, BigInteger defaultValue) {
+        ensureResolvedKeys();
+        JsonValue jsonValue = content.get(key);
+        if (jsonValue == null) {
+            return defaultValue;
+        }
+        return jsonValue.asNumber().bigIntegerValue();
     }
 
     /**
