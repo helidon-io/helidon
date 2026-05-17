@@ -90,7 +90,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private SocketWriter writer;
     private ProxyProtocolData proxyProtocolData;
 
-    // Published from the handler thread so lifecycle close/interrupt paths do not miss a created delegate.
+    // Published before handling starts so lifecycle close/interrupt paths do not miss the delegate.
     private volatile ServerConnection connection;
     // Published so concurrent close uses the wrapped socket once setup reaches that stage.
     private volatile HelidonSocket helidonSocket;
@@ -302,26 +302,28 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         }
 
         try {
+            ServerConnection selectedConnection = null;
             if (helidonSocket.protocolNegotiated()) {
-                this.connection = connectionProviders.byApplicationProtocol(helidonSocket.protocol())
+                selectedConnection = connectionProviders.byApplicationProtocol(helidonSocket.protocol())
                         .connection(this);
             }
 
-            if (connection == null) {
-                this.connection = identifyConnection();
+            if (selectedConnection == null) {
+                selectedConnection = identifyConnection();
             }
 
-            if (connection == null) {
+            if (selectedConnection == null) {
                 if (isHttp10Connection(reader)) {
                     // cannot easily return 505, so log better message instead
                     throw new CloseConnectionException("HTTP 1.0 is not supported, consider using HTTP 1.1");
                 }
                 throw new CloseConnectionException("No suitable connection provider");
             }
-            if (!startHandling()) {
+            if (!startHandling(selectedConnection)) {
+                close(false);
                 return;
             }
-            connection.handle(requestLimit);
+            selectedConnection.handle(requestLimit);
         } catch (RequestException e) {
             helidonSocket.log(LOGGER, WARNING, "escaped Request exception", e);
         } catch (HttpException e) {
@@ -352,9 +354,10 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         }
     }
 
-    private boolean startHandling() {
+    private boolean startHandling(ServerConnection selectedConnection) {
         closeLock.lock();
         try {
+            connection = selectedConnection;
             if (closeRequested) {
                 return false;
             }

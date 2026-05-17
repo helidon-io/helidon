@@ -271,6 +271,11 @@ class ServerListener implements ListenerContext {
         return tls.enabled();
     }
 
+    Thread.State serverThreadState() {
+        Thread localServerThread = serverThread;
+        return localServerThread == null ? null : localServerThread.getState();
+    }
+
     void reloadTls(Tls tls) {
         if (!this.tls.enabled()) {
             throw new IllegalArgumentException("TLS is not enabled on the socket " + socketName

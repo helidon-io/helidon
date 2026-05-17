@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 import io.helidon.common.buffers.BufferData;
@@ -454,12 +455,59 @@ class ServerListenerLifecycleTest {
 
             assertThat(stopThread.isAlive(), is(false));
             assertThat(stopFailure.get(), nullValue());
-            assertThat(selector.connection().gracefulCloses(), is(0));
+            assertThat(selector.connection().gracefulCloses(), is(1));
             assertThat(selector.connection().forcedCloses(), is(0));
             assertThat(selector.connection().handlingStarted(), is(false));
         } finally {
             selector.release();
-            selector.connection().release();
+            BlockingConnection connection = selector.connection();
+            if (connection != null) {
+                connection.release();
+            }
+            if (stopThread != null && stopThread.isAlive()) {
+                stopThread.interrupt();
+            }
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void gracefulShutdownClosesConnectionCreatedAfterCloseRequest() throws Exception {
+        ConnectionCreationBlockingSelector selector = new ConnectionCreationBlockingSelector();
+        AtomicReference<Throwable> stopFailure = new AtomicReference<>();
+        LoomServer server = startServer(selector, Duration.ofMinutes(1));
+        Thread stopThread = null;
+
+        try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
+            socket.setSoTimeout(5_000);
+            socket.getOutputStream().write('x');
+            assertThat(selector.awaitConnectionCreation(), is(true));
+
+            stopThread = Thread.ofPlatform()
+                    .name("test-graceful-connection-created-after-close")
+                    .start(() -> {
+                        try {
+                            server.stop();
+                        } catch (RuntimeException | Error e) {
+                            stopFailure.set(e);
+                        }
+                    });
+
+            assertSocketClosed(socket);
+            selector.release();
+            stopThread.join(TimeUnit.SECONDS.toMillis(5));
+
+            assertThat(stopThread.isAlive(), is(false));
+            assertThat(stopFailure.get(), nullValue());
+            assertThat(selector.connection().handlingStarted(), is(false));
+            assertThat(selector.connection().gracefulCloses(), is(1));
+            assertThat(selector.connection().forcedCloses(), is(0));
+        } finally {
+            selector.release();
+            BlockingConnection connection = selector.connection();
+            if (connection != null) {
+                connection.release();
+            }
             if (stopThread != null && stopThread.isAlive()) {
                 stopThread.interrupt();
             }
@@ -483,8 +531,11 @@ class ServerListenerLifecycleTest {
             assertThat(selector.connection().handlingStarted(), is(false));
 
             selector.release();
+            waitFor(Duration.ofSeconds(5),
+                    () -> selector.connection().forcedCloses() == 1,
+                    "accepted connection was not force closed");
             assertThat(selector.connection().gracefulCloses(), is(0));
-            assertThat(selector.connection().forcedCloses(), is(0));
+            assertThat(selector.connection().forcedCloses(), is(1));
             assertThat(selector.connection().handlingStarted(), is(false));
         } finally {
             selector.release();
@@ -524,7 +575,7 @@ class ServerListenerLifecycleTest {
             assertThat(suspendThread.isAlive(), is(false));
             assertThat(suspendFailure.get(), nullValue());
             assertThat(selector.connection().gracefulCloses(), is(0));
-            assertThat(selector.connection().forcedCloses(), is(0));
+            assertThat(selector.connection().forcedCloses(), is(1));
             assertThat(selector.connection().handlingStarted(), is(false));
         } finally {
             selector.release();
@@ -538,7 +589,7 @@ class ServerListenerLifecycleTest {
 
     @Test
     void idleTimeoutIgnoresAcceptedSocketBeforeConnectionHandling() throws Exception {
-        PreRegistrationConnectionSelector selector = new PreRegistrationConnectionSelector();
+        PreRegistrationThenIdleConnectionSelector selector = new PreRegistrationThenIdleConnectionSelector();
         LoomServer server = (LoomServer) WebServer.builder()
                 .shutdownHook(false)
                 .address(InetAddress.getLoopbackAddress())
@@ -549,19 +600,25 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start();
 
-        try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
-            socket.setSoTimeout(250);
-            socket.getOutputStream().write('x');
+        try (Socket blockedSocket = new Socket(InetAddress.getLoopbackAddress(), server.port());
+                Socket idleSocket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
+            blockedSocket.setSoTimeout(250);
+            blockedSocket.getOutputStream().write('x');
             assertThat(selector.awaitSupports(), is(true));
-            TimeUnit.MILLISECONDS.sleep(200);
 
-            assertThrows(SocketTimeoutException.class, () -> socket.getInputStream().read());
-            assertThat(selector.connection().handlingStarted(), is(false));
-            assertThat(selector.connection().gracefulCloses(), is(0));
-            assertThat(selector.connection().forcedCloses(), is(0));
+            idleSocket.getOutputStream().write('x');
+            assertThat(selector.idleConnection().awaitHandling(), is(true));
+            assertThat(selector.idleConnection().awaitGracefulClose(), is(true));
+
+            assertThrows(SocketTimeoutException.class, () -> blockedSocket.getInputStream().read());
+            assertThat(selector.preRegistrationConnection().handlingStarted(), is(false));
+            assertThat(selector.preRegistrationConnection().gracefulCloses(), is(0));
+            assertThat(selector.preRegistrationConnection().forcedCloses(), is(0));
+            assertThat(selector.idleConnection().forcedCloses(), is(0));
         } finally {
             selector.release();
-            selector.connection().release();
+            selector.preRegistrationConnection().release();
+            selector.idleConnection().release();
             stopUntilStopped(server);
         }
     }
@@ -761,6 +818,17 @@ class ServerListenerLifecycleTest {
         }
     }
 
+    private static void waitFor(Duration timeout, BooleanSupplier condition, String message) throws InterruptedException {
+        long deadline = System.nanoTime() + timeout.toNanos();
+        while (System.nanoTime() < deadline) {
+            if (condition.getAsBoolean()) {
+                return;
+            }
+            TimeUnit.MILLISECONDS.sleep(10);
+        }
+        throw new AssertionError(message);
+    }
+
     private static int awaitPort(WebServer server, String socketName) throws Exception {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         int port;
@@ -896,6 +964,114 @@ class ServerListenerLifecycleTest {
                 return connections[connections.length - 1];
             }
             return connections[current];
+        }
+    }
+
+    private static final class PreRegistrationThenIdleConnectionSelector implements ServerConnectionSelector {
+        private final AtomicBoolean preRegistrationSelected = new AtomicBoolean();
+        private final ThreadLocal<Boolean> preRegistrationHandler = ThreadLocal.withInitial(() -> false);
+        private final CountDownLatch supportsEntered = new CountDownLatch(1);
+        private final CountDownLatch release = new CountDownLatch(1);
+        private final BlockingConnection preRegistrationConnection = new BlockingConnection();
+        private final IdleBlockingConnection idleConnection = new IdleBlockingConnection();
+
+        @Override
+        public int bytesToIdentifyConnection() {
+            return 0;
+        }
+
+        @Override
+        public Support supports(BufferData data) {
+            if (preRegistrationSelected.compareAndSet(false, true)) {
+                preRegistrationHandler.set(true);
+                supportsEntered.countDown();
+                while (release.getCount() != 0) {
+                    try {
+                        release.await(1, TimeUnit.SECONDS);
+                    } catch (InterruptedException _) {
+                        // Deliberately ignore interrupts to prove idle timeout does not close the accepted socket.
+                    }
+                }
+            }
+            return Support.SUPPORTED;
+        }
+
+        @Override
+        public Set<String> supportedApplicationProtocols() {
+            return Set.of("test-pre-registration-then-idle");
+        }
+
+        @Override
+        public ServerConnection connection(ConnectionContext ctx) {
+            if (preRegistrationHandler.get()) {
+                preRegistrationHandler.remove();
+                return preRegistrationConnection;
+            }
+            return idleConnection;
+        }
+
+        private boolean awaitSupports() throws InterruptedException {
+            return supportsEntered.await(5, TimeUnit.SECONDS);
+        }
+
+        private void release() {
+            release.countDown();
+        }
+
+        private BlockingConnection preRegistrationConnection() {
+            return preRegistrationConnection;
+        }
+
+        private IdleBlockingConnection idleConnection() {
+            return idleConnection;
+        }
+    }
+
+    private static final class ConnectionCreationBlockingSelector implements ServerConnectionSelector {
+        private final CountDownLatch connectionCreationEntered = new CountDownLatch(1);
+        private final CountDownLatch release = new CountDownLatch(1);
+        private final AtomicReference<BlockingConnection> connection = new AtomicReference<>();
+
+        @Override
+        public int bytesToIdentifyConnection() {
+            return 0;
+        }
+
+        @Override
+        public Support supports(BufferData data) {
+            return Support.SUPPORTED;
+        }
+
+        @Override
+        public Set<String> supportedApplicationProtocols() {
+            return Set.of("test-connection-creation-blocking");
+        }
+
+        @Override
+        public ServerConnection connection(ConnectionContext ctx) {
+            BlockingConnection newConnection = new BlockingConnection();
+            connection.set(newConnection);
+            connectionCreationEntered.countDown();
+            while (release.getCount() != 0) {
+                try {
+                    release.await(1, TimeUnit.SECONDS);
+                } catch (InterruptedException _) {
+                    // Deliberately ignore interrupts to prove shutdown closes the just-created connection.
+                }
+            }
+            return newConnection;
+        }
+
+        private boolean awaitConnectionCreation() throws InterruptedException {
+            return connectionCreationEntered.await(5, TimeUnit.SECONDS);
+        }
+
+        private void release() {
+            release.countDown();
+        }
+
+        private BlockingConnection connection() {
+            return connection.get();
         }
     }
 

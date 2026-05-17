@@ -17,12 +17,14 @@
 package io.helidon.webserver;
 
 import java.net.Socket;
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BooleanSupplier;
 
 import org.junit.jupiter.api.Test;
 
@@ -46,6 +48,10 @@ class ServerListenerSuspendTest {
         try {
             stalledConnection = new Socket("127.0.0.1", server.port());
             queuedConnection = new Socket("127.0.0.1", server.port());
+
+            waitFor(Duration.ofSeconds(5),
+                    () -> server.listenerThreadState(WebServer.DEFAULT_SOCKET_NAME) == Thread.State.TIMED_WAITING,
+                    "listener did not block on the TCP connection limit");
 
             Future<?> suspendFuture = executor.submit(server::suspend);
             try {
@@ -88,6 +94,17 @@ class ServerListenerSuspendTest {
             throw error;
         }
         return e;
+    }
+
+    private static void waitFor(Duration timeout, BooleanSupplier condition, String message) throws InterruptedException {
+        long deadline = System.nanoTime() + timeout.toNanos();
+        while (System.nanoTime() < deadline) {
+            if (condition.getAsBoolean()) {
+                return;
+            }
+            Thread.sleep(10);
+        }
+        fail(message);
     }
 
     private static void closeQuietly(Socket socket) {

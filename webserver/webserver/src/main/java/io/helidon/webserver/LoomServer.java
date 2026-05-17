@@ -262,6 +262,11 @@ class LoomServer implements WebServer, Resumable {
                 + "Java " + Runtime.version());
     }
 
+    Thread.State listenerThreadState(String socketName) {
+        ServerListener listener = listeners.get(socketName);
+        return listener == null ? null : listener.serverThreadState();
+    }
+
     private static void validateRoutingsHaveNamedListener(WebServerConfig serverConfig, Set<String> namedListeners) {
         var routingNames = serverConfig.namedRoutings()
                 .keySet();
