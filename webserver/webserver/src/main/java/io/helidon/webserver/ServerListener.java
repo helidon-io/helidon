@@ -271,6 +271,7 @@ class ServerListener implements ListenerContext {
         return tls.enabled();
     }
 
+    // Intended for tests that need listener state without stack walking.
     Thread.State serverThreadState() {
         Thread localServerThread = serverThread;
         return localServerThread == null ? null : localServerThread.getState();
