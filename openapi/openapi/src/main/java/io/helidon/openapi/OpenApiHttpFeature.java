@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.openapi;
 
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -25,10 +26,19 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.BadRequestException;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpMediaType;
+import io.helidon.http.HttpPrologue;
+import io.helidon.http.PathMatcher;
+import io.helidon.http.PathMatchers;
+import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.cors.CorsEnabledServiceHelper;
+import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpFeature;
+import io.helidon.webserver.http.HttpRoute;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.SecureHandler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -67,12 +77,16 @@ class OpenApiHttpFeature implements HttpFeature {
     @Override
     public void setup(HttpRouting.Builder routing) {
         String path = config.webContext();
+        HttpRules openApiServiceRules = routing;
         if (!config.permitAll()) {
-            routing.any(path, SecureHandler.authorize(config.roles().toArray(new String[0])));
+            SecureHandler secureHandler = SecureHandler.authorize(config.roles().toArray(new String[0]));
+            routing.any(path, secureHandler);
+            openApiServiceRules = new SecuredRules(routing, secureHandler);
         }
         routing.any(path, corsService.processor())
                 .get(path, this::handle);
-        config.services().forEach(service -> service.setup(routing, path, this::content));
+        HttpRules serviceRules = openApiServiceRules;
+        config.services().forEach(service -> service.setup(serviceRules, path, this::content));
     }
 
     @SuppressWarnings("unchecked")
@@ -130,6 +144,117 @@ class OpenApiHttpFeature implements HttpFeature {
             }
         }
         return cachedDocuments.computeIfAbsent(format, fmt -> format(manager, fmt, model.get()));
+    }
+
+    private static final class SecuredRules implements HttpRules {
+        private final HttpRules delegate;
+        private final SecureHandler secureHandler;
+
+        private SecuredRules(HttpRules delegate, SecureHandler secureHandler) {
+            this.delegate = delegate;
+            this.secureHandler = secureHandler;
+        }
+
+        @Override
+        public HttpRules register(HttpService... service) {
+            delegate.register(securedServices(service));
+            return this;
+        }
+
+        @Override
+        public HttpRules register(String pathPattern, HttpService... service) {
+            delegate.register(pathPattern, securedServices(service));
+            return this;
+        }
+
+        @Override
+        public HttpRules route(HttpRoute route) {
+            delegate.route(new SecuredRoute(route, secureHandler));
+            return this;
+        }
+
+        private HttpService[] securedServices(HttpService[] services) {
+            HttpService[] securedServices = new HttpService[services.length];
+            for (int i = 0; i < services.length; i++) {
+                securedServices[i] = new SecuredService(services[i], secureHandler);
+            }
+            return securedServices;
+        }
+    }
+
+    private static final class SecuredService implements HttpService {
+        private final HttpService delegate;
+        private final SecureHandler secureHandler;
+
+        private SecuredService(HttpService delegate, SecureHandler secureHandler) {
+            this.delegate = delegate;
+            this.secureHandler = secureHandler;
+        }
+
+        @Override
+        public void routing(HttpRules rules) {
+            delegate.routing(new SecuredRules(rules, secureHandler));
+        }
+
+        @Override
+        public void beforeStart() {
+            delegate.beforeStart();
+        }
+
+        @Override
+        public void afterStart(WebServer webServer) {
+            delegate.afterStart(webServer);
+        }
+
+        @Override
+        public void afterStop() {
+            delegate.afterStop();
+        }
+    }
+
+    private static final class SecuredRoute implements HttpRoute {
+        private final HttpRoute delegate;
+        private final Handler handler;
+
+        private SecuredRoute(HttpRoute delegate, SecureHandler secureHandler) {
+            this.delegate = delegate;
+            this.handler = secureHandler.wrap(delegate.handler());
+        }
+
+        @Override
+        public PathMatchers.MatchResult accepts(HttpPrologue prologue) {
+            return delegate.accepts(prologue);
+        }
+
+        @Override
+        public PathMatchers.MatchResult accepts(HttpPrologue prologue, ServerRequestHeaders headers) {
+            return delegate.accepts(prologue, headers);
+        }
+
+        @Override
+        public Handler handler() {
+            return handler;
+        }
+
+        @Override
+        public Optional<PathMatcher> pathMatcher() {
+            return delegate.pathMatcher();
+        }
+
+        @Override
+        public void beforeStart() {
+            delegate.beforeStart();
+        }
+
+        @Override
+        public void afterStart(WebServer webServer) {
+            delegate.afterStart(webServer);
+        }
+
+        @Override
+        public void afterStop() {
+            delegate.afterStop();
+        }
     }
 
 }
