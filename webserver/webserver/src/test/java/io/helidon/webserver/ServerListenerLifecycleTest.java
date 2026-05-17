@@ -574,6 +574,9 @@ class ServerListenerLifecycleTest {
 
             assertThat(suspendThread.isAlive(), is(false));
             assertThat(suspendFailure.get(), nullValue());
+            waitFor(Duration.ofSeconds(5),
+                    () -> selector.connection().forcedCloses() == 1,
+                    "accepted connection was not force closed");
             assertThat(selector.connection().gracefulCloses(), is(0));
             assertThat(selector.connection().forcedCloses(), is(1));
             assertThat(selector.connection().handlingStarted(), is(false));
