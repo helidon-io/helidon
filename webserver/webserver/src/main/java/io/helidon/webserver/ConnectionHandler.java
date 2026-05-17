@@ -132,7 +132,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             if (writer != null) {
                 writer.close();
             }
-            closeChannel(channelId);
+            closeChannel();
             if (helidonSocket != null) {
                 helidonSocket.log(LOGGER, DEBUG, "socket closed");
             }
@@ -217,7 +217,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             closeLock.unlock();
         }
         if (closeChannel) {
-            closeChannel("0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket)));
+            closeChannel();
         }
         if (localConnection != null) {
             localConnection.close(localCloseInterrupt);
@@ -502,7 +502,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         }
     }
 
-    private void closeChannel(String channelId) {
+    private void closeChannel() {
         if (helidonSocket == null) {
             try {
                 socket.close();
