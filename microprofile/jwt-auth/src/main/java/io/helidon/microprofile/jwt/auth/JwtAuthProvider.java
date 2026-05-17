@@ -44,12 +44,14 @@ import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
@@ -121,6 +123,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
      * This will be ignored unless {@link #CONFIG_JWT_HEADER} is set to {@link io.helidon.http.HeaderNames#COOKIE}.
      */
     private static final String CONFIG_COOKIE_PROPERTY_NAME = "mp.jwt.token.cookie";
+    private static final String DEFAULT_JWT_GROUPS_PATH = "groups";
     /**
      * Configuration of the header where the JWT token is set.
      *
@@ -153,6 +156,8 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
     private final boolean useCookie;
     private final Duration expectedMaxTokenAge;
     private final Duration clockSkew;
+    private final String jwtGroupsPath;
+    private final String jwtGroupsSeparator;
 
     private JwtAuthProvider(Builder builder) {
         this.optional = builder.optional;
@@ -175,6 +180,8 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
         this.decryptionKeyAlgorithm = builder.decryptionKeyAlgorithm;
         this.expectedMaxTokenAge = builder.expectedMaxTokenAge;
         this.clockSkew = builder.clockSkew;
+        this.jwtGroupsPath = builder.jwtGroupsPath;
+        this.jwtGroupsSeparator = builder.jwtGroupsSeparator;
 
         if (null == atnTokenHandler) {
             defaultTokenHandler = TokenHandler.builder()
@@ -319,7 +326,11 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
                         Errors validate = jwtValidator.validate(jwt);
 
                         if (validate.isValid()) {
-                            return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
+                            try {
+                                return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
+                            } catch (JwtException e) {
+                                return AuthenticationResponse.failed(e.getMessage(), e);
+                            }
                         } else {
                             return AuthenticationResponse.failed(validate.toString());
                         }
@@ -350,7 +361,8 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
     }
 
     Subject buildSubject(Jwt jwt, SignedJwt signedJwt) {
-        JsonWebTokenImpl principal = buildPrincipal(signedJwt);
+        Optional<List<String>> userGroups = jwtGroups(jwt);
+        JsonWebTokenImpl principal = buildPrincipal(signedJwt, userGroups.map(Set::copyOf).orElse(null));
 
         TokenCredential.Builder builder = TokenCredential.builder();
         jwt.issueTime().ifPresent(builder::issueTime);
@@ -365,7 +377,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
                 .principal(principal)
                 .addPublicCredential(TokenCredential.class, builder.build());
 
-        Optional<List<String>> userGroups = jwt.userGroups();
         userGroups.ifPresent(groups -> groups.forEach(group -> subjectBuilder.addGrant(Role.create(group))));
 
         Optional<List<String>> scopes = jwt.scopes();
@@ -378,8 +389,52 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
         return subjectBuilder.build();
     }
 
-    static JsonWebTokenImpl buildPrincipal(SignedJwt signedJwt) {
-        return JsonWebTokenImpl.create(signedJwt);
+    static JsonWebTokenImpl buildPrincipal(SignedJwt signedJwt, Set<String> userGroups) {
+        return JsonWebTokenImpl.create(signedJwt, userGroups);
+    }
+
+    private Optional<List<String>> jwtGroups(Jwt jwt) {
+        if (DEFAULT_JWT_GROUPS_PATH.equals(jwtGroupsPath)) {
+            return jwt.userGroups();
+        }
+        return jwtGroupsClaim(jwt)
+                .map(this::toGroups)
+                .or(() -> Optional.of(List.of()));
+    }
+
+    private Optional<io.helidon.json.JsonValue> jwtGroupsClaim(Jwt jwt) {
+        String[] pathSegments = jwtGroupsPath.split("/");
+        Optional<io.helidon.json.JsonValue> currentValue = jwt.payloadClaimValue(pathSegments[0]);
+        for (int i = 1; i < pathSegments.length; i++) {
+            String pathSegment = pathSegments[i];
+            currentValue = currentValue
+                    .filter(it -> it instanceof io.helidon.json.JsonObject)
+                    .flatMap(it -> it.asObject().value(pathSegment));
+        }
+        return currentValue;
+    }
+
+    private List<String> toGroups(io.helidon.json.JsonValue claimValue) {
+        if (claimValue instanceof io.helidon.json.JsonArray groups) {
+            return groups.values()
+                    .stream()
+                    .map(this::toGroup)
+                    .toList();
+        }
+        String group = toGroup(claimValue);
+        if (jwtGroupsSeparator == null) {
+            return List.of(group);
+        }
+        return Stream.of(group.split(Pattern.quote(jwtGroupsSeparator)))
+                .filter(it -> !it.isBlank())
+                .toList();
+    }
+
+    private String toGroup(io.helidon.json.JsonValue groupValue) {
+        if (groupValue instanceof io.helidon.json.JsonString group) {
+            return group.value();
+        }
+        throw new JwtException("Invalid value. Expecting a string or string array for key " + jwtGroupsPath);
     }
 
     @Override
@@ -674,6 +729,8 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
         private boolean loadOnStartup = false;
         private Duration expectedMaxTokenAge = null;
         private Duration clockSkew = Duration.ofSeconds(5);
+        private String jwtGroupsPath = DEFAULT_JWT_GROUPS_PATH;
+        private String jwtGroupsSeparator;
 
         private Builder() {
         }
@@ -1167,6 +1224,8 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
             config.get("sign-token").asNode().ifPresent(outbound -> outboundConfig(OutboundConfig.create(outbound)));
             config.get("sign-token").asNode().ifPresent(this::outbound);
             config.get("load-on-startup").asBoolean().ifPresent(this::loadOnStartup);
+            config.get("jwt-groups-path").asString().ifPresent(this::jwtGroupsPath);
+            config.get("jwt-groups-separator").asString().ifPresent(this::jwtGroupsSeparator);
 
             org.eclipse.microprofile.config.Config mpConfig = ConfigProviderResolver.instance().getConfig();
 
@@ -1329,6 +1388,41 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
         public Builder clockSkew(int clockSkew) {
             this.clockSkew = Duration.ofSeconds(clockSkew);
             return this;
+        }
+
+        /**
+         * Path to the JWT payload claim containing the groups to add as role grants.
+         * The default path is {@code groups}. Nested object claims can be configured with slash-separated path segments,
+         * such as {@code realm/groups}.
+         *
+         * @param jwtGroupsPath JWT groups claim path
+         * @return updated builder instance
+         */
+        public Builder jwtGroupsPath(String jwtGroupsPath) {
+            this.jwtGroupsPath = requireText(jwtGroupsPath, "JWT groups path");
+            return this;
+        }
+
+        /**
+         * Separator used to split a string claim value into multiple groups.
+         * This is used only when {@link #jwtGroupsPath(String)} configures a custom path other than {@code groups}.
+         * The default {@code groups} claim keeps the standard MP JWT behavior.
+         * Setting this property without changing the JWT groups path has no effect.
+         *
+         * @param jwtGroupsSeparator separator for string-valued custom groups claim
+         * @return updated builder instance
+         */
+        public Builder jwtGroupsSeparator(String jwtGroupsSeparator) {
+            this.jwtGroupsSeparator = requireText(jwtGroupsSeparator, "JWT groups separator");
+            return this;
+        }
+
+        private static String requireText(String value, String description) {
+            Objects.requireNonNull(value, description + " must not be null");
+            if (value.isEmpty()) {
+                throw new IllegalArgumentException(description + " must not be empty");
+            }
+            return value;
         }
 
         private void verifyKeys(Config config) {
