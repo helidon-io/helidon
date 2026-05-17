@@ -31,6 +31,7 @@ import io.helidon.webserver.ServerConnectionException;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -94,5 +95,29 @@ class Http2ConnectionTest {
                 () -> assertThat(exception.getCause(), instanceOf(UncheckedIOException.class)),
                 () -> assertThat(exception.getCause().getCause(), instanceOf(SocketException.class))
         );
+    }
+
+    @Test
+    void gracefulCloseBeforeHandleDoesNotRequireHandlerThread() {
+        closeBeforeHandleDoesNotRequireHandlerThread(false);
+    }
+
+    @Test
+    void forcedCloseBeforeHandleDoesNotRequireHandlerThread() {
+        closeBeforeHandleDoesNotRequireHandlerThread(true);
+    }
+
+    private static void closeBeforeHandleDoesNotRequireHandlerThread(boolean interrupt) {
+        ConnectionContext ctx = mock(ConnectionContext.class);
+        when(ctx.router()).thenReturn(Router.empty());
+        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
+        when(ctx.dataWriter()).thenReturn(mock(DataWriter.class));
+        when(ctx.dataReader()).thenReturn(mock(DataReader.class));
+
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
+
+        connection.close(interrupt);
+
+        assertThat(connection.canInterrupt(), is(true));
     }
 }

@@ -19,23 +19,31 @@ package io.helidon.webserver;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketOption;
 import java.net.UnixDomainSocketAddress;
+import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import io.helidon.common.task.InterruptableTask;
+import io.helidon.common.buffers.BufferData;
+import io.helidon.common.socket.SocketOptions;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.spi.ServerConnection;
+import io.helidon.webserver.spi.ServerConnectionSelector;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
@@ -45,6 +53,7 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -310,211 +319,218 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
-    void interruptedExecutorShutdownStillFinishesListenerCleanup() throws Exception {
-        CountDownLatch sharedTaskStarted = new CountDownLatch(1);
-        CountDownLatch releaseSharedTask = new CountDownLatch(1);
-        CountDownLatch sharedTaskInterrupted = new CountDownLatch(1);
-        CountDownLatch sharedExecutorAwaitStarted = new CountDownLatch(1);
-        CountDownLatch forceCloseInvoked = new CountDownLatch(1);
-        AtomicReference<Throwable> stopFailure = new AtomicReference<>();
+    void activeConnectionCloseFailuresDoNotSkipRemainingConnections() throws Exception {
+        AtomicInteger firstCloseCalls = new AtomicInteger();
+        AtomicInteger secondCloseCalls = new AtomicInteger();
+        ThrowingBlockingConnection first = new ThrowingBlockingConnection(firstCloseCalls, "connection close failed");
+        ThrowingBlockingConnection second = new ThrowingBlockingConnection(secondCloseCalls, "connection close failed");
+        QueueingConnectionSelector selector = new QueueingConnectionSelector(first, second);
         LifecycleService service = new LifecycleService("default");
 
-        LoomServer server = (LoomServer) WebServer.builder()
-                .shutdownHook(false)
-                .port(0)
-                .shutdownGracePeriod(Duration.ofSeconds(30))
-                .routing(routing -> routing.register(service))
-                .build()
-                .start();
+        LoomServer server = startServer(selector, Duration.ZERO, service);
 
-        Future<?> sharedTask = null;
-        Thread stopThread = null;
-        try {
-            ServerListener listener = server.listener(WebServer.DEFAULT_SOCKET_NAME);
-            assertThat(listener, notNullValue());
-            listener.activeConnection("test", new CloseTrackingConnection(forceCloseInvoked));
-            listener.beforeSharedExecutorAwait(sharedExecutorAwaitStarted::countDown);
-            sharedTask = listener.executor().submit(() -> {
-                sharedTaskStarted.countDown();
-                try {
-                    releaseSharedTask.await();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    sharedTaskInterrupted.countDown();
-                    throw new IllegalStateException("shared task interrupted", e);
-                }
-            });
-            assertThat(sharedTaskStarted.await(5, TimeUnit.SECONDS), is(true));
-
-            stopThread = Thread.ofPlatform()
-                    .name("test-interrupted-stop")
-                    .start(() -> {
-                        try {
-                            server.stop();
-                        } catch (RuntimeException | Error e) {
-                            stopFailure.set(e);
-                        }
-                    });
-
-            assertThat(sharedExecutorAwaitStarted.await(5, TimeUnit.SECONDS), is(true));
-
-            stopThread.interrupt();
-            assertThat(forceCloseInvoked.await(5, TimeUnit.SECONDS), is(true));
-            assertThat(sharedTaskInterrupted.await(5, TimeUnit.SECONDS), is(true));
-            stopThread.join(TimeUnit.SECONDS.toMillis(5));
-
-            assertThat(stopThread.isAlive(), is(false));
-            assertThat(stopFailure.get(), notNullValue());
-            assertThat(containsMessage(stopFailure.get(), "Interrupted while shutting down listener executor"), is(true));
-            assertThat(server.isRunning(), is(false));
-            assertThat(service.afterStops(), is(1));
-        } finally {
-            releaseSharedTask.countDown();
-            if (sharedTask != null) {
-                sharedTask.cancel(true);
-            }
-            if (stopThread != null && stopThread.isAlive()) {
-                stopThread.interrupt();
-            }
-            stopUntilStopped(server);
-        }
-    }
-
-    @Test
-    void interruptedReaderExecutorShutdownFailsStopAndForcesShutdown() throws Exception {
-        CountDownLatch readerTaskStarted = new CountDownLatch(1);
-        CountDownLatch releaseReaderTask = new CountDownLatch(1);
-        CountDownLatch readerTaskInterrupted = new CountDownLatch(1);
-        CountDownLatch readerExecutorTerminateStarted = new CountDownLatch(1);
-        AtomicReference<Throwable> stopFailure = new AtomicReference<>();
-        LifecycleService service = new LifecycleService("default");
-
-        LoomServer server = (LoomServer) WebServer.builder()
-                .shutdownHook(false)
-                .port(0)
-                .shutdownGracePeriod(Duration.ofSeconds(30))
-                .routing(routing -> routing.register(service))
-                .build()
-                .start();
-
-        Future<?> readerTask = null;
-        Thread stopThread = null;
-        try {
-            ServerListener listener = server.listener(WebServer.DEFAULT_SOCKET_NAME);
-            assertThat(listener, notNullValue());
-            listener.beforeReaderExecutorTerminate(readerExecutorTerminateStarted::countDown);
-            readerTask = listener.readerTask(new BlockingReaderTask(readerTaskStarted,
-                                                                    releaseReaderTask,
-                                                                    readerTaskInterrupted));
-            assertThat(readerTaskStarted.await(5, TimeUnit.SECONDS), is(true));
-
-            stopThread = Thread.ofPlatform()
-                    .name("test-interrupted-reader-stop")
-                    .start(() -> {
-                        try {
-                            server.stop();
-                        } catch (RuntimeException | Error e) {
-                            stopFailure.set(e);
-                        }
-                    });
-
-            assertThat(readerExecutorTerminateStarted.await(5, TimeUnit.SECONDS), is(true));
-
-            stopThread.interrupt();
-            assertThat(readerTaskInterrupted.await(5, TimeUnit.SECONDS), is(true));
-            stopThread.join(TimeUnit.SECONDS.toMillis(5));
-
-            assertThat(stopThread.isAlive(), is(false));
-            assertThat(stopFailure.get(), notNullValue());
-            assertThat(containsMessage(stopFailure.get(), "Interrupted while shutting down listener reader executor"), is(true));
-            assertThat(server.isRunning(), is(false));
-            assertThat(service.afterStops(), is(1));
-        } finally {
-            releaseReaderTask.countDown();
-            if (readerTask != null) {
-                readerTask.cancel(true);
-            }
-            if (stopThread != null && stopThread.isAlive()) {
-                stopThread.interrupt();
-            }
-            stopUntilStopped(server);
-        }
-    }
-
-    @Test
-    void executorShutdownTestHookFailureDoesNotSkipForcedShutdown() throws Exception {
-        CountDownLatch sharedTaskStarted = new CountDownLatch(1);
-        CountDownLatch releaseSharedTask = new CountDownLatch(1);
-        CountDownLatch sharedTaskInterrupted = new CountDownLatch(1);
-        LifecycleService service = new LifecycleService("default");
-
-        LoomServer server = (LoomServer) WebServer.builder()
-                .shutdownHook(false)
-                .port(0)
-                .shutdownGracePeriod(Duration.ofMillis(1))
-                .routing(routing -> routing.register(service))
-                .build()
-                .start();
-
-        Future<?> sharedTask = null;
-        try {
-            ServerListener listener = server.listener(WebServer.DEFAULT_SOCKET_NAME);
-            assertThat(listener, notNullValue());
-            listener.beforeSharedExecutorAwait(() -> {
-                throw new IllegalStateException("before await failed");
-            });
-            sharedTask = listener.executor().submit(() -> {
-                sharedTaskStarted.countDown();
-                try {
-                    releaseSharedTask.await();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    sharedTaskInterrupted.countDown();
-                    throw new IllegalStateException("shared task interrupted", e);
-                }
-            });
-            assertThat(sharedTaskStarted.await(5, TimeUnit.SECONDS), is(true));
-
-            RuntimeException failure = assertThrows(RuntimeException.class, server::stop);
-
-            assertThat(containsMessage(failure, "before await failed"), is(true));
-            assertThat(sharedTaskInterrupted.await(5, TimeUnit.SECONDS), is(true));
-            assertThat(server.isRunning(), is(false));
-            assertThat(service.afterStops(), is(1));
-        } finally {
-            releaseSharedTask.countDown();
-            if (sharedTask != null) {
-                sharedTask.cancel(true);
-            }
-            stopUntilStopped(server);
-        }
-    }
-
-    @Test
-    void activeConnectionCloseFailuresDoNotSkipRemainingConnections() {
-        AtomicInteger closeCalls = new AtomicInteger();
-        LifecycleService service = new LifecycleService("default");
-
-        LoomServer server = (LoomServer) WebServer.builder()
-                .shutdownHook(false)
-                .port(0)
-                .routing(routing -> routing.register(service))
-                .build()
-                .start();
-
-        try {
-            ServerListener listener = server.listener(WebServer.DEFAULT_SOCKET_NAME);
-            assertThat(listener, notNullValue());
-            listener.activeConnection("first", new ThrowingCloseConnection(closeCalls));
-            listener.activeConnection("second", new ThrowingCloseConnection(closeCalls));
+        try (Socket firstSocket = new Socket(InetAddress.getLoopbackAddress(), server.port());
+             Socket secondSocket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
+            firstSocket.getOutputStream().write('x');
+            secondSocket.getOutputStream().write('x');
+            assertThat(first.awaitHandling(), is(true));
+            assertThat(second.awaitHandling(), is(true));
 
             RuntimeException failure = assertThrows(RuntimeException.class, server::stop);
 
             assertThat(containsMessage(failure, "connection close failed"), is(true));
-            assertThat(closeCalls.get(), is(4));
+            assertThat(firstCloseCalls.get(), is(2));
+            assertThat(secondCloseCalls.get(), is(2));
             assertThat(service.afterStops(), is(1));
             assertThat(server.isRunning(), is(false));
         } finally {
+            first.release();
+            second.release();
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void checkpointSuspendCloseFailuresDoNotSkipRemainingConnections() throws Exception {
+        AtomicInteger firstCloseCalls = new AtomicInteger();
+        AtomicInteger secondCloseCalls = new AtomicInteger();
+        ThrowingBlockingConnection first = new ThrowingBlockingConnection(firstCloseCalls, "connection close failed");
+        ThrowingBlockingConnection second = new ThrowingBlockingConnection(secondCloseCalls, "connection close failed");
+        QueueingConnectionSelector selector = new QueueingConnectionSelector(first, second);
+        LifecycleService service = new LifecycleService("default");
+
+        LoomServer server = startServer(selector, Duration.ZERO, service);
+
+        try (Socket firstSocket = new Socket(InetAddress.getLoopbackAddress(), server.port());
+             Socket secondSocket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
+            firstSocket.getOutputStream().write('x');
+            secondSocket.getOutputStream().write('x');
+            assertThat(first.awaitHandling(), is(true));
+            assertThat(second.awaitHandling(), is(true));
+
+            RuntimeException failure = assertThrows(RuntimeException.class, server::suspend);
+
+            assertThat(containsMessage(failure, "connection close failed"), is(true));
+            assertThat(firstCloseCalls.get() >= 2, is(true));
+            assertThat(secondCloseCalls.get() >= 2, is(true));
+        } finally {
+            first.release();
+            second.release();
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void gracefulShutdownClosesAcceptedSocketDuringSocketConfiguration() throws Exception {
+        BlockingSocketOptions socketOptions = new BlockingSocketOptions();
+        AtomicReference<Throwable> stopFailure = new AtomicReference<>();
+        LoomServer server = (LoomServer) WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .shutdownGracePeriod(Duration.ofMinutes(1))
+                .connectionOptions(socketOptions)
+                .build()
+                .start();
+        Thread stopThread = null;
+
+        try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
+            socket.setSoTimeout(5_000);
+            assertThat(socketOptions.awaitConfigure(), is(true));
+
+            stopThread = Thread.ofPlatform()
+                    .name("test-graceful-socket-config-stop")
+                    .start(() -> {
+                        try {
+                            server.stop();
+                        } catch (RuntimeException | Error e) {
+                            stopFailure.set(e);
+                        }
+                    });
+
+            assertSocketClosed(socket);
+            socketOptions.release();
+            stopThread.join(TimeUnit.SECONDS.toMillis(5));
+
+            assertThat(stopThread.isAlive(), is(false));
+            assertThat(stopFailure.get(), nullValue());
+        } finally {
+            socketOptions.release();
+            if (stopThread != null && stopThread.isAlive()) {
+                stopThread.interrupt();
+            }
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void gracefulShutdownClosesAcceptedSocketBeforeConnectionRegistration() throws Exception {
+        PreRegistrationConnectionSelector selector = new PreRegistrationConnectionSelector();
+        AtomicReference<Throwable> stopFailure = new AtomicReference<>();
+        LoomServer server = startServer(selector, Duration.ofMinutes(1));
+        Thread stopThread = null;
+
+        try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
+            socket.setSoTimeout(5_000);
+            socket.getOutputStream().write('x');
+            assertThat(selector.awaitSupports(), is(true));
+
+            stopThread = Thread.ofPlatform()
+                    .name("test-graceful-pre-registration-stop")
+                    .start(() -> {
+                        try {
+                            server.stop();
+                        } catch (RuntimeException | Error e) {
+                            stopFailure.set(e);
+                        }
+                    });
+
+            assertSocketClosed(socket);
+            assertThat(selector.connection().handlingStarted(), is(false));
+
+            selector.release();
+            stopThread.join(TimeUnit.SECONDS.toMillis(5));
+
+            assertThat(stopThread.isAlive(), is(false));
+            assertThat(stopFailure.get(), nullValue());
+            assertThat(selector.connection().gracefulCloses(), is(0));
+            assertThat(selector.connection().forcedCloses(), is(0));
+            assertThat(selector.connection().handlingStarted(), is(false));
+        } finally {
+            selector.release();
+            selector.connection().release();
+            if (stopThread != null && stopThread.isAlive()) {
+                stopThread.interrupt();
+            }
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void forcedShutdownClosesAcceptedSocketBeforeConnectionRegistration() throws Exception {
+        PreRegistrationConnectionSelector selector = new PreRegistrationConnectionSelector();
+        LoomServer server = startServer(selector, Duration.ZERO);
+
+        try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
+            socket.setSoTimeout(5_000);
+            socket.getOutputStream().write('x');
+            assertThat(selector.awaitSupports(), is(true));
+
+            server.stop();
+
+            assertSocketClosed(socket);
+            assertThat(selector.connection().handlingStarted(), is(false));
+
+            selector.release();
+            assertThat(selector.connection().gracefulCloses(), is(0));
+            assertThat(selector.connection().forcedCloses(), is(0));
+            assertThat(selector.connection().handlingStarted(), is(false));
+        } finally {
+            selector.release();
+            selector.connection().release();
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void suspendClosesAcceptedSocketBeforeConnectionRegistration() throws Exception {
+        PreRegistrationConnectionSelector selector = new PreRegistrationConnectionSelector();
+        AtomicReference<Throwable> suspendFailure = new AtomicReference<>();
+        LoomServer server = startServer(selector, Duration.ZERO);
+        Thread suspendThread = null;
+
+        try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
+            socket.setSoTimeout(5_000);
+            socket.getOutputStream().write('x');
+            assertThat(selector.awaitSupports(), is(true));
+
+            suspendThread = Thread.ofPlatform()
+                    .name("test-suspend-pre-registration")
+                    .start(() -> {
+                        try {
+                            server.suspend();
+                        } catch (RuntimeException | Error e) {
+                            suspendFailure.set(e);
+                        }
+                    });
+
+            assertSocketClosed(socket);
+            assertThat(selector.connection().handlingStarted(), is(false));
+
+            selector.release();
+            suspendThread.join(TimeUnit.SECONDS.toMillis(5));
+
+            assertThat(suspendThread.isAlive(), is(false));
+            assertThat(suspendFailure.get(), nullValue());
+            assertThat(selector.connection().gracefulCloses(), is(0));
+            assertThat(selector.connection().forcedCloses(), is(0));
+            assertThat(selector.connection().handlingStarted(), is(false));
+        } finally {
+            selector.release();
+            selector.connection().release();
+            if (suspendThread != null && suspendThread.isAlive()) {
+                suspendThread.interrupt();
+            }
             stopUntilStopped(server);
         }
     }
@@ -546,13 +562,17 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
-    void webServerSuspendFailureStopsAllListenersAndPreservesCleanupFailure() {
+    void webServerSuspendFailureStopsAllListenersAndPreservesCleanupFailure() throws Exception {
+        ThrowingBlockingConnection connection = new ThrowingBlockingConnection(new AtomicInteger(), "suspend close failed");
+        QueueingConnectionSelector selector = new QueueingConnectionSelector(connection);
         LifecycleService defaultService = new LifecycleService("default");
         LifecycleService adminService = new LifecycleService("admin", true);
         LifecycleService monitorService = new LifecycleService("monitor");
         LoomServer server = (LoomServer) WebServer.builder()
                 .shutdownHook(false)
                 .port(0)
+                .shutdownGracePeriod(Duration.ZERO)
+                .addConnectionSelector(selector)
                 .routing(routing -> routing.register(defaultService))
                 .putSocket("admin", listener -> listener.port(0)
                         .routing(routing -> routing.register(adminService)))
@@ -561,11 +581,9 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start();
 
-        try {
-            ServerListener listener = server.listener(WebServer.DEFAULT_SOCKET_NAME);
-            assertThat(listener, notNullValue());
-            listener.activeConnection("failing",
-                                      new ThrowingCloseConnection(new AtomicInteger(), "suspend close failed"));
+        try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
+            socket.getOutputStream().write('x');
+            assertThat(connection.awaitHandling(), is(true));
 
             RuntimeException failure = assertThrows(RuntimeException.class, server::suspend);
 
@@ -576,6 +594,7 @@ class ServerListenerLifecycleTest {
             assertThat(adminService.afterStops(), is(1));
             assertThat(monitorService.afterStops(), is(1));
         } finally {
+            connection.release();
             stopUntilStopped(server);
         }
     }
@@ -616,29 +635,6 @@ class ServerListenerLifecycleTest {
             assertThat(adminService.afterStops(), is(1));
             assertThat(monitorService.afterStops(), is(1));
             assertThat(Files.readString(socketPath), is("existing"));
-        } finally {
-            stopUntilStopped(server);
-        }
-    }
-
-    @Test
-    void shutdownHandlerStopFailureStopsAllListeners() {
-        LifecycleService defaultService = new LifecycleService("default", true);
-        LifecycleService adminService = new LifecycleService("admin", true);
-        LoomServer server = (LoomServer) WebServer.builder()
-                .port(0)
-                .routing(routing -> routing.register(defaultService))
-                .putSocket("admin", listener -> listener.port(0)
-                        .routing(routing -> routing.register(adminService)))
-                .build()
-                .start();
-
-        try {
-            server.shutdownFromShutdownHook();
-
-            assertThat(server.isRunning(), is(false));
-            assertThat(defaultService.afterStops(), is(1));
-            assertThat(adminService.afterStops(), is(1));
         } finally {
             stopUntilStopped(server);
         }
@@ -701,6 +697,14 @@ class ServerListenerLifecycleTest {
         }
     }
 
+    private static void assertSocketClosed(Socket socket) throws Exception {
+        try {
+            assertThat(socket.getInputStream().read(), is(-1));
+        } catch (SocketException _) {
+            // A reset socket is closed from the client perspective.
+        }
+    }
+
     private static int awaitPort(WebServer server, String socketName) throws Exception {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         int port;
@@ -714,9 +718,193 @@ class ServerListenerLifecycleTest {
         return port;
     }
 
-    private record CloseTrackingConnection(CountDownLatch forceCloseInvoked) implements ServerConnection {
+    private static LoomServer startServer(ServerConnectionSelector selector, Duration shutdownGracePeriod) {
+        return (LoomServer) WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .shutdownGracePeriod(shutdownGracePeriod)
+                .addConnectionSelector(selector)
+                .build()
+                .start();
+    }
+
+    private static LoomServer startServer(ServerConnectionSelector selector,
+                                          Duration shutdownGracePeriod,
+                                          LifecycleService service) {
+        return (LoomServer) WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .shutdownGracePeriod(shutdownGracePeriod)
+                .addConnectionSelector(selector)
+                .routing(routing -> routing.register(service))
+                .build()
+                .start();
+    }
+
+    private static final class BlockingSocketOptions implements SocketOptions {
+        private final SocketOptions delegate = SocketOptions.create();
+        private final CountDownLatch configureEntered = new CountDownLatch(1);
+        private final CountDownLatch release = new CountDownLatch(1);
+
+        @Override
+        public void configureSocket(SocketChannel socket) {
+            configureEntered.countDown();
+            while (release.getCount() != 0) {
+                try {
+                    release.await(1, TimeUnit.SECONDS);
+                } catch (InterruptedException _) {
+                    // Deliberately ignore interrupts to prove shutdown closes the accepted socket.
+                }
+            }
+            delegate.configureSocket(socket);
+        }
+
+        @Override
+        public Map<SocketOption<?>, Object> socketOptions() {
+            return delegate.socketOptions();
+        }
+
+        @Override
+        public Duration connectTimeout() {
+            return delegate.connectTimeout();
+        }
+
+        @Override
+        public Duration readTimeout() {
+            return delegate.readTimeout();
+        }
+
+        @Override
+        public Optional<Integer> socketReceiveBufferSize() {
+            return delegate.socketReceiveBufferSize();
+        }
+
+        @Override
+        public Optional<Integer> socketSendBufferSize() {
+            return delegate.socketSendBufferSize();
+        }
+
+        @Override
+        public boolean socketReuseAddress() {
+            return delegate.socketReuseAddress();
+        }
+
+        @Override
+        public boolean socketKeepAlive() {
+            return delegate.socketKeepAlive();
+        }
+
+        @Override
+        public boolean tcpNoDelay() {
+            return delegate.tcpNoDelay();
+        }
+
+        private boolean awaitConfigure() throws InterruptedException {
+            return configureEntered.await(5, TimeUnit.SECONDS);
+        }
+
+        private void release() {
+            release.countDown();
+        }
+    }
+
+    private static final class QueueingConnectionSelector implements ServerConnectionSelector {
+        private final ServerConnection[] connections;
+        private final AtomicInteger index = new AtomicInteger();
+
+        private QueueingConnectionSelector(ServerConnection... connections) {
+            this.connections = connections;
+        }
+
+        @Override
+        public int bytesToIdentifyConnection() {
+            return 0;
+        }
+
+        @Override
+        public Support supports(BufferData data) {
+            return Support.SUPPORTED;
+        }
+
+        @Override
+        public Set<String> supportedApplicationProtocols() {
+            return Set.of("test-queueing");
+        }
+
+        @Override
+        public ServerConnection connection(ConnectionContext ctx) {
+            int current = index.getAndIncrement();
+            if (current >= connections.length) {
+                return connections[connections.length - 1];
+            }
+            return connections[current];
+        }
+    }
+
+    private static final class PreRegistrationConnectionSelector implements ServerConnectionSelector {
+        private final CountDownLatch supportsEntered = new CountDownLatch(1);
+        private final CountDownLatch release = new CountDownLatch(1);
+        private final BlockingConnection connection = new BlockingConnection();
+
+        @Override
+        public int bytesToIdentifyConnection() {
+            return 0;
+        }
+
+        @Override
+        public Support supports(BufferData data) {
+            supportsEntered.countDown();
+            while (release.getCount() != 0) {
+                try {
+                    release.await(1, TimeUnit.SECONDS);
+                } catch (InterruptedException _) {
+                    // Deliberately ignore interrupts to prove shutdown closes the accepted socket.
+                }
+            }
+            return Support.SUPPORTED;
+        }
+
+        @Override
+        public Set<String> supportedApplicationProtocols() {
+            return Set.of("test-pre-registration");
+        }
+
+        @Override
+        public ServerConnection connection(ConnectionContext ctx) {
+            return connection;
+        }
+
+        private boolean awaitSupports() throws InterruptedException {
+            return supportsEntered.await(5, TimeUnit.SECONDS);
+        }
+
+        private void release() {
+            release.countDown();
+        }
+
+        private BlockingConnection connection() {
+            return connection;
+        }
+    }
+
+    private static final class BlockingConnection implements ServerConnection {
+        private final CountDownLatch handling = new CountDownLatch(1);
+        private final CountDownLatch release = new CountDownLatch(1);
+        private final AtomicInteger gracefulCloses = new AtomicInteger();
+        private final AtomicInteger forcedCloses = new AtomicInteger();
+
         @Override
         public void handle(io.helidon.common.concurrency.limits.Limit limit) {
+            handling.countDown();
+            while (release.getCount() != 0) {
+                try {
+                    release.await(1, TimeUnit.SECONDS);
+                } catch (InterruptedException _) {
+                    // Deliberately ignore interrupts so shutdown must close the connection.
+                }
+            }
         }
 
         @Override
@@ -727,18 +915,50 @@ class ServerListenerLifecycleTest {
         @Override
         public void close(boolean interrupt) {
             if (interrupt) {
-                forceCloseInvoked.countDown();
+                forcedCloses.incrementAndGet();
+            } else {
+                gracefulCloses.incrementAndGet();
             }
+        }
+
+        private boolean handlingStarted() {
+            return handling.getCount() == 0;
+        }
+
+        private int gracefulCloses() {
+            return gracefulCloses.get();
+        }
+
+        private int forcedCloses() {
+            return forcedCloses.get();
+        }
+
+        private void release() {
+            release.countDown();
         }
     }
 
-    private record ThrowingCloseConnection(AtomicInteger closeCalls, String message) implements ServerConnection {
-        private ThrowingCloseConnection(AtomicInteger closeCalls) {
-            this(closeCalls, "connection close failed");
+    private static final class ThrowingBlockingConnection implements ServerConnection {
+        private final CountDownLatch handling = new CountDownLatch(1);
+        private final CountDownLatch release = new CountDownLatch(1);
+        private final AtomicInteger closeCalls;
+        private final String message;
+
+        private ThrowingBlockingConnection(AtomicInteger closeCalls, String message) {
+            this.closeCalls = closeCalls;
+            this.message = message;
         }
 
         @Override
         public void handle(io.helidon.common.concurrency.limits.Limit limit) {
+            handling.countDown();
+            while (release.getCount() != 0) {
+                try {
+                    release.await(1, TimeUnit.SECONDS);
+                } catch (InterruptedException _) {
+                    // Deliberately ignore interrupts so shutdown must close the connection.
+                }
+            }
         }
 
         @Override
@@ -751,27 +971,13 @@ class ServerListenerLifecycleTest {
             closeCalls.incrementAndGet();
             throw new IllegalStateException(message);
         }
-    }
 
-    private record BlockingReaderTask(CountDownLatch started,
-                                      CountDownLatch release,
-                                      CountDownLatch interrupted) implements InterruptableTask<Void> {
-        @Override
-        public boolean canInterrupt() {
-            return false;
+        private boolean awaitHandling() throws InterruptedException {
+            return handling.await(5, TimeUnit.SECONDS);
         }
 
-        @Override
-        public Void call() throws Exception {
-            started.countDown();
-            try {
-                release.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                interrupted.countDown();
-                throw e;
-            }
-            return null;
+        private void release() {
+            release.countDown();
         }
     }
 
