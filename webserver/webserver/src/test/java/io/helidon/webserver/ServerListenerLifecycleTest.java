@@ -22,6 +22,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketOption;
+import java.net.SocketTimeoutException;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
@@ -536,6 +537,61 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
+    void idleTimeoutIgnoresAcceptedSocketBeforeConnectionHandling() throws Exception {
+        PreRegistrationConnectionSelector selector = new PreRegistrationConnectionSelector();
+        LoomServer server = (LoomServer) WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .idleConnectionTimeout(Duration.ofMillis(1))
+                .idleConnectionPeriod(Duration.ofMillis(10))
+                .addConnectionSelector(selector)
+                .build()
+                .start();
+
+        try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
+            socket.setSoTimeout(250);
+            socket.getOutputStream().write('x');
+            assertThat(selector.awaitSupports(), is(true));
+            TimeUnit.MILLISECONDS.sleep(200);
+
+            assertThrows(SocketTimeoutException.class, () -> socket.getInputStream().read());
+            assertThat(selector.connection().handlingStarted(), is(false));
+            assertThat(selector.connection().gracefulCloses(), is(0));
+            assertThat(selector.connection().forcedCloses(), is(0));
+        } finally {
+            selector.release();
+            selector.connection().release();
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void idleTimeoutClosesHandledConnection() throws Exception {
+        IdleBlockingConnection connection = new IdleBlockingConnection();
+        QueueingConnectionSelector selector = new QueueingConnectionSelector(connection);
+        LoomServer server = (LoomServer) WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .idleConnectionTimeout(Duration.ofMillis(1))
+                .idleConnectionPeriod(Duration.ofMillis(10))
+                .addConnectionSelector(selector)
+                .build()
+                .start();
+
+        try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
+            socket.getOutputStream().write('x');
+            assertThat(connection.awaitHandling(), is(true));
+            assertThat(connection.awaitGracefulClose(), is(true));
+            assertThat(connection.forcedCloses(), is(0));
+        } finally {
+            connection.release();
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
     void webServerStopFailureThrowsAfterStoppingAllListeners() {
         LifecycleService defaultService = new LifecycleService("default", true);
         LifecycleService adminService = new LifecycleService("admin", true);
@@ -927,6 +983,55 @@ class ServerListenerLifecycleTest {
 
         private int gracefulCloses() {
             return gracefulCloses.get();
+        }
+
+        private int forcedCloses() {
+            return forcedCloses.get();
+        }
+
+        private void release() {
+            release.countDown();
+        }
+    }
+
+    private static final class IdleBlockingConnection implements ServerConnection {
+        private final CountDownLatch handling = new CountDownLatch(1);
+        private final CountDownLatch gracefulClose = new CountDownLatch(1);
+        private final CountDownLatch release = new CountDownLatch(1);
+        private final AtomicInteger forcedCloses = new AtomicInteger();
+
+        @Override
+        public void handle(io.helidon.common.concurrency.limits.Limit limit) {
+            handling.countDown();
+            while (release.getCount() != 0) {
+                try {
+                    release.await(1, TimeUnit.SECONDS);
+                } catch (InterruptedException _) {
+                    // Deliberately ignore interrupts so shutdown must close the connection.
+                }
+            }
+        }
+
+        @Override
+        public Duration idleTime() {
+            return Duration.ofMinutes(1);
+        }
+
+        @Override
+        public void close(boolean interrupt) {
+            if (interrupt) {
+                forcedCloses.incrementAndGet();
+            } else {
+                gracefulClose.countDown();
+            }
+        }
+
+        private boolean awaitHandling() throws InterruptedException {
+            return handling.await(5, TimeUnit.SECONDS);
+        }
+
+        private boolean awaitGracefulClose() throws InterruptedException {
+            return gracefulClose.await(5, TimeUnit.SECONDS);
         }
 
         private int forcedCloses() {

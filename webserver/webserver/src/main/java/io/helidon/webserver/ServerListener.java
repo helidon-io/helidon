@@ -30,11 +30,8 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HexFormat;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.Timer;
@@ -60,7 +57,6 @@ import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.spi.ProtocolConfig;
-import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.spi.ServerConnectionSelector;
 import io.helidon.webserver.spi.ServerConnectionSelectorProvider;
 
@@ -94,8 +90,7 @@ class ServerListener implements ListenerContext {
     private final Context context;
     private final Limit connectionLimit;
     private final Limit requestLimit;
-    private final Set<ConnectionHandler> activeHandlers = ConcurrentHashMap.newKeySet();
-    private final Map<String, ServerConnection> activeConnections = new ConcurrentHashMap<>();
+    private final Set<ConnectionHandler> connectionHandlers = ConcurrentHashMap.newKeySet();
 
     private volatile boolean running;
     private volatile boolean inCheckpoint;
@@ -188,7 +183,7 @@ class ServerListener implements ListenerContext {
         // handle idle connection timeout
         IdleTimeoutHandler ith = new IdleTimeoutHandler(idleConnectionTimer,
                                                         listenerConfig,
-                                                        this::activeConnections);
+                                                        this::connectionHandlers);
         ith.start();
     }
 
@@ -633,38 +628,37 @@ class ServerListener implements ListenerContext {
                                                                       token,
                                                                       requestLimit,
                                                                       connectionProviders,
-                                                                      activeConnections,
                                                                       socket,
                                                                       serverChannelId,
                                                                       router,
                                                                       tls,
-                                                                      activeHandlers::remove);
-                    activeHandlers.add(handler);
+                                                                      connectionHandlers::remove);
+                    connectionHandlers.add(handler);
 
                     try {
                         if (!running) {
-                            activeHandlers.remove(handler);
+                            connectionHandlers.remove(handler);
                             closeAcceptedSocket(socket, null);
                             token.ignore();
                             continue;
                         }
                         connectionOptions.configureSocket(socket);
                         if (!running) {
-                            activeHandlers.remove(handler);
+                            connectionHandlers.remove(handler);
                             closeAcceptedSocket(socket, null);
                             token.ignore();
                             continue;
                         }
                         readerExecutor.execute(handler);
                     } catch (RejectedExecutionException e) {
-                        activeHandlers.remove(handler);
+                        connectionHandlers.remove(handler);
                         LOGGER.log(ERROR, "Executor rejected handler for new connection", e);
                         closeAcceptedSocket(socket, e);
 
                         // we never started the handler, so we must release the semaphore here
                         token.dropped();
                     } catch (Exception e) {
-                        activeHandlers.remove(handler);
+                        connectionHandlers.remove(handler);
                         // we may get an SSL handshake errors, which should only fail one socket, not the listener
                         LOGGER.log(TRACE, "Failed to handle accepted socket", e);
                         closeAcceptedSocket(socket, e);
@@ -714,36 +708,13 @@ class ServerListener implements ListenerContext {
         }
     }
 
-    private List<ConnectionHandler> activeHandlers() {
-        return new ArrayList<>(activeHandlers);
-    }
-
-    private List<ServerConnection> activeConnections() {
-        return new ArrayList<>(activeConnections.values());
-    }
-
-    private List<ServerConnection> activeConnectionsExcludingActiveHandlers(List<ConnectionHandler> activeHandlers) {
-        List<ServerConnection> result = new ArrayList<>();
-        Set<ServerConnection> handledConnections = activeHandlerConnections(activeHandlers);
-        for (ServerConnection connection : activeConnections()) {
-            if (!handledConnections.contains(connection)) {
-                result.add(connection);
-            }
-        }
-        return result;
+    private List<ConnectionHandler> connectionHandlers() {
+        return new ArrayList<>(connectionHandlers);
     }
 
     private Throwable closeOpenConnections(boolean interrupt) {
         Throwable failure = null;
-        List<ConnectionHandler> handlers = activeHandlers();
-        failure = LifecycleFailures.add(failure, closeActiveHandlers(handlers, interrupt));
-        failure = LifecycleFailures.add(failure, closeActiveConnections(handlers, interrupt));
-        return failure;
-    }
-
-    private Throwable closeActiveHandlers(List<ConnectionHandler> activeHandlers, boolean interrupt) {
-        Throwable failure = null;
-        for (ConnectionHandler handler : activeHandlers) {
+        for (ConnectionHandler handler : connectionHandlers()) {
             try {
                 handler.close(interrupt);
             } catch (RuntimeException | Error e) {
@@ -751,29 +722,6 @@ class ServerListener implements ListenerContext {
             }
         }
         return failure;
-    }
-
-    private Throwable closeActiveConnections(List<ConnectionHandler> activeHandlers, boolean interrupt) {
-        Throwable failure = null;
-        for (ServerConnection connection : activeConnectionsExcludingActiveHandlers(activeHandlers)) {
-            try {
-                connection.close(interrupt);
-            } catch (RuntimeException | Error e) {
-                failure = LifecycleFailures.add(failure, e);
-            }
-        }
-        return failure;
-    }
-
-    private Set<ServerConnection> activeHandlerConnections(List<ConnectionHandler> activeHandlers) {
-        Set<ServerConnection> connections = Collections.newSetFromMap(new IdentityHashMap<>());
-        for (ConnectionHandler handler : activeHandlers) {
-            ServerConnection connection = handler.connection();
-            if (connection != null) {
-                connections.add(connection);
-            }
-        }
-        return connections;
     }
 
     private static void throwIfCheckpointSuspendFailed(Throwable failure) {

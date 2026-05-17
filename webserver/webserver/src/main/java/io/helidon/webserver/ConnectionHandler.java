@@ -25,7 +25,6 @@ import java.time.Duration;
 import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.locks.ReentrantLock;
@@ -74,14 +73,13 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private final Limit requestLimit;
     private final ConnectionProviders connectionProviders;
     private final List<ServerConnectionSelector> providerCandidates;
-    private final Map<String, ServerConnection> activeConnections;
     private final SocketChannel socket;
     private final String serverChannelId;
     private final Router router;
     private final Tls tls;
     private final ListenerConfig listenerConfig;
     private final String channelId;
-    private final Consumer<ConnectionHandler> activeHandlerRemoveListener;
+    private final Consumer<ConnectionHandler> connectionHandlerRemoveListener;
     private final ReentrantLock closeLock = new ReentrantLock();
 
     private String socketIds;
@@ -94,8 +92,6 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
 
     // Published from the handler thread so lifecycle close/interrupt paths do not miss a created delegate.
     private volatile ServerConnection connection;
-    // Published for listener-side deduplication of handler-owned active connections.
-    private volatile ServerConnection activeConnection;
     // Published so concurrent close uses the wrapped socket once setup reaches that stage.
     private volatile HelidonSocket helidonSocket;
 
@@ -103,24 +99,22 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                       LimitAlgorithm.Token limitToken,
                       Limit requestLimit,
                       ConnectionProviders connectionProviders,
-                      Map<String, ServerConnection> activeConnections,
                       SocketChannel socket,
                       String serverChannelId,
                       Router router,
                       Tls tls,
-                      Consumer<ConnectionHandler> activeHandlerRemoveListener) {
+                      Consumer<ConnectionHandler> connectionHandlerRemoveListener) {
         this.listenerContext = listenerContext;
         this.limitToken = limitToken;
         this.requestLimit = requestLimit;
         this.connectionProviders = connectionProviders;
         this.providerCandidates = connectionProviders.providerCandidates();
-        this.activeConnections = activeConnections;
         this.socket = socket;
         this.serverChannelId = serverChannelId;
         this.router = router;
         this.tls = tls;
         this.listenerConfig = listenerContext.config();
-        this.activeHandlerRemoveListener = activeHandlerRemoveListener;
+        this.connectionHandlerRemoveListener = connectionHandlerRemoveListener;
         this.channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
     }
 
@@ -135,9 +129,6 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             run(channelId);
         } finally {
             releaseConnectionLimit(handlingStarted);
-            if (socketIds != null) {
-                activeConnections.remove(socketIds);
-            }
             if (writer != null) {
                 writer.close();
             }
@@ -145,7 +136,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             if (helidonSocket != null) {
                 helidonSocket.log(LOGGER, DEBUG, "socket closed");
             }
-            activeHandlerRemoveListener.accept(this);
+            connectionHandlerRemoveListener.accept(this);
         }
     }
 
@@ -209,11 +200,6 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         return helidonSocket;
     }
 
-    ServerConnection connection() {
-        ServerConnection localActiveConnection = activeConnection;
-        return localActiveConnection == null ? connection : localActiveConnection;
-    }
-
     void close(boolean interrupt) {
         ServerConnection localConnection;
         boolean localCloseInterrupt;
@@ -235,6 +221,24 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         }
         if (localConnection != null) {
             localConnection.close(localCloseInterrupt);
+        }
+    }
+
+    void closeIfIdle(Duration timeout) {
+        ServerConnection localConnection;
+        closeLock.lock();
+        try {
+            if (!handlingStarted || closeRequested) {
+                return;
+            }
+            localConnection = connection;
+        } finally {
+            closeLock.unlock();
+        }
+        if (localConnection != null && localConnection.idleTime().compareTo(timeout) > 0) {
+            // this should be a graceful shutdown, in case a request is received in parallel, we want to handle
+            // it, and yes, then it would be closed (and it must not accept another request)
+            close(false);
         }
     }
 
@@ -314,10 +318,6 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                 }
                 throw new CloseConnectionException("No suitable connection provider");
             }
-            if (!registerActiveConnection(socketIds)) {
-                return;
-            }
-            activeHandlerRemoveListener.accept(this);
             if (!startHandling()) {
                 return;
             }
@@ -349,20 +349,6 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             limitToken.success();
         } else {
             limitToken.ignore();
-        }
-    }
-
-    private boolean registerActiveConnection(String socketsId) {
-        closeLock.lock();
-        try {
-            if (closeRequested) {
-                return false;
-            }
-            activeConnection = new ActiveConnection(connection);
-            activeConnections.put(socketsId, activeConnection);
-            return true;
-        } finally {
-            closeLock.unlock();
         }
     }
 
@@ -528,30 +514,6 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             } catch (Throwable e) {
                 helidonSocket.log(LOGGER, TRACE, "Failed to close socket on connection close", e);
             }
-        }
-    }
-
-    // we need to call close on ConnectionHandler, instead on the connection, when invoked from ServerListener
-    private final class ActiveConnection implements ServerConnection {
-        private final ServerConnection delegate;
-
-        private ActiveConnection(ServerConnection delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public void handle(Limit limit) throws InterruptedException {
-            delegate.handle(limit);
-        }
-
-        @Override
-        public Duration idleTime() {
-            return delegate.idleTime();
-        }
-
-        @Override
-        public void close(boolean interrupt) {
-            ConnectionHandler.this.close(interrupt);
         }
     }
 

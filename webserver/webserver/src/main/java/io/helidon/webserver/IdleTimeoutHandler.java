@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,20 +22,18 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Supplier;
 
-import io.helidon.webserver.spi.ServerConnection;
-
 class IdleTimeoutHandler extends TimerTask {
     private final Timer timer;
-    private final Supplier<List<ServerConnection>> connectionSupplier;
+    private final Supplier<List<ConnectionHandler>> handlerSupplier;
     private final Duration timeout;
     private final Duration period;
     private final String taskName;
 
     IdleTimeoutHandler(Timer timer,
                        ListenerConfig listenerConfig,
-                       Supplier<List<ServerConnection>> connectionSupplier) {
+                       Supplier<List<ConnectionHandler>> handlerSupplier) {
         this.timer = timer;
-        this.connectionSupplier = connectionSupplier;
+        this.handlerSupplier = handlerSupplier;
         this.timeout = listenerConfig.idleConnectionTimeout();
         this.period = listenerConfig.idleConnectionPeriod();
 
@@ -47,17 +45,13 @@ class IdleTimeoutHandler extends TimerTask {
     public void run() {
         String name = Thread.currentThread().getName();
         Thread.currentThread().setName(taskName);
-        List<ServerConnection> serverConnections = connectionSupplier.get();
-        for (ServerConnection serverConnection : serverConnections) {
-            if (serverConnection.idleTime().compareTo(timeout) > 0) {
-                // this should be a graceful shutdown, in case a request is received in parallel, we want to handle
-                // it, and yes, then it would be closed (and it must not accept another request)
-                try {
-                    serverConnection.close(false);
-                } catch (Throwable t) {
-                    System.getLogger(IdleTimeoutHandler.class.getName() + "." + taskName)
-                            .log(System.Logger.Level.TRACE, "Failed to close an idle connection", t);
-                }
+        List<ConnectionHandler> connectionHandlers = handlerSupplier.get();
+        for (ConnectionHandler connectionHandler : connectionHandlers) {
+            try {
+                connectionHandler.closeIfIdle(timeout);
+            } catch (Throwable t) {
+                System.getLogger(IdleTimeoutHandler.class.getName() + "." + taskName)
+                        .log(System.Logger.Level.TRACE, "Failed to close an idle connection", t);
             }
         }
         Thread.currentThread().setName(name);
