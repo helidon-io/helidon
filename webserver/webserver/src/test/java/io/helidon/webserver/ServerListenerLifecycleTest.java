@@ -569,11 +569,12 @@ class ServerListenerLifecycleTest {
             assertSocketClosed(socket);
             assertThat(selector.connection().handlingStarted(), is(false));
 
-            selector.release();
             suspendThread.join(TimeUnit.SECONDS.toMillis(5));
 
             assertThat(suspendThread.isAlive(), is(false));
             assertThat(suspendFailure.get(), nullValue());
+
+            selector.release();
             waitFor(Duration.ofSeconds(5),
                     () -> selector.connection().forcedCloses() == 1,
                     "accepted connection was not force closed");
