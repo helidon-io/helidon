@@ -39,7 +39,7 @@ public final class Option {
     public @interface Configured {
         /**
          * Override "guessed" configuration key.
-         * The configuration key is the method name converted to snake case by default.
+         * The configuration key is the method name converted to kebab-case by default.
          *
          * @return custom configuration key
          */
