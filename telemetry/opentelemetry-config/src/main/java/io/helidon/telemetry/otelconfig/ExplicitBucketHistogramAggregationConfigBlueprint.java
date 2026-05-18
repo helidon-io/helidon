@@ -33,7 +33,7 @@ interface ExplicitBucketHistogramAggregationConfigBlueprint {
     /**
      * Helidon-supplied default value for {@code recordMinMax} for backward compatibility.
      */
-    static final boolean DEFAULT_RECORD_MIN_MAX = true;
+    boolean DEFAULT_RECORD_MIN_MAX = true;
 
     /**
      * Explicit bucket boundaries.
