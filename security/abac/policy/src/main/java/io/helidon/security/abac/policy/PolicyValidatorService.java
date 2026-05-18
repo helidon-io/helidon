@@ -25,6 +25,12 @@ import io.helidon.security.providers.abac.spi.AbacValidatorService;
  * A validator of policy statements java service to plug into Abac security provider.
  */
 public class PolicyValidatorService implements AbacValidatorService {
+    /**
+     * Create a policy validator service.
+     */
+    public PolicyValidatorService() {
+    }
+
     @Override
     public String configKey() {
         return "policy-validator";

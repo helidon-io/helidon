@@ -66,7 +66,7 @@ public class EndpointConfig implements AbacSupport {
     private EndpointConfig(Builder builder) {
         this.securityLevels = Collections.unmodifiableList(builder.securityLevels);
         this.attributes = BasicAttributes.create(builder.attributes);
-        this.customObjects = new ClassToInstanceStore<>();
+        this.customObjects = ClassToInstanceStore.create();
         this.customObjects.putAll(builder.customObjects);
         this.configMap = new HashMap<>(builder.configMap);
     }
@@ -186,7 +186,7 @@ public class EndpointConfig implements AbacSupport {
      * A fluent API builder for {@link EndpointConfig}.
      */
     public static final class Builder implements io.helidon.common.Builder<Builder, EndpointConfig> {
-        private final ClassToInstanceStore<Object> customObjects = new ClassToInstanceStore<>();
+        private final ClassToInstanceStore<Object> customObjects = ClassToInstanceStore.create();
         private final Map<String, Config> configMap = new HashMap<>();
         private final List<SecurityLevel> securityLevels = new ArrayList<>();
         private BasicAttributes attributes = BasicAttributes.create();

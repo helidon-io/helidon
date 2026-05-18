@@ -30,6 +30,12 @@ public class OidcProviderService implements SecurityProviderService {
      */
     public static final String PROVIDER_CONFIG_KEY = "oidc";
 
+    /**
+     * Create an OIDC provider service.
+     */
+    public OidcProviderService() {
+    }
+
     @Override
     public String providerConfigKey() {
         return PROVIDER_CONFIG_KEY;

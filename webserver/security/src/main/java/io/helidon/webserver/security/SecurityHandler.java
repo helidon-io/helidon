@@ -106,7 +106,7 @@ public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityH
         // must copy values to be safely immutable
         this.customObjects = config.customObjects()
                 .map(it -> {
-                    ClassToInstanceStore<Object> ctis = new ClassToInstanceStore<>();
+                    ClassToInstanceStore<Object> ctis = ClassToInstanceStore.create();
                     ctis.putAll(it);
                     return ctis;
                 });
@@ -470,7 +470,7 @@ public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityH
         securityContext.endpointConfig(securityContext.endpointConfig()
                                                .derive()
                                                .configMap(configMap)
-                                               .customObjects(customObjects.orElse(new ClassToInstanceStore<>()))
+                                               .customObjects(customObjects.orElseGet(ClassToInstanceStore::create))
                                                .build());
 
         try {

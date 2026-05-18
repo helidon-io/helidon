@@ -26,6 +26,12 @@ import io.helidon.security.providers.abac.spi.AbacValidatorService;
  * Time validator java service for {@link AbacProvider}.
  */
 public class TimeValidatorService implements AbacValidatorService {
+    /**
+     * Create a time validator service.
+     */
+    public TimeValidatorService() {
+    }
+
     @Override
     public String configKey() {
         return "time-validator";

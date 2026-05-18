@@ -978,6 +978,9 @@ public final class OidcConfig extends TenantConfigImpl {
                                       .addMediaSupport(JsonSupport.create())
                                       .build());
 
+        /**
+         * Create an OIDC configuration builder.
+         */
         protected Builder() {
         }
 

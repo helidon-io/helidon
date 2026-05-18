@@ -27,6 +27,12 @@ public class AbacProviderService implements SecurityProviderService {
 
     static final String PROVIDER_CONFIG_KEY = "abac";
 
+    /**
+     * Create an ABAC provider service.
+     */
+    public AbacProviderService() {
+    }
+
     @Override
     public String providerConfigKey() {
         return PROVIDER_CONFIG_KEY;

@@ -391,6 +391,15 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
             private boolean permitAll = false;
             private boolean denyAll = false;
 
+            /**
+             * Create a new builder instance.
+             *
+             * @deprecated Use {@link RoleConfig#builder()} instead.
+             */
+            @Deprecated(forRemoval = true, since = "27.0.0")
+            public Builder() {
+            }
+
             @Override
             public RoleConfig build() {
                 return new RoleConfig(this);

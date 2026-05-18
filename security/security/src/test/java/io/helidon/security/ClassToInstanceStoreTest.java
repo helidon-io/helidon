@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public class ClassToInstanceStoreTest {
 
     @Test
     public void simpleInstance() {
-        ClassToInstanceStore<Object> ctim = new ClassToInstanceStore<>();
+        ClassToInstanceStore<Object> ctim = ClassToInstanceStore.create();
 
         String first = "a String";
         String second = "a second String";
@@ -66,7 +66,7 @@ public class ClassToInstanceStoreTest {
 
     @Test
     public void ifaceAndImpl() {
-        ClassToInstanceStore<Object> ctim = new ClassToInstanceStore<>();
+        ClassToInstanceStore<Object> ctim = ClassToInstanceStore.create();
 
         CharSequence first = "a String";
         CharSequence second = "a second String";
@@ -90,7 +90,7 @@ public class ClassToInstanceStoreTest {
 
     @Test
     public void putAll() {
-        ClassToInstanceStore<Object> ctim = new ClassToInstanceStore<>();
+        ClassToInstanceStore<Object> ctim = ClassToInstanceStore.create();
 
         String first = "a String";
         String second = "a second String";
@@ -98,7 +98,7 @@ public class ClassToInstanceStoreTest {
         ctim.putInstance(CharSequence.class, first);
         ctim.putInstance(String.class, second);
 
-        ClassToInstanceStore<Object> copy = new ClassToInstanceStore<>();
+        ClassToInstanceStore<Object> copy = ClassToInstanceStore.create();
 
         copy.putAll(ctim);
 
@@ -108,7 +108,7 @@ public class ClassToInstanceStoreTest {
 
     @Test
     public void containsKey() {
-        ClassToInstanceStore<Object> ctim = new ClassToInstanceStore<>();
+        ClassToInstanceStore<Object> ctim = ClassToInstanceStore.create();
 
         String first = "a String";
         String second = "a second String";
@@ -123,7 +123,7 @@ public class ClassToInstanceStoreTest {
 
     @Test
     public void testIsEmpty() {
-        ClassToInstanceStore<CharSequence> ctis = new ClassToInstanceStore<>();
+        ClassToInstanceStore<CharSequence> ctis = ClassToInstanceStore.create();
 
         assertThat(ctis.isEmpty(), is(true));
 
@@ -134,7 +134,7 @@ public class ClassToInstanceStoreTest {
 
     @Test
     public void testPutInstanceNoClass() {
-        ClassToInstanceStore<CharSequence> ctis = new ClassToInstanceStore<>();
+        ClassToInstanceStore<CharSequence> ctis = ClassToInstanceStore.create();
         Optional<String> optional = ctis.putInstance("test");
 
         if (optional.isPresent()) {
@@ -164,7 +164,7 @@ public class ClassToInstanceStoreTest {
 
     @Test
     public void testKeysAndValues() {
-        ClassToInstanceStore<CharSequence> ctis = new ClassToInstanceStore<>();
+        ClassToInstanceStore<CharSequence> ctis = ClassToInstanceStore.create();
         String value1 = "aValue";
         StringBuffer value2 = new StringBuffer("anotherValue");
         StringBuilder value3 = new StringBuilder("someValue");
@@ -185,7 +185,7 @@ public class ClassToInstanceStoreTest {
 
     @Test
     public void testToString() {
-        ClassToInstanceStore<CharSequence> ctis = new ClassToInstanceStore<>();
+        ClassToInstanceStore<CharSequence> ctis = ClassToInstanceStore.create();
         ctis.putInstance("MyValue");
         ctis.putInstance(new StringBuilder("Some value"));
 

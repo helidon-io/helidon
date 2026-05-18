@@ -31,6 +31,10 @@
     <artifactId>helidon-security-project</artifactId>
     <name>Helidon Security Project</name>
 
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+    </properties>
+
     <modules>
         <module>annotations</module>
         <module>util</module>

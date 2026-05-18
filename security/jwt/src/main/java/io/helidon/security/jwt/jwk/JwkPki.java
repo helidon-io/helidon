@@ -80,22 +80,47 @@ abstract class JwkPki extends Jwk {
         this.sha256Thumbprint = Optional.ofNullable(builder.sha256Thumbprint);
     }
 
+    /**
+     * Private key if available.
+     *
+     * @return private key
+     */
     public Optional<PrivateKey> privateKey() {
         return privateKey;
     }
 
+    /**
+     * Public key.
+     *
+     * @return public key
+     */
     public PublicKey publicKey() {
         return publicKey;
     }
 
+    /**
+     * X.509 certificate chain.
+     *
+     * @return certificate chain
+     */
     public Optional<List<X509Certificate>> certificateChain() {
         return certificateChain;
     }
 
+    /**
+     * X.509 certificate SHA-1 thumbprint.
+     *
+     * @return SHA-1 thumbprint bytes
+     */
     public Optional<byte[]> sha1Thumbprint() {
         return sha1Thumbprint;
     }
 
+    /**
+     * X.509 certificate SHA-256 thumbprint.
+     *
+     * @return SHA-256 thumbprint bytes
+     */
     public Optional<byte[]> sha256Thumbprint() {
         return sha256Thumbprint;
     }

@@ -28,6 +28,12 @@ public class HeaderAtnService implements SecurityProviderService {
 
     static final String PROVIDER_CONFIG_KEY = "header-atn";
 
+    /**
+     * Create a header authentication provider service.
+     */
+    public HeaderAtnService() {
+    }
+
     @Override
     public String providerConfigKey() {
         return PROVIDER_CONFIG_KEY;

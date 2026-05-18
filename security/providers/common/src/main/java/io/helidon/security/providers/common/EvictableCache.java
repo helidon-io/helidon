@@ -203,6 +203,15 @@ public interface EvictableCache<K, V> {
         private BiFunction<K, V, Boolean> evictor = (key, value) -> false;
 
         /**
+         * Create a new builder instance.
+         *
+         * @deprecated Use {@link EvictableCache#builder()} instead.
+         */
+        @Deprecated(forRemoval = true, since = "27.0.0")
+        public Builder() {
+        }
+
+        /**
          * Build a new instance of the cache based on configuration of this builder.
          *
          * @return a new instance of the cache

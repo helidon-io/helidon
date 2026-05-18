@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,6 +156,11 @@ public abstract class SecurityResponse {
             this.success = success;
         }
 
+        /**
+         * Whether this status represents a successful security operation.
+         *
+         * @return whether this status is successful
+         */
         public boolean isSuccess() {
             return success;
         }

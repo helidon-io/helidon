@@ -383,7 +383,7 @@ public abstract class Jwk {
 
         /**
          * Intended usage of this JWK.
-         * You may configure usage, {@link #operations} or neither (never both).
+         * You may configure usage, {@link #operations(List) operations} or neither (never both).
          *
          * @param usage usage of this JWK
          * @return updated builder instance
@@ -397,7 +397,7 @@ public abstract class Jwk {
 
         /**
          * Intended operations of this JWK.
-         * You may configure operations, {@link #usage} or neither (never both).
+         * You may configure operations, {@link #usage(String) usage} or neither (never both).
          *
          * @param operations operations to use, replaces existing operations
          * @return updated builder instance
@@ -415,7 +415,7 @@ public abstract class Jwk {
 
         /**
          * Add intended operation of this JWK.
-         * You may configure operations, {@link #usage} or neither (never both).
+         * You may configure operations, {@link #usage(String) usage} or neither (never both).
          *
          * @param operation operation to add to list of operations
          * @return updated builder instance

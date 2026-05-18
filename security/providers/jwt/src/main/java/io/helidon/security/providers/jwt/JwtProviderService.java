@@ -28,6 +28,12 @@ public class JwtProviderService implements SecurityProviderService {
 
     static final String PROVIDER_CONFIG_KEY = "jwt";
 
+    /**
+     * Create a JWT provider service.
+     */
+    public JwtProviderService() {
+    }
+
     @Override
     public String providerConfigKey() {
         return PROVIDER_CONFIG_KEY;
