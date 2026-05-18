@@ -52,12 +52,12 @@ public final class JaegerGrpcSpanExporter implements SpanExporter {
   // Visible for testing
   static final AttributeKey<String> IP_KEY = AttributeKey.stringKey("ip");
 
-  private final GrpcExporter<PostSpansRequestMarshaler> delegate;
+  private final GrpcExporter delegate;
 
   // Jaeger-specific resource information
   private final Resource jaegerResource;
 
-  JaegerGrpcSpanExporter(GrpcExporter<PostSpansRequestMarshaler> delegate) {
+  JaegerGrpcSpanExporter(GrpcExporter delegate) {
     this.delegate = delegate;
 
     String hostname;
