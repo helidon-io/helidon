@@ -17,6 +17,7 @@
 package io.helidon.telemetry.otelconfig;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
@@ -30,10 +31,24 @@ import io.helidon.builder.api.Prototype;
 interface ExplicitBucketHistogramAggregationConfigBlueprint {
 
     /**
+     * Helidon-supplied default value for {@code recordMinMax} for backward compatibility.
+     */
+    static final boolean DEFAULT_RECORD_MIN_MAX = true;
+
+    /**
      * Explicit bucket boundaries.
      *
      * @return bucket boundaries
      */
     @Option.Configured
     List<Double> bucketBoundaries();
+
+    /**
+     * Whether the min and max should be recorded.
+     *
+     * @return whether to record min and max
+     */
+    @Option.DefaultBoolean(DEFAULT_RECORD_MIN_MAX)
+    @Option.Configured
+    Optional<Boolean> recordMinMax();
 }

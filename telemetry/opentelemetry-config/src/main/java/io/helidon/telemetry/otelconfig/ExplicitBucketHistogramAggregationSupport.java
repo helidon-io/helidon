@@ -21,6 +21,8 @@ import io.helidon.builder.api.Prototype;
 import io.opentelemetry.sdk.metrics.Aggregation;
 import io.opentelemetry.sdk.metrics.internal.view.ExplicitBucketHistogramAggregation;
 
+import static io.helidon.telemetry.otelconfig.ExplicitBucketHistogramAggregationConfigBlueprint.DEFAULT_RECORD_MIN_MAX;
+
 class ExplicitBucketHistogramAggregationSupport {
 
     static class CustomMethods {
@@ -35,7 +37,9 @@ class ExplicitBucketHistogramAggregationSupport {
         static Aggregation aggregation(ExplicitBucketHistogramAggregationConfig config) {
             return config.bucketBoundaries().isEmpty()
                     ? ExplicitBucketHistogramAggregation.getDefault()
-                    : ExplicitBucketHistogramAggregation.create(config.bucketBoundaries());
+                    : ExplicitBucketHistogramAggregation.create(config.bucketBoundaries(),
+                                                                config.recordMinMax()
+                                                                        .orElse(DEFAULT_RECORD_MIN_MAX));
         }
     }
 }
