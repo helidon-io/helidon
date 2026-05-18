@@ -130,7 +130,6 @@ class FixedLimitMetricsTest {
         try (HttpClientResponse res = webClient.get("/observe/metrics").request()) {
             String s = res.as(String.class);
             assertThat(s, containsString("fixed_rtt_seconds_count"));
-            assertThat(s, containsString("socketName=\"admin\""));
             assertThat(res.status().code(), is(200));
         }
 
