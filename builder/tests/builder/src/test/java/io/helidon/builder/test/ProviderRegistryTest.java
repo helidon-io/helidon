@@ -241,6 +241,72 @@ class ProviderRegistryTest {
         assertThat(copy.listDiscover(), is(List.of()));
     }
 
+    @Test
+    void testDisabledOptionalContainerDiscoveryOnTheCopy() {
+        SomeProvider.SomeService someService = new DummyService();
+        WithProviderRegistry value = WithProviderRegistry.builder()
+                .optionalListDiscoverDiscoverServices(false)
+                .optionalSetDiscoverDiscoverServices(false)
+                .optionalListDiscover(List.of())
+                .optionalSetDiscover(Set.of())
+                .oneNotDiscover(someService)
+                .mappersExplicit(Mappers.create())
+                .build();
+        assertThat(value.optionalListDiscover(), optionalValue(is(List.of())));
+        assertThat(value.optionalSetDiscover(), optionalValue(is(Set.of())));
+
+        WithProviderRegistry copy = WithProviderRegistry.builder()
+                .from(value)
+                .build();
+        assertThat(copy.optionalListDiscover(), optionalValue(is(List.of())));
+        assertThat(copy.optionalSetDiscover(), optionalValue(is(Set.of())));
+
+        value = WithProviderRegistry.builder()
+                .optionalListDiscoverDiscoverServices(false)
+                .optionalSetDiscoverDiscoverServices(false)
+                .optionalListDiscover(List.of(someService))
+                .optionalSetDiscover(Set.of(someService))
+                .oneNotDiscover(someService)
+                .mappersExplicit(Mappers.create())
+                .build();
+        copy = WithProviderRegistry.builder()
+                .from(value)
+                .build();
+        assertThat(copy.optionalListDiscover(), optionalValue(is(List.of(someService))));
+        assertThat(copy.optionalSetDiscover(), optionalValue(is(Set.of(someService))));
+    }
+
+    @Test
+    void testDisabledOptionalContainerDiscoveryOnTheCopiedBuilder() {
+        SomeProvider.SomeService someService = new DummyService();
+        WithProviderRegistry.Builder value = WithProviderRegistry.builder()
+                .optionalListDiscoverDiscoverServices(false)
+                .optionalSetDiscoverDiscoverServices(false)
+                .optionalListDiscover(List.of())
+                .optionalSetDiscover(Set.of())
+                .oneNotDiscover(someService)
+                .mappersExplicit(Mappers.create());
+
+        WithProviderRegistry copy = WithProviderRegistry.builder()
+                .from(value)
+                .build();
+        assertThat(copy.optionalListDiscover(), optionalValue(is(List.of())));
+        assertThat(copy.optionalSetDiscover(), optionalValue(is(Set.of())));
+
+        value = WithProviderRegistry.builder()
+                .optionalListDiscoverDiscoverServices(false)
+                .optionalSetDiscoverDiscoverServices(false)
+                .optionalListDiscover(List.of(someService))
+                .optionalSetDiscover(Set.of(someService))
+                .oneNotDiscover(someService)
+                .mappersExplicit(Mappers.create());
+        copy = WithProviderRegistry.builder()
+                .from(value)
+                .build();
+        assertThat(copy.optionalListDiscover(), optionalValue(is(List.of(someService))));
+        assertThat(copy.optionalSetDiscover(), optionalValue(is(Set.of(someService))));
+    }
+
     private static class DummyService implements SomeProvider.SomeService {
         @Override
         public String prop() {

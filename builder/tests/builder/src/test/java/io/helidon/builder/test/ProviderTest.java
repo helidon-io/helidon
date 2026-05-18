@@ -250,6 +250,68 @@ class ProviderTest {
     }
 
     @Test
+    void testDisabledOptionalContainerDiscoveryOnTheCopy() {
+        SomeProvider.SomeService someService = new DummyService();
+        WithProvider value = WithProvider.builder()
+                .optionalListDiscoverDiscoverServices(false)
+                .optionalSetDiscoverDiscoverServices(false)
+                .optionalListDiscover(List.of())
+                .optionalSetDiscover(Set.of())
+                .oneNotDiscover(someService)
+                .build();
+        assertThat(value.optionalListDiscover(), optionalValue(is(List.of())));
+        assertThat(value.optionalSetDiscover(), optionalValue(is(Set.of())));
+
+        WithProvider copy = WithProvider.builder()
+                .from(value)
+                .build();
+        assertThat(copy.optionalListDiscover(), optionalValue(is(List.of())));
+        assertThat(copy.optionalSetDiscover(), optionalValue(is(Set.of())));
+
+        value = WithProvider.builder()
+                .optionalListDiscoverDiscoverServices(false)
+                .optionalSetDiscoverDiscoverServices(false)
+                .optionalListDiscover(List.of(someService))
+                .optionalSetDiscover(Set.of(someService))
+                .oneNotDiscover(someService)
+                .build();
+        copy = WithProvider.builder()
+                .from(value)
+                .build();
+        assertThat(copy.optionalListDiscover(), optionalValue(is(List.of(someService))));
+        assertThat(copy.optionalSetDiscover(), optionalValue(is(Set.of(someService))));
+    }
+
+    @Test
+    void testDisabledOptionalContainerDiscoveryOnTheCopiedBuilder() {
+        SomeProvider.SomeService someService = new DummyService();
+        WithProvider.Builder value = WithProvider.builder()
+                .optionalListDiscoverDiscoverServices(false)
+                .optionalSetDiscoverDiscoverServices(false)
+                .optionalListDiscover(List.of())
+                .optionalSetDiscover(Set.of())
+                .oneNotDiscover(someService);
+
+        WithProvider copy = WithProvider.builder()
+                .from(value)
+                .build();
+        assertThat(copy.optionalListDiscover(), optionalValue(is(List.of())));
+        assertThat(copy.optionalSetDiscover(), optionalValue(is(Set.of())));
+
+        value = WithProvider.builder()
+                .optionalListDiscoverDiscoverServices(false)
+                .optionalSetDiscoverDiscoverServices(false)
+                .optionalListDiscover(List.of(someService))
+                .optionalSetDiscover(Set.of(someService))
+                .oneNotDiscover(someService);
+        copy = WithProvider.builder()
+                .from(value)
+                .build();
+        assertThat(copy.optionalListDiscover(), optionalValue(is(List.of(someService))));
+        assertThat(copy.optionalSetDiscover(), optionalValue(is(Set.of(someService))));
+    }
+
+    @Test
     void testDisabledDiscoveryOnInheritedBuilder() {
         SomeProvider.SomeService someService = new DummyService();
         WithInheritedProvider value = WithInheritedProvider.builder()

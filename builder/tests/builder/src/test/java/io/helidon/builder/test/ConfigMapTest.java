@@ -118,6 +118,48 @@ public class ConfigMapTest {
     }
 
     @Test
+    void testOptionalCollectionAdders() {
+        ConfigMap configMap = ConfigMap.builder()
+                .addOptionalList(List.of())
+                .addOptionalSet(Set.of())
+                .build();
+
+        assertThat(configMap.optionalList().orElseThrow(), empty());
+        assertThat(configMap.optionalSet().orElseThrow(), empty());
+
+        List<String> firstList = new ArrayList<>();
+        firstList.add("first");
+        List<String> secondList = new ArrayList<>();
+        secondList.add("second");
+        Set<String> firstSet = new LinkedHashSet<>();
+        firstSet.add("first");
+        firstSet.add("duplicate");
+        Set<String> secondSet = new LinkedHashSet<>();
+        secondSet.add("second");
+        secondSet.add("duplicate");
+
+        ConfigMap.Builder builder = ConfigMap.builder()
+                .addOptionalList(firstList)
+                .addOptionalList(secondList)
+                .addOptionalSet(firstSet)
+                .addOptionalSet(secondSet);
+        firstList.clear();
+        secondList.clear();
+        firstSet.clear();
+        secondSet.clear();
+
+        configMap = builder.build();
+
+        List<String> builtList = configMap.optionalList().orElseThrow();
+        Set<String> builtSet = configMap.optionalSet().orElseThrow();
+
+        assertThat(builtList, is(List.of("first", "second")));
+        assertThat(builtSet, is(Set.of("first", "second", "duplicate")));
+        assertThrows(UnsupportedOperationException.class, () -> builtList.add("third"));
+        assertThrows(UnsupportedOperationException.class, () -> builtSet.add("third"));
+    }
+
+    @Test
     void testOptionalContainerDefensiveCopies() {
         Map<String, String> map = new LinkedHashMap<>();
         map.put("key", "value");
