@@ -116,6 +116,6 @@ interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTele
      * @return the SDK
      */
     @Option.Access("")
-    OpenTelemetrySdk openTelemetrySdk();
+    Optional<OpenTelemetrySdk> openTelemetrySdk();
 
 }
