@@ -20,6 +20,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 class IdleTimeoutHandler extends TimerTask {
@@ -28,6 +30,8 @@ class IdleTimeoutHandler extends TimerTask {
     private final Duration timeout;
     private final Duration period;
     private final String taskName;
+    private final Lock runLock = new ReentrantLock();
+    private volatile boolean cancelled;
 
     IdleTimeoutHandler(Timer timer,
                        ListenerConfig listenerConfig,
@@ -44,20 +48,39 @@ class IdleTimeoutHandler extends TimerTask {
     @Override
     public void run() {
         String name = Thread.currentThread().getName();
-        Thread.currentThread().setName(taskName);
-        List<ConnectionHandler> connectionHandlers = handlerSupplier.get();
-        for (ConnectionHandler connectionHandler : connectionHandlers) {
-            try {
-                connectionHandler.closeIfIdle(timeout);
-            } catch (Throwable t) {
-                System.getLogger(IdleTimeoutHandler.class.getName() + "." + taskName)
-                        .log(System.Logger.Level.TRACE, "Failed to close an idle connection", t);
+        runLock.lock();
+        try {
+            if (cancelled) {
+                return;
             }
+            Thread.currentThread().setName(taskName);
+            List<ConnectionHandler> connectionHandlers = handlerSupplier.get();
+            for (ConnectionHandler connectionHandler : connectionHandlers) {
+                try {
+                    connectionHandler.closeIfIdle(timeout);
+                } catch (Throwable t) {
+                    System.getLogger(IdleTimeoutHandler.class.getName() + "." + taskName)
+                            .log(System.Logger.Level.TRACE, "Failed to close an idle connection", t);
+                }
+            }
+        } finally {
+            Thread.currentThread().setName(name);
+            runLock.unlock();
         }
-        Thread.currentThread().setName(name);
     }
 
     void start() {
         timer.schedule(this, period.toMillis(), period.toMillis());
+    }
+
+    void cancelAndAwait() {
+        cancelled = true;
+        cancel();
+        runLock.lock();
+        try {
+            // Wait for an in-flight idle timeout pass to finish.
+        } finally {
+            runLock.unlock();
+        }
     }
 }
