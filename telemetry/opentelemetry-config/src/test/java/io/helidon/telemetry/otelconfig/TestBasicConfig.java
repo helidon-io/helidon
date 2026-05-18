@@ -24,6 +24,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
@@ -102,11 +103,8 @@ class TestBasicConfig {
                          iterableWithSize(2)));
 
         assertThat("Sampler",
-                   openTelemetryConfig.openTelemetrySdk()
-                           .map(OpenTelemetrySdk::getSdkTracerProvider)
-                           .map(SdkTracerProvider::getSampler)
-                           .map(Sampler::toString),
-                   OptionalMatcher.optionalValue(is("AlwaysOffSampler")));
+                   openTelemetryConfig.openTelemetrySdk().getSdkTracerProvider().getSampler().toString(),
+                   is("AlwaysOffSampler"));
 
     }
 
@@ -141,6 +139,10 @@ class TestBasicConfig {
 
         OpenTelemetryConfig openTelemetry = OpenTelemetryConfig.create(config.get("telemetry"));
         assertThat("OpenTelemetry with config disabled", openTelemetry.openTelemetry(), is(equalTo(OpenTelemetry.noop())));
+        assertThat("OpenTelemetry SDK with config disabled", openTelemetry.openTelemetrySdk(), is(notNullValue()));
+        assertThat("OpenTelemetry SDK propagators with config disabled",
+                   openTelemetry.openTelemetrySdk().getPropagators(),
+                   is(equalTo(ContextPropagators.noop())));
 
     }
 
