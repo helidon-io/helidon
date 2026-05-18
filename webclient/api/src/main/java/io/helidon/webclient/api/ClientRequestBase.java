@@ -149,6 +149,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
         // this must be after we set clientUri, as it is used from the method
         clientConfig.baseAddress()
+                .filter(it -> !(it instanceof UnixDomainSocketAddress)
+                        || this.redirectSourceUri == null)
                 .ifPresent(this::address);
     }
 

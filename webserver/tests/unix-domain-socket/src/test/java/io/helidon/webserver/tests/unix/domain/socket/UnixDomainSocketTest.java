@@ -42,6 +42,7 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.socket.TlsNioSocket;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
@@ -79,6 +80,8 @@ public class UnixDomainSocketTest {
     private static final String LOGICAL_HOST = "service.example";
     private static final String LOGICAL_AUTHORITY = LOGICAL_HOST + ":443";
     private static final String LOGICAL_BASE_URI = "https://" + LOGICAL_HOST;
+    private static final String LOGICAL_PLAIN_BASE_URI = "http://127.0.0.1:1";
+    private static final String LOGICAL_PLAIN_AUTHORITY = "127.0.0.1:1";
 
     private static Path socketPath;
 
@@ -92,6 +95,20 @@ public class UnixDomainSocketTest {
     @SetUpRoute
     public static void setUpRoute(HttpRules rules) {
         rules.get("/test", (req, res) -> res.send("Hello World!"));
+        rules.get("/redirect-http1", (req, res) -> res.status(Status.FOUND_302)
+                .header(HeaderNames.LOCATION, "/redirected-http1")
+                .send());
+        rules.get("/redirected-http1", (req, res) -> res.send(req.authority()));
+        rules.get("/redirect-http1-cross-origin", (req, res) -> res.status(Status.FOUND_302)
+                .header(HeaderNames.LOCATION, req.query().get("target"))
+                .send());
+        rules.route(Http2Route.route(Method.GET, "/redirect-http2", (req, res) -> res.status(Status.FOUND_302)
+                .header(HeaderNames.LOCATION, "/redirected-http2")
+                .send()));
+        rules.route(Http2Route.route(Method.GET, "/redirected-http2", (req, res) -> res.send(req.authority())));
+        rules.route(Http2Route.route(Method.GET, "/redirect-http2-cross-origin", (req, res) -> res.status(Status.FOUND_302)
+                .header(HeaderNames.LOCATION, req.query().get("target"))
+                .send()));
     }
 
     @Test
@@ -105,6 +122,174 @@ public class UnixDomainSocketTest {
 
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("Hello World!"));
+    }
+
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
+    public void http1UnixSocketSameOriginRedirectPreservesTransportAddress() {
+        var address = UnixDomainSocketAddress.of(socketPath);
+        Http1Client http1Client = Http1Client.builder()
+                .shareConnectionCache(false)
+                .baseUri(LOGICAL_PLAIN_BASE_URI)
+                .build();
+        try {
+            assertResponse(http1Client.get()
+                                   .address(address)
+                                   .path("/redirect-http1")
+                                   .request(String.class),
+                           LOGICAL_PLAIN_AUTHORITY);
+        } finally {
+            http1Client.closeResource();
+        }
+    }
+
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
+    public void http2UnixSocketSameOriginRedirectPreservesTransportAddress() {
+        var address = UnixDomainSocketAddress.of(socketPath);
+        Http2Client http2Client = Http2Client.builder()
+                .shareConnectionCache(false)
+                .baseUri(LOGICAL_PLAIN_BASE_URI)
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .build();
+        try {
+            assertResponse(http2Client.get()
+                                   .address(address)
+                                   .path("/redirect-http2")
+                                   .request(String.class),
+                           LOGICAL_PLAIN_AUTHORITY);
+        } finally {
+            http2Client.closeResource();
+        }
+    }
+
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
+    public void http1UnixSocketBaseAddressSameOriginRedirectPreservesTransportAddress() {
+        var address = UnixDomainSocketAddress.of(socketPath);
+        Http1Client http1Client = Http1Client.builder()
+                .shareConnectionCache(false)
+                .baseUri(LOGICAL_PLAIN_BASE_URI)
+                .baseAddress(address)
+                .build();
+        try {
+            assertResponse(http1Client.get()
+                                   .path("/redirect-http1")
+                                   .request(String.class),
+                           LOGICAL_PLAIN_AUTHORITY);
+        } finally {
+            http1Client.closeResource();
+        }
+    }
+
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
+    public void http2UnixSocketBaseAddressSameOriginRedirectPreservesTransportAddress() {
+        var address = UnixDomainSocketAddress.of(socketPath);
+        Http2Client http2Client = Http2Client.builder()
+                .shareConnectionCache(false)
+                .baseUri(LOGICAL_PLAIN_BASE_URI)
+                .baseAddress(address)
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .build();
+        try {
+            assertResponse(http2Client.get()
+                                   .path("/redirect-http2")
+                                   .request(String.class),
+                           LOGICAL_PLAIN_AUTHORITY);
+        } finally {
+            http2Client.closeResource();
+        }
+    }
+
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
+    public void http1UnixSocketCrossOriginRedirectDropsTransportAddress() {
+        var address = UnixDomainSocketAddress.of(socketPath);
+        WebServer targetServer = startPlainServer("HTTP/1 TCP target", false);
+        Http1Client http1Client = Http1Client.builder()
+                .shareConnectionCache(false)
+                .baseUri(LOGICAL_PLAIN_BASE_URI)
+                .build();
+        try {
+            assertResponse(http1Client.get()
+                                   .address(address)
+                                   .path("/redirect-http1-cross-origin")
+                                   .queryParam("target", "http://127.0.0.1:" + targetServer.port() + "/target")
+                                   .request(String.class),
+                           "HTTP/1 TCP target");
+        } finally {
+            http1Client.closeResource();
+            targetServer.stop();
+        }
+    }
+
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
+    public void http1UnixSocketBaseAddressCrossOriginRedirectDropsTransportAddress() {
+        var address = UnixDomainSocketAddress.of(socketPath);
+        WebServer targetServer = startPlainServer("HTTP/1 TCP target", false);
+        Http1Client http1Client = Http1Client.builder()
+                .shareConnectionCache(false)
+                .baseUri(LOGICAL_PLAIN_BASE_URI)
+                .baseAddress(address)
+                .build();
+        try {
+            assertResponse(http1Client.get()
+                                   .path("/redirect-http1-cross-origin")
+                                   .queryParam("target", "http://127.0.0.1:" + targetServer.port() + "/redirect-again")
+                                   .request(String.class),
+                           "HTTP/1 TCP target");
+        } finally {
+            http1Client.closeResource();
+            targetServer.stop();
+        }
+    }
+
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
+    public void http2UnixSocketBaseAddressCrossOriginRedirectDropsTransportAddress() {
+        var address = UnixDomainSocketAddress.of(socketPath);
+        WebServer targetServer = startPlainServer("HTTP/2 TCP target", true);
+        Http2Client http2Client = Http2Client.builder()
+                .shareConnectionCache(false)
+                .baseUri(LOGICAL_PLAIN_BASE_URI)
+                .baseAddress(address)
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .build();
+        try {
+            assertResponse(http2Client.get()
+                                   .path("/redirect-http2-cross-origin")
+                                   .queryParam("target", "http://127.0.0.1:" + targetServer.port() + "/redirect-again")
+                                   .request(String.class),
+                           "HTTP/2 TCP target");
+        } finally {
+            http2Client.closeResource();
+            targetServer.stop();
+        }
+    }
+
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
+    public void http2UnixSocketCrossOriginRedirectDropsTransportAddress() {
+        var address = UnixDomainSocketAddress.of(socketPath);
+        WebServer targetServer = startPlainServer("HTTP/2 TCP target", true);
+        Http2Client http2Client = Http2Client.builder()
+                .shareConnectionCache(false)
+                .baseUri(LOGICAL_PLAIN_BASE_URI)
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .build();
+        try {
+            assertResponse(http2Client.get()
+                                   .address(address)
+                                   .path("/redirect-http2-cross-origin")
+                                   .queryParam("target", "http://127.0.0.1:" + targetServer.port() + "/target")
+                                   .request(String.class),
+                           "HTTP/2 TCP target");
+        } finally {
+            http2Client.closeResource();
+            targetServer.stop();
+        }
     }
 
     @Test
@@ -451,6 +636,27 @@ public class UnixDomainSocketTest {
                 .routing(rules -> {
                     rules.get("/test", (req, res) -> res.send(http1Response));
                     rules.route(Http2Route.route(Method.GET, "/h2", (req, res) -> res.send(http2Response)));
+                })
+                .build()
+                .start();
+    }
+
+    private static WebServer startPlainServer(String response, boolean http2) {
+        return WebServer.builder()
+                .host("127.0.0.1")
+                .port(http2 ? -1 : 0)
+                .routing(rules -> {
+                    if (http2) {
+                        rules.route(Http2Route.route(Method.GET, "/redirect-again", (req, res) -> res.status(Status.FOUND_302)
+                                .header(HeaderNames.LOCATION, "/target")
+                                .send()));
+                        rules.route(Http2Route.route(Method.GET, "/target", (req, res) -> res.send(response)));
+                    } else {
+                        rules.get("/redirect-again", (req, res) -> res.status(Status.FOUND_302)
+                                .header(HeaderNames.LOCATION, "/target")
+                                .send());
+                        rules.get("/target", (req, res) -> res.send(response));
+                    }
                 })
                 .build()
                 .start();

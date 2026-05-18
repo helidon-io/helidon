@@ -96,6 +96,9 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
         tls(request.tls());
+        if (sameOrigin(request.resolvedUri(), clientUri)) {
+            request.address().ifPresent(this::address);
+        }
         outputStreamRedirect(request.outputStreamRedirect());
     }
 
@@ -227,6 +230,12 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
 
     Http1ClientImpl http1Client() {
         return http1Client;
+    }
+
+    private static boolean sameOrigin(ClientUri sourceUri, ClientUri targetUri) {
+        return sourceUri.scheme().equalsIgnoreCase(targetUri.scheme())
+                && sourceUri.host().equalsIgnoreCase(targetUri.host())
+                && sourceUri.port() == targetUri.port();
     }
 
     void sanitizeRedirectHeaders(ClientUri requestUri, ClientRequestHeaders requestHeaders) {
