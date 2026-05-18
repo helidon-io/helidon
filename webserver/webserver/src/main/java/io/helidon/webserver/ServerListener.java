@@ -315,40 +315,6 @@ class ServerListener implements ListenerContext {
         return InitializationContext.create(socketName, List.of(Tag.create("socketName", socketName)));
     }
 
-    private static void suppressCleanupFailure(Throwable startupFailure, Runnable cleanup) {
-        try {
-            cleanup.run();
-        } catch (RuntimeException | Error e) {
-            LifecycleFailures.add(startupFailure, e);
-        }
-    }
-
-    private static void closeAcceptedSocket(SocketChannel socket, Throwable cause) {
-        // the socket was never handled
-        try {
-            socket.close();
-        } catch (IOException e) {
-            if (cause != null && cause != e) {
-                e.addSuppressed(cause);
-            }
-            LOGGER.log(TRACE, "Failed to close socket that was not handled", e);
-        }
-    }
-
-    private static void throwIfCheckpointSuspendFailed(Throwable failure) {
-        if (failure == null) {
-            return;
-        }
-        Throwable unwrapped = LifecycleFailures.unwrap(failure);
-        if (unwrapped instanceof RuntimeException runtimeException) {
-            throw runtimeException;
-        }
-        if (unwrapped instanceof Error error) {
-            throw error;
-        }
-        throw new IllegalStateException("Failed to suspend listener for checkpoint", unwrapped);
-    }
-
     private void initServerThread() {
         this.closeFuture = new CompletableFuture<>();
         this.serverThread = Thread.ofPlatform()
@@ -548,6 +514,14 @@ class ServerListener implements ListenerContext {
         }
     }
 
+    private static void suppressCleanupFailure(Throwable startupFailure, Runnable cleanup) {
+        try {
+            cleanup.run();
+        } catch (RuntimeException | Error e) {
+            LifecycleFailures.add(startupFailure, e);
+        }
+    }
+
     private void closeServerSocketOnFailure() {
         ServerSocketChannel localServerSocket = serverSocket;
         if (localServerSocket == null) {
@@ -737,6 +711,18 @@ class ServerListener implements ListenerContext {
         closeFuture.complete(null);
     }
 
+    private static void closeAcceptedSocket(SocketChannel socket, Throwable cause) {
+        // the socket was never handled
+        try {
+            socket.close();
+        } catch (IOException e) {
+            if (cause != null && cause != e) {
+                e.addSuppressed(cause);
+            }
+            LOGGER.log(TRACE, "Failed to close socket that was not handled", e);
+        }
+    }
+
     private List<ConnectionHandler> connectionHandlers() {
         return new ArrayList<>(connectionHandlers);
     }
@@ -751,6 +737,20 @@ class ServerListener implements ListenerContext {
             }
         }
         return failure;
+    }
+
+    private static void throwIfCheckpointSuspendFailed(Throwable failure) {
+        if (failure == null) {
+            return;
+        }
+        Throwable unwrapped = LifecycleFailures.unwrap(failure);
+        if (unwrapped instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+        if (unwrapped instanceof Error error) {
+            throw error;
+        }
+        throw new IllegalStateException("Failed to suspend listener for checkpoint", unwrapped);
     }
 
 }

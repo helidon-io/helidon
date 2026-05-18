@@ -110,21 +110,6 @@ class AimdLimitImpl extends LimitBase {
         return doCall(callable);
     }
 
-    /**
-     * Initialize metrics for this limit.
-     *
-     * @param context context for limit initialization
-     */
-    void init(Limit.InitializationContext context) {
-        originName = context.originName();
-        metrics.init(context);
-    }
-
-    @Deprecated
-    void init(String originName) {
-        init(Limit.InitializationContext.create(originName, SemaphoreMetrics.legacySocketTags(originName)));
-    }
-
     void updateWithSample(long startTime, long endTime, int currentRequests, boolean success) {
         long rtt = endTime - startTime;
 
@@ -198,6 +183,21 @@ class AimdLimitImpl extends LimitBase {
         } finally {
             limitLock.unlock();
         }
+    }
+
+    /**
+     * Initialize metrics for this limit.
+     *
+     * @param context context for limit initialization
+     */
+    void init(Limit.InitializationContext context) {
+        originName = context.originName();
+        metrics.init(context);
+    }
+
+    @Deprecated
+    void init(String originName) {
+        init(Limit.InitializationContext.create(originName, SemaphoreMetrics.legacySocketTags(originName)));
     }
 
     private static final class AdjustableSemaphore extends Semaphore {
