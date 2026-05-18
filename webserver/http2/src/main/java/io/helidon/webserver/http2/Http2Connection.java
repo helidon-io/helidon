@@ -154,20 +154,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         this.initConnectionHeaders = true;
     }
 
-    private static void settingsUpdate(Http2Config config, Http2Settings.Builder builder) {
-        applySetting(builder, config.maxFrameSize(), Http2Setting.MAX_FRAME_SIZE);
-        applySetting(builder, config.maxHeaderListSize(), Http2Setting.MAX_HEADER_LIST_SIZE);
-        applySetting(builder, config.maxConcurrentStreams(), Http2Setting.MAX_CONCURRENT_STREAMS);
-        applySetting(builder, config.initialWindowSize(), Http2Setting.INITIAL_WINDOW_SIZE);
-    }
-
-    // Add value to the builder only when differs from default
-    private static void applySetting(Http2Settings.Builder builder, long value, Http2Setting<Long> settings) {
-        if (value != settings.defaultValue()) {
-            builder.add(settings, value);
-        }
-    }
-
     @Override
     public void handle(Limit limit) throws InterruptedException {
         try {
@@ -253,19 +239,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
     }
 
-    private static void validateMaxFrameSize(Http2Settings http2Settings) {
-        if (!http2Settings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {
-            return;
-        }
-
-        Long maxFrameSize = http2Settings.value(Http2Setting.MAX_FRAME_SIZE);
-        // specification defines, that the frame size must be between the initial size (16384) and 2^24-1
-        if (maxFrameSize < WindowSize.DEFAULT_MAX_FRAME_SIZE || maxFrameSize > WindowSize.MAX_MAX_FRAME_SIZE) {
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL,
-                                     "Frame size must be between 2^14 and 2^24-1, but is: " + maxFrameSize);
-        }
-    }
-
     /**
      * Connection headers from an upgrade request from HTTP/1.1.
      *
@@ -299,10 +272,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         return Duration.between(lastRequestTimestamp, DateTime.timestamp());
     }
 
-    void finish() {
-        this.state = State.FINISHED;
-    }
-
     @Override
     public void close(boolean interrupt) {
         // either way, finish
@@ -316,8 +285,15 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         } else if (canInterrupt()) {
             // only interrupt when not processing a request (there is a chance of a race condition, this edge case
             // is ignored
-            myThread.interrupt();
+            Thread localThread = myThread;
+            if (localThread != null) {
+                localThread.interrupt();
+            }
         }
+    }
+
+    void finish() {
+        this.state = State.FINISHED;
     }
 
     // jUnit Http2Config pkg only visible test accessor.
@@ -333,6 +309,56 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     // jUnit Http2Settings pkg only visible test accessor.
     Http2Settings clientSettings() {
         return clientSettings;
+    }
+
+    void pendingPing(Http2Ping ping) {
+        this.ping = ping;
+    }
+
+    void writePingAck() {
+        BufferData frame = ping.data();
+        Http2FrameHeader header = Http2FrameHeader.create(frame.available(),
+                                                          Http2FrameTypes.PING,
+                                                          Http2Flag.PingFlags.create(Http2Flag.ACK),
+                                                          0);
+        ping = null;
+        writeConnectionFrame(new Http2FrameData(header, frame));
+        state = State.READ_FRAME;
+    }
+
+    void writeConnectionFrame(Http2FrameData frame) {
+        try {
+            connectionWriter.write(frame);
+        } catch (UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write HTTP/2 connection frame", e);
+        }
+    }
+
+    private static void settingsUpdate(Http2Config config, Http2Settings.Builder builder) {
+        applySetting(builder, config.maxFrameSize(), Http2Setting.MAX_FRAME_SIZE);
+        applySetting(builder, config.maxHeaderListSize(), Http2Setting.MAX_HEADER_LIST_SIZE);
+        applySetting(builder, config.maxConcurrentStreams(), Http2Setting.MAX_CONCURRENT_STREAMS);
+        applySetting(builder, config.initialWindowSize(), Http2Setting.INITIAL_WINDOW_SIZE);
+    }
+
+    // Add value to the builder only when differs from default
+    private static void applySetting(Http2Settings.Builder builder, long value, Http2Setting<Long> settings) {
+        if (value != settings.defaultValue()) {
+            builder.add(settings, value);
+        }
+    }
+
+    private static void validateMaxFrameSize(Http2Settings http2Settings) {
+        if (!http2Settings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {
+            return;
+        }
+
+        Long maxFrameSize = http2Settings.value(Http2Setting.MAX_FRAME_SIZE);
+        // specification defines, that the frame size must be between the initial size (16384) and 2^24-1
+        if (maxFrameSize < WindowSize.DEFAULT_MAX_FRAME_SIZE || maxFrameSize > WindowSize.MAX_MAX_FRAME_SIZE) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                     "Frame size must be between 2^14 and 2^24-1, but is: " + maxFrameSize);
+        }
     }
 
     private void doHandle(Limit limit) throws InterruptedException {
@@ -746,29 +772,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             state = State.READ_FRAME;
         } else {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received priority while processing headers");
-        }
-    }
-
-    void pendingPing(Http2Ping ping) {
-        this.ping = ping;
-    }
-
-    void writePingAck() {
-        BufferData frame = ping.data();
-        Http2FrameHeader header = Http2FrameHeader.create(frame.available(),
-                                                          Http2FrameTypes.PING,
-                                                          Http2Flag.PingFlags.create(Http2Flag.ACK),
-                                                          0);
-        ping = null;
-        writeConnectionFrame(new Http2FrameData(header, frame));
-        state = State.READ_FRAME;
-    }
-
-    void writeConnectionFrame(Http2FrameData frame) {
-        try {
-            connectionWriter.write(frame);
-        } catch (UncheckedIOException e) {
-            throw new ServerConnectionException("Failed to write HTTP/2 connection frame", e);
         }
     }
 

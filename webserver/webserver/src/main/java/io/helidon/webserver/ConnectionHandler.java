@@ -21,12 +21,14 @@ import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
+import java.time.Duration;
 import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.net.ssl.SSLEngine;
@@ -71,39 +73,49 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private final Limit requestLimit;
     private final ConnectionProviders connectionProviders;
     private final List<ServerConnectionSelector> providerCandidates;
-    private final Map<String, ServerConnection> activeConnections;
     private final SocketChannel socket;
     private final String serverChannelId;
     private final Router router;
     private final Tls tls;
     private final ListenerConfig listenerConfig;
+    private final String channelId;
+    private final Consumer<ConnectionHandler> connectionHandlerRemoveListener;
+    private final ReentrantLock closeLock = new ReentrantLock();
 
-    private ServerConnection connection;
-    private HelidonSocket helidonSocket;
+    private String socketIds;
+    private boolean closeRequested;
+    private boolean closeInterrupt;
+    private boolean handlingStarted;
     private DataReader reader;
     private SocketWriter writer;
     private ProxyProtocolData proxyProtocolData;
+
+    // Published before handling starts so lifecycle close/interrupt paths do not miss the delegate.
+    private volatile ServerConnection connection;
+    // Published so concurrent close uses the wrapped socket once setup reaches that stage.
+    private volatile HelidonSocket helidonSocket;
 
     ConnectionHandler(ListenerContext listenerContext,
                       LimitAlgorithm.Token limitToken,
                       Limit requestLimit,
                       ConnectionProviders connectionProviders,
-                      Map<String, ServerConnection> activeConnections,
                       SocketChannel socket,
                       String serverChannelId,
                       Router router,
-                      Tls tls) {
+                      Tls tls,
+                      Consumer<ConnectionHandler> connectionHandlerRemoveListener) {
         this.listenerContext = listenerContext;
         this.limitToken = limitToken;
         this.requestLimit = requestLimit;
         this.connectionProviders = connectionProviders;
         this.providerCandidates = connectionProviders.providerCandidates();
-        this.activeConnections = activeConnections;
         this.socket = socket;
         this.serverChannelId = serverChannelId;
         this.router = router;
         this.tls = tls;
         this.listenerConfig = listenerContext.config();
+        this.connectionHandlerRemoveListener = connectionHandlerRemoveListener;
+        this.channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
     }
 
     @Override
@@ -113,104 +125,19 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
 
     @Override
     public final void run() {
-        String channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
-
-        // proxy protocol before SSL handshake
-        if (listenerConfig.enableProxyProtocol()) {
-            ProxyProtocolHandler handler = new ProxyProtocolHandler(socket, channelId);
-            try {
-                proxyProtocolData = handler.get();
-            } catch (RuntimeException e) {
-                if (LOGGER.isLoggable(TRACE)) {
-                    LOGGER.log(TRACE, "[" + channelId + "] Failed to retrieve Proxy Protocol data", e);
-                }
-                closeChannel(channelId);
-                return;
-            }
-        }
-
-        // handle SSL and init helidonSocket, reader and writer
         try {
-            helidonSocket = createSocket(tls, socket, channelId);
-
-            reader = DataReader.create(new MapExceptionDataSupplier(helidonSocket));
-            writer = SocketWriter.create(listenerContext.executor(),
-                                         helidonSocket,
-                                         listenerConfig.writeQueueLength(),
-                                         listenerConfig.smartAsyncWrites());
-        } catch (RuntimeException e) {
-            // these exceptions are thrown to the executor service
-            if (LOGGER.isLoggable(TRACE)) {
-                LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
-            }
-            closeChannel(channelId);
-            return;
-        } catch (Exception e) {
-            if (LOGGER.isLoggable(TRACE)) {
-                LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
-            }
-            closeChannel(channelId);
-            return;
-        }
-
-        // connection handling
-        String socketsId = helidonSocket.socketId() + " " + helidonSocket.childSocketId();
-        Thread.currentThread().setName("[" + socketsId + "] WebServer socket");
-        if (LOGGER.isLoggable(DEBUG)) {
-            helidonSocket.log(LOGGER,
-                       DEBUG,
-                       "accepted socket from %s:%d",
-                       helidonSocket.remotePeer().host(),
-                       helidonSocket.remotePeer().port());
-        }
-
-        try {
-            if (helidonSocket.protocolNegotiated()) {
-                this.connection = connectionProviders.byApplicationProtocol(helidonSocket.protocol())
-                        .connection(this);
-            }
-
-            if (connection == null) {
-                this.connection = identifyConnection();
-            }
-
-            if (connection == null) {
-                if (isHttp10Connection(reader)) {
-                    // cannot easily return 505, so log better message instead
-                    throw new CloseConnectionException("HTTP 1.0 is not supported, consider using HTTP 1.1");
-                }
-                throw new CloseConnectionException("No suitable connection provider");
-            }
-            activeConnections.put(socketsId, connection);
-            connection.handle(requestLimit);
-        } catch (RequestException e) {
-            helidonSocket.log(LOGGER, WARNING, "escaped Request exception", e);
-        } catch (HttpException e) {
-            helidonSocket.log(LOGGER, WARNING, "escaped HTTP exception", e);
-        } catch (ServerConnectionException e) {
-            // socket exception - the socket failed, probably killed by OS, proxy or client
-            helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
-        } catch (CloseConnectionException e) {
-            // end of request stream - safe to close the connection, as it was requested by our client
-            helidonSocket.log(LOGGER, TRACE, "connection close requested", e);
-        } catch (UncheckedIOException e) {
-            if (e.getCause() instanceof SocketException) {
-                // socket exception - the socket failed, probably killed by OS, proxy or client
-                helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
-            } else {
-                helidonSocket.log(LOGGER, WARNING, "unexpected I/O exception", e);
-            }
-        } catch (Exception e) {
-            helidonSocket.log(LOGGER, WARNING, "unexpected exception", e);
+            run(channelId);
         } finally {
-            // connection has finished the loop of handling, release the semaphore
-            limitToken.success();
-            activeConnections.remove(socketsId);
-            writer.close();
-            closeChannel(channelId);
+            releaseConnectionLimit(handlingStarted);
+            if (writer != null) {
+                writer.close();
+            }
+            closeChannel();
+            if (helidonSocket != null) {
+                helidonSocket.log(LOGGER, DEBUG, "socket closed");
+            }
+            connectionHandlerRemoveListener.accept(this);
         }
-
-        helidonSocket.log(LOGGER, DEBUG, "socket closed");
     }
 
     @Override
@@ -271,6 +198,174 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     @Override
     public HelidonSocket serverSocket() {
         return helidonSocket;
+    }
+
+    void close(boolean interrupt) {
+        ServerConnection localConnection;
+        boolean localCloseInterrupt;
+        boolean closeChannel;
+        closeLock.lock();
+        try {
+            if (interrupt) {
+                closeInterrupt = true;
+            }
+            closeRequested = true;
+            localConnection = connection;
+            localCloseInterrupt = closeInterrupt;
+            closeChannel = !handlingStarted;
+        } finally {
+            closeLock.unlock();
+        }
+        if (closeChannel) {
+            closeChannel();
+        }
+        if (localConnection != null) {
+            localConnection.close(localCloseInterrupt);
+        }
+    }
+
+    void closeIfIdle(Duration timeout) {
+        ServerConnection localConnection;
+        closeLock.lock();
+        try {
+            if (!handlingStarted || closeRequested) {
+                return;
+            }
+            localConnection = connection;
+        } finally {
+            closeLock.unlock();
+        }
+        if (localConnection != null && localConnection.idleTime().compareTo(timeout) > 0) {
+            // this should be a graceful shutdown, in case a request is received in parallel, we want to handle
+            // it, and yes, then it would be closed (and it must not accept another request)
+            close(false);
+        }
+    }
+
+    static boolean isHttp10Connection(DataReader reader) {
+        try {
+            reader.ensureAvailable();
+        } catch (DataReader.InsufficientDataAvailableException e) {
+            throw new CloseConnectionException("No data available", e);
+        }
+        BufferData request = reader.getBuffer(reader.available());
+        int lf = request.indexOf(Bytes.LF_BYTE);
+        return lf != -1 && request.readString(lf).endsWith(HTTP_1_0);
+    }
+
+    // extracted run method to make the run method clean (a single try/finally block)
+    private void run(String channelId) {
+        // proxy protocol before SSL handshake
+        if (listenerConfig.enableProxyProtocol()) {
+            ProxyProtocolHandler handler = new ProxyProtocolHandler(socket, channelId);
+            try {
+                proxyProtocolData = handler.get();
+            } catch (RuntimeException e) {
+                if (LOGGER.isLoggable(TRACE)) {
+                    LOGGER.log(TRACE, "[" + channelId + "] Failed to retrieve Proxy Protocol data", e);
+                }
+                return;
+            }
+        }
+
+        // handle SSL and init helidonSocket, reader and writer
+        try {
+            helidonSocket = createSocket(tls, socket, channelId);
+
+            reader = DataReader.create(new MapExceptionDataSupplier(helidonSocket));
+            writer = SocketWriter.create(listenerContext.executor(),
+                                         helidonSocket,
+                                         listenerConfig.writeQueueLength(),
+                                         listenerConfig.smartAsyncWrites());
+        } catch (RuntimeException e) {
+            // these exceptions are thrown to the executor service
+            if (LOGGER.isLoggable(TRACE)) {
+                LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
+            }
+            return;
+        } catch (Exception e) {
+            if (LOGGER.isLoggable(TRACE)) {
+                LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
+            }
+            return;
+        }
+
+        // connection handling
+        socketIds = helidonSocket.socketId() + " " + helidonSocket.childSocketId();
+        Thread.currentThread().setName("[" + socketIds + "] WebServer socket");
+        if (LOGGER.isLoggable(DEBUG)) {
+            helidonSocket.log(LOGGER,
+                              DEBUG,
+                              "accepted socket from %s:%d",
+                              helidonSocket.remotePeer().host(),
+                              helidonSocket.remotePeer().port());
+        }
+
+        try {
+            ServerConnection selectedConnection = null;
+            if (helidonSocket.protocolNegotiated()) {
+                selectedConnection = connectionProviders.byApplicationProtocol(helidonSocket.protocol())
+                        .connection(this);
+            }
+
+            if (selectedConnection == null) {
+                selectedConnection = identifyConnection();
+            }
+
+            if (selectedConnection == null) {
+                if (isHttp10Connection(reader)) {
+                    // cannot easily return 505, so log better message instead
+                    throw new CloseConnectionException("HTTP 1.0 is not supported, consider using HTTP 1.1");
+                }
+                throw new CloseConnectionException("No suitable connection provider");
+            }
+            if (!startHandling(selectedConnection)) {
+                close(false);
+                return;
+            }
+            selectedConnection.handle(requestLimit);
+        } catch (RequestException e) {
+            helidonSocket.log(LOGGER, WARNING, "escaped Request exception", e);
+        } catch (HttpException e) {
+            helidonSocket.log(LOGGER, WARNING, "escaped HTTP exception", e);
+        } catch (ServerConnectionException e) {
+            // socket exception - the socket failed, probably killed by OS, proxy or client
+            helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
+        } catch (CloseConnectionException e) {
+            // end of request stream - safe to close the connection, as it was requested by our client
+            helidonSocket.log(LOGGER, TRACE, "connection close requested", e);
+        } catch (UncheckedIOException e) {
+            if (e.getCause() instanceof SocketException) {
+                // socket exception - the socket failed, probably killed by OS, proxy or client
+                helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
+            } else {
+                helidonSocket.log(LOGGER, WARNING, "unexpected I/O exception", e);
+            }
+        } catch (Exception e) {
+            helidonSocket.log(LOGGER, WARNING, "unexpected exception", e);
+        }
+    }
+
+    private void releaseConnectionLimit(boolean handlingStarted) {
+        if (handlingStarted) {
+            limitToken.success();
+        } else {
+            limitToken.ignore();
+        }
+    }
+
+    private boolean startHandling(ServerConnection selectedConnection) {
+        closeLock.lock();
+        try {
+            connection = selectedConnection;
+            if (closeRequested) {
+                return false;
+            }
+            handlingStarted = true;
+            return true;
+        } finally {
+            closeLock.unlock();
+        }
     }
 
     private HelidonSocket createSocket(Tls tls, SocketChannel socket, String channelId) throws IOException {
@@ -407,7 +502,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         }
     }
 
-    private void closeChannel(String channelId) {
+    private void closeChannel() {
         if (helidonSocket == null) {
             try {
                 socket.close();
@@ -423,17 +518,6 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                 helidonSocket.log(LOGGER, TRACE, "Failed to close socket on connection close", e);
             }
         }
-    }
-
-    static boolean isHttp10Connection(DataReader reader) {
-        try {
-            reader.ensureAvailable();
-        } catch (DataReader.InsufficientDataAvailableException e) {
-            throw new CloseConnectionException("No data available", e);
-        }
-        BufferData request = reader.getBuffer(reader.available());
-        int lf = request.indexOf(Bytes.LF_BYTE);
-        return lf != -1 && request.readString(lf).endsWith(HTTP_1_0);
     }
 
     private static class MapExceptionDataSupplier implements Supplier<byte[]> {

@@ -32,14 +32,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
@@ -54,13 +52,11 @@ import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.context.Context;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.task.HelidonTaskExecutor;
-import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.spi.ProtocolConfig;
-import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.spi.ServerConnectionSelector;
 import io.helidon.webserver.spi.ServerConnectionSelectorProvider;
 
@@ -94,7 +90,7 @@ class ServerListener implements ListenerContext {
     private final Context context;
     private final Limit connectionLimit;
     private final Limit requestLimit;
-    private final Map<String, ServerConnection> activeConnections = new ConcurrentHashMap<>();
+    private final Set<ConnectionHandler> connectionHandlers = ConcurrentHashMap.newKeySet();
 
     private volatile boolean running;
     private volatile boolean inCheckpoint;
@@ -102,10 +98,6 @@ class ServerListener implements ListenerContext {
     private volatile ServerSocketChannel serverSocket;
     private volatile Thread serverThread;
     private volatile CompletableFuture<Void> closeFuture;
-    private volatile Runnable beforeReaderExecutorTerminate = () -> {
-    };
-    private volatile Runnable beforeSharedExecutorAwait = () -> {
-    };
 
     @SuppressWarnings("unchecked")
     ServerListener(String socketName,
@@ -191,17 +183,8 @@ class ServerListener implements ListenerContext {
         // handle idle connection timeout
         IdleTimeoutHandler ith = new IdleTimeoutHandler(idleConnectionTimer,
                                                         listenerConfig,
-                                                        this::activeConnections);
+                                                        this::connectionHandlers);
         ith.start();
-    }
-
-    private void initServerThread() {
-        this.closeFuture = new CompletableFuture<>();
-        this.serverThread = Thread.ofPlatform()
-                .inheritInheritableThreadLocals(true)
-                .daemon(false)
-                .name("server-" + socketName + "-listener")
-                .unstarted(this::listen);
     }
 
     @Override
@@ -266,14 +249,79 @@ class ServerListener implements ListenerContext {
         LifecycleFailures.throwIfFailed(failure, "Failed to stop listener " + socketName);
     }
 
+    void start() {
+        start(() -> false);
+    }
+
+    void start(BooleanSupplier cancelled) {
+        boolean lifecycleStarted = false;
+        try {
+            checkCancelledStartup(cancelled);
+            router.beforeStart();
+            lifecycleStarted = true;
+            checkCancelledStartup(cancelled);
+            startIt(cancelled);
+        } catch (RuntimeException | Error e) {
+            rollbackFailedStart(e, lifecycleStarted);
+            throw e;
+        }
+    }
+
+    boolean hasTls() {
+        return tls.enabled();
+    }
+
+    // Intended for tests that need listener state without stack walking.
+    Thread.State serverThreadState() {
+        Thread localServerThread = serverThread;
+        return localServerThread == null ? null : localServerThread.getState();
+    }
+
+    void reloadTls(Tls tls) {
+        if (!this.tls.enabled()) {
+            throw new IllegalArgumentException("TLS is not enabled on the socket " + socketName
+                                                       + " and therefore cannot be reloaded");
+        }
+        if (!tls.enabled()) {
+            throw new UnsupportedOperationException("TLS cannot be disabled by reloading on the socket " + socketName);
+        }
+        this.tls.reload(tls);
+    }
+
+    void suspend() {
+        inCheckpoint = true;
+        // Checkpoint suspend is expected to stop the listener thread. The connection-limit wait path
+        // converts interrupts into a rejected outcome, so clear the loop condition first to avoid
+        // re-entering the wait after the interrupt is consumed.
+        running = false;
+        suspendForCheckpoint();
+        serverThread = null;
+        closeFuture = null;
+    }
+
+    void resume() {
+        initServerThread();
+        startIt();
+        inCheckpoint = false;
+    }
+
+    private void initServerThread() {
+        this.closeFuture = new CompletableFuture<>();
+        this.serverThread = Thread.ofPlatform()
+                .inheritInheritableThreadLocals(true)
+                .daemon(false)
+                .name("server-" + socketName + "-listener")
+                .unstarted(this::listen);
+    }
+
     private Throwable stopResources() {
         Throwable failure = null;
         // Stop listening for connections
         closeServerSocketForStop();
 
         try {
-            // Stop handling any new requests on all active connections
-            failure = LifecycleFailures.add(failure, closeActiveConnections(false));
+            // Stop handling any new requests on all accepted and active connections
+            failure = LifecycleFailures.add(failure, closeOpenConnections(false));
         } catch (RuntimeException | Error e) {
             failure = LifecycleFailures.add(failure, e);
         }
@@ -293,8 +341,8 @@ class ServerListener implements ListenerContext {
         }
 
         try {
-            // Interrupt and close any active connections
-            failure = LifecycleFailures.add(failure, closeActiveConnections(true));
+            // Interrupt and close any accepted and active connections
+            failure = LifecycleFailures.add(failure, closeOpenConnections(true));
         } catch (RuntimeException | Error e) {
             failure = LifecycleFailures.add(failure, e);
         }
@@ -319,6 +367,7 @@ class ServerListener implements ListenerContext {
     }
 
     private void suspendForCheckpoint() {
+        Throwable failure = null;
         try {
             // Stop listening for connections
             serverSocket.close();
@@ -330,33 +379,27 @@ class ServerListener implements ListenerContext {
                     LOGGER.log(WARNING, "Failed to delete UNIX socket file " + udsa.getPath().toAbsolutePath(), e);
                 }
             }
-            // Stop handling any new requests on all active connections
-            activeConnections().forEach(connection -> connection.close(false));
-            // Interrupt and close any active connections
-            activeConnections().forEach(connection -> connection.close(true));
         } catch (IOException e) {
             LOGGER.log(INFO, "Exception thrown on socket close", e);
         }
-        serverThread.interrupt();
-        closeFuture.join();
-    }
+        // Stop handling any new requests on all accepted and active connections
+        failure = LifecycleFailures.add(failure, closeOpenConnections(false));
+        // Interrupt and close any accepted and active connections
+        failure = LifecycleFailures.add(failure, closeOpenConnections(true));
 
-    void start() {
-        start(() -> false);
-    }
-
-    void start(BooleanSupplier cancelled) {
-        boolean lifecycleStarted = false;
-        try {
-            checkCancelledStartup(cancelled);
-            router.beforeStart();
-            lifecycleStarted = true;
-            checkCancelledStartup(cancelled);
-            startIt(cancelled);
-        } catch (RuntimeException | Error e) {
-            rollbackFailedStart(e, lifecycleStarted);
-            throw e;
+        Thread localServerThread = serverThread;
+        if (localServerThread != null) {
+            localServerThread.interrupt();
         }
+        CompletableFuture<Void> localCloseFuture = closeFuture;
+        if (localCloseFuture != null) {
+            try {
+                localCloseFuture.join();
+            } catch (RuntimeException | Error e) {
+                failure = LifecycleFailures.add(failure, e);
+            }
+        }
+        throwIfCheckpointSuspendFailed(failure);
     }
 
     private void startIt() {
@@ -436,21 +479,6 @@ class ServerListener implements ListenerContext {
         if (cancelled.getAsBoolean()) {
             throw new IllegalStateException("Listener startup cancelled " + socketName);
         }
-    }
-
-    boolean hasTls() {
-        return tls.enabled();
-    }
-
-    void reloadTls(Tls tls) {
-        if (!this.tls.enabled()) {
-            throw new IllegalArgumentException("TLS is not enabled on the socket " + socketName
-                                                       + " and therefore cannot be reloaded");
-        }
-        if (!tls.enabled()) {
-            throw new UnsupportedOperationException("TLS cannot be disabled by reloading on the socket " + socketName);
-        }
-        this.tls.reload(tls);
     }
 
     private void debugTls(String serverChannelId, Tls tls) {
@@ -544,11 +572,6 @@ class ServerListener implements ListenerContext {
 
     private void shutdownReaderExecutor() {
         Throwable failure = null;
-        try {
-            beforeReaderExecutorTerminate.run();
-        } catch (RuntimeException | Error e) {
-            failure = LifecycleFailures.add(failure, e);
-        }
         readerExecutor.terminate(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
         if (Thread.currentThread().isInterrupted()) {
             failure = LifecycleFailures.add(failure,
@@ -569,11 +592,6 @@ class ServerListener implements ListenerContext {
     private void shutdownSharedExecutor() {
         Throwable failure = null;
         sharedExecutor.shutdown();
-        try {
-            beforeSharedExecutorAwait.run();
-        } catch (RuntimeException | Error e) {
-            failure = LifecycleFailures.add(failure, e);
-        }
         try {
             boolean done = sharedExecutor.awaitTermination(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
             if (!done) {
@@ -612,42 +630,44 @@ class ServerListener implements ListenerContext {
 
                     // if accept fails itself, we consider it end of story, the listener is broken
                     SocketChannel socket = serverSocket.accept();
+                    ConnectionHandler handler = new ConnectionHandler(this,
+                                                                      token,
+                                                                      requestLimit,
+                                                                      connectionProviders,
+                                                                      socket,
+                                                                      serverChannelId,
+                                                                      router,
+                                                                      tls,
+                                                                      connectionHandlers::remove);
+                    connectionHandlers.add(handler);
 
                     try {
+                        if (!running) {
+                            connectionHandlers.remove(handler);
+                            closeAcceptedSocket(socket, null);
+                            token.ignore();
+                            continue;
+                        }
                         connectionOptions.configureSocket(socket);
-                        ConnectionHandler handler = new ConnectionHandler(this,
-                                                                          token,
-                                                                          requestLimit,
-                                                                          connectionProviders,
-                                                                          activeConnections,
-                                                                          socket,
-                                                                          serverChannelId,
-                                                                          router,
-                                                                          tls);
+                        if (!running) {
+                            connectionHandlers.remove(handler);
+                            closeAcceptedSocket(socket, null);
+                            token.ignore();
+                            continue;
+                        }
                         readerExecutor.execute(handler);
                     } catch (RejectedExecutionException e) {
+                        connectionHandlers.remove(handler);
                         LOGGER.log(ERROR, "Executor rejected handler for new connection", e);
-
-                        // the socket was never handled
-                        try {
-                            socket.close();
-                        } catch (IOException ex) {
-                            LOGGER.log(TRACE, "Failed to close socket that was rejected for execution", e);
-                        }
+                        closeAcceptedSocket(socket, e);
 
                         // we never started the handler, so we must release the semaphore here
                         token.dropped();
                     } catch (Exception e) {
+                        connectionHandlers.remove(handler);
                         // we may get an SSL handshake errors, which should only fail one socket, not the listener
                         LOGGER.log(TRACE, "Failed to handle accepted socket", e);
-                        // the socket was never handled
-                        try {
-                            socket.close();
-                        } catch (IOException ex) {
-                            LOGGER.log(TRACE,
-                                       "Failed to close socket that failed start execution (see previous trace for reason)",
-                                       e);
-                        }
+                        closeAcceptedSocket(socket, e);
 
                         // we never started the handler, so we must release the semaphore here
                         token.ignore();
@@ -682,15 +702,27 @@ class ServerListener implements ListenerContext {
         closeFuture.complete(null);
     }
 
-    private List<ServerConnection> activeConnections() {
-        return new ArrayList<>(activeConnections.values());
+    private static void closeAcceptedSocket(SocketChannel socket, Throwable cause) {
+        // the socket was never handled
+        try {
+            socket.close();
+        } catch (IOException e) {
+            if (cause != null && cause != e) {
+                e.addSuppressed(cause);
+            }
+            LOGGER.log(TRACE, "Failed to close socket that was not handled", e);
+        }
     }
 
-    private Throwable closeActiveConnections(boolean interrupt) {
+    private List<ConnectionHandler> connectionHandlers() {
+        return new ArrayList<>(connectionHandlers);
+    }
+
+    private Throwable closeOpenConnections(boolean interrupt) {
         Throwable failure = null;
-        for (ServerConnection connection : activeConnections()) {
+        for (ConnectionHandler handler : connectionHandlers()) {
             try {
-                connection.close(interrupt);
+                handler.close(interrupt);
             } catch (RuntimeException | Error e) {
                 failure = LifecycleFailures.add(failure, e);
             }
@@ -698,45 +730,18 @@ class ServerListener implements ListenerContext {
         return failure;
     }
 
-    // Intended for testing.
-    Thread serverThreads() {
-        return serverThread;
+    private static void throwIfCheckpointSuspendFailed(Throwable failure) {
+        if (failure == null) {
+            return;
+        }
+        Throwable unwrapped = LifecycleFailures.unwrap(failure);
+        if (unwrapped instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+        if (unwrapped instanceof Error error) {
+            throw error;
+        }
+        throw new IllegalStateException("Failed to suspend listener for checkpoint", unwrapped);
     }
 
-    // Intended for testing.
-    void activeConnection(String id, ServerConnection connection) {
-        activeConnections.put(id, connection);
-    }
-
-    // Intended for testing.
-    Future<?> readerTask(InterruptableTask<?> task) {
-        return readerExecutor.execute(task);
-    }
-
-    // Intended for testing.
-    void beforeReaderExecutorTerminate(Runnable beforeReaderExecutorTerminate) {
-        this.beforeReaderExecutorTerminate = Objects.requireNonNull(beforeReaderExecutorTerminate);
-    }
-
-    // Intended for testing.
-    void beforeSharedExecutorAwait(Runnable beforeSharedExecutorAwait) {
-        this.beforeSharedExecutorAwait = Objects.requireNonNull(beforeSharedExecutorAwait);
-    }
-
-    void suspend() {
-        inCheckpoint = true;
-        // Checkpoint suspend is expected to stop the listener thread. The connection-limit wait path
-        // converts interrupts into a rejected outcome, so clear the loop condition first to avoid
-        // re-entering the wait after the interrupt is consumed.
-        running = false;
-        suspendForCheckpoint();
-        serverThread = null;
-        closeFuture = null;
-    }
-
-    void resume() {
-        initServerThread();
-        startIt();
-        inCheckpoint = false;
-    }
 }

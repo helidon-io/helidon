@@ -208,6 +208,66 @@ class LoomServer implements WebServer, Resumable {
         return context;
     }
 
+    @Override
+    public void suspend() {
+        try {
+            lifecycleLock.lockInterruptibly();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted during snapshot checkpoint.", e);
+        }
+        try {
+            if (running.get()) {
+                try {
+                    for (ServerListener listener : listeners.values()) {
+                        listener.suspend();
+                    }
+                } catch (RuntimeException | Error e) {
+                    stopAfterResumableFailure(e);
+                    throw e;
+                }
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    @Override
+    public void resume() {
+        long now = System.currentTimeMillis();
+        try {
+            lifecycleLock.lockInterruptibly();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted during snapshot restore.", e);
+        }
+        try {
+            if (running.get()) {
+                try {
+                    for (ServerListener listener : listeners.values()) {
+                        listener.resume();
+                    }
+                } catch (RuntimeException | Error e) {
+                    stopAfterResumableFailure(e);
+                    throw e;
+                }
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
+        now = System.currentTimeMillis() - now;
+        LOGGER.log(System.Logger.Level.INFO, "Restored all channels in "
+                + now + " milliseconds. "
+                + ResumableSupport.get().uptimeSinceResume() + " milliseconds since JVM snapshot restore. "
+                + "Java " + Runtime.version());
+    }
+
+    // Intended for tests that need listener state without stack walking.
+    Thread.State listenerThreadState(String socketName) {
+        ServerListener listener = listeners.get(socketName);
+        return listener == null ? null : listener.serverThreadState();
+    }
+
     private static void validateRoutingsHaveNamedListener(WebServerConfig serverConfig, Set<String> namedListeners) {
         var routingNames = serverConfig.namedRoutings()
                 .keySet();
@@ -233,24 +293,6 @@ class LoomServer implements WebServer, Resumable {
             } else {
                 throw new IllegalStateException(message);
             }
-        }
-    }
-
-    // Intended for testing. May return null!
-    ServerListener listener(String socketName) {
-        return listeners.get(socketName);
-    }
-
-    // Intended for testing.
-    void shutdownFromShutdownHook() {
-        HelidonShutdownHandler localShutdownHandler = shutdownHandler;
-        if (localShutdownHandler == null) {
-            throw new IllegalStateException("Shutdown handler is not registered");
-        }
-        try {
-            localShutdownHandler.shutdown();
-        } finally {
-            deregisterShutdownHook();
         }
     }
 
@@ -476,60 +518,6 @@ class LoomServer implements WebServer, Resumable {
             }
         }
         return failure;
-    }
-
-    @Override
-    public void suspend() {
-        try {
-            lifecycleLock.lockInterruptibly();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted during snapshot checkpoint.", e);
-        }
-        try {
-            if (running.get()) {
-                try {
-                    for (ServerListener listener : listeners.values()) {
-                        listener.suspend();
-                    }
-                } catch (RuntimeException | Error e) {
-                    stopAfterResumableFailure(e);
-                    throw e;
-                }
-            }
-        } finally {
-            lifecycleLock.unlock();
-        }
-    }
-
-    @Override
-    public void resume() {
-        long now = System.currentTimeMillis();
-        try {
-            lifecycleLock.lockInterruptibly();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted during snapshot restore.", e);
-        }
-        try {
-            if (running.get()) {
-                try {
-                    for (ServerListener listener : listeners.values()) {
-                        listener.resume();
-                    }
-                } catch (RuntimeException | Error e) {
-                    stopAfterResumableFailure(e);
-                    throw e;
-                }
-            }
-        } finally {
-            lifecycleLock.unlock();
-        }
-        now = System.currentTimeMillis() - now;
-        LOGGER.log(System.Logger.Level.INFO, "Restored all channels in "
-                + now + " milliseconds. "
-                + ResumableSupport.get().uptimeSinceResume() + " milliseconds since JVM snapshot restore. "
-                + "Java " + Runtime.version());
     }
 
     private void stopAfterResumableFailure(Throwable failure) {

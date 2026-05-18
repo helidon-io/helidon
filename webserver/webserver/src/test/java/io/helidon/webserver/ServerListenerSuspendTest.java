@@ -46,13 +46,11 @@ class ServerListenerSuspendTest {
         boolean suspended = false;
 
         try {
-            ServerListener listener = server.listener(WebServer.DEFAULT_SOCKET_NAME);
-            Thread listenerThread = listener.serverThreads();
             stalledConnection = new Socket("127.0.0.1", server.port());
             queuedConnection = new Socket("127.0.0.1", server.port());
 
             waitFor(Duration.ofSeconds(5),
-                    () -> listenerThread.getState() == Thread.State.TIMED_WAITING,
+                    () -> server.listenerThreadState(WebServer.DEFAULT_SOCKET_NAME) == Thread.State.TIMED_WAITING,
                     "listener did not block on the TCP connection limit");
 
             Future<?> suspendFuture = executor.submit(server::suspend);
