@@ -62,7 +62,10 @@ public final class OutboundConfig {
 
     /**
      * Create a new empty outbound configuration.
+     *
+     * @deprecated Use {@link #builder()}, {@link #create(Config)}, or {@link #create(Config, OutboundTarget...)} instead.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     public OutboundConfig() {
     }
 

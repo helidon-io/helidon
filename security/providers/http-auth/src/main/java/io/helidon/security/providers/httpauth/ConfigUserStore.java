@@ -36,7 +36,10 @@ public class ConfigUserStore implements SecureUserStore {
 
     /**
      * Create an empty user store.
+     *
+     * @deprecated Use {@link #create(Config)} instead.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     public ConfigUserStore() {
     }
 
@@ -89,7 +92,10 @@ public class ConfigUserStore implements SecureUserStore {
 
         /**
          * Create an empty config user.
+         *
+         * @deprecated Use {@link #create(Config)} instead.
          */
+        @Deprecated(forRemoval = true, since = "27.0.0")
         public ConfigUser() {
         }
 
