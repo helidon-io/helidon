@@ -269,6 +269,15 @@ public interface AnnotationAnalyzer {
             private String authenticator;
             private String authorizer;
 
+            /**
+             * Create a new builder instance.
+             *
+             * @deprecated Use {@link AnalyzerResponse#builder()} instead.
+             */
+            @Deprecated(forRemoval = true, since = "27.0.0")
+            public Builder() {
+            }
+
             @Override
             public AnalyzerResponse build() {
                 return new AnalyzerResponse(this);

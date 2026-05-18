@@ -26,6 +26,12 @@ import io.helidon.security.providers.abac.spi.AbacValidatorService;
  * A service to provide {@link ScopeValidator} to {@link AbacProvider}.
  */
 public class ScopeValidatorService implements AbacValidatorService {
+    /**
+     * Create a scope validator service.
+     */
+    public ScopeValidatorService() {
+    }
+
     @Override
     public String configKey() {
         return "scope-validator";

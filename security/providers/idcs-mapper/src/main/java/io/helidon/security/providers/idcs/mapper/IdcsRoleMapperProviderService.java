@@ -26,6 +26,12 @@ public class IdcsRoleMapperProviderService implements SecurityProviderService {
 
     static final String PROVIDER_CONFIG_KEY = "idcs-role-mapper";
 
+    /**
+     * Create an IDCS role mapper provider service.
+     */
+    public IdcsRoleMapperProviderService() {
+    }
+
     @Override
     public String providerConfigKey() {
         return PROVIDER_CONFIG_KEY;

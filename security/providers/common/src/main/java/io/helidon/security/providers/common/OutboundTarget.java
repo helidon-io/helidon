@@ -70,7 +70,7 @@ public final class OutboundTarget {
     private final List<Pattern> pathPatterns = new LinkedList<>();
     private final Set<String> methods = new HashSet<>();
     private final Config config;
-    private final ClassToInstanceStore<Object> customObjects = new ClassToInstanceStore<>();
+    private final ClassToInstanceStore<Object> customObjects = ClassToInstanceStore.create();
     private final boolean matchAllTransports;
     private final boolean matchAllHosts;
     private final boolean matchAllPaths;
@@ -285,7 +285,7 @@ public final class OutboundTarget {
         private final Set<String> hosts = new HashSet<>();
         private final Set<String> paths = new HashSet<>();
         private final Set<String> methods = new HashSet<>();
-        private final ClassToInstanceStore<Object> customObjects = new ClassToInstanceStore<>();
+        private final ClassToInstanceStore<Object> customObjects = ClassToInstanceStore.create();
         private String name;
         private Config config;
 

@@ -61,6 +61,12 @@ public final class OutboundConfig {
     private final LinkedList<OutboundTarget> targets = new LinkedList<>();
 
     /**
+     * Create a new empty outbound configuration.
+     */
+    public OutboundConfig() {
+    }
+
+    /**
      * Parse targets from provider configuration.
      *
      * @param providerConfig configuration object of current provider

@@ -319,6 +319,15 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 .tokenPrefix("Bearer ")
                 .build();
 
+        /**
+         * Create a new builder instance.
+         *
+         * @deprecated Use {@link OidcProvider#builder()} instead.
+         */
+        @Deprecated(forRemoval = true, since = "27.0.0")
+        public Builder() {
+        }
+
         @Override
         public OidcProvider build() {
             if (null == oidcConfig) {

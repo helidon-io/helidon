@@ -172,6 +172,14 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         return builder.build();
     }
 
+    /**
+     * Request roles from IDCS and process the response.
+     *
+     * @param request HTTP request to submit
+     * @param entity request entity
+     * @param subjectName subject name for diagnostics
+     * @return grants returned from IDCS, or an empty list on failure
+     */
     protected List<? extends Grant> processRoleRequest(HttpClientRequest request, Object entity, String subjectName) {
         try (HttpClientResponse response = request.submit(entity)) {
             if (response.status().family() == Status.Family.SUCCESSFUL) {
@@ -390,12 +398,25 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         private final URI tokenEndpointUri;
         private final Duration tokenRefreshSkew;
 
+        /**
+         * Create an application token cache.
+         *
+         * @param webClient web client to request tokens
+         * @param tokenEndpointUri token endpoint URI
+         * @param tokenRefreshSkew token refresh skew
+         */
         protected AppToken(WebClient webClient, URI tokenEndpointUri, Duration tokenRefreshSkew) {
             this.webClient = webClient;
             this.tokenEndpointUri = tokenEndpointUri;
             this.tokenRefreshSkew = tokenRefreshSkew;
         }
 
+        /**
+         * Return a cached application token, requesting a new token when needed.
+         *
+         * @param tracing role mapper tracing
+         * @return token content
+         */
         protected Optional<String> getToken(RoleMapTracing tracing) {
             LazyValue<AppTokenData> currentTokenData = token.get();
             if (currentTokenData == null) {

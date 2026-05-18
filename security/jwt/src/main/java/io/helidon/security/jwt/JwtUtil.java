@@ -569,26 +569,56 @@ public final class JwtUtil {
             this.country = getString(jsonObject, "country");
         }
 
+        /**
+         * Full formatted mailing address.
+         *
+         * @return formatted address
+         */
         public Optional<String> getFormatted() {
             return formatted;
         }
 
+        /**
+         * Street address.
+         *
+         * @return street address
+         */
         public Optional<String> getStreetAddress() {
             return streetAddress;
         }
 
+        /**
+         * Locality or city.
+         *
+         * @return locality
+         */
         public Optional<String> getLocality() {
             return locality;
         }
 
+        /**
+         * State, province, prefecture, or region.
+         *
+         * @return region
+         */
         public Optional<String> getRegion() {
             return region;
         }
 
+        /**
+         * Postal code.
+         *
+         * @return postal code
+         */
         public Optional<String> getPostalCode() {
             return postalCode;
         }
 
+        /**
+         * Country.
+         *
+         * @return country
+         */
         public Optional<String> getCountry() {
             return country;
         }

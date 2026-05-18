@@ -36,6 +36,12 @@ import jakarta.annotation.security.PermitAll;
 @Weight(Weighted.DEFAULT_WEIGHT) // Helidon service loader loaded and ordered
 public class RoleAnnotationAnalyzer implements AnnotationAnalyzer {
 
+    /**
+     * Create a role annotation analyzer.
+     */
+    public RoleAnnotationAnalyzer() {
+    }
+
     @Override
     public AnalyzerResponse analyze(Class<?> maybeAnnotated) {
         return analyze(TypeName.create(maybeAnnotated), AnnotationFactory.create(maybeAnnotated));

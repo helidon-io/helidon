@@ -35,6 +35,12 @@ public class ConfigUserStore implements SecureUserStore {
     private final Map<String, ConfigUser> users = new HashMap<>();
 
     /**
+     * Create an empty user store.
+     */
+    public ConfigUserStore() {
+    }
+
+    /**
      * Create an instance from config. Expects key "users" to be the current key.
      * Example:
      * <pre>
@@ -80,6 +86,12 @@ public class ConfigUserStore implements SecureUserStore {
         private final Set<String> roles = new LinkedHashSet<>();
         private String login;
         private char[] password;
+
+        /**
+         * Create an empty config user.
+         */
+        public ConfigUser() {
+        }
 
         /**
          * Create a new user from configuration.

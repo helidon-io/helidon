@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,15 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public final class ClassToInstanceStore<T> {
     private final Map<Class<? extends T>, T> backingMap = new IdentityHashMap<>();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
+    /**
+     * Create an empty mutable class-to-instance store.
+     *
+     * @deprecated Use {@link #create(Object...)} instead.
+     */
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    public ClassToInstanceStore() {
+    }
 
     /**
      * Create a new instance based on explicit instances.

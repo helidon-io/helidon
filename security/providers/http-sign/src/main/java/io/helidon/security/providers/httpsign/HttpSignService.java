@@ -28,6 +28,12 @@ public class HttpSignService implements SecurityProviderService {
 
     static final String PROVIDER_CONFIG_KEY = "http-signatures";
 
+    /**
+     * Create an HTTP signature provider service.
+     */
+    public HttpSignService() {
+    }
+
     @Override
     public String providerConfigKey() {
         return PROVIDER_CONFIG_KEY;

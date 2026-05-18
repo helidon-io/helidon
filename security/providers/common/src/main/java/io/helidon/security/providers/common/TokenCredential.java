@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public class TokenCredential {
     private final Optional<Instant> issueTime;
     private final Optional<Instant> expTime;
     private final String token;
-    private final ClassToInstanceStore<Object> tokens = new ClassToInstanceStore<>();
+    private final ClassToInstanceStore<Object> tokens = ClassToInstanceStore.create();
 
     private TokenCredential(Builder builder) {
         this.token = builder.token;
@@ -124,7 +124,7 @@ public class TokenCredential {
      * Fluent API builder for {@link TokenCredential}.
      */
     public static final class Builder implements io.helidon.common.Builder<Builder, TokenCredential> {
-        private final ClassToInstanceStore<Object> tokens = new ClassToInstanceStore<>();
+        private final ClassToInstanceStore<Object> tokens = ClassToInstanceStore.create();
         private Instant issueTime;
         private Instant expTime;
         private String issuer;

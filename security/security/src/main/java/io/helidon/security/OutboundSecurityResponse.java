@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,15 @@ public final class OutboundSecurityResponse extends SecurityResponse {
      * Builder class to build custom identity propagation responses.
      */
     public static class Builder extends SecurityResponse.SecurityResponseBuilder<Builder, OutboundSecurityResponse> {
+        /**
+         * Create a new builder instance.
+         *
+         * @deprecated Use {@link OutboundSecurityResponse#builder()} instead.
+         */
+        @Deprecated(forRemoval = true, since = "27.0.0")
+        public Builder() {
+        }
+
         /**
          * Build identity propagation response based on this builder.
          *
