@@ -190,13 +190,6 @@ class ServerListener implements ListenerContext {
         ith.start();
     }
 
-    private static InitializationContext limitContext(String socketName) {
-        if (WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
-            return InitializationContext.create(socketName);
-        }
-        return InitializationContext.create(socketName, List.of(Tag.create("socketName", socketName)));
-    }
-
     @Override
     public MediaContext mediaContext() {
         return mediaContext;
@@ -313,6 +306,47 @@ class ServerListener implements ListenerContext {
         initServerThread();
         startIt();
         inCheckpoint = false;
+    }
+
+    private static InitializationContext limitContext(String socketName) {
+        if (WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
+            return InitializationContext.create(socketName);
+        }
+        return InitializationContext.create(socketName, List.of(Tag.create("socketName", socketName)));
+    }
+
+    private static void suppressCleanupFailure(Throwable startupFailure, Runnable cleanup) {
+        try {
+            cleanup.run();
+        } catch (RuntimeException | Error e) {
+            LifecycleFailures.add(startupFailure, e);
+        }
+    }
+
+    private static void closeAcceptedSocket(SocketChannel socket, Throwable cause) {
+        // the socket was never handled
+        try {
+            socket.close();
+        } catch (IOException e) {
+            if (cause != null && cause != e) {
+                e.addSuppressed(cause);
+            }
+            LOGGER.log(TRACE, "Failed to close socket that was not handled", e);
+        }
+    }
+
+    private static void throwIfCheckpointSuspendFailed(Throwable failure) {
+        if (failure == null) {
+            return;
+        }
+        Throwable unwrapped = LifecycleFailures.unwrap(failure);
+        if (unwrapped instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+        if (unwrapped instanceof Error error) {
+            throw error;
+        }
+        throw new IllegalStateException("Failed to suspend listener for checkpoint", unwrapped);
     }
 
     private void initServerThread() {
@@ -464,7 +498,6 @@ class ServerListener implements ListenerContext {
                                                    socketName));
                 }
 
-
                 if (LOGGER.isLoggable(TRACE)) {
                     if (listenerConfig.writeQueueLength() <= 1) {
                         LOGGER.log(System.Logger.Level.TRACE, "[" + serverChannelId + "] direct writes");
@@ -512,14 +545,6 @@ class ServerListener implements ListenerContext {
         suppressCleanupFailure(startupFailure, this::shutdownSharedExecutor);
         if (lifecycleStarted) {
             suppressCleanupFailure(startupFailure, router::afterStop);
-        }
-    }
-
-    private static void suppressCleanupFailure(Throwable startupFailure, Runnable cleanup) {
-        try {
-            cleanup.run();
-        } catch (RuntimeException | Error e) {
-            LifecycleFailures.add(startupFailure, e);
         }
     }
 
@@ -712,18 +737,6 @@ class ServerListener implements ListenerContext {
         closeFuture.complete(null);
     }
 
-    private static void closeAcceptedSocket(SocketChannel socket, Throwable cause) {
-        // the socket was never handled
-        try {
-            socket.close();
-        } catch (IOException e) {
-            if (cause != null && cause != e) {
-                e.addSuppressed(cause);
-            }
-            LOGGER.log(TRACE, "Failed to close socket that was not handled", e);
-        }
-    }
-
     private List<ConnectionHandler> connectionHandlers() {
         return new ArrayList<>(connectionHandlers);
     }
@@ -738,20 +751,6 @@ class ServerListener implements ListenerContext {
             }
         }
         return failure;
-    }
-
-    private static void throwIfCheckpointSuspendFailed(Throwable failure) {
-        if (failure == null) {
-            return;
-        }
-        Throwable unwrapped = LifecycleFailures.unwrap(failure);
-        if (unwrapped instanceof RuntimeException runtimeException) {
-            throw runtimeException;
-        }
-        if (unwrapped instanceof Error error) {
-            throw error;
-        }
-        throw new IllegalStateException("Failed to suspend listener for checkpoint", unwrapped);
     }
 
 }
