@@ -24,6 +24,12 @@ import io.helidon.dbclient.hikari.spi.HikariMetricsProvider;
  */
 public final class HikariMetricsExtensionProvider implements HikariMetricsProvider {
 
+    /**
+     * Creates a Hikari metrics extension provider.
+     */
+    public HikariMetricsExtensionProvider() {
+    }
+
     @Override
     public String configKey() {
         return "pool-metrics";

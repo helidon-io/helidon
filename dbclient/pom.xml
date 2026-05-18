@@ -30,6 +30,10 @@
     <artifactId>helidon-dbclient-project</artifactId>
     <name>Helidon Database Client Project</name>
 
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+    </properties>
+
     <modules>
         <module>dbclient</module>
         <module>jdbc</module>

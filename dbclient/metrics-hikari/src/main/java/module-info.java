@@ -29,6 +29,7 @@ module helidon.dbclient.metrics.hikari {
     requires transitive io.helidon.common.features.api;
 
     requires transitive io.helidon.config;
+    requires transitive io.helidon.dbclient.metrics;
     requires transitive io.helidon.metrics.api;
     requires transitive io.helidon.dbclient.jdbc;
     requires transitive io.helidon.dbclient.hikari;

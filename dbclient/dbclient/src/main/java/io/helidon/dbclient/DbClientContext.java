@@ -96,6 +96,15 @@ public class DbClientContext implements DbContext {
      */
     public static final class Builder extends BuilderBase<Builder, DbClientContext> {
 
+        /**
+         * Creates a new builder.
+         *
+         * @deprecated use {@link DbClientContext#builder()} instead
+         */
+        @Deprecated(forRemoval = true, since = "27.0.0")
+        public Builder() {
+        }
+
         @Override
         public DbClientContext build() {
             return new DbClientContext(this);

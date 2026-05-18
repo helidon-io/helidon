@@ -130,6 +130,15 @@ public class DbExecuteContext implements DbContext {
      */
     public static final class Builder extends BuilderBase<Builder, DbExecuteContext> {
 
+        /**
+         * Creates a new builder.
+         *
+         * @deprecated use {@link DbExecuteContext#builder()} instead
+         */
+        @Deprecated(forRemoval = true, since = "27.0.0")
+        public Builder() {
+        }
+
         @Override
         public DbExecuteContext build() {
             return new DbExecuteContext(this);
@@ -149,6 +158,17 @@ public class DbExecuteContext implements DbContext {
         private String statementName;
         private String statement;
         private DbClientContext clientContext;
+
+        /**
+         * Creates an instance of base builder for {@link DbExecuteContext}.
+         * Child classes may call this constructor; only direct public use is not supported.
+         *
+         * @deprecated direct public use is not supported; use {@link DbExecuteContext#builder()}
+         *         for the built-in execution context builder
+         */
+        @Deprecated(forRemoval = true, since = "27.0.0")
+        public BuilderBase() {
+        }
 
         /**
          * Set the execution statement.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,12 @@ public abstract class DbRowBase implements DbRow {
     private final DbColumnBase[] columns;
     private final Map<String, DbColumnBase> namesIndex;
 
+    /**
+     * Creates a row base.
+     *
+     * @param columns row columns
+     * @param dbMapperManager mapper manager
+     */
     protected DbRowBase(DbColumnBase[] columns, DbMapperManager dbMapperManager) {
         this.columns = columns;
         this.dbMapperManager = dbMapperManager;
