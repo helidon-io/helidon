@@ -32,6 +32,10 @@
 
     <description>Health check support for Helidon SE</description>
 
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+    </properties>
+
     <modules>
         <module>health</module>
         <module>health-checks</module>
