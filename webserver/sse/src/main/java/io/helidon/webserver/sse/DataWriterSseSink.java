@@ -113,7 +113,7 @@ class DataWriterSseSink implements SseSink {
                 outputStream.write(SSE_NL);
             }
             Object data = sseEvent.data();
-            if (data != null) {
+            if (data != SseEvent.NO_DATA) {
                 MediaType mediaType = sseEvent.mediaType().orElse(MediaTypes.TEXT_PLAIN);
 
                 // is it multi-line string data?
