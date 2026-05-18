@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -56,9 +56,9 @@ fi
 # Set OSS_INDEX_USERNAME and OSS_INDEX_PASSWORD to authenticate.
 # Otherwise OSS Index analyzer will be disabled
 # And yes, this option uses a lower case i while Username and Password has an upper case I
-OSS_INDEX_OPTIONS="-DossindexAnalyzerEnabled=false"
+OSS_INDEX_OPTIONS="-DossIndexAnalyzerEnabled=false"
 if [ -n "${OSS_INDEX_PASSWORD}" ] && [ -n "${OSS_INDEX_USERNAME}" ]; then
-    OSS_INDEX_OPTIONS="-DossindexAnalyzerEnabled=true -DossIndexUsername=${OSS_INDEX_USERNAME} -DossIndexPassword=${OSS_INDEX_PASSWORD}"
+    OSS_INDEX_OPTIONS="-DossIndexAnalyzerEnabled=true -DossIndexUsername=${OSS_INDEX_USERNAME} -DossIndexPassword=${OSS_INDEX_PASSWORD}"
 fi
 
 # Setting NVD_API_KEY is not required but improves behavior of NVD API throttling
