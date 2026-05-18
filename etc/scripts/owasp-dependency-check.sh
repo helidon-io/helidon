@@ -55,10 +55,9 @@ fi
 # See https://ossindex.sonatype.org/doc/auth-required
 # Set OSS_INDEX_USERNAME and OSS_INDEX_PASSWORD to authenticate.
 # Otherwise OSS Index analyzer will be disabled
-# And yes, this option uses a lower case i while Username and Password has an upper case I
-OSS_INDEX_OPTIONS="-DossindexAnalyzerEnabled=false"
+OSS_INDEX_OPTIONS="-DossIndexAnalyzerEnabled=false"
 if [ -n "${OSS_INDEX_PASSWORD}" ] && [ -n "${OSS_INDEX_USERNAME}" ]; then
-    OSS_INDEX_OPTIONS="-DossindexAnalyzerEnabled=true -DossIndexUsername=${OSS_INDEX_USERNAME} -DossIndexPassword=${OSS_INDEX_PASSWORD}"
+    OSS_INDEX_OPTIONS="-DossIndexAnalyzerEnabled=true -DossIndexUsername=${OSS_INDEX_USERNAME} -DossIndexPassword=${OSS_INDEX_PASSWORD}"
 fi
 
 # Setting NVD_API_KEY is not required but improves behavior of NVD API throttling
