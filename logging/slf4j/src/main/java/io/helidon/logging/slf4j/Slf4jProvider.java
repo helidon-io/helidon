@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,13 @@ import org.slf4j.LoggerFactory;
  * Slf4j logging provider.
  */
 public class Slf4jProvider implements LoggingProvider {
+
+    /**
+     * Default constructor required by {@link java.util.ServiceLoader}.
+     */
+    public Slf4jProvider() {
+    }
+
     @Override
     public void initialization() {
         LoggerFactory.getLogger(Slf4jProvider.class)
