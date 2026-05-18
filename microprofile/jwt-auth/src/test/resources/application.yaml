@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -80,3 +80,24 @@ jwt-no-outbound:
     # Expected audience (if not defined, any audience is accepted - security issue...)
     jwt-audience: "audience.application.id"
     default-key-id: "verify-rsa"
+
+jwt-custom-groups:
+  # Token extraction
+  atn-token:
+    # JWK configuration (where to get keys for verification/signatures)
+    jwk.resource.resource-path: "verify-jwk.json"
+    # Expected audience (if not defined, any audience is accepted - security issue...)
+    jwt-audience: "audience.application.id"
+    default-key-id: "verify-rsa"
+  jwt-groups-path: "permissions"
+
+jwt-custom-groups-separated:
+  # Token extraction
+  atn-token:
+    # JWK configuration (where to get keys for verification/signatures)
+    jwk.resource.resource-path: "verify-jwk.json"
+    # Expected audience (if not defined, any audience is accepted - security issue...)
+    jwt-audience: "audience.application.id"
+    default-key-id: "verify-rsa"
+  jwt-groups-path: "permissions"
+  jwt-groups-separator: ","

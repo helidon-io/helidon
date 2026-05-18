@@ -34,6 +34,7 @@ import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
@@ -43,8 +44,11 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.SetCookie;
 import io.helidon.http.Status;
+import io.helidon.json.JsonArray;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
+import io.helidon.json.JsonString;
+import io.helidon.json.JsonValue;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -95,15 +99,28 @@ class TenantAuthenticationHandler {
     private final TenantConfig tenantConfig;
     private final Tenant tenant;
     private final boolean useJwtGroups;
+    private final String jwtGroupsPath;
+    private final String jwtGroupsSeparator;
     private final BiFunction<SignedJwt, Errors.Collector, Errors.Collector> jwtValidator;
     private final BiConsumer<StringBuilder, String> scopeAppender;
     private final Pattern attemptPattern;
 
     TenantAuthenticationHandler(OidcConfig oidcConfig, Tenant tenant, boolean useJwtGroups, boolean optional) {
+        this(oidcConfig, tenant, useJwtGroups, OidcProvider.DEFAULT_JWT_GROUPS_PATH, null, optional);
+    }
+
+    TenantAuthenticationHandler(OidcConfig oidcConfig,
+                                Tenant tenant,
+                                boolean useJwtGroups,
+                                String jwtGroupsPath,
+                                String jwtGroupsSeparator,
+                                boolean optional) {
         this.oidcConfig = oidcConfig;
         this.tenant = tenant;
         this.tenantConfig = tenant.tenantConfig();
         this.useJwtGroups = useJwtGroups;
+        this.jwtGroupsPath = jwtGroupsPath;
+        this.jwtGroupsSeparator = jwtGroupsSeparator;
         this.optional = optional;
 
         attemptPattern = Pattern.compile(".*?" + oidcConfig.redirectAttemptParam() + "=(\\d+).*");
@@ -784,7 +801,16 @@ class TenantAuthenticationHandler {
         if (errors.isValid() && validationErrors.isValid()) {
 
             errors.log(LOGGER);
-            Subject subject = buildSubject(jwt, signedJwt, idToken);
+            Subject subject;
+            try {
+                subject = buildSubject(jwt, signedJwt, idToken);
+            } catch (JwtException e) {
+                return errorResponse(providerRequest,
+                                     Status.UNAUTHORIZED_401,
+                                     "invalid_token",
+                                     e.getMessage(),
+                                     tenantId);
+            }
 
             Set<String> scopes = subject.grantsByType("scope")
                     .stream()
@@ -833,7 +859,8 @@ class TenantAuthenticationHandler {
         }
     }
 
-    private Subject buildSubject(Jwt jwt, SignedJwt signedJwt, Jwt idToken) {
+    // Package-private to allow focused tests to exercise subject construction without invoking remote OIDC flows.
+    Subject buildSubject(Jwt jwt, SignedJwt signedJwt, Jwt idToken) {
         Principal principal = buildPrincipal(jwt, idToken);
 
         TokenCredential.Builder builder = TokenCredential.builder();
@@ -849,8 +876,7 @@ class TenantAuthenticationHandler {
                 .addPublicCredential(TokenCredential.class, builder.build());
 
         if (useJwtGroups) {
-            Optional<List<String>> userGroups = jwt.userGroups();
-            userGroups.ifPresent(groups -> groups.forEach(group -> subjectBuilder.addGrant(Role.create(group))));
+            jwtGroups(jwt).forEach(group -> subjectBuilder.addGrant(Role.create(group)));
         }
 
         Optional<List<String>> scopes = jwt.scopes();
@@ -861,6 +887,50 @@ class TenantAuthenticationHandler {
 
         return subjectBuilder.build();
 
+    }
+
+    private List<String> jwtGroups(Jwt jwt) {
+        if (OidcProvider.DEFAULT_JWT_GROUPS_PATH.equals(jwtGroupsPath)) {
+            return jwt.userGroups().orElse(List.of());
+        }
+        return jwtGroupsClaim(jwt)
+                .map(this::toGroups)
+                .orElse(List.of());
+    }
+
+    private Optional<JsonValue> jwtGroupsClaim(Jwt jwt) {
+        String[] pathSegments = jwtGroupsPath.split("/");
+        Optional<JsonValue> currentValue = jwt.payloadClaimValue(pathSegments[0]);
+        for (int i = 1; i < pathSegments.length; i++) {
+            String pathSegment = pathSegments[i];
+            currentValue = currentValue
+                    .filter(it -> it instanceof JsonObject)
+                    .flatMap(it -> it.asObject().value(pathSegment));
+        }
+        return currentValue;
+    }
+
+    private List<String> toGroups(JsonValue claimValue) {
+        if (claimValue instanceof JsonArray groups) {
+            return groups.values()
+                    .stream()
+                    .map(this::toGroup)
+                    .toList();
+        }
+        String group = toGroup(claimValue);
+        if (jwtGroupsSeparator == null) {
+            return List.of(group);
+        }
+        return Stream.of(group.split(Pattern.quote(jwtGroupsSeparator)))
+                .filter(it -> !it.isBlank())
+                .toList();
+    }
+
+    private String toGroup(JsonValue groupValue) {
+        if (groupValue instanceof JsonString group) {
+            return group.value();
+        }
+        throw new JwtException("Invalid value. Expecting a string or string array for key " + jwtGroupsPath);
     }
 
     private Principal buildPrincipal(Jwt accessToken, Jwt idToken) {

@@ -101,3 +101,24 @@ jwt-no-verification:
         outbound-token:
           header: "Authorization"
           format: "bearer %1$s"
+
+jwt-custom-groups:
+  # Token extraction
+  atn-token:
+    # Expected issuer (if not defined, any issuer is accepted)
+    jwt-issuer: "jwt.example.com"
+    # Expected audience (if not defined, any audience is accepted - security issue...)
+    jwt-audience: "audience.application.id"
+    verify-signature: false
+  jwt-groups-path: "permissions"
+  jwt-groups-separator: ","
+
+jwt-custom-groups-nested:
+  # Token extraction
+  atn-token:
+    # Expected issuer (if not defined, any issuer is accepted)
+    jwt-issuer: "jwt.example.com"
+    # Expected audience (if not defined, any audience is accepted - security issue...)
+    jwt-audience: "audience.application.id"
+    verify-signature: false
+  jwt-groups-path: "realm_access/roles"

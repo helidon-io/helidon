@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,10 +44,16 @@ final class BackedJsonWebToken extends JsonWebTokenImpl {
 
     private final AbacSupport properties;
     private final String name;
+    private final Optional<Set<String>> groups;
 
     BackedJsonWebToken(SignedJwt signed) {
+        this(signed, null);
+    }
+
+    BackedJsonWebToken(SignedJwt signed, Set<String> groups) {
         this.jwt = signed.getJwt();
         this.signed = signed;
+        this.groups = Optional.ofNullable(groups);
         BasicAttributes container = BasicAttributes.create();
         jwt.payloadClaims()
                 .forEach((key, jsonValue) -> container.put(key, JwtUtil.toObject(jsonValue)));
@@ -122,7 +128,7 @@ final class BackedJsonWebToken extends JsonWebTokenImpl {
         case raw_token:
             return (T) signed.tokenContent();
         case groups:
-            return (T) jwt.userGroups().map(HashSet::new).orElse(null);
+            return (T) groups.or(() -> jwt.userGroups().map(HashSet::new)).orElse(null);
         case aud:
             return (T) jwt.audience().map(HashSet::new).orElse(null);
         case email_verified:
