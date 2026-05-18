@@ -137,6 +137,15 @@ class SseBaseTest {
         }
     }
 
+    static void sseCommentOnly(ServerRequest req, ServerResponse res) {
+        try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            SseEvent event = SseEvent.builder()
+                    .comment("This is a comment")
+                    .build();
+            sseSink.emit(event);
+        }
+    }
+
     protected void testSse(String path, String... events) throws Exception {
         testSse(path, List.of(), events);
     }
