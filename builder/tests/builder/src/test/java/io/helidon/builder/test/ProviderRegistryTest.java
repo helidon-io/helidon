@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package io.helidon.builder.test;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import io.helidon.builder.test.testsubjects.SomeProvider;
 import io.helidon.builder.test.testsubjects.WithProviderRegistry;
@@ -33,6 +35,7 @@ import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -61,7 +64,15 @@ class ProviderRegistryTest {
         assertThat(value.optionalNotDiscover().map(SomeProvider.SomeService::prop), optionalEmpty());
 
         assertThat(value.listDiscover(), hasSize(2));
+        List<SomeProvider.SomeService> optionalListDiscover = value.optionalListDiscover().orElseThrow();
+        Collection<SomeProvider.SomeService> optionalSetDiscover = value.optionalSetDiscover().orElseThrow();
+        assertServicePropsInOrder(optionalListDiscover, "some-1", "some-2");
+        assertServiceProps(optionalSetDiscover, "some-1", "some-2");
+        assertUnmodifiable(optionalListDiscover);
+        assertUnmodifiable(optionalSetDiscover);
         assertThat(value.listNotDiscover(), hasSize(0));
+        assertThat(value.optionalListNotDiscover(), optionalEmpty());
+        assertThat(value.optionalSetNotDiscover(), optionalEmpty());
 
         /*
         Test all the methods for a provider with no implementations
@@ -69,6 +80,8 @@ class ProviderRegistryTest {
         assertThat(value.optionalNoImplDiscover(), optionalEmpty());
         assertThat(value.optionalNoImplNotDiscover(), optionalEmpty());
         assertThat(value.listNoImplDiscover(), hasSize(0));
+        assertThat(value.optionalListNoImplDiscoverNoConfig(), optionalEmpty());
+        assertThat(value.optionalSetNoImplDiscoverNoConfig(), optionalEmpty());
         assertThat(value.listNoImplNotDiscover(), hasSize(0));
     }
 
@@ -97,6 +110,11 @@ class ProviderRegistryTest {
         assertThat(value.listNotDiscover(), hasSize(2));
         assertThat(services.get(0).prop(), is("config"));
         assertThat(services.get(1).prop(), is("config2"));
+
+        assertServicePropsInOrder(value.optionalListDiscover().orElseThrow(), "config", "config2");
+        assertServiceProps(value.optionalSetDiscover().orElseThrow(), "config", "config2");
+        assertServicePropsInOrder(value.optionalListNotDiscover().orElseThrow(), "config", "config2");
+        assertServiceProps(value.optionalSetNotDiscover().orElseThrow(), "config", "config2");
     }
 
     @Test
@@ -135,6 +153,61 @@ class ProviderRegistryTest {
         services = value.listNotDiscover();
         assertThat(value.listNotDiscover(), hasSize(1));
         assertThat(services.get(0).prop(), is("config2"));
+
+        assertServicePropsInOrder(value.optionalListDiscover().orElseThrow(), "config", "some-2");
+        assertServiceProps(value.optionalSetDiscover().orElseThrow(), "config", "some-2");
+        assertServicePropsInOrder(value.optionalListNotDiscover().orElseThrow(), "config2");
+        assertServiceProps(value.optionalSetNotDiscover().orElseThrow(), "config2");
+    }
+
+    @Test
+    void testEmptyOptionalProviderContainers() {
+        WithProviderRegistry value = WithProviderRegistry.builder()
+                .config(config.get("empty-optional-containers-object"))
+                .mappersExplicit(Mappers.create())
+                .build();
+
+        assertThat(value.optionalListDiscover(), optionalValue(is(List.of())));
+        assertThat(value.optionalSetDiscover(), optionalValue(is(Set.of())));
+        assertThat(value.optionalListNotDiscover(), optionalValue(is(List.of())));
+        assertThat(value.optionalSetNotDiscover(), optionalValue(is(Set.of())));
+
+        value = WithProviderRegistry.builder()
+                .config(config.get("empty-optional-containers-array"))
+                .mappersExplicit(Mappers.create())
+                .build();
+
+        assertThat(value.optionalListDiscover(), optionalValue(is(List.of())));
+        assertThat(value.optionalSetDiscover(), optionalValue(is(Set.of())));
+        assertThat(value.optionalListNotDiscover(), optionalValue(is(List.of())));
+        assertThat(value.optionalSetNotDiscover(), optionalValue(is(Set.of())));
+    }
+
+    @Test
+    void testOptionalProviderContainerDiscoveryEnabled() {
+        SomeProvider.SomeService someService = new DummyService();
+
+        WithProviderRegistry value = WithProviderRegistry.builder()
+                .config(config.get("min-defined"))
+                .oneNotDiscover(someService)
+                .mappersExplicit(Mappers.create())
+                .optionalListNotDiscoverDiscoverServices(true)
+                .optionalSetNotDiscoverDiscoverServices(true)
+                .build();
+
+        assertServicePropsInOrder(value.optionalListNotDiscover().orElseThrow(), "some-1", "some-2");
+        assertServiceProps(value.optionalSetNotDiscover().orElseThrow(), "some-1", "some-2");
+    }
+
+    @Test
+    void testOptionalProviderContainerDiscoveryEnabledFromConfig() {
+        WithProviderRegistry value = WithProviderRegistry.builder()
+                .config(config.get("discover-optional-containers-from-config"))
+                .mappersExplicit(Mappers.create())
+                .build();
+
+        assertServicePropsInOrder(value.optionalListNotDiscover().orElseThrow(), "some-1", "some-2");
+        assertServiceProps(value.optionalSetNotDiscover().orElseThrow(), "some-1", "some-2");
     }
 
     @Test
@@ -183,6 +256,18 @@ class ProviderRegistryTest {
         public String type() {
             return null;
         }
+    }
+
+    private static void assertServiceProps(Collection<SomeProvider.SomeService> services, String... props) {
+        assertThat(services.stream().map(SomeProvider.SomeService::prop).toList(), containsInAnyOrder(props));
+    }
+
+    private static void assertServicePropsInOrder(List<SomeProvider.SomeService> services, String... props) {
+        assertThat(services.stream().map(SomeProvider.SomeService::prop).toList(), is(List.of(props)));
+    }
+
+    private static void assertUnmodifiable(Collection<SomeProvider.SomeService> services) {
+        assertThrows(UnsupportedOperationException.class, () -> services.add(new DummyService()));
     }
 
 }

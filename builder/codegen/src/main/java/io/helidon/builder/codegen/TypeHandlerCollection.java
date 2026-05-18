@@ -58,7 +58,7 @@ import io.helidon.common.types.TypedElementInfo;
 import static io.helidon.codegen.CodegenUtil.capitalize;
 
 abstract class TypeHandlerCollection extends TypeHandlerContainer {
-    private static final Set<TypeName> BUILT_IN_MAPPERS = Set.of(
+    static final Set<TypeName> BUILT_IN_MAPPERS = Set.of(
             TypeNames.STRING,
             TypeNames.BOXED_BOOLEAN,
             TypeNames.BOXED_BYTE,

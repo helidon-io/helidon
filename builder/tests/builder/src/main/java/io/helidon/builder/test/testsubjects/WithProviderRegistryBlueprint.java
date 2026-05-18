@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,8 +49,24 @@ interface WithProviderRegistryBlueprint {
     List<SomeProvider.SomeService> listDiscover();
 
     @Option.Configured
+    @Option.Provider(SomeProvider.class)
+    Optional<List<SomeProvider.SomeService>> optionalListDiscover();
+
+    @Option.Configured
+    @Option.Provider(SomeProvider.class)
+    Optional<Set<SomeProvider.SomeService>> optionalSetDiscover();
+
+    @Option.Configured
     @Option.Provider(value = SomeProvider.class, discoverServices = false)
     List<SomeProvider.SomeService> listNotDiscover();
+
+    @Option.Configured
+    @Option.Provider(value = SomeProvider.class, discoverServices = false)
+    Optional<List<SomeProvider.SomeService>> optionalListNotDiscover();
+
+    @Option.Configured
+    @Option.Provider(value = SomeProvider.class, discoverServices = false)
+    Optional<Set<SomeProvider.SomeService>> optionalSetNotDiscover();
 
     /*
     The following should always be empty, as there are no implementations
@@ -73,6 +89,12 @@ interface WithProviderRegistryBlueprint {
 
     @Option.Provider(ProviderNoImpls.SomeService.class)
     Optional<ProviderNoImpls.SomeService> noImplDiscoverNoConfig();
+
+    @Option.Provider(ProviderNoImpls.SomeService.class)
+    Optional<List<ProviderNoImpls.SomeService>> optionalListNoImplDiscoverNoConfig();
+
+    @Option.Provider(ProviderNoImpls.SomeService.class)
+    Optional<Set<ProviderNoImpls.SomeService>> optionalSetNoImplDiscoverNoConfig();
 
     @Option.Configured
     @Option.Provider(value = ProviderNoImpls.class, discoverServices = false)
