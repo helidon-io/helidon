@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,13 @@ import io.helidon.logging.common.spi.MdcProvider;
  * This class is loaded and used via SPI.
  */
 public class JulMdcProvider implements MdcProvider {
+
+    /**
+     * Default constructor required by {@link java.util.ServiceLoader}.
+     */
+    public JulMdcProvider() {
+    }
+
     @Override
     public void put(String key, String value) {
         JulMdc.put(key, value);

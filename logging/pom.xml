@@ -29,6 +29,10 @@
     <packaging>pom</packaging>
     <name>Helidon Logging Project</name>
 
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+    </properties>
+
     <modules>
         <module>common</module>
         <module>jul</module>

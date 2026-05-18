@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,12 @@ import org.slf4j.MDC;
  * This class is loaded and used via SPI.
  */
 public class Slf4jMdcProvider implements MdcProvider {
+
+    /**
+     * Default constructor required by {@link java.util.ServiceLoader}.
+     */
+    public Slf4jMdcProvider() {
+    }
 
     @Override
     public void put(String key, String value) {
