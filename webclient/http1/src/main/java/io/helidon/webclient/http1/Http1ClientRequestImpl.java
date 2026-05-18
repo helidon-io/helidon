@@ -17,6 +17,7 @@
 package io.helidon.webclient.http1;
 
 import java.io.ByteArrayOutputStream;
+import java.net.UnixDomainSocketAddress;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -33,6 +34,7 @@ import io.helidon.http.media.MediaContext;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
+import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.Proxy.ProxyType;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
@@ -214,9 +216,13 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     @Override
     protected void additionalHeaders() {
         super.additionalHeaders();
-        if (proxy().type() != ProxyType.NONE) {
+        if (effectiveProxy().type() != ProxyType.NONE) {
             header(PROXY_CONNECTION);
         }
+    }
+
+    Proxy effectiveProxy() {
+        return address().filter(UnixDomainSocketAddress.class::isInstance).isPresent() ? Proxy.noProxy() : proxy();
     }
 
     Http1ClientImpl http1Client() {

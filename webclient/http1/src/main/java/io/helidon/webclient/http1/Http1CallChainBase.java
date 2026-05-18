@@ -94,7 +94,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         this.timeout = clientRequest.readTimeout();
         this.connection = clientRequest.connection().orElse(null);
         this.tls = clientRequest.tls();
-        this.proxy = clientRequest.proxy();
+        this.proxy = clientRequest.effectiveProxy();
         this.keepAlive = clientRequest.keepAlive();
         this.http1Client = clientRequest.http1Client();
         this.whenComplete = whenComplete;
