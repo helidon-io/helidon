@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -228,6 +228,15 @@ public final class EncryptionFilter implements ConfigFilter {
         private char[] masterPassword;
         private Keys privateKeyConfig;
         private boolean requireEncryption = true;
+
+        /**
+         * Create a new builder.
+         *
+         * @deprecated use {@link EncryptionFilter#builder()} instead
+         */
+        @Deprecated(forRemoval = true, since = "27.0.0")
+        public Builder() {
+        }
 
         private Builder fromConfig() {
             fromConfig = true;
