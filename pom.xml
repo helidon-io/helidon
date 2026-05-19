@@ -532,6 +532,8 @@
                         <skipTestScope>true</skipTestScope>
                         <failBuildOnCVSS>0</failBuildOnCVSS>
                         <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                        <!-- Bump up from 24 to 72 to reduce token use -->
+                        <ossIndexAnalyzerCacheValidForHours>72</ossIndexAnalyzerCacheValidForHours>
                         <excludes>
                             <!-- Exclude stuff we do not deploy -->
                             <exclude>io.helidon.tracing:helidon-tracing-tests</exclude>
@@ -543,7 +545,6 @@
                         </excludes>
                         <formats>
                             <format>HTML</format>
-                            <format>CSV</format>
                         </formats>
                         <suppressionFiles>
                             <!--suppress UnresolvedMavenProperty -->

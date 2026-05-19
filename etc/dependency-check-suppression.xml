@@ -116,6 +116,52 @@
 </suppress>
 
 <!-- False Positives.
+     These are confusing prometheus simple client tracer for otel with OTel dotnet, Go, python
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient_tracer_otel-0.16.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
+    <cve>CVE-2026-40894</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient_tracer_otel-0.16.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
+    <cve>CVE-2026-39882</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient_tracer_otel-0.16.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
+    <cve>CVE-2026-41078</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient_tracer_otel-0.16.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
+    <cve>CVE-2023-47108</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient_tracer_otel-0.16.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
+    <cve>CVE-2023-45142</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient_tracer_otel-0.16.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
+    <cve>CVE-2023-43810</cve>
+</suppress>
+
+<!-- False Positives.
      This CVE is against the XML Database component of Oracle Database Server.
      The below are client libraries for XML and XML JDBC support.
 -->
