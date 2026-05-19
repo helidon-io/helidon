@@ -105,6 +105,11 @@ public class WsUpgrader implements Http1Upgrader {
     private final Set<String> origins;
     private final boolean anyOrigin;
 
+    /**
+     * Create an upgrader.
+     *
+     * @param wsConfig WebSocket configuration
+     */
     protected WsUpgrader(WsConfig wsConfig) {
         this.origins = wsConfig.origins();
         this.anyOrigin = this.origins.isEmpty();
@@ -197,10 +202,20 @@ public class WsUpgrader implements Http1Upgrader {
         }
     }
 
+    /**
+     * Whether no explicit origin allowlist is configured.
+     *
+     * @return whether origin validation falls back to host authority matching
+     */
     protected boolean anyOrigin() {
         return anyOrigin;
     }
 
+    /**
+     * Configured allowed origins.
+     *
+     * @return configured allowed origins
+     */
     protected Set<String> origins() {
         return origins;
     }
@@ -318,6 +333,13 @@ public class WsUpgrader implements Http1Upgrader {
         return "https".equalsIgnoreCase(scheme) ? 443 : 80;
     }
 
+    /**
+     * Create the WebSocket accept hash.
+     *
+     * @param ctx connection context
+     * @param wsKey WebSocket key
+     * @return WebSocket accept hash
+     */
     protected String hash(ConnectionContext ctx, String wsKey) {
         byte[] decodedBytes = B64_DECODER.decode(wsKey);
         if (decodedBytes.length != 16) {

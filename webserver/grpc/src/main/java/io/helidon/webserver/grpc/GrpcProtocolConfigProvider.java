@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.grpc;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.ProtocolConfigProvider;
 
@@ -23,6 +24,13 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
  * Implementation of a service provider interface to create grpc protocol configuration.
  */
 public class GrpcProtocolConfigProvider implements ProtocolConfigProvider<GrpcConfig> {
+    /**
+     * Required public constructor for {@link java.util.ServiceLoader}.
+     */
+    @Api.Internal
+    public GrpcProtocolConfigProvider() {
+    }
+
     @Override
     public String configKey() {
         return GrpcProtocolProvider.CONFIG_NAME;

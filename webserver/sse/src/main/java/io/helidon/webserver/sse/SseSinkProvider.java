@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.sse;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.sse.SseEvent;
@@ -30,6 +31,12 @@ import io.helidon.webserver.http.spi.SinkProviderContext;
  * @see io.helidon.webserver.http.spi.SinkProvider
  */
 public class SseSinkProvider implements SinkProvider<SseEvent> {
+    /**
+     * Required public constructor for {@link java.util.ServiceLoader}.
+     */
+    @Api.Internal
+    public SseSinkProvider() {
+    }
 
     @Override
     public boolean supports(GenericType<? extends Sink<?>> type, ServerRequest request) {

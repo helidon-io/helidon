@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webserver.testing.junit5.websocket;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.webclient.websocket.WsClient;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.Router;
@@ -36,6 +37,13 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
  * artifacts, such as {@link io.helidon.webclient.websocket.WsClient} in Helidon WebServer integration tests.
  */
 public class WsServerExtension implements ServerJunitExtension {
+    /**
+     * Required public constructor for {@link java.util.ServiceLoader}.
+     */
+    @Api.Internal
+    public WsServerExtension() {
+    }
+
     @Override
     public Optional<ParamHandler<?>> setUpRouteParamHandler(Class<?> type) {
         if (WsRouting.Builder.class.equals(type)) {

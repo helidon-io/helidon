@@ -35,6 +35,8 @@ interface GrpcTracingConfigBlueprint {
 
     /**
      * A flag indicating if tracing is enabled.
+     *
+     * @return whether tracing is enabled
      */
     @Option.Configured
     @Option.DefaultBoolean(true)
@@ -42,6 +44,8 @@ interface GrpcTracingConfigBlueprint {
 
     /**
      * A flag indicating verbose logging.
+     *
+     * @return whether verbose logging is enabled
      */
     @Option.Configured
     @Option.DefaultBoolean(false)
@@ -49,6 +53,8 @@ interface GrpcTracingConfigBlueprint {
 
     /**
      * A flag indicating streaming logging.
+     *
+     * @return whether streaming logging is enabled
      */
     @Option.Configured
     @Option.DefaultBoolean(false)

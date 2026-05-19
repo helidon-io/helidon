@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.testing.junit5.jsonrpc;
 
+import io.helidon.common.Api;
 import io.helidon.webclient.jsonrpc.JsonRpcClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.testing.junit5.Junit5Util;
@@ -31,6 +32,12 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
  * {@link io.helidon.webclient.jsonrpc.JsonRpcClient} in Helidon integration tests.
  */
 public class JsonRpcServerExtension implements ServerJunitExtension {
+    /**
+     * Required public constructor for {@link java.util.ServiceLoader}.
+     */
+    @Api.Internal
+    public JsonRpcServerExtension() {
+    }
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)

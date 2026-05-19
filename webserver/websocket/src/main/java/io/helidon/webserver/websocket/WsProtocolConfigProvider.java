@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.websocket;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.ProtocolConfigProvider;
 
@@ -23,6 +24,13 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
  * Service provider implementation for WebSocket protocol configuration.
  */
 public class WsProtocolConfigProvider implements ProtocolConfigProvider<WsConfig> {
+    /**
+     * Required public constructor for {@link java.util.ServiceLoader}.
+     */
+    @Api.Internal
+    public WsProtocolConfigProvider() {
+    }
+
     @Override
     public String configKey() {
         return WsUpgradeProvider.CONFIG_NAME;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public interface DirectJunitExtension extends HelidonJunitExtension {
     /**
      * Check if the type is supported and return a handler for it.
      *
-     * @param features
+     * @param features server features
      * @param type     type of the parameter to {@link io.helidon.webserver.testing.junit5.SetUpRoute} method
      * @return parameter handler if the type is supported, empty otherwise
      */

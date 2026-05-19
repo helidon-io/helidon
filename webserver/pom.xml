@@ -31,6 +31,10 @@
     <name>Helidon WebServer Project</name>
     <packaging>pom</packaging>
 
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+    </properties>
+
     <modules>
         <module>access-log</module>
         <module>context</module>
