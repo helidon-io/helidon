@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,14 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.Base64;
 
+import io.helidon.common.Base64Value;
+import io.helidon.common.buffers.BufferData;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.crypto.CryptoException;
+import io.helidon.common.crypto.SymmetricCipher;
 import io.helidon.common.pki.Keys;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -35,6 +39,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -107,6 +113,123 @@ public class EncryptionUtilTest {
         } catch (Exception e) {
             //this is OK
         }
+    }
+
+    @Test
+    public void testEncryptAndDecryptAesEnvelope() {
+        String encryptedBase64 = EncryptionUtil.encryptAesEnvelope(MASTER_PASSWORD, TEST_SECRET);
+        String decrypted = EncryptionUtil.decryptAesEnvelope(MASTER_PASSWORD, encryptedBase64);
+
+        assertThat(decrypted, is(TEST_SECRET));
+
+        EncryptionUtil.AesEnvelope envelope = EncryptionUtil.decodeAesEnvelope(encryptedBase64);
+        assertThat(envelope.version(), is(1));
+        assertThat(envelope.iterations(), is(EncryptionUtil.ENVELOPE_HASH_ITERATIONS));
+
+        String encryptedAgain = EncryptionUtil.encryptAesEnvelope(MASTER_PASSWORD, TEST_SECRET);
+        assertThat(encryptedAgain, is(not(encryptedBase64)));
+        assertThat(EncryptionUtil.decryptAesEnvelope(MASTER_PASSWORD, encryptedAgain), is(TEST_SECRET));
+    }
+
+    @Test
+    public void testEncryptAndDecryptAesEnvelopeEmptySecret() {
+        String encryptedBase64 = EncryptionUtil.encryptAesEnvelope(MASTER_PASSWORD, "");
+
+        assertThat(EncryptionUtil.decryptAesEnvelope(MASTER_PASSWORD, encryptedBase64), is(""));
+    }
+
+    @Test
+    public void testAesEnvelopeSymmetricCipherBytes() {
+        String encryptedBase64 = EncryptionUtil.encryptAesEnvelope(MASTER_PASSWORD, TEST_SECRET);
+        EncryptionUtil.AesEnvelope envelope = EncryptionUtil.decodeAesEnvelope(encryptedBase64);
+        byte[] decodedBytes = Base64.getDecoder().decode(encryptedBase64);
+        BufferData envelopeData = BufferData.create(decodedBytes);
+        byte[] header = new byte[Byte.BYTES + Integer.BYTES];
+        envelopeData.read(header);
+
+        assertArrayEquals(envelope.header(), header);
+        assertArrayEquals(envelope.encrypted(), envelopeData.readBytes());
+
+        BufferData headerData = BufferData.create(envelope.header());
+        assertThat(headerData.read(), is(1));
+        assertThat(headerData.readInt32(), is(EncryptionUtil.ENVELOPE_HASH_ITERATIONS));
+
+        SymmetricCipher cipher = SymmetricCipher.builder()
+                .password(MASTER_PASSWORD)
+                .numberOfIterations(envelope.iterations())
+                .keySize(256)
+                .additionalAuthenticatedData(envelope.header())
+                .build();
+
+        assertThat(cipher.decrypt(Base64Value.create(envelope.encrypted())).toDecodedString(), is(TEST_SECRET));
+    }
+
+    @Test
+    public void testAesEnvelopeRequiresAuthenticatedHeader() {
+        String encryptedBase64 = EncryptionUtil.encryptAesEnvelope(MASTER_PASSWORD, TEST_SECRET);
+        EncryptionUtil.AesEnvelope envelope = EncryptionUtil.decodeAesEnvelope(encryptedBase64);
+        SymmetricCipher cipher = SymmetricCipher.builder()
+                .password(MASTER_PASSWORD)
+                .numberOfIterations(envelope.iterations())
+                .keySize(256)
+                .build();
+
+        CryptoException exception = assertThrows(CryptoException.class,
+                                                () -> cipher.decrypt(Base64Value.create(envelope.encrypted())));
+        assertThat(exception.getMessage(), is("Failed to decrypt the message"));
+    }
+
+    @Test
+    public void testAesEnvelopeTamperingFails() {
+        String encryptedBase64 = EncryptionUtil.encryptAesEnvelope(MASTER_PASSWORD, TEST_SECRET);
+        byte[] decodedBytes = Base64.getDecoder().decode(encryptedBase64);
+
+        byte[] tamperedIterations = decodedBytes.clone();
+        tamperedIterations[4] ^= 1;
+        assertThrows(ConfigEncryptionException.class,
+                     () -> EncryptionUtil.decryptAesEnvelope(MASTER_PASSWORD,
+                                                             Base64.getEncoder().encodeToString(tamperedIterations)));
+
+        byte[] tamperedEncrypted = decodedBytes.clone();
+        tamperedEncrypted[Byte.BYTES + Integer.BYTES] ^= 1;
+        assertThrows(ConfigEncryptionException.class,
+                     () -> EncryptionUtil.decryptAesEnvelope(MASTER_PASSWORD,
+                                                             Base64.getEncoder().encodeToString(tamperedEncrypted)));
+
+        byte[] tamperedCiphertext = decodedBytes.clone();
+        tamperedCiphertext[tamperedCiphertext.length - 1] ^= 1;
+        assertThrows(ConfigEncryptionException.class,
+                     () -> EncryptionUtil.decryptAesEnvelope(MASTER_PASSWORD,
+                                                             Base64.getEncoder().encodeToString(tamperedCiphertext)));
+    }
+
+    @Test
+    public void testAesEnvelopeRejectsInvalidInput() {
+        assertThrows(ConfigEncryptionException.class,
+                     () -> EncryptionUtil.decryptAesEnvelope(MASTER_PASSWORD, "not really base64"));
+
+        assertThrows(ConfigEncryptionException.class,
+                     () -> EncryptionUtil.decryptAesEnvelope(MASTER_PASSWORD,
+                                                             Base64.getEncoder().encodeToString(new byte[8])));
+
+        String encryptedBase64 = EncryptionUtil.encryptAesEnvelope(MASTER_PASSWORD, TEST_SECRET);
+        byte[] decodedBytes = Base64.getDecoder().decode(encryptedBase64);
+
+        byte[] unsupportedVersion = decodedBytes.clone();
+        unsupportedVersion[0] = 2;
+        assertThrows(ConfigEncryptionException.class,
+                     () -> EncryptionUtil.decryptAesEnvelope(MASTER_PASSWORD,
+                                                             Base64.getEncoder().encodeToString(unsupportedVersion)));
+
+        byte[] tooFewIterations = decodedBytes.clone();
+        Arrays.fill(tooFewIterations, 1, 5, (byte) 0);
+        tooFewIterations[4] = 1;
+        assertThrows(ConfigEncryptionException.class,
+                     () -> EncryptionUtil.decryptAesEnvelope(MASTER_PASSWORD,
+                                                             Base64.getEncoder().encodeToString(tooFewIterations)));
+
+        assertThrows(ConfigEncryptionException.class,
+                     () -> EncryptionUtil.decryptAesEnvelope("anotherPassword".toCharArray(), encryptedBase64));
     }
 
     private PublicKey generateDsaPublicKey() throws NoSuchAlgorithmException {
