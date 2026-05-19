@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package io.helidon.webserver;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
+/**
+ * Error handling configuration.
+ */
 @Prototype.Configured
 @Prototype.Blueprint
 interface ErrorHandlingBlueprint {
@@ -37,6 +40,8 @@ interface ErrorHandlingBlueprint {
      * Whether to log all messages in a {@link io.helidon.http.RequestException} or not.
      * If set to {@code false}, only those that return {@code true} for
      * {@link io.helidon.http.RequestException#safeMessage()} are logged.
+     *
+     * @return whether to log all messages
      */
     @Option.Configured
     @Option.DefaultBoolean(false)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,12 @@ import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
 public class Http1DirectJunitExtension implements DirectJunitExtension {
     private final Map<String, DirectClient> clients = new HashMap<>();
     private final Map<String, DirectWebClient> webClients = new HashMap<>();
+
+    /**
+     * Required public constructor for {@link java.util.ServiceLoader}.
+     */
+    public Http1DirectJunitExtension() {
+    }
 
     @Override
     public void afterAll(ExtensionContext context) {

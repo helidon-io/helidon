@@ -110,6 +110,7 @@ class SecurityConfigSupport {
          * This creates a hard dependency on a specific security provider, so use with care.
          *
          * @param builder builder instance
+         * @param objectType type to register the object under
          * @param object  An object expected by security provider
          */
         @Prototype.BuilderMethod

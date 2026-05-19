@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http2;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.ProtocolConfigProvider;
 
@@ -24,6 +25,13 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
  * This configuration is used both when upgrading from HTTP/1 and when using selector.
  */
 public class Http2ProtocolConfigProvider implements ProtocolConfigProvider<Http2Config> {
+    /**
+     * Required public constructor for {@link java.util.ServiceLoader}.
+     */
+    @Api.Internal
+    public Http2ProtocolConfigProvider() {
+    }
+
     @Override
     public String configKey() {
         return Http2ConnectionProvider.CONFIG_NAME;

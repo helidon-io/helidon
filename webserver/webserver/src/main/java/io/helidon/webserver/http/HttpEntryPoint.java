@@ -36,6 +36,12 @@ import io.helidon.service.registry.ServiceDescriptor;
 @Api.Incubating
 public class HttpEntryPoint {
     /**
+     * Create an instance.
+     */
+    public HttpEntryPoint() {
+    }
+
+    /**
      * Interceptor of an HTTP entry point.
      * This interceptor has direct access to {@link io.helidon.webserver.http.ServerRequest} and
      * {@link io.helidon.webserver.http.ServerResponse}, as well as metadata of the invoked endpoint.
