@@ -124,6 +124,8 @@ public class Http2ClientConnection {
     private final ConnectionFlowControl connectionFlowControl;
     private final Http2Headers.DynamicTable inboundDynamicTable =
             Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+    // Inbound header decode is serialized on the connection thread, so one decoder instance is enough.
+    private final Http2HuffmanDecoder inboundHuffman = Http2HuffmanDecoder.create();
     private final PendingInboundHeaders pendingInboundHeaders;
     private final Http2ClientProtocolConfig protocolConfig;
     private final ClientConnection connection;
@@ -587,7 +589,7 @@ public class Http2ClientConnection {
         // Keep HPACK decode on the connection thread so the shared dynamic table advances in wire order.
         return Http2Headers.create(stream,
                                    inboundDynamicTable,
-                                   Http2HuffmanDecoder.create(),
+                                   inboundHuffman,
                                    headerDecodeBasis,
                                    headerFrames);
     }

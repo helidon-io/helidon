@@ -59,6 +59,8 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     private static final System.Logger LOGGER = System.getLogger(Http2ClientStream.class.getName());
     private static final Set<Http2StreamState> NON_CANCELABLE = Set.of(Http2StreamState.CLOSED, Http2StreamState.IDLE);
+    // Http2Headers.create(...) clones the supplied basis headers, so one shared empty basis is sufficient.
+    private static final Http2Headers EMPTY_INBOUND_HEADER_DECODE_BASIS = Http2Headers.create(WritableHeaders.create());
 
     private final Http2ClientConnection connection;
     private final Http2Settings serverSettings;
@@ -273,6 +275,16 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         buffer.push(frameData);
     }
 
+    /**
+     * Push decoded trailers into the stream buffer behind any earlier DATA frames.
+     *
+     * @param headers decoded trailer headers
+     * @param endOfStream whether the trailer block ended the stream
+     */
+    void pushTrailers(Http2Headers headers, boolean endOfStream) {
+        buffer.pushTrailers(headers, endOfStream);
+    }
+
     BufferData read(int i) {
         return read();
     }
@@ -439,9 +451,21 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * @return the data frame
      */
     public Http2FrameData readOne(Duration pollTimeout) {
-        Http2FrameData frameData = buffer.poll(pollTimeout);
+        StreamBuffer.InboundItem inboundItem = buffer.poll(pollTimeout);
 
-        if (frameData != null) {
+        if (inboundItem != null) {
+            if (inboundItem.isTrailers()) {
+                inboundStateLock.lock();
+                try {
+                    trailersLocked(inboundItem.trailers(), inboundItem.endOfStream());
+                    inboundStateChanged.signalAll();
+                } finally {
+                    inboundStateLock.unlock();
+                }
+                return null;
+            }
+
+            Http2FrameData frameData = inboundItem.frameData();
             recvListener.frameHeader(ctx, streamId, frameData.header());
             recvListener.frame(ctx, streamId, frameData.data());
 
@@ -472,7 +496,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             if (readState == ReadState.HEADERS && currentHeaders != null) {
                 return currentHeaders;
             }
-            return Http2Headers.create(WritableHeaders.create());
+            return EMPTY_INBOUND_HEADER_DECODE_BASIS;
         } finally {
             inboundStateLock.unlock();
         }
@@ -497,7 +521,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             switch (readState) {
             case CONTINUE_100_HEADERS -> continue100Locked(headers, endOfStream);
             case HEADERS -> headersLocked(headers, endOfStream);
-            case DATA, TRAILERS -> trailersLocked(headers, endOfStream);
+            case DATA, TRAILERS -> pushTrailers(headers, endOfStream);
             default -> throw new IllegalStateException("Client is in wrong read state " + readState.name());
             }
             inboundStateChanged.signalAll();
@@ -569,6 +593,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private void trailersLocked(Http2Headers headers, boolean endOfStream) {
         state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, false, endOfStream, true);
         readState = readState.check(ReadState.END);
+        hasEntity = false;
         trailers.complete(headers.httpHeaders());
     }
 
