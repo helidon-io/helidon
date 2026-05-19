@@ -254,8 +254,12 @@ import io.helidon.webclient.tracing.WebClientTracing;
  * <tr>
  *     <td>redirect-attempt-param</td>
  *     <td>{@value DEFAULT_ATTEMPT_PARAM}</td>
- *     <td>Query parameter holding the number of times we redirected to an identity server. Customizable to prevent
- *     conflicts with application parameters</td>
+ *     <td>Query parameter holding the number of redirects to an identity server. Customizable to prevent conflicts.</td>
+ * </tr>
+ * <tr>
+ *     <td>redirect-attempt-param-enabled</td>
+ *     <td>true</td>
+ *     <td>Whether to append the redirect attempt counter parameter.</td>
  * </tr>
  * <tr>
  *     <td>max-redirects</td>
@@ -389,6 +393,7 @@ public final class OidcConfig extends TenantConfigImpl {
     private final String frontendUri;
     private final boolean redirect;
     private final String redirectAttemptParam;
+    private final boolean redirectAttemptParamEnabled;
     private final int maxRedirects;
     private final URI postLogoutUri;
     private final CrossOriginConfig crossOriginConfig;
@@ -427,6 +432,7 @@ public final class OidcConfig extends TenantConfigImpl {
         this.postLogoutUri = builder.postLogoutUri;
         this.redirect = builder.redirect;
         this.redirectAttemptParam = builder.redirectAttemptParam;
+        this.redirectAttemptParamEnabled = builder.redirectAttemptParamEnabled;
         this.maxRedirects = builder.maxRedirects;
         this.forceHttpsRedirects = builder.forceHttpsRedirects;
         this.crossOriginConfig = builder.crossOriginConfig;
@@ -698,13 +704,17 @@ public final class OidcConfig extends TenantConfigImpl {
     }
 
     /**
-     * Name of the parameter used in state passed to OIDC to store the number of attempted redirects.
-     * This is to prevent infinite redirects.
-     *
+     * Name of the redirect attempt query parameter.
      * @return name of the query parameter
      */
     public String redirectAttemptParam() {
         return redirectAttemptParam;
+    }
+    /** Whether to append the redirect attempt parameter to the redirected URI.
+     * @return whether to append the redirect attempt parameter
+     */
+    public boolean redirectAttemptParamEnabled() {
+        return redirectAttemptParamEnabled;
     }
 
     /**
@@ -1001,6 +1011,7 @@ public final class OidcConfig extends TenantConfigImpl {
         private String frontendUri;
         private boolean redirect = DEFAULT_REDIRECT;
         private String redirectAttemptParam = DEFAULT_ATTEMPT_PARAM;
+        private boolean redirectAttemptParamEnabled = true;
         private int maxRedirects = DEFAULT_MAX_REDIRECTS;
         private URI postLogoutUri;
         private CrossOriginConfig crossOriginConfig;
@@ -1195,6 +1206,7 @@ public final class OidcConfig extends TenantConfigImpl {
 
             config.get("redirect").asBoolean().ifPresent(this::redirect);
             config.get("redirect-attempt-param").asString().ifPresent(this::redirectAttemptParam);
+            config.get("redirect-attempt-param-enabled").asBoolean().ifPresent(this::redirectAttemptParamEnabled);
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("force-https-redirects").asBoolean().ifPresent(this::forceHttpsRedirects);
 
@@ -1378,16 +1390,22 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * Configure the parameter used to store the number of attempts in redirect.
-         * <p>
-         * Defaults to {@value #DEFAULT_ATTEMPT_PARAM}
-         *
-         * @param paramName name of the parameter used in the state parameter
+         * Configure the redirect attempt query parameter.
+         * @param paramName name of the parameter
          * @return updated builder instance
          */
         @ConfiguredOption(value = DEFAULT_ATTEMPT_PARAM)
         public Builder redirectAttemptParam(String paramName) {
             this.redirectAttemptParam = paramName;
+            return this;
+        }
+        /** Configure whether to append the redirect attempt parameter to the redirected URI.
+         * @param enabled whether the redirect attempt parameter should be appended
+         * @return updated builder instance
+         */
+        @ConfiguredOption(value = "true")
+        public Builder redirectAttemptParamEnabled(boolean enabled) {
+            this.redirectAttemptParamEnabled = enabled;
             return this;
         }
 

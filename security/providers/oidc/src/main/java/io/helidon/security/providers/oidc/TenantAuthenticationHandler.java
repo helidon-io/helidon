@@ -488,6 +488,9 @@ class TenantAuthenticationHandler {
     }
 
     private int redirectAttempt(String state) {
+        if (!oidcConfig.redirectAttemptParamEnabled()) {
+            return 1;
+        }
         if (state.contains("?")) {
             // there are parameters
             Matcher matcher = attemptPattern.matcher(state);

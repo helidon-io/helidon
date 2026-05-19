@@ -73,9 +73,20 @@ class OidcFeatureTest {
             .oidcMetadataWellKnown(false)
             .redirectAttemptParam(PARAM_NAME)
             .build();
+    private final OidcConfig oidcConfigDisabledParam = OidcConfig.builder()
+            .clientId("id")
+            .clientSecret("secret")
+            .identityUri(URI.create("http://localhost:7774/identity"))
+            .tokenEndpointUri(URI.create("http://localhost:7774/token"))
+            .authorizationEndpointUri(URI.create("http://localhost:7774/authorize"))
+            .signJwk(JwkKeys.builder().build())
+            .oidcMetadataWellKnown(false)
+            .redirectAttemptParamEnabled(false)
+            .build();
 
     private final OidcFeature oidcFeature = OidcFeature.create(oidcConfig);
     private final OidcFeature oidcFeatureCustomParam = OidcFeature.create(oidcConfigCustomParam);
+    private final OidcFeature oidcFeatureDisabledParam = OidcFeature.create(oidcConfigDisabledParam);
     private final OidcProvider provider = OidcProvider.builder()
             .oidcConfig(oidcConfig)
             .outboundConfig(OutboundConfig.builder()
@@ -158,6 +169,14 @@ class OidcFeatureTest {
 
         assertThat(state, not(newState));
         assertThat(newState, endsWith(PARAM_NAME + "=12&b=second"));
+    }
+
+    @Test
+    void testRedirectAttemptParamDisabled() {
+        String state = "http://localhost:7145/test?a=first&b=second";
+        String newState = oidcFeatureDisabledParam.increaseRedirectCounterIfEnabled(state);
+
+        assertThat(newState, is(state));
     }
 
     @Test

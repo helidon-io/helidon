@@ -106,6 +106,8 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Cookie name", tokenCookieHandler.cookieName(), is(DEFAULT_COOKIE_NAME)),
                 () -> assertThat("Realm", config.realm(), is(OidcConfig.Builder.DEFAULT_REALM)),
                 () -> assertThat("Redirect Attempt Parameter", config.redirectAttemptParam(), is(DEFAULT_ATTEMPT_PARAM)),
+                () -> assertThat("Redirect Attempt Parameter Enabled",
+                                 config.redirectAttemptParamEnabled(), is(true)),
                 () -> assertThat("Max Redirects", config.maxRedirects(), is(DEFAULT_MAX_REDIRECTS)),
                 () -> assertThat("Client Timeout", config.clientTimeout(), is(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS))),
                 () -> assertThat("Force HTTPS Redirects", config.forceHttpsRedirects(), is(DEFAULT_FORCE_HTTPS_REDIRECTS)),
@@ -118,6 +120,19 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Client without authentication", config.generalWebClient(), notNullValue()),
                 () -> assertThat("Client with authentication", config.appWebClient(), notNullValue()),
                 () -> assertThat("JWK Keys", config.signJwk(), notNullValue()));
+    }
+
+    @Test
+    void testRedirectAttemptParamDisabledFromBuilder() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .redirectAttemptParamEnabled(false)
+                .build();
+
+        assertThat(config.redirectAttemptParamEnabled(), is(false));
     }
 
     @Test

@@ -538,7 +538,7 @@ public final class OidcFeature implements HttpFeature {
             }
         }
 
-        originalUri = increaseRedirectCounter(originalUri);
+        originalUri = increaseRedirectCounterIfEnabled(originalUri);
         res.headers().add(HeaderNames.LOCATION, originalUri);
 
         if (oidcConfig.useCookie()) {
@@ -628,6 +628,13 @@ public final class OidcFeature implements HttpFeature {
             // no parameters
             return state + "?" + oidcConfig.redirectAttemptParam() + "=1";
         }
+    }
+
+    String increaseRedirectCounterIfEnabled(String state) {
+        if (oidcConfig.redirectAttemptParamEnabled()) {
+            return increaseRedirectCounter(state);
+        }
+        return state;
     }
 
     private void processError(ServerRequest req, ServerResponse res) {

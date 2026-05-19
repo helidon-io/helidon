@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,12 @@ class OidcConfigFromConfigTest extends OidcConfigAbstractTest {
     void testDisabledAudience() {
         OidcConfig oidcConfig = OidcConfig.create(config.get("security.oidc-disabled-aud"));
         assertThat(oidcConfig.checkAudience(), is(false));
+    }
+
+    @Test
+    void testRedirectAttemptParamDisabled() {
+        OidcConfig oidcConfig = OidcConfig.create(config.get("security.oidc-redirect-attempt-param-disabled"));
+        assertThat(oidcConfig.redirectAttemptParamEnabled(), is(false));
     }
 
 }
