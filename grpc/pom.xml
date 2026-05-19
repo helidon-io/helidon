@@ -32,6 +32,10 @@
 
     <description>gRPC support for Helidon</description>
 
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+    </properties>
+
     <modules>
         <module>api</module>
         <module>core</module>
