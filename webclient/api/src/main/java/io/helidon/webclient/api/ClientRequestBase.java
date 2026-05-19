@@ -97,6 +97,16 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private ClientConnection connection;
     private Boolean sendExpectContinue;
 
+    /**
+     * Create a new request.
+     *
+     * @param clientConfig client configuration
+     * @param cookieManager cookie manager
+     * @param protocolId protocol identifier
+     * @param method HTTP method
+     * @param clientUri request URI
+     * @param properties request properties
+     */
     protected ClientRequestBase(HttpClientConfig clientConfig,
                                 WebClientCookieManager cookieManager,
                                 String protocolId,
@@ -106,6 +116,17 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         this(clientConfig, cookieManager, protocolId, method, clientUri, null, properties);
     }
 
+    /**
+     * Create a new request.
+     *
+     * @param clientConfig client configuration
+     * @param cookieManager cookie manager
+     * @param protocolId protocol identifier
+     * @param method HTTP method
+     * @param clientUri request URI
+     * @param sendExpectContinue whether to send the {@code Expect: 100-Continue} header
+     * @param properties request properties
+     */
     protected ClientRequestBase(HttpClientConfig clientConfig,
                                 WebClientCookieManager cookieManager,
                                 String protocolId,
@@ -116,6 +137,18 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         this(clientConfig, cookieManager, protocolId, method, clientUri, sendExpectContinue, properties, null);
     }
 
+    /**
+     * Create a new request.
+     *
+     * @param clientConfig client configuration
+     * @param cookieManager cookie manager
+     * @param protocolId protocol identifier
+     * @param method HTTP method
+     * @param clientUri request URI
+     * @param sendExpectContinue whether to send the {@code Expect: 100-Continue} header
+     * @param properties request properties
+     * @param redirectSourceUri original request URI for redirect handling
+     */
     protected ClientRequestBase(HttpClientConfig clientConfig,
                                 WebClientCookieManager cookieManager,
                                 String protocolId,
@@ -434,8 +467,20 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         return Optional.ofNullable(socketAddress);
     }
 
+    /**
+     * Submit a request entity.
+     *
+     * @param entity request entity
+     * @return HTTP client response
+     */
     protected abstract R doSubmit(Object entity);
 
+    /**
+     * Submit a request entity provided through an output stream.
+     *
+     * @param outputStreamHandler output stream handler
+     * @return HTTP client response
+     */
     protected abstract R doOutputStream(OutputStreamHandler outputStreamHandler);
 
     /**

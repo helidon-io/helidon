@@ -23,15 +23,28 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.Size;
 import io.helidon.webclient.spi.ProtocolConfig;
 
+/**
+ * HTTP/2 client protocol configuration.
+ */
 @Prototype.Blueprint(decorator = Http2ClientConfigSupport.ProtocolConfigDecorator.class)
 @Prototype.Configured
 @Prototype.IncludeDefaultMethods("maxBufferedEntitySize")
 interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
+    /**
+     * Type of this protocol.
+     *
+     * @return protocol type
+     */
     @Override
     default String type() {
         return Http2ProtocolProvider.CONFIG_KEY;
     }
 
+    /**
+     * Name of this protocol.
+     *
+     * @return protocol name
+     */
     @Option.Configured
     @Option.Default(Http2ProtocolProvider.CONFIG_KEY)
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,11 @@ public abstract class ClientConnectionCache implements ReleasableResource, Resum
 
     private static final System.Logger LOGGER = System.getLogger(ClientConnectionCache.class.getName());
 
+    /**
+     * Create a client connection cache.
+     *
+     * @param shared whether the cache is shared and should be closed on JVM shutdown
+     */
     protected ClientConnectionCache(boolean shared) {
         if (shared) {
             Runtime.getRuntime().addShutdownHook(new Thread(this::onShutdown));
@@ -44,6 +49,9 @@ public abstract class ClientConnectionCache implements ReleasableResource, Resum
 
     }
 
+    /**
+     * Evict all cached connections.
+     */
     protected abstract void evict();
 
     private void onShutdown() {
