@@ -31,6 +31,10 @@
     <artifactId>helidon-graphql-server</artifactId>
     <name>Helidon GraphQL Server</name>
 
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.graphql-java</groupId>

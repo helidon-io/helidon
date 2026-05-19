@@ -31,6 +31,9 @@ import io.helidon.service.registry.Service;
  * Each annotated method can have an unqualified parameter {@link io.helidon.websocket.WsSession}.
  */
 public class WebSocket {
+    private WebSocket() {
+    }
+
     /**
      * A message listener method. There can be maximally two methods on a service with this annotation, and they must
      * use different message type (i.e. one method max for binary, and one method max for string messages).

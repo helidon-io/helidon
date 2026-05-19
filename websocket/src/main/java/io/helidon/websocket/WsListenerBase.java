@@ -68,6 +68,20 @@ public abstract class WsListenerBase implements WsListener {
 
     private List<BufferData> buffers;
 
+    /**
+     * Create a new listener base for subclasses.
+     */
+    protected WsListenerBase() {
+    }
+
+    /**
+     * Process a text message chunk as a string.
+     *
+     * @param session WebSocket session
+     * @param text text chunk
+     * @param last whether this is the last chunk
+     * @param stringConsumer consumer of the complete text message
+     */
     protected void textString(WsSession session,
                               String text,
                               boolean last,
@@ -85,6 +99,14 @@ public abstract class WsListenerBase implements WsListener {
     }
 
     // runs on current connection thread
+    /**
+     * Process a text message chunk as a reader.
+     *
+     * @param session WebSocket session
+     * @param text text chunk
+     * @param last whether this is the last chunk
+     * @param readerConsumer consumer of the text reader
+     */
     protected void textReader(WsSession session,
                               String text,
                               boolean last,
@@ -141,6 +163,14 @@ public abstract class WsListenerBase implements WsListener {
         }
     }
 
+    /**
+     * Process a binary message chunk as buffer data.
+     *
+     * @param session WebSocket session
+     * @param buffer binary chunk
+     * @param last whether this is the last chunk
+     * @param bufferDataConsumer consumer of the complete binary message
+     */
     protected void binaryBufferData(WsSession session,
                                     BufferData buffer,
                                     boolean last,
@@ -160,6 +190,14 @@ public abstract class WsListenerBase implements WsListener {
         }
     }
 
+    /**
+     * Process a binary message chunk as a byte buffer.
+     *
+     * @param session WebSocket session
+     * @param buffer binary chunk
+     * @param last whether this is the last chunk
+     * @param streamConsumer consumer of the complete binary message
+     */
     protected void binaryByteBuffer(WsSession session,
                                     BufferData buffer,
                                     boolean last,
@@ -183,6 +221,14 @@ public abstract class WsListenerBase implements WsListener {
         }
     }
 
+    /**
+     * Process a binary message chunk as a byte array.
+     *
+     * @param session WebSocket session
+     * @param buffer binary chunk
+     * @param last whether this is the last chunk
+     * @param byteArrayConsumer consumer of the complete binary message
+     */
     protected void binaryByteArray(WsSession session,
                                    BufferData buffer,
                                    boolean last,
@@ -205,6 +251,14 @@ public abstract class WsListenerBase implements WsListener {
         }
     }
 
+    /**
+     * Process a binary message chunk as an input stream.
+     *
+     * @param session WebSocket session
+     * @param buffer binary chunk
+     * @param last whether this is the last chunk
+     * @param streamConsumer consumer of the binary input stream
+     */
     protected void binaryInputStream(WsSession session,
                                      BufferData buffer,
                                      boolean last,
