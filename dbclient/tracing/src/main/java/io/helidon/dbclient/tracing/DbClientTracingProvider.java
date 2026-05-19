@@ -30,6 +30,12 @@ public class DbClientTracingProvider implements DbClientServiceProvider {
 
     private static final System.Logger LOGGER = System.getLogger(DbClientTracingProvider.class.getName());
 
+    /**
+     * Creates a database client tracing provider.
+     */
+    public DbClientTracingProvider() {
+    }
+
     @Override
     public String configKey() {
         return "tracing";

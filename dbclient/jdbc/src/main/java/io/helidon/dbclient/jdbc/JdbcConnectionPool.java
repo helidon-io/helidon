@@ -139,6 +139,9 @@ public interface JdbcConnectionPool extends NamedService {
         private String username;
         private String password;
 
+        /**
+         * Creates a JDBC connection pool builder base.
+         */
         protected BuilderBase() {
         }
 

@@ -30,6 +30,12 @@ import io.helidon.dbclient.spi.DbClientServiceProvider;
 public class DbClientMetricsProvider implements DbClientServiceProvider {
     private static final System.Logger LOGGER = System.getLogger(DbClientMetricsProvider.class.getName());
 
+    /**
+     * Creates a database client metrics provider.
+     */
+    public DbClientMetricsProvider() {
+    }
+
     @Override
     public String configKey() {
         return "metrics";

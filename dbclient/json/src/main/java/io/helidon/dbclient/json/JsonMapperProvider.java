@@ -28,6 +28,13 @@ import io.helidon.json.JsonObject;
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class JsonMapperProvider implements DbMapperProvider {
+
+    /**
+     * Creates a Helidon JSON mapper provider.
+     */
+    public JsonMapperProvider() {
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <T> Optional<DbMapper<T>> mapper(Class<T> type) {

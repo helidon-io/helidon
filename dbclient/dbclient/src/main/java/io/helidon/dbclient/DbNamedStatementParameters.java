@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,12 @@ import java.util.Map;
 public class DbNamedStatementParameters extends DbStatementParameters {
 
     private final Map<String, Object> parameters = new HashMap<>();
+
+    /**
+     * Creates named statement parameters.
+     */
+    public DbNamedStatementParameters() {
+    }
 
     @Override
     public DbStatementParameters addParam(String name, Object parameter) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,4 +25,15 @@ import io.helidon.dbclient.DbClientServiceBase;
  */
 public abstract class DbClientMetricBuilder<B extends DbClientMetricBuilder<B, T>, T extends DbClientServiceBase>
         extends MetricBuilderBase<B, T> {
+
+    /**
+     * Creates a database client metric builder.
+     * Child classes may call this constructor; only direct public use is not supported.
+     *
+     * @deprecated direct public use is not supported; use {@link DbClientMetrics#counter()}
+     *         or {@link DbClientMetrics#timer()} for the built-in metric builders
+     */
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    public DbClientMetricBuilder() {
+    }
 }

@@ -29,6 +29,13 @@ import jakarta.json.JsonObject;
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class JsonProcessingMapperProvider implements DbMapperProvider {
+
+    /**
+     * Creates a JSON-P mapper provider.
+     */
+    public JsonProcessingMapperProvider() {
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <T> Optional<DbMapper<T>> mapper(Class<T> type) {
