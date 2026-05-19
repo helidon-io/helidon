@@ -64,8 +64,11 @@ class IdleTimeoutHandler extends TimerTask {
                 }
             }
         } finally {
-            Thread.currentThread().setName(name);
-            runLock.unlock();
+            try {
+                Thread.currentThread().setName(name);
+            } finally {
+                runLock.unlock();
+            }
         }
     }
 

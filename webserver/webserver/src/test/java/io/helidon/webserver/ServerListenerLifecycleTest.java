@@ -653,6 +653,122 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
+    void stopWaitsForRunningIdleTimeoutTask() throws Exception {
+        CountDownLatch handling = new CountDownLatch(1);
+        CountDownLatch idleCloseEntered = new CountDownLatch(1);
+        CountDownLatch releaseIdleClose = new CountDownLatch(1);
+        CountDownLatch releaseHandling = new CountDownLatch(1);
+        CountDownLatch stopStarted = new CountDownLatch(1);
+        CountDownLatch stopDone = new CountDownLatch(1);
+        AtomicInteger gracefulCloses = new AtomicInteger();
+        AtomicReference<Throwable> stopFailure = new AtomicReference<>();
+        ServerConnection connection = new ServerConnection() {
+            @Override
+            public void handle(io.helidon.common.concurrency.limits.Limit limit) {
+                handling.countDown();
+                while (releaseHandling.getCount() != 0) {
+                    try {
+                        releaseHandling.await(1, TimeUnit.SECONDS);
+                    } catch (InterruptedException _) {
+                        // Deliberately ignore interrupts so shutdown must close the connection.
+                    }
+                }
+            }
+
+            @Override
+            public Duration idleTime() {
+                return Duration.ofMinutes(1);
+            }
+
+            @Override
+            public void close(boolean interrupt) {
+                if (interrupt) {
+                    releaseHandling.countDown();
+                    return;
+                }
+                if (gracefulCloses.incrementAndGet() == 1) {
+                    idleCloseEntered.countDown();
+                    try {
+                        releaseIdleClose.await(5, TimeUnit.SECONDS);
+                    } catch (InterruptedException _) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        };
+        ServerConnectionSelector selector = new ServerConnectionSelector() {
+            @Override
+            public int bytesToIdentifyConnection() {
+                return 0;
+            }
+
+            @Override
+            public Support supports(BufferData data) {
+                return Support.SUPPORTED;
+            }
+
+            @Override
+            public Set<String> supportedApplicationProtocols() {
+                return Set.of("test-stop-waits-for-idle-timeout");
+            }
+
+            @Override
+            public ServerConnection connection(ConnectionContext ctx) {
+                return connection;
+            }
+        };
+        LoomServer server = (LoomServer) WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .idleConnectionTimeout(Duration.ofMillis(1))
+                .idleConnectionPeriod(Duration.ofMillis(10))
+                .addConnectionSelector(selector)
+                .build()
+                .start();
+        Thread stopThread = null;
+
+        try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
+            socket.getOutputStream().write('x');
+            assertThat(handling.await(5, TimeUnit.SECONDS), is(true));
+            assertThat(idleCloseEntered.await(5, TimeUnit.SECONDS), is(true));
+
+            stopThread = Thread.ofPlatform()
+                    .name("test-stop-waits-for-idle-timeout")
+                    .start(() -> {
+                        stopStarted.countDown();
+                        try {
+                            server.stop();
+                        } catch (RuntimeException | Error e) {
+                            stopFailure.set(e);
+                        } finally {
+                            stopDone.countDown();
+                        }
+                    });
+
+            assertThat(stopStarted.await(5, TimeUnit.SECONDS), is(true));
+            Thread localStopThread = stopThread;
+            waitFor(Duration.ofSeconds(5),
+                    () -> localStopThread.getState() == Thread.State.WAITING && stopDone.getCount() != 0,
+                    "stop did not wait for the running idle timeout task");
+            assertThat(gracefulCloses.get(), is(1));
+
+            releaseIdleClose.countDown();
+            stopThread.join(TimeUnit.SECONDS.toMillis(5));
+
+            assertThat(stopThread.isAlive(), is(false));
+            assertThat(stopFailure.get(), nullValue());
+        } finally {
+            releaseIdleClose.countDown();
+            releaseHandling.countDown();
+            if (stopThread != null && stopThread.isAlive()) {
+                stopThread.interrupt();
+            }
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
     void webServerStopFailureThrowsAfterStoppingAllListeners() {
         LifecycleService defaultService = new LifecycleService("default", true);
         LifecycleService adminService = new LifecycleService("admin", true);
