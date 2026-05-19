@@ -69,12 +69,9 @@ public abstract class WsListenerBase implements WsListener {
     private List<BufferData> buffers;
 
     /**
-     * Create a new listener base.
-     *
-     * @deprecated This type is intended only as a base class for inheriting listeners.
+     * Create a new listener base for subclasses.
      */
-    @Deprecated(forRemoval = true, since = "27.0.0")
-    public WsListenerBase() {
+    protected WsListenerBase() {
     }
 
     /**

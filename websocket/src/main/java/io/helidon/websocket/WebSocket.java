@@ -31,13 +31,7 @@ import io.helidon.service.registry.Service;
  * Each annotated method can have an unqualified parameter {@link io.helidon.websocket.WsSession}.
  */
 public class WebSocket {
-    /**
-     * Create a new WebSocket annotation container.
-     *
-     * @deprecated This type only groups nested annotations and should not be instantiated.
-     */
-    @Deprecated(forRemoval = true, since = "27.0.0")
-    public WebSocket() {
+    private WebSocket() {
     }
 
     /**
