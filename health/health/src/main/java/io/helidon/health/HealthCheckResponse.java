@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,15 @@ public interface HealthCheckResponse {
         // Use a TreeMap to preserve stability of the details in JSON output.
         private final Map<String, Object> details = new TreeMap<>();
         private Status status = Status.UP;
+
+        /**
+         * Create a new builder.
+         *
+         * @deprecated use {@link HealthCheckResponse#builder()} instead
+         */
+        @Deprecated(forRemoval = true, since = "27.0.0")
+        public Builder() {
+        }
 
         @Override
         public HealthCheckResponse build() {
