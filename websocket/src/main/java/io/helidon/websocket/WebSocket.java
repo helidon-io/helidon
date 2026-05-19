@@ -32,6 +32,12 @@ import io.helidon.service.registry.Service;
  */
 public class WebSocket {
     /**
+     * Create a new WebSocket annotation container.
+     */
+    public WebSocket() {
+    }
+
+    /**
      * A message listener method. There can be maximally two methods on a service with this annotation, and they must
      * use different message type (i.e. one method max for binary, and one method max for string messages).
      * <p>

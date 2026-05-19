@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,13 @@ abstract sealed class AbstractWsFrame implements WsFrame permits ServerWsFrame, 
         return opCode + (fin ? " (last): \n" : ": \n") + unmaskedData.get().debugDataHex();
     }
 
+    /**
+     * Read a WebSocket frame header.
+     *
+     * @param reader data reader
+     * @param maxFrameLength maximal allowed frame length
+     * @return frame header
+     */
     protected static FrameHeader readFrameHeader(DataReader reader, int maxFrameLength) {
         int opCodeByte = reader.read();
         boolean fin = (opCodeByte & 0b10000000) != 0;
@@ -112,11 +119,24 @@ abstract sealed class AbstractWsFrame implements WsFrame permits ServerWsFrame, 
         return new FrameHeader(opCode, fin, masked, (int) frameLength);
     }
 
+    /**
+     * Read frame payload.
+     *
+     * @param reader data reader
+     * @param header frame header
+     * @return payload data
+     */
     protected static BufferData readPayload(DataReader reader, FrameHeader header) {
         int length = header.length();
         return length == 0 ? BufferData.empty() : reader.readBuffer(length);
     }
 
+    /**
+     * Check whether the frame is a text or binary data frame.
+     *
+     * @param header frame header
+     * @return whether the frame is a text or binary data frame
+     */
     protected static boolean isPayload(FrameHeader header) {
         WsOpCode opCode = header.opCode;
         return opCode == WsOpCode.BINARY || opCode == WsOpCode.TEXT;

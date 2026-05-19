@@ -28,9 +28,7 @@
     <name>Helidon HTTP Media Jackson</name>
 
     <properties>
-        <!-- this must be disabled, as jars contain module-info.java, but Javadoc is generated without modules,
-         so generated links were invalid -->
-        <javadoc.fail-on-warnings>false</javadoc.fail-on-warnings>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
     </properties>
 
     <dependencies>
@@ -170,6 +168,17 @@
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <!-- Jackson Javadocs are published for unnamed modules. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <additionalOptions>
+                        <option>--link-modularity-mismatch</option>
+                        <option>info</option>
+                    </additionalOptions>
                 </configuration>
             </plugin>
         </plugins>

@@ -28,6 +28,10 @@
     <artifactId>helidon-websocket</artifactId>
     <name>Helidon WebSocket</name>
 
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -76,4 +80,3 @@
         </plugins>
     </build>
 </project>
-
