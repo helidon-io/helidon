@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ class SseServerTest extends SseBaseTest {
         rules.get("/sseJson2", SseServerTest::sseJson2);
         rules.get("/sseMixed", SseServerTest::sseMixed);
         rules.get("/sseIdComment", SseServerTest::sseIdComment);
+        rules.get("/sseCommentOnly", SseServerTest::sseCommentOnly);
     }
 
     @Test
@@ -76,6 +77,11 @@ class SseServerTest extends SseBaseTest {
     @Test
     void testIdComment() throws Exception {
         testSse("/sseIdComment", ":This is a comment\nid:1\ndata:hello");
+    }
+
+    @Test
+    void testCommentOnly() throws Exception {
+        testSse("/sseCommentOnly", ":This is a comment");
     }
 
     @Test
