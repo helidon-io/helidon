@@ -64,7 +64,7 @@ public interface MetricsFactory {
     /**
      * Returns a new metrics factory instance from a highest-weight provider using the provided
      * config node to set up the metrics factory and saving the resulting metrics factory
-     * as the current one, returned by {@link #getInstance()}}.
+     * as the current one, returned by {@link #getInstance()}.
      *
      * @param metricsConfigNode metrics config node
      * @return new instance configured as directed

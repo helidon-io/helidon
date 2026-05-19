@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
@@ -37,8 +38,9 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
     private final List<MicrometerMetricsFactory> metricsFactories = new ArrayList<>();
 
     /**
-     * Creates a new {@link io.helidon.metrics.api.MetricsFactory} based on Micrometer. Public for service loading.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public MicrometerMetricsFactoryProvider() {
         observeGlobalRegistry();
         addSystemTagsFilter();
