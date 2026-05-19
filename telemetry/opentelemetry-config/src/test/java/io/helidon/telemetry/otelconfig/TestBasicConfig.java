@@ -131,7 +131,7 @@ class TestBasicConfig {
 
         assertThat("Record min/max default",
                    aggregationConfig.recordMinMax(),
-                   OptionalMatcher.optionalValue(is(true)));
+                   is(true));
     }
 
     @Test
@@ -147,6 +147,6 @@ class TestBasicConfig {
 
         assertThat("Record min/max default",
                    aggregationConfig.recordMinMax(),
-                   OptionalMatcher.optionalValue(is(true)));
+                   is(true));
     }
 }

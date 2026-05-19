@@ -27,12 +27,8 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Configured
 @Prototype.Blueprint(decorator = Base2ExponentialHistogramAggregationSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(Base2ExponentialHistogramAggregationSupport.CustomMethods.class)
+@Prototype.IncludeDefaultMethods
 interface Base2ExponentialHistogramAggregationConfigBlueprint {
-
-    /**
-     * Helidon-supplied default value for {@code recordMinMax} for backward compatibility.
-     */
-    boolean DEFAULT_RECORD_MIN_MAX = true;
 
     /**
      * Maximum number of buckets.
@@ -55,8 +51,10 @@ interface Base2ExponentialHistogramAggregationConfigBlueprint {
      *
      * @return whether to record min and max
      */
-    @Option.DefaultBoolean(DEFAULT_RECORD_MIN_MAX)
+    @Option.DefaultBoolean(Base2ExponentialHistogramAggregationSupport.DEFAULT_RECORD_MIN_MAX)
     @Option.Configured
-    Optional<Boolean> recordMinMax();
+    default boolean recordMinMax() {
+        return Base2ExponentialHistogramAggregationSupport.DEFAULT_RECORD_MIN_MAX;
+    }
 
 }
