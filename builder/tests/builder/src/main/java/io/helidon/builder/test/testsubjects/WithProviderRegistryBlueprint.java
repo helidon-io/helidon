@@ -53,12 +53,20 @@ interface WithProviderRegistryBlueprint {
     Optional<List<SomeProvider.SomeService>> optionalListDiscover();
 
     @Option.Configured
+    @Option.Provider(SomeProvider.class)
+    Optional<Set<SomeProvider.SomeService>> optionalSetDiscover();
+
+    @Option.Configured
     @Option.Provider(value = SomeProvider.class, discoverServices = false)
     List<SomeProvider.SomeService> listNotDiscover();
 
     @Option.Configured
     @Option.Provider(value = SomeProvider.class, discoverServices = false)
     Optional<List<SomeProvider.SomeService>> optionalListNotDiscover();
+
+    @Option.Configured
+    @Option.Provider(value = SomeProvider.class, discoverServices = false)
+    Optional<Set<SomeProvider.SomeService>> optionalSetNotDiscover();
 
     /*
     The following should always be empty, as there are no implementations
@@ -80,10 +88,13 @@ interface WithProviderRegistryBlueprint {
     List<ProviderNoImpls.SomeService> listNoImplDiscoverNoConfig();
 
     @Option.Provider(ProviderNoImpls.SomeService.class)
+    Optional<ProviderNoImpls.SomeService> noImplDiscoverNoConfig();
+
+    @Option.Provider(ProviderNoImpls.SomeService.class)
     Optional<List<ProviderNoImpls.SomeService>> optionalListNoImplDiscoverNoConfig();
 
     @Option.Provider(ProviderNoImpls.SomeService.class)
-    Optional<ProviderNoImpls.SomeService> noImplDiscoverNoConfig();
+    Optional<Set<ProviderNoImpls.SomeService>> optionalSetNoImplDiscoverNoConfig();
 
     @Option.Configured
     @Option.Provider(value = ProviderNoImpls.class, discoverServices = false)

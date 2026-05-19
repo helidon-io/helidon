@@ -17,18 +17,22 @@
 package io.helidon.builder.codegen;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
 import io.helidon.codegen.classmodel.ClassBase;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Field;
 import io.helidon.codegen.classmodel.Javadoc;
+import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
@@ -37,6 +41,9 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.codegen.CodegenUtil.capitalize;
+import static io.helidon.common.types.TypeNames.LIST;
+import static io.helidon.common.types.TypeNames.MAP;
+import static io.helidon.common.types.TypeNames.SET;
 
 class TypeHandlerOptional extends TypeHandlerBasic {
     TypeHandlerOptional(List<BuilderCodegenExtension> extensions, PrototypeInfo prototypeInfo, OptionInfo option) {
@@ -66,8 +73,21 @@ class TypeHandlerOptional extends TypeHandlerBasic {
     }
 
     @Override
+    public void generateFromConfig(Method.Builder method, OptionConfigured optionConfigured) {
+        if (optionalMap()) {
+            generateOptionalMapFromConfig(method, optionConfigured);
+            return;
+        }
+        if (optionalCollection()) {
+            generateOptionalCollectionFromConfig(method, optionConfigured);
+            return;
+        }
+        super.generateFromConfig(method, optionConfigured);
+    }
+
+    @Override
     GeneratedMethod prepareBuilderSetter(Javadoc getterJavadoc) {
-        if (!optionalCollection()) {
+        if (!optionalContainer()) {
             return super.prepareBuilderSetter(getterJavadoc);
         }
 
@@ -84,7 +104,7 @@ class TypeHandlerOptional extends TypeHandlerBasic {
 
         method.addParameterArgument(param -> param
                 .kind(ElementKind.PARAMETER)
-                .typeName(collectionParameterType())
+                .typeName(containerParameterType())
                 .elementName(name)
         );
 
@@ -103,7 +123,7 @@ class TypeHandlerOptional extends TypeHandlerBasic {
             it.addContent("this.")
                     .addContent(name)
                     .addContent(" = ");
-            mutableCollection(it, name);
+            mutableContainer(it, name);
             it.addContentLine(";")
                     .addContentLine("return self();");
         };
@@ -117,8 +137,8 @@ class TypeHandlerOptional extends TypeHandlerBasic {
 
     @Override
     Optional<GeneratedMethod> prepareBuilderSetterDeclared(Javadoc getterJavadoc) {
-        if (optionalCollection()) {
-            return prepareOptionalCollectionSetterDeclared(getterJavadoc);
+        if (optionalContainer()) {
+            return prepareOptionalContainerSetterDeclared(getterJavadoc);
         }
 
         TypeName typeName = asTypeArgument(TypeNames.OPTIONAL);
@@ -173,7 +193,7 @@ class TypeHandlerOptional extends TypeHandlerBasic {
 
     @Override
     Optional<GeneratedMethod> prepareBuilderAddCollection(Javadoc getterJavadoc) {
-        if (!optionalCollection()) {
+        if (!optionalContainer()) {
             return Optional.empty();
         }
 
@@ -190,7 +210,7 @@ class TypeHandlerOptional extends TypeHandlerBasic {
 
         method.addParameterArgument(param -> param
                 .kind(ElementKind.PARAMETER)
-                .typeName(collectionParameterType())
+                .typeName(containerParameterType())
                 .elementName(name)
         );
 
@@ -210,11 +230,16 @@ class TypeHandlerOptional extends TypeHandlerBasic {
                     .addContent("this.")
                     .addContent(name)
                     .addContent(" = ");
-            emptyMutableCollection(it);
+            emptyMutableContainer(it);
             it.addContentLine(";")
-                    .addContentLine("}")
-                    .addContentLine("this." + name + ".addAll(" + name + ");")
-                    .addContentLine("return self();");
+                    .addContentLine("}");
+
+            if (optionalMap()) {
+                it.addContentLine("this." + name + ".putAll(" + name + ");");
+            } else {
+                it.addContentLine("this." + name + ".addAll(" + name + ");");
+            }
+            it.addContentLine("return self();");
         };
 
         return Optional.of(GeneratedMethod.builder()
@@ -270,7 +295,7 @@ class TypeHandlerOptional extends TypeHandlerBasic {
                 .addContent(")");
     }
 
-    private Optional<GeneratedMethod> prepareOptionalCollectionSetterDeclared(Javadoc getterJavadoc) {
+    private Optional<GeneratedMethod> prepareOptionalContainerSetterDeclared(Javadoc getterJavadoc) {
         TypeName typeName = asTypeArgument(TypeNames.OPTIONAL);
         TypeName returnType = Utils.builderReturnType();
 
@@ -297,7 +322,7 @@ class TypeHandlerOptional extends TypeHandlerBasic {
                     .addContent(".ifPresent(it -> this.")
                     .addContent(name)
                     .addContent(" = ");
-            mutableCollection(it, "it");
+            mutableContainer(it, "it");
             it.addContentLine(");")
                     .addContentLine("return self();");
         };
@@ -309,54 +334,260 @@ class TypeHandlerOptional extends TypeHandlerBasic {
                                    .build());
     }
 
+    private void generateOptionalCollectionFromConfig(Method.Builder method, OptionConfigured optionConfigured) {
+        TypeName actualType = type().typeArguments().getFirst().genericTypeName();
+        String setterName = option().setterName();
+
+        Optional<FactoryMethod> factoryMethod = optionConfigured.factoryMethod();
+        if (factoryMethod.isPresent()) {
+            var fm = factoryMethod.get();
+            TypeName returnType = fm.returnType();
+
+            boolean mapList;
+            if (returnType.isList() || returnType.isSet()) {
+                mapList = false;
+            } else {
+                mapList = Utils.typesEqual(actualType, returnType);
+            }
+            if (mapList) {
+                method.addContent(configGet(optionConfigured))
+                        .addContent(".asList(")
+                        .update(it -> generateMapListFromConfig(it, fm))
+                        .addContent(")");
+                collectionConfigMapper(method);
+                method.addContentLine(".ifPresent(this::" + setterName + ");");
+            } else {
+                method.addContent(configGet(optionConfigured));
+                generateFromConfig(method, fm.returnType(), Optional.of(fm));
+                collectionConfigMapper(method);
+                method.addContentLine(".ifPresent(this::" + setterName + ");");
+            }
+        } else if (TypeHandlerCollection.BUILT_IN_MAPPERS.contains(actualType)) {
+            method.addContent(configGet(optionConfigured))
+                    .addContent(".asList(")
+                    .addContent(actualType.genericTypeName())
+                    .addContent(".class)");
+            collectionConfigMapper(method);
+            method.addContentLine(".ifPresent(this::" + setterName + ");");
+        } else {
+            method.addContent(configGet(optionConfigured)
+                                      + ".asNodeList()"
+                                      + ".map(nodeList -> nodeList.stream()"
+                                      + ".map(cfg -> cfg");
+            generateFromConfig(method, actualType, Optional.empty());
+            method.addContent(".get()).");
+            collectionCollector(method);
+            method.addContentLine(").ifPresent(this::" + setterName + ");");
+        }
+    }
+
+    private void generateOptionalMapFromConfig(Method.Builder method, OptionConfigured optionConfigured) {
+        TypeName keyType = type().typeArguments().get(0);
+        TypeName valueType = type().typeArguments().get(1);
+        String optionName = option().name();
+
+        if (TypeNames.STRING.equals(keyType) && TypeNames.STRING.equals(valueType)) {
+            method.addContentLine(configGet(optionConfigured) + ".detach().asMap().ifPresent(this::" + optionName + ");");
+        } else {
+            method.addContentLine("if (" + configGet(optionConfigured) + ".exists()) {")
+                    .addContent("this.")
+                    .addContent(optionName)
+                    .addContent(" = ");
+            emptyMutableContainer(method);
+            method.addContentLine(";");
+
+            if (optionConfigured.traverse()) {
+                method.addContent(configGet(optionConfigured) + ".detach().traverse().filter(")
+                        .addContent(Types.CONFIG)
+                        .addContent("::hasValue).forEach(node -> "
+                                            + optionName)
+                        .addContent(".put(node.get(\"name\").asString().orElse(node.key().toString()), node");
+                generateFromConfig(method, valueType, optionConfigured.factoryMethod());
+                method.addContentLine(".get()));");
+            } else {
+                method.addContent(configGet(optionConfigured)
+                                          + ".asNodeList().orElseGet("
+                                          + List.class.getCanonicalName()
+                                          + "::of).forEach(node -> "
+                                          + optionName + ".put(node.get(\"name\").asString().orElse(node.name()), node");
+                generateFromConfig(method, valueType, optionConfigured.factoryMethod());
+                method.addContentLine(".get()));");
+            }
+            method.addContentLine("}");
+        }
+    }
+
+    private void generateFromConfig(ContentBuilder<?> content,
+                                    TypeName usedType,
+                                    Optional<FactoryMethod> factoryMethod) {
+        if (factoryMethod.isPresent()) {
+            FactoryMethod fm = factoryMethod.get();
+            content.addContent(".as(")
+                    .addContent(fm.declaringType().genericTypeName())
+                    .addContent("::");
+            if (!usedType.typeArguments().isEmpty()) {
+                content.addContent("<");
+                var iterator = usedType.typeArguments().iterator();
+                while (iterator.hasNext()) {
+                    content.addContent(iterator.next());
+                    if (iterator.hasNext()) {
+                        content.addContent(", ");
+                    }
+                }
+                content.addContent(">");
+            }
+            content.addContent(fm.methodName())
+                    .addContent(")");
+            return;
+        }
+
+        if (usedType.fqName().equals("char[]")) {
+            content.addContent(".asString().as(")
+                    .addContent(String.class)
+                    .addContent("::toCharArray)");
+            return;
+        }
+
+        if (usedType.equals(TypeNames.STRING)) {
+            content.addContent(".asString()");
+            return;
+        }
+
+        if (usedType.boxed().equals(TypeNames.BOXED_INT)) {
+            content.addContent(".asInt()");
+            return;
+        }
+
+        if (usedType.boxed().equals(TypeNames.BOXED_DOUBLE)) {
+            content.addContent(".asDouble()");
+            return;
+        }
+
+        if (usedType.boxed().equals(TypeNames.BOXED_BOOLEAN)) {
+            content.addContent(".asBoolean()");
+            return;
+        }
+
+        if (usedType.boxed().equals(TypeNames.BOXED_LONG)) {
+            content.addContent(".asLong()");
+            return;
+        }
+
+        content.addContent(".as(")
+                .addContent(usedType.boxed().genericTypeName())
+                .addContent(".class)");
+    }
+
+    private void generateMapListFromConfig(ContentBuilder<?> content, FactoryMethod factoryMethod) {
+        var declaringType = factoryMethod.declaringType();
+        var methodName = factoryMethod.methodName();
+
+        content.addContent(declaringType.genericTypeName())
+                .addContent("::")
+                .addContent(methodName);
+    }
+
+    private boolean optionalContainer() {
+        return optionalCollection() || optionalMap();
+    }
+
     private boolean optionalCollection() {
         return type().isList() || type().isSet();
     }
 
-    private TypeName collectionParameterType() {
+    private boolean optionalMap() {
+        return type().isMap();
+    }
+
+    private TypeName containerParameterType() {
+        if (optionalMap()) {
+            return TypeName.builder(MAP)
+                    .addTypeArgument(Utils.toWildcard(type().typeArguments().get(0)))
+                    .addTypeArgument(Utils.toWildcard(type().typeArguments().get(1)))
+                    .build();
+        }
         return TypeName.builder(collectionType())
                 .addTypeArgument(Utils.toWildcard(type().typeArguments().getFirst()))
                 .build();
     }
 
     private TypeName collectionType() {
-        return type().isList() ? TypeNames.LIST : TypeNames.SET;
+        return type().isList() ? LIST : SET;
+    }
+
+    private void collectionConfigMapper(ContentBuilder<?> content) {
+        if (type().isSet()) {
+            content.addContent(".map(")
+                    .addContent(LinkedHashSet.class)
+                    .addContent("::new)");
+        }
+    }
+
+    private void collectionCollector(ContentBuilder<?> content) {
+        if (type().isList()) {
+            content.addContent("toList()");
+        } else {
+            content.addContent("collect(")
+                    .addContent(Collectors.class)
+                    .addContent(".toCollection(")
+                    .addContent(LinkedHashSet.class)
+                    .addContent("::new))");
+        }
     }
 
     private void optionalDecoratorValue(ContentBuilder<?> content) {
         content.addContent(Optional.class)
-                .addContent(".of(")
-                .addContent(collectionType())
-                .addContent(".copyOf(")
-                .addContent(option().name())
-                .addContent("))");
+                .addContent(".of(");
+        immutableContainer(content, option().name());
+        content.addContent(")");
     }
 
-    private void mutableCollection(ContentBuilder<?> content, String source) {
+    private void mutableContainer(ContentBuilder<?> content, String source) {
+        content.addContent("new ");
         if (type().isList()) {
-            content.addContent("new ")
-                    .addContent(ArrayList.class)
-                    .addContent("<>(")
-                    .addContent(source)
-                    .addContent(")");
+            content.addContent(ArrayList.class);
+        } else if (type().isSet()) {
+            content.addContent(LinkedHashSet.class);
         } else {
-            content.addContent("new ")
-                    .addContent(LinkedHashSet.class)
-                    .addContent("<>(")
-                    .addContent(source)
-                    .addContent(")");
+            content.addContent(LinkedHashMap.class);
         }
+        content.addContent("<>(")
+                .addContent(source)
+                .addContent(")");
     }
 
-    private void emptyMutableCollection(ContentBuilder<?> content) {
+    private void emptyMutableContainer(ContentBuilder<?> content) {
+        content.addContent("new ");
         if (type().isList()) {
-            content.addContent("new ")
-                    .addContent(ArrayList.class)
-                    .addContent("<>()");
+            content.addContent(ArrayList.class);
+        } else if (type().isSet()) {
+            content.addContent(LinkedHashSet.class);
         } else {
-            content.addContent("new ")
+            content.addContent(LinkedHashMap.class);
+        }
+        content.addContent("<>()");
+    }
+
+    private void immutableContainer(ContentBuilder<?> content, String source) {
+        if (type().isList()) {
+            content.addContent(List.class)
+                    .addContent(".copyOf(")
+                    .addContent(source)
+                    .addContent(")");
+        } else if (type().isSet()) {
+            content.addContent(Collections.class)
+                    .addContent(".unmodifiableSet(new ")
                     .addContent(LinkedHashSet.class)
-                    .addContent("<>()");
+                    .addContent("<>(")
+                    .addContent(source)
+                    .addContent("))");
+        } else {
+            content.addContent(Collections.class)
+                    .addContent(".unmodifiableMap(new ")
+                    .addContent(LinkedHashMap.class)
+                    .addContent("<>(")
+                    .addContent(source)
+                    .addContent("))");
         }
     }
 }
