@@ -29,6 +29,7 @@ import io.helidon.common.configurable.Resource;
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Prototype.CustomMethods(ExtendedTracerConfigBlueprintSupport.class)
 interface ExtendedTracerConfigBlueprint {
 
     /**

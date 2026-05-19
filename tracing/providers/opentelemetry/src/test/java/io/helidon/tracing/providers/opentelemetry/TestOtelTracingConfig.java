@@ -19,25 +19,18 @@ package io.helidon.tracing.providers.opentelemetry;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.tracing.Span;
-import io.helidon.tracing.SpanProcessorType;
+import io.helidon.tracing.SamplerType;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.sdk.trace.data.SpanData;
-import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
-import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
-import org.hamcrest.TypeSafeMatcher;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -181,6 +174,27 @@ class TestOtelTracingConfig {
         assertThat("OpenTelemetry",
                    tracer.prototype().openTelemetry().toString(),
                    containsString("spanExporter=OtlpHttpSpanExporter"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"constant", "const", "CONSTANT", "CONST"})
+    void testConstantSamplerTypeCompatibility(String samplerType) {
+        var configSettings = """
+                tracing:
+                  service: tracing-test
+                  global: false
+                  sampler-type: %s
+                """.formatted(samplerType);
+        Config config = Config.just(ConfigSources.create(configSettings, MediaTypes.APPLICATION_YAML));
+
+        OpenTelemetryTracer tracer = OpenTelemetryTracer.builder()
+                .config(config.get("tracing"))
+                .build();
+
+        assertThat("Sampler type", tracer.prototype().samplerType(), equalTo(SamplerType.CONSTANT));
+        assertThat("OpenTelemetry",
+                   tracer.prototype().openTelemetry().toString(),
+                   containsString("sampler=AlwaysOnSampler"));
     }
 
 
