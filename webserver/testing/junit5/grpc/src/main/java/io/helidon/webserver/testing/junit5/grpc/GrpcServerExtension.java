@@ -18,6 +18,7 @@ package io.helidon.webserver.testing.junit5.grpc;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.Router;
@@ -39,6 +40,7 @@ public class GrpcServerExtension implements ServerJunitExtension {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public GrpcServerExtension() {
     }
 

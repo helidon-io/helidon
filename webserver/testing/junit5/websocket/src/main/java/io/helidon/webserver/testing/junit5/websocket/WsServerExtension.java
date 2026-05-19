@@ -18,6 +18,7 @@ package io.helidon.webserver.testing.junit5.websocket;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.webclient.websocket.WsClient;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.Router;
@@ -39,6 +40,7 @@ public class WsServerExtension implements ServerJunitExtension {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public WsServerExtension() {
     }
 

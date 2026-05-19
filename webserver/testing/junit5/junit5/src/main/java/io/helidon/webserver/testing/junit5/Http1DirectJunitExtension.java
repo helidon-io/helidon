@@ -24,6 +24,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.Builder;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
@@ -51,6 +52,7 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public Http1DirectJunitExtension() {
     }
 

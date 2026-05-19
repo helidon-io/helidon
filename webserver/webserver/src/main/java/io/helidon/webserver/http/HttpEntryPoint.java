@@ -35,10 +35,7 @@ import io.helidon.service.registry.ServiceDescriptor;
  */
 @Api.Incubating
 public class HttpEntryPoint {
-    /**
-     * Create an instance.
-     */
-    public HttpEntryPoint() {
+    private HttpEntryPoint() {
     }
 
     /**

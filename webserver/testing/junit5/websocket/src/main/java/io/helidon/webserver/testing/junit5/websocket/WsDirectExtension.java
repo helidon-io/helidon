@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.webclient.websocket.WsClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.spi.ServerFeature;
@@ -43,6 +44,7 @@ public class WsDirectExtension implements DirectJunitExtension {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public WsDirectExtension() {
     }
 

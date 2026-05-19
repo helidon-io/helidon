@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.testing.junit5.jsonrpc;
 
+import io.helidon.common.Api;
 import io.helidon.webclient.jsonrpc.JsonRpcClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.testing.junit5.Junit5Util;
@@ -34,6 +35,7 @@ public class JsonRpcServerExtension implements ServerJunitExtension {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public JsonRpcServerExtension() {
     }
 
