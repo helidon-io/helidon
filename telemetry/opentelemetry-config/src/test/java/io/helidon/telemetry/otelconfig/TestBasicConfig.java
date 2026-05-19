@@ -116,4 +116,37 @@ class TestBasicConfig {
         assertThat("Global", openTelemetry.global(), is(true));
         assertThat("Enabled", openTelemetry.enabled(), is(true));
     }
+
+    @Test
+    void testBase2ExponentialHistogramRecordMinMaxDefault() {
+        var config = Config.just(ConfigSources.create(
+                """
+                        aggregation:
+                          max-buckets: 152
+                          max-scale: 19
+                        """,
+                MediaTypes.APPLICATION_YAML));
+
+        var aggregationConfig = Base2ExponentialHistogramAggregationConfig.create(config.get("aggregation"));
+
+        assertThat("Record min/max default",
+                   aggregationConfig.recordMinMax(),
+                   is(true));
+    }
+
+    @Test
+    void testExplicitBucketHistogramRecordMinMaxDefault() {
+        var config = Config.just(ConfigSources.create(
+                """
+                        aggregation:
+                          bucket-boundaries: [3, 5, 7]
+                        """,
+                MediaTypes.APPLICATION_YAML));
+
+        var aggregationConfig = ExplicitBucketHistogramAggregationConfig.create(config.get("aggregation"));
+
+        assertThat("Record min/max default",
+                   aggregationConfig.recordMinMax(),
+                   is(true));
+    }
 }
