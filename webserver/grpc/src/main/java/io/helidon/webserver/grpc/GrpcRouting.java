@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import io.grpc.stub.ServerCalls;
  */
 public class GrpcRouting implements Routing {
     private static final GrpcRouting EMPTY = GrpcRouting.builder().build();
+    private static final String SERVER_PROTOCOL_CONFIG_KEY = "server.protocols." + GrpcProtocolProvider.CONFIG_NAME;
 
     private final ArrayList<GrpcRoute> routes;
     private final WeightedBag<ServerInterceptor> interceptors;
@@ -141,8 +142,16 @@ public class GrpcRouting implements Routing {
 
             // add all the interceptors from server services SPI
             Config config = Services.get(Config.class);
-            GrpcConfig grpcConfig = GrpcConfig.create(config.get(GrpcProtocolProvider.CONFIG_NAME));
-            for (GrpcServerService serverService : grpcConfig.grpcServices()) {
+            Map<String, GrpcServerService> configuredServices = new LinkedHashMap<>();
+            for (GrpcServerService serverService : GrpcConfig.create(config.get(GrpcProtocolProvider.CONFIG_NAME))
+                    .grpcServices()) {
+                configuredServices.put(serverService.name(), serverService);
+            }
+            for (GrpcServerService serverService : GrpcConfig.create(config.get(SERVER_PROTOCOL_CONFIG_KEY))
+                    .grpcServices()) {
+                configuredServices.put(serverService.name(), serverService);
+            }
+            for (GrpcServerService serverService : configuredServices.values()) {
                 interceptors.merge(serverService.interceptors());
             }
         }

@@ -564,6 +564,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-grpc-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-grpc-tracing</artifactId>
         </dependency>
         <dependency>

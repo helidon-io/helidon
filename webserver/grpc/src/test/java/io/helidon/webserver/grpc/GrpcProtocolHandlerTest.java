@@ -141,6 +141,13 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
+    void testClosedTransitionRemainsClosed() {
+        Http2StreamState next = GrpcProtocolHandler.nextStreamState(
+                Http2StreamState.CLOSED, Http2StreamState.HALF_CLOSED_LOCAL);
+        assertThat(next, is(Http2StreamState.CLOSED));
+    }
+
+    @Test
     void testSendHeadersWrapsUncheckedIOException() {
         ServerCall<String, String> serverCall = createServerCall(headersFailingWriter());
 
@@ -179,19 +186,61 @@ class GrpcProtocolHandlerTest {
                                                                                 GrpcConfig.create());
         handler.init();
         handler.rstStream(new Http2RstStream(io.helidon.http.http2.Http2ErrorCode.CANCEL));
+        assertThat(handler.streamState(), is(Http2StreamState.CLOSED));
 
         Http2FrameHeader header = Http2FrameHeader.create(0,
                                                           Http2FrameTypes.DATA,
                                                           Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
                                                           1);
 
-        ServerConnectionException exception = assertThrows(ServerConnectionException.class,
-                                                           () -> handler.data(header, BufferData.empty()));
+        assertDoesNotThrow(() -> handler.data(header, BufferData.empty()));
+    }
 
-        assertAll(
-                () -> assertThat(exception.getCause(), instanceOf(RuntimeException.class)),
-                () -> assertThat(Status.fromThrowable(exception.getCause()).getCode(), is(Status.Code.CANCELLED))
-        );
+    @Test
+    void testLocalHalfCloseDrainsRemoteEndStream() {
+        GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                                                Http2Headers.create(WritableHeaders.create()),
+                                                                                noOpWriter(),
+                                                                                1,
+                                                                                null,
+                                                                                Http2StreamState.HALF_CLOSED_LOCAL,
+                                                                                null,
+                                                                                GrpcConfig.create());
+
+        Http2FrameHeader header = Http2FrameHeader.create(0,
+                                                          Http2FrameTypes.DATA,
+                                                          Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                          1);
+
+        assertDoesNotThrow(() -> handler.data(header, BufferData.empty()));
+        assertThat(handler.streamState(), is(Http2StreamState.CLOSED));
+    }
+
+    @Test
+    void testCloseBeforeListenerAssignmentClosesStream() {
+        ServerMethodDefinition<String, String> definition =
+                ServerMethodDefinition.create(stringMethodDescriptor(), new ServerCallHandler<>() {
+                    @Override
+                    public ServerCall.Listener<String> startCall(ServerCall<String, String> call, Metadata headers) {
+                        call.close(Status.UNAUTHENTICATED, new Metadata());
+                        return new ServerCall.Listener<>() {
+                        };
+                    }
+                });
+        GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                                                Http2Headers.create(WritableHeaders.create()),
+                                                                                noOpWriter(),
+                                                                                1,
+                                                                                null,
+                                                                                Http2StreamState.OPEN,
+                                                                                GrpcRouteHandler.methodDefinition(definition,
+                                                                                                                   null,
+                                                                                                                   WeightedBag.create()),
+                                                                                GrpcConfig.create());
+
+        handler.init();
+
+        assertThat(handler.streamState(), is(Http2StreamState.CLOSED));
     }
 
     @Test

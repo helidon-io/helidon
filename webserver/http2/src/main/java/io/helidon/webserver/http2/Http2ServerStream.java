@@ -216,6 +216,10 @@ class Http2ServerStream implements Runnable, Http2Stream {
         }
         boolean rapidReset = writeState.get() == WriteState.INIT;
         this.state = Http2StreamState.CLOSED;
+        boolean wakeupOffered = inboundData.offer(TERMINATING_FRAME);
+        if (!wakeupOffered && LOGGER.isLoggable(DEBUG)) {
+            ctx.log(LOGGER, DEBUG, "Reset stream %d already has pending data to wake up the stream handler.", streamId);
+        }
         return rapidReset;
     }
 
@@ -772,8 +776,8 @@ class Http2ServerStream implements Runnable, Http2Stream {
             }
         } else {
             subProtocolHandler.init();
-            while (subProtocolHandler.streamState() != Http2StreamState.CLOSED
-                    && subProtocolHandler.streamState() != Http2StreamState.HALF_CLOSED_LOCAL) {
+            this.state = subProtocolHandler.streamState();
+            while (this.state != Http2StreamState.CLOSED) {
                 DataFrame frame;
                 try {
                     frame = inboundData.take();
@@ -782,6 +786,9 @@ class Http2ServerStream implements Runnable, Http2Stream {
                     // this stream was interrupted, does not make sense to do anything else
                     String handlerName = subProtocolHandler.getClass().getSimpleName();
                     ctx.log(LOGGER, System.Logger.Level.DEBUG, "%s interrupted stream %d", handlerName, streamId);
+                    return;
+                }
+                if (this.state == Http2StreamState.CLOSED) {
                     return;
                 }
                 subProtocolHandler.data(frame.header, frame.data);
