@@ -70,7 +70,10 @@ public abstract class WsListenerBase implements WsListener {
 
     /**
      * Create a new listener base.
+     *
+     * @deprecated This type is intended only as a base class for inheriting listeners.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     public WsListenerBase() {
     }
 
