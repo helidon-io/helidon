@@ -16,6 +16,7 @@
 
 package io.helidon.metrics.providers.micrometer;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsPublisher;
 import io.helidon.metrics.spi.MetricsPublisherProvider;
@@ -29,8 +30,9 @@ public class OtlpPublisherProvider implements MetricsPublisherProvider {
     static final String TYPE = "otlp";
 
     /**
-     * Creates a new provider for service loading.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public OtlpPublisherProvider() {
     }
 

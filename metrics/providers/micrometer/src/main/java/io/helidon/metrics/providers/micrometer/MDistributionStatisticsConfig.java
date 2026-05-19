@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,11 +96,11 @@ class MDistributionStatisticsConfig implements io.helidon.metrics.api.Distributi
     }
 
     /**
-     * Builder for the {@link }{@link io.helidon.metrics.api.DistributionStatisticsConfig}} in the Micrometer provider.
+     * Builder for the {@link io.helidon.metrics.api.DistributionStatisticsConfig} in the Micrometer provider.
      * <p>
      *     Although Micrometer uses its own stats config builder internally it is not accessible to us. Instead, for example to
      *     set the percentiles in the Micrometer stats config builder, we invoke a method on the Micrometer
-     *     {}@link {@link io.micrometer.core.instrument.DistributionSummary.Builder}, and it delegates to its internal stats
+     *     {@link io.micrometer.core.instrument.DistributionSummary.Builder}, and it delegates to its internal stats
      *     builder.
      * <p>
      *     Therefore, the "delegate" for this builder is the builder for the Micrometer DistributionSummary. Further, because
