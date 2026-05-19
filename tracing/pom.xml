@@ -29,6 +29,10 @@
     <artifactId>helidon-tracing-project</artifactId>
     <name>Helidon Tracing Project</name>
 
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+    </properties>
+
     <modules>
         <module>tracing</module>
         <module>config</module>

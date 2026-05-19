@@ -95,7 +95,7 @@ public final class HelidonOpenTelemetry {
      *
      * @param span open telemetry span
      * @param baggage open telemetry baggage
-     * @return Helidon (@link io.helidon.tracing.Span}
+     * @return Helidon {@link io.helidon.tracing.Span}
      */
     public static io.helidon.tracing.Span create(Span span, Baggage baggage) {
         return new OpenTelemetrySpan(span, baggage, SPAN_LISTENERS.get());
