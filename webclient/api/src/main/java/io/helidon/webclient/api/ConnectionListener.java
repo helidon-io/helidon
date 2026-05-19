@@ -47,6 +47,7 @@ public interface ConnectionListener {
      * Called when the given {@link Socket} connection has been established and {@link io.helidon.common.socket.SocketOptions}
      * applied, but before any TLS or HTTP application traffic has been sent.
      * @param socketInfo The newly connected socket.
+     * @throws IOException if an I/O error occurs
      */
     void socketConnected(ConnectedSocketInfo socketInfo) throws IOException;
 
@@ -54,6 +55,7 @@ public interface ConnectionListener {
      * Called when the given {@link SocketChannel} connection has been established and
      * {@link io.helidon.common.socket.SocketOptions} applied, but before any TLS or HTTP application traffic has been sent.
      * @param socketInfo The newly connected socket channel.
+     * @throws IOException if an I/O error occurs
      */
     void socketChannelConnected(ConnectedSocketChannelInfo socketInfo) throws IOException;
 }

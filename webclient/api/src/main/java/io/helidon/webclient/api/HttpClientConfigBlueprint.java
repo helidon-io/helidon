@@ -252,6 +252,8 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      * For most HTTP protocols, we may cache connections to various endpoints for keep alive (or stream reuse in case of HTTP/2).
      * This option limits the size. Setting this number lower than the "usual" number of target services will cause connections
      * to be closed and reopened frequently.
+     *
+     * @return maximal size of the connection cache
      */
     @Option.Configured
     @Option.DefaultInt(256)
