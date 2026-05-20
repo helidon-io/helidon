@@ -23,13 +23,20 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonString;
+import io.helidon.json.JsonValue;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -66,6 +73,7 @@ import io.helidon.security.util.TokenHandler;
  */
 public final class JwtProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final System.Logger LOGGER = System.getLogger(JwtProvider.class.getName());
+    private static final String DEFAULT_JWT_GROUPS_PATH = "groups";
 
     private final boolean optional;
     private final boolean authenticate;
@@ -84,6 +92,8 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
     private final Map<OutboundTarget, JwtOutboundTarget> targetToJwtConfig = new IdentityHashMap<>();
     private final Jwk defaultJwk;
     private final boolean useJwtGroups;
+    private final String jwtGroupsPath;
+    private final String jwtGroupsSeparator;
 
     private JwtProvider(Builder builder) {
         this.optional = builder.optional;
@@ -100,6 +110,8 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         this.expectedIssuer = builder.expectedIssuer;
         this.verifySignature = builder.verifySignature;
         this.useJwtGroups = builder.useJwtGroups;
+        this.jwtGroupsPath = builder.jwtGroupsPath;
+        this.jwtGroupsSeparator = builder.jwtGroupsSeparator;
 
         if (null == atnTokenHandler) {
             defaultTokenHandler = TokenHandler.builder()
@@ -191,7 +203,11 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         if (!validate.isValid()) {
             return failOrAbstain(validate.toString());
         }
-        return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
+        try {
+            return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
+        } catch (JwtException e) {
+            return failOrAbstain(e.getMessage());
+        }
     }
 
     private Errors validateJwt(Jwt jwt) {
@@ -239,8 +255,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                 .addPublicCredential(TokenCredential.class, builder.build());
 
         if (useJwtGroups) {
-            Optional<List<String>> userGroups = jwt.userGroups();
-            userGroups.ifPresent(groups -> groups.forEach(group -> subjectBuilder.addGrant(Role.create(group))));
+            jwtGroups(jwt).forEach(group -> subjectBuilder.addGrant(Role.create(group)));
         }
 
         Optional<List<String>> scopes = jwt.scopes();
@@ -278,6 +293,50 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         jwt.fullName().ifPresent(value -> builder.addAttribute("full_name", value));
 
         return builder.build();
+    }
+
+    private List<String> jwtGroups(Jwt jwt) {
+        if (DEFAULT_JWT_GROUPS_PATH.equals(jwtGroupsPath)) {
+            return jwt.userGroups().orElse(List.of());
+        }
+        return jwtGroupsClaim(jwt)
+                .map(this::toGroups)
+                .orElse(List.of());
+    }
+
+    private Optional<JsonValue> jwtGroupsClaim(Jwt jwt) {
+        String[] pathSegments = jwtGroupsPath.split("/");
+        Optional<JsonValue> currentValue = jwt.payloadClaimValue(pathSegments[0]);
+        for (int i = 1; i < pathSegments.length; i++) {
+            String pathSegment = pathSegments[i];
+            currentValue = currentValue
+                    .filter(it -> it instanceof JsonObject)
+                    .flatMap(it -> it.asObject().value(pathSegment));
+        }
+        return currentValue;
+    }
+
+    private List<String> toGroups(JsonValue claimValue) {
+        if (claimValue instanceof JsonArray groups) {
+            return groups.values()
+                    .stream()
+                    .map(this::toGroup)
+                    .toList();
+        }
+        String group = toGroup(claimValue);
+        if (jwtGroupsSeparator == null) {
+            return List.of(group);
+        }
+        return Stream.of(group.split(Pattern.quote(jwtGroupsSeparator)))
+                .filter(it -> !it.isBlank())
+                .toList();
+    }
+
+    private String toGroup(JsonValue groupValue) {
+        if (groupValue instanceof JsonString group) {
+            return group.value();
+        }
+        throw new JwtException("Invalid value. Expecting a string or string array for key " + jwtGroupsPath);
     }
 
     @Override
@@ -671,6 +730,8 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         private String expectedAudience;
         private String expectedIssuer;
         private boolean useJwtGroups = true;
+        private String jwtGroupsPath = DEFAULT_JWT_GROUPS_PATH;
+        private String jwtGroupsSeparator;
 
         private Builder() {
         }
@@ -894,6 +955,8 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             }
             config.get("allow-unsigned").asBoolean().ifPresent(this::allowUnsigned);
             config.get("use-jwt-groups").asBoolean().ifPresent(this::useJwtGroups);
+            config.get("jwt-groups-path").asString().ifPresent(this::jwtGroupsPath);
+            config.get("jwt-groups-separator").asString().ifPresent(this::jwtGroupsSeparator);
 
             return this;
         }
@@ -931,6 +994,43 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         public Builder useJwtGroups(boolean useJwtGroups) {
             this.useJwtGroups = useJwtGroups;
             return this;
+        }
+
+        /**
+         * Path to the JWT payload claim containing the groups to add as role grants.
+         * The default path is {@code groups}. Nested object claims can be configured with slash-separated path segments,
+         * such as {@code realm/groups}.
+         *
+         * @param jwtGroupsPath JWT groups claim path
+         * @return updated builder instance
+         */
+        @ConfiguredOption("groups")
+        public Builder jwtGroupsPath(String jwtGroupsPath) {
+            this.jwtGroupsPath = requireText(jwtGroupsPath, "JWT groups path");
+            return this;
+        }
+
+        /**
+         * Separator used to split a string claim value into multiple groups.
+         * This is used only when {@link #jwtGroupsPath(String)} configures a custom path other than {@code groups}.
+         * The default {@code groups} claim keeps the standard JWT behavior.
+         * Setting this property without changing the JWT groups path has no effect.
+         *
+         * @param jwtGroupsSeparator separator for string-valued custom groups claim
+         * @return updated builder instance
+         */
+        @ConfiguredOption
+        public Builder jwtGroupsSeparator(String jwtGroupsSeparator) {
+            this.jwtGroupsSeparator = requireText(jwtGroupsSeparator, "JWT groups separator");
+            return this;
+        }
+
+        private static String requireText(String value, String description) {
+            Objects.requireNonNull(value, description + " must not be null");
+            if (value.isEmpty()) {
+                throw new IllegalArgumentException(description + " must not be empty");
+            }
+            return value;
         }
 
         private void verifyKeys(Config config) {

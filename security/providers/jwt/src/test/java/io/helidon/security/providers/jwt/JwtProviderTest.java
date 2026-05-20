@@ -22,15 +22,19 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
+import io.helidon.security.Role;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityResponse;
@@ -47,6 +51,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -162,6 +167,106 @@ public class JwtProviderTest {
         assertThat(authenticationResponse.service(), is(Optional.empty()));
         assertThat(authenticationResponse.user(), is(Optional.empty()));
         assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+    }
+
+    @Test
+    public void testCustomJwtGroupsPath() {
+        JwtProvider provider = JwtProvider.create(providersConfig.get("jwt-custom-groups"));
+        Instant now = Instant.now();
+        Jwt jwt = Jwt.builder()
+                .subject("user1-id")
+                .preferredUsername("user1")
+                .issuer("jwt.example.com")
+                .algorithm(JwkRSA.ALG_RS256)
+                .keyId("verify-rsa")
+                .issueTime(now)
+                .expirationTime(now.plus(1, ChronoUnit.HOURS))
+                .addAudience("audience.application.id")
+                .addPayloadClaim("permissions", "inventory:read,inventory:write")
+                .build();
+        SignedJwt signedJwt = SignedJwt.sign(jwt, signKeys.forKeyId("sign-rsa").orElseThrow());
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(request(signedJwt.tokenContent()));
+
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        Subject subject = authenticationResponse.user().orElseThrow();
+        assertThat(subject.grants(Role.class), hasItems(Role.create("inventory:read"), Role.create("inventory:write")));
+    }
+
+    @Test
+    public void testCustomNestedJwtGroupsPath() {
+        JwtProvider provider = JwtProvider.create(providersConfig.get("jwt-custom-groups-nested"));
+        Instant now = Instant.now();
+        Jwt jwt = Jwt.builder()
+                .subject("user1-id")
+                .preferredUsername("user1")
+                .issuer("jwt.example.com")
+                .algorithm(JwkRSA.ALG_RS256)
+                .keyId("verify-rsa")
+                .issueTime(now)
+                .expirationTime(now.plus(1, ChronoUnit.HOURS))
+                .addAudience("audience.application.id")
+                .addPayloadClaim("realm_access",
+                                 JsonObject.create(Map.of("roles",
+                                                          JsonArray.createStrings(List.of("inventory:read",
+                                                                                          "inventory:write")))))
+                .build();
+        SignedJwt signedJwt = SignedJwt.sign(jwt, signKeys.forKeyId("sign-rsa").orElseThrow());
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(request(signedJwt.tokenContent()));
+
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        Subject subject = authenticationResponse.user().orElseThrow();
+        assertThat(subject.grants(Role.class), hasItems(Role.create("inventory:read"), Role.create("inventory:write")));
+    }
+
+    @Test
+    public void testInvalidCustomJwtGroupsPathFailsAuthentication() {
+        JwtProvider provider = JwtProvider.create(providersConfig.get("jwt-custom-groups"));
+        Instant now = Instant.now();
+        Jwt jwt = Jwt.builder()
+                .subject("user1-id")
+                .preferredUsername("user1")
+                .issuer("jwt.example.com")
+                .algorithm(JwkRSA.ALG_RS256)
+                .keyId("verify-rsa")
+                .issueTime(now)
+                .expirationTime(now.plus(1, ChronoUnit.HOURS))
+                .addAudience("audience.application.id")
+                .addPayloadClaim("permissions", 42)
+                .build();
+        SignedJwt signedJwt = SignedJwt.sign(jwt, signKeys.forKeyId("sign-rsa").orElseThrow());
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(request(signedJwt.tokenContent()));
+
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(authenticationResponse.user(), is(Optional.empty()));
+    }
+
+    @Test
+    public void testJwtGroupsSeparatorIgnoredForDefaultGroupsPath() {
+        JwtProvider provider = JwtProvider.builder()
+                .verifySignature(false)
+                .jwtGroupsSeparator(",")
+                .build();
+        Instant now = Instant.now();
+        Jwt jwt = Jwt.builder()
+                .subject("user1-id")
+                .preferredUsername("user1")
+                .issuer("jwt.example.com")
+                .algorithm(JwkRSA.ALG_RS256)
+                .keyId("verify-rsa")
+                .issueTime(now)
+                .expirationTime(now.plus(1, ChronoUnit.HOURS))
+                .addPayloadClaim("groups", "inventory:read,inventory:write")
+                .build();
+        SignedJwt signedJwt = SignedJwt.sign(jwt, signKeys.forKeyId("sign-rsa").orElseThrow());
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(request(signedJwt.tokenContent()));
+
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        Subject subject = authenticationResponse.user().orElseThrow();
+        assertThat(subject.grants(Role.class), hasItems(Role.create("inventory:read,inventory:write")));
     }
 
     @Test
@@ -560,5 +665,14 @@ public class JwtProviderTest {
                     assertThat(atnPrincipal.abacAttribute("full_name"), is(Optional.of(fullName)));
                     assertThat(atnPrincipal.abacAttribute("locale"), is(Optional.of(locale)));
                 }, () -> fail("User must be present in response"));
+    }
+
+    private ProviderRequest request(String token) {
+        ProviderRequest atnRequest = mock(ProviderRequest.class);
+        SecurityEnvironment se = SecurityEnvironment.builder()
+                .header("Authorization", "bearer " + token)
+                .build();
+        when(atnRequest.env()).thenReturn(se);
+        return atnRequest;
     }
 }

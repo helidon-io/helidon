@@ -17,11 +17,26 @@
 package io.helidon.security.providers.oidc;
 
 import java.net.URI;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 
+import io.helidon.config.Config;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonString;
+import io.helidon.security.AuthenticationResponse;
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
+import io.helidon.security.Role;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityResponse;
+import io.helidon.security.Subject;
+import io.helidon.security.jwt.Jwt;
+import io.helidon.security.jwt.SignedJwt;
+import io.helidon.security.jwt.jwk.Jwk;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy;
 import io.helidon.security.providers.oidc.common.Tenant;
@@ -32,6 +47,7 @@ import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterSt
 import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.NONE;
 import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.PARAM;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -43,6 +59,67 @@ import static org.mockito.Mockito.when;
  */
 class TenantAuthenticationHandlerTest {
     private static final String ATTEMPT_PARAM = "h_ra";
+
+    @Test
+    public void testCustomJwtGroupsPath() {
+        OidcConfig oidcConfig = OidcConfig.builder()
+                .clientId("test")
+                .clientSecret("123")
+                .identityUri(URI.create("http://localhost:1234"))
+                .build();
+
+        Tenant tenant = mock(Tenant.class);
+        when(tenant.tenantConfig()).thenReturn(oidcConfig);
+
+        TenantAuthenticationHandler authenticationHandler = new TenantAuthenticationHandler(oidcConfig,
+                                                                                            tenant,
+                                                                                            true,
+                                                                                            "realm_access/roles",
+                                                                                            null,
+                                                                                            true);
+        Instant now = Instant.now();
+        Jwt jwt = Jwt.builder()
+                .subject("user1-id")
+                .preferredUsername("user1")
+                .algorithm("none")
+                .issueTime(now)
+                .expirationTime(now.plus(1, ChronoUnit.HOURS))
+                .addPayloadClaim("realm_access",
+                                 JsonObject.create(Map.of("roles",
+                                                          JsonArray.createStrings(List.of("inventory:read",
+                                                                                          "inventory:write")))))
+                .build();
+        SignedJwt signedJwt = SignedJwt.sign(jwt, Jwk.NONE_JWK);
+
+        Subject subject = authenticationHandler.buildSubject(jwt, signedJwt, null);
+
+        assertThat(subject.grants(Role.class), hasItems(Role.create("inventory:read"), Role.create("inventory:write")));
+    }
+
+    @Test
+    public void testConfiguredCustomJwtGroupsPathWithSeparator() {
+        OidcProvider provider = OidcProvider.create(Config.create().get("security.oidc-custom-groups"));
+        Instant now = Instant.now();
+        Jwt jwt = Jwt.builder()
+                .subject("user1-id")
+                .preferredUsername("user1")
+                .algorithm("none")
+                .issueTime(now)
+                .expirationTime(now.plus(1, ChronoUnit.HOURS))
+                .addPayloadClaim("realm_access",
+                                 JsonObject.create(Map.of("roles",
+                                                          JsonString.create("inventory:read,inventory:write"))))
+                .build();
+        SignedJwt signedJwt = SignedJwt.sign(jwt, Jwk.NONE_JWK);
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(request(signedJwt.tokenContent()));
+
+        assertThat(authenticationResponse.description().orElse("Unexpected authentication response"),
+                   authenticationResponse.status(),
+                   is(SecurityResponse.SecurityStatus.SUCCESS));
+        Subject subject = authenticationResponse.user().orElseThrow();
+        assertThat(subject.grants(Role.class), hasItems(Role.create("inventory:read"), Role.create("inventory:write")));
+    }
 
     @Test
     public void testOriginalUri() {
@@ -107,8 +184,8 @@ class TenantAuthenticationHandlerTest {
         OidcConfig oidcConfig = oidcConfig(PARAM);
         TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);
 
-        assertThat(authenticationHandler.redirectAttempt(request(), "/test?someUri=value"), is(1));
-        assertThat(authenticationHandler.redirectAttempt(request(), "/test?someUri=value&"
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(), "/test?someUri=value"), is(1));
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(), "/test?someUri=value&"
                 + ATTEMPT_PARAM + "=4"), is(4));
     }
 
@@ -117,8 +194,8 @@ class TenantAuthenticationHandlerTest {
         OidcConfig oidcConfig = oidcConfig(COOKIE);
         TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);
 
-        assertThat(authenticationHandler.redirectAttempt(request(), "/test?someUri=value"), is(1));
-        assertThat(authenticationHandler.redirectAttempt(request(ATTEMPT_PARAM + "=4"), "/test?someUri=value"),
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(), "/test?someUri=value"), is(1));
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(ATTEMPT_PARAM + "=4"), "/test?someUri=value"),
                    is(4));
     }
 
@@ -127,7 +204,7 @@ class TenantAuthenticationHandlerTest {
         OidcConfig oidcConfig = oidcConfig(NONE);
         TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);
 
-        assertThat(authenticationHandler.redirectAttempt(request(ATTEMPT_PARAM + "=4"),
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(ATTEMPT_PARAM + "=4"),
                                                          "/test?someUri=value&" + ATTEMPT_PARAM + "=4"),
                    is(0));
     }
@@ -156,7 +233,7 @@ class TenantAuthenticationHandlerTest {
         return new TenantAuthenticationHandler(oidcConfig, tenant, false, true);
     }
 
-    private static ProviderRequest request(String... cookies) {
+    private static ProviderRequest requestWithCookies(String... cookies) {
         ProviderRequest providerRequest = mock(ProviderRequest.class);
         SecurityEnvironment.Builder securityEnvironmentBuilder = SecurityEnvironment.builder()
                 .targetUri(URI.create("http://localhost:1234/test"));
@@ -164,6 +241,20 @@ class TenantAuthenticationHandlerTest {
             securityEnvironmentBuilder.header("Cookie", cookie);
         }
         when(providerRequest.env()).thenReturn(securityEnvironmentBuilder.build());
+        return providerRequest;
+    }
+
+    private ProviderRequest request(String token) {
+        ProviderRequest providerRequest = mock(ProviderRequest.class);
+        SecurityEnvironment securityEnvironment = SecurityEnvironment.builder()
+                .header("Authorization", "bearer " + token)
+                .targetUri(URI.create("http://localhost:1234/test"))
+                .build();
+        when(providerRequest.env()).thenReturn(securityEnvironment);
+
+        EndpointConfig endpointConfig = mock(EndpointConfig.class);
+        when(endpointConfig.securityLevels()).thenReturn(List.of());
+        when(providerRequest.endpointConfig()).thenReturn(endpointConfig);
         return providerRequest;
     }
 

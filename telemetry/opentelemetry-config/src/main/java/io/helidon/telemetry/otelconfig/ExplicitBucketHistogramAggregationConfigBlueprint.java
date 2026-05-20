@@ -27,6 +27,7 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Blueprint
 @Prototype.Configured
 @Prototype.CustomMethods(ExplicitBucketHistogramAggregationSupport.CustomMethods.class)
+@Prototype.IncludeDefaultMethods
 interface ExplicitBucketHistogramAggregationConfigBlueprint {
 
     /**
@@ -36,4 +37,15 @@ interface ExplicitBucketHistogramAggregationConfigBlueprint {
      */
     @Option.Configured
     List<Double> bucketBoundaries();
+
+    /**
+     * Whether the min and max should be recorded.
+     *
+     * @return whether to record min and max
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(ExplicitBucketHistogramAggregationSupport.DEFAULT_RECORD_MIN_MAX)
+    default boolean recordMinMax() {
+        return ExplicitBucketHistogramAggregationSupport.DEFAULT_RECORD_MIN_MAX;
+    }
 }

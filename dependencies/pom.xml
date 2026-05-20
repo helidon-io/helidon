@@ -73,7 +73,7 @@
         <version.lib.hibernate-validator>8.0.2.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
-        <version.lib.jackson>2.21.1</version.lib.jackson>
+        <version.lib.jackson>2.21.3</version.lib.jackson>
         <version.lib.jakarta.activation-api>2.1.3</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.1.1</version.lib.jakarta.annotation-api>
         <version.lib.jakarta.cdi-api>4.0.1</version.lib.jakarta.cdi-api>
@@ -115,7 +115,7 @@
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.micrometer>1.15.2</version.lib.micrometer>
         <version.lib.micrometer-prometheus>1.15.2</version.lib.micrometer-prometheus>
-        <version.lib.micronaut>4.10.9</version.lib.micronaut>
+        <version.lib.micronaut>4.10.23</version.lib.micronaut>
         <version.lib.micronaut.validation>4.12.0</version.lib.micronaut.validation>
         <version.lib.micronaut.data>4.4.1</version.lib.micronaut.data>
         <version.lib.micronaut.sql>5.4.0</version.lib.micronaut.sql>
@@ -141,7 +141,7 @@
         <version.lib.narayana>7.1.0.Final</version.lib.narayana>
         <version.lib.neo4j>5.28.3</version.lib.neo4j>
         <version.lib.netty>4.1.133.Final</version.lib.netty>
-        <version.lib.oci>3.78.1</version.lib.oci>
+        <version.lib.oci>3.86.2</version.lib.oci>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <version.lib.ojdbc>${version.lib.ojdbc.family}.26.1.0.0</version.lib.ojdbc>
         <version.lib.ojdbc8>${version.lib.ojdbc}</version.lib.ojdbc8>
@@ -150,10 +150,10 @@
         <!-- Force upgrade okhttp3 for dependency convergence -->
         <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
         <version.lib.opentelemetry.semconv>1.37.0</version.lib.opentelemetry.semconv>
-        <version.lib.opentelemetry-sdk-extension-autoconfigure>1.58.0</version.lib.opentelemetry-sdk-extension-autoconfigure>
-        <version.lib.opentelemetry.opentracing.shim>1.58.0</version.lib.opentelemetry.opentracing.shim>
-        <version.lib.opentelemetry>1.58.0</version.lib.opentelemetry>
-        <version.lib.opentelemetry.instrumentation.annotations>2.24.0</version.lib.opentelemetry.instrumentation.annotations>
+        <version.lib.opentelemetry-sdk-extension-autoconfigure>1.62.0</version.lib.opentelemetry-sdk-extension-autoconfigure>
+        <version.lib.opentelemetry.opentracing.shim>1.62.0</version.lib.opentelemetry.opentracing.shim>
+        <version.lib.opentelemetry>1.62.0</version.lib.opentelemetry>
+        <version.lib.opentelemetry.instrumentation.annotations>2.27.0</version.lib.opentelemetry.instrumentation.annotations>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
@@ -164,9 +164,9 @@
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.slf4j>2.0.17</version.lib.slf4j>
         <version.lib.smallrye-openapi>3.3.4</version.lib.smallrye-openapi>
-        <version.lib.snakeyaml>2.5</version.lib.snakeyaml>
+        <version.lib.snakeyaml>2.6</version.lib.snakeyaml>
         <version.lib.testcontainers>1.21.4</version.lib.testcontainers>
-        <version.lib.typesafe-config>1.4.4</version.lib.typesafe-config>
+        <version.lib.typesafe-config>1.4.8</version.lib.typesafe-config>
         <version.lib.tyrus>2.1.5</version.lib.tyrus>
         <version.lib.weld-api>5.0.SP3</version.lib.weld-api>
         <version.lib.weld>5.1.6.Final</version.lib.weld>

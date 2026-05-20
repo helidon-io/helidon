@@ -187,6 +187,16 @@ The following interfaces and annotations are used to work with JWT in Helidon MP
 |`USER`
 |Principal type this provider extracts (and also propagates)
 
+| `security.providers.mp-jwt-auth.jwt-groups-path`
+|`String`
+|`groups`
+|Path to the JWT payload claim containing groups to add as role grants. Nested object claims can be configured with slash-separated path segments, such as `realm/groups`.
+
+| `security.providers.mp-jwt-auth.jwt-groups-separator`
+|`String`
+|{nbsp}
+|Separator used to split a string claim value into multiple groups. This is used only when `jwt-groups-path` is configured to a custom path other than `groups`; setting only `jwt-groups-separator` has no effect.
+
 | `security.providers.mp-jwt-auth.optional`
 |`Boolean`
 |`false`

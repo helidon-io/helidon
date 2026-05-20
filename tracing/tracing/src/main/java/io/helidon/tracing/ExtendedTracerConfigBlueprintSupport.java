@@ -13,18 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
 
-package io.helidon.tracing.exporter.jaeger;
+package io.helidon.tracing;
 
-// A Java object to correspond to the gRPC response for the Collector.PostSpans method. If fields
-// are added to the type in the future, this can be converted to an actual class.
-//
-// It may seem like Void could be used instead but gRPC does not allow response values to be
-// null.
-enum PostSpansResponse {
-  INSTANCE;
+import java.util.Locale;
+
+import io.helidon.builder.api.Prototype;
+import io.helidon.config.Config;
+
+class ExtendedTracerConfigBlueprintSupport {
+
+    private ExtendedTracerConfigBlueprintSupport() {
+    }
+
+    @Prototype.ConfigFactoryMethod("samplerType")
+    static SamplerType createSamplerType(Config config) {
+        String samplerType = config.asString().get().toUpperCase(Locale.ROOT);
+        samplerType = "CONST".equals(samplerType) ? SamplerType.CONSTANT.name() : samplerType;
+        return SamplerType.valueOf(samplerType);
+    }
 }
