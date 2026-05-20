@@ -24,10 +24,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.common.context.Context;
-import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.spi.ConfigNode;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.security.Security;
@@ -41,6 +40,7 @@ import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.grpc.GrpcConfig;
 import io.helidon.webserver.grpc.GrpcRouting;
+import io.helidon.webserver.grpc.security.GrpcSecurity;
 import io.helidon.webserver.grpc.spi.GrpcServerService;
 import io.helidon.webserver.grpc.strings.StringServiceGrpc;
 import io.helidon.webserver.grpc.strings.Strings.StringMessage;
@@ -51,6 +51,7 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import io.grpc.Metadata;
+import io.grpc.ServerInterceptor;
 import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.MetadataUtils;
@@ -93,16 +94,9 @@ class GrpcSecurityHttpFeatureTest extends BaseServiceTest {
 
     @SetUpRoute
     static void grpcRouting(Router.RouterBuilder<?> router) {
-        Context context = Context.builder()
-                .build();
-        context.register(buildSecurity());
-
-        GrpcRouting.Builder grpcRouting = GrpcRouting.builder();
-        Contexts.runInContext(context, () -> GrpcConfig.create(buildGrpcSecurityConfig().get("server.protocols.grpc"))
-                .grpcServices()
-                .forEach(service -> service.interceptors().forEach(grpcRouting::intercept)));
-
-        router.addRouting(grpcRouting.service(new StringService()));
+        router.addRouting(GrpcRouting.builder()
+                                  .config(buildGrpcSecurityConfig())
+                                  .service(new StringService()));
     }
 
     @BeforeEach
@@ -152,16 +146,140 @@ class GrpcSecurityHttpFeatureTest extends BaseServiceTest {
 
     @Test
     void grpcSecurityIsLoadedFromGrpcServicesConfig() {
-        Context context = Context.builder().build();
-        context.register(buildSecurity());
-
-        List<GrpcServerService> services = Contexts.runInContext(context,
-                                                                 () -> GrpcConfig.create(buildGrpcSecurityConfig()
-                                                                                                 .get("server.protocols.grpc"))
-                                                                         .grpcServices());
+        Config config = buildGrpcSecurityConfig();
+        List<GrpcServerService> services = GrpcConfig.create(config.get("server.protocols.grpc"))
+                .grpcServices();
+        GrpcRouting routing = GrpcRouting.builder()
+                .config(config)
+                .build();
+        GrpcRouting protocolRouting = GrpcRouting.builder()
+                .config(config.get("server.protocols.grpc"))
+                .build();
 
         assertThat(services.size(), is(1));
         assertThat(services.get(0).interceptors().isEmpty(), is(false));
+        assertGrpcSecurityInterceptor(routing, true);
+        assertGrpcSecurityInterceptor(protocolRouting, true);
+    }
+
+    @Test
+    void grpcSecurityIsLoadedFromGrpcConfigNode() {
+        Config config = buildGrpcSecurityConfig("grpc");
+        GrpcRouting routing = GrpcRouting.builder()
+                .config(config)
+                .build();
+        GrpcRouting grpcRouting = GrpcRouting.builder()
+                .config(config.get("grpc"))
+                .build();
+
+        assertGrpcSecurityInterceptor(routing, true);
+        assertGrpcSecurityInterceptor(grpcRouting, true);
+    }
+
+    @Test
+    void disabledGrpcSecurityDoesNotRequireSecurityConfig() {
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "server.protocols.grpc.grpc-services.security.enabled", "false")));
+        GrpcRouting routing = GrpcRouting.builder()
+                .config(config)
+                .build();
+        GrpcRouting protocolRouting = GrpcRouting.builder()
+                .config(config.get("server.protocols.grpc"))
+                .build();
+
+        assertGrpcSecurityInterceptor(routing, false);
+        assertGrpcSecurityInterceptor(protocolRouting, false);
+    }
+
+    @Test
+    void excludedGrpcSecurityPreservesConfiguredGrpcServicesWithoutLeafValues() {
+        Config config = Config.just(ConfigSources.create(ConfigNode.ObjectNode.builder()
+                .addValue("security.providers.0.http-basic-auth.realm", "helidon")
+                .addObject("server.protocols.grpc.grpc-services.security", ConfigNode.ObjectNode.empty())
+                .addObject("server.protocols.grpc.grpc-services.tracing", ConfigNode.ObjectNode.empty())
+                .build()));
+
+        GrpcRouting routing = GrpcRouting.builder()
+                .config(config)
+                .addExcludedServiceName("security")
+                .build();
+
+        assertThat(routing.interceptors().stream().anyMatch(GrpcSecurity.class::isInstance), is(false));
+        assertThat(routing.interceptors().stream()
+                           .anyMatch(GrpcSecurityHttpFeatureTest::isGrpcTracingInterceptor),
+                   is(true));
+    }
+
+    @Test
+    void excludedGrpcSecurityDoesNotDropTypedServiceNamedSecurity() {
+        Config config = Config.just(ConfigSources.create(ConfigNode.ObjectNode.builder()
+                .addObject("server.protocols.grpc.grpc-services.security", ConfigNode.ObjectNode.builder()
+                        .addValue("type", "tracing")
+                        .build())
+                .build()));
+
+        GrpcRouting routing = GrpcRouting.builder()
+                .config(config)
+                .addExcludedServiceName("security")
+                .build();
+
+        assertThat(routing.interceptors().stream().anyMatch(GrpcSecurity.class::isInstance), is(false));
+        assertThat(routing.interceptors().stream()
+                           .anyMatch(GrpcSecurityHttpFeatureTest::isGrpcTracingInterceptor),
+                   is(true));
+    }
+
+    @Test
+    void excludedGrpcSecurityDropsCustomNamedSecurityService() {
+        Config config = Config.just(ConfigSources.create(ConfigNode.ObjectNode.builder()
+                .addValue("security.providers.0.http-basic-auth.realm", "helidon")
+                .addObject("server.protocols.grpc.grpc-services.authn", ConfigNode.ObjectNode.builder()
+                        .addValue("type", "security")
+                        .build())
+                .addObject("server.protocols.grpc.grpc-services.tracing", ConfigNode.ObjectNode.empty())
+                .build()));
+
+        GrpcRouting routing = GrpcRouting.builder()
+                .config(config)
+                .addExcludedServiceName("authn")
+                .build();
+
+        assertGrpcSecurityInterceptor(routing, false);
+        assertThat(routing.interceptors().stream()
+                           .anyMatch(GrpcSecurityHttpFeatureTest::isGrpcTracingInterceptor),
+                   is(true));
+    }
+
+    @Test
+    void excludedGrpcSecurityDropsListConfiguredCustomNamedSecurityService() {
+        Config config = Config.just(ConfigSources.create(ConfigNode.ObjectNode.builder()
+                .addValue("security.providers.0.http-basic-auth.realm", "helidon")
+                .addList("server.protocols.grpc.grpc-services", ConfigNode.ListNode.builder()
+                        .addObject(ConfigNode.ObjectNode.builder()
+                                           .addValue("type", "security")
+                                           .addValue("name", "authn")
+                                           .build())
+                        .addObject(ConfigNode.ObjectNode.builder()
+                                           .addValue("type", "tracing")
+                                           .build())
+                        .build())
+                .build()));
+
+        GrpcRouting routing = GrpcRouting.builder()
+                .config(config)
+                .addExcludedServiceName("authn")
+                .build();
+
+        assertGrpcSecurityInterceptor(routing, false);
+        assertThat(routing.interceptors().stream()
+                           .anyMatch(GrpcSecurityHttpFeatureTest::isGrpcTracingInterceptor),
+                   is(true));
+    }
+
+    private static boolean isGrpcTracingInterceptor(ServerInterceptor interceptor) {
+        return interceptor.getClass()
+                .getName()
+                .endsWith(".GrpcTracingInterceptor");
     }
 
     private static Security buildSecurity() {
@@ -174,9 +292,21 @@ class GrpcSecurityHttpFeatureTest extends BaseServiceTest {
     }
 
     private static Config buildGrpcSecurityConfig() {
+        return buildGrpcSecurityConfig("server.protocols.grpc");
+    }
+
+    private static Config buildGrpcSecurityConfig(String configPrefix) {
         return Config.just(ConfigSources.create(Map.of(
-                "server.protocols.grpc.grpc-services.security.services.0.name", "StringService",
-                "server.protocols.grpc.grpc-services.security.services.0.defaults.authenticate", "true")));
+                "security.providers.0.http-basic-auth.realm", "helidon",
+                "security.providers.0.http-basic-auth.users.0.login", USERNAME,
+                "security.providers.0.http-basic-auth.users.0.password", new String(PASSWORD),
+                "security.providers.0.http-basic-auth.users.0.roles.0", "user",
+                configPrefix + ".grpc-services.security.services.0.name", "StringService",
+                configPrefix + ".grpc-services.security.services.0.defaults.authenticate", "true")));
+    }
+
+    private static void assertGrpcSecurityInterceptor(GrpcRouting routing, boolean expected) {
+        assertThat(routing.interceptors().stream().anyMatch(GrpcSecurity.class::isInstance), is(expected));
     }
 
     private static SecureUserStore buildUserStore() {
