@@ -4,7 +4,7 @@ In Helidon 3.x we have made some changes to APIs and runtime behavior. This guid
 
 ## Java 17 Runtime
 
-Java 11 is no longer supported in Helidon 3. Java 17 or newer is required. Please follow the instructions in [Prerequisites](../../about/prerequisites.md) for proper installation.
+Java 11 is no longer supported in Helidon 3. Java 17 or newer is required.
 
 ## javax.\* namespace to jakarta.\* namespace
 
