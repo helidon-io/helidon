@@ -920,8 +920,12 @@ class TenantAuthenticationHandler {
         if (oidcConfig.redirectAttemptCounterStrategy() != RedirectAttemptCounterStrategy.COOKIE) {
             return cookies;
         }
+        String originalUri = origUri(providerRequest);
+        if (RedirectAttemptCookie.find(oidcConfig, providerRequest.env().headers(), tenantId, originalUri).isEmpty()) {
+            return cookies;
+        }
         List<String> responseCookies = new ArrayList<>(cookies);
-        responseCookies.add(RedirectAttemptCookie.remove(oidcConfig, tenantId, origUri(providerRequest)).toString());
+        responseCookies.add(RedirectAttemptCookie.remove(oidcConfig, tenantId, originalUri).toString());
         return responseCookies;
     }
 

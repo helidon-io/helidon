@@ -352,10 +352,22 @@ class TenantAuthenticationHandlerTest {
     public void testSuccessfulAuthenticationClearsCookieCounter() {
         OidcConfig oidcConfig = oidcConfig(COOKIE);
         TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);
-        ProviderRequest providerRequest = requestWithUri(URI.create("http://localhost:1234/test"));
+        ProviderRequest providerRequest = requestWithUri(URI.create("http://localhost:1234/test"),
+                                                         attemptCookie(oidcConfig, DEFAULT_TENANT_ID, "/test", 1));
 
         assertThat(authenticationHandler.successCookies(List.of("other=value"), providerRequest, DEFAULT_TENANT_ID),
                    hasItem(startsWith(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, "/test") + "=;")));
+    }
+
+    @Test
+    public void testSuccessfulAuthenticationDoesNotClearMissingCookieCounter() {
+        OidcConfig oidcConfig = oidcConfig(COOKIE);
+        TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);
+        ProviderRequest providerRequest = requestWithUri(URI.create("http://localhost:1234/test"),
+                                                         attemptCookie(oidcConfig, DEFAULT_TENANT_ID, "/other", 1));
+        List<String> cookies = List.of("other=value");
+
+        assertThat(authenticationHandler.successCookies(cookies, providerRequest, DEFAULT_TENANT_ID), is(cookies));
     }
 
     @Test
