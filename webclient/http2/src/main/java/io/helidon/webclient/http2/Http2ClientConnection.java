@@ -80,43 +80,6 @@ public class Http2ClientConnection {
     private static final Http2Headers EMPTY_INBOUND_HEADERS = Http2Headers.create(WritableHeaders.create());
     private static final Http2Stream DROPPED_INBOUND_HEADERS_STREAM = new DroppedInboundHeadersStream();
 
-    private static final class DroppedInboundHeadersStream implements Http2Stream {
-        @Override
-        public boolean rstStream(Http2RstStream rstStream) {
-            return false;
-        }
-
-        @Override
-        public void windowUpdate(Http2WindowUpdate windowUpdate) {
-        }
-
-        @Override
-        public void headers(Http2Headers headers, boolean endOfStream) {
-        }
-
-        @Override
-        public void data(Http2FrameHeader header, BufferData data, boolean endOfStream) {
-        }
-
-        @Override
-        public void priority(Http2Priority http2Priority) {
-        }
-
-        @Override
-        public int streamId() {
-            return 0;
-        }
-
-        @Override
-        public Http2StreamState streamState() {
-            return Http2StreamState.CLOSED;
-        }
-
-        @Override
-        public StreamFlowControl flowControl() {
-            return null;
-        }
-    }
     private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
     private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
     private final LockingStreamIdSequence streamIdSeq = new LockingStreamIdSequence();
@@ -1052,6 +1015,44 @@ public class Http2ClientConnection {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL,
                                          "Response Header Fields Too Large");
             }
+        }
+    }
+
+    private static final class DroppedInboundHeadersStream implements Http2Stream {
+        @Override
+        public boolean rstStream(Http2RstStream rstStream) {
+            return false;
+        }
+
+        @Override
+        public void windowUpdate(Http2WindowUpdate windowUpdate) {
+        }
+
+        @Override
+        public void headers(Http2Headers headers, boolean endOfStream) {
+        }
+
+        @Override
+        public void data(Http2FrameHeader header, BufferData data, boolean endOfStream) {
+        }
+
+        @Override
+        public void priority(Http2Priority http2Priority) {
+        }
+
+        @Override
+        public int streamId() {
+            return 0;
+        }
+
+        @Override
+        public Http2StreamState streamState() {
+            return Http2StreamState.CLOSED;
+        }
+
+        @Override
+        public StreamFlowControl flowControl() {
+            return null;
         }
     }
 }
