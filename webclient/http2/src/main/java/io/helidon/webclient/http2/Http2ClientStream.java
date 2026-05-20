@@ -512,10 +512,27 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * @return the data frame
      */
     public Http2FrameData readOne(Duration pollTimeout) {
-        Object inboundItem = buffer.poll(pollTimeout);
+        StreamBuffer.InboundItem inboundItem = buffer.poll(pollTimeout);
 
         if (inboundItem != null) {
-            if (inboundItem instanceof StreamBuffer.InboundTrailers inboundTrailers) {
+            return switch (inboundItem) {
+            case StreamBuffer.InboundData inboundData -> {
+                Http2FrameData frameData = inboundData.frameData();
+                recvListener.frameHeader(ctx, streamId, frameData.header());
+                recvListener.frame(ctx, streamId, frameData.data());
+
+                switch (frameData.header().type()) {
+                case DATA:
+                    int flags = frameData.header().flags();
+                    boolean endOfStream = (flags & Http2Flag.END_OF_STREAM) == Http2Flag.END_OF_STREAM;
+                    data(frameData.header(), frameData.data(), endOfStream);
+                    yield frameData;
+                default:
+                    LOGGER.log(DEBUG, "Dropping frame " + frameData.header() + " expected header or data.");
+                    yield null;
+                }
+            }
+            case StreamBuffer.InboundTrailers inboundTrailers -> {
                 inboundStateLock.lock();
                 try {
                     trailersLocked(inboundTrailers.trailers(), inboundTrailers.endOfStream());
@@ -523,22 +540,9 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                 } finally {
                     inboundStateLock.unlock();
                 }
-                return null;
+                yield null;
             }
-
-            Http2FrameData frameData = (Http2FrameData) inboundItem;
-            recvListener.frameHeader(ctx, streamId, frameData.header());
-            recvListener.frame(ctx, streamId, frameData.data());
-
-            switch (frameData.header().type()) {
-            case DATA:
-                int flags = frameData.header().flags();
-                boolean endOfStream = (flags & Http2Flag.END_OF_STREAM) == Http2Flag.END_OF_STREAM;
-                data(frameData.header(), frameData.data(), endOfStream);
-                return frameData;
-            default:
-                LOGGER.log(DEBUG, "Dropping frame " + frameData.header() + " expected header or data.");
-            }
+            };
         }
         return null;
     }
