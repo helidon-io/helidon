@@ -16,7 +16,11 @@
 
 package io.helidon.security.providers.oidc;
 
-import java.time.Instant;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,23 +33,27 @@ final class RedirectAttemptCookie {
     private RedirectAttemptCookie() {
     }
 
-    static SetCookie create(OidcConfig oidcConfig, int attempt) {
-        return builder(oidcConfig, String.valueOf(attempt)).build();
-    }
-
-    static SetCookie remove(OidcConfig oidcConfig) {
-        return builder(oidcConfig, "")
-                .expires(Instant.ofEpochMilli(0))
+    static SetCookie create(OidcConfig oidcConfig, String tenantId, String state, int attempt) {
+        String value = String.valueOf(attempt);
+        return builder(oidcConfig, name(oidcConfig, tenantId, state), value, true)
                 .build();
     }
 
-    static Optional<String> find(OidcConfig oidcConfig, Map<String, List<String>> headers) {
+    static SetCookie remove(OidcConfig oidcConfig, String tenantId, String state) {
+        return builder(oidcConfig, name(oidcConfig, tenantId, state), "", false)
+                .build();
+    }
+
+    static Optional<String> find(OidcConfig oidcConfig,
+                                 Map<String, List<String>> headers,
+                                 String tenantId,
+                                 String state) {
         List<String> cookies = headers.get(HeaderNames.COOKIE_NAME);
         if ((cookies == null) || cookies.isEmpty()) {
             return Optional.empty();
         }
 
-        String valuePrefix = oidcConfig.redirectAttemptParam() + "=";
+        String valuePrefix = name(oidcConfig, tenantId, state) + "=";
         for (String cookie : cookies) {
             for (String cookieValue : cookie.split(";\\s?")) {
                 String trimmed = cookieValue.trim();
@@ -57,10 +65,33 @@ final class RedirectAttemptCookie {
         return Optional.empty();
     }
 
-    private static SetCookie.Builder builder(OidcConfig oidcConfig, String value) {
-        return SetCookie.builder(oidcConfig.redirectAttemptParam(), value)
-                .path("/")
-                .httpOnly(true)
-                .sameSite(SetCookie.SameSite.LAX);
+    static String name(OidcConfig oidcConfig, String tenantId, String state) {
+        return oidcConfig.redirectAttemptParam() + "_" + hash(tenantId + "\n" + state);
+    }
+
+    private static SetCookie.Builder builder(OidcConfig oidcConfig, String name, String value, boolean create) {
+        SetCookie configuredCookie = create
+                ? oidcConfig.tokenCookieHandler().createCookie(value).build()
+                : oidcConfig.tokenCookieHandler().removeCookie().build();
+        SetCookie.Builder builder = SetCookie.builder(name, value);
+        configuredCookie.expires().ifPresent(builder::expires);
+        configuredCookie.maxAge().ifPresent(builder::maxAge);
+        configuredCookie.domain().ifPresent(builder::domain);
+        configuredCookie.path().ifPresent(builder::path);
+        builder.secure(configuredCookie.secure());
+        builder.httpOnly(configuredCookie.httpOnly());
+        configuredCookie.sameSite().ifPresent(builder::sameSite);
+        return builder;
+    }
+
+    private static String hash(String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            return Base64.getUrlEncoder()
+                    .withoutPadding()
+                    .encodeToString(Arrays.copyOf(digest, 12));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 message digest is not available", e);
+        }
     }
 }

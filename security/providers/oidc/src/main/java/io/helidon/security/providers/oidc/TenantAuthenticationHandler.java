@@ -379,9 +379,9 @@ class TenantAuthenticationHandler {
         if (oidcConfig.shouldRedirect()) {
             // make sure we do not exceed redirect limit
             String origUri = origUri(providerRequest);
-            int redirectAttempt = redirectAttempt(providerRequest, origUri);
+            int redirectAttempt = redirectAttempt(providerRequest, tenantId, origUri);
             if (redirectAttempt >= oidcConfig.maxRedirects()) {
-                return errorResponseNoRedirect(code, description, status);
+                return errorResponseNoRedirect(code, description, status, tenantId, origUri);
             }
             String state = generateRandomString();
             String pkceVerifier = oidcConfig.pkceEnabled() ? generateCodeVerifier() : "";
@@ -481,10 +481,18 @@ class TenantAuthenticationHandler {
     }
 
     private AuthenticationResponse errorResponseNoRedirect(String code, String description, Status status) {
+        return errorResponseNoRedirect(code, description, status, null, null);
+    }
+
+    private AuthenticationResponse errorResponseNoRedirect(String code,
+                                                           String description,
+                                                           Status status,
+                                                           String tenantId,
+                                                           String state) {
         if (optional) {
             return noRedirectResponse(AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.ABSTAIN)
-                    .description(description));
+                    .description(description), tenantId, state);
         }
         if (null == code) {
             return noRedirectResponse(AuthenticationResponse.builder()
@@ -492,25 +500,27 @@ class TenantAuthenticationHandler {
                     .statusCode(Status.UNAUTHORIZED_401.code())
                     .responseHeader(HeaderNames.WWW_AUTHENTICATE.defaultCase(),
                                     "Bearer realm=\"" + tenantConfig.realm() + "\"")
-                    .description(description));
+                    .description(description), tenantId, state);
         } else {
             return noRedirectResponse(AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE)
                     .statusCode(status.code())
                     .responseHeader(HeaderNames.WWW_AUTHENTICATE.defaultCase(), errorHeader(code, description))
-                    .description(description));
+                    .description(description), tenantId, state);
         }
     }
 
-    private AuthenticationResponse noRedirectResponse(AuthenticationResponse.Builder builder) {
-        if (oidcConfig.redirectAttemptCounterStrategy() == RedirectAttemptCounterStrategy.COOKIE) {
+    private AuthenticationResponse noRedirectResponse(AuthenticationResponse.Builder builder,
+                                                      String tenantId,
+                                                      String state) {
+        if (oidcConfig.redirectAttemptCounterStrategy() == RedirectAttemptCounterStrategy.COOKIE && state != null) {
             builder.responseHeader(HeaderNames.SET_COOKIE.defaultCase(),
-                                   RedirectAttemptCookie.remove(oidcConfig).toString());
+                                   RedirectAttemptCookie.remove(oidcConfig, tenantId, state).toString());
         }
         return builder.build();
     }
 
-    int redirectAttempt(ProviderRequest providerRequest, String state) {
+    int redirectAttempt(ProviderRequest providerRequest, String tenantId, String state) {
         RedirectAttemptCounterStrategy strategy = oidcConfig.redirectAttemptCounterStrategy();
         switch (strategy) {
         case NONE:
@@ -518,7 +528,7 @@ class TenantAuthenticationHandler {
         case PARAM:
             return redirectAttemptParam(state);
         case COOKIE:
-            return redirectAttemptCookie(providerRequest);
+            return redirectAttemptCookie(providerRequest, tenantId, state);
         default:
             throw new IllegalStateException("Unsupported redirect attempt counter strategy: " + strategy);
         }
@@ -536,8 +546,8 @@ class TenantAuthenticationHandler {
         return 1;
     }
 
-    private int redirectAttemptCookie(ProviderRequest providerRequest) {
-        return RedirectAttemptCookie.find(oidcConfig, providerRequest.env().headers())
+    private int redirectAttemptCookie(ProviderRequest providerRequest, String tenantId, String state) {
+        return RedirectAttemptCookie.find(oidcConfig, providerRequest.env().headers(), tenantId, state)
                 .map(this::parseRedirectAttemptCookie)
                 .orElse(1);
     }
@@ -866,7 +876,7 @@ class TenantAuthenticationHandler {
                         .status(SecurityResponse.SecurityStatus.SUCCESS)
                         .user(subject);
 
-                List<String> responseCookies = successCookies(cookies);
+                List<String> responseCookies = successCookies(cookies, providerRequest, tenantId);
                 if (responseCookies.isEmpty()) {
                     return response.build();
                 } else {
@@ -895,12 +905,12 @@ class TenantAuthenticationHandler {
         }
     }
 
-    List<String> successCookies(List<String> cookies) {
+    List<String> successCookies(List<String> cookies, ProviderRequest providerRequest, String tenantId) {
         if (oidcConfig.redirectAttemptCounterStrategy() != RedirectAttemptCounterStrategy.COOKIE) {
             return cookies;
         }
         List<String> responseCookies = new ArrayList<>(cookies);
-        responseCookies.add(RedirectAttemptCookie.remove(oidcConfig).toString());
+        responseCookies.add(RedirectAttemptCookie.remove(oidcConfig, tenantId, origUri(providerRequest)).toString());
         return responseCookies;
     }
 

@@ -46,6 +46,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.COOKIE;
 import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.NONE;
 import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.PARAM;
+import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
@@ -184,8 +185,11 @@ class TenantAuthenticationHandlerTest {
         OidcConfig oidcConfig = oidcConfig(PARAM);
         TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);
 
-        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(), "/test?someUri=value"), is(1));
-        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(), "/test?someUri=value&"
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(),
+                                                         DEFAULT_TENANT_ID,
+                                                         "/test?someUri=value"),
+                   is(1));
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(), DEFAULT_TENANT_ID, "/test?someUri=value&"
                 + ATTEMPT_PARAM + "=4"), is(4));
     }
 
@@ -193,10 +197,31 @@ class TenantAuthenticationHandlerTest {
     public void testRedirectAttemptCookieStrategy() {
         OidcConfig oidcConfig = oidcConfig(COOKIE);
         TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);
+        String state = "/test?someUri=value";
+        String otherState = "/other?someUri=value";
 
-        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(), "/test?someUri=value"), is(1));
-        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(ATTEMPT_PARAM + "=4"), "/test?someUri=value"),
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(), DEFAULT_TENANT_ID, state), is(1));
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(attemptCookie(oidcConfig,
+                                                                                         DEFAULT_TENANT_ID,
+                                                                                         state,
+                                                                                         4)),
+                                                        DEFAULT_TENANT_ID,
+                                                        state),
                    is(4));
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(attemptCookie(oidcConfig,
+                                                                                         DEFAULT_TENANT_ID,
+                                                                                         otherState,
+                                                                                         4)),
+                                                        DEFAULT_TENANT_ID,
+                                                        state),
+                   is(1));
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(attemptCookie(oidcConfig,
+                                                                                         "tenant-a",
+                                                                                         state,
+                                                                                         4)),
+                                                        DEFAULT_TENANT_ID,
+                                                        state),
+                   is(1));
     }
 
     @Test
@@ -205,16 +230,19 @@ class TenantAuthenticationHandlerTest {
         TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);
 
         assertThat(authenticationHandler.redirectAttempt(requestWithCookies(ATTEMPT_PARAM + "=4"),
+                                                         DEFAULT_TENANT_ID,
                                                          "/test?someUri=value&" + ATTEMPT_PARAM + "=4"),
                    is(0));
     }
 
     @Test
     public void testSuccessfulAuthenticationClearsCookieCounter() {
-        TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig(COOKIE));
+        OidcConfig oidcConfig = oidcConfig(COOKIE);
+        TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);
+        ProviderRequest providerRequest = requestWithCookies();
 
-        assertThat(authenticationHandler.successCookies(List.of("other=value")),
-                   hasItem(startsWith(ATTEMPT_PARAM + "=;")));
+        assertThat(authenticationHandler.successCookies(List.of("other=value"), providerRequest, DEFAULT_TENANT_ID),
+                   hasItem(startsWith(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, "/test") + "=;")));
     }
 
     private static OidcConfig oidcConfig(RedirectAttemptCounterStrategy strategy) {
@@ -231,6 +259,10 @@ class TenantAuthenticationHandlerTest {
         Tenant tenant = mock(Tenant.class);
         when(tenant.tenantConfig()).thenReturn(oidcConfig);
         return new TenantAuthenticationHandler(oidcConfig, tenant, false, true);
+    }
+
+    private static String attemptCookie(OidcConfig oidcConfig, String tenantId, String state, int attempt) {
+        return RedirectAttemptCookie.name(oidcConfig, tenantId, state) + "=" + attempt;
     }
 
     private static ProviderRequest requestWithCookies(String... cookies) {

@@ -539,7 +539,7 @@ public final class OidcFeature implements HttpFeature {
             }
         }
 
-        originalUri = updateRedirectCounter(req, headers, originalUri);
+        originalUri = updateRedirectCounter(req, headers, tenantName, originalUri);
         headers.add(HeaderNames.LOCATION, originalUri);
 
         if (oidcConfig.useCookie()) {
@@ -630,13 +630,18 @@ public final class OidcFeature implements HttpFeature {
     }
 
     String updateRedirectCounter(ServerRequest req, ServerResponseHeaders headers, String state) {
+        return updateRedirectCounter(req, headers, DEFAULT_TENANT_ID, state);
+    }
+
+    String updateRedirectCounter(ServerRequest req, ServerResponseHeaders headers, String tenantName, String state) {
         switch (oidcConfig.redirectAttemptCounterStrategy()) {
         case NONE:
             return state;
         case PARAM:
             return increaseRedirectCounter(state);
         case COOKIE:
-            headers.addCookie(RedirectAttemptCookie.create(oidcConfig, nextRedirectAttempt(req)));
+            int nextRedirectAttempt = nextRedirectAttempt(req, tenantName, state);
+            headers.addCookie(RedirectAttemptCookie.create(oidcConfig, tenantName, state, nextRedirectAttempt));
             return state;
         default:
             throw new IllegalStateException("Unsupported redirect attempt counter strategy: "
@@ -644,8 +649,8 @@ public final class OidcFeature implements HttpFeature {
         }
     }
 
-    private int nextRedirectAttempt(ServerRequest req) {
-        return RedirectAttemptCookie.find(oidcConfig, req.headers().toMap())
+    private int nextRedirectAttempt(ServerRequest req, String tenantName, String state) {
+        return RedirectAttemptCookie.find(oidcConfig, req.headers().toMap(), tenantName, state)
                 .map(this::parseRedirectAttempt)
                 .orElse(0) + 1;
     }
