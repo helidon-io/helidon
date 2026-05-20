@@ -478,4 +478,4 @@ See the [`UriInfo`](/apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo
 ## Reference
 
 - [Helidon MicroProfile Server Javadoc](/apidocs/io.helidon.microprofile.server/module-summary.html)
-- [Helidon MicroProfile Server on GitHub](https://github.com/oracle/helidon/tree/main/microprofile/server)
+- [Helidon MicroProfile Server on GitHub](https://github.com/helidon-io/helidon/tree/main/microprofile/server)

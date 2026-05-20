@@ -577,7 +577,7 @@ tmmConfiguration:
 *Build and run Helidon LRA coordinator*
 
 ```bash
-docker build -t helidon/lra-coordinator https://github.com/oracle/helidon.git#:lra/coordinator/server
+docker build -t helidon/lra-coordinator https://github.com/helidon-io/helidon.git#:lra/coordinator/server
 docker run --name lra-coordinator --network="host" helidon/lra-coordinator
 ```
 

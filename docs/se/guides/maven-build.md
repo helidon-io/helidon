@@ -19,7 +19,7 @@ Helidon examples and projects generated using the [Helidon Quickstart](../../se/
 
 If you want to use your own parent POM, then take a look at the [standalone quickstart example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/quickstarts/helidon-standalone-quickstart-se). This example has a standalone POM that you can pattern your own application POM after.
 
-For more details on Helidon application POMs see the [Helidon’s Application POMS](https://github.com/oracle/helidon/tree/main/docs-internal/application-pom.md)
+For more details on Helidon application POMs see the [Helidon’s Application POMS](https://github.com/helidon-io/helidon/tree/main/docs-internal/application-pom.md)
 
 ## Dependency Management
 
@@ -66,7 +66,7 @@ Helidon provides a Maven plugin that, among other things, provides the following
 1.  jlink-image: Build a [custom runtime Java image](../../se/guides/jlink-image.md).
 2.  native-image: Build a [GraalVM native image](../../se/guides/graalnative.md). Note: this capability is now provided via the [Maven plugin for GraalVM Native Image](https://graalvm.github.io/native-build-tools/latest/maven-plugin.html)
 
-For full documentation of the plugin please see the [Helidon Maven Plugin README](https://github.com/oracle/helidon-build-tools/tree/master/maven-plugins/helidon-maven-plugin).
+For full documentation of the plugin please see the [Helidon Maven Plugin README](https://github.com/helidon-io/helidon-build-tools/tree/master/maven-plugins/helidon-maven-plugin).
 
 If you use the Helidon application parent POM you will have this plugin configured for you. If you need to customize the `helidon-maven-plugin` you can do so in a few ways:
 

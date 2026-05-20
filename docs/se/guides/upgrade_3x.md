@@ -121,14 +121,14 @@ WebServer.builder()
 
 ## Deprecations
 
-- The custom Helidon OCI clients have been deprecated ([See PR](https://github.com/oracle/helidon/pull/4015)).
+- The custom Helidon OCI clients have been deprecated ([See PR](https://github.com/helidon-io/helidon/pull/4015)).
 
 Use the OCI Java SDK instead. For Helidon MP, use `io.helidon.integrations.oci:helidon-integrations-oci` only for OCI authentication, region, and configuration support; the legacy `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi` module is deprecated.
 
 > [!NOTE]
 > See [Resolving compatibility issue with OCI SDK](../../se/integrations/oci.md#oci-compatibility) for detailed information on how to work around this issue.
 
-- The MultiPart buffered readers have been deprecated ([See PR](https://github.com/oracle/helidon/pull/4096)). Use the MultiPart stream readers instead.
+- The MultiPart buffered readers have been deprecated ([See PR](https://github.com/helidon-io/helidon/pull/4096)). Use the MultiPart stream readers instead.
 
 ### Helidon Common
 
@@ -137,7 +137,7 @@ Deprecations in the following classes:
 - `Resource` - old configuration approach (since 2.0)
 - `ThreadPoolSupplier` - Named thread pools (since 2.4.2)
 
-More information in the following [Task](https://github.com/oracle/helidon/issues/4363).
+More information in the following [Task](https://github.com/helidon-io/helidon/issues/4363).
 
 ### Media Common
 
@@ -150,7 +150,7 @@ Deprecations in the following classes:
 - `MessageBodyWriterContext` - Methods with alternatives (since 2.0)
 - `ReadableByteChannelPublisher` - Class with alternative (since 2.0)
 
-More information in the following [Task](https://github.com/oracle/helidon/issues/4364).
+More information in the following [Task](https://github.com/helidon-io/helidon/issues/4364).
 
 ### Metrics
 
@@ -160,7 +160,7 @@ Deprecations in the following classes:
 - `KeyPerformanceIndicatorMetricsSettings` - New class in metrics API, for backward compatibility only
 - `RegistryFactory` - New class in metrics API, for backward compatibility only
 
-More information in the following [Task](https://github.com/oracle/helidon/issues/4365).
+More information in the following [Task](https://github.com/helidon-io/helidon/issues/4365).
 
 ### Common Context
 
@@ -168,7 +168,7 @@ Deprecations in the following class:
 
 - `DataPropagationProvider` - clearData should use new method
 
-More information in the following [Task](https://github.com/oracle/helidon/issues/4366).
+More information in the following [Task](https://github.com/helidon-io/helidon/issues/4366).
 
 ### GRPC core
 
@@ -176,7 +176,7 @@ Deprecations:
 
 - `JavaMarshaller` - removed support for JavaMarshaller
 
-More information in the following [Task](https://github.com/oracle/helidon/issues/4367).
+More information in the following [Task](https://github.com/helidon-io/helidon/issues/4367).
 
 gRPC scope is temporarily smaller in Helidon, please follow issue <https://github.com/helidon-io/helidon/issues/5418>
 
@@ -187,7 +187,7 @@ Deprecations in the following class:
 - `CoordinatorClient` - multiple methods
 - `Headers`
 
-More information in the following [Task](https://github.com/oracle/helidon/issues/4368).
+More information in the following [Task](https://github.com/helidon-io/helidon/issues/4368).
 
 ### MP Messaging
 
@@ -195,7 +195,7 @@ Deprecations in the following class:
 
 - `MessagingCdiExtension` - Alternative methods used
 
-More information in the following [Task](https://github.com/oracle/helidon/issues/4369).
+More information in the following [Task](https://github.com/helidon-io/helidon/issues/4369).
 
 ### JWT
 
@@ -203,7 +203,7 @@ Deprecations in the following class:
 
 - `Jwt` - Audience can be a list (since 2.4.0)
 
-More information in the following [Task](https://github.com/oracle/helidon/issues/4370).
+More information in the following [Task](https://github.com/helidon-io/helidon/issues/4370).
 
 ### MP Metrics
 
@@ -212,13 +212,13 @@ Deprecations in the following class:
 - `MetricUtil` - multiple methods
 - `MetricsCdiExtension` - multiple methods
 
-More information in the following [Task](https://github.com/oracle/helidon/issues/4371).
+More information in the following [Task](https://github.com/helidon-io/helidon/issues/4371).
 
 ### HTTP Signature Security Provider
 
 - `backwardCompatibleEol` - set to false
 
-More information in the following [Task](https://github.com/oracle/helidon/issues/4372).
+More information in the following [Task](https://github.com/helidon-io/helidon/issues/4372).
 
 ### Service Common
 
@@ -226,10 +226,10 @@ Deprecations in the following class:
 
 - `HelidonRestServiceSupport` - method *configureEndpoint(Rules)*
 
-More information in the following [Task](https://github.com/oracle/helidon/issues/4371).
+More information in the following [Task](https://github.com/helidon-io/helidon/issues/4371).
 
 ### WebServer
 
 - `Static content support` in `WebServer` - moved to a separate module. Fully removed from `WebServer` module.
 
-More information in the following [Task](https://github.com/oracle/helidon/issues/4374).
+More information in the following [Task](https://github.com/helidon-io/helidon/issues/4374).

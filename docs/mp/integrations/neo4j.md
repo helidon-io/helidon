@@ -192,7 +192,7 @@ curl -s -X GET http://localhost:8080/metrics
 curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ```
 
-Full example code is available in [Helidon GitHub Repository](https://github.com/oracle/helidon/tree/master/examples/integrations/neo4j/neo4j-mp).
+Full example code is available in [Helidon GitHub Repository](https://github.com/helidon-io/helidon/tree/master/examples/integrations/neo4j/neo4j-mp).
 
 ## Additional Information
 

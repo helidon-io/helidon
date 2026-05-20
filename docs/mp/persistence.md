@@ -286,7 +286,7 @@ In general, the properties that can be set on the [`org.h2.jdbcx.JdbcDataSource`
 
 You use Helidon MP’s named data source integration in the same way, regardless of your choices of vendor-supplied `DataSource` and connection pool.
 
-To use Helidon MP’s named data source integration in your application, once it has been [set up](#project-setup) and [configured](#configuration), create an ordinary [`DataSource`](https://docs.oracle.com/en/java/javase/21/docs/api/java.sql/javax/sql/DataSource.html)-typed injection point in a [Java class representing a CDI bean](https://github.com/oracle/helidon/wiki/FAQ#how-do-i-make-a-class-a-cdi-bean) somewhere in your application, [annotated with the name](https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named) of the data source you wish to use.
+To use Helidon MP’s named data source integration in your application, once it has been [set up](#project-setup) and [configured](#configuration), create an ordinary [`DataSource`](https://docs.oracle.com/en/java/javase/21/docs/api/java.sql/javax/sql/DataSource.html)-typed injection point in a [Java class representing a CDI bean](https://github.com/helidon-io/helidon/wiki/FAQ#how-do-i-make-a-class-a-cdi-bean) somewhere in your application, [annotated with the name](https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named) of the data source you wish to use.
 
 Here is how to define such a field-backed injection point:
 
