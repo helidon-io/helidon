@@ -240,6 +240,10 @@ class TenantAuthenticationHandlerTest {
         String state = "/test?someUri=value";
         String stateWithTokens = state + "&accessToken=token&id_token=id-token&h_tenant=tenant";
         String stateWithMoreTokens = stateWithTokens + "&accessToken=next-token&id_token=next-id-token";
+        String stateWithManyParams = "/test?k548985=1&k764588=1&k641847=1&k970313=1&k64254=1&k814904=1"
+                + "&k504434=1&k906606=1&k239978=1&k301748=1&k136569=1&k998473=1";
+        String stateWithManyParamsAndTokens = stateWithManyParams
+                + "&accessToken=token&id_token=id-token&h_tenant=tenant";
 
         assertThat(authenticationHandler.redirectAttempt(requestWithCookies(attemptCookie(oidcConfig,
                                                                                          DEFAULT_TENANT_ID,
@@ -248,8 +252,17 @@ class TenantAuthenticationHandlerTest {
                                                         DEFAULT_TENANT_ID,
                                                         stateWithTokens),
                    is(4));
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(attemptCookie(oidcConfig,
+                                                                                         DEFAULT_TENANT_ID,
+                                                                                         stateWithManyParams,
+                                                                                         4)),
+                                                        DEFAULT_TENANT_ID,
+                                                        stateWithManyParamsAndTokens),
+                   is(4));
         assertThat(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, stateWithMoreTokens),
                    is(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, state)));
+        assertThat(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, stateWithManyParamsAndTokens),
+                   is(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, stateWithManyParams)));
         assertThat(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, state + "&other=value")
                            .equals(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, state)),
                    is(false));
@@ -311,8 +324,13 @@ class TenantAuthenticationHandlerTest {
         String stateWithTokens = state + "&access+token=token"
                 + "&id+token=id-token"
                 + "&h+tenant=tenant";
+        String stateWithPercentEncodedName = state + "&%61ccess+token=token"
+                + "&id+token=id-token"
+                + "&h+tenant=tenant";
 
         assertThat(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, stateWithTokens),
+                   is(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, state)));
+        assertThat(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, stateWithPercentEncodedName),
                    is(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, state)));
         assertThat(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, "/test?someUri=value&h_ra=5")
                            .equals(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, state)),

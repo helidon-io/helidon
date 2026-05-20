@@ -16,17 +16,18 @@
 
 package io.helidon.security.providers.oidc;
 
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
-import io.helidon.common.uri.UriQueryWriteable;
+import io.helidon.common.uri.UriEncoding;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.SetCookie;
 import io.helidon.security.providers.oidc.common.OidcConfig;
@@ -85,27 +86,56 @@ final class RedirectAttemptCookie {
                 : state.substring(queryStart + 1, fragmentStart);
         String fragment = fragmentStart < 0 ? "" : state.substring(fragmentStart);
 
-        UriQueryWriteable queryParams = UriQueryWriteable.create();
-        queryParams.fromQueryString(query);
+        Set<String> paramsToRemove = new HashSet<>();
         if (oidcConfig.redirectAttemptCounterStrategy() == RedirectAttemptCounterStrategy.PARAM) {
-            removeCounterQueryParam(queryParams, oidcConfig.redirectAttemptParam());
+            paramsToRemove.add(oidcConfig.redirectAttemptParam());
         }
         if (oidcConfig.useParam()) {
-            removeCounterQueryParam(queryParams, oidcConfig.paramName());
-            removeCounterQueryParam(queryParams, oidcConfig.idTokenParamName());
-            removeCounterQueryParam(queryParams, oidcConfig.tenantParamName());
+            paramsToRemove.add(oidcConfig.paramName());
+            paramsToRemove.add(oidcConfig.idTokenParamName());
+            paramsToRemove.add(oidcConfig.tenantParamName());
         }
 
-        String counterQuery = queryParams.rawValue();
+        String counterQuery = filterQuery(query, paramsToRemove);
         if (counterQuery.isEmpty()) {
             return path + fragment;
         }
         return path + "?" + counterQuery + fragment;
     }
 
-    private static void removeCounterQueryParam(UriQueryWriteable queryParams, String name) {
-        queryParams.remove(name);
-        queryParams.remove(URLEncoder.encode(name, StandardCharsets.UTF_8));
+    private static String filterQuery(String query, Set<String> namesToRemove) {
+        if (namesToRemove.isEmpty()) {
+            return query;
+        }
+
+        StringBuilder result = new StringBuilder(query.length());
+        int start = 0;
+        while (start <= query.length()) {
+            int end = query.indexOf('&', start);
+            if (end < 0) {
+                end = query.length();
+            }
+
+            String queryParam = query.substring(start, end);
+            if (!removeQueryParam(queryParam, namesToRemove)) {
+                if (!result.isEmpty()) {
+                    result.append('&');
+                }
+                result.append(queryParam);
+            }
+
+            if (end == query.length()) {
+                break;
+            }
+            start = end + 1;
+        }
+        return result.toString();
+    }
+
+    private static boolean removeQueryParam(String queryParam, Set<String> namesToRemove) {
+        int equals = queryParam.indexOf('=');
+        String rawName = equals < 0 ? queryParam : queryParam.substring(0, equals);
+        return namesToRemove.contains(rawName) || namesToRemove.contains(UriEncoding.decodeUri(rawName));
     }
 
     private static SetCookie.Builder builder(OidcConfig oidcConfig, String name, String value, boolean create) {
