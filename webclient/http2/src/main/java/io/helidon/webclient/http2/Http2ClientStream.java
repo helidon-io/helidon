@@ -76,15 +76,15 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private final ReentrantLock inboundStateLock = new ReentrantLock();
     private final Condition inboundStateChanged = inboundStateLock.newCondition();
     private final CompletableFuture<Headers> trailers = new CompletableFuture<>();
-    private boolean closed;
+    private volatile boolean closed;
 
-    private Http2StreamState state = Http2StreamState.IDLE;
-    private ReadState readState = ReadState.INIT;
+    private volatile Http2StreamState state = Http2StreamState.IDLE;
+    private volatile ReadState readState = ReadState.INIT;
     private Http2Headers currentHeaders;
     // accessed from stream thread an connection thread
     private volatile StreamFlowControl flowControl;
     private boolean hasEntity;
-    private boolean inboundEndQueued;
+    private volatile boolean inboundEndQueued;
 
     // streamId and buffer can only be created when we are locked in the stream id sequence
     private int streamId;
@@ -281,26 +281,35 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     boolean prepareInboundData(Http2FrameData frameData) {
         int flags = frameData.header().flags();
         boolean endOfStream = (flags & Http2Flag.END_OF_STREAM) == Http2Flag.END_OF_STREAM;
+        ReadState currentReadState = readState;
+
+        if (closed) {
+            return false;
+        }
+        if (inboundEndQueued || currentReadState != ReadState.DATA) {
+            throw invalidInboundDataState(currentReadState);
+        }
+        if (!endOfStream) {
+            return true;
+        }
 
         inboundStateLock.lock();
         try {
             if (closed) {
                 return false;
             }
-            if (inboundEndQueued || readState != ReadState.DATA) {
-                throw new Http2Exception(Http2ErrorCode.PROTOCOL,
-                                         "Received DATA frame in invalid response read state " + readState);
+            currentReadState = readState;
+            if (inboundEndQueued || currentReadState != ReadState.DATA) {
+                throw invalidInboundDataState(currentReadState);
             }
             Http2StreamState nextState = Http2StreamState.checkAndGetState(state,
                                                                            frameData.header().type(),
                                                                            false,
                                                                            endOfStream,
                                                                            false);
-            if (endOfStream) {
-                inboundEndQueued = true;
-                if (nextState == Http2StreamState.CLOSED || state == Http2StreamState.HALF_CLOSED_LOCAL) {
-                    releaseReservation();
-                }
+            inboundEndQueued = true;
+            if (nextState == Http2StreamState.CLOSED || state == Http2StreamState.HALF_CLOSED_LOCAL) {
+                releaseReservation();
             }
             return true;
         } finally {
@@ -683,6 +692,11 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         if (reservationReleased.compareAndSet(false, true)) {
             connection.releaseReservedStream();
         }
+    }
+
+    private Http2Exception invalidInboundDataState(ReadState currentReadState) {
+        return new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                  "Received DATA frame in invalid response read state " + currentReadState);
     }
 
     enum ReadState {
