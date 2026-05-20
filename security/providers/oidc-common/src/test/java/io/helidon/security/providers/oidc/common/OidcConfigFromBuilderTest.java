@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
 
+import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -47,11 +48,14 @@ import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_REDIR
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_REDIRECT_URI;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_RELATIVE_URIS;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_TOKEN_REFRESH_SKEW;
+import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.COOKIE;
+import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.PARAM;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link OidcConfig}.
@@ -106,6 +110,8 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Cookie name", tokenCookieHandler.cookieName(), is(DEFAULT_COOKIE_NAME)),
                 () -> assertThat("Realm", config.realm(), is(OidcConfig.Builder.DEFAULT_REALM)),
                 () -> assertThat("Redirect Attempt Parameter", config.redirectAttemptParam(), is(DEFAULT_ATTEMPT_PARAM)),
+                () -> assertThat("Redirect Attempt Counter Strategy",
+                                 config.redirectAttemptCounterStrategy(), is(PARAM)),
                 () -> assertThat("Max Redirects", config.maxRedirects(), is(DEFAULT_MAX_REDIRECTS)),
                 () -> assertThat("Client Timeout", config.clientTimeout(), is(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS))),
                 () -> assertThat("Force HTTPS Redirects", config.forceHttpsRedirects(), is(DEFAULT_FORCE_HTTPS_REDIRECTS)),
@@ -118,6 +124,46 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Client without authentication", config.generalWebClient(), notNullValue()),
                 () -> assertThat("Client with authentication", config.appWebClient(), notNullValue()),
                 () -> assertThat("JWK Keys", config.signJwk(), notNullValue()));
+    }
+
+    @Test
+    void testRedirectAttemptCounterStrategyFromBuilder() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .redirectAttemptCounterStrategy(COOKIE)
+                .build();
+
+        assertThat(config.redirectAttemptCounterStrategy(), is(COOKIE));
+    }
+
+    @Test
+    void testCookieStrategyRejectsInvalidRedirectAttemptCookiePrefix() {
+        assertThrows(Errors.ErrorMessagesException.class,
+                     () -> OidcConfig.builder()
+                             .identityUri(URI.create("https://identity.oracle.com"))
+                             .clientId("client-id-value")
+                             .clientSecret("client-secret-value")
+                             .oidcMetadataWellKnown(false)
+                             .redirectAttemptParam("foo[]")
+                             .redirectAttemptCounterStrategy(COOKIE)
+                             .build());
+    }
+
+    @Test
+    void testParamStrategyAllowsQueryStyleRedirectAttemptParam() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .redirectAttemptParam("foo[]")
+                .redirectAttemptCounterStrategy(PARAM)
+                .build();
+
+        assertThat(config.redirectAttemptParam(), is("foo[]"));
     }
 
     @Test

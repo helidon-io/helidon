@@ -27,6 +27,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.security.providers.oidc {
 
     requires io.helidon.common.crypto;
+    requires io.helidon.common.uri;
     requires io.helidon.common;
     requires io.helidon.cors;
     requires io.helidon.json;
