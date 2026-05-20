@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ include::{rootdir}/includes/se.adoc[]
 ** <<HTTP/2 Support, HTTP/2 Support>>
 ** <<Static Content Support, Static Content Support>>
 ** <<Jersey (JAX-RS) Support, Jersey (JAX-RS) Support>>
+** <<Multipart Support, Multipart Support>>
 ** <<JSON Support, JSON Support>>
 - <<Reference, Reference>>
 - <<Additional Information, Additional Information>>
@@ -618,6 +619,28 @@ public class HelloWorld {
     private ServerResponse response;
 }
 ----
+
+== Multipart Support
+
+Helidon provides multipart MIME parsing in the `helidon-media-multipart`
+module.
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.media</groupId>
+    <artifactId>helidon-media-multipart</artifactId>
+</dependency>
+----
+
+The multipart parser protects applications from oversized multipart structure.
+It rejects messages with more than 1000 parts, more than 100 headers in one
+part, or a part header line longer than 8192 bytes.
+
+When reading the `filename` parameter from a `Content-Disposition` header,
+Helidon percent-decodes the value, ignores any directory path information, and
+returns only the final path segment. Empty filenames, `.` and `..`, and names
+containing control characters are rejected.
 
 == JSON Support
 The WebServer supports JSON-P. When enabled, you can send and

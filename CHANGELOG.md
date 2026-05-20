@@ -9,6 +9,24 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.18]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3. Helidon 3 requires Java 17 or newer.
+
+### CHANGES
+
+- Config: Strengthen encrypted configuration value format and PBKDF2 defaults
+- Config: Use the context class loader to locate MicroProfile meta-configuration [11796](https://github.com/helidon-io/helidon/pull/11796)
+- Dependencies: Upgrade Log4j to 2.25.4 [11819](https://github.com/helidon-io/helidon/pull/11819)
+- Dependencies: Upgrade Netty to 4.1.133.Final [11923](https://github.com/helidon-io/helidon/pull/11923)
+- Dependencies: Upgrade PostgreSQL JDBC driver to 42.7.11 [11852](https://github.com/helidon-io/helidon/pull/11852)
+- gRPC: Apply configured gRPC security automatically when using `GrpcRouting.builder(config)`
+- LRA: Validate participant and coordinator callback URIs before use
+- Media: Add multipart parser structural limits and safer multipart filename handling
+- Security: Harden authentication, token, redirect, CORS, HTTP Signature, OIDC, and static-content handling
+- WebServer: Fix `Content-Location` header constant [11920](https://github.com/helidon-io/helidon/pull/11920)
+- WebServer: Fix response `Connection: close` handling [11951](https://github.com/helidon-io/helidon/pull/11951)
+
 ## [3.2.17]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.

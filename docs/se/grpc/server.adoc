@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -723,6 +723,20 @@ GrpcRouting.builder()
     .build();
 ----
 
+If your application uses `GrpcRouting.builder(config)` and includes the
+`helidon-security-integration-grpc` dependency, Helidon automatically adds
+`GrpcSecurity.create(config.get("security"))` when `security.grpc-server`
+exists in configuration. You can still add `GrpcSecurity` explicitly; Helidon
+does not add a duplicate interceptor that uses the same security configuration.
+
+[source,java]
+.Example using automatic configuration
+----
+GrpcRouting.builder(config)
+    .register(new GreetService())
+    .build();
+----
+
 [source,conf]
 .Example using configuration - configuration (HOCON)
 ----
@@ -954,4 +968,3 @@ A set of gRPC server examples for Helidon SE can be found in the following links
 * link:{helidon-github-examples-url}/grpc/security[Basic Auth Security on a gRPC Server]
 * link:{helidon-github-examples-url}/grpc/security-abac[Attribute-Based Access Control (ABAC) security on a gRPC Server]
 * link:{helidon-github-examples-url}/grpc/security-outbound[Outbound Security on a gRPC Server]
-

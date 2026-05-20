@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -425,6 +425,34 @@ Helidon LRA coordinator is compatible with Narayana clients, you need to add an 
     <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
 </dependency>
 ----
+
+==== Participant URL Validation
+
+The Helidon LRA coordinator validates participant URLs by default before storing
+or calling them. Participant URLs must use `http` or `https`, must include a
+host, and must not include user information. Unless explicitly allowed, the
+coordinator also rejects unresolved hosts and hosts that resolve to loopback,
+link-local, site-local, multicast, unique-local, or other restricted addresses.
+
+Use `helidon.lra.coordinator.participant-url.validation` to customize this
+validation for deployments that deliberately use local addresses or a fixed
+host allow list.
+
+[source,yaml]
+.Participant URL validation
+----
+helidon.lra.coordinator:
+  participant-url:
+    validation:
+      enabled: true
+      allow-local-addresses: false
+      allowed-hosts:
+        - "lra-participants.example.com"
+----
+
+Set `enabled` to `false` only for deployments that must preserve the previous
+behavior. Use `allowed-hosts` for trusted internal names that should bypass
+address classification.
 
 === Narayana
 https://narayana.io[Narayana] is a transaction manager supporting LRA.
