@@ -262,7 +262,11 @@ class Http2ServerStream implements Runnable, Http2Stream {
             writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
             streams.remove(this.streamId);
             Http2RstStream rst = new Http2RstStream(Http2ErrorCode.PROTOCOL);
-            writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+            try {
+                writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+            } catch (SocketWriterException | UncheckedIOException e) {
+                throw new ServerConnectionException("Failed to write reset stream", e);
+            }
             connectionAttackVectorMetrics.madeYouResetCheck(streamId);
 
             try {
@@ -316,7 +320,9 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                  + ctx.childSocketId() + " ] - " + streamId);
         try {
             handle();
-        } catch (SocketWriterException | CloseConnectionException | UncheckedIOException e) {
+        } catch (SocketWriterException | UncheckedIOException e) {
+            throw e;
+        } catch (CloseConnectionException e) {
             Http2RstStream rst = new Http2RstStream(Http2ErrorCode.STREAM_CLOSED);
             writer.write(rst.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
             // no sense in throwing an exception, as this is invoked from an executor service directly

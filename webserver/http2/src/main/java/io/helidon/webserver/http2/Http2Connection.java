@@ -27,6 +27,7 @@ import java.util.Set;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
 import io.helidon.http.DateTime;
@@ -176,6 +177,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             state = State.FINISHED;
         } catch (CloseConnectionException
                  | InterruptedException
+                 | SocketWriterException
                  | UncheckedIOException e) {
             throw e;
         } catch (Throwable e) {
@@ -329,7 +331,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     void writeConnectionFrame(Http2FrameData frame) {
         try {
             connectionWriter.write(frame);
-        } catch (UncheckedIOException e) {
+        } catch (SocketWriterException | UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write HTTP/2 connection frame", e);
         }
     }
@@ -904,14 +906,18 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         UNKNOWN
     }
 
-    private record StreamRunnable(Http2ConnectionStreams streams,
-                                  Http2ServerStream stream,
-                                  Thread handlerThread) implements Runnable {
+    // Package-private for deterministic tests of writer-thread failure handling.
+    record StreamRunnable(Http2ConnectionStreams streams,
+                          Http2ServerStream stream,
+                          Thread handlerThread) implements Runnable {
 
         @Override
         public void run() {
             try {
                 stream.run();
+            } catch (SocketWriterException e) {
+                handlerThread.interrupt();
+                LOGGER.log(DEBUG, "Socket writer error on writer thread", e);
             } catch (UncheckedIOException e) {
                 // Broken connection
                 if (e.getCause() instanceof SocketException) {

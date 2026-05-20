@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,16 @@
 
 package io.helidon.common.socket;
 
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.CompositeBufferData;
@@ -29,19 +34,55 @@ import io.helidon.common.buffers.DataWriter;
 /**
  * Socket writer (possibly) used from multiple threads, takes care of writing to a single
  * socket.
+ *
+ * The writer has two write paths:
+ * <ul>
+ *     <li>{@link #write(BufferData)} enqueues data for later draining.</li>
+ *     <li>{@link #writeNow(BufferData)} and {@link #flush()} drain queued data on the caller thread.</li>
+ * </ul>
+ * The caller-thread flush path is intentional: when the caller and writer use the same executor,
+ * waiting for the writer thread to flush could deadlock under saturation or reentrant use.
  */
 class SocketWriterAsync extends SocketWriter implements DataWriter {
-    private static final System.Logger LOGGER = System.getLogger(SocketWriterAsync.class.getName());
-    private static final BufferData CLOSING_TOKEN = BufferData.empty();
+    private static final Runnable EMPTY_RUNNABLE = () -> { };
+    private static final long CLOSE_TIMEOUT_MILLIS = 1000;
+    private static final int MAX_BATCH_SIZE = 1000;
+    private static final long WRITE_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10);
 
     private final ExecutorService executor;
-    private final ArrayBlockingQueue<BufferData> writeQueue;
+    private final Deque<BufferData> writeQueue;
+    private final BufferData[] writeBatch;
+    private final int writeQueueLength;
     private final CountDownLatch cdl = new CountDownLatch(1);
     private final AtomicBoolean started = new AtomicBoolean(false);
+
+    /*
+     * All queue state is protected by stateLock. The conditions split the common waits:
+     * - notEmpty wakes the writer thread when producers enqueue data.
+     * - notFull wakes blocked producers when a batch is drained.
+     * - idle wakes either side when an active socket write or flush finishes.
+     */
+    private final Lock stateLock = new ReentrantLock();
+    private final Condition notEmpty = stateLock.newCondition();
+    private final Condition notFull = stateLock.newCondition();
+    private final Condition idle = stateLock.newCondition();
+
+    // Test hooks used to block at deterministic points without exposing production state.
+    private volatile Runnable beforeCloseAwait = EMPTY_RUNNABLE;
+    private volatile Runnable beforeFlushAwait = EMPTY_RUNNABLE;
+    private volatile Runnable beforeWriteQueueAwait = EMPTY_RUNNABLE;
+
+    // Failure and lifecycle fields are read from paths that may not hold stateLock.
     private volatile Throwable caught;
     private volatile boolean run = true;
-    private Thread thread;
-    private double avgQueueSize;
+    private volatile Thread thread;
+    private volatile double avgQueueSize;
+
+    // Guarded by stateLock. Exactly one thread may be writing to the socket at a time.
+    private boolean writing;
+
+    // Guarded by stateLock. While true, producers wait so later writes cannot overtake flush/writeNow.
+    private boolean flushing;
 
     /**
      * A new socket writer.
@@ -54,7 +95,9 @@ class SocketWriterAsync extends SocketWriter implements DataWriter {
     SocketWriterAsync(ExecutorService executor, HelidonSocket socket, int writeQueueLength) {
         super(socket);
         this.executor = executor;
-        this.writeQueue = new ArrayBlockingQueue<>(writeQueueLength);
+        this.writeQueue = new ArrayDeque<>(writeQueueLength);
+        this.writeBatch = new BufferData[Math.min(writeQueueLength, MAX_BATCH_SIZE)];
+        this.writeQueueLength = writeQueueLength;
     }
 
     @Override
@@ -66,94 +109,347 @@ class SocketWriterAsync extends SocketWriter implements DataWriter {
 
     @Override
     public void write(BufferData buffer) {
-        checkRunning();
+        Objects.requireNonNull(buffer);
+        long remaining = WRITE_TIMEOUT_NANOS;
+
+        // Start outside stateLock so executor submission cannot block queue state progress.
+        startWriterIfNeeded();
         try {
-            if (!writeQueue.offer(buffer, 10, TimeUnit.SECONDS)) {
+            stateLock.lockInterruptibly();
+            try {
                 checkRunning();
-                throw new IllegalStateException("Failed to write data to queue, timed out");
+
+                // Producers that observe an active flush wait so they do not overtake the flush/writeNow path.
+                while (caught == null && run && flushing) {
+                    idle.await();
+                    checkRunning();
+                }
+
+                // Apply bounded backpressure when the queue is full.
+                while (writeQueue.size() == writeQueueLength) {
+                    checkRunning();
+                    beforeWriteQueueAwait.run();
+                    remaining = notFull.awaitNanos(remaining);
+                    if (remaining > 0) {
+                        continue;
+                    }
+                    checkRunning();
+                    throw new IllegalStateException("Failed to write data to queue, timed out");
+                }
+                checkRunning();
+                writeQueue.add(buffer);
+                notEmpty.signal();
+            } finally {
+                stateLock.unlock();
             }
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while trying to write to a queue", e);
         }
     }
 
-    /**
-     * Close this writer. Will attempt to write all enqueued buffers and will stop the thread if created.
-     */
-    public void close() {
-        run = false;
-        if (!started.get()) {
-            // thread never started
-            return;
-        }
+    @Override
+    public void writeNow(BufferData buffer) {
+        flush(Objects.requireNonNull(buffer));
+    }
+
+    @Override
+    public void flush() {
+        flush(null);
+    }
+
+    private void flush(BufferData current) {
+        boolean currentPending = current != null;
+        boolean runHook = true;
+        boolean flushStarted = false;
         try {
-            writeQueue.put(CLOSING_TOKEN); // wake up blocked take() operation
-            if (cdl.await(1000, TimeUnit.MILLISECONDS)) {
-                // reads finished because we set run to false
-                BufferData available;
-                while ((available = writeQueue.poll()) != null) {
+            while (true) {
+                int queueSize;
+                stateLock.lockInterruptibly();
+                try {
+                    // Nothing has ever been scheduled and there is no current writeNow buffer.
+                    if (!flushStarted && !currentPending && !started.get() && !writing && writeQueue.isEmpty()) {
+                        return;
+                    }
+                    if (!flushStarted) {
+                        // Only one caller-thread flush can own the queue at a time.
+                        while (caught == null && run && flushing) {
+                            idle.await();
+                        }
+                        checkRunning();
+                        flushing = true;
+                        flushStarted = true;
+                    }
+                    if (runHook) {
+                        beforeFlushAwait.run();
+                        runHook = false;
+                    }
+
+                    // Do not write to the socket concurrently with the writer thread or another flush iteration.
+                    while (caught == null && run && writing) {
+                        idle.await();
+                    }
+                    checkRunning();
+
+                    /*
+                     * Queue contents always go first. For writeNow(current), this preserves FIFO ordering for queued
+                     * data and for producers that were already waiting for queue capacity before this flush started.
+                     */
+                    if (!writeQueue.isEmpty()) {
+                        queueSize = drainBatch(writeBatch.length);
+                    } else if (currentPending) {
+                        writeBatch[0] = current;
+                        currentPending = false;
+                        queueSize = 1;
+                    } else {
+                        return;
+                    }
+
+                    // The lock is released while writing to the socket, but the writing flag keeps other writers out.
+                    writing = true;
+                } finally {
+                    stateLock.unlock();
+                }
+
+                try {
+                    writeBatch(queueSize);
+                } catch (Throwable e) {
+                    fail(e);
+                    throw socketWriterException();
+                } finally {
+                    stateLock.lock();
                     try {
-                        writeNow(available);
-                    } catch (Exception e) {
-                        LOGGER.log(System.Logger.Level.TRACE, "Failed to write last buffers during writer shutdown", e);
-                        // in case we fail to write to socket when closing, it is probably because it is already closed
-                        // we still need to release all buffers
+                        writing = false;
+                        idle.signalAll();
+                    } finally {
+                        stateLock.unlock();
                     }
                 }
             }
-            if (thread != null) {
-                // fail blocked writers
-                thread.interrupt();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while trying to flush queued writes", e);
+        } finally {
+            if (flushStarted) {
+                stateLock.lock();
+                try {
+                    // Release producers and the writer thread after the caller-thread flush is fully done.
+                    flushing = false;
+                    idle.signalAll();
+                } finally {
+                    stateLock.unlock();
+                }
             }
-        } catch (InterruptedException e) {            // failed to get
+        }
+    }
+
+    /**
+     * Close this writer, wake blocked waiters, and stop the writer thread if created.
+     * Queued buffers may be discarded during close.
+     */
+    public void close() {
+        boolean threadStarted;
+        stateLock.lock();
+        try {
+            // Stop accepting new data and wake blocked producers, flushers, and the writer so they can observe close.
+            run = false;
+            threadStarted = started.get();
+            notEmpty.signalAll();
+            notFull.signalAll();
+            idle.signalAll();
+        } finally {
+            stateLock.unlock();
+        }
+        if (!threadStarted) {
+            // thread never started
+            return;
         }
 
+        try {
+            beforeCloseAwait.run();
+            boolean stopped = cdl.await(CLOSE_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+            if (!stopped) {
+                // The socket may be stuck in I/O; interrupt and discard buffers instead of blocking close forever.
+                interruptWriter();
+                discardQueue();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            interruptWriter();
+            discardQueue();
+        }
+
+    }
+
+    // Intended for deterministic tests of close sequencing.
+    void beforeCloseAwait(Runnable hook) {
+        this.beforeCloseAwait = Objects.requireNonNull(hook);
+    }
+
+    // Intended for deterministic tests of flush sequencing.
+    void beforeFlushAwait(Runnable hook) {
+        this.beforeFlushAwait = Objects.requireNonNull(hook);
+    }
+
+    // Intended for deterministic tests of full-queue producer sequencing.
+    void beforeWriteQueueAwait(Runnable hook) {
+        this.beforeWriteQueueAwait = Objects.requireNonNull(hook);
+    }
+
+    private void interruptWriter() {
+        Thread currentThread = thread;
+        if (currentThread != null) {
+            currentThread.interrupt();
+        }
+    }
+
+    private boolean writeNextQueued() throws InterruptedException {
+        int queueSize;
+
+        stateLock.lockInterruptibly();
+        try {
+            // The background writer yields to caller-thread flush/writeNow so those calls can make progress.
+            while (writeQueue.isEmpty() || writing || flushing) {
+                if (!run) {
+                    return false;
+                }
+                if (writing || flushing) {
+                    idle.await();
+                } else {
+                    notEmpty.await();
+                }
+            }
+
+            queueSize = drainBatch(writeBatch.length);
+
+            // The actual socket write happens outside stateLock; this flag keeps all other writers out.
+            writing = true;
+        } finally {
+            stateLock.unlock();
+        }
+
+        try {
+            writeBatch(queueSize);
+            return true;
+        } catch (Throwable e) {
+            fail(e);
+            return false;
+        } finally {
+            stateLock.lock();
+            try {
+                writing = false;
+                idle.signalAll();
+            } finally {
+                stateLock.unlock();
+            }
+        }
+    }
+
+    private void fail(Throwable e) {
+        stateLock.lock();
+        try {
+            // Record the terminal failure and wake every waiter so they all observe it.
+            this.caught = e;
+            this.run = false;
+            notEmpty.signalAll();
+            notFull.signalAll();
+            idle.signalAll();
+        } finally {
+            stateLock.unlock();
+        }
     }
 
     private void run() {
         this.thread = Thread.currentThread();
         this.thread.setName("[" + socket().socketId() + " " + socket().childSocketId() + "]");
         try {
-            while (run) {
-                CompositeBufferData toWrite = BufferData.createComposite(writeQueue.take());  // wait if the queue is empty
-                // we only want to read a certain amount of data, if somebody writes huge amounts
-                // we could spin here forever and run out of memory
-                int queueSize = 1;
-                for (; queueSize <= 1000; queueSize++) {
-                    BufferData newBuf = writeQueue.poll(); // drain ~all elements from the queue, don't wait.
-                    if (newBuf == null) {
-                        break;
-                    }
-                    toWrite.add(newBuf);
-                }
-                writeNow(toWrite);
-                avgQueueSize = (avgQueueSize + queueSize) / 2.0;
+            // Drain queued writes until close or failure tells writeNextQueued to stop.
+            while (writeNextQueued()) {
             }
-            cdl.countDown();
         } catch (Throwable e) {
-            this.caught = e;
-            this.run = false;
+            fail(e);
+        } finally {
+            // Drop queued buffer references on any terminal exit, including close and failed socket writes.
+            discardQueue();
+            cdl.countDown();
         }
     }
 
     private void checkRunning() {
-        if (started.compareAndSet(false, true)) {
-            // start writer on first asynchronous write
-            executor.submit(this::run);
-        }
         if (!run) {
-            throw new SocketWriterException(caught);
+            throw socketWriterException();
         }
     }
 
-    void drainQueue() {
-        BufferData buffer;
-        while ((buffer = writeQueue.poll()) != null) {
-            writeNow(buffer);
+    private SocketWriterException socketWriterException() {
+        Throwable failure = caught;
+        return failure == null ? new SocketWriterException() : new SocketWriterException(failure);
+    }
+
+    private void startWriterIfNeeded() {
+        if (started.compareAndSet(false, true)) {
+            try {
+                // start writer on first asynchronous write
+                executor.submit(this::run);
+            } catch (RuntimeException e) {
+                fail(e);
+                cdl.countDown();
+                throw e;
+            }
         }
     }
 
     double avgQueueSize() {
         return avgQueueSize;
+    }
+
+    // Intended for deterministic tests of close cleanup.
+    int queuedBufferCount() {
+        stateLock.lock();
+        try {
+            return writeQueue.size();
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    private void signalNotFull(int slots) {
+        for (int i = 0; i < slots; i++) {
+            notFull.signal();
+        }
+    }
+
+    private int drainBatch(int maxSize) {
+        // Caller must hold stateLock.
+        int queueSize = 0;
+        while (queueSize < maxSize && !writeQueue.isEmpty()) {
+            writeBatch[queueSize++] = writeQueue.remove();
+        }
+        signalNotFull(queueSize);
+        return queueSize;
+    }
+
+    private void writeBatch(int queueSize) {
+        // Caller must have reserved the socket write by setting writing=true.
+        CompositeBufferData toWrite = BufferData.createComposite(writeBatch[0]);
+        writeBatch[0] = null;
+        for (int i = 1; i < queueSize; i++) {
+            toWrite.add(writeBatch[i]);
+            writeBatch[i] = null;
+        }
+        super.writeNow(toWrite);
+        avgQueueSize = (avgQueueSize + queueSize) / 2.0;
+    }
+
+    private void discardQueue() {
+        stateLock.lock();
+        try {
+            // Clearing the queue drops references and unblocks producers.
+            writeQueue.clear();
+            notFull.signalAll();
+            idle.signalAll();
+        } finally {
+            stateLock.unlock();
+        }
     }
 }
