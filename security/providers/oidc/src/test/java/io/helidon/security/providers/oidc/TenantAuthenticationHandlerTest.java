@@ -259,6 +259,42 @@ class TenantAuthenticationHandlerTest {
     }
 
     @Test
+    public void testRedirectAttemptCookieStrategyWithInvalidCookieValue() {
+        OidcConfig oidcConfig = oidcConfig(COOKIE);
+        TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);
+        String state = "/test?someUri=value";
+
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(attemptCookie(oidcConfig,
+                                                                                         DEFAULT_TENANT_ID,
+                                                                                         state,
+                                                                                         "invalid")),
+                                                        DEFAULT_TENANT_ID,
+                                                        state),
+                   is(oidcConfig.maxRedirects()));
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(attemptCookie(oidcConfig,
+                                                                                         DEFAULT_TENANT_ID,
+                                                                                         state,
+                                                                                         "999999999999999999999")),
+                                                        DEFAULT_TENANT_ID,
+                                                        state),
+                   is(oidcConfig.maxRedirects()));
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(attemptCookie(oidcConfig,
+                                                                                         DEFAULT_TENANT_ID,
+                                                                                         state,
+                                                                                         "-1")),
+                                                        DEFAULT_TENANT_ID,
+                                                        state),
+                   is(oidcConfig.maxRedirects()));
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(attemptCookie(oidcConfig,
+                                                                                         DEFAULT_TENANT_ID,
+                                                                                         state,
+                                                                                         "0")),
+                                                        DEFAULT_TENANT_ID,
+                                                        state),
+                   is(oidcConfig.maxRedirects()));
+    }
+
+    @Test
     public void testRedirectAttemptCookieStrategyWithEncodedQueryParamNames() {
         OidcConfig oidcConfig = OidcConfig.builder()
                 .clientId("test")
@@ -271,14 +307,16 @@ class TenantAuthenticationHandlerTest {
                 .idTokenParamName("id token")
                 .paramTenantName("h tenant")
                 .build();
-        String state = "/test?someUri=value";
+        String state = "/test?someUri=value&h_ra=4";
         String stateWithTokens = state + "&access+token=token"
                 + "&id+token=id-token"
-                + "&h+tenant=tenant"
-                + "&h_ra=4";
+                + "&h+tenant=tenant";
 
         assertThat(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, stateWithTokens),
                    is(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, state)));
+        assertThat(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, "/test?someUri=value&h_ra=5")
+                           .equals(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, state)),
+                   is(false));
     }
 
     @Test
@@ -363,6 +401,10 @@ class TenantAuthenticationHandlerTest {
     }
 
     private static String attemptCookie(OidcConfig oidcConfig, String tenantId, String state, int attempt) {
+        return attemptCookie(oidcConfig, tenantId, state, String.valueOf(attempt));
+    }
+
+    private static String attemptCookie(OidcConfig oidcConfig, String tenantId, String state, String attempt) {
         return RedirectAttemptCookie.name(oidcConfig, tenantId, state) + "=" + attempt;
     }
 

@@ -560,10 +560,15 @@ class TenantAuthenticationHandler {
 
     private int parseRedirectAttemptCookie(String value) {
         try {
-            return Integer.parseInt(value);
+            int attempt = Integer.parseInt(value);
+            if (attempt > 0) {
+                return attempt;
+            }
+            LOGGER.log(System.Logger.Level.DEBUG, "Invalid OIDC redirect attempt cookie value");
+            return oidcConfig.maxRedirects();
         } catch (NumberFormatException e) {
             LOGGER.log(System.Logger.Level.DEBUG, "Invalid OIDC redirect attempt cookie value", e);
-            return 0;
+            return oidcConfig.maxRedirects();
         }
     }
 

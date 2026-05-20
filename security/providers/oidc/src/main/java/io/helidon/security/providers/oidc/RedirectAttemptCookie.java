@@ -30,6 +30,7 @@ import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.SetCookie;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy;
 
 final class RedirectAttemptCookie {
     private RedirectAttemptCookie() {
@@ -86,7 +87,9 @@ final class RedirectAttemptCookie {
 
         UriQueryWriteable queryParams = UriQueryWriteable.create();
         queryParams.fromQueryString(query);
-        removeCounterQueryParam(queryParams, oidcConfig.redirectAttemptParam());
+        if (oidcConfig.redirectAttemptCounterStrategy() == RedirectAttemptCounterStrategy.PARAM) {
+            removeCounterQueryParam(queryParams, oidcConfig.redirectAttemptParam());
+        }
         if (oidcConfig.useParam()) {
             removeCounterQueryParam(queryParams, oidcConfig.paramName());
             removeCounterQueryParam(queryParams, oidcConfig.idTokenParamName());
