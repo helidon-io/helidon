@@ -82,6 +82,9 @@ class GreetResourceMockedTest {
         public void close() {}
 
         @Override
+        public void enableDualStackEndpoints(boolean dualStackEndpointTemplateEnabled) {}
+
+        @Override
         public String getEndpoint() {
             return this.endpoint;
         }
