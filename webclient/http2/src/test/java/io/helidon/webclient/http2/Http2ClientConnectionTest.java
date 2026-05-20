@@ -38,14 +38,17 @@ import io.helidon.http.Headers;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2HuffmanEncoder;
+import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2Setting;
 import io.helidon.http.http2.Http2Settings;
+import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.WebClient;
 
@@ -354,6 +357,100 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void lateControlFramesForAbandonedStreamDoNotCloseConnection() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream abandonedStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream secondStream = connection.createStream(STREAM_CONFIG);
+
+            abandonedStream.writeHeaders(requestHeaders(), false);
+            secondStream.writeHeaders(requestHeaders(), false);
+            abandonedStream.close();
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(windowUpdateFrame(abandonedStream.streamId()),
+                              rstStreamFrame(abandonedStream.streamId()),
+                              encodedHeaderFrame(secondStream.streamId(),
+                                                 encodedResponseHeaders(true),
+                                                 inboundTable,
+                                                 huffman));
+
+            Http2Headers secondHeaders = secondStream.readHeaders();
+            assertThat(secondHeaders.status(), is(Status.OK_200));
+            assertThat(secondHeaders.httpHeaders().get(HeaderNames.CACHE_CONTROL).get(), is("no-cache"));
+
+            secondStream.close();
+            connection.close();
+        }
+    }
+
+    @Test
+    void controlFrameForNeverOpenedStreamClosesConnection() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            test.createConnection(false);
+
+            test.offerInbound(windowUpdateFrame(1));
+
+            test.assertConnectionClosed();
+        }
+    }
+
+    @Test
+    void rstStreamForNeverOpenedStreamClosesConnection() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            test.createConnection(false);
+
+            test.offerInbound(rstStreamFrame(1));
+
+            test.assertConnectionClosed();
+        }
+    }
+
+    @Test
+    void missingServerInitiatedHeadersCloseConnection() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            stream.writeHeaders(requestHeaders(), false);
+
+            test.offerInbound(encodedHeaderFrame(2, encodedResponseHeaders(false), inboundTable, huffman));
+
+            test.assertConnectionClosed();
+        }
+    }
+
+    @Test
+    void missingFutureClientStreamHeadersCloseConnection() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            stream.writeHeaders(requestHeaders(), false);
+
+            test.offerInbound(encodedHeaderFrame(stream.streamId() + 4,
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman));
+
+            test.assertConnectionClosed();
+        }
+    }
+
+    @Test
     void closedStreamDoesNotReceiveHeadersWhenClosedAfterDecode() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.offerInbound(settingsFrame(10));
@@ -534,6 +631,16 @@ class Http2ClientConnectionTest {
                                                                                              : 0),
                                                           streamId);
         return new Http2FrameData(header, BufferData.create(bytes));
+    }
+
+    private static Http2FrameData windowUpdateFrame(int streamId) {
+        return new Http2WindowUpdate(1)
+                .toFrameData(null, streamId, Http2Flag.NoFlags.create());
+    }
+
+    private static Http2FrameData rstStreamFrame(int streamId) {
+        return new Http2RstStream(Http2ErrorCode.CANCEL)
+                .toFrameData(null, streamId, Http2Flag.NoFlags.create());
     }
 
     private static Http2FrameData[] encodedSplitHeaderFrames(int streamId,

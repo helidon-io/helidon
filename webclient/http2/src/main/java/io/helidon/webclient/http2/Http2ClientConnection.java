@@ -19,10 +19,8 @@ package io.helidon.webclient.http2;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -125,7 +123,6 @@ public class Http2ClientConnection {
     private final ReadWriteLock streamsLock = new ReentrantReadWriteLock();
     // streams may be accessed from connection thread, or stream thread, must be guarded by the above lock
     private final Map<Integer, Http2ClientStream> streams = new HashMap<>();
-    private final Set<Integer> abandonedClientStreams = new HashSet<>();
     private final ConnectionFlowControl connectionFlowControl;
     private final Http2Headers.DynamicTable inboundDynamicTable =
             Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
@@ -296,7 +293,6 @@ public class Http2ClientConnection {
         lock.lock();
         try {
             this.streams.put(streamId, stream);
-            this.abandonedClientStreams.remove(streamId);
         } finally {
             lock.unlock();
         }
@@ -311,9 +307,7 @@ public class Http2ClientConnection {
         Lock lock = streamsLock.writeLock();
         lock.lock();
         try {
-            if (this.streams.remove(streamId) != null && clientStreamId(streamId)) {
-                this.abandonedClientStreams.add(streamId);
-            }
+            this.streams.remove(streamId);
         } finally {
             lock.unlock();
         }
@@ -764,7 +758,13 @@ public class Http2ClientConnection {
         if (streamId == 0) {
             updateConnectionWindow(windowUpdate);
         } else {
-            stream(streamId).windowUpdate(windowUpdate);
+            Http2ClientStream stream = stream(streamId);
+            if (stream == null) {
+                validateKnownAbandonedClientStream(streamId, frameHeader.type());
+                logDroppedFrame(frameHeader.type(), streamId);
+            } else {
+                stream.windowUpdate(windowUpdate);
+            }
         }
         return true;
     }
@@ -809,7 +809,13 @@ public class Http2ClientConnection {
     private void handleRstStreamFrame(int streamId, BufferData data) {
         Http2RstStream rstStream = Http2RstStream.create(data);
         recvListener.frame(ctx, streamId, rstStream);
-        stream(streamId).rstStream(rstStream);
+        Http2ClientStream stream = stream(streamId);
+        if (stream == null) {
+            validateKnownAbandonedClientStream(streamId, Http2FrameType.RST_STREAM);
+            logDroppedFrame(Http2FrameType.RST_STREAM, streamId);
+        } else {
+            stream.rstStream(rstStream);
+        }
     }
 
     private void handleDataFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {
@@ -857,17 +863,10 @@ public class Http2ClientConnection {
 
         Http2ClientStream headerStream = stream(streamId);
         if (headerStream == null) {
-            if (!knownAbandonedClientStream(streamId)) {
-                throw new Http2Exception(Http2ErrorCode.PROTOCOL,
-                                         "Received " + frameHeader.type()
-                                                 + " frame for invalid stream " + streamId);
-            }
+            validateKnownAbandonedClientStream(streamId, frameHeader.type());
             // Keep the shared inbound HPACK table in sync even if the application already closed the stream.
             decodeDroppedInboundHeaders(headerFrames);
-            if (LOGGER.isLoggable(DEBUG)) {
-                ctx.log(LOGGER, DEBUG, "%d: received %s for stream %d, which does not exist",
-                        0, frameHeader.type(), streamId);
-            }
+            logDroppedFrame(frameHeader.type(), streamId);
             return true;
         }
 
@@ -879,12 +878,23 @@ public class Http2ClientConnection {
     }
 
     private boolean knownAbandonedClientStream(int streamId) {
-        Lock lock = streamsLock.readLock();
-        lock.lock();
-        try {
-            return abandonedClientStreams.contains(streamId);
-        } finally {
-            lock.unlock();
+        // Client stream IDs are monotonic odd numbers, so an opened ID at or below lastStreamId is locally abandoned
+        // when it no longer has an active stream entry.
+        return clientStreamId(streamId) && streamId <= lastStreamId;
+    }
+
+    private void validateKnownAbandonedClientStream(int streamId, Http2FrameType frameType) {
+        if (!knownAbandonedClientStream(streamId)) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                     "Received " + frameType
+                                             + " frame for invalid stream " + streamId);
+        }
+    }
+
+    private void logDroppedFrame(Http2FrameType frameType, int streamId) {
+        if (LOGGER.isLoggable(DEBUG)) {
+            ctx.log(LOGGER, DEBUG, "%d: received %s for stream %d, which does not exist",
+                    0, frameType, streamId);
         }
     }
 
