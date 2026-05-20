@@ -247,6 +247,42 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void cancelReleasesReservedStreamAfterRstWrite() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            stream.writeHeaders(requestHeaders(), false);
+            assertNull(connection.tryStream(STREAM_CONFIG));
+
+            MockedConnectionTestContext.BlockedWrite blockedWrite = test.blockNextWriteNow();
+            CompletableFuture<Void> cancel = CompletableFuture.runAsync(stream::cancel);
+
+            assertTrue(blockedWrite.awaitEntered());
+            try {
+                Http2ClientStream unexpectedStream = connection.tryStream(STREAM_CONFIG);
+                try {
+                    assertNull(unexpectedStream);
+                } finally {
+                    if (unexpectedStream != null) {
+                        unexpectedStream.close();
+                    }
+                }
+            } finally {
+                blockedWrite.release();
+            }
+            cancel.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            stream.close();
+
+            Http2ClientStream recoveredStream = connection.tryStream(STREAM_CONFIG);
+            assertNotNull(recoveredStream);
+            recoveredStream.close();
+            connection.close();
+        }
+    }
+
+    @Test
     void inboundHeadersEndStreamReleasesReservedStreamBeforeApplicationClose() {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.offerInbound(settingsFrame(1));
@@ -747,6 +783,7 @@ class Http2ClientConnectionTest {
         private final ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();
         private final LinkedBlockingQueue<byte[]> inboundFrames = new LinkedBlockingQueue<>();
         private final AtomicBoolean failWrites = new AtomicBoolean();
+        private final AtomicReference<BlockedWrite> blockedWrite = new AtomicReference<>();
         private final DataWriter dataWriter = mock(DataWriter.class);
         private final io.helidon.common.socket.HelidonSocket socket = mock(io.helidon.common.socket.HelidonSocket.class);
         private final Http2ClientConfig clientConfig;
@@ -777,10 +814,12 @@ class Http2ClientConnectionTest {
             }).when(dataWriter).write(any(BufferData[].class));
             doAnswer(invocation -> {
                 maybeFailWrites();
+                maybeBlockWriteNow();
                 return null;
             }).when(dataWriter).writeNow(any(BufferData.class));
             doAnswer(invocation -> {
                 maybeFailWrites();
+                maybeBlockWriteNow();
                 return null;
             }).when(dataWriter).writeNow(any(BufferData[].class));
 
@@ -826,9 +865,24 @@ class Http2ClientConnectionTest {
             failWrites.set(false);
         }
 
+        private BlockedWrite blockNextWriteNow() {
+            BlockedWrite result = new BlockedWrite();
+            if (!blockedWrite.compareAndSet(null, result)) {
+                throw new IllegalStateException("A write is already blocked");
+            }
+            return result;
+        }
+
         private void maybeFailWrites() {
             if (failWrites.get()) {
                 throw new UncheckedIOException(new IOException("expected test write failure"));
+            }
+        }
+
+        private void maybeBlockWriteNow() {
+            BlockedWrite block = blockedWrite.getAndSet(null);
+            if (block != null) {
+                block.block();
             }
         }
 
@@ -848,6 +902,31 @@ class Http2ClientConnectionTest {
         @Override
         public void close() {
             connectionExecutor.shutdownNow();
+        }
+
+        private static final class BlockedWrite {
+            private final CountDownLatch entered = new CountDownLatch(1);
+            private final CountDownLatch released = new CountDownLatch(1);
+
+            private boolean awaitEntered() throws InterruptedException {
+                return entered.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            }
+
+            private void release() {
+                released.countDown();
+            }
+
+            private void block() {
+                entered.countDown();
+                try {
+                    if (!released.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
+                        throw new IllegalStateException("Timed out waiting for test to release blocked write");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while blocking test write", e);
+                }
+            }
         }
     }
 

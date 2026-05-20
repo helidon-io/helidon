@@ -231,13 +231,20 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         }
         Http2RstStream rstStream = new Http2RstStream(Http2ErrorCode.CANCEL);
         Http2FrameData frameData = rstStream.toFrameData(settings, streamId, Http2Flag.NoFlags.create());
+        Http2StreamState nextState = Http2StreamState.checkAndGetState(this.state,
+                                                                       Http2FrameType.RST_STREAM,
+                                                                       true,
+                                                                       false,
+                                                                       false);
         sendListener.frameHeader(ctx, streamId, frameData.header());
         sendListener.frame(ctx, streamId, rstStream);
         try {
-            write(frameData, false);
+            connection.writer().write(frameData);
         } catch (UncheckedIOException e) {
             // we consider this to be a marker that the connection is already close
             ctx.log(LOGGER, DEBUG, "Exception during stream cancel", e);
+        } finally {
+            updateState(nextState);
         }
     }
 
