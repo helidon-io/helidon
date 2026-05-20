@@ -21,6 +21,8 @@ import java.lang.reflect.Field;
 import java.net.SocketException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -28,6 +30,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.HelidonSocket;
+import io.helidon.common.socket.SocketWriter;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
 import io.helidon.webserver.ConnectionContext;
@@ -70,6 +75,27 @@ class WsConnectionTest {
                 () -> assertThat(exception.getCause(), instanceOf(UncheckedIOException.class)),
                 () -> assertThat(exception.getCause().getCause(), instanceOf(SocketException.class))
         );
+    }
+
+    @Test
+    void sendWrapsSocketWriterExceptionFromSmartWriter() {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        SocketWriter writer = smartFailingWriter(executor);
+        try {
+            WsConnection connection = createConnection(writer);
+
+            ServerConnectionException exception = assertThrows(ServerConnectionException.class,
+                                                               () -> connection.send("hello", true));
+
+            assertAll(
+                    () -> assertThat(exception.getCause(), instanceOf(SocketWriterException.class)),
+                    () -> assertThat(exception.getCause().getCause(), instanceOf(UncheckedIOException.class)),
+                    () -> assertThat(exception.getCause().getCause().getCause(), instanceOf(SocketException.class))
+            );
+        } finally {
+            writer.close();
+            executor.shutdownNow();
+        }
     }
 
     @Test
@@ -120,6 +146,16 @@ class WsConnectionTest {
                                    mock(Headers.class),
                                    "key",
                                    mock(WsListener.class));
+    }
+
+    private static SocketWriter smartFailingWriter(ExecutorService executor) {
+        HelidonSocket socket = mock(HelidonSocket.class);
+        when(socket.socketId()).thenReturn("test");
+        when(socket.childSocketId()).thenReturn("child");
+        doThrow(new UncheckedIOException(new SocketException("Broken pipe")))
+                .when(socket)
+                .write(any(BufferData.class));
+        return SocketWriter.create(executor, socket, 2, true);
     }
 
     private static boolean awaitCloseSent(WsConnection connection) throws ReflectiveOperationException, InterruptedException {
