@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -209,7 +209,7 @@ Navigate to the `helidon-quickstart-se` directory and open the `pom.xml` file to
     </dependency>
     <dependency>
         <groupId>io.helidon.dbclient</groupId>
-        <artifactId>helidon-dbclient-jsonp</artifactId> <!--7-->
+        <artifactId>helidon-dbclient-json</artifactId> <!--7-->
     </dependency>
     <!-- ... -->
 </dependencies>
@@ -220,7 +220,11 @@ Navigate to the `helidon-quickstart-se` directory and open the `pom.xml` file to
 <4> H2 driver dependency.
 <5> Support for health check.
 <6> Support for metrics.
-<7> Support for Jsonp.
+<7> Support for Helidon JSON mapping.
+
+The `helidon-dbclient-json` module maps DB rows to Helidon JSON `JsonObject` instances and maps `JsonObject`
+instances to named or indexed statement parameters. MongoDB statements also accept Helidon JSON `JsonObject` and
+`JsonArray` instances directly as statement parameters.
 
 === Configure the DB Client
 
@@ -337,8 +341,8 @@ Client xref:../dbclient.adoc[here].
 include::{sourcedir}/se/guides/DbclientSnippets.java[tag=snippet_5, indent=0]
 ----
 
-Instead of sending the `INFO` content of the targeted book, the `getJsonBook` method send the whole row of the
-database as a `JsonObject`.
+Instead of sending the `INFO` content of the targeted book, the `getJsonBook` method sends the whole row of the
+database as a Helidon JSON `JsonObject`.
 
 [source,java]
 .Add addBook to the LibraryService:
