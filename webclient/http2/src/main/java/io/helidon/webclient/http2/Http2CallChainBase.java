@@ -132,7 +132,24 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
             if (!clientRequest().outputStreamRedirect()) {
                 http2Client.connectionCache().remove(connectionKey);
             }
+            closeFailedStream(result);
             throw e;
+        } catch (RuntimeException | Error e) {
+            closeFailedStream(result);
+            throw e;
+        }
+    }
+
+    private void closeFailedStream(Http2ConnectionAttemptResult result) {
+        if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
+            Http2ClientStream failedStream = result.stream();
+            try {
+                failedStream.cancel();
+            } catch (RuntimeException | Error ignored) {
+                // Preserve the original request failure; close still releases the reserved stream slot.
+            } finally {
+                failedStream.close();
+            }
         }
     }
 

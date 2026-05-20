@@ -197,8 +197,13 @@ public class Http2ClientConnection {
                                                       Http2ClientImpl http2Client,
                                                       boolean sendSettings) {
         Http2ClientConnection rawConnection = connection;
-        rawConnection.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
-        rawConnection.awaitInitialSettings();
+        try {
+            rawConnection.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
+            rawConnection.awaitInitialSettings();
+        } catch (RuntimeException | Error e) {
+            rawConnection.close();
+            throw e;
+        }
         return connection;
     }
 
@@ -366,7 +371,9 @@ public class Http2ClientConnection {
         this.goAway(0, Http2ErrorCode.NO_ERROR, "Closing connection");
         if (state.getAndSet(State.CLOSED) != State.CLOSED) {
             try {
-                handleTask.cancel(true);
+                if (handleTask != null) {
+                    handleTask.cancel(true);
+                }
                 ctx.log(LOGGER, TRACE, "Closing connection");
                 connection.closeResource();
             } catch (Throwable e) {
@@ -526,6 +533,7 @@ public class Http2ClientConnection {
         frameHeader.type().checkLength(frameHeader.length());
         BufferData data = readFrameData(frameHeader);
         int streamId = frameHeader.streamId();
+        validateFrameStreamId(frameHeader, streamId);
         validateHeaderContinuation(frameHeader, streamId);
 
         return switch (frameHeader.type()) {
@@ -570,6 +578,25 @@ public class Http2ClientConnection {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL,
                                      "Received CONTINUATION for stream " + streamId
                                              + ", expected for " + expectedStreamId);
+        }
+    }
+
+    private void validateFrameStreamId(Http2FrameHeader frameHeader, int streamId) {
+        switch (frameHeader.type()) {
+        case DATA, HEADERS, CONTINUATION, RST_STREAM -> {
+            if (streamId == 0) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                         "Received " + frameHeader.type() + " frame with stream id 0");
+            }
+        }
+        case SETTINGS, PING, GO_AWAY -> {
+            if (streamId != 0) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                         "Received " + frameHeader.type() + " frame for stream " + streamId);
+            }
+        }
+        default -> {
+        }
         }
     }
 
@@ -779,11 +806,15 @@ public class Http2ClientConnection {
             }
             return;
         }
+        Http2FrameData frameData = new Http2FrameData(frameHeader, data);
+        if (!stream.prepareInboundData(frameData)) {
+            return;
+        }
         stream.flowControl().inbound().decrementWindowSize(frameHeader.length());
         if (LOGGER.isLoggable(DEBUG)) {
             ctx.log(LOGGER, DEBUG, "%d: received data for stream %d", 0, streamId);
         }
-        stream.push(new Http2FrameData(frameHeader, data));
+        stream.push(frameData);
     }
 
     private boolean handleHeadersFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {

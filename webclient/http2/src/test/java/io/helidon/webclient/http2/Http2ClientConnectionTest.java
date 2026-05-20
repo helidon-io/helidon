@@ -60,6 +60,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class Http2ClientConnectionTest {
@@ -145,6 +147,83 @@ class Http2ClientConnectionTest {
                                                                       huffman));
             firstStream.close();
             secondStream.close();
+            connection.close();
+        }
+    }
+
+    @Test
+    void headersOnStreamZeroCloseConnection() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            test.createConnection(false);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedSplitHeaderFrames(0, encodedResponseHeaders(false), inboundTable, huffman)[0]);
+
+            test.assertConnectionClosed();
+        }
+    }
+
+    @Test
+    void initialSettingsFailureClosesConnection() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.closeInbound();
+
+            assertThrows(IllegalStateException.class, () -> test.createConnection(false));
+            test.assertConnectionClosed();
+        }
+    }
+
+    @Test
+    void dataBeforeResponseHeadersClosesConnection() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            stream.writeHeaders(requestHeaders(), true);
+            test.offerInbound(dataFrame(stream.streamId(), "hello".getBytes(StandardCharsets.UTF_8), false));
+
+            test.assertConnectionClosed();
+        }
+    }
+
+    @Test
+    void dataAfterTrailersClosesConnection() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            stream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(stream.streamId(), encodedResponseHeaders(false), inboundTable, huffman),
+                              encodedHeaderFrame(stream.streamId(), encodedTrailers(), inboundTable, huffman, true),
+                              dataFrame(stream.streamId(), "late".getBytes(StandardCharsets.UTF_8), false));
+
+            test.assertConnectionClosed();
+        }
+    }
+
+    @Test
+    void closeBeforeWriteHeadersReleasesReservedStream() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream reservedStream = connection.createStream(STREAM_CONFIG);
+
+            assertNull(connection.tryStream(STREAM_CONFIG));
+
+            reservedStream.close();
+
+            Http2ClientStream recoveredStream = connection.tryStream(STREAM_CONFIG);
+            assertNotNull(recoveredStream);
+            recoveredStream.close();
             connection.close();
         }
     }
@@ -465,6 +544,8 @@ class Http2ClientConnectionTest {
     }
 
     private static final class MockedConnectionTestContext implements AutoCloseable {
+        private static final byte[] END_INBOUND = new byte[0];
+
         private final ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();
         private final LinkedBlockingQueue<byte[]> inboundFrames = new LinkedBlockingQueue<>();
         private final AtomicBoolean failWrites = new AtomicBoolean();
@@ -531,6 +612,14 @@ class Http2ClientConnectionTest {
             }
         }
 
+        private void closeInbound() {
+            inboundFrames.add(END_INBOUND);
+        }
+
+        private void assertConnectionClosed() {
+            verify(clientConnection, timeout(TEST_WAIT_TIMEOUT.toMillis())).closeResource();
+        }
+
         private void failWrites() {
             failWrites.set(true);
         }
@@ -547,7 +636,11 @@ class Http2ClientConnectionTest {
 
         private byte[] nextInboundFrame() {
             try {
-                return inboundFrames.take();
+                byte[] frame = inboundFrames.take();
+                if (frame == END_INBOUND) {
+                    return null;
+                }
+                return frame;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return null;

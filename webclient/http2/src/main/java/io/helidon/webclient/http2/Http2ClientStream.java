@@ -82,6 +82,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     // accessed from stream thread an connection thread
     private volatile StreamFlowControl flowControl;
     private boolean hasEntity;
+    private boolean inboundEndQueued;
 
     // streamId and buffer can only be created when we are locked in the stream id sequence
     private int streamId;
@@ -275,6 +276,29 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         buffer.push(frameData);
     }
 
+    boolean prepareInboundData(Http2FrameData frameData) {
+        int flags = frameData.header().flags();
+        boolean endOfStream = (flags & Http2Flag.END_OF_STREAM) == Http2Flag.END_OF_STREAM;
+
+        inboundStateLock.lock();
+        try {
+            if (closed) {
+                return false;
+            }
+            if (inboundEndQueued || readState != ReadState.DATA) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                         "Received DATA frame in invalid response read state " + readState);
+            }
+            Http2StreamState.checkAndGetState(state, frameData.header().type(), false, endOfStream, false);
+            if (endOfStream) {
+                inboundEndQueued = true;
+            }
+            return true;
+        } finally {
+            inboundStateLock.unlock();
+        }
+    }
+
     /**
      * Push decoded trailers into the stream buffer behind any earlier DATA frames.
      *
@@ -282,6 +306,15 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * @param endOfStream whether the trailer block ended the stream
      */
     void pushTrailers(Http2Headers headers, boolean endOfStream) {
+        if (inboundEndQueued) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                     "Received trailers after inbound stream end was queued");
+        }
+        if (!endOfStream) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                     "Received trailers without END_STREAM");
+        }
+        inboundEndQueued = true;
         buffer.pushTrailers(headers, endOfStream);
     }
 
