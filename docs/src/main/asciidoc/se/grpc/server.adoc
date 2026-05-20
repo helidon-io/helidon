@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ include::{rootdir}/includes/se.adoc[]
 ** <<Metrics, Metrics>>
 - <<Configuration, Configuration>>
 ** <<Configuring the gRPC Server, Configuring the gRPC Server>>
+** <<Securing gRPC Services, Securing gRPC Services>>
 ** <<Configuring the gRPC Reflection Service, Configuring the gRPC Reflection Service>>
 ** <<Configuring Compression, Configuring Compression>>
 - <<Examples, Examples>>
@@ -259,7 +260,9 @@ or via a configuration file.
 
 === Configuring the gRPC Server
 
-Currently, we do not have any custom configuration options for the gRPC protocol.
+The default gRPC protocol can be configured using `server.protocols.grpc`. See the
+xref:{rootdir}/config/io_helidon_webserver_grpc_GrpcConfig.adoc[gRPC configuration reference]
+for all options.
 
 To register a routing with Helidon WebServer, simply add the routing to the listener
 (WebServer configuration is itself the default listener configuration)
@@ -271,6 +274,76 @@ include::{sourcedir}/se/grpc/ServerSnippets.java[tag=snippet_3, indent=0]
 
 <1> Configure HTTP routing of the server
 <2> Configure gRPC routing of the server
+
+=== Securing gRPC Services
+
+HTTP routing security protects HTTP routes only. gRPC requests are dispatched by the
+gRPC protocol, so secure gRPC services with `helidon-webserver-grpc-security`.
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-grpc-security</artifactId>
+</dependency>
+----
+
+Configure security as a gRPC server service under `grpc.grpc-services.security`.
+The `security` root config still defines the Helidon security providers.
+The example below uses HTTP Basic authentication, so it also needs the
+`helidon-security-providers-http-auth` dependency:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-http-auth</artifactId>
+</dependency>
+----
+
+[source,yaml]
+----
+security:
+  providers:
+    - http-basic-auth:
+        realm: "helidon"
+        users:
+          - login: "jack"
+            password: "changeit"
+            roles: ["user"]
+
+grpc:
+  grpc-services:
+    security:
+      defaults:
+        authenticate: true
+      services:
+        - name: StringService
+          methods:
+            - name: Upper
+              roles-allowed: ["user"]
+----
+
+Service names may use the full gRPC service name or the final service name segment.
+Method names use the bare gRPC method name, such as `Upper`, not the full
+`StringService/Upper` method path.
+
+Automatic gRPC security loading is supported from `grpc.grpc-services.security`.
+The `server.protocols.grpc` tree configures the gRPC protocol only, not gRPC
+services or their security rules. For named sockets, register gRPC security
+programmatically with that socket's gRPC routing.
+
+You can also register gRPC security programmatically:
+
+[source,java]
+----
+GrpcRouting.builder()
+        .intercept(GrpcSecurity.create(security, config.get("grpc.grpc-services.security")))
+        .service(new StringService());
+----
+
+The gRPC security configuration reference is available at
+xref:{rootdir}/config/io_helidon_webserver_grpc_security_GrpcSecurityConfig.adoc[GrpcSecurityConfig].
 
 === Configuring the gRPC Reflection Service
 

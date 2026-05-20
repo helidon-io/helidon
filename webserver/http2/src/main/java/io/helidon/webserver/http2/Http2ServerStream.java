@@ -23,6 +23,8 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.IntConsumer;
 
 import io.helidon.common.buffers.BufferData;
@@ -100,6 +102,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private final Http2ConcurrentConnectionStreams streams;
     private final HttpRouting routing;
     private final AtomicReference<WriteState> writeState = new AtomicReference<>(WriteState.INIT);
+    private final Lock inboundDataLock = new ReentrantLock();
     private boolean wasLastDataFrame = false;
     private boolean hasEntity = true;
     private volatile Http2Headers headers;
@@ -208,7 +211,17 @@ class Http2ServerStream implements Runnable, Http2Stream {
             subProtocolHandler.rstStream(rstStream);
         }
         boolean rapidReset = writeState.get() == WriteState.INIT;
-        this.state = Http2StreamState.CLOSED;
+        inboundDataLock.lock();
+        try {
+            this.state = Http2StreamState.CLOSED;
+            drainInboundData();
+        } finally {
+            inboundDataLock.unlock();
+        }
+        boolean wakeupOffered = inboundData.offer(TERMINATING_FRAME);
+        if (!wakeupOffered && LOGGER.isLoggable(DEBUG)) {
+            ctx.log(LOGGER, DEBUG, "Reset stream %d already has pending data to wake up the stream handler.", streamId);
+        }
         return rapidReset;
     }
 
@@ -263,6 +276,10 @@ class Http2ServerStream implements Runnable, Http2Stream {
     @Override
     public void data(Http2FrameHeader header, BufferData data, boolean endOfStream) {
         int dataLength = data.available();
+        if (state == Http2StreamState.CLOSED) {
+            flowControl.inbound().incrementWindowSize(header.length());
+            return;
+        }
         if (expectedLength != -1 && expectedLength < dataLength) {
             resetInvalidContentLength(header.length(), endOfStream);
             return;
@@ -282,16 +299,28 @@ class Http2ServerStream implements Runnable, Http2Stream {
             return;
         }
         try {
-            inboundData.put(new DataFrame(header, data));
+            DataFrame frame = new DataFrame(header, data);
+            inboundData.put(frame);
+            inboundDataLock.lock();
+            try {
+                if (state == Http2StreamState.CLOSED) {
+                    if (inboundData.remove(frame)) {
+                        flowControl.inbound().incrementWindowSize(header.length());
+                    }
+                    return;
+                }
+                if (endOfStream) {
+                    if (state == Http2StreamState.HALF_CLOSED_LOCAL) {
+                        state = Http2StreamState.CLOSED;
+                    } else {
+                        state = Http2StreamState.HALF_CLOSED_REMOTE;
+                    }
+                }
+            } finally {
+                inboundDataLock.unlock();
+            }
         } catch (InterruptedException e) {
             throw new Http2Exception(Http2ErrorCode.INTERNAL, "Interrupted", e);
-        }
-        if (endOfStream) {
-            if (state == Http2StreamState.HALF_CLOSED_LOCAL) {
-                state = Http2StreamState.CLOSED;
-            } else {
-                state = Http2StreamState.HALF_CLOSED_REMOTE;
-            }
         }
     }
 
@@ -397,9 +426,17 @@ class Http2ServerStream implements Runnable, Http2Stream {
             resetInvalidContentLength(0, true);
             return;
         }
-        this.state = state == Http2StreamState.HALF_CLOSED_LOCAL
-                ? Http2StreamState.CLOSED
-                : Http2StreamState.HALF_CLOSED_REMOTE;
+        inboundDataLock.lock();
+        try {
+            if (state == Http2StreamState.CLOSED) {
+                return;
+            }
+            this.state = state == Http2StreamState.HALF_CLOSED_LOCAL
+                    ? Http2StreamState.CLOSED
+                    : Http2StreamState.HALF_CLOSED_REMOTE;
+        } finally {
+            inboundDataLock.unlock();
+        }
         try {
             // we need to notify that there is no data coming
             inboundData.put(TERMINATING_FRAME);
@@ -538,14 +575,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
         if (currentFrameLength > 0) {
             flowControl.inbound().incrementWindowSize(currentFrameLength);
         }
-        DataFrame frame = inboundData.poll();
-        while (frame != null) {
-            int frameLength = frame.header().length();
-            if (frameLength > 0) {
-                flowControl.inbound().incrementWindowSize(frameLength);
-            }
-            frame = inboundData.poll();
-        }
+        drainInboundData();
         if (!inboundData.offer(TERMINATING_FRAME)) {
             throw new Http2Exception(Http2ErrorCode.INTERNAL, "Failed to notify reset stream.");
         }
@@ -705,8 +735,21 @@ class Http2ServerStream implements Runnable, Http2Stream {
             }
         } else {
             subProtocolHandler.init();
-            while (subProtocolHandler.streamState() != Http2StreamState.CLOSED
-                    && subProtocolHandler.streamState() != Http2StreamState.HALF_CLOSED_LOCAL) {
+            boolean closedAfterInit;
+            inboundDataLock.lock();
+            try {
+                this.state = subProtocolHandler.streamState();
+                closedAfterInit = this.state == Http2StreamState.CLOSED;
+                if (closedAfterInit) {
+                    drainInboundData();
+                }
+            } finally {
+                inboundDataLock.unlock();
+            }
+            if (closedAfterInit) {
+                return;
+            }
+            while (this.state != Http2StreamState.CLOSED) {
                 DataFrame frame;
                 try {
                     frame = inboundData.take();
@@ -717,9 +760,23 @@ class Http2ServerStream implements Runnable, Http2Stream {
                     ctx.log(LOGGER, System.Logger.Level.DEBUG, "%s interrupted stream %d", handlerName, streamId);
                     return;
                 }
+                if (this.state == Http2StreamState.CLOSED) {
+                    return;
+                }
                 subProtocolHandler.data(frame.header, frame.data);
                 this.state = subProtocolHandler.streamState();
             }
+        }
+    }
+
+    private void drainInboundData() {
+        DataFrame frame = inboundData.poll();
+        while (frame != null) {
+            int frameLength = frame.header().length();
+            if (frameLength > 0) {
+                flowControl.inbound().incrementWindowSize(frameLength);
+            }
+            frame = inboundData.poll();
         }
     }
 

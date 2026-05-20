@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameHeader;
+import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2StreamState;
@@ -53,7 +54,7 @@ class GrpcProtocolHandlerNotFound implements Http2SubProtocolSelector.SubProtoco
                                   streamId,
                                   Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
                                   FlowControl.Outbound.NOOP);
-        currentStreamState = Http2StreamState.HALF_CLOSED_LOCAL;
+        currentStreamState = GrpcProtocolHandler.nextStreamState(currentStreamState, Http2StreamState.HALF_CLOSED_LOCAL);
     }
 
     @Override
@@ -71,5 +72,8 @@ class GrpcProtocolHandlerNotFound implements Http2SubProtocolSelector.SubProtoco
 
     @Override
     public void data(Http2FrameHeader header, BufferData data) {
+        if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
+            currentStreamState = GrpcProtocolHandler.nextStreamState(currentStreamState, Http2StreamState.HALF_CLOSED_REMOTE);
+        }
     }
 }

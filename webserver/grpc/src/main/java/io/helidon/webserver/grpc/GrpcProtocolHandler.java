@@ -61,11 +61,13 @@ import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 
+import io.grpc.Attributes;
 import io.grpc.Codec;
 import io.grpc.Compressor;
 import io.grpc.CompressorRegistry;
 import io.grpc.Decompressor;
 import io.grpc.DecompressorRegistry;
+import io.grpc.Grpc;
 import io.grpc.KnownLength;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
@@ -78,6 +80,8 @@ import static io.helidon.http.http2.Http2Flag.DataFlags;
 import static io.helidon.http.http2.Http2Flag.END_OF_HEADERS;
 import static io.helidon.http.http2.Http2Flag.END_OF_STREAM;
 import static io.helidon.http.http2.Http2Flag.HeaderFlags;
+import static io.helidon.http.http2.Http2StreamState.CLOSED;
+import static io.helidon.http.http2.Http2StreamState.HALF_CLOSED_LOCAL;
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 import static java.lang.System.Logger.Level.ERROR;
 
@@ -202,9 +206,11 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     @Override
     public void rstStream(Http2RstStream rstStream) {
         callCancelled = (rstStream.errorCode() == Http2ErrorCode.CANCEL);
-        listener.onCancel();
+        if (listener != null) {
+            listener.onCancel();
+        }
         currentStreamState.updateAndGet(
-                current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_REMOTE));
+                current -> nextStreamState(current, Http2StreamState.CLOSED));
     }
 
     @Override
@@ -221,6 +227,18 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     @Override
     public void data(Http2FrameHeader header, BufferData data) {
         try {
+            Http2StreamState state = currentStreamState.get();
+            if (state == Http2StreamState.CLOSED) {
+                return;
+            }
+            if (state == Http2StreamState.HALF_CLOSED_LOCAL) {
+                if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
+                    currentStreamState.updateAndGet(
+                            current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_REMOTE));
+                }
+                return;
+            }
+
             boolean isCompressed = false;
 
             // check for any unread data received before
@@ -391,6 +409,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
      */
     static Http2StreamState nextStreamState(Http2StreamState currentStreamState,
                                             Http2StreamState desiredStreamState) {
+        if (currentStreamState == Http2StreamState.CLOSED) {
+            return Http2StreamState.CLOSED;
+        }
         return switch (desiredStreamState) {
             case HALF_CLOSED_LOCAL -> currentStreamState == Http2StreamState.HALF_CLOSED_REMOTE
                     ? Http2StreamState.CLOSED
@@ -483,14 +504,14 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             @Override
             public void close(Status status, Metadata trailers) {
-                // prepare trailers, may override status code to CANCELLED
+                // Security interceptors can reject the call before startCall returns a listener.
+                Http2StreamState closeState = listener == null ? CLOSED : HALF_CLOSED_LOCAL;
                 WritableHeaders<?> writable = WritableHeaders.create();
                 if (!headersSent) {
                     writable.set(GRPC_CONTENT_TYPE);
                 }
                 GrpcHeadersUtil.updateHeaders(writable, trailers);
-                int statusValue = callCancelled ? Status.CANCELLED.getCode().value()
-                        : status.getCode().value();
+                int statusValue = callCancelled ? Status.CANCELLED.getCode().value() : status.getCode().value();
                 writable.set(HeaderValues.create(GrpcStatus.STATUS_NAME, statusValue));
                 String description = status.getDescription();
                 if (description != null) {
@@ -506,15 +527,13 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     writeHeaders(http2Headers, HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM));
                 } catch (CloseConnectionException e) {
                     callCancelled = true;
-                    currentStreamState.updateAndGet(
-                            current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_LOCAL));
+                    currentStreamState.updateAndGet(current -> nextStreamState(current, closeState));
                     return;
                 }
-                currentStreamState.updateAndGet(
-                        current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_LOCAL));
+                currentStreamState.updateAndGet(current -> nextStreamState(current, closeState));
 
                 // inform listener of completion
-                if (!callCancelled) {
+                if (!callCancelled && listener != null) {
                     listener.onComplete();
                 }
 
@@ -529,6 +548,14 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             @Override
             public boolean isCancelled() {
                 return callCancelled || currentStreamState.get() == Http2StreamState.CLOSED;
+            }
+
+            @Override
+            public Attributes getAttributes() {
+                // gRPC security reads peer addresses from the standard gRPC transport attributes.
+                return Attributes.newBuilder()
+                        .set(Grpc.TRANSPORT_ATTR_REMOTE_ADDR, connectionContext.remotePeer().address())
+                        .set(Grpc.TRANSPORT_ATTR_LOCAL_ADDR, connectionContext.localPeer().address()).build();
             }
 
             @Override

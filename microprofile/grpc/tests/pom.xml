@@ -58,7 +58,17 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.grpc</groupId>
+            <artifactId>helidon-microprofile-grpc-security</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.grpc</groupId>
             <artifactId>helidon-microprofile-grpc-tracing</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-http-auth</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

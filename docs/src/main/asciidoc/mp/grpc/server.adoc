@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Usage, Usage>>
 ** <<Defining a Service, Defining a Service>>
 ** <<Using Custom Marshalers, Using Custom Marshalers>>
+** <<Securing Services, Securing Services>>
 - <<Implementing a gRPC Extension, Implementing a gRPC Extension>>
 - <<gRPC Reflection Service, gRPC Reflection Service>>
 - <<Configuration, Configuration>>
@@ -61,6 +62,16 @@ include::{rootdir}/includes/dependencies.adoc[]
 Additional dependencies may be required depending on your application needs. See
 the link:{helidon-github-examples-url}/microprofile/grpc[gRPC MP Example]
 for a complete example.
+
+To secure MP gRPC services, add the gRPC MP security dependency:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.grpc</groupId>
+    <artifactId>helidon-microprofile-grpc-security</artifactId>
+</dependency>
+----
 
 == API
 All Helidon gRPC MP annotations are defined in the `Grpc` interface. The following annotations are
@@ -150,6 +161,62 @@ include::{sourcedir}/mp/grpc/GrpcSnippets.java[tag=snippet_3, indent=0]
 Annotating the supplier with `@Dependent` ensures discoverability provided CDI is configured
 to find all annotated beans in the corresponding `beans.xml` file.
 
+=== Securing Services
+
+HTTP routing security protects HTTP routes only. gRPC requests are dispatched by the
+gRPC protocol, so add `helidon-microprofile-grpc-security` to secure MP gRPC services.
+
+MP gRPC security in this Helidon version is configuration-based. Security annotations on
+gRPC service classes or methods, such as `@RolesAllowed`, are not interpreted by the MP
+gRPC integration. Use `grpc.grpc-services.security` configuration to select the secured
+services and methods.
+
+The `security` root config defines the Helidon security providers. The
+`grpc.grpc-services.security` config defines the gRPC service and method rules.
+For MP gRPC security, use only this top-level `grpc.grpc-services.security`
+configuration path. The `server.protocols.grpc` tree configures protocol setup;
+it does not configure MP gRPC services or their security rules.
+The example below uses HTTP Basic authentication, so it also needs the
+`helidon-security-providers-http-auth` dependency:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-http-auth</artifactId>
+</dependency>
+----
+
+[source,yaml]
+----
+security:
+  providers:
+    - http-basic-auth:
+        realm: "helidon"
+        users:
+          - login: "jack"
+            password: "changeit"
+            roles: ["user"]
+
+grpc:
+  grpc-services:
+    security:
+      defaults:
+        authenticate: true
+      services:
+        - name: StringService
+          methods:
+            - name: Upper
+              roles-allowed: ["user"]
+----
+
+Service names may use the full gRPC service name or the final service name segment.
+Method names use the bare gRPC method name, such as `Upper`, not the full
+`StringService/Upper` method path.
+
+The gRPC security configuration reference is available at
+xref:{rootdir}/config/io_helidon_webserver_grpc_security_GrpcSecurityConfig.adoc[GrpcSecurityConfig].
+
 == Implementing a gRPC Extension
 
 When unable to annotate a service class &mdash;for example when the code is built by a third party&mdash;
@@ -219,8 +286,9 @@ method to provide service introspection to any clients that support the protocol
 
 == Configuration
 
-At the time of writing, there is no configuration that is specific to
-Helidon MP. For more information about gRPC configuration in SE, see
+MP gRPC security is configured under `grpc.grpc-services.security`. Other gRPC
+server options use the same configuration as Helidon SE. For more information
+about gRPC configuration in SE, see
 xref:{rootdir}/se/grpc/server.adoc#_configuration[gRPC Server Configuration].
 
 == Examples

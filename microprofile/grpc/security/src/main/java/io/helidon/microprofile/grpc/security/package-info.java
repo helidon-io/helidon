@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.server.spi;
-
 /**
- * Microprofile service to extend features of the server.
+ * Microprofile gRPC security integration.
  */
-public interface GrpcMpExtension {
-
-    /**
-     * Allow the service to add configuration through the context.
-     *
-     * @param context context to obtain configuration objects
-     */
-    void configure(GrpcMpContext context);
-}
+package io.helidon.microprofile.grpc.security;

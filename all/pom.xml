@@ -307,6 +307,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.grpc</groupId>
+            <artifactId>helidon-microprofile-grpc-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.grpc</groupId>
             <artifactId>helidon-microprofile-grpc-tracing</artifactId>
         </dependency>
         <dependency>
@@ -1134,6 +1138,10 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-grpc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-grpc-security</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
