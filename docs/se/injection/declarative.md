@@ -12,7 +12,7 @@ Our declarative approach has the following advantages:
 - Declarative features are in the same modules as Helidon SE features (i.e. does not require additional dependencies)
 
 > [!NOTE]
-> Helidon Declarative is an incubating feature. The APIs shown here are subject to change. These APIs will be finalized in a future release of Helidon.
+> Helidon Declarative is a preview feature. The APIs shown here are subject to change between major releases without deprecation, but they are intended for supported external use.
 
 ## Usage
 
@@ -275,7 +275,7 @@ Helidon validation module:
 
 #### Constraint Annotations
 
-A "Constraint Annotation" is any annotation directly annotated with `io.helidon.validation.Validation`. Helidon Validation provides a set of built-in validation constraints, though custom constraints can be created, or existing constraints can be combined.
+A "Constraint Annotation" is any annotation directly annotated with `io.helidon.validation.Validation.Constraint`. Helidon Validation provides a set of built-in validation constraints, though custom constraints can be created, or existing constraints can be combined.
 
 Existing constraints:
 
@@ -301,16 +301,19 @@ Constraints for types that extend `java.lang.Number`. These constraints accept a
 - [`io.helidon.validation.Validation.Number.Min`](/apidocs/io.helidon.validation/io/helidon/validation/Validation.Number.Min.html) - the value must be at least the specified minimal value (`>= min`), value is defined as a `String`
 - [`io.helidon.validation.Validation.Number.Max`](/apidocs/io.helidon.validation/io/helidon/validation/Validation.Number.Max.html) - the value must be at most the specified maximal value (`<= max`), value is defined as a `String`
 - [`io.helidon.validation.Validation.Number.Digits`](/apidocs/io.helidon.validation/io/helidon/validation/Validation.Number.Digits.html) - the number must have at most the specified number of integer and fractional digits
+- [`io.helidon.validation.Validation.Number.MultipleOf`](/apidocs/io.helidon.validation/io/helidon/validation/Validation.Number.MultipleOf.html) - the value must be evenly divisible by the specified positive factor, which is defined as a `String`
 
 Constraints for `Integer` data types. These constraints accept `int, long, byte, char, short` and their boxed counterparts. `byte` is always converted as an unsigned number, i.e. its values are from `0` to `255` inclusive. These are convenience annotation that use `int` data type:
 
 - [`io.helidon.validation.Validation.Integer.Min`](/apidocs/io.helidon.validation/io/helidon/validation/Validation.Integer.Min.html) - the value must be at least the specified minimal value (`>= min`)
 - [`io.helidon.validation.Validation.Integer.Max`](/apidocs/io.helidon.validation/io/helidon/validation/Validation.Integer.Max.html) - the value must be at most the specified maximal value (`<= max`)
+- [`io.helidon.validation.Validation.Integer.MultipleOf`](/apidocs/io.helidon.validation/io/helidon/validation/Validation.Integer.MultipleOf.html) - the value must be evenly divisible by the specified positive integer factor
 
 Constraints for `Long` and `long` data types. No other type is supported:
 
 - [`io.helidon.validation.Validation.Long.Min`](/apidocs/io.helidon.validation/io/helidon/validation/Validation.Long.Min.html) - the value must be at least the specified minimal value (`>= min`)
 - [`io.helidon.validation.Validation.Long.Max`](/apidocs/io.helidon.validation/io/helidon/validation/Validation.Long.Max.html) - the value must be at most the specified maximal value (`<= max`)
+- [`io.helidon.validation.Validation.Long.MultipleOf`](/apidocs/io.helidon.validation/io/helidon/validation/Validation.Long.MultipleOf.html) - the value must be evenly divisible by the specified positive long factor
 
 Constraints for `Boolean` and `boolean` data type. No other type is supported:
 
@@ -349,7 +352,7 @@ Supported types for calendar/time validations:
 
 #### Type Validation
 
-A type annotated with `@Validation.Validated` will have validation code generated. Usage of that type can be marked with `@Validation.Valid` - if such an annotation is present, and it is on a field of another validated type, or it is a parameter, return type, or a type argument of a parameter/return type of a service method, the object instance will be validated using a generated interceptor.
+A type annotated with `@Validation.Validated` will have validation code generated. Usage of that type can be marked with `@Validation.Valid` - if such an annotation is present, and it is on a field of another validated type, or it is a parameter, return type, or a type argument of a parameter/return type of a service method, the object instance will be validated using a generated interceptor. Type-use validation is supported on nested `Optional`, `Collection`, `List`, `Set`, `Map` key/value types, array component types, and wildcard bounds.
 
 #### Usage
 
@@ -371,6 +374,24 @@ static class ValidatedService {
     String process(@Validation.Valid @Validation.NotNull MyType myType) {
         // result of the logic
         return "some result";
+    }
+}
+```
+
+Constraint annotations and `@Validation.Valid` can also be declared on non-private instance methods of service interfaces. They are applied when the service instance is obtained from the service registry. The same applies to instances returned by registry-managed service factories, including `Supplier`, `Service.ServicesFactory`, `Service.InjectionPointFactory`, and `Service.QualifiedFactory` services. This can change runtime behavior for services that already declared interface validation: invalid calls through registry-obtained services may now fail with a `ValidationException`, while directly constructed objects are not intercepted.
+
+Example of a validated service contract
+
+```java
+interface ValidatedServiceContract {
+    String process(@Validation.String.NotBlank String value);
+}
+
+@Service.Singleton
+static class ContractValidatedService implements ValidatedServiceContract {
+    @Override
+    public String process(String value) {
+        return value;
     }
 }
 ```

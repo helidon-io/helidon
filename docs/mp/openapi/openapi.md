@@ -153,6 +153,12 @@ Helidon OpenAPI configuration supports the following settings:
 
 Further, Helidon OpenAPI supports the MicroProfile OpenAPI settings described in [the MicroProfile OpenAPI specification](https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html#_configuration).
 
+### MicroProfile OpenAPI configuration options
+
+| Key | Type | Description |
+|----|----|----|
+| `mp.openapi.extensions.helidon.use-jaxrs-semantics` | `Boolean` | If `true` and the `jakarta.ws.rs.core.Application` class returns a non-empty set, endpoints defined by other resources are not included in the OpenAPI document |
+
 ## Examples
 
 Helidon MP includes a [complete OpenAPI example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/openapi) based on the MP quick-start sample app. The rest of this section shows, step-by-step, how one might change the original QuickStart service to adopt OpenAPI.

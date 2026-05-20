@@ -123,7 +123,7 @@ WebServer.builder()
 
 - The custom Helidon OCI clients have been deprecated ([See PR](https://github.com/oracle/helidon/pull/4015)).
 
-Use the OCI Java SDK instead. If you use Helidon MP you can inject OCI SDK clients by adding the dependency `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi`.
+Use the OCI Java SDK instead. For Helidon MP, use `io.helidon.integrations.oci:helidon-integrations-oci` only for OCI authentication, region, and configuration support; the legacy `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi` module is deprecated.
 
 > [!NOTE]
 > See [Resolving compatibility issue with OCI SDK](../../se/integrations/oci.md#oci-compatibility) for detailed information on how to work around this issue.

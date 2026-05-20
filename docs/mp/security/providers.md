@@ -8,7 +8,7 @@ Helidon provides the following security providers for endpoint protection:
 |----|----|----|----|
 | [OIDC Provider](#oidc-provider) | Authentication | ✅ | Open ID Connect supporting JWT, Scopes, Groups and OIDC code flow |
 | [HTTP Basic Authentication](#http-basic-authentication-provider) | Authentication | ✅ | HTTP Basic Authentication support |
-| [HTTP Digest Authentication](#http-digest-authentication-provider) | Authentication | 🚫 | HTTP Digest Authentication support |
+| [HTTP Digest Authentication](#http-digest-authentication-provider) | Authentication | 🚫 | **Deprecated!** HTTP Digest Authentication support |
 | [Header Assertion](#header-authentication-provider) | Authentication | ✅ | Asserting a user based on a header value |
 | [HTTP Signatures](#http-signatures-provider) | Authentication | ✅ | Protecting service to service communication through signatures |
 | [IDCS Roles](#idcs-role-mapper) | Role Mapping | 🚫 | Retrieves roles from IDCS provider for authenticated user |
@@ -430,6 +430,8 @@ If a request comes without a token or with insufficient scopes:
 5.  The JWT is stored in a cookie (if cookie support is enabled, which it is by default)
 6.  Helidon service redirects to original endpoint (on itself)
 
+Redirect attempts are counted to prevent infinite login redirects. By default, Helidon stores the count in the `redirect-attempt-param` query parameter. Set `redirect-attempt-counter-strategy` to `COOKIE` to store the counter in a small cookie instead. Set it to `NONE` to disable redirect attempt counting and `max-redirects` loop protection. The `redirect-attempt-param` value is used as the cookie name prefix when the `COOKIE` strategy is used; the full cookie name also includes a tenant and original URI hash.
+
 Helidon obtains a token from request (from cookie, header, or query parameter):
 
 1.  Token is parsed as a singed JWT
@@ -636,7 +638,9 @@ Basic authentication uses base64 encoded username and password and passes it ove
 
 ### HTTP Digest Authentication Provider
 
-HTTP Digest authentication support
+~~HTTP Digest authentication support~~
+
+This provider is deprecated and will be removed in a future version of Helidon without replacement. It is kept in Helidon 4 for backward compatibility only, relies on obsolete MD5 hash, and should not be used in production.
 
 #### Setup
 
@@ -701,7 +705,7 @@ Java service loader service `io.helidon.security.providers.httpauth.spi.UserStor
 
 *Note on security of HTTP Digest Authentication*
 
-These authentication schemes should be *obsolete*, though they provide a very easy way to test a protected resource.
+This authentication scheme is obsolete and should only be used for local testing or short-lived compatibility work.
 
 ### Header Authentication Provider
 
@@ -1233,6 +1237,7 @@ security:
     - provider:
         atn-token:
           jwk.resource.resource-path: "verifying-jwk.json"
+          jwt-issuer: "http://trusted.issuer"
           jwt-audience: "http://my.service"
         sign-token:
           jwk.resource.resource-path: "signing-jwk.json"
