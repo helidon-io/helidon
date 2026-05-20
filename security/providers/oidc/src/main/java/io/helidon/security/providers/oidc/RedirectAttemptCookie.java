@@ -20,13 +20,13 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.SetCookie;
 import io.helidon.security.providers.oidc.common.OidcConfig;
@@ -83,35 +83,26 @@ final class RedirectAttemptCookie {
                 ? state.substring(queryStart + 1)
                 : state.substring(queryStart + 1, fragmentStart);
         String fragment = fragmentStart < 0 ? "" : state.substring(fragmentStart);
-        List<String> queryParams = new ArrayList<>();
-        for (String queryParam : query.split("&")) {
-            if (!queryParam.isEmpty() && !counterQueryParam(oidcConfig, queryParam)) {
-                queryParams.add(queryParam);
-            }
+
+        UriQueryWriteable queryParams = UriQueryWriteable.create();
+        queryParams.fromQueryString(query);
+        removeCounterQueryParam(queryParams, oidcConfig.redirectAttemptParam());
+        if (oidcConfig.useParam()) {
+            removeCounterQueryParam(queryParams, oidcConfig.paramName());
+            removeCounterQueryParam(queryParams, oidcConfig.idTokenParamName());
+            removeCounterQueryParam(queryParams, oidcConfig.tenantParamName());
         }
-        if (queryParams.isEmpty()) {
+
+        String counterQuery = queryParams.rawValue();
+        if (counterQuery.isEmpty()) {
             return path + fragment;
         }
-        return path + "?" + String.join("&", queryParams) + fragment;
+        return path + "?" + counterQuery + fragment;
     }
 
-    private static boolean counterQueryParam(OidcConfig oidcConfig, String queryParam) {
-        int equals = queryParam.indexOf('=');
-        String name = equals < 0 ? queryParam : queryParam.substring(0, equals);
-        if (matches(name, oidcConfig.redirectAttemptParam())) {
-            return true;
-        }
-        if (!oidcConfig.useParam()) {
-            return false;
-        }
-        return matches(name, oidcConfig.paramName())
-                || matches(name, oidcConfig.idTokenParamName())
-                || matches(name, oidcConfig.tenantParamName());
-    }
-
-    private static boolean matches(String actualName, String expectedName) {
-        return actualName.equals(expectedName)
-                || actualName.equals(URLEncoder.encode(expectedName, StandardCharsets.UTF_8));
+    private static void removeCounterQueryParam(UriQueryWriteable queryParams, String name) {
+        queryParams.remove(name);
+        queryParams.remove(URLEncoder.encode(name, StandardCharsets.UTF_8));
     }
 
     private static SetCookie.Builder builder(OidcConfig oidcConfig, String name, String value, boolean create) {

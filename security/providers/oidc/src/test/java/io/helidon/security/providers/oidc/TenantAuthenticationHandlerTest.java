@@ -259,6 +259,29 @@ class TenantAuthenticationHandlerTest {
     }
 
     @Test
+    public void testRedirectAttemptCookieStrategyWithEncodedQueryParamNames() {
+        OidcConfig oidcConfig = OidcConfig.builder()
+                .clientId("test")
+                .clientSecret("123")
+                .identityUri(URI.create("http://localhost:1234"))
+                .oidcMetadataWellKnown(false)
+                .redirectAttemptCounterStrategy(COOKIE)
+                .useParam(true)
+                .paramName("access token")
+                .idTokenParamName("id token")
+                .paramTenantName("h tenant")
+                .build();
+        String state = "/test?someUri=value";
+        String stateWithTokens = state + "&access+token=token"
+                + "&id+token=id-token"
+                + "&h+tenant=tenant"
+                + "&h_ra=4";
+
+        assertThat(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, stateWithTokens),
+                   is(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, state)));
+    }
+
+    @Test
     public void testRedirectAttemptNoneStrategy() {
         OidcConfig oidcConfig = oidcConfig(NONE);
         TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);
