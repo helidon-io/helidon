@@ -1,7 +1,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -205,7 +205,7 @@ For more information, see xref:{rootdir}/mp/security/configuration-secrets.adoc[
 .Example of encrypted secrets
 ----
 # Password encrypted using a master password
-client_secret=${GCM=mYRkg+4Q4hua1kvpCCI2hg==}
+client_secret=${ENC=AQAJJYB...}
 # Password encrypted using public key (there are length limits when using RSA)
 client_secret=${RSA=mYRkg+4Q4hua1kvpCCI2hg==}
 # Password in clear text, can be used in development

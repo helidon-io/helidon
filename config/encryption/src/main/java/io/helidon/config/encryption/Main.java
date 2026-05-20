@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ public final class Main {
     }
 
     /**
-     * Expected parameters: type [aes|rsa] encryptionConfig [masterPassword|pathToRsaPublicKey] secretToEncrypt.
+     * Expected parameters: type [enc|aes|gcm|rsa] encryptionConfig [masterPassword|pathToRsaPublicKey] secretToEncrypt.
      *
      * @param args arguments
      */
@@ -53,7 +53,16 @@ public final class Main {
     private static void help() {
         System.out.println("To encrypt password using master password to be used in a property file:");
         System.out.println("java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar "
-                + "aes masterPassword secretToEncrypt");
+                                   + "enc masterPassword secretToEncrypt [iterations]");
+        System.out.println("Optional iterations must be between "
+                                   + EncryptionUtil.ENVELOPE_MIN_HASH_ITERATIONS + " and "
+                                   + EncryptionUtil.ENVELOPE_MAX_HASH_ITERATIONS + "; default is "
+                                   + EncryptionUtil.ENVELOPE_HASH_ITERATIONS + ".");
+        System.out.println("To encrypt password using legacy formats:");
+        System.out.println("java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar "
+                                   + "aes masterPassword secretToEncrypt");
+        System.out.println("java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar "
+                                   + "gcm masterPassword secretToEncrypt");
         System.out.println();
         System.out.println("To encrypt password using public key to be used in a property file:");
         System.out.println("java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar "
@@ -62,6 +71,7 @@ public final class Main {
 
     enum Algorithm {
         aes,
+        enc,
         gcm,
         rsa
     }
@@ -77,6 +87,7 @@ public final class Main {
         private String secret;
         private PublicKey publicKey;
         private String masterPassword;
+        private int aesIterations = EncryptionUtil.ENVELOPE_HASH_ITERATIONS;
 
         EncryptionCliProcessor() {
         }
@@ -88,12 +99,16 @@ public final class Main {
             }
             String algorithm = cliArgs[0];
 
-            if ("aes".equals(algorithm) || "gcm".equals(algorithm)) {
-                parseAes(cliArgs);
+            if ("enc".equals(algorithm)) {
+                parseAes(cliArgs, Algorithm.enc);
+            } else if ("aes".equals(algorithm)) {
+                parseAes(cliArgs, Algorithm.aes);
+            } else if ("gcm".equals(algorithm)) {
+                parseAes(cliArgs, Algorithm.gcm);
             } else if ("rsa".equals(algorithm)) {
                 parseRsa(cliArgs);
             } else {
-                throw new ValidationException("First argument must be a valid algorithm (rsa or aes)");
+                throw new ValidationException("First argument must be a valid algorithm (rsa, enc, aes, or gcm)");
             }
         }
 
@@ -136,22 +151,35 @@ public final class Main {
                     .orElseThrow(() -> new ValidationException("There is no public key available for cert alias: " + certAlias));
         }
 
-        private void parseAes(String[] cliArgs) {
+        private void parseAes(String[] cliArgs, Algorithm algorithm) {
             String config = cliArgs[1];
             if (cliArgs.length == 2) {
                 this.secret = "";
             } else {
                 this.secret = cliArgs[2];
             }
+            if (algorithm == Algorithm.enc && cliArgs.length > 3) {
+                try {
+                    this.aesIterations = Integer.parseInt(cliArgs[3]);
+                    EncryptionUtil.validateEnvelopeIterations(aesIterations);
+                } catch (NumberFormatException e) {
+                    throw new ValidationException("AES iterations must be a valid integer");
+                } catch (ConfigEncryptionException e) {
+                    throw new ValidationException(e.getMessage());
+                }
+            }
 
-            this.algorithm = Algorithm.aes;
+            this.algorithm = algorithm;
             this.masterPassword = config;
         }
 
         String encrypt() {
             switch (algorithm) {
+            case enc:
+                return enc();
             case aes:
-                return aes();
+            case gcm:
+                return gcm();
             case rsa:
                 return rsa();
             default:
@@ -163,7 +191,13 @@ public final class Main {
             return EncryptionFilter.PREFIX_RSA + EncryptionUtil.encryptRsa(publicKey, secret) + '}';
         }
 
-        String aes() {
+        String enc() {
+            return EncryptionFilter.PREFIX_ENC
+                    + EncryptionUtil.encryptAesEnvelope(masterPassword.toCharArray(), secret, aesIterations)
+                    + '}';
+        }
+
+        String gcm() {
             return EncryptionFilter.PREFIX_GCM + EncryptionUtil.encryptAes(masterPassword.toCharArray(), secret) + '}';
         }
 
@@ -173,6 +207,10 @@ public final class Main {
 
         String getMasterPassword() {
             return masterPassword;
+        }
+
+        int getAesIterations() {
+            return aesIterations;
         }
 
         PublicKey getPublicKey() {

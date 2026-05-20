@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,14 @@ public final class EncryptionUtil {
     private static final int SEED_LENGTH = 16;
     private static final int HASH_ITERATIONS = 10000;
     private static final int KEY_LENGTH_LEGACY = 128;
+    static final int ENVELOPE_HASH_ITERATIONS = 600000;
+    static final int ENVELOPE_MIN_HASH_ITERATIONS = 600000;
+    static final int ENVELOPE_MAX_HASH_ITERATIONS = 10000000;
+    private static final int ENVELOPE_VERSION = 1;
+    private static final int GCM_TAG_LENGTH = 16;
+    private static final int ENVELOPE_HEADER_LENGTH = Byte.BYTES + Integer.BYTES;
+    private static final int SYMMETRIC_CIPHER_MIN_LENGTH = SALT_LENGTH + Integer.BYTES + NONCE_LENGTH + GCM_TAG_LENGTH;
+    private static final int ENVELOPE_MAX_LENGTH = 64 * 1024;
     private static final int KEY_LENGTH = 256;
 
     private EncryptionUtil() {
@@ -149,6 +157,34 @@ public final class EncryptionUtil {
         Objects.requireNonNull(secret, "Secret message must be provided to be encrypted");
 
         return encryptAesBytes(masterPassword, secret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Encrypt using AES with GCM method into a versioned envelope, key is derived from password with random salt.
+     *
+     * @param masterPassword master password
+     * @param secret         secret to encrypt
+     * @param iterations     PBKDF2 iteration count
+     * @return Encrypted envelope base64 encoded
+     * @throws ConfigEncryptionException If any problem with encryption occurs
+     */
+    public static String encryptAesEnvelope(char[] masterPassword, String secret, int iterations)
+            throws ConfigEncryptionException {
+        Objects.requireNonNull(secret, "Secret message must be provided to be encrypted");
+
+        return encryptAesEnvelopeBytes(masterPassword, secret.getBytes(StandardCharsets.UTF_8), iterations);
+    }
+
+    /**
+     * Encrypt using AES with GCM method into a versioned envelope, key is derived from password with random salt.
+     *
+     * @param masterPassword master password
+     * @param secret         secret to encrypt
+     * @return Encrypted envelope base64 encoded
+     * @throws ConfigEncryptionException If any problem with encryption occurs
+     */
+    public static String encryptAesEnvelope(char[] masterPassword, String secret) throws ConfigEncryptionException {
+        return encryptAesEnvelope(masterPassword, secret, ENVELOPE_HASH_ITERATIONS);
     }
 
     /**
@@ -249,6 +285,19 @@ public final class EncryptionUtil {
     }
 
     /**
+     * Decrypt using AES from a versioned envelope.
+     *
+     * @param masterPassword  master password
+     * @param encryptedBase64 encrypted envelope, base64 encoded
+     * @return Decrypted secret
+     * @throws ConfigEncryptionException if something bad happens during decryption (e.g. wrong password)
+     */
+    public static String decryptAesEnvelope(char[] masterPassword, String encryptedBase64)
+            throws ConfigEncryptionException {
+        return new String(decryptAesEnvelopeBytes(masterPassword, encryptedBase64), StandardCharsets.UTF_8);
+    }
+
+    /**
      * Decrypt using AES.
      * Will only decrypt messages encrypted with {@link #encryptAes(char[], String)} as the algorithm used is quite custom
      * (number of bytes of seed, of salt and approach).
@@ -284,6 +333,156 @@ public final class EncryptionUtil {
         } catch (Throwable e) {
             throw new ConfigEncryptionException("Failed to decrypt value using AES. Returning clear text value as is: "
                                                         + encryptedBase64, e);
+        }
+    }
+
+    static void validateEnvelopeIterations(int iterations) {
+        if (iterations < ENVELOPE_MIN_HASH_ITERATIONS || iterations > ENVELOPE_MAX_HASH_ITERATIONS) {
+            throw new ConfigEncryptionException("PBKDF2 iterations must be between "
+                                                        + ENVELOPE_MIN_HASH_ITERATIONS + " and "
+                                                        + ENVELOPE_MAX_HASH_ITERATIONS + ", but was " + iterations);
+        }
+    }
+
+    private static String encryptAesEnvelopeBytes(char[] masterPassword, byte[] secret, int iterations)
+            throws ConfigEncryptionException {
+        Objects.requireNonNull(masterPassword, "Password must be provided for encryption");
+        Objects.requireNonNull(secret, "Secret message must be provided to be encrypted");
+        validateEnvelopeIterations(iterations);
+        if (secret.length > ENVELOPE_MAX_LENGTH - ENVELOPE_HEADER_LENGTH - SYMMETRIC_CIPHER_MIN_LENGTH) {
+            throw new ConfigEncryptionException("Secret value is too large");
+        }
+
+        try {
+            byte[] header = envelopeHeader(iterations);
+            SymmetricCipher cipher = SymmetricCipher.builder()
+                    .password(masterPassword)
+                    .numberOfIterations(iterations)
+                    .keySize(KEY_LENGTH)
+                    .additionalAuthenticatedData(header)
+                    .build();
+            byte[] encrypted = cipher.encrypt(Base64Value.create(secret)).toBytes();
+            if (header.length + encrypted.length > ENVELOPE_MAX_LENGTH) {
+                throw new ConfigEncryptionException("Secret value is too large");
+            }
+
+            byte[] bytesToEncode = new byte[header.length + encrypted.length];
+            System.arraycopy(header, 0, bytesToEncode, 0, header.length);
+            System.arraycopy(encrypted, 0, bytesToEncode, header.length, encrypted.length);
+
+            return Base64.getEncoder().encodeToString(bytesToEncode);
+        } catch (ConfigEncryptionException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ConfigEncryptionException("Failed to encrypt using AES envelope", e);
+        }
+    }
+
+    private static byte[] decryptAesEnvelopeBytes(char[] masterPassword, String encryptedBase64) {
+        Objects.requireNonNull(masterPassword, "Password must be provided for encryption");
+        Objects.requireNonNull(encryptedBase64, "Encrypted bytes must be provided for decryption (base64 encoded)");
+
+        try {
+            AesEnvelope envelope = decodeAesEnvelope(encryptedBase64);
+            switch (envelope.version()) {
+            case ENVELOPE_VERSION:
+                return decryptAesEnvelopeV1(masterPassword, envelope);
+            default:
+                throw new ConfigEncryptionException("Unsupported AES envelope version: " + envelope.version());
+            }
+        } catch (ConfigEncryptionException e) {
+            throw e;
+        } catch (IllegalArgumentException e) {
+            throw new ConfigEncryptionException("Encrypted AES envelope is not valid", e);
+        } catch (Exception e) {
+            throw new ConfigEncryptionException("Failed to decrypt value using AES envelope", e);
+        }
+    }
+
+    private static byte[] decryptAesEnvelopeV1(char[] masterPassword, AesEnvelope envelope) {
+        validateEnvelopeIterations(envelope.iterations());
+        SymmetricCipher cipher = SymmetricCipher.builder()
+                .password(masterPassword)
+                .numberOfIterations(envelope.iterations())
+                .keySize(KEY_LENGTH)
+                .additionalAuthenticatedData(envelope.header())
+                .build();
+
+        return cipher.decrypt(Base64Value.create(envelope.encrypted())).toBytes();
+    }
+
+    static AesEnvelope decodeAesEnvelope(String encryptedBase64) {
+        byte[] decodedBytes;
+        try {
+            decodedBytes = Base64.getDecoder().decode(encryptedBase64);
+        } catch (IllegalArgumentException e) {
+            throw new ConfigEncryptionException("Encrypted AES envelope is not valid", e);
+        }
+
+        if (decodedBytes.length < ENVELOPE_HEADER_LENGTH + SYMMETRIC_CIPHER_MIN_LENGTH
+                || decodedBytes.length > ENVELOPE_MAX_LENGTH) {
+            throw new ConfigEncryptionException("Encrypted AES envelope is not valid");
+        }
+
+        byte[] header = new byte[ENVELOPE_HEADER_LENGTH];
+        byte[] encrypted = new byte[decodedBytes.length - ENVELOPE_HEADER_LENGTH];
+        System.arraycopy(decodedBytes, 0, header, 0, header.length);
+        System.arraycopy(decodedBytes, header.length, encrypted, 0, encrypted.length);
+
+        int version = Byte.toUnsignedInt(header[0]);
+        int iterations = readInt32(header, Byte.BYTES);
+
+        return new AesEnvelope(version, iterations, header, encrypted);
+    }
+
+    private static byte[] envelopeHeader(int iterations) {
+        byte[] header = new byte[ENVELOPE_HEADER_LENGTH];
+        header[0] = (byte) ENVELOPE_VERSION;
+        writeInt32(header, Byte.BYTES, iterations);
+        return header;
+    }
+
+    private static int readInt32(byte[] bytes, int offset) {
+        return ((bytes[offset] & 0xFF) << 24)
+                | ((bytes[offset + 1] & 0xFF) << 16)
+                | ((bytes[offset + 2] & 0xFF) << 8)
+                | (bytes[offset + 3] & 0xFF);
+    }
+
+    private static void writeInt32(byte[] bytes, int offset, int value) {
+        bytes[offset] = (byte) (value >>> 24);
+        bytes[offset + 1] = (byte) (value >>> 16);
+        bytes[offset + 2] = (byte) (value >>> 8);
+        bytes[offset + 3] = (byte) value;
+    }
+
+    static final class AesEnvelope {
+        private final int version;
+        private final int iterations;
+        private final byte[] header;
+        private final byte[] encrypted;
+
+        private AesEnvelope(int version, int iterations, byte[] header, byte[] encrypted) {
+            this.version = version;
+            this.iterations = iterations;
+            this.header = header;
+            this.encrypted = encrypted;
+        }
+
+        int version() {
+            return version;
+        }
+
+        int iterations() {
+            return iterations;
+        }
+
+        byte[] header() {
+            return header;
+        }
+
+        byte[] encrypted() {
+            return encrypted;
         }
     }
 
