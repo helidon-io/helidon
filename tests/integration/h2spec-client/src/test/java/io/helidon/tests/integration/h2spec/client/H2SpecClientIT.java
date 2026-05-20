@@ -81,14 +81,11 @@ class H2SpecClientIT {
     private static final Pattern CASE_PATTERN =
             Pattern.compile("^\\s*(?:([\\u2714\\u00D7])\\s+)?(\\d+):\\s+(.*)$");
 
-    // These are the two known upstream client conformance failures tracked by issue #11771.
-    private static final Set<String> KNOWN_FAILING_IDS = Set.of(
-            "client/6.9.1/1",
-            "client/6.9.1/2"
-    );
-    private static final Set<String> KNOWN_FAILING_DESCRIPTIONS = Set.of(
-            "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1",
-            "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream"
+    private static final Set<KnownFailure> KNOWN_FAILURES = Set.of(
+            new KnownFailure("client/6.9.1/1",
+                             "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1"),
+            new KnownFailure("client/6.9.1/2",
+                             "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream")
     );
 
     static {
@@ -103,7 +100,7 @@ class H2SpecClientIT {
         LOGGER.info("{}: \n - {} \nID: {}", caseName, desc, id);
 
         if (skipped != null) {
-            Assumptions.abort(skipped);
+            Assertions.fail("Unexpected h2specd skip for " + id + " (" + desc + "): " + skipped);
         }
 
         if (err != null && isKnownFailure(id, desc)) {
@@ -232,6 +229,9 @@ class H2SpecClientIT {
         int expectedPassed = Integer.parseInt(summaryMatcher.group(2));
         int expectedSkipped = Integer.parseInt(summaryMatcher.group(3));
         int expectedFailed = Integer.parseInt(summaryMatcher.group(4));
+        Assertions.assertEquals(0,
+                                expectedSkipped,
+                                "h2specd reported skipped client cases; update the allowlist if this is expected.");
 
         String executionOutput = normalized;
         int failuresStart = normalized.indexOf("\nFailures:");
@@ -393,7 +393,10 @@ class H2SpecClientIT {
     }
 
     private static boolean isKnownFailure(String id, String desc) {
-        return KNOWN_FAILING_IDS.contains(id) || KNOWN_FAILING_DESCRIPTIONS.contains(desc);
+        return KNOWN_FAILURES.contains(new KnownFailure(id, desc));
+    }
+
+    private record KnownFailure(String id, String description) {
     }
 
     private record H2SpecCaseResult(String caseName,

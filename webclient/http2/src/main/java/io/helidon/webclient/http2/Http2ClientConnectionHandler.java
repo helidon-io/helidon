@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,13 +111,13 @@ class Http2ClientConnectionHandler {
             if (conn == null) {
                 conn = createConnection(http2Client, request, initialUri);
                 // we must assume that a new connection can handle a new stream
-                stream = conn.createStream(request);
+                stream = createStreamOnNewConnection(conn, request);
             } else {
                 stream = conn.tryStream(request);
                 if (stream == null) {
                     // either the connection is closed, or it ran out of streams
                     conn = createConnection(http2Client, request, initialUri);
-                    stream = conn.createStream(request);
+                    stream = createStreamOnNewConnection(conn, request);
                 }
             }
 
@@ -292,6 +292,23 @@ class Http2ClientConnectionHandler {
         }
 
         return usedConnection;
+    }
+
+    private Http2ClientStream createStreamOnNewConnection(Http2ClientConnection connection,
+                                                          Http2ClientRequestImpl request) {
+        try {
+            return connection.createStream(request);
+        } catch (RuntimeException e) {
+            discardConnection(connection);
+            throw e;
+        }
+    }
+
+    private void discardConnection(Http2ClientConnection connection) {
+        activeConnection.compareAndSet(connection, null);
+        allConnections.remove(connection);
+        h2ConnByConn.values().remove(connection);
+        connection.close();
     }
 
     private ClientConnection connectClient(WebClient webClient, List<String> alpn) {

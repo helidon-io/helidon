@@ -63,7 +63,7 @@ public final class H2SpecClientMain {
         try (var response = client.get().request()) {
             // Consume the full body so the client observes the complete frame sequence under test.
             response.entity().as(byte[].class);
-        } catch (Throwable t) {
+        } catch (RuntimeException t) {
             t.printStackTrace(System.err);
             System.exit(1);
         } finally {

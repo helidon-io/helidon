@@ -19,8 +19,10 @@ package io.helidon.webclient.http2;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -78,7 +80,9 @@ public class Http2ClientConnection {
     private static final int FRAME_HEADER_LENGTH = 9;
     private static final long NO_PING_ACK = Long.MIN_VALUE;
     private static final Http2Headers EMPTY_INBOUND_HEADERS = Http2Headers.create(WritableHeaders.create());
-    private static final Http2Stream DROPPED_INBOUND_HEADERS_STREAM = new Http2Stream() {
+    private static final Http2Stream DROPPED_INBOUND_HEADERS_STREAM = new DroppedInboundHeadersStream();
+
+    private static final class DroppedInboundHeadersStream implements Http2Stream {
         @Override
         public boolean rstStream(Http2RstStream rstStream) {
             return false;
@@ -114,13 +118,14 @@ public class Http2ClientConnection {
         public StreamFlowControl flowControl() {
             return null;
         }
-    };
+    }
     private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
     private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
     private final LockingStreamIdSequence streamIdSeq = new LockingStreamIdSequence();
     private final ReadWriteLock streamsLock = new ReentrantReadWriteLock();
     // streams may be accessed from connection thread, or stream thread, must be guarded by the above lock
     private final Map<Integer, Http2ClientStream> streams = new HashMap<>();
+    private final Set<Integer> abandonedClientStreams = new HashSet<>();
     private final ConnectionFlowControl connectionFlowControl;
     private final Http2Headers.DynamicTable inboundDynamicTable =
             Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
@@ -197,12 +202,15 @@ public class Http2ClientConnection {
                                                       Http2ClientImpl http2Client,
                                                       boolean sendSettings) {
         Http2ClientConnection rawConnection = connection;
+        boolean success = false;
         try {
             rawConnection.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
             rawConnection.awaitInitialSettings();
-        } catch (RuntimeException | Error e) {
-            rawConnection.close();
-            throw e;
+            success = true;
+        } finally {
+            if (!success) {
+                rawConnection.close();
+            }
         }
         return connection;
     }
@@ -247,6 +255,9 @@ public class Http2ClientConnection {
         // The peer can tighten MAX_CONCURRENT_STREAMS in its first SETTINGS frame.
         awaitInitialSettings();
         if (!reserveStream()) {
+            if (peerMaxConcurrentStreams == 0) {
+                close();
+            }
             throw new IllegalStateException("Peer max concurrent streams reached: " + peerMaxConcurrentStreams);
         }
         Http2ClientStream stream = new Http2ClientStream(this,
@@ -285,6 +296,7 @@ public class Http2ClientConnection {
         lock.lock();
         try {
             this.streams.put(streamId, stream);
+            this.abandonedClientStreams.remove(streamId);
         } finally {
             lock.unlock();
         }
@@ -299,7 +311,9 @@ public class Http2ClientConnection {
         Lock lock = streamsLock.writeLock();
         lock.lock();
         try {
-            this.streams.remove(streamId);
+            if (this.streams.remove(streamId) != null && clientStreamId(streamId)) {
+                this.abandonedClientStreams.add(streamId);
+            }
         } finally {
             lock.unlock();
         }
@@ -843,6 +857,11 @@ public class Http2ClientConnection {
 
         Http2ClientStream headerStream = stream(streamId);
         if (headerStream == null) {
+            if (!knownAbandonedClientStream(streamId)) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                         "Received " + frameHeader.type()
+                                                 + " frame for invalid stream " + streamId);
+            }
             // Keep the shared inbound HPACK table in sync even if the application already closed the stream.
             decodeDroppedInboundHeaders(headerFrames);
             if (LOGGER.isLoggable(DEBUG)) {
@@ -857,6 +876,20 @@ public class Http2ClientConnection {
         recvListener.headers(ctx, streamId, headers);
         headerStream.inboundHeaders(headers, endOfStream);
         return true;
+    }
+
+    private boolean knownAbandonedClientStream(int streamId) {
+        Lock lock = streamsLock.readLock();
+        lock.lock();
+        try {
+            return abandonedClientStreams.contains(streamId);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private static boolean clientStreamId(int streamId) {
+        return streamId > 0 && streamId % 2 == 1;
     }
 
     private static boolean endOfHeaders(Http2FrameHeader frameHeader) {
@@ -877,7 +910,7 @@ public class Http2ClientConnection {
     }
 
     private void goAway(int streamId, Http2ErrorCode errorCode, String msg) {
-        if (State.OPEN == state.getAndSet(State.GO_AWAY)) {
+        if (state.compareAndSet(State.OPEN, State.GO_AWAY)) {
             Http2Settings http2Settings = Http2Settings.create();
             Http2GoAway frame = new Http2GoAway(streamId, errorCode, msg);
             writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()));

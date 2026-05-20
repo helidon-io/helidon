@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webclient.http2;
+package io.helidon.webclient.tests.http2;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -43,6 +43,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpMediaTypes;
 import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.http2.Http2Client;
+import io.helidon.webclient.http2.Http2ClientProtocolConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -56,7 +58,6 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -64,19 +65,19 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Manual integration-test reproducer for issue 11529.
  *
  * <p>Run explicitly with:
- * {@code mvn -pl webclient/http2 -am verify -Dissue11529.run=true -Dit.test=Http2JettyH2cReproducerIT}
+ * {@code mvn -Ptests -pl :helidon-webclient-tests-http2 -am verify -Dit.test=Http2JettyH2cReproducerIT}
  */
-@EnabledIfSystemProperty(named = "issue11529.run", matches = "true")
 public class Http2JettyH2cReproducerIT {
     private static final StringBuilder PEER_LOG = new StringBuilder();
     private static final Lock PEER_LOG_LOCK = new ReentrantLock();
     private static final String APP_PATH = "/api/field-service/appcache/v1/rpc/get_properties";
-    private static final int THREAD_COUNT = Integer.getInteger("issue11529.threads", 500);
-    private static final int REQUEST_COUNT = Integer.getInteger("issue11529.requests", 10_000);
+    private static final int THREAD_COUNT = Integer.getInteger("issue11529.threads", 64);
+    private static final int REQUEST_COUNT = Integer.getInteger("issue11529.requests", 512);
     private static final int RETRY_COUNT = Integer.getInteger("issue11529.retryCount", 1);
     private static final int PROGRESS_EVERY = Integer.getInteger("issue11529.progressEvery",
                                                                  Math.max(1, REQUEST_COUNT / 10));
     private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(THREAD_COUNT);
+    private static final ExecutorService PEER_LOG_EXECUTOR = Executors.newSingleThreadExecutor();
     private static final String REQUEST_BODY = """
             {"data":{"entity":2,"context":"all_fields_api_inventory","options":1,"entity_id":26030351,"provider_id":0,"page_id":1,"user_id":"1"}}
             """.trim();
@@ -103,6 +104,10 @@ public class Http2JettyH2cReproducerIT {
         EXECUTOR.shutdown();
         if (!EXECUTOR.awaitTermination(30, TimeUnit.SECONDS)) {
             EXECUTOR.shutdownNow();
+        }
+        PEER_LOG_EXECUTOR.shutdown();
+        if (!PEER_LOG_EXECUTOR.awaitTermination(30, TimeUnit.SECONDS)) {
+            PEER_LOG_EXECUTOR.shutdownNow();
         }
     }
 
@@ -185,6 +190,7 @@ public class Http2JettyH2cReproducerIT {
                         .submit(REQUEST_BODY)) {
 
                     int status = response.status().code();
+                    response.inputStream().readAllBytes();
                     addLatency(latenciesLock, latenciesMs, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - requestStarted));
                     if (status == 200) {
                         ok.incrementAndGet();
@@ -192,8 +198,6 @@ public class Http2JettyH2cReproducerIT {
                         fail.incrementAndGet();
                         non200Statuses.computeIfAbsent(status, ignored -> new AtomicInteger()).incrementAndGet();
                     }
-
-                    response.inputStream().readAllBytes();
                     return;
                 } catch (Exception e) {
                     if (retryable(e) && attempt < RETRY_COUNT) {
@@ -234,7 +238,7 @@ public class Http2JettyH2cReproducerIT {
         processBuilder.redirectErrorStream(true);
 
         Process process = processBuilder.start();
-        EXECUTOR.submit(() -> consumePeerLog(process));
+        PEER_LOG_EXECUTOR.submit(() -> consumePeerLog(process));
         return process;
     }
 
@@ -480,7 +484,7 @@ public class Http2JettyH2cReproducerIT {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     throw new IOException("Interrupted while streaming response", e);
-                } catch (Throwable t) {
+                } catch (IOException | RuntimeException t) {
                     t.printStackTrace(System.out);
                     System.out.flush();
                     throw t;

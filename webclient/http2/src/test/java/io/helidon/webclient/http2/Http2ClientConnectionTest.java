@@ -167,6 +167,21 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void missingStreamHeadersForNeverOpenedStreamCloseConnection() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            test.createConnection(false);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(1, encodedResponseHeaders(false), inboundTable, huffman));
+
+            test.assertConnectionClosed();
+        }
+    }
+
+    @Test
     void initialSettingsFailureClosesConnection() {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.closeInbound();
@@ -225,6 +240,82 @@ class Http2ClientConnectionTest {
             assertNotNull(recoveredStream);
             recoveredStream.close();
             connection.close();
+        }
+    }
+
+    @Test
+    void inboundHeadersEndStreamReleasesReservedStreamBeforeApplicationClose() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream firstStream = connection.createStream(STREAM_CONFIG);
+
+            firstStream.writeHeaders(requestHeaders(), true);
+            assertNull(connection.tryStream(STREAM_CONFIG));
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(firstStream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman,
+                                                 true));
+
+            assertThat(firstStream.readHeaders().status(), is(Status.OK_200));
+
+            Http2ClientStream secondStream = connection.tryStream(STREAM_CONFIG);
+            assertNotNull(secondStream);
+
+            secondStream.close();
+            firstStream.close();
+            connection.close();
+        }
+    }
+
+    @Test
+    void inboundDataEndStreamReleasesReservedStreamBeforeApplicationClose() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream firstStream = connection.createStream(STREAM_CONFIG);
+
+            firstStream.writeHeaders(requestHeaders(), true);
+            assertNull(connection.tryStream(STREAM_CONFIG));
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(firstStream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman),
+                              dataFrame(firstStream.streamId(), "done".getBytes(StandardCharsets.UTF_8), true));
+
+            assertThat(firstStream.readHeaders().status(), is(Status.OK_200));
+            BufferData data = firstStream.read();
+            byte[] entity = new byte[data.available()];
+            data.read(entity);
+            assertThat(new String(entity, StandardCharsets.UTF_8), is("done"));
+
+            Http2ClientStream secondStream = connection.tryStream(STREAM_CONFIG);
+            assertNotNull(secondStream);
+
+            secondStream.close();
+            firstStream.close();
+            connection.close();
+        }
+    }
+
+    @Test
+    void initialZeroMaxConcurrentStreamsClosesUnusableConnection() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(0));
+            Http2ClientConnection connection = test.createConnection(false);
+
+            assertThrows(IllegalStateException.class, () -> connection.createStream(STREAM_CONFIG));
+
+            test.assertConnectionClosed();
         }
     }
 

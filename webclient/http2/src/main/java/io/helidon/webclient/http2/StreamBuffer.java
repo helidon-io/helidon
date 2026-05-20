@@ -31,7 +31,7 @@ class StreamBuffer {
 
     private final Lock streamLock = new ReentrantLock();
     private final Semaphore dequeSemaphore = new Semaphore(1);
-    private final Queue<InboundItem> buffer = new ArrayDeque<>();
+    private final Queue<Object> buffer = new ArrayDeque<>();
     private final Http2ClientStream stream;
     private final int streamId;
 
@@ -40,7 +40,7 @@ class StreamBuffer {
         this.streamId = streamId;
     }
 
-    InboundItem poll(Duration timeout) {
+    Object poll(Duration timeout) {
         try {
             // Block deque thread when queue is empty
             // avoid CPU burning
@@ -59,14 +59,14 @@ class StreamBuffer {
     }
 
     void push(Http2FrameData frameData) {
-        push(InboundItem.data(frameData));
+        push((Object) frameData);
     }
 
     void pushTrailers(Http2Headers headers, boolean endOfStream) {
-        push(InboundItem.trailers(headers, endOfStream));
+        push(new InboundTrailers(headers, endOfStream));
     }
 
-    private void push(InboundItem item) {
+    private void push(Object item) {
         try {
             streamLock.lock();
             buffer.add(item);
@@ -77,39 +77,6 @@ class StreamBuffer {
         }
     }
 
-    static final class InboundItem {
-        private final Http2FrameData frameData;
-        private final Http2Headers trailers;
-        private final boolean endOfStream;
-
-        private InboundItem(Http2FrameData frameData, Http2Headers trailers, boolean endOfStream) {
-            this.frameData = frameData;
-            this.trailers = trailers;
-            this.endOfStream = endOfStream;
-        }
-
-        private static InboundItem data(Http2FrameData frameData) {
-            return new InboundItem(frameData, null, false);
-        }
-
-        private static InboundItem trailers(Http2Headers trailers, boolean endOfStream) {
-            return new InboundItem(null, trailers, endOfStream);
-        }
-
-        boolean isTrailers() {
-            return trailers != null;
-        }
-
-        Http2FrameData frameData() {
-            return frameData;
-        }
-
-        Http2Headers trailers() {
-            return trailers;
-        }
-
-        boolean endOfStream() {
-            return endOfStream;
-        }
+    record InboundTrailers(Http2Headers trailers, boolean endOfStream) {
     }
 }
