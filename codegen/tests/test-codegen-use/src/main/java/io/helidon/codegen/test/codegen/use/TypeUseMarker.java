@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,13 @@
 
 package io.helidon.codegen.test.codegen.use;
 
-import io.helidon.common.Weight;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-@Weight(48)
-final class TriggerType {
-    private transient volatile String field = "value";
+import static java.lang.annotation.ElementType.TYPE_USE;
+import static java.lang.annotation.RetentionPolicy.CLASS;
 
-    public synchronized final String getField() {
-        return field;
-    }
-
-    public @TypeUseMarker long primitiveValue() {
-        return 48L;
-    }
-
-    public @TypeUseMarker DeclaredValueType declaredValue() {
-        return new DeclaredValueType(48L);
-    }
-
-    public String @TypeUseMarker [] arrayValue() {
-        return new String[0];
-    }
-}
-
-record DeclaredValueType(long value) {
+@Target(TYPE_USE)
+@Retention(CLASS)
+public @interface TypeUseMarker {
 }
