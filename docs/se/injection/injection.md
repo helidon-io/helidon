@@ -639,6 +639,8 @@ class MyServiceProvider implements Supplier<MyService> {
 
 Method calls on an instance created this way can’t be intercepted. To enable interception in such cases, we use the [`@Interception.Delegate`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Interception.Delegate.html) annotation. However, keep in mind that usage of this annotation doesn’t add the ability to intercept constructor calls. To enable interception, this annotation must be present on the class that the factory produces. While it is not required on interfaces, it will still work correctly if applied there.
 
+If the produced type is an interface, Helidon can generate the required delegation wrapper for registry-managed factories without `@Interception.Delegate` on the produced implementation class. This is the path used by declarative validation when method constraints are declared on service interfaces.
+
 If you need to enable interception for classes using delegation, you should make sure about the following:
 
 - The class must have accessible no-arg constructor (at least package local)

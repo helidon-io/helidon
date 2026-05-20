@@ -88,7 +88,7 @@ Configure the annotation processors in your Maven build:
                         <version>${helidon.version}</version>
                     </path>
                     <path>
-                        <groupId>io.helidon.json.codegen</groupId>
+                        <groupId>io.helidon.json</groupId>
                         <artifactId>helidon-json-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </path>

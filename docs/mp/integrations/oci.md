@@ -2,22 +2,29 @@
 
 ## Overview
 
-You can quickly and easily deploy Helidon applications on Oracle Cloud Infrastructure (OCI) and integrate them with OCI services using the OCI Java SDK and the Helidon OCI SDK Extension.
+You can quickly and easily deploy Helidon applications on Oracle Cloud Infrastructure (OCI) and integrate them with OCI services using the OCI Java SDK.
 
-[The Oracle Cloud Infrastructure SDK for Java](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm) enables you to write code to manage Oracle Cloud Infrastructure resources. The Helidon OCI SDK [CDI portable extension](https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html#spi) provides support for injecting [Oracle Cloud Infrastructure SDK Clients](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm) into your Helidon applications.
+[The Oracle Cloud Infrastructure SDK for Java](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm) enables you to write code to manage Oracle Cloud Infrastructure resources. For new Helidon MP applications, use the OCI Java SDK directly. If you need Helidon-provided OCI authentication, region, or configuration support, use `io.helidon.integrations.oci:helidon-integrations-oci`.
+
+> [!WARNING]
+> `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi` is deprecated and will be removed in a future release. The remainder of this page documents its legacy behavior for existing applications that still depend on the CDI portable extension.
 
 ## Maven Coordinates
 
 To enable OCI Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
 
-*Adding the Helidon OCI SDK Extension dependency*
+*Adding the Helidon OCI authentication/configuration support dependency*
 
 ```xml
 <dependency>
-     <groupId>io.helidon.integrations.oci.sdk</groupId>
-     <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
+     <groupId>io.helidon.integrations.oci</groupId>
+     <artifactId>helidon-integrations-oci</artifactId>
 </dependency>
 ```
+
+For new applications, create OCI SDK clients directly using the OCI Java SDK APIs.
+
+If you are maintaining an existing application that still depends on the deprecated `helidon-integrations-oci-sdk-cdi` module, the rest of this page describes its legacy configuration and behavior.
 
 ## Authentication
 
@@ -47,7 +54,7 @@ If your environment is already set up to work with the OCI SDK or the OCI CLI, t
 
 When you inject an OCI SDK Client object, the Helidon OCI SDK extension configures and constructs the object for you. The configuration primarily consists of initializing an OCI `AuthenticationDetailsProvider`. By default, the extension examines your environment and selects the best `AuthenticationDetailsProvider` and configures it for you.
 
-If you require greater control over the OCI configuration, see [OciExtension](/apidocs/io.helidon.integrations.oci.sdk.cdi/io/helidon/integrations/oci/sdk/cdi/OciExtension.html) in the Helidon Javadocs for more information concerning the extension and its configuration and authentication options. In particular, the `oci.auth-strategies` property lets you control which `AuthenticationDetailsProvider` will be used.
+If you are maintaining an existing application that still uses the deprecated `helidon-integrations-oci-sdk-cdi` module and require greater control over its legacy OCI configuration, see [OciExtension](/apidocs/io.helidon.integrations.oci.sdk.cdi/io/helidon/integrations/oci/sdk/cdi/OciExtension.html) in the Helidon Javadocs for more information concerning the extension and its configuration and authentication options. In particular, the `oci.auth-strategies` property lets you control which `AuthenticationDetailsProvider` will be used.
 
 ## Accessing OCI Services
 
@@ -145,5 +152,5 @@ VaultResource(Secrets secrets,
 
 ## References
 
-- [OciExtension](/apidocs/io.helidon.integrations.oci.sdk.cdi/io/helidon/integrations/oci/sdk/cdi/OciExtension.html) in the Helidon Javadocs
+- Legacy [OciExtension](/apidocs/io.helidon.integrations.oci.sdk.cdi/io/helidon/integrations/oci/sdk/cdi/OciExtension.html) Javadocs
 - [OCI SDK Usage Examples](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/integrations/oci) in the Helidon Examples GitHub repository

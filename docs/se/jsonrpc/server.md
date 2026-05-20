@@ -74,18 +74,20 @@ class MachineService implements JsonRpcService {
 
 This JSON-RPC service registers handlers for method names `start` and `stop` under the path `/machine`, thus JSON-RPC clients shall use the `/rpc/machine` URI to send requests —see `JsonRpcRouting` instance creation above.
 
-The logic for the two methods `start` and `stop` is very similar. First, they inspect parameters, then they decide to return either a result or an error, and finally they call `send()` on the response. Parameters, as well as results, can be either JSON-P instances or JSON-B objects. In this example, we defined some simple records to bind and serialize data using JSON-B.
+The logic for the two methods `start` and `stop` is very similar. First, they inspect parameters, then they decide to return either a result or an error, and finally they call `send()` on the response. Parameters, as well as results, can be either Helidon JSON instances or Java objects bound using Helidon JSON binding. In this example, we define some simple records annotated with `@Json.Entity`.
 
 ```java
+@Json.Entity
 public record StartStopParams(String when, Duration duration) {
 }
 
+@Json.Entity
 public record StartStopResult(String status) {
 }
 ```
 
 > [!NOTE]
-> These record types used during serialization must be public for the JSON-B implementation (Eclipse Yasson in our example) to have access to them.
+> Custom types used during serialization and deserialization must be annotated with `@Json.Entity` and compiled with the Helidon JSON annotation processor. See [Enabling Code Generation](../../se/json/json.md#enabling-code-generation) for the Maven annotation processor setup.
 
 ## Configuration
 

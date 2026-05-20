@@ -980,12 +980,12 @@ server:
 - [Usage](#usage)
 - [API](#api)
 
-Helidon provides optional support for the Prometheus metrics API.
+Helidon provides optional, deprecated support for the Prometheus metrics API.
 
-To use it, your service registers Prometheus support with your routing set-up. You can customize its configuration. For information about using Prometheus, see the Prometheus documentation: <https://prometheus.io/docs/introduction/overview/>.
+> [!WARNING]
+> `helidon-metrics-prometheus` is deprecated as of Helidon 4.5.0 and will be removed in a future major release. Prefer Helidon’s built-in metrics implementation, which already exposes Prometheus (OpenMetrics) output without requiring direct use of the Prometheus client API.
 
-> [!NOTE]
-> Helidon’s fully-functional, built-in metrics implementation supports Prometheus (OpenMetrics) output. Use the optional support described in *this* section only if you want to use the Prometheus *API* from your application code.
+If you are maintaining an existing application that already uses the Prometheus client API, your service can still register Prometheus support with your routing set-up. You can customize its configuration. For information about using Prometheus, see the Prometheus documentation: <https://prometheus.io/docs/introduction/overview/>.
 
 #### Maven Coordinates
 
@@ -1000,7 +1000,7 @@ To use it, your service registers Prometheus support with your routing set-up. Y
 
 #### Usage
 
-Your application code uses the Prometheus API to manage metrics. To expose those metrics to clients via a REST endpoint, your code uses the `PrometheusSupport` interface which Helidon provides.
+If you are maintaining an existing application, your code uses the Prometheus API to manage metrics. To expose those metrics to clients via a REST endpoint, your code uses the `PrometheusSupport` interface which Helidon provides.
 
 #### API
 

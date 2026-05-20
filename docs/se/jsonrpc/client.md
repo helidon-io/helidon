@@ -56,7 +56,10 @@ if (res.status() == Status.OK_200 && res.result().isPresent()) {
 > [!NOTE]
 > The HTTP status code is independent of any other error code in a JSON-RPC error response.
 
-Every JSON-RPC response contains either a result or an error, and that is the reason why `res.result()` returns an optional value. The last step shows how the result is mapped to a `StartStopResult` instance using JSON-B. See [JSON-RPC Server](../../se/jsonrpc/server.md) for more information on these types.
+Every JSON-RPC response contains either a result or an error, and that is the reason why `res.result()` returns an optional value. The last step shows how the result is mapped to a `StartStopResult` instance using Helidon JSON binding. See [JSON-RPC Server](../../se/jsonrpc/server.md) for more information on these types.
+
+> [!NOTE]
+> Custom types used with Helidon JSON binding must be annotated with `@Json.Entity` and compiled with the Helidon JSON annotation processor. See [Enabling Code Generation](../../se/json/json.md#enabling-code-generation) for the Maven annotation processor setup.
 
 ### Batch Requests
 
@@ -80,7 +83,7 @@ batch.rpcMethod("start")
 JsonRpcClientBatchResponse batchRes = batch.submit();
 ```
 
-The response of type `JsonClientBatchResponse` shall include an entry for each of the invocations in the request. In this example, we can test that the response returned HTTP status 200 and has a size of 2, and then verify the results by binding them to `StartStopResult` instances using JSON-B.
+The response of type `JsonClientBatchResponse` shall include an entry for each of the invocations in the request. In this example, we can test that the response returned HTTP status 200 and has a size of 2, and then verify the results by binding them to `StartStopResult` instances using Helidon JSON binding.
 
 ```java
 if (batchRes.status() == Status.OK_200 && batchRes.size() == 2) {
