@@ -26,7 +26,9 @@ server:
   idle-connection-timeout: PT5M # Close connections that have been idle for 5 minutes
   max-concurrent-requests: NNNN # Maximum number of concurrent requests. -1 is unlimited.
   max-requests-per-second: NNNN # Maximum throughput of requests over a one-second duration. -1 is unlimited.
-  max-tcp-connections: NNNN     # Max number of concurrent tcp connections. -1 is unlimited.
+  # Pre-accept connection admission capacity. A permit is reserved before accept and
+  # released after handling, or if configuring/submitting the accepted socket fails.
+  max-tcp-connections: NNNN     # -1 is unlimited.
   max-in-memory-entity: NNNNNN  # Entities smaller than this are buffered in memory vs streamed (bytes)
   max-payload-size: NNNNNNN     # Reject requests with payload sizes greater than this. -1 is unlimited (bytes)
 

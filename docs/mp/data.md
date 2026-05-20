@@ -8,6 +8,9 @@ Data repository queries are an abstraction over Object–Relational Mapping, or 
 
 The Helidon Data Repository supports Jakarta Persistence and major providers such as EclipseLink and Hibernate.
 
+> [!NOTE]
+> Helidon Data Repository is a preview feature. It is ready for production use, but its APIs may change without the usual deprecation process. This feature will be backward compatible within a major version of Helidon.
+
 ## Maven Coordinates
 
 To enable Data Repository, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).

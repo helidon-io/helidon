@@ -126,7 +126,7 @@ Migration from `javax` to `jakarta` namespace is making this release backward in
 
 ## Deprecations
 
-- The custom Helidon OCI clients have been deprecated. Use the OCI Java SDK instead. If you use Helidon MP you can inject OCI SDK clients by adding the dependency `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi`.
+- The custom Helidon OCI clients have been deprecated. Use the OCI Java SDK instead. For Helidon MP, use `io.helidon.integrations.oci:helidon-integrations-oci` only for OCI authentication, region, and configuration support; the legacy `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi` module is deprecated.
 
 > [!NOTE]
 > See [Resolving compatibility issue with OCI SDK](../../mp/integrations/oci.md#oci-compatibility) for detailed information on how to work around this issue.
