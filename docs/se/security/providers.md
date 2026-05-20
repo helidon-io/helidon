@@ -1277,7 +1277,7 @@ For outbound, we support either token propagation (e.g. the token from request i
 
 ## Reference
 
-- [Helidon Security Examples](https://github.com/oracle/helidon/tree/mainexamples/security)
+- [Helidon Security Examples](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security)
 - [Helidon OIDC JavaDoc](/apidocs/io.helidon.security.providers.oidc/module-summary.html)
 - [Helidon HTTP Authentication JavaDoc](/apidocs/io.helidon.security.providers.httpauth/module-summary.html)
 - [Helidon Header Authentication JavaDoc](/apidocs/io.helidon.security.providers.header/module-summary.html)
