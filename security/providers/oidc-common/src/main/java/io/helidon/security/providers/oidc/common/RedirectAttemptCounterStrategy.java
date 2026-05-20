@@ -16,6 +16,9 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import io.helidon.common.Errors;
+import io.helidon.http.HttpToken;
+
 /**
  * Strategy used to count redirects to an identity server.
  */
@@ -33,5 +36,22 @@ public enum RedirectAttemptCounterStrategy {
     /**
      * Count redirect attempts using a small cookie.
      */
-    COOKIE
+    COOKIE;
+
+    void validateRedirectAttemptParam(String redirectAttemptParam, Errors.Collector collector) {
+        if (this != COOKIE) {
+            return;
+        }
+        if (redirectAttemptParam == null) {
+            collector.fatal("redirect-attempt-param must be configured when redirect-attempt-counter-strategy "
+                                    + "is COOKIE");
+            return;
+        }
+        try {
+            HttpToken.validate(redirectAttemptParam + "_");
+        } catch (IllegalArgumentException ignored) {
+            collector.fatal("redirect-attempt-param must be a valid cookie name prefix when "
+                                    + "redirect-attempt-counter-strategy is COOKIE");
+        }
+    }
 }

@@ -1085,6 +1085,7 @@ public final class OidcConfig extends TenantConfigImpl {
                                             + "is set as an outbound type and \"idcs\" is the server type");
                 }
             }
+            redirectAttemptCounterStrategy.validateRedirectAttemptParam(redirectAttemptParam, collector);
 
             // second set of validations
             collector.collect().checkValid();

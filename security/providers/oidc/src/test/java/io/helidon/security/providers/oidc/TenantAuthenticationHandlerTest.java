@@ -349,6 +349,23 @@ class TenantAuthenticationHandlerTest {
     }
 
     @Test
+    public void testRedirectAttemptNoneStrategyIgnoresMaxRedirects() {
+        OidcConfig oidcConfig = OidcConfig.builder()
+                .clientId("test")
+                .clientSecret("123")
+                .identityUri(URI.create("http://localhost:1234"))
+                .oidcMetadataWellKnown(false)
+                .redirectAttemptCounterStrategy(NONE)
+                .maxRedirects(0)
+                .build();
+        TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);
+
+        AuthenticationResponse response = authenticationHandler.authenticate(DEFAULT_TENANT_ID, requestWithCookies());
+
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE_FINISH));
+    }
+
+    @Test
     public void testSuccessfulAuthenticationClearsCookieCounter() {
         OidcConfig oidcConfig = oidcConfig(COOKIE);
         TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);

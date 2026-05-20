@@ -379,9 +379,13 @@ class TenantAuthenticationHandler {
         if (oidcConfig.shouldRedirect()) {
             // make sure we do not exceed redirect limit
             String origUri = origUri(providerRequest);
-            int redirectAttempt = redirectAttempt(providerRequest, tenantId, origUri);
-            if (redirectAttempt >= oidcConfig.maxRedirects()) {
-                return errorResponseNoRedirect(code, description, status, tenantId, origUri);
+            RedirectAttemptCounterStrategy counterStrategy = oidcConfig.redirectAttemptCounterStrategy();
+            int redirectAttempt = 0;
+            if (counterStrategy != RedirectAttemptCounterStrategy.NONE) {
+                redirectAttempt = redirectAttempt(providerRequest, tenantId, origUri);
+                if (redirectAttempt >= oidcConfig.maxRedirects()) {
+                    return errorResponseNoRedirect(code, description, status, tenantId, origUri);
+                }
             }
             String state = generateRandomString();
             String pkceVerifier = oidcConfig.pkceEnabled() ? generateCodeVerifier() : "";
@@ -441,7 +445,7 @@ class TenantAuthenticationHandler {
             SetCookie cookie = oidcConfig.stateCookieHandler().createCookie(stateBase64).build();
             List<String> responseCookies = new ArrayList<>();
             responseCookies.add(cookie.toString());
-            if (oidcConfig.redirectAttemptCounterStrategy() == RedirectAttemptCounterStrategy.COOKIE) {
+            if (counterStrategy == RedirectAttemptCounterStrategy.COOKIE) {
                 responseCookies.add(RedirectAttemptCookie.create(oidcConfig, tenantId, origUri, redirectAttempt + 1)
                                             .toString());
             }
