@@ -24,7 +24,6 @@ import java.util.Optional;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.SetCookie;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.WritableHeaders;
@@ -48,12 +47,10 @@ import org.mockito.Mockito;
 
 import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.COOKIE;
 import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.NONE;
-import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
 import static org.mockito.Mockito.when;
@@ -206,48 +203,11 @@ class OidcFeatureTest {
     void testRedirectAttemptCookieCounter() {
         String state = "http://localhost:7145/test?a=first&b=second";
         ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
-        String cookieName = RedirectAttemptCookie.name(oidcConfigCookieCounter, DEFAULT_TENANT_ID, state);
 
-        String newState = oidcFeatureCookieCounter.updateRedirectCounter(request(cookieName + "=4"),
-                                                                         responseHeaders,
-                                                                         state);
+        String newState = oidcFeatureCookieCounter.updateRedirectCounter(request(), responseHeaders, state);
 
         assertThat(newState, is(state));
-        assertThat(responseHeaders.values(HeaderNames.SET_COOKIE), hasItem(startsWith(cookieName + "=5")));
-    }
-
-    @Test
-    void testRedirectAttemptCookieCounterUsesConfiguredCookieAttributes() {
-        String state = "http://localhost:7145/test?a=first&b=second";
-        OidcConfig oidcConfig = OidcConfig.builder()
-                .clientId("id")
-                .clientSecret("secret")
-                .identityUri(URI.create("http://localhost:7774/identity"))
-                .tokenEndpointUri(URI.create("http://localhost:7774/token"))
-                .authorizationEndpointUri(URI.create("http://localhost:7774/authorize"))
-                .signJwk(JwkKeys.builder().build())
-                .oidcMetadataWellKnown(false)
-                .redirectAttemptCounterStrategy(COOKIE)
-                .cookieSecure(true)
-                .cookieDomain("example.com")
-                .cookiePath("/oidc")
-                .cookieSameSite(SetCookie.SameSite.STRICT)
-                .cookieHttpOnly(false)
-                .build();
-        OidcFeature feature = OidcFeature.create(oidcConfig);
-        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
-
-        String newState = feature.updateRedirectCounter(request(), responseHeaders, state);
-        SetCookie cookie = SetCookie.parse(responseHeaders.values(HeaderNames.SET_COOKIE).getFirst());
-
-        assertThat(newState, is(state));
-        assertThat(cookie.name(), is(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, state)));
-        assertThat(cookie.value(), is("1"));
-        assertThat(cookie.secure(), is(true));
-        assertThat(cookie.httpOnly(), is(false));
-        assertThat(cookie.domain(), is(Optional.of("example.com")));
-        assertThat(cookie.path(), is(Optional.of("/oidc")));
-        assertThat(cookie.sameSite(), is(Optional.of(SetCookie.SameSite.STRICT)));
+        assertThat(responseHeaders.values(HeaderNames.SET_COOKIE).isEmpty(), is(true));
     }
 
     @Test

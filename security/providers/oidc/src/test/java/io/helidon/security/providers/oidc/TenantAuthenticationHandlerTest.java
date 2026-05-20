@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.config.Config;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.SetCookie;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonString;
@@ -200,7 +202,7 @@ class TenantAuthenticationHandlerTest {
         String state = "/test?someUri=value";
         String otherState = "/other?someUri=value";
 
-        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(), DEFAULT_TENANT_ID, state), is(1));
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(), DEFAULT_TENANT_ID, state), is(0));
         assertThat(authenticationHandler.redirectAttempt(requestWithCookies(attemptCookie(oidcConfig,
                                                                                          DEFAULT_TENANT_ID,
                                                                                          state,
@@ -214,14 +216,46 @@ class TenantAuthenticationHandlerTest {
                                                                                          4)),
                                                         DEFAULT_TENANT_ID,
                                                         state),
-                   is(1));
+                   is(0));
         assertThat(authenticationHandler.redirectAttempt(requestWithCookies(attemptCookie(oidcConfig,
                                                                                          "tenant-a",
                                                                                          state,
                                                                                          4)),
                                                         DEFAULT_TENANT_ID,
                                                         state),
-                   is(1));
+                   is(0));
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(attemptCookie(oidcConfig,
+                                                                                         DEFAULT_TENANT_ID,
+                                                                                         state,
+                                                                                         4)),
+                                                        DEFAULT_TENANT_ID,
+                                                        state + "&accessToken=token&id_token=id-token&h_tenant=tenant"),
+                   is(0));
+    }
+
+    @Test
+    public void testRedirectAttemptCookieStrategyWithQueryParamTokenPropagation() {
+        OidcConfig oidcConfig = oidcConfig(COOKIE, true);
+        TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);
+        String state = "/test?someUri=value";
+        String stateWithTokens = state + "&accessToken=token&id_token=id-token&h_tenant=tenant";
+        String stateWithMoreTokens = stateWithTokens + "&accessToken=next-token&id_token=next-id-token";
+
+        assertThat(authenticationHandler.redirectAttempt(requestWithCookies(attemptCookie(oidcConfig,
+                                                                                         DEFAULT_TENANT_ID,
+                                                                                         state,
+                                                                                         4)),
+                                                        DEFAULT_TENANT_ID,
+                                                        stateWithTokens),
+                   is(4));
+        assertThat(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, stateWithMoreTokens),
+                   is(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, state)));
+        assertThat(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, state + "&other=value")
+                           .equals(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, state)),
+                   is(false));
+        assertThat(RedirectAttemptCookie.name(oidcConfig, "tenant-a", state)
+                           .equals(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, state)),
+                   is(false));
     }
 
     @Test
@@ -239,25 +273,69 @@ class TenantAuthenticationHandlerTest {
     public void testSuccessfulAuthenticationClearsCookieCounter() {
         OidcConfig oidcConfig = oidcConfig(COOKIE);
         TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);
-        ProviderRequest providerRequest = requestWithCookies();
+        ProviderRequest providerRequest = requestWithUri(URI.create("http://localhost:1234/test"));
 
         assertThat(authenticationHandler.successCookies(List.of("other=value"), providerRequest, DEFAULT_TENANT_ID),
                    hasItem(startsWith(RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, "/test") + "=;")));
     }
 
+    @Test
+    public void testRedirectSetsCookieCounter() {
+        OidcConfig oidcConfig = OidcConfig.builder()
+                .clientId("test")
+                .clientSecret("123")
+                .identityUri(URI.create("http://localhost:1234"))
+                .oidcMetadataWellKnown(false)
+                .redirectAttemptCounterStrategy(COOKIE)
+                .cookieSecure(true)
+                .cookieDomain("example.com")
+                .cookiePath("/app")
+                .cookieSameSite(SetCookie.SameSite.STRICT)
+                .cookieHttpOnly(false)
+                .build();
+        TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig);
+        String state = "/app/test?resource=a";
+        ProviderRequest providerRequest = requestWithUri(URI.create("http://localhost:1234" + state),
+                                                         attemptCookie(oidcConfig, DEFAULT_TENANT_ID, state, 2));
+
+        AuthenticationResponse response = authenticationHandler.authenticate(DEFAULT_TENANT_ID, providerRequest);
+        List<String> cookies = response.responseHeaders().get(HeaderNames.SET_COOKIE.defaultCase());
+        String cookieName = RedirectAttemptCookie.name(oidcConfig, DEFAULT_TENANT_ID, state);
+        String cookieValue = cookies.stream()
+                .filter(it -> it.startsWith(cookieName + "="))
+                .findFirst()
+                .orElseThrow();
+        SetCookie cookie = SetCookie.parse(cookieValue);
+
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE_FINISH));
+        assertThat(cookie.name(), is(cookieName));
+        assertThat(cookie.value(), is("3"));
+        assertThat(cookie.secure(), is(true));
+        assertThat(cookie.httpOnly(), is(false));
+        assertThat(cookie.domain().orElseThrow(), is("example.com"));
+        assertThat(cookie.path().orElseThrow(), is("/app"));
+        assertThat(cookie.sameSite().orElseThrow(), is(SetCookie.SameSite.STRICT));
+    }
+
     private static OidcConfig oidcConfig(RedirectAttemptCounterStrategy strategy) {
+        return oidcConfig(strategy, false);
+    }
+
+    private static OidcConfig oidcConfig(RedirectAttemptCounterStrategy strategy, boolean useParam) {
         return OidcConfig.builder()
                 .clientId("test")
                 .clientSecret("123")
                 .identityUri(URI.create("http://localhost:1234"))
                 .oidcMetadataWellKnown(false)
                 .redirectAttemptCounterStrategy(strategy)
+                .useParam(useParam)
                 .build();
     }
 
     private static TenantAuthenticationHandler authenticationHandler(OidcConfig oidcConfig) {
         Tenant tenant = mock(Tenant.class);
         when(tenant.tenantConfig()).thenReturn(oidcConfig);
+        when(tenant.authorizationEndpointUri()).thenReturn("http://localhost:1234/authorize");
         return new TenantAuthenticationHandler(oidcConfig, tenant, false, true);
     }
 
@@ -266,13 +344,21 @@ class TenantAuthenticationHandlerTest {
     }
 
     private static ProviderRequest requestWithCookies(String... cookies) {
+        return requestWithUri(URI.create("http://localhost:1234/test"), cookies);
+    }
+
+    private static ProviderRequest requestWithUri(URI targetUri, String... cookies) {
         ProviderRequest providerRequest = mock(ProviderRequest.class);
         SecurityEnvironment.Builder securityEnvironmentBuilder = SecurityEnvironment.builder()
-                .targetUri(URI.create("http://localhost:1234/test"));
+                .targetUri(targetUri)
+                .header("Host", "localhost:1234");
         for (String cookie : cookies) {
             securityEnvironmentBuilder.header("Cookie", cookie);
         }
         when(providerRequest.env()).thenReturn(securityEnvironmentBuilder.build());
+        EndpointConfig endpointConfig = mock(EndpointConfig.class);
+        when(endpointConfig.securityLevels()).thenReturn(List.of());
+        when(providerRequest.endpointConfig()).thenReturn(endpointConfig);
         return providerRequest;
     }
 

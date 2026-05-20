@@ -439,13 +439,19 @@ class TenantAuthenticationHandler {
 
             String stateBase64 = Base64.getEncoder().encodeToString(stateJson.toString().getBytes(StandardCharsets.UTF_8));
             SetCookie cookie = oidcConfig.stateCookieHandler().createCookie(stateBase64).build();
+            List<String> responseCookies = new ArrayList<>();
+            responseCookies.add(cookie.toString());
+            if (oidcConfig.redirectAttemptCounterStrategy() == RedirectAttemptCounterStrategy.COOKIE) {
+                responseCookies.add(RedirectAttemptCookie.create(oidcConfig, tenantId, origUri, redirectAttempt + 1)
+                                            .toString());
+            }
 
             // must redirect
             return AuthenticationResponse
                     .builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
                     .statusCode(Status.TEMPORARY_REDIRECT_307.code())
-                    .responseHeader(HeaderNames.SET_COOKIE.defaultCase(), cookie.toString())
+                    .responseHeader(HeaderNames.SET_COOKIE.defaultCase(), responseCookies)
                     .description("Redirecting to identity server: " + description)
                     .responseHeader("Location", authorizationEndpoint + queryString)
                     .build();
@@ -549,7 +555,7 @@ class TenantAuthenticationHandler {
     private int redirectAttemptCookie(ProviderRequest providerRequest, String tenantId, String state) {
         return RedirectAttemptCookie.find(oidcConfig, providerRequest.env().headers(), tenantId, state)
                 .map(this::parseRedirectAttemptCookie)
-                .orElse(1);
+                .orElse(0);
     }
 
     private int parseRedirectAttemptCookie(String value) {
@@ -557,7 +563,7 @@ class TenantAuthenticationHandler {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
             LOGGER.log(System.Logger.Level.DEBUG, "Invalid OIDC redirect attempt cookie value", e);
-            return 1;
+            return 0;
         }
     }
 

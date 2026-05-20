@@ -69,7 +69,9 @@ for a JWT
 
 Redirect attempts are counted to prevent infinite login redirects. By default, Helidon stores the count in the
 `redirect-attempt-param` query parameter. Set `redirect-attempt-counter-strategy` to `COOKIE` to store the counter in
-a small cookie instead, or to `NONE` to disable redirect attempt counting.
+a small cookie instead, or to `NONE` to disable redirect attempt counting. The `redirect-attempt-param` value is used
+as the cookie name prefix when the `COOKIE` strategy is used; the full cookie name also includes a tenant and original
+URI hash.
 
 Helidon obtains a token from request (from cookie, header, or query parameter):
 

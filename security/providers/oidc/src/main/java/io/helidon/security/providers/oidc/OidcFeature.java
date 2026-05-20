@@ -640,27 +640,10 @@ public final class OidcFeature implements HttpFeature {
         case PARAM:
             return increaseRedirectCounter(state);
         case COOKIE:
-            int nextRedirectAttempt = nextRedirectAttempt(req, tenantName, state);
-            headers.addCookie(RedirectAttemptCookie.create(oidcConfig, tenantName, state, nextRedirectAttempt));
             return state;
         default:
             throw new IllegalStateException("Unsupported redirect attempt counter strategy: "
                                                     + oidcConfig.redirectAttemptCounterStrategy());
-        }
-    }
-
-    private int nextRedirectAttempt(ServerRequest req, String tenantName, String state) {
-        return RedirectAttemptCookie.find(oidcConfig, req.headers().toMap(), tenantName, state)
-                .map(this::parseRedirectAttempt)
-                .orElse(0) + 1;
-    }
-
-    private int parseRedirectAttempt(String cookieValue) {
-        try {
-            return Integer.parseInt(cookieValue);
-        } catch (NumberFormatException e) {
-            LOGGER.log(Level.DEBUG, "Invalid OIDC redirect attempt cookie value", e);
-            return 0;
         }
     }
 

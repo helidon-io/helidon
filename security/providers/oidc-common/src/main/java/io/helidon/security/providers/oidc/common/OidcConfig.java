@@ -254,7 +254,7 @@ import io.helidon.webclient.tracing.WebClientTracing;
  * <tr>
  *     <td>redirect-attempt-param</td>
  *     <td>{@value DEFAULT_ATTEMPT_PARAM}</td>
- *     <td>Name used by the redirect attempt query parameter and cookie. Customizable to prevent conflicts.</td>
+ *     <td>Redirect attempt query parameter name, or cookie name prefix for cookie-based counters.</td>
  * </tr>
  * <tr>
  *     <td>redirect-attempt-counter-strategy</td>
@@ -703,8 +703,8 @@ public final class OidcConfig extends TenantConfigImpl {
         return redirect;
     }
 
-    /** Name used by the redirect attempt query parameter and cookie.
-     * @return name of the query parameter or cookie
+    /** Name used by the redirect attempt query parameter, or as the cookie name prefix for cookie-based counters.
+     * @return name of the query parameter or cookie name prefix
      */
     public String redirectAttemptParam() {
         return redirectAttemptParam;
@@ -1389,8 +1389,8 @@ public final class OidcConfig extends TenantConfigImpl {
             return this;
         }
 
-        /** Configure the redirect attempt query parameter and cookie name.
-         * @param paramName name of the parameter or cookie
+        /** Configure the redirect attempt query parameter and cookie name prefix.
+         * @param paramName name of the parameter or cookie name prefix
          * @return updated builder instance
          */
         @ConfiguredOption(value = DEFAULT_ATTEMPT_PARAM)

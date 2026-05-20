@@ -16,9 +16,11 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
@@ -66,7 +68,50 @@ final class RedirectAttemptCookie {
     }
 
     static String name(OidcConfig oidcConfig, String tenantId, String state) {
-        return oidcConfig.redirectAttemptParam() + "_" + hash(tenantId + "\n" + state);
+        return oidcConfig.redirectAttemptParam() + "_" + hash(tenantId + "\n" + counterState(oidcConfig, state));
+    }
+
+    static String counterState(OidcConfig oidcConfig, String state) {
+        int queryStart = state.indexOf('?');
+        if (queryStart < 0) {
+            return state;
+        }
+
+        int fragmentStart = state.indexOf('#', queryStart);
+        String path = state.substring(0, queryStart);
+        String query = fragmentStart < 0
+                ? state.substring(queryStart + 1)
+                : state.substring(queryStart + 1, fragmentStart);
+        String fragment = fragmentStart < 0 ? "" : state.substring(fragmentStart);
+        List<String> queryParams = new ArrayList<>();
+        for (String queryParam : query.split("&")) {
+            if (!queryParam.isEmpty() && !counterQueryParam(oidcConfig, queryParam)) {
+                queryParams.add(queryParam);
+            }
+        }
+        if (queryParams.isEmpty()) {
+            return path + fragment;
+        }
+        return path + "?" + String.join("&", queryParams) + fragment;
+    }
+
+    private static boolean counterQueryParam(OidcConfig oidcConfig, String queryParam) {
+        int equals = queryParam.indexOf('=');
+        String name = equals < 0 ? queryParam : queryParam.substring(0, equals);
+        if (matches(name, oidcConfig.redirectAttemptParam())) {
+            return true;
+        }
+        if (!oidcConfig.useParam()) {
+            return false;
+        }
+        return matches(name, oidcConfig.paramName())
+                || matches(name, oidcConfig.idTokenParamName())
+                || matches(name, oidcConfig.tenantParamName());
+    }
+
+    private static boolean matches(String actualName, String expectedName) {
+        return actualName.equals(expectedName)
+                || actualName.equals(URLEncoder.encode(expectedName, StandardCharsets.UTF_8));
     }
 
     private static SetCookie.Builder builder(OidcConfig oidcConfig, String name, String value, boolean create) {
