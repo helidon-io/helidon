@@ -67,6 +67,10 @@ for a JWT
 5. The JWT is stored in a cookie (if cookie support is enabled, which it is by default)
 6. Helidon service redirects to original endpoint (on itself)
 
+Redirect attempts are counted to prevent infinite login redirects. By default, Helidon stores the count in the
+`redirect-attempt-param` query parameter. Set `redirect-attempt-counter-strategy` to `COOKIE` to store the counter in
+a small cookie instead, or to `NONE` to disable redirect attempt counting.
+
 Helidon obtains a token from request (from cookie, header, or query parameter):
 
 1. Token is parsed as a singed JWT

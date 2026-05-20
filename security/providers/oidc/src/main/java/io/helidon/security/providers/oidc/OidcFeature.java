@@ -527,6 +527,7 @@ public final class OidcFeature implements HttpFeature {
 
         //redirect to "originalUri"
         String originalUri = stateCookie.stringValue("originalUri", DEFAULT_REDIRECT);
+        ServerResponseHeaders headers = res.headers();
         res.status(Status.TEMPORARY_REDIRECT_307);
         if (oidcConfig.useParam()) {
             originalUri += (originalUri.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + accessToken;
@@ -538,8 +539,8 @@ public final class OidcFeature implements HttpFeature {
             }
         }
 
-        originalUri = increaseRedirectCounterIfEnabled(originalUri);
-        res.headers().add(HeaderNames.LOCATION, originalUri);
+        originalUri = updateRedirectCounter(req, headers, originalUri);
+        headers.add(HeaderNames.LOCATION, originalUri);
 
         if (oidcConfig.useCookie()) {
             try {
@@ -549,8 +550,6 @@ public final class OidcFeature implements HttpFeature {
                         .build();
                 String encodedAccessToken = Base64.getEncoder()
                         .encodeToString(accessTokenJson.toString().getBytes(StandardCharsets.UTF_8));
-
-                ServerResponseHeaders headers = res.headers();
 
                 OidcCookieHandler tenantCookieHandler = oidcConfig.tenantCookieHandler();
 
@@ -630,11 +629,34 @@ public final class OidcFeature implements HttpFeature {
         }
     }
 
-    String increaseRedirectCounterIfEnabled(String state) {
-        if (oidcConfig.redirectAttemptParamEnabled()) {
+    String updateRedirectCounter(ServerRequest req, ServerResponseHeaders headers, String state) {
+        switch (oidcConfig.redirectAttemptCounterStrategy()) {
+        case NONE:
+            return state;
+        case PARAM:
             return increaseRedirectCounter(state);
+        case COOKIE:
+            headers.addCookie(RedirectAttemptCookie.create(oidcConfig, nextRedirectAttempt(req)));
+            return state;
+        default:
+            throw new IllegalStateException("Unsupported redirect attempt counter strategy: "
+                                                    + oidcConfig.redirectAttemptCounterStrategy());
         }
-        return state;
+    }
+
+    private int nextRedirectAttempt(ServerRequest req) {
+        return RedirectAttemptCookie.find(oidcConfig, req.headers().toMap())
+                .map(this::parseRedirectAttempt)
+                .orElse(0) + 1;
+    }
+
+    private int parseRedirectAttempt(String cookieValue) {
+        try {
+            return Integer.parseInt(cookieValue);
+        } catch (NumberFormatException e) {
+            LOGGER.log(Level.DEBUG, "Invalid OIDC redirect attempt cookie value", e);
+            return 0;
+        }
     }
 
     private void processError(ServerRequest req, ServerResponse res) {

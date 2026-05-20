@@ -254,12 +254,12 @@ import io.helidon.webclient.tracing.WebClientTracing;
  * <tr>
  *     <td>redirect-attempt-param</td>
  *     <td>{@value DEFAULT_ATTEMPT_PARAM}</td>
- *     <td>Query parameter holding the number of redirects to an identity server. Customizable to prevent conflicts.</td>
+ *     <td>Name used by the redirect attempt query parameter and cookie. Customizable to prevent conflicts.</td>
  * </tr>
  * <tr>
- *     <td>redirect-attempt-param-enabled</td>
- *     <td>true</td>
- *     <td>Whether to append the redirect attempt counter parameter.</td>
+ *     <td>redirect-attempt-counter-strategy</td>
+ *     <td>{@link RedirectAttemptCounterStrategy#PARAM}</td>
+ *     <td>Strategy used to count redirects to an identity server.</td>
  * </tr>
  * <tr>
  *     <td>max-redirects</td>
@@ -393,7 +393,7 @@ public final class OidcConfig extends TenantConfigImpl {
     private final String frontendUri;
     private final boolean redirect;
     private final String redirectAttemptParam;
-    private final boolean redirectAttemptParamEnabled;
+    private final RedirectAttemptCounterStrategy redirectAttemptCounterStrategy;
     private final int maxRedirects;
     private final URI postLogoutUri;
     private final CrossOriginConfig crossOriginConfig;
@@ -432,7 +432,7 @@ public final class OidcConfig extends TenantConfigImpl {
         this.postLogoutUri = builder.postLogoutUri;
         this.redirect = builder.redirect;
         this.redirectAttemptParam = builder.redirectAttemptParam;
-        this.redirectAttemptParamEnabled = builder.redirectAttemptParamEnabled;
+        this.redirectAttemptCounterStrategy = builder.redirectAttemptCounterStrategy;
         this.maxRedirects = builder.maxRedirects;
         this.forceHttpsRedirects = builder.forceHttpsRedirects;
         this.crossOriginConfig = builder.crossOriginConfig;
@@ -703,18 +703,17 @@ public final class OidcConfig extends TenantConfigImpl {
         return redirect;
     }
 
-    /**
-     * Name of the redirect attempt query parameter.
-     * @return name of the query parameter
+    /** Name used by the redirect attempt query parameter and cookie.
+     * @return name of the query parameter or cookie
      */
     public String redirectAttemptParam() {
         return redirectAttemptParam;
     }
-    /** Whether to append the redirect attempt parameter to the redirected URI.
-     * @return whether to append the redirect attempt parameter
+    /** Strategy used to count redirects to an identity server.
+     * @return redirect attempt counter strategy
      */
-    public boolean redirectAttemptParamEnabled() {
-        return redirectAttemptParamEnabled;
+    public RedirectAttemptCounterStrategy redirectAttemptCounterStrategy() {
+        return redirectAttemptCounterStrategy;
     }
 
     /**
@@ -1011,7 +1010,7 @@ public final class OidcConfig extends TenantConfigImpl {
         private String frontendUri;
         private boolean redirect = DEFAULT_REDIRECT;
         private String redirectAttemptParam = DEFAULT_ATTEMPT_PARAM;
-        private boolean redirectAttemptParamEnabled = true;
+        private RedirectAttemptCounterStrategy redirectAttemptCounterStrategy = RedirectAttemptCounterStrategy.PARAM;
         private int maxRedirects = DEFAULT_MAX_REDIRECTS;
         private URI postLogoutUri;
         private CrossOriginConfig crossOriginConfig;
@@ -1206,7 +1205,8 @@ public final class OidcConfig extends TenantConfigImpl {
 
             config.get("redirect").asBoolean().ifPresent(this::redirect);
             config.get("redirect-attempt-param").asString().ifPresent(this::redirectAttemptParam);
-            config.get("redirect-attempt-param-enabled").asBoolean().ifPresent(this::redirectAttemptParamEnabled);
+            config.get("redirect-attempt-counter-strategy").as(RedirectAttemptCounterStrategy.class)
+                    .ifPresent(this::redirectAttemptCounterStrategy);
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("force-https-redirects").asBoolean().ifPresent(this::forceHttpsRedirects);
 
@@ -1389,9 +1389,8 @@ public final class OidcConfig extends TenantConfigImpl {
             return this;
         }
 
-        /**
-         * Configure the redirect attempt query parameter.
-         * @param paramName name of the parameter
+        /** Configure the redirect attempt query parameter and cookie name.
+         * @param paramName name of the parameter or cookie
          * @return updated builder instance
          */
         @ConfiguredOption(value = DEFAULT_ATTEMPT_PARAM)
@@ -1399,13 +1398,14 @@ public final class OidcConfig extends TenantConfigImpl {
             this.redirectAttemptParam = paramName;
             return this;
         }
-        /** Configure whether to append the redirect attempt parameter to the redirected URI.
-         * @param enabled whether the redirect attempt parameter should be appended
+
+        /** Configure the strategy used to count redirects to an identity server.
+         * @param strategy redirect attempt counter strategy
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "true")
-        public Builder redirectAttemptParamEnabled(boolean enabled) {
-            this.redirectAttemptParamEnabled = enabled;
+        @ConfiguredOption(value = "PARAM")
+        public Builder redirectAttemptCounterStrategy(RedirectAttemptCounterStrategy strategy) {
+            this.redirectAttemptCounterStrategy = Objects.requireNonNull(strategy);
             return this;
         }
 

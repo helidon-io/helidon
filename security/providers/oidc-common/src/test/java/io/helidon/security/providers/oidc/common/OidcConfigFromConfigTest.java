@@ -20,6 +20,7 @@ import io.helidon.config.Config;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.COOKIE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -59,9 +60,9 @@ class OidcConfigFromConfigTest extends OidcConfigAbstractTest {
     }
 
     @Test
-    void testRedirectAttemptParamDisabled() {
-        OidcConfig oidcConfig = OidcConfig.create(config.get("security.oidc-redirect-attempt-param-disabled"));
-        assertThat(oidcConfig.redirectAttemptParamEnabled(), is(false));
+    void testRedirectAttemptCounterStrategy() {
+        OidcConfig oidcConfig = OidcConfig.create(config.get("security.oidc-redirect-attempt-cookie"));
+        assertThat(oidcConfig.redirectAttemptCounterStrategy(), is(COOKIE));
     }
 
 }

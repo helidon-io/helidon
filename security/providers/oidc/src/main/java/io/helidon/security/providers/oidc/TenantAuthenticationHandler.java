@@ -69,6 +69,7 @@ import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.PkceChallengeMethod;
+import io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy;
 import io.helidon.security.providers.oidc.common.Tenant;
 import io.helidon.security.providers.oidc.common.TenantConfig;
 import io.helidon.security.util.TokenHandler;
@@ -361,7 +362,7 @@ class TenantAuthenticationHandler {
         if (oidcConfig.shouldRedirect()) {
             // make sure we do not exceed redirect limit
             String origUri = origUri(providerRequest);
-            int redirectAttempt = redirectAttempt(origUri);
+            int redirectAttempt = redirectAttempt(providerRequest, origUri);
             if (redirectAttempt >= oidcConfig.maxRedirects()) {
                 return errorResponseNoRedirect(code, description, status);
             }
@@ -464,33 +465,49 @@ class TenantAuthenticationHandler {
 
     private AuthenticationResponse errorResponseNoRedirect(String code, String description, Status status) {
         if (optional) {
-            return AuthenticationResponse.builder()
+            return noRedirectResponse(AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.ABSTAIN)
-                    .description(description)
-                    .build();
+                    .description(description));
         }
         if (null == code) {
-            return AuthenticationResponse.builder()
+            return noRedirectResponse(AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE)
                     .statusCode(Status.UNAUTHORIZED_401.code())
                     .responseHeader(HeaderNames.WWW_AUTHENTICATE.defaultCase(),
                                     "Bearer realm=\"" + tenantConfig.realm() + "\"")
-                    .description(description)
-                    .build();
+                    .description(description));
         } else {
-            return AuthenticationResponse.builder()
+            return noRedirectResponse(AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE)
                     .statusCode(status.code())
                     .responseHeader(HeaderNames.WWW_AUTHENTICATE.defaultCase(), errorHeader(code, description))
-                    .description(description)
-                    .build();
+                    .description(description));
         }
     }
 
-    private int redirectAttempt(String state) {
-        if (!oidcConfig.redirectAttemptParamEnabled()) {
-            return 1;
+    private AuthenticationResponse noRedirectResponse(AuthenticationResponse.Builder builder) {
+        if (oidcConfig.redirectAttemptCounterStrategy() == RedirectAttemptCounterStrategy.COOKIE) {
+            builder.responseHeader(HeaderNames.SET_COOKIE.defaultCase(),
+                                   RedirectAttemptCookie.remove(oidcConfig).toString());
         }
+        return builder.build();
+    }
+
+    int redirectAttempt(ProviderRequest providerRequest, String state) {
+        RedirectAttemptCounterStrategy strategy = oidcConfig.redirectAttemptCounterStrategy();
+        switch (strategy) {
+        case NONE:
+            return 0;
+        case PARAM:
+            return redirectAttemptParam(state);
+        case COOKIE:
+            return redirectAttemptCookie(providerRequest);
+        default:
+            throw new IllegalStateException("Unsupported redirect attempt counter strategy: " + strategy);
+        }
+    }
+
+    private int redirectAttemptParam(String state) {
         if (state.contains("?")) {
             // there are parameters
             Matcher matcher = attemptPattern.matcher(state);
@@ -500,6 +517,21 @@ class TenantAuthenticationHandler {
         }
 
         return 1;
+    }
+
+    private int redirectAttemptCookie(ProviderRequest providerRequest) {
+        return RedirectAttemptCookie.find(oidcConfig, providerRequest.env().headers())
+                .map(this::parseRedirectAttemptCookie)
+                .orElse(1);
+    }
+
+    private int parseRedirectAttemptCookie(String value) {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            LOGGER.log(System.Logger.Level.DEBUG, "Invalid OIDC redirect attempt cookie value", e);
+            return 1;
+        }
     }
 
     private String errorHeader(String code, String description) {
@@ -808,11 +840,12 @@ class TenantAuthenticationHandler {
                         .status(SecurityResponse.SecurityStatus.SUCCESS)
                         .user(subject);
 
-                if (cookies.isEmpty()) {
+                List<String> responseCookies = successCookies(cookies);
+                if (responseCookies.isEmpty()) {
                     return response.build();
                 } else {
                     return response
-                            .responseHeader(HeaderNames.SET_COOKIE.defaultCase(), cookies)
+                            .responseHeader(HeaderNames.SET_COOKIE.defaultCase(), responseCookies)
                             .build();
                 }
             } else {
@@ -834,6 +867,15 @@ class TenantAuthenticationHandler {
                                  "Token not valid",
                                  tenantId);
         }
+    }
+
+    List<String> successCookies(List<String> cookies) {
+        if (oidcConfig.redirectAttemptCounterStrategy() != RedirectAttemptCounterStrategy.COOKIE) {
+            return cookies;
+        }
+        List<String> responseCookies = new ArrayList<>(cookies);
+        responseCookies.add(RedirectAttemptCookie.remove(oidcConfig).toString());
+        return responseCookies;
     }
 
     private Subject buildSubject(Jwt jwt, SignedJwt signedJwt, Jwt idToken) {
