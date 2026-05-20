@@ -66,6 +66,7 @@
         <module>zipkin-mp-2.2</module>
         <module>tls-revocation-config</module>
         <module>h2spec</module>
+        <module>h2spec-client</module>
         <module>mp-telemetry</module>
         <module>mp-jaxrs-preserve-headers</module>
         <module>mp-metrics-gh-9995</module>

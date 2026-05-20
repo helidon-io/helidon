@@ -126,13 +126,30 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
                 this.response = result.response();
                 return doProceed(serviceRequest, result.response());
             }
-        } catch (StreamTimeoutException e){
+        } catch (StreamTimeoutException e) {
             //This request was waiting for 100 Continue, but it was very likely not supported by the server.
             //Do not remove connection from the cache in that case.
             if (!clientRequest().outputStreamRedirect()) {
                 http2Client.connectionCache().remove(connectionKey);
+                closeFailedStream(result);
             }
             throw e;
+        } catch (RuntimeException e) {
+            closeFailedStream(result);
+            throw e;
+        }
+    }
+
+    private void closeFailedStream(Http2ConnectionAttemptResult result) {
+        if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
+            Http2ClientStream failedStream = result.stream();
+            try {
+                failedStream.cancel();
+            } catch (RuntimeException ignored) {
+                // Preserve the original request failure; close still releases the reserved stream slot.
+            } finally {
+                failedStream.close();
+            }
         }
     }
 
