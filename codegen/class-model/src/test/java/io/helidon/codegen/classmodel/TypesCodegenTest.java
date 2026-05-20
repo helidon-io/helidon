@@ -20,11 +20,16 @@ import java.lang.annotation.ElementType;
 import java.util.List;
 
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.TypedElementInfo;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class TypesCodegenTest {
@@ -92,5 +97,130 @@ class TypesCodegenTest {
                               .property("ltype", @java.util.List@.of(@io.helidon.common.types.TypeName@.create("io.helidon.codegen.classmodel.TypesCodegenTest"),@io.helidon.common.types.TypeName@.create("io.helidon.codegen.classmodel.TypesCodegenTest")))
                               .property("lenum", @java.util.List@.of(@io.helidon.common.types.EnumValue@.create(@io.helidon.common.types.TypeName@.create("java.lang.annotation.ElementType"),"FIELD"),@io.helidon.common.types.EnumValue@.create(@io.helidon.common.types.TypeName@.create("java.lang.annotation.ElementType"),"MODULE")))
                               .build()"""));
+    }
+
+    @Test
+    void testAnnotatedNestedTypeName() {
+        Annotation annotation = Annotation.builder()
+                .typeName(TypeName.create("io.helidon.RandomAnnotation"))
+                .property("value", "quoted \" backslash \\ tab \t")
+                .build();
+        TypeName typeName = TypeName.builder(TypeNames.MAP)
+                .addTypeArgument(TypeNames.STRING)
+                .addTypeArgument(TypeName.builder(TypeNames.MAP)
+                                         .addTypeArgument(TypeNames.STRING)
+                                         .addTypeArgument(TypeName.builder(TypeNames.STRING)
+                                                                  .addAnnotation(annotation)
+                                                                  .build())
+                                         .build())
+                .build();
+
+        TestContentBuilder contentBuilder = new TestContentBuilder();
+        ContentSupport.addCreateTypeName(contentBuilder, typeName);
+        String createString = contentBuilder.generatedString();
+
+        assertThat(createString,
+                   not(containsString("@io.helidon.common.types.TypeName@.create(\"java.util.Map<java.lang.String,")));
+        assertThat(createString, containsString(".className(\"Map\")"));
+        assertThat(createString, containsString(".addTypeArgument(@io.helidon.common.types.TypeName@.builder()"));
+        assertThat(createString, containsString(".addAnnotation(@io.helidon.common.types.Annotation@.builder()"));
+        assertThat(createString, containsString(".property(\"value\", \"quoted \\\" backslash \\\\ tab \\t\")"));
+    }
+
+    @Test
+    void testAnnotatedBoundTypeName() {
+        Annotation annotation = Annotation.builder()
+                .typeName(TypeName.create("io.helidon.RandomAnnotation"))
+                .build();
+        TypeName typeName = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(TypeName.builder()
+                                         .className("?")
+                                         .wildcard(true)
+                                         .addUpperBound(TypeName.builder(TypeNames.STRING)
+                                                        .addAnnotation(annotation)
+                                                        .build())
+                                         .build())
+                .build();
+
+        TestContentBuilder contentBuilder = new TestContentBuilder();
+        ContentSupport.addCreateTypeName(contentBuilder, typeName);
+        String createString = contentBuilder.generatedString();
+
+        assertThat(createString,
+                   not(containsString("@io.helidon.common.types.TypeName@.create(\"java.util.List<? extends")));
+        assertThat(createString, containsString(".wildcard(true)"));
+        assertThat(createString, containsString(".addUpperBound(@io.helidon.common.types.TypeName@.builder()"));
+        assertThat(createString, containsString(".addAnnotation(@io.helidon.common.types.Annotation@.create("));
+    }
+
+    @Test
+    void testAnnotatedLowerBoundTypeName() {
+        Annotation annotation = Annotation.builder()
+                .typeName(TypeName.create("io.helidon.RandomAnnotation"))
+                .build();
+        TypeName typeName = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(TypeName.builder()
+                                         .className("?")
+                                         .wildcard(true)
+                                         .addLowerBound(TypeName.builder(TypeNames.STRING)
+                                                        .addAnnotation(annotation)
+                                                        .build())
+                                         .build())
+                .build();
+
+        TestContentBuilder contentBuilder = new TestContentBuilder();
+        ContentSupport.addCreateTypeName(contentBuilder, typeName);
+        String createString = contentBuilder.generatedString();
+
+        assertThat(createString,
+                   not(containsString("@io.helidon.common.types.TypeName@.create(\"java.util.List<? super")));
+        assertThat(createString, containsString(".wildcard(true)"));
+        assertThat(createString, containsString(".addLowerBound(@io.helidon.common.types.TypeName@.builder()"));
+        assertThat(createString, containsString(".addAnnotation(@io.helidon.common.types.Annotation@.create("));
+    }
+
+    @Test
+    void testAnnotatedComponentTypeName() {
+        Annotation annotation = Annotation.builder()
+                .typeName(TypeName.create("io.helidon.RandomAnnotation"))
+                .build();
+        TypeName componentType = TypeName.builder(TypeNames.STRING)
+                .addAnnotation(annotation)
+                .build();
+        TypeName typeName = TypeName.builder(TypeNames.STRING)
+                .array(true)
+                .componentType(componentType)
+                .build();
+
+        TestContentBuilder contentBuilder = new TestContentBuilder();
+        ContentSupport.addCreateTypeName(contentBuilder, typeName);
+        String createString = contentBuilder.generatedString();
+
+        assertThat(createString,
+                   not(containsString("@io.helidon.common.types.TypeName@.create(\"java.lang.String[]")));
+        assertThat(createString, containsString(".array(true)"));
+        assertThat(createString, containsString(".componentType(@io.helidon.common.types.TypeName@.builder()"));
+        assertThat(createString, containsString(".addAnnotation(@io.helidon.common.types.Annotation@.create("));
+    }
+
+    @Test
+    void testTypedElementEnclosingType() {
+        TypeName enclosingType = TypeName.create("io.helidon.codegen.classmodel.EnclosingType");
+        TypedElementInfo elementInfo = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .elementName("method")
+                .typeName(TypeNames.STRING)
+                .enclosingType(enclosingType)
+                .build();
+
+        TestContentBuilder contentBuilder = new TestContentBuilder();
+        ContentSupport.addCreateElement(contentBuilder, elementInfo);
+        String createString = contentBuilder.generatedString();
+
+        assertThat(createString, containsString(".enclosingType("));
+        assertThat(createString,
+                   containsString(".enclosingType(@io.helidon.common.types.TypeName@.create(\""
+                                          + enclosingType.fqName()
+                                          + "\"))"));
     }
 }
