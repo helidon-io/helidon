@@ -160,7 +160,7 @@ For more information see [Metrics](../se/metrics/metrics.md) documentation.
 To customize the endpoint of an observer:
 
 1.  For MicroProfile technologies (metrics, health) refer to the Helidon MP documentation for them:
-    - [metrics config](../mp/metrics/metrics.md#config-intro) documentation
+    - [metrics config](../mp/metrics/metrics.md#configuration-options) documentation
     - [health config](../mp/health.md#configuration) documentation
 2.  For other observers, assign a custom endpoint using a config setting such as `server.features.observe.info.endpoint`.
 

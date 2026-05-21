@@ -9,7 +9,7 @@ There are two ways to use validation features in Helidon SE:
 1.  Have a `@Validation.Validated` annotated type and use a `TypeValidator` service to validate it
 2.  Invoke the constraint checks directly using `Validators` static methods
 
-The feature fit with our [Helidon Declarative](../se/injection/declarative.md#Dec-Validation), which is a preview feature.
+The feature fit with our [Helidon Declarative](../se/injection/declarative.md#validation), which is a preview feature.
 
 ## Maven Coordinates
 
