@@ -35,9 +35,7 @@ RUN sed -i 's/time.Duration(3) \* time.Second/c.Timeout/' spec/specd.go
 RUN grep -nF 'time.After(c.Timeout)' spec/specd.go
 RUN go build -ldflags "-X main.VERSION=${VERSION} -X main.COMMIT=${COMMIT}" ./cmd/h2specd
 
-FROM container-registry.oracle.com/os/oraclelinux:9-slim
-RUN microdnf install java-21-openjdk-headless -y \
-    && microdnf clean all
+FROM container-registry.oracle.com/java/jdk:26-oraclelinux9
 
 WORKDIR /opt/helidon/app
 RUN mkdir -p /opt/helidon/app
