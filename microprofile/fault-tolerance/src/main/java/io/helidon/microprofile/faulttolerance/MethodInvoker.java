@@ -588,43 +588,7 @@ class MethodInvoker implements FtSupplier<Object> {
 
         methodState.lock.lock();
         try {
-            // Retries
-            if (introspector.hasRetry()) {
-                long retryCounter = methodState.retry.retryCounter();
-                boolean wasRetried = retryCounter > 0;
-                Counter retryRetriesTotal = RetryRetriesTotal.get(introspector.getMethodNameTag());
-
-                // Update retry counter
-                if (wasRetried) {
-                    retryRetriesTotal.inc(retryCounter);
-                }
-
-                // Update retry metrics based on outcome
-                if (cause == null) {
-                    RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                        wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
-                                        RetryResult.VALUE_RETURNED.get()).inc();
-                } else if (cause instanceof RetryTimeoutException) {
-                    RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                        wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
-                                        RetryResult.MAX_DURATION_REACHED.get()).inc();
-                } else {
-                    // Exception thrown but not RetryTimeoutException
-                    int maxRetries = introspector.getRetry().maxRetries();
-                    if (maxRetries == -1) {
-                        maxRetries = Integer.MAX_VALUE;
-                    }
-                    if (retryCounter == maxRetries) {
-                        RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                            wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
-                                            RetryResult.MAX_RETRIES_REACHED.get()).inc();
-                    } else if (retryCounter < maxRetries) {
-                        RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                            wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
-                                            RetryResult.EXCEPTION_NOT_RETRYABLE.get()).inc();
-                    }
-                }
-            }
+            updateRetryMetrics(cause);
 
             // CircuitBreaker
             if (introspector.hasCircuitBreaker()) {
@@ -735,6 +699,47 @@ class MethodInvoker implements FtSupplier<Object> {
             InvocationsTotal.get(introspector.getMethodNameTag(),
                                  EXCEPTION_THROWN.get(),
                                  introspector.getFallbackTag(fallbackCalled.get())).inc();
+        }
+    }
+
+    private void updateRetryMetrics(Throwable cause) {
+        if (!introspector.hasRetry()) {
+            return;
+        }
+
+        long retryCounter = methodState.retry.retryCounter();
+        boolean wasRetried = retryCounter > 0;
+        Counter retryRetriesTotal = RetryRetriesTotal.get(introspector.getMethodNameTag());
+
+        // Update retry counter
+        if (wasRetried) {
+            retryRetriesTotal.inc(retryCounter);
+        }
+
+        // Update retry metrics based on outcome
+        if (cause == null) {
+            RetryCallsTotal.get(introspector.getMethodNameTag(),
+                                wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                                RetryResult.VALUE_RETURNED.get()).inc();
+        } else if (cause instanceof RetryTimeoutException) {
+            RetryCallsTotal.get(introspector.getMethodNameTag(),
+                                wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                                RetryResult.MAX_DURATION_REACHED.get()).inc();
+        } else {
+            // Exception thrown but not RetryTimeoutException
+            int maxRetries = introspector.getRetry().maxRetries();
+            if (maxRetries == -1) {
+                maxRetries = Integer.MAX_VALUE;
+            }
+            if (retryCounter == maxRetries) {
+                RetryCallsTotal.get(introspector.getMethodNameTag(),
+                                    wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                                    RetryResult.MAX_RETRIES_REACHED.get()).inc();
+            } else if (retryCounter < maxRetries) {
+                RetryCallsTotal.get(introspector.getMethodNameTag(),
+                                    wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                                    RetryResult.EXCEPTION_NOT_RETRYABLE.get()).inc();
+            }
         }
     }
 
