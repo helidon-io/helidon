@@ -13,7 +13,7 @@ To enable MicroProfile Telemetry, either add a dependency on the [helidon-microp
 
 ###  OTel Exporter Dependencies
 
-Microprofile Telemetry mandates that implementations such as Helidon use OpenTelemetry, so also add a dependency on an OpenTelemetry exporter.
+MicroProfile Telemetry mandates that implementations such as Helidon use OpenTelemetry, so also add a dependency on an OpenTelemetry exporter.
 
 *Example dependency for the OpenTelemetry OTLP exporter*
 
@@ -133,7 +133,7 @@ public class HelidonEndpoint {
 - Inject `Tracer`.
 - Use `Tracer.spanBuilder` to create and start new `Span`.
 
-Helidon Microprofile Telemetry is integrated with [Helidon Tracing API](tracing.md). This means that both APIs can be mixed, and all parent hierarchies will be kept. In the case below, `@WithSpan` annotated method is mixed with manually created `io.helidon.tracing.Span`:
+Helidon MicroProfile Telemetry is integrated with [Helidon Tracing API](tracing.md). This means that both APIs can be mixed, and all parent hierarchies will be kept. In the case below, `@WithSpan` annotated method is mixed with manually created `io.helidon.tracing.Span`:
 
 *Inject Helidon Tracer*
 

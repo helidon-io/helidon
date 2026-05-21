@@ -1,4 +1,4 @@
-# Microprofile Config Sources
+# MicroProfile Config Sources
 
 ## Creating MicroProfile Config Sources for Manual Setup of Config
 
@@ -44,7 +44,7 @@ To create an in-memory source from properties with custom name, use <code>create
 
 ### Create Custom Map MicroProfile Config Source
 
-You can create Microprofile Config Source from a map.
+You can create MicroProfile Config Source from a map.
 
 *Create MicroProfile Config Source based on Environment Variables and Custom Map*
 
@@ -67,7 +67,7 @@ resolver.registerConfig(config, null);
 
 ### Create YAML MicroProfile Config Source
 
-You can create YAML Microprofile Config Source from a path or a URL. When you create a MicroProfile instance from the builder, the `YamlMpConfigSource` allows you to create a custom Config Source and register it with the builder.
+You can create YAML MicroProfile Config Source from a path or a URL. When you create a MicroProfile instance from the builder, the `YamlMpConfigSource` allows you to create a custom Config Source and register it with the builder.
 
 *Create YamlMPConfigSource from a path*
 
@@ -130,9 +130,9 @@ public class CustomConfigSource implements ConfigSource {
 
 ## Creating MicroProfile Config Sources from meta-config
 
-Instead of directly specifying the configuration sources in your code, you can use meta-configuration in a file that declares the configuration sources, and their attributes as mentioned in [Microprofile Config](introduction.md).
+Instead of directly specifying the configuration sources in your code, you can use meta-configuration in a file that declares the configuration sources, and their attributes as mentioned in [MicroProfile Config](introduction.md).
 
-When used, the Microprofile Config uses configuration sources and flags configured in the meta configuration file.
+When used, the MicroProfile Config uses configuration sources and flags configured in the meta configuration file.
 
 If a file named `mp-meta-config.yaml`, or `mp-meta-config.properties` is in the current directory or on the classpath, and there is no explicit setup of configuration in the code, the configuration will be loaded from the `meta-config` file. The location of the file can be overridden using system property `io.helidon.config.mp.meta-config`, or environment variable `HELIDON_MP_META_CONFIG`.
 

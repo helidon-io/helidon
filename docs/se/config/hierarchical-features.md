@@ -45,7 +45,7 @@ config-key = *1( key-token *( "." key-token ) )
 ```
 
 > [!IMPORTANT]
-> To emphasize, the dot character (“.”) has special meaning as a name separator in keys. To include a dot as a character in a key escape it as “~1”. To include a tilda escape it as “~0”.
+> To emphasize, the dot character (“.”) has special meaning as a name separator in keys. To include a dot as a character in a key escape it as “~1”. To include a tilde escape it as “~0”.
 
 ## In-memory Representation of Configuration
 

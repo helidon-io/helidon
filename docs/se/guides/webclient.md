@@ -77,7 +77,7 @@ You should now have a directory called `helidon-quickstart-se`.
 cd helidon-quickstart-se
 ```
 
-The Helidon quickstart is a greeting application supporting several HTTP requests such as GET and PUT. Using it will be time-saving for this exercise as it will allow us to modify the project to demonstrate some of the Webclient features and usability, rather than start from scratch.
+The Helidon quickstart is a greeting application supporting several HTTP requests such as GET and PUT. Using it will be time-saving for this exercise as it will allow us to modify the project to demonstrate some of the WebClient features and usability, rather than start from scratch.
 
 The quickstart example utilizes `WebClient` solely for testing purposes, with the dependency configured under the test scope. To use `WebClient` within your application, remove the test scope from the dependency in the `pom.xml`.
 

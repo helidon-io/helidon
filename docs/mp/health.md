@@ -17,7 +17,7 @@ To enable MicroProfile Health add the [helidon-microprofile bundle](introduction
 
 MicroProfile Health is already included in the bundle.
 
-If full control over the dependencies is required, and you want to minimize the quantity of the dependencies - `Helidon MicroProfile Core budnle` should be used. In this case the following dependencies should be included in your project’s `pom.xml`:
+If full control over the dependencies is required, and you want to minimize the quantity of the dependencies - `Helidon MicroProfile Core bundle` should be used. In this case the following dependencies should be included in your project’s `pom.xml`:
 
 ```xml
 <dependency>

@@ -253,7 +253,7 @@ Helidon MP applications can use the `META-INF/microprofile-config.properties` fi
 *Initial microprofile-config.properties*
 
 ```bash
-# Microprofile server properties
+# MicroProfile server properties
 server.port=8080
 server.host=0.0.0.0
 ```
@@ -268,7 +268,7 @@ In addition to predefined server properties, application-specific configuration 
 *Updated META-INF/microprofile-config.properties*
 
 ```bash
-# Microprofile server properties
+# MicroProfile server properties
 server.port=8080
 server.host=0.0.0.0
 

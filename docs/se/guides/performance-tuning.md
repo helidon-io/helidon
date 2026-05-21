@@ -2,7 +2,7 @@
 
 ## Introduction
 
-In this guide you fill find basic advice for performance tuning of your Helidon application. Most of this concerns tuning Helidon WebServer, but you should also consider configuring/tuning Java heap size as per any Java application.
+In this guide you will find basic advice for performance tuning of your Helidon application. Most of this concerns tuning Helidon WebServer, but you should also consider configuring/tuning Java heap size as per any Java application.
 
 ## WebServer Tuning
 

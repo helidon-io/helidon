@@ -142,7 +142,7 @@ clientConfig.connectorProvider(HelidonConnectorProvider.create());
 clientConfig.property(HelidonProperties.TLS, tls);
 clientConfig.property(HelidonProperties.PROTOCOL_CONFIGS,
                       List.of(Http2ClientProtocolConfig.builder()
-                                      .priorKnowledge(true)    // HTTP/2 knowlege
+                                      .priorKnowledge(true)    // HTTP/2 knowledge
                                       .build()));
 Client client = ClientBuilder.newClient(clientConfig);
 

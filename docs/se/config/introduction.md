@@ -149,7 +149,7 @@ For example the default configuration when you use `Config.create()` uses the fo
 
 1.  System properties config source
 2.  Environment variables config source
-3.  A classpath config source called `application.?` where the `?` depends on supported media types currently on the classpath.By default, it is `properties`, but if you have YAML support on classpath, it would be `application.yaml` (a `ConfigParser` may add additional supported suffixes for default file)
+3.  A classpath config source called `application.?` where the `?` depends on supported media types currently on the classpath. By default, it is `properties`, but if you have YAML support on classpath, it would be `application.yaml` (a `ConfigParser` may add additional supported suffixes for default file)
 
 Let’s consider the following keys:
 

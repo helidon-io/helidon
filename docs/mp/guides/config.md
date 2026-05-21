@@ -127,7 +127,7 @@ In order to properly configure your application using configuration sources, you
 Each of these sources specify configuration properties in Java Property format (key/value), like `color=red`. If any of the Helidon required properties are not specified in one of these source, like `server.port`, then Helidon will use a default value.
 
 > [!NOTE]
-> Because environment variable names are restricted to alphanumeric characters and underscores, Helidon adds aliases to the environment configuration source, allowing entries with dotted and/or hyphenated keys to be overridden. For example, this mapping allows an environment variable named "APP_GREETING" to override an entry key named "app.greeting". In the same way, an environment variable named "APP_dash_GREETING" will map to "app-greeting". See [Microprofile Config Specifications](https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html) for more information.
+> Because environment variable names are restricted to alphanumeric characters and underscores, Helidon adds aliases to the environment configuration source, allowing entries with dotted and/or hyphenated keys to be overridden. For example, this mapping allows an environment variable named "APP_GREETING" to override an entry key named "app.greeting". In the same way, an environment variable named "APP_dash_GREETING" will map to "app-greeting". See [MicroProfile Config Specifications](https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html) for more information.
 
 The following examples will demonstrate the default precedence order.
 
