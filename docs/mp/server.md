@@ -400,7 +400,7 @@ server:
 
 For any HTTP request for `/` this will return a 301 with the `Location:` header set to the value of `server.base-path`. This is often used with Static Content Support to serve a specific `index.html` when `/` is requested.
 
-Note that this feature is not for setting a context root for applications. To configure alternate context roots see see [Setting Application Path](jaxrs/jaxrs-applications.md#_setting_application_path).
+Note that this feature is not for setting a context root for applications. To configure alternate context roots see see [Setting Application Path](jaxrs/jaxrs-applications.md#setting-application-path).
 
 ### Example configuration of routing
 

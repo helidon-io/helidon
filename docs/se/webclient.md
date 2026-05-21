@@ -452,7 +452,7 @@ WebClient.builder()
 
 WebClient currently supports several built-in services, namely
 
-- [`discovery`](discovery.md#_web_client_discovery_integration)
+- [`discovery`](discovery.md#web-client-discovery-integration)
 - `metrics`
 - `tracing`
 - `telemetry` (following OpenTelemetry semantic conventions)
@@ -464,7 +464,7 @@ WebClient currently supports several built-in services, namely
 
 In order for a service to function, its dependencies need to be added in the application’s `pom.xml`. Below are examples on how to enable the built-in services:
 
-- `discovery` (see [its documentation](discovery.md#_web_client_discovery_integration))
+- `discovery` (see [its documentation](discovery.md#web-client-discovery-integration))
 
   *`pom.xml`*
 
@@ -481,7 +481,7 @@ In order for a service to function, its dependencies need to be added in the app
   </dependency>
   ```
 
-  - Backs the `discovery` service with a [Discovery provider based on Netflix’s Eureka](discovery.md#_eureka)
+  - Backs the `discovery` service with a [Discovery provider based on Netflix’s Eureka](discovery.md#eureka)
 
 - `metrics`
 

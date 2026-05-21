@@ -617,7 +617,7 @@ During the deserialization process, null values are always converted into the em
 
 In addition to using annotations directly on classes, custom serializers, deserializers, and converters can be automatically registered with the JSON binding system through Helidon’s Service Registry. So they get automatically discovered and one does not need to register them manually at runtime.
 
-See [Helidon Declarative](../injection/declarative.md#Overview)
+See [Helidon Declarative](../injection/declarative.md#overview)
 
 ### Binding Factories
 

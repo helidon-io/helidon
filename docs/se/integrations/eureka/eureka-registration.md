@@ -72,4 +72,4 @@ Information about how this feature is communicating with the Eureka Server is lo
 
 ## Related Documentation
 
-Users of this feature may also be interested in the (related) [Discovery feature](../../../se/discovery.md), particularly its [Eureka provider](../../../se/discovery.md#_eureka).
+Users of this feature may also be interested in the (related) [Discovery feature](../../../se/discovery.md), particularly its [Eureka provider](../../../se/discovery.md#eureka).

@@ -183,7 +183,7 @@ OpenTelemetry prescribes its own [semantic conventions](https://github.com/open-
 
 ### Enabling OpenTelemetry for Outgoing Helidon Webclient Traffic
 
-Helidon supports the OpenTelemetry semantic conventions for outgoing traffic which uses the Helidon WebClient. See the [Helidon WebClient documentation](../../se/webclient.md#_configuring_telemetry).
+Helidon supports the OpenTelemetry semantic conventions for outgoing traffic which uses the Helidon WebClient. See the [Helidon WebClient documentation](../../se/webclient.md#configuring-telemetry).
 
 <a id="note-about-exporter-dependencies"></a>
 ### Specifying Additional OpenTelemetry Dependencies

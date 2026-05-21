@@ -109,7 +109,7 @@ The following configuration sources can be used to retrieve the configuration:
 | File on classpath | Creates the source from a properties file on classpath with `MpConfigSources.classpath(String)`. |
 | YAML | Creates the source from YAML using `YamlMpConfigSource.create(Path)` or `YamlMpConfigSource.create(URL)`. |
 
-See [manual setup of config](advanced-configuration.md#_creating_microprofile_config_sources_for_manual_setup_of_config) section for more information.
+See [manual setup of config](advanced-configuration.md#creating-microprofile-config-sources-for-manual-setup-of-config) section for more information.
 
 #### References
 
@@ -178,7 +178,7 @@ client_secret_clear=${CLEAR=known_password}
 
 You can configure the Config using Helidon MP Config meta configuration feature. The meta-config allows configuration of config sources and other configuration options, including addition of discovered sources and converters.
 
-See [Microprofile Config Sources](advanced-configuration.md#_creating_microprofile_config_sources_from_meta_config) for detailed information.
+See [Microprofile Config Sources](advanced-configuration.md#creating-microprofile-config-sources-from-meta-config) for detailed information.
 
 > [!NOTE]
 > For backward compatibility, we will support usage of Helidon SE meta-configuration until version 3.0.0. Using this approach causes behavior that is not compatible with MicroProfile Config specification.

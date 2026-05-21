@@ -8,7 +8,7 @@ Our declarative approach has the following advantages:
 
 - Uses Helidon SE imperative code to implement features (i.e. performance is same as "pure" imperative application)
 - Generates all the necessary code at build-time, to avoid reflection and bytecode manipulation at runtime
-- It is based on [Helidon Injection](injection.md#Overview)
+- It is based on [Helidon Injection](injection.md#overview)
 - Declarative features are in the same modules as Helidon SE features (i.e. does not require additional dependencies)
 
 > [!NOTE]

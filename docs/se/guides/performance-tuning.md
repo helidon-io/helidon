@@ -10,7 +10,7 @@ Helidon WebServer is in large part self tuning. It uses default values that will
 
 For details on the following options please see:
 
-- [WebServer Configuration](../../se/webserver/webserver.md#_configuration_options)
+- [WebServer Configuration](../../se/webserver/webserver.md#configuration-options)
 - [WebServer Socket Configuration](../../config/io_helidon_common_socket_SocketOptions.md)
 
 ## Summary of Tuning Options

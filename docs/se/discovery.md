@@ -33,9 +33,9 @@ To use Helidon Discovery, you acquire an [`io.helidon.discovery.Discovery` objec
 
 ### `Discovery` Acquisition
 
-#### `Discovery` Acquisition Using [Helidon Inject](injection/injection.md#_injection_points)
+#### `Discovery` Acquisition Using [Helidon Inject](injection/injection.md#injection-points)
 
-You can acquire a [`io.helidon.discovery.Discovery` object](/apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html) by [injecting](injection/injection.md#_injection_points) it into your Helidon SE application:
+You can acquire a [`io.helidon.discovery.Discovery` object](/apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html) by [injecting](injection/injection.md#injection-points) it into your Helidon SE application:
 
 Acquiring a `Discovery` object using Helidon Inject
 
@@ -56,13 +56,13 @@ public class MyClass {
 }
 ```
 
-1.  Use the [`io.helidon.service.registry.Service.Inject` annotation](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Inject.html) to indicate that this constructor has an [injection point](injection/injection.md#_injection_points).
+1.  Use the [`io.helidon.service.registry.Service.Inject` annotation](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Inject.html) to indicate that this constructor has an [injection point](injection/injection.md#injection-points).
 2.  Here, the `discovery` constructor parameter is the injection point and will receive a non-`null` [instance of `io.helidon.discovery.Discovery`](/apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html).
 3.  The constructor explicitly assigns the injected reference to the `discovery` instance field.
 
-#### `Discovery` Acquisition Using the Helidon [Service Registry](injection/injection.md#_programmatic_lookup)
+#### `Discovery` Acquisition Using the Helidon [Service Registry](injection/injection.md#programmatic-lookup)
 
-You can acquire a [`io.helidon.discovery.Discovery` object](/apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html) by [using the Helidon Service Registry](injection/injection.md#_programmatic_lookup) via the [`io.helidon.service.registry.Services` façade](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Services.html):
+You can acquire a [`io.helidon.discovery.Discovery` object](/apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html) by [using the Helidon Service Registry](injection/injection.md#programmatic-lookup) via the [`io.helidon.service.registry.Services` façade](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Services.html):
 
 Acquiring a `Discovery` object using the Helidon Service Registry
 
@@ -271,7 +271,7 @@ The behavior of the Web Client Discovery integration is [fully specified and doc
 
 The Helidon Web Client Discovery integration can be configured using [Helidon Config](config/introduction.md). Examples shown below are in YAML, but are expressible in any format and any location that Helidon Config supports.
 
-Because the Helidon Web Client Discovery integration is fundamentally a [Web Client Service](webclient.md#_adding_service_to_webclient), you configure it under a Web Client’s `services` configuration node:
+Because the Helidon Web Client Discovery integration is fundamentally a [Web Client Service](webclient.md#adding-service-to-webclient), you configure it under a Web Client’s `services` configuration node:
 
 `application.yaml`
 
