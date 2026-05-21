@@ -216,7 +216,6 @@ public class JwtAuthProviderTest {
     public void testMissingExpectedIssuerFailsFastFromConfig() {
         ConfigProviderResolver resolver = ConfigProviderResolver.instance();
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        org.eclipse.microprofile.config.Config originalConfig = resolver.getConfig(classLoader);
         org.eclipse.microprofile.config.Config mpConfig = resolver.getBuilder()
                 .withSources(MpConfigSources.create(Map.of("mp.jwt.verify.publickey.location", "verify-jwk.json")))
                 .build();
@@ -234,7 +233,8 @@ public class JwtAuthProviderTest {
 
             assertThat(exception.getMessage(), containsString(JwtAuthProvider.CONFIG_EXPECTED_ISSUER));
         } finally {
-            resolver.registerConfig(originalConfig, classLoader);
+            resolver.releaseConfig(mpConfig);
+            resolver.getConfig(classLoader);
         }
     }
 

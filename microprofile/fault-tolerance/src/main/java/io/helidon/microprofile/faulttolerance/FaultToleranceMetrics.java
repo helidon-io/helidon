@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ class FaultToleranceMetrics {
 
         protected Counter getCounter(Tag... tags) {
             MetricID metricID = new MetricID(name(), tags);
-            return (Counter) getMetricRegistry().getMetrics().get(metricID);
+            return getMetricRegistry().getCounter(metricID);
         }
 
         protected Counter registerCounter(Tag... tags) {
@@ -113,7 +113,7 @@ class FaultToleranceMetrics {
 
         protected Histogram getHistogram(Tag... tags) {
             MetricID metricID = new MetricID(name(), tags);
-            return (Histogram) getMetricRegistry().getMetrics().get(metricID);
+            return getMetricRegistry().getHistogram(metricID);
         }
 
         protected Histogram registerHistogram(Tag... tags) {
@@ -138,7 +138,7 @@ class FaultToleranceMetrics {
         @SuppressWarnings("unchecked")
         protected <T extends Number> Gauge<T> getGauge(Tag... tags) {
             MetricID metricID = new MetricID(name(), tags);
-            return (Gauge<T>) getMetricRegistry().getMetrics().get(metricID);
+            return (Gauge<T>) getMetricRegistry().getGauge(metricID);
         }
 
         protected <T extends Number> Gauge<T> registerGauge(Gauge<T> newGauge, Tag... tags) {

@@ -214,7 +214,10 @@ public class Http2ClientConnection {
      * @param config stream configuration
      * @return a new client stream with one reserved peer-concurrency slot
      */
-    Http2ClientStream createStream(Http2StreamConfig config) {
+    Http2ClientStream createStream(Http2StreamConfig config,
+                                   Http2ClientConfig clientConfig,
+                                   Http2FrameListener sendListener,
+                                   Http2FrameListener recvListener) {
         // The peer can tighten MAX_CONCURRENT_STREAMS in its first SETTINGS frame.
         awaitInitialSettings();
         if (!reserveStream()) {
@@ -232,6 +235,10 @@ public class Http2ClientConnection {
                 sendListener,
                 recvListener);
         return stream;
+    }
+
+    Http2ClientStream createStream(Http2StreamConfig config) {
+        return createStream(config, clientConfig, sendListener, recvListener);
     }
 
     /**
@@ -282,12 +289,19 @@ public class Http2ClientConnection {
 
     }
 
-    Http2ClientStream tryStream(Http2StreamConfig config) {
+    Http2ClientStream tryStream(Http2StreamConfig config,
+                                Http2ClientConfig clientConfig,
+                                Http2FrameListener sendListener,
+                                Http2FrameListener recvListener) {
         try {
-            return createStream(config);
+            return createStream(config, clientConfig, sendListener, recvListener);
         } catch (IllegalStateException | UncheckedIOException e) {
             return null;
         }
+    }
+
+    Http2ClientStream tryStream(Http2StreamConfig config) {
+        return tryStream(config, clientConfig, sendListener, recvListener);
     }
 
     boolean closed() {
@@ -844,7 +858,6 @@ public class Http2ClientConnection {
 
         Http2Headers headers = decodeInboundHeaders(headerStream, headerFrames);
         beforeDeliverInboundHeaders(headerStream, headers, endOfStream);
-        recvListener.headers(ctx, streamId, headers);
         headerStream.inboundHeaders(headers, endOfStream);
         return true;
     }

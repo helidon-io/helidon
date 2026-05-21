@@ -88,6 +88,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             //If cos is marked as interrupted, we know that our interrupted exception has been thrown, but
             //it was intercepted by the user OutputStreamHandler and not rethrown.
             //This is a fallback mechanism to correctly handle such a situations.
+            stream(outputStream.stream);
             return outputStream.serviceResponse();
         } else if (!outputStream.closed()) {
             throw new IllegalStateException("Output stream was not closed in handler");
@@ -113,9 +114,16 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             request.outputStreamRedirect(false);
             request.readTimeout(outputStream.originalRequest.readTimeout());
             int numberOfRedirects = outputStream.numberOfRedirects;
+            try {
+                outputStream.stream.cancel();
+            } finally {
+                outputStream.stream.close();
+            }
             Http2ClientResponseImpl clientResponse = RedirectionProcessor.invokeWithFollowRedirects(request,
                                                                                                     numberOfRedirects,
                                                                                                     BufferData.EMPTY_BYTES);
+
+            stream(clientResponse.stream());
             return createServiceResponse(serviceRequest,
                                          clientConfig(),
                                          clientResponse.stream(),
@@ -124,6 +132,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                          clientResponse.headers());
         }
 
+        stream(outputStream.stream);
         return createServiceResponse(serviceRequest,
                                      clientConfig(),
                                      outputStream.stream,

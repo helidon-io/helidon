@@ -80,6 +80,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private volatile Http2StreamState state = Http2StreamState.IDLE;
     private volatile ReadState readState = ReadState.INIT;
     private Http2Headers currentHeaders;
+    private RuntimeException inboundFailure;
     // accessed from stream thread an connection thread
     private volatile StreamFlowControl flowControl;
     private boolean hasEntity;
@@ -407,6 +408,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         Duration readContinueTimeout = http2ClientConfig.readContinueTimeout();
         inboundStateLock.lock();
         try {
+            throwIfInboundFailed();
             boolean expected100Continue = readState == ReadState.CONTINUE_100_HEADERS;
             long remainingNanos = readContinueTimeout.toNanos();
             while (readState == ReadState.CONTINUE_100_HEADERS && !closed) {
@@ -419,7 +421,9 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                     return Status.CONTINUE_100;
                 }
                 remainingNanos = inboundStateChanged.awaitNanos(remainingNanos);
+                throwIfInboundFailed();
             }
+            throwIfInboundFailed();
             if (expected100Continue && currentHeaders != null) {
                 return currentHeaders.status();
             }
@@ -523,13 +527,16 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     public Http2Headers readHeaders() {
         inboundStateLock.lock();
         try {
+            throwIfInboundFailed();
             long remainingNanos = timeout.toNanos();
             while (readState == ReadState.HEADERS && !closed) {
                 if (remainingNanos <= 0) {
                     throw new StreamTimeoutException(this, streamId, timeout);
                 }
                 remainingNanos = inboundStateChanged.awaitNanos(remainingNanos);
+                throwIfInboundFailed();
             }
+            throwIfInboundFailed();
             if (currentHeaders == null && closed) {
                 throw new IllegalStateException("Stream closed while waiting for response headers");
             }
@@ -634,11 +641,18 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                 return;
             }
             if (readState == ReadState.CONTINUE_100_HEADERS || readState == ReadState.HEADERS) {
-                headers.validateResponse();
-                if (protocolConfig().validateResponseHeaders()) {
-                    validateRegularHeaders(headers.httpHeaders());
+                try {
+                    headers.validateResponse();
+                    if (protocolConfig().validateResponseHeaders()) {
+                        validateRegularHeaders(headers.httpHeaders());
+                    }
+                } catch (Http2Exception e) {
+                    inboundFailure = e;
+                    inboundStateChanged.signalAll();
+                    return;
                 }
             }
+            recvListener.headers(ctx, streamId, headers);
             switch (readState) {
             case CONTINUE_100_HEADERS -> continue100Locked(headers, endOfStream);
             case HEADERS -> headersLocked(headers, endOfStream);
@@ -729,6 +743,13 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         readState = readState.check(ReadState.END);
         hasEntity = false;
         trailers.complete(headers.httpHeaders());
+    }
+
+    private void throwIfInboundFailed() {
+        RuntimeException failure = inboundFailure;
+        if (failure != null) {
+            throw failure;
+        }
     }
 
     private static void validateRegularHeaders(Headers headers) {

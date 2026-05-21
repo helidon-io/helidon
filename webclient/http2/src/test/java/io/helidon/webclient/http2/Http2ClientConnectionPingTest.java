@@ -225,7 +225,7 @@ class Http2ClientConnectionPingTest {
         MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
         Http2ClientStream stream = test.newStream();
         stream.writeHeaders(requestHeaders(VALID_REGULAR_HEADER), true);
-        stream.push(responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER)));
+        pushResponseHeaders(test, responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER)));
 
         Http2Exception exception = assertThrows(Http2Exception.class, stream::readHeaders);
 
@@ -237,7 +237,7 @@ class Http2ClientConnectionPingTest {
         MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
         Http2ClientStream stream = test.newStream();
         stream.writeHeaders(requestHeaders(VALID_REGULAR_HEADER), true);
-        stream.push(responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER)));
+        pushResponseHeaders(test, responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER)));
 
         Http2Exception exception = assertThrows(Http2Exception.class, () -> Http2CallChainBase.readHeaders(stream));
 
@@ -252,7 +252,7 @@ class Http2ClientConnectionPingTest {
         Http2ClientStream stream = test.newStream();
         stream.writeHeaders(requestHeaders(VALID_REGULAR_HEADER), true);
         test.dataWriter.onWrite = () -> assertThat(test.connection().stream(stream.streamId()), nullValue());
-        stream.push(responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER)));
+        pushResponseHeaders(test, responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER)));
 
         assertThrows(Http2Exception.class, () -> Http2CallChainBase.readHeaders(stream));
     }
@@ -265,7 +265,7 @@ class Http2ClientConnectionPingTest {
         RacingHeader header = new RacingHeader(() -> handleRstStream(test, stream.streamId()));
         Http2FrameData frameData = responseHeadersFrame(responseHeaders(header));
         header.arm();
-        stream.push(frameData);
+        pushResponseHeaders(test, frameData);
 
         Http2Exception exception = assertThrows(Http2Exception.class, () -> Http2CallChainBase.readHeaders(stream));
 
@@ -278,9 +278,10 @@ class Http2ClientConnectionPingTest {
         MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
         Http2ClientStream stream = test.newStream();
         stream.writeHeaders(requestHeaders(HeaderValues.EXPECT_100), false);
-        stream.push(responseHeadersFrame(Http2Headers.create(writableHeaders(INVALID_REGULAR_HEADER))
-                                          .status(Status.CONTINUE_100),
-                                         false));
+        pushResponseHeaders(test,
+                            responseHeadersFrame(Http2Headers.create(writableHeaders(INVALID_REGULAR_HEADER))
+                                                  .status(Status.CONTINUE_100),
+                                                 false));
 
         Http2Exception exception = assertThrows(Http2Exception.class, () -> Http2CallChainBase.waitFor100Continue(stream));
 
@@ -297,7 +298,7 @@ class Http2ClientConnectionPingTest {
                                                                           false);
         Http2ClientStream stream = test.newStream();
         stream.writeHeaders(requestHeaders(VALID_REGULAR_HEADER), true);
-        stream.push(responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER)));
+        pushResponseHeaders(test, responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER)));
 
         Http2Headers responseHeaders = stream.readHeaders();
 
@@ -384,6 +385,10 @@ class Http2ClientConnectionPingTest {
         Http2RstStream rstStream = new Http2RstStream(Http2ErrorCode.CANCEL);
         Http2FrameData rstStreamFrame = rstStream.toFrameData(Http2Settings.create(), streamId, Http2Flag.NoFlags.create());
         assertThat(test.connection().handle(rstStreamFrame.header(), rstStreamFrame.data()), is(true));
+    }
+
+    private static void pushResponseHeaders(MockedConnectionTestContext test, Http2FrameData frameData) {
+        assertThat(test.connection().handle(frameData.header(), frameData.data()), is(true));
     }
 
     private static CompletableFuture<Boolean> startPing(MockedConnectionTestContext test) {

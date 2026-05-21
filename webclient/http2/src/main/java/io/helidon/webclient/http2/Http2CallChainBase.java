@@ -286,6 +286,10 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return clientRequest;
     }
 
+    protected void stream(Http2ClientStream stream) {
+        this.stream = stream;
+    }
+
     void closeResponse() {
         if (response != null) {
             response.close();

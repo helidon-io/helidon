@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,6 @@
  */
 
 package io.helidon.http;
-
-import java.nio.charset.StandardCharsets;
-
-import io.helidon.common.buffers.BufferData;
 
 /**
  * HTTP Token utility.
@@ -40,28 +36,20 @@ public final class HttpToken {
             char aChar = chars[i];
             if (aChar > 254) {
                 throw new IllegalArgumentException("Token contains non-ASCII character at position "
-                                                           + hex(i)
-                                                           + " \n"
-                                                           + debugToken(token));
+                                                           + hex(i));
             }
             if (Character.isISOControl(aChar)) {
                 throw new IllegalArgumentException("Token contains control character at position "
-                                                           + hex(i)
-                                                           + "\n"
-                                                           + debugToken(token));
+                                                           + hex(i));
             }
             if (Character.isWhitespace(aChar)) {
                 throw new IllegalArgumentException("Token contains whitespace character at position "
-                                                           + hex(i)
-                                                           + "\n"
-                                                           + debugToken(token));
+                                                           + hex(i));
             }
             switch (aChar) {
             case '(', ')', '<', '>', '@', ',', ';', ':', '\\', '"', '/', '[', ']', '?', '=', '{', '}' -> {
                 throw new IllegalArgumentException("Token contains illegal character at position "
-                                                           + hex(i)
-                                                           + "\n"
-                                                           + debugToken(token));
+                                                           + hex(i));
             }
             default -> {
                 // this is a valid character
@@ -72,10 +60,5 @@ public final class HttpToken {
 
     private static String hex(int i) {
         return Integer.toHexString(i);
-    }
-
-    private static String debugToken(String token) {
-        return BufferData.create(token.getBytes(StandardCharsets.US_ASCII))
-                .debugDataHex();
     }
 }
