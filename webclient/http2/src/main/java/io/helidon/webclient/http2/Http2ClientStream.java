@@ -165,16 +165,13 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         if (increment == 0) {
             Http2RstStream frame = new Http2RstStream(Http2ErrorCode.PROTOCOL);
             connection.writer().write(frame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+            return;
         }
         //6.9.1/3
         if (flowControl.outbound().incrementStreamWindowSize(increment) > WindowSize.MAX_WIN_SIZE) {
             Http2RstStream frame = new Http2RstStream(Http2ErrorCode.FLOW_CONTROL);
             connection.writer().write(frame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
         }
-
-        flowControl()
-                .outbound()
-                .incrementStreamWindowSize(increment);
     }
 
     @Override
