@@ -127,13 +127,13 @@ class Http2ClientConnectionHandler {
             if (conn == null) {
                 conn = createConnection(http2Client, request, initialUri);
                 // we must assume that a new connection can handle a new stream
-                stream = conn.createStream(request);
+                stream = createStreamOnNewConnection(conn, request);
             } else {
                 stream = conn.tryStream(request);
                 if (stream == null) {
                     // either the connection is closed, or it ran out of streams
                     conn = createConnection(http2Client, request, initialUri);
-                    stream = conn.createStream(request);
+                    stream = createStreamOnNewConnection(conn, request);
                 }
             }
 
@@ -368,6 +368,23 @@ class Http2ClientConnectionHandler {
         }
 
         return usedConnection;
+    }
+
+    private Http2ClientStream createStreamOnNewConnection(Http2ClientConnection connection,
+                                                          Http2ClientRequestImpl request) {
+        try {
+            return connection.createStream(request);
+        } catch (RuntimeException e) {
+            discardConnection(connection);
+            throw e;
+        }
+    }
+
+    private void discardConnection(Http2ClientConnection connection) {
+        activeConnection.compareAndSet(connection, null);
+        allConnections.remove(connection);
+        h2ConnByConn.values().remove(connection);
+        connection.close();
     }
 
     private Http2ClientConnection createHttp2Connection(Http2ClientImpl http2Client,
