@@ -74,7 +74,7 @@ public class Http2ClientConnection {
     private static final long NO_PING_ACK = Long.MIN_VALUE;
     private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
     private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
-    private final LockingStreamIdSequence streamIdSeq = new LockingStreamIdSequence();
+    private final LockingStreamIdSequence streamIdSeq = LockingStreamIdSequence.create();
     private final ReadWriteLock streamsLock = new ReentrantReadWriteLock();
     // streams may be accessed from connection thread, or stream thread, must be guarded by the above lock
     private final Map<Integer, Http2ClientStream> streams = new HashMap<>();

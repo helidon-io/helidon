@@ -29,7 +29,19 @@ public class LockingStreamIdSequence {
 
     /**
      * Create a new locking stream ID sequence.
+     *
+     * @return a new locking stream ID sequence
      */
+    public static LockingStreamIdSequence create() {
+        return new LockingStreamIdSequence();
+    }
+
+    /**
+     * Create a new locking stream ID sequence.
+     *
+     * @deprecated use {@link #create()} instead
+     */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     public LockingStreamIdSequence() {
     }
 
