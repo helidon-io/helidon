@@ -40,6 +40,7 @@
         <module>security</module>
         <module>tls-revocation-config</module>
         <module>h2spec</module>
+        <module>h2spec-client</module>
         <module>context-http-propagation</module>
     </modules>
 

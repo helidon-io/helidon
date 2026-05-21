@@ -308,7 +308,13 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                     redirectUri.port(lastUri.port());
                 }
                 lastUri = redirectUri;
-                stream.close();
+                // Queue RST_STREAM before releasing this stream's reservation, so redirected HEADERS
+                // are serialized after the abandoned upload is reset for max-concurrent-streams peers.
+                try {
+                    stream.cancel();
+                } finally {
+                    stream.close();
+                }
                 Http2ClientRequestImpl clientRequest = new Http2ClientRequestImpl(lastRequest,
                                                                                   method,
                                                                                   redirectUri,
