@@ -378,10 +378,11 @@ class MethodInvoker implements FtSupplier<Object> {
                 cancellableSupplier.cancel();
                 // Cancel supplier in bulkhead in case it is queued
                 if (introspector.hasBulkhead()) {
-                    if (methodState.bulkheadWaitingStarts != null) {
+                    boolean removedFromQueue = methodState.bulkhead.cancelSupplier(handlerSupplier);
+                    // If the supplier was already dequeued, the queue listener owns recording waiting time.
+                    if (removedFromQueue && methodState.bulkheadWaitingStarts != null) {
                         methodState.bulkheadWaitingStarts.remove(handlerSupplier);
                     }
-                    methodState.bulkhead.cancelSupplier(handlerSupplier);
                 }
                 asyncFuture.cancel(mayInterrupt.get());
             }
