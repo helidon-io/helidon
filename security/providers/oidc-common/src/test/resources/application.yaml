@@ -43,3 +43,10 @@ security:
     client-id: "my-id"
     client-secret: "my-well-known-secret"
     check-audience: false
+
+  oidc-redirect-attempt-cookie:
+    identity-uri: "https://my.identity"
+    client-id: "my-id"
+    client-secret: "my-well-known-secret"
+    oidc-metadata-well-known: false
+    redirect-attempt-counter-strategy: COOKIE

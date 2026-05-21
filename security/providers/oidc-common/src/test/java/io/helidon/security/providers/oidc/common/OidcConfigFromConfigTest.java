@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import io.helidon.config.Config;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.COOKIE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -56,6 +57,12 @@ class OidcConfigFromConfigTest extends OidcConfigAbstractTest {
     void testDisabledAudience() {
         OidcConfig oidcConfig = OidcConfig.create(config.get("security.oidc-disabled-aud"));
         assertThat(oidcConfig.checkAudience(), is(false));
+    }
+
+    @Test
+    void testRedirectAttemptCounterStrategy() {
+        OidcConfig oidcConfig = OidcConfig.create(config.get("security.oidc-redirect-attempt-cookie"));
+        assertThat(oidcConfig.redirectAttemptCounterStrategy(), is(COOKIE));
     }
 
 }
