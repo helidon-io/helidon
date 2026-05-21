@@ -179,7 +179,7 @@ The filter resolves the `${host}` reference to the `localhost` value.
 
 This makes it easier to override values in testing and production, as you can just override the `host` key and leave the URIs same.
 
-See [Filter, Overrides, and Token Substitution](advanced-configuration.md#filters-and-overrides) section for further information on some more involved aspects.
+See [Filter, Overrides, and Token Substitution](advanced-configuration.md#filters-overrides-and-token-substitution) section for further information on some more involved aspects.
 
 ### Typed config values
 
@@ -272,7 +272,7 @@ The links in the following tables lead you to more information about various oth
 |----|----|
 | Where config comes from | [Config sources](#config-sources),[Config Profiles](config-profiles.md) |
 | What format config data is expressed in | [Config parsers](#config-parsers), [supported formats](supported-formats.md) |
-| How to filter, override, and dereference values | [Filters and overrides](advanced-configuration.md#filters-and-overrides) |
+| How to filter, override, and dereference values | [Filters and overrides](advanced-configuration.md#filters-overrides-and-token-substitution) |
 | What happens when config data changes | [Mutability Support](mutability-support.md) |
 | How to deal with loading errors | [Config retry policies](#dealing-with-loading-errors-retry-policies) |
 

@@ -351,7 +351,7 @@ As before, the config system replaces the value node in the containing config tr
 
 ## Config Keys with . in name
 
-As described in the [hierarchical features section](hierarchical-features.md#accessByKey) each config node (except the root) has a non-null key.
+As described in the [hierarchical features section](hierarchical-features.md#access-by-key) each config node (except the root) has a non-null key.
 
 > [!IMPORTANT]
 > To emphasize, the dot character (“.”) has special meaning as a name separator in keys. To include a dot as a character in a key escape it as “~1”.
@@ -400,7 +400,7 @@ assert config.get(Key.escapeName("oracle.com")).name().equals("oracle.com"); // 
 
 ## Filters, Overrides, and Token Substitution
 
-When your application retrieves a config value, the config system can transform it before returning the value, according to *filters*, *overrides*, and *tokens*. The config system provides some built-in instances of these you can use, and you can add your own as described in the sections which describe [filters](extensions.md#Config-SPI-ConfigFilter) and [overrides](extensions.md#Config-SPI-OverrideSource).
+When your application retrieves a config value, the config system can transform it before returning the value, according to *filters*, *overrides*, and *tokens*. The config system provides some built-in instances of these you can use, and you can add your own as described in the sections which describe [filters](extensions.md#Config-SPI-ConfigFilter) and [overrides](extensions.md#overridesource-spi).
 
 Your application can add filters and overrides explicitly to a config builder and the config system by default uses the Java service loader mechanism to locate all available filters and overrides and add them automatically to all config builders (unless your code disables that behavior for a given builder).
 

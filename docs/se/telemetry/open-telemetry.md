@@ -12,7 +12,7 @@ Helidon SE supports OpenTelemetry in several important ways:
   - Declaratively, using Helidon config under the top-level `telemetry` config key
   - Programmatically, using the OpenTelemetry SDK API and the Helidon OpenTelemetry API
 - Conforms to the [OpenTelemetry semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.58.0/docs/http/http-spans.md#http-server) for automatically-created spans and metrics for HTTP requests
-- Allows [publishing Helidon metrics](../../se/metrics/metrics.md#usage-publishing) to backend systems using OTLP.
+- Allows [publishing Helidon metrics](../../se/metrics/metrics.md#publishing-metrics-for-external-access) to backend systems using OTLP.
 
 OpenTelemetry models observability as a set of [*signals*](https://opentelemetry.io/docs/concepts/signals/). Each signal—​for example metrics, tracing, and logging—​is an origin of monitoring data, and each has configurable settings which control its behavior.
 

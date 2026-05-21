@@ -49,7 +49,7 @@ config-key = *1( key-token *( "." key-token ) )
 
 ## In-memory Representation of Configuration
 
-The following example is in [HOCON](https://github.com/lightbend/config/blob/master/HOCON.md) (human-optimized config object notation) format. The config system supports HOCON as an [extension module](supported-formats.md#Config-ModuleHocon).
+The following example is in [HOCON](https://github.com/lightbend/config/blob/master/HOCON.md) (human-optimized config object notation) format. The config system supports HOCON as an [extension module](supported-formats.md#hoconjson).
 
 *HOCON `application.conf` file*
 
