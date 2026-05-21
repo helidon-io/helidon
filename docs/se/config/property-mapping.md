@@ -84,7 +84,7 @@ T as(GenericType<T> genericType);
 
 which maps the current node to a type.
 
-The next example, and later ones below showing complex type mapping, use the example [`application.properties`](introduction.md#built-in-formats) configuration from the config introduction. Part of that example includes this line:
+The next example, and later ones below showing complex type mapping, use the example [`application.properties`](introduction.md#built-in-support-for-config-formats) configuration from the config introduction. Part of that example includes this line:
 
 ```properties
 bl.initial-id = 10000000000
@@ -211,7 +211,7 @@ If your application converts to the same target type in several places in the co
 
 #### Continuing the `Web` Example
 
-The following examples build on the example configuration from the [`application.properties`](introduction.md#built-in-formats) example file in the introduction.
+The following examples build on the example configuration from the [`application.properties`](introduction.md#built-in-support-for-config-formats) example file in the introduction.
 
 *Java POJO to Hold `web` Properties Config*
 

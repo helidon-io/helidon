@@ -311,7 +311,7 @@ Config config = Config.create(
 
 - Use `PollingStrategies.regular(Duration duration)` to monitor for config changes.
 
-You can also implement your own polling strategy by implementing [`PollingStrategy`](/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html). See the [mutability support](mutability-support.md) and [polling strategy](extensions.md#Config-SPI-PollingStrategy) discussions.
+You can also implement your own polling strategy by implementing [`PollingStrategy`](/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html). See the [mutability support](mutability-support.md) and [polling strategy](extensions.md#pollingstrategy-spi) discussions.
 
 #### Loading Meta-configuration via git
 

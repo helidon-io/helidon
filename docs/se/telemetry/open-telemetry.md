@@ -12,7 +12,7 @@ Helidon SE supports OpenTelemetry in several important ways:
   - Declaratively, using Helidon config under the top-level `telemetry` config key
   - Programmatically, using the OpenTelemetry SDK API and the Helidon OpenTelemetry API
 - Conforms to the [OpenTelemetry semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.58.0/docs/http/http-spans.md#http-server) for automatically-created spans and metrics for HTTP requests
-- Allows [publishing Helidon metrics](../../se/metrics/metrics.md#usage-publishing) to backend systems using OTLP.
+- Allows [publishing Helidon metrics](../../se/metrics/metrics.md#publishing-metrics-for-external-access) to backend systems using OTLP.
 
 OpenTelemetry models observability as a set of [*signals*](https://opentelemetry.io/docs/concepts/signals/). Each signal—​for example metrics, tracing, and logging—​is an origin of monitoring data, and each has configurable settings which control its behavior.
 
@@ -181,9 +181,9 @@ OpenTelemetry prescribes its own [semantic conventions](https://github.com/open-
 </dependency>
 ```
 
-### Enabling OpenTelemetry for Outgoing Helidon Webclient Traffic
+### Enabling OpenTelemetry for Outgoing Helidon WebClient Traffic
 
-Helidon supports the OpenTelemetry semantic conventions for outgoing traffic which uses the Helidon WebClient. See the [Helidon WebClient documentation](../../se/webclient.md#_configuring_telemetry).
+Helidon supports the OpenTelemetry semantic conventions for outgoing traffic which uses the Helidon WebClient. See the [Helidon WebClient documentation](../../se/webclient.md#configuring-telemetry).
 
 <a id="note-about-exporter-dependencies"></a>
 ### Specifying Additional OpenTelemetry Dependencies

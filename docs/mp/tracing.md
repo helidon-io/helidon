@@ -227,7 +227,7 @@ cd helidon-quickstart-mp-2
 app.greeting=Hello From MP-2
 tracing.service=helidon-mp-2
 
-# Microprofile server properties
+# MicroProfile server properties
 server.port=8081
 ```
 

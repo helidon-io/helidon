@@ -45,7 +45,7 @@ Configuration can be loaded from different types of locations and expressed in d
 
 See the JavaDoc for the [`ConfigSources`](/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html) class for a complete list of the built-in config source types and how to use them.
 
-See the [advanced topics'](advanced-configuration.md#_advanced_config_sources) page for further information on some more involved aspects of config sources.
+See the [advanced topics'](advanced-configuration.md#advanced-config-sources) page for further information on some more involved aspects of config sources.
 
 ### Config Parsers
 
@@ -55,7 +55,7 @@ The config system includes several built-in parsers, such as for the Java proper
 
 You can extend the system with custom parsers of your own. Implement the [`ConfigParser`](/apidocs/io.helidon.config/io/helidon/config/spi/ConfigParser.html) interface, then construct a `Config.Builder` using the `addParser` method, passing an instance of your customer parser. Invoke one of the `sources` methods to include a source that uses the custom format and then build the `Config` object.
 
-See the [advanced topics'](advanced-configuration.md#_advanced_config_parsers) page for further information on some more involved aspects of config parsers.
+See the [advanced topics'](advanced-configuration.md#advanced-config-parsers) page for further information on some more involved aspects of config parsers.
 
 ## Configuration
 
@@ -89,7 +89,7 @@ Although the default configuration is very simple to use, your application can t
 
 When your application prepares a `Config.Builder` it sets what `ConfigSource`s and `ConfigParser`s the builder should use in constructing the resulting `Config` object. The JavaDoc explains how to use the [`Config.Builder`](/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html).
 
-See the [Custom Configuration Sources](../../se/guides/config.md#_custom_configuration_sources) and [advanced config sources](advanced-configuration.md#_advanced_config_sources) sections for detailed examples and further information.
+See the [Custom Configuration Sources](../../se/guides/config.md#_custom_configuration_sources) and [advanced config sources](advanced-configuration.md#advanced-config-sources) sections for detailed examples and further information.
 
 ### Accessing Config Values
 
@@ -149,7 +149,7 @@ For example the default configuration when you use `Config.create()` uses the fo
 
 1.  System properties config source
 2.  Environment variables config source
-3.  A classpath config source called `application.?` where the `?` depends on supported media types currently on the classpath.By default, it is `properties`, but if you have YAML support on classpath, it would be `application.yaml` (a `ConfigParser` may add additional supported suffixes for default file)
+3.  A classpath config source called `application.?` where the `?` depends on supported media types currently on the classpath. By default, it is `properties`, but if you have YAML support on classpath, it would be `application.yaml` (a `ConfigParser` may add additional supported suffixes for default file)
 
 Let’s consider the following keys:
 
@@ -179,7 +179,7 @@ The filter resolves the `${host}` reference to the `localhost` value.
 
 This makes it easier to override values in testing and production, as you can just override the `host` key and leave the URIs same.
 
-See [Filter, Overrides, and Token Substitution](advanced-configuration.md#filters-and-overrides) section for further information on some more involved aspects.
+See [Filter, Overrides, and Token Substitution](advanced-configuration.md#filters-overrides-and-token-substitution) section for further information on some more involved aspects.
 
 ### Typed config values
 
@@ -272,7 +272,7 @@ The links in the following tables lead you to more information about various oth
 |----|----|
 | Where config comes from | [Config sources](#config-sources),[Config Profiles](config-profiles.md) |
 | What format config data is expressed in | [Config parsers](#config-parsers), [supported formats](supported-formats.md) |
-| How to filter, override, and dereference values | [Filters and overrides](advanced-configuration.md#filters-and-overrides) |
+| How to filter, override, and dereference values | [Filters and overrides](advanced-configuration.md#filters-overrides-and-token-substitution) |
 | What happens when config data changes | [Mutability Support](mutability-support.md) |
 | How to deal with loading errors | [Config retry policies](#dealing-with-loading-errors-retry-policies) |
 

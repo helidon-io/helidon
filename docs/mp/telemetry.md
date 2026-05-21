@@ -13,7 +13,7 @@ To enable MicroProfile Telemetry, either add a dependency on the [helidon-microp
 
 ###  OTel Exporter Dependencies
 
-Microprofile Telemetry mandates that implementations such as Helidon use OpenTelemetry, so also add a dependency on an OpenTelemetry exporter.
+MicroProfile Telemetry mandates that implementations such as Helidon use OpenTelemetry, so also add a dependency on an OpenTelemetry exporter.
 
 *Example dependency for the OpenTelemetry OTLP exporter*
 
@@ -133,7 +133,7 @@ public class HelidonEndpoint {
 - Inject `Tracer`.
 - Use `Tracer.spanBuilder` to create and start new `Span`.
 
-Helidon Microprofile Telemetry is integrated with [Helidon Tracing API](tracing.md). This means that both APIs can be mixed, and all parent hierarchies will be kept. In the case below, `@WithSpan` annotated method is mixed with manually created `io.helidon.tracing.Span`:
+Helidon MicroProfile Telemetry is integrated with [Helidon Tracing API](tracing.md). This means that both APIs can be mixed, and all parent hierarchies will be kept. In the case below, `@WithSpan` annotated method is mixed with manually created `io.helidon.tracing.Span`:
 
 *Inject Helidon Tracer*
 
@@ -261,7 +261,7 @@ Applications and libraries can register listeners to be notified at several mome
 - After a span is activated (creating a new scope)
 - After a scope is closed
 
-See the [Helidon SE documentation on span lifecycle support](../se/tracing.md#Tracing-callbacks) for more detail on the Helidon SE API which supports this feature. You can use those features from a Helidon MP application as well, in particular receiving notification of life cycle changes of *OpenTelemetry* spans.
+See the [Helidon SE documentation on span lifecycle support](../se/tracing.md#responding-to-span-lifecycle-events) for more detail on the Helidon SE API which supports this feature. You can use those features from a Helidon MP application as well, in particular receiving notification of life cycle changes of *OpenTelemetry* spans.
 
 Helidon MP applications which inject an OpenTelemetry `Tracer` or `Span` can easily request such notification by adding the Helidon [`@CallbackEnabled`](/apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/CallbackEnabled.html) annotation to injection points as shown in the following example.
 

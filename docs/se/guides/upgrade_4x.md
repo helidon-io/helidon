@@ -151,7 +151,7 @@ If you want full control using the API, you still have that option.
 For more information, see:
 
 - [Observability Feature Support](../observability.md)
-- [Media Types Support](../webserver/webserver.md#_media_types_support)
+- [Media Types Support](../webserver/webserver.md#media-types-support)
 
 ### Routing Configuration
 

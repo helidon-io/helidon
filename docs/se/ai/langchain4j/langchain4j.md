@@ -85,8 +85,8 @@ Providers available out of the box:
 |  |  |  |
 |----|----|----|
 | Provider | Provider Key | Description |
-| [**LangChain4j content retriever**](lc4j-providers.md#Lc4jContentRetrieverProvider) | `lc4j-content-retriever` | Built-in content-retriever for RAG |
-| [**LangChain4j in-memory embedding store**](lc4j-providers.md#Lc4jInMemoryEmbeddingStoreProvider) | `lc4j-in-memory` | Built-in in-memory embedding store |
+| [**LangChain4j content retriever**](lc4j-providers.md#content-retriever) | `lc4j-content-retriever` | Built-in content-retriever for RAG |
+| [**LangChain4j in-memory embedding store**](lc4j-providers.md#in-memory-embedding-store) | `lc4j-in-memory` | Built-in in-memory embedding store |
 | [**LangChain4j in-process models**](lc4j-in-process.md) | `lc4j-in-process` | Local [in-process models](https://docs.langchain4j.dev/integrations/embedding-models/in-process) |
 | [**Open AI**](open-ai.md) | `open-ai` | OpenAI and OpenAI compatible models providers |
 | [**OCI GenAI**](oci-genai.md) | `oci-gen-ai`, `oci-gen-ai-cohere` | Oracle Cloud Infrastructure GenAI models |

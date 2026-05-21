@@ -38,7 +38,7 @@ If full control over the dependencies is required, and you want to minimize the 
 
 ## Usage
 
-Helidon Microprofile Server is used to collect and deploy JAX-RS application(s). When starting Helidon MP, it is recommended to use the `io.helidon.Main` main class, which will take care of starting Helidon. CDI will then discover all extensions, including the Server extension and start it.
+Helidon MicroProfile Server is used to collect and deploy JAX-RS application(s). When starting Helidon MP, it is recommended to use the `io.helidon.Main` main class, which will take care of starting Helidon. CDI will then discover all extensions, including the Server extension and start it.
 
 See the [Helidon MP Quickstart example](guides/quickstart.md). Note that the server lifecycle is bound to CDI.
 
@@ -400,7 +400,7 @@ server:
 
 For any HTTP request for `/` this will return a 301 with the `Location:` header set to the value of `server.base-path`. This is often used with Static Content Support to serve a specific `index.html` when `/` is requested.
 
-Note that this feature is not for setting a context root for applications. To configure alternate context roots see see [Setting Application Path](jaxrs/jaxrs-applications.md#_setting_application_path).
+Note that this feature is not for setting a context root for applications. To configure alternate context roots see [Setting Application Path](jaxrs/jaxrs-applications.md#setting-application-path).
 
 ### Example configuration of routing
 
@@ -478,4 +478,4 @@ See the [`UriInfo`](/apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo
 ## Reference
 
 - [Helidon MicroProfile Server Javadoc](/apidocs/io.helidon.microprofile.server/module-summary.html)
-- [Helidon MicroProfile Server on GitHub](https://github.com/oracle/helidon/tree/main/microprofile/server)
+- [Helidon MicroProfile Server on GitHub](https://github.com/helidon-io/helidon/tree/main/microprofile/server)

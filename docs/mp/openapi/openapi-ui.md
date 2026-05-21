@@ -98,7 +98,7 @@ You can use configuration to affect the UI path in these ways:
 
 - Configure the OpenAPI endpoint path (the `/openapi` part).
 
-  Recall that you can [configure the Helidon OpenAPI component](../../mp/openapi/openapi.md#config) to change where it serves the OpenAPI document.
+  Recall that you can [configure the Helidon OpenAPI component](../../mp/openapi/openapi.md#configuration) to change where it serves the OpenAPI document.
 
   ``` properties
   mp.openapi.web-context=/my-openapi

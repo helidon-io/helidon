@@ -140,7 +140,7 @@ public class MyExtension implements GrpcMpExtension {
 ```
 
 - The `configure` method of the extension will be called to allow the extension to add extra configuration to the server.
-- In this example, an instance of the `StringService` is registered with the routing, as described in the [gRPC Server Routing](../../se/grpc/server.md#_grpc_server_routing) documentation.
+- In this example, an instance of the `StringService` is registered with the routing, as described in the [gRPC Server Routing](../../se/grpc/server.md#grpc-server-routing) documentation.
 
 The `GrpcMpExtension` instances are discovered and loaded using the service loader, so for this example above to work, a file `META-INF/services/io.helidon.microprofile.grpc.server.spi.GrpcMpExtension` would need to be created with the name of the extension shown above.
 
@@ -156,7 +156,7 @@ Helidon includes a gRPC reflection service that can be queried by client tools t
       enabled: true
 ```
 
-For more information see [gRPC Server Configuration](../../se/grpc/server.md#_configuration).
+For more information see [gRPC Server Configuration](../../se/grpc/server.md#configuration).
 
 In Helidon MP, annotated services must provide access to the underlying Protobuf description to use the reflection service. Here is a modified version of `StringService` that adds an annotated method returning the descriptor:
 
@@ -182,7 +182,7 @@ A method annotated by `@Grpc.Proto` must return type `Descriptors.FileDescriptor
 
 ## Configuration
 
-At the time of writing, there is no configuration that is specific to Helidon MP. For more information about gRPC configuration in SE, see [gRPC Server Configuration](../../se/grpc/server.md#_configuration).
+At the time of writing, there is no configuration that is specific to Helidon MP. For more information about gRPC configuration in SE, see [gRPC Server Configuration](../../se/grpc/server.md#configuration).
 
 ## Examples
 

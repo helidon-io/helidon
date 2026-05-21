@@ -98,7 +98,7 @@ If you require greater control over the OCI configuration, the `helidon.oci.auth
 
 ### Accessing OCI Services
 
-Once you have authentication with OCI configured, you can use it to access any [OCI service supported by the OCI SDK](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm#Services_Supported). You need to add dependencies for the specific ODI SDK clients you will use.
+Once you have authentication with OCI configured, you can use it to access any [OCI service supported by the OCI SDK](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm#Services_Supported). You need to add dependencies for the specific OCI SDK clients you will use.
 
 #### Object Storage
 

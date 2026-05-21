@@ -675,7 +675,7 @@ Helidon can make the registered meters and their current values available extern
 
 Optional configuration options
 
-See the [Helidon OpenTelemetry documentation](../../se/telemetry/open-telemetry.md#enabling-automatic-metrics-for-inbound-http) for more information.
+See the [Helidon OpenTelemetry documentation](../../se/telemetry/open-telemetry.md#enabling-automatic-metrics-for-incoming-http-requests) for more information.
 
 #### Selecting REST Endpoints for Automatic Measurement
 

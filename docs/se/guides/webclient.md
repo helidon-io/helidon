@@ -11,7 +11,7 @@ For this 15 minute tutorial, you will need the following:
 | [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 | [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
-| [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can [install one on your desktop](../../about/kubernetes.md)). |
+| [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
@@ -77,7 +77,7 @@ You should now have a directory called `helidon-quickstart-se`.
 cd helidon-quickstart-se
 ```
 
-The Helidon quickstart is a greeting application supporting several HTTP requests such as GET and PUT. Using it will be time-saving for this exercise as it will allow us to modify the project to demonstrate some of the Webclient features and usability, rather than start from scratch.
+The Helidon quickstart is a greeting application supporting several HTTP requests such as GET and PUT. Using it will be time-saving for this exercise as it will allow us to modify the project to demonstrate some of the WebClient features and usability, rather than start from scratch.
 
 The quickstart example utilizes `WebClient` solely for testing purposes, with the dependency configured under the test scope. To use `WebClient` within your application, remove the test scope from the dependency in the `pom.xml`.
 

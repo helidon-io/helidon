@@ -8,7 +8,7 @@ Our declarative approach has the following advantages:
 
 - Uses Helidon SE imperative code to implement features (i.e. performance is same as "pure" imperative application)
 - Generates all the necessary code at build-time, to avoid reflection and bytecode manipulation at runtime
-- It is based on [Helidon Injection](injection.md#Overview)
+- It is based on [Helidon Injection](injection.md#overview)
 - Declarative features are in the same modules as Helidon SE features (i.e. does not require additional dependencies)
 
 > [!NOTE]
@@ -16,7 +16,7 @@ Our declarative approach has the following advantages:
 
 ## Usage
 
-To create a declarative application, use the annotations provided in our Helidon SE modules (details under [Features](#features)), and the maven plugin described in [Injection: Startup](injection.md#generate-binding) to generate the binding.
+To create a declarative application, use the annotations provided in our Helidon SE modules (details under [Features](#features)), and the maven plugin described in [Injection: Startup](injection.md#startup) to generate the binding.
 
 In addition, the following section must be added to the `build` of the Maven `pom.xml` to enable annotation processors that generate the necessary code:
 

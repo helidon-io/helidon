@@ -67,7 +67,7 @@ grpc:
                 resource-path: "client.p12"
 ```
 
-TLS in the gRPC MP client section is configured in the same way as in other Helidon components such as the webserver. For more information see [Configuring TLS](../../se/webserver/webserver.md#_configuring_tls).
+TLS in the gRPC MP client section is configured in the same way as in other Helidon components such as the webserver. For more information see [Configuring TLS](../../se/webserver/webserver.md#configuring-tls).
 
 Given that TLS is enabled by default in gRPC, it must be explicitly turned off by setting the `enabled` flag to `false` when connecting to an unsecure endpoint. For example, to turn off TLS for the `string-channel` above use:
 

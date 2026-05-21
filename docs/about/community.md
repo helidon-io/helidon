@@ -8,7 +8,7 @@ Helidon is a Java open source project under the [Apache License version 2.0](htt
 
 Have a question?
 
-- Ask them in in Slack at [\#helidon-user](http://slack.helidon.io)
+- Ask them in Slack at [\#helidon-user](http://slack.helidon.io)
 - Or on [Stack Overflow](https://stackoverflow.com/questions/tagged/helidon) using the `helidon` tag
 - Read the [Helidon FAQ](https://github.com/helidon-io/helidon/wiki/FAQ)
 

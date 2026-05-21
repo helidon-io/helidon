@@ -286,7 +286,7 @@ In general, the properties that can be set on the [`org.h2.jdbcx.JdbcDataSource`
 
 You use Helidon MP’s named data source integration in the same way, regardless of your choices of vendor-supplied `DataSource` and connection pool.
 
-To use Helidon MP’s named data source integration in your application, once it has been [set up](#project-setup) and [configured](#configuration), create an ordinary [`DataSource`](https://docs.oracle.com/en/java/javase/21/docs/api/java.sql/javax/sql/DataSource.html)-typed injection point in a [Java class representing a CDI bean](https://github.com/oracle/helidon/wiki/FAQ#how-do-i-make-a-class-a-cdi-bean) somewhere in your application, [annotated with the name](https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named) of the data source you wish to use.
+To use Helidon MP’s named data source integration in your application, once it has been [set up](#project-setup) and [configured](#configuration), create an ordinary [`DataSource`](https://docs.oracle.com/en/java/javase/21/docs/api/java.sql/javax/sql/DataSource.html)-typed injection point in a [Java class representing a CDI bean](https://github.com/helidon-io/helidon/wiki/FAQ#how-do-i-make-a-class-a-cdi-bean) somewhere in your application, [annotated with the name](https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/named) of the data source you wish to use.
 
 Here is how to define such a field-backed injection point:
 
@@ -414,7 +414,7 @@ Jakarta Persistence may also (preferably) be used in a fully container-managed m
 Helidon MP’s Jakarta Persistence integration comes with support for two JPA implementations, known as *JPA providers*:
 
 1.  [Hibernate ORM](https://hibernate.org/orm/documentation/6.1)
-2.  [Eclipselink](https://www.eclipse.org/eclipselink/documentation/)
+2.  [EclipseLink](https://www.eclipse.org/eclipselink/documentation/)
 
 In any given project, you use one or the other, but not both.
 
@@ -474,7 +474,7 @@ These `<dependency>` elements do not set up a JPA provider. See details below fo
 
 ##### Setting Up Static Metamodel Generation
 
-To generate and compile the Jakarta Persistence static metamodel for your application, regardless of whether you are using Hibernate ORM or Eclipselink, [ensure your dependencies are managed](../about/managing-dependencies.md), and then make sure the `<plugin>` element in the following code snippet is present as a child element of the `<pluginManagement><plugins>` element sequence as shown below:
+To generate and compile the Jakarta Persistence static metamodel for your application, regardless of whether you are using Hibernate ORM or EclipseLink, [ensure your dependencies are managed](../about/managing-dependencies.md), and then make sure the `<plugin>` element in the following code snippet is present as a child element of the `<pluginManagement><plugins>` element sequence as shown below:
 
 ```xml
 <pluginManagement>
@@ -575,9 +575,9 @@ For more on Hibernate ORM’s bytecode enhancement (weaving) in general, see [By
 
 For more on bytecode enhancement properties, see [Bytecode Enhancement Properties](https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#configurations-bytecode-enhancement) in Hibernate ORM’s documentation.
 
-##### Maven Coordinates (Eclipselink)
+##### Maven Coordinates (EclipseLink)
 
-To include Helidon’s Jakarta Persistence-related integration for Eclipselink:
+To include Helidon’s Jakarta Persistence-related integration for EclipseLink:
 
 - [Ensure your dependencies are managed](../about/managing-dependencies.md)
 - [Ensure the basics of your JPA project are set up properly](#maven-coordinates-common)
@@ -591,13 +591,13 @@ To include Helidon’s Jakarta Persistence-related integration for Eclipselink:
   </dependency>
   ```
 
-  - The `scope` is `runtime`, which ensures that Helidon MP’s Eclipselink integration is available at runtime.
+  - The `scope` is `runtime`, which ensures that Helidon MP’s EclipseLink integration is available at runtime.
 
-##### Setting Up Static Weaving (Eclipselink)
+##### Setting Up Static Weaving (EclipseLink)
 
-Eclipselink can alter your classes' bytecode at build time to keep track of changes made to objects participating in Jakarta Persistence workflows.
+EclipseLink can alter your classes' bytecode at build time to keep track of changes made to objects participating in Jakarta Persistence workflows.
 
-To set up this required static weaving for Eclipselink, ensure that the following `<plugin>` element is present as a child element of your project’s `pom.xml` file’s `<plugins>` element:
+To set up this required static weaving for EclipseLink, ensure that the following `<plugin>` element is present as a child element of your project’s `pom.xml` file’s `<plugins>` element:
 
 ```xml
 <plugin>
@@ -630,7 +630,7 @@ To set up this required static weaving for Eclipselink, ensure that the followin
 
 - Always check [Maven Central](https://search.maven.org/artifact/org.codehaus.mojo/exec-maven-plugin) for up-to-date versions.
 
-For more on the Eclipselink static weaving command-line utility, see [Static Weaving](https://wiki.eclipse.org/EclipseLink/UserGuide/JPA/Advanced_JPA_Development/Performance/Weaving/Static_Weaving#Use_the_Command_Line) in the Eclipselink documentation.
+For more on the EclipseLink static weaving command-line utility, see [Static Weaving](https://wiki.eclipse.org/EclipseLink/UserGuide/JPA/Advanced_JPA_Development/Performance/Weaving/Static_Weaving#Use_the_Command_Line) in the EclipseLink documentation.
 
 ### Configuration
 
@@ -802,14 +802,14 @@ Here is a partial exmaple of a persistence unit named `test`, with a helpful des
 ```
 
 - The name identifies a name present in the [*datasourcename* portion of a named datasource configuration](#configuration-prefixes). There is no need for any kind of reserved prefix (like `java:comp/env`).
-- This is a Hibernate ORM-specific property and will be properly ignored if the JPA provider you have [set up](#project-setup-1) is Eclipselink. See [Statement logging and statistics](https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#configurations-logging) in the Hibernate ORM documentation for more details about the `hibernate.show_sql` property.
-- This is an Eclipselink-specific property (and (a) is required and (b) must be set to `false` if you are using Eclipselink), and will be properly ignored if the JPA provider you have [set up](#project-setup-1) is Hibernate ORM. See [weaving](https://www.eclipse.org/eclipselink/documentation/4.0.2/jpa/extensions/persistenceproperties_ref.htm#weaving) in the Eclipselink documentation for more details about the `eclipselink.weaving` property.
+- This is a Hibernate ORM-specific property and will be properly ignored if the JPA provider you have [set up](#project-setup-1) is EclipseLink. See [Statement logging and statistics](https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#configurations-logging) in the Hibernate ORM documentation for more details about the `hibernate.show_sql` property.
+- This is an EclipseLink-specific property (and (a) is required and (b) must be set to `false` if you are using EclipseLink), and will be properly ignored if the JPA provider you have [set up](#project-setup-1) is Hibernate ORM. See [weaving](https://www.eclipse.org/eclipselink/documentation/4.0.2/jpa/extensions/persistenceproperties_ref.htm#weaving) in the EclipseLink documentation for more details about the `eclipselink.weaving` property.
 
 > [!TIP]
 > For an exhaustive list of Hibernate ORM-specific properties, see [Configurations](https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html#configurations) in the Hibernate ORM documentation.
 
 > [!TIP]
-> For an exhaustive list of Eclipselink-specific properties, see [Persistence Property Extensions Reference](https://www.eclipse.org/eclipselink/documentation/4.0.2/jpa/extensions/persistenceproperties_ref.htm#sthref733) in the Eclipselink documentation.
+> For an exhaustive list of EclipseLink-specific properties, see [Persistence Property Extensions Reference](https://www.eclipse.org/eclipselink/documentation/4.0.2/jpa/extensions/persistenceproperties_ref.htm#sthref733) in the EclipseLink documentation.
 
 ### Usage
 
@@ -848,4 +848,4 @@ A full tutorial of Jakarta Persistence is *well* beyond the scope of this docume
 - [Jakarta Persistence 3.1 Specification](https://jakarta.ee/specifications/persistence/3.1/jakarta-persistence-spec-3.1.html)
 - [Jakarta Persistence 3.1 API Reference](https://jakarta.ee/specifications/persistence/3.1/apidocs/)
 - [Hibernate ORM User Guide](https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html)
-- [Eclipselink documentation](https://www.eclipse.org/eclipselink/documentation/)
+- [EclipseLink documentation](https://www.eclipse.org/eclipselink/documentation/)

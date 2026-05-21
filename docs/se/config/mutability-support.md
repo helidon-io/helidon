@@ -45,7 +45,7 @@ The following sections describe these steps in detail.
 
 ### Setting up Config Source Change Detection
 
-When the application creates a config source, it can set up change detection for that source. This is called *polling* in the Helidon API but specific change detection algorithms might not use actual polling. You choose a specific [`PollingStrategy`](/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html) for each config source you want to monitor. See the section on [polling strategies](extensions.md#Config-SPI-PollingStrategy) in the config extensions doc page for more information.
+When the application creates a config source, it can set up change detection for that source. This is called *polling* in the Helidon API but specific change detection algorithms might not use actual polling. You choose a specific [`PollingStrategy`](/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html) for each config source you want to monitor. See the section on [polling strategies](extensions.md#pollingstrategy-spi) in the config extensions doc page for more information.
 
 The config system provides some built-in polling strategies, exposed as these methods on the [`PollingStrategies`](/apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html) class:
 

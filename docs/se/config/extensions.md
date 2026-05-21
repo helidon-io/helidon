@@ -4,7 +4,7 @@
 
 Developer-provided extensions influence how the config system behaves.
 
-The [config system introduction](introduction.md#%3Cem%3Egetting_started) explains the design of the config system and how its parts work together to read and parse config data, convert it to Java types, fine-tune the look-up of config data, and reload and reprocess data when it changes. \_Config extensions provided by the application modify and expand the way the config system performs these steps.
+The [config system introduction](introduction.md#overview) explains the design of the config system and how its parts work together to read and parse config data, convert it to Java types, fine-tune the look-up of config data, and reload and reprocess data when it changes. \_Config extensions provided by the application modify and expand the way the config system performs these steps.
 
 Each config extension implements one of the interfaces defined in the Configuration SPI:
 

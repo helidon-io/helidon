@@ -11,7 +11,7 @@ For this 20 minute tutorial, you will need the following:
 | [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 | [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
-| [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can [install one on your desktop](../../about/kubernetes.md)). |
+| [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
@@ -525,7 +525,7 @@ You can re-run the previous tests that exercised environment variables and syste
 
 ## Accessing Config within an Application
 
-You have used Helidon to customize configuration behavior from your code using the `Config` and `Config.Builder` classes. As discussed previously, Helidon reads configuration from a config source, which uses a config parser to translate the source into an in-memory tree which represents the configuration’s structure and values. Helidon offers a variety of methods to access in-memory configuration. These can be categorized as *key access* or *tree navigation*. You have been using *key access* for all the examples to this point. For example `app.greeting` is accessing the `greeting` child node of the `app` parent node. There are many options for access this data using navigation methods as described in [Hierarchical Config](../config/hierarchical-features.md) and [Advanced Config\>](../config/advanced-configuration.md).
+You have used Helidon to customize configuration behavior from your code using the `Config` and `Config.Builder` classes. As discussed previously, Helidon reads configuration from a config source, which uses a config parser to translate the source into an in-memory tree which represents the configuration’s structure and values. Helidon offers a variety of methods to access in-memory configuration. These can be categorized as *key access* or *tree navigation*. You have been using *key access* for all the examples to this point. For example `app.greeting` is accessing the `greeting` child node of the `app` parent node. There are many options for accessing this data using navigation methods as described in [Hierarchical Config](../config/hierarchical-features.md) and [Advanced Config\>](../config/advanced-configuration.md).
 
 ### Accessing Config Using Keys or Navigation
 

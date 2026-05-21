@@ -577,7 +577,7 @@ tmmConfiguration:
 *Build and run Helidon LRA coordinator*
 
 ```bash
-docker build -t helidon/lra-coordinator https://github.com/oracle/helidon.git#:lra/coordinator/server
+docker build -t helidon/lra-coordinator https://github.com/helidon-io/helidon.git#:lra/coordinator/server
 docker run --name lra-coordinator --network="host" helidon/lra-coordinator
 ```
 
@@ -621,6 +621,6 @@ Narayana LRA coordinator is running by default under `lra-coordinator` context, 
 
 - [MicroProfile LRA GitHub Repository](https://github.com/eclipse/microprofile-lra)
 - [MicroProfile Long Running Actions specification](https://download.eclipse.org/microprofile/microprofile-lra-2.0/microprofile-lra-spec-2.0.html)
-- [Microprofile LRA JavaDoc](https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/)
+- [MicroProfile LRA JavaDoc](https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/)
 - [Helidon LRA Client JavaDoc](https://helidon.io/docs/v4/apidocs/io.helidon.lra.coordinator.client/module-summary.html)
 - [MicroTx - Oracle Transaction Manager for Microservices](https://docs.oracle.com/en/database/oracle/transaction-manager-for-microservices/index.html)

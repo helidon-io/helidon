@@ -2,7 +2,7 @@
 
 ## Description
 
-Configuration of security feature fow webserver
+Configuration of security feature for webserver
 
 ## Configuration options
 

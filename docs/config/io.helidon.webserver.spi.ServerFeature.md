@@ -92,7 +92,7 @@ This type is a provider contract.
 <code>security</code>
 </a>
 </td>
-<td>Configuration of security feature fow webserver</td>
+<td>Configuration of security feature for webserver</td>
 </tr>
 <tr>
 <td>

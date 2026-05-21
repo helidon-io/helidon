@@ -149,7 +149,7 @@ For a complete example, see [Helidon SE CORS Example](https://github.com/helidon
 
 The decisions the Helidon CORS feature makes depend on accurate information about each incoming request, particularly the host to which the request is sent. Conveyed as headers in the request, this information can be changed or overwritten by intermediate nodes—​such as load balancers—​between the origin of the request and your service.
 
-Well-behaved intermediate nodes preserve this important data in other headers, such as `Forwarded`. You can configure how the Helidon server handles these headers as described in the documentation for [requested URI discovery](../se/webserver/webserver.md#_requested_uri_discovery).
+Well-behaved intermediate nodes preserve this important data in other headers, such as `Forwarded`. You can configure how the Helidon server handles these headers as described in the documentation for [requested URI discovery](../se/webserver/webserver.md#requested-uri-discovery).
 
 The CORS support in Helidon uses the requested URI feature to discover the correct information about each request, according to your configuration, so it can make accurate decisions about whether to permit cross-origin accesses.
 

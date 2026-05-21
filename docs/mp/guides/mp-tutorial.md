@@ -11,7 +11,7 @@ For this 30 minute tutorial, you will need the following:
 | [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 | [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
-| [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can [install one on your desktop](../../about/kubernetes.md)). |
+| [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 | [curl](https://curl.se/download.html) | (Optional) for testing |
 
 *Verify Prerequisites*
@@ -253,7 +253,7 @@ Helidon MP applications can use the `META-INF/microprofile-config.properties` fi
 *Initial microprofile-config.properties*
 
 ```bash
-# Microprofile server properties
+# MicroProfile server properties
 server.port=8080
 server.host=0.0.0.0
 ```
@@ -268,7 +268,7 @@ In addition to predefined server properties, application-specific configuration 
 *Updated META-INF/microprofile-config.properties*
 
 ```bash
-# Microprofile server properties
+# MicroProfile server properties
 server.port=8080
 server.host=0.0.0.0
 
@@ -747,7 +747,7 @@ curl http://localhost:8080/health/ready
 
 ## Deploy the application to Kubernetes
 
-If you don’t have access to a Kubernetes cluster, you can [install one on your desktop](../../about/kubernetes.md). Then deploy the example:
+If you don’t have access to a Kubernetes cluster, create or obtain access to one. Then deploy the example:
 
 *Verify connectivity to cluster*
 
@@ -859,4 +859,4 @@ There were several links to more detailed information included in the tutorial. 
 - [MicroProfile Metrics Specification](https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html)
 - [Metrics Guide](metrics.md)
 - [MicroProfile Health Protocol and Wireformat](https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html##_protocol_and_wireformat)
-- [Install Kubernetes on your desktop](../../about/kubernetes.md)
+- Access to a Kubernetes cluster

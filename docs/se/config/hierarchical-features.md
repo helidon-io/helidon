@@ -45,11 +45,11 @@ config-key = *1( key-token *( "." key-token ) )
 ```
 
 > [!IMPORTANT]
-> To emphasize, the dot character (“.”) has special meaning as a name separator in keys. To include a dot as a character in a key escape it as “~1”. To include a tilda escape it as “~0”.
+> To emphasize, the dot character (“.”) has special meaning as a name separator in keys. To include a dot as a character in a key escape it as “~1”. To include a tilde escape it as “~0”.
 
 ## In-memory Representation of Configuration
 
-The following example is in [HOCON](https://github.com/lightbend/config/blob/master/HOCON.md) (human-optimized config object notation) format. The config system supports HOCON as an [extension module](supported-formats.md#Config-ModuleHocon).
+The following example is in [HOCON](https://github.com/lightbend/config/blob/master/HOCON.md) (human-optimized config object notation) format. The config system supports HOCON as an [extension module](supported-formats.md#hoconjson).
 
 *HOCON `application.conf` file*
 
@@ -288,7 +288,7 @@ VALUE   app.basic-range.1
 
 Sometimes it can be convenient to write part of your application to deal with configuration without it knowing if or where the relevant configuration is plugged into a larger config tree.
 
-For example, the [`application.properties`](introduction.md#create-simple-config-props) from the introduction section contains several settings prefixed with `web` such as `web.page-size`. Perhaps in another config source the same information might be stored as `server.web.page-size`:
+For example, the [`application.properties`](introduction.md#accessing-config-values) from the introduction section contains several settings prefixed with `web` such as `web.page-size`. Perhaps in another config source the same information might be stored as `server.web.page-size`:
 
 *Alternate Structure for Web Config*
 

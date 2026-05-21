@@ -7,7 +7,7 @@ WebClient is an HTTP client for Helidon SE. It can be used to send requests and 
 Helidon WebClient provides the following features:
 
 - **Blocking approach**  
-  The Webclient uses the blocking approach to synchronously process a request and its correspond response. Both `HTTP/1.1` and `HTTP/2` request and response will run in the thread of the user. Additionally, for `HTTP/2`, virtual thread is employed to manage the connection.
+  The WebClient uses the blocking approach to synchronously process a request and its corresponding response. Both `HTTP/1.1` and `HTTP/2` request and response will run in the thread of the user. Additionally, for `HTTP/2`, virtual thread is employed to manage the connection.
 
 - **Builder-like setup and execution**  
   Creates every client and request as a builder pattern. This improves readability and code maintenance.
@@ -139,7 +139,7 @@ WebClient currently supports `HTTP/1.1` and `HTTP/2` protocols. Below are the ru
 
 ### Adding Media Support
 
-Webclient supports the following built-in Helidon Media Support libraries:
+WebClient supports the following built-in Helidon Media Support libraries:
 
 1.  JSON Processing (JSON-P)
 2.  JSON Binding (JSON-B)
@@ -190,7 +190,7 @@ WebClient.builder()
 
 ### DNS Resolving
 
-Webclient provides three DNS resolver implementations out of the box:
+WebClient provides three DNS resolver implementations out of the box:
 
 - `Java DNS resolution` is the default.
 - `First DNS resolution` uses the first IP address from a DNS lookup. To enable this option, add below dependency:
@@ -233,7 +233,7 @@ The class responsible for WebClient configuration is:
 
 ### Protocol Specific Configuration
 
-Protocol specific configuration can be set using the `protocol-configs` parameter. Webclient currently supports `HTTP/1.1.` and `HTTP/2`. Below are the options for each of the protocol type:
+Protocol specific configuration can be set using the `protocol-configs` parameter. WebClient currently supports `HTTP/1.1.` and `HTTP/2`. Below are the options for each of the protocol type:
 
 - `HTTP/1.1`
 
@@ -338,7 +338,7 @@ client:
 
 ## Examples
 
-### Webclient with Proxy
+### WebClient with Proxy
 
 Configure Proxy setup either programmatically or via the Helidon configuration framework.
 
@@ -452,7 +452,7 @@ WebClient.builder()
 
 WebClient currently supports several built-in services, namely
 
-- [`discovery`](discovery.md#_web_client_discovery_integration)
+- [`discovery`](discovery.md#web-client-discovery-integration)
 - `metrics`
 - `tracing`
 - `telemetry` (following OpenTelemetry semantic conventions)
@@ -464,7 +464,7 @@ WebClient currently supports several built-in services, namely
 
 In order for a service to function, its dependencies need to be added in the application’s `pom.xml`. Below are examples on how to enable the built-in services:
 
-- `discovery` (see [its documentation](discovery.md#_web_client_discovery_integration))
+- `discovery` (see [its documentation](discovery.md#web-client-discovery-integration))
 
   *`pom.xml`*
 
@@ -481,7 +481,7 @@ In order for a service to function, its dependencies need to be added in the app
   </dependency>
   ```
 
-  - Backs the `discovery` service with a [Discovery provider based on Netflix’s Eureka](discovery.md#_eureka)
+  - Backs the `discovery` service with a [Discovery provider based on Netflix’s Eureka](discovery.md#eureka)
 
 - `metrics`
 
@@ -750,7 +750,7 @@ See the [manifest](../config/manifest.md) for all available types.
 
 ## Reference
 
-- [Helidon Webclient API](/apidocs/io.helidon.webclient.api/module-summary.html)
+- [Helidon WebClient API](/apidocs/io.helidon.webclient.api/module-summary.html)
 - [Helidon WebClient HTTP/1.1 Support](/apidocs/io.helidon.webclient.http1/module-summary.html)
 - [Helidon WebClient HTTP/2 Support](/apidocs/io.helidon.webclient.http2/module-summary.html)
 - [Helidon WebClient DNS Resolver First Support](/apidocs/io.helidon.webclient.dns.resolver.first/module-summary.html)

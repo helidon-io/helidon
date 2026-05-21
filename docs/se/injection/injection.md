@@ -41,7 +41,7 @@ In a declarative approach, you use annotations on classes, constructors, and con
 
 For example, instead of manually managing dependencies, you declare that a class should be injectable using annotations like [`@Service.Singleton`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Singleton.html) (More about that later).
 
-See [Helidon Declarative](declarative.md#Overview)
+See [Helidon Declarative](declarative.md#overview)
 
 ### Service registry
 
