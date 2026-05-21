@@ -174,7 +174,7 @@ class Http2ClientConnectionPingTest {
                                          socket,
                                          STREAM_CONFIG,
                                          clientConfig,
-                                         new LockingStreamIdSequence());
+                                         LockingStreamIdSequence.create());
         }
     }
 
