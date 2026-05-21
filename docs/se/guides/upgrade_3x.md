@@ -125,9 +125,6 @@ WebServer.builder()
 
 Use the OCI Java SDK instead. For Helidon MP, use `io.helidon.integrations.oci:helidon-integrations-oci` only for OCI authentication, region, and configuration support; the legacy `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi` module is deprecated.
 
-> [!NOTE]
-> See [Resolving compatibility issue with OCI SDK](../../se/integrations/oci.md#oci-compatibility) for detailed information on how to work around this issue.
-
 - The MultiPart buffered readers have been deprecated ([See PR](https://github.com/helidon-io/helidon/pull/4096)). Use the MultiPart stream readers instead.
 
 ### Helidon Common

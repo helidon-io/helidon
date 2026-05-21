@@ -16,7 +16,7 @@ Our declarative approach has the following advantages:
 
 ## Usage
 
-To create a declarative application, use the annotations provided in our Helidon SE modules (details under [Features](#features)), and the maven plugin described in [Injection: Startup](injection.md#generate-binding) to generate the binding.
+To create a declarative application, use the annotations provided in our Helidon SE modules (details under [Features](#features)), and the maven plugin described in [Injection: Startup](injection.md#startup) to generate the binding.
 
 In addition, the following section must be added to the `build` of the Maven `pom.xml` to enable annotation processors that generate the necessary code:
 

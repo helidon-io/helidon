@@ -288,7 +288,7 @@ VALUE   app.basic-range.1
 
 Sometimes it can be convenient to write part of your application to deal with configuration without it knowing if or where the relevant configuration is plugged into a larger config tree.
 
-For example, the [`application.properties`](introduction.md#create-simple-config-props) from the introduction section contains several settings prefixed with `web` such as `web.page-size`. Perhaps in another config source the same information might be stored as `server.web.page-size`:
+For example, the [`application.properties`](introduction.md#accessing-config-values) from the introduction section contains several settings prefixed with `web` such as `web.page-size`. Perhaps in another config source the same information might be stored as `server.web.page-size`:
 
 *Alternate Structure for Web Config*
 
