@@ -15,13 +15,15 @@
  */
 package io.helidon.microprofile.faulttolerance;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -93,6 +95,11 @@ class MethodInvoker implements FtSupplier<Object> {
      * be shared by all instances of this class.
      */
     private static final MethodStateCache METHOD_STATES = new MethodStateCache();
+
+    /**
+     * System logger.
+     */
+    private static final System.Logger LOGGER = System.getLogger(MethodInvoker.class.getName());
 
     /**
      * The method being intercepted.
@@ -379,9 +386,9 @@ class MethodInvoker implements FtSupplier<Object> {
                 // Cancel supplier in bulkhead in case it is queued
                 if (introspector.hasBulkhead()) {
                     boolean removedFromQueue = methodState.bulkhead.cancelSupplier(handlerSupplier);
-                    // If the supplier was already dequeued, the queue listener owns recording waiting time.
-                    if (removedFromQueue && methodState.bulkheadWaitingStarts != null) {
-                        methodState.bulkheadWaitingStarts.remove(handlerSupplier);
+                    BulkheadWaitingTracker waitingTracker = methodState.bulkheadWaitingTracker;
+                    if (removedFromQueue && waitingTracker != null) {
+                        waitingTracker.cancelled(handlerSupplier);
                     }
                 }
                 asyncFuture.cancel(mayInterrupt.get());
@@ -404,28 +411,18 @@ class MethodInvoker implements FtSupplier<Object> {
             methodState.bulkhead = Bulkhead.create(builder -> {
                 builder.limit(introspector.getBulkhead().value())
                         .queueLength(introspector.isAsynchronous() ? introspector.getBulkhead().waitingTaskQueue() : 0);
-                if (introspector.isAsynchronous()) {
-                    ConcurrentMap<Supplier<?>, Long> waitingStarts = new ConcurrentHashMap<>();
-                    Set<Supplier<?>> waitingRecorded = ConcurrentHashMap.newKeySet();
-                    Tag methodNameTag = introspector.getMethodNameTag();
-
-                    methodState.bulkheadWaitingStarts = waitingStarts;
-                    methodState.bulkheadWaitingRecorded = waitingRecorded;
+                if (introspector.isAsynchronous() && isFaultToleranceMetricsEnabled()) {
+                    BulkheadWaitingTracker waitingTracker = new BulkheadWaitingTracker(introspector.getMethodNameTag());
+                    methodState.bulkheadWaitingTracker = waitingTracker;
                     builder.addQueueListener(new Bulkhead.QueueListener() {
                         @Override
                         public <T> void enqueueing(Supplier<? extends T> supplier) {
-                            if (isFaultToleranceMetricsEnabled()) {
-                                waitingStarts.put(supplier, System.nanoTime());
-                            }
+                            waitingTracker.enqueueing(supplier);
                         }
 
                         @Override
                         public <T> void dequeued(Supplier<? extends T> supplier) {
-                            Long startNanos = waitingStarts.remove(supplier);
-                            if (startNanos != null && isFaultToleranceMetricsEnabled()) {
-                                BulkheadWaitingDuration.get(methodNameTag).update(System.nanoTime() - startNanos);
-                                waitingRecorded.add(supplier);
-                            }
+                            waitingTracker.dequeued(supplier);
                         }
                     });
                 }
@@ -564,20 +561,16 @@ class MethodInvoker implements FtSupplier<Object> {
      */
     private void updateMetricsAfter(Throwable cause) {
         boolean metricsEnabled = isFaultToleranceMetricsEnabled();
+        if (!metricsEnabled) {
+            return;
+        }
+
         boolean asyncBulkhead = introspector.hasBulkhead() && introspector.isAsynchronous();
         boolean waitingRecordedBeforeCompletion = false;
         if (asyncBulkhead) {
-            ConcurrentMap<Supplier<?>, Long> waitingStarts = methodState.bulkheadWaitingStarts;
-            if (waitingStarts != null) {
-                waitingStarts.remove(handlerSupplier);
-            }
-            Set<Supplier<?>> waitingRecorded = methodState.bulkheadWaitingRecorded;
-            waitingRecordedBeforeCompletion = waitingRecorded != null
-                    && waitingRecorded.remove(handlerSupplier);
-        }
-
-        if (!metricsEnabled) {
-            return;
+            BulkheadWaitingTracker waitingTracker = methodState.bulkheadWaitingTracker;
+            waitingRecordedBeforeCompletion = waitingTracker != null
+                    && waitingTracker.recordedOrPending(handlerSupplier);
         }
 
         // Calculate execution time
@@ -656,7 +649,7 @@ class MethodInvoker implements FtSupplier<Object> {
                 }
 
                 // Update histograms if task accepted
-                if (!(cause instanceof BulkheadException)) {
+                if (invocationStartNanos != 0 && !(cause instanceof BulkheadException)) {
                     long waitingTime = invocationStartNanos - handlerStartNanos;
                     bulkheadRunningDuration = executionTime - waitingTime;
                     updateBulkheadDuration = true;
@@ -744,6 +737,107 @@ class MethodInvoker implements FtSupplier<Object> {
         }
     }
 
+    private static class BulkheadWaitingTracker {
+        private final Tag methodNameTag;
+        private final ConcurrentMap<Supplier<?>, WaitingState> states = new ConcurrentHashMap<>();
+
+        BulkheadWaitingTracker(Tag methodNameTag) {
+            this.methodNameTag = methodNameTag;
+        }
+
+        void enqueueing(Supplier<?> supplier) {
+            if (!isFaultToleranceMetricsEnabled()) {
+                return;
+            }
+            long startNanos = System.nanoTime();
+            states.compute(supplier, (ignored, state) -> {
+                WaitingState newState = state == null ? new WaitingState() : state;
+                newState.starts.addLast(startNanos);
+                return newState;
+            });
+        }
+
+        void dequeued(Supplier<?> supplier) {
+            long[] startNanos = new long[1];
+            boolean[] found = new boolean[1];
+            states.compute(supplier, (ignored, state) -> {
+                if (state == null || state.starts.isEmpty()) {
+                    return state;
+                }
+                startNanos[0] = state.starts.removeFirst();
+                found[0] = true;
+                if (!state.completionObserved) {
+                    state.listenerOwnsCompletionRecord = true;
+                }
+                return state.starts.isEmpty() && state.completionObserved ? null : state;
+            });
+
+            if (found[0]) {
+                recordWaitingDuration(startNanos[0]);
+            }
+        }
+
+        void cancelled(Supplier<?> supplier) {
+            long[] startNanos = new long[1];
+            boolean[] record = new boolean[1];
+            states.compute(supplier, (ignored, state) -> {
+                if (state == null || state.starts.isEmpty()) {
+                    return state;
+                }
+                startNanos[0] = state.starts.removeFirst();
+                record[0] = state.completionObserved;
+                return state.starts.isEmpty() && (state.completionObserved || !state.listenerOwnsCompletionRecord)
+                        ? null : state;
+            });
+            if (record[0]) {
+                recordWaitingDuration(startNanos[0]);
+            }
+        }
+
+        boolean recordedOrPending(Supplier<?> supplier) {
+            if (states.get(supplier) == null) {
+                return false;
+            }
+            boolean[] result = new boolean[1];
+            states.compute(supplier, (ignored, state) -> {
+                if (state == null) {
+                    return null;
+                }
+                if (!state.starts.isEmpty()) {
+                    state.completionObserved = true;
+                    state.listenerOwnsCompletionRecord = false;
+                    result[0] = true;
+                    return state;
+                }
+                if (state.listenerOwnsCompletionRecord) {
+                    result[0] = true;
+                    return null;
+                }
+                return null;
+            });
+            return result[0];
+        }
+
+        private void recordWaitingDuration(long startNanos) {
+            if (!isFaultToleranceMetricsEnabled()) {
+                return;
+            }
+
+            try {
+                // Keep metric failures from escaping permit handoff or queued-cancel cleanup.
+                BulkheadWaitingDuration.get(methodNameTag).update(System.nanoTime() - startNanos);
+            } catch (RuntimeException e) {
+                LOGGER.log(Level.DEBUG, "Failed to update bulkhead waiting duration metric", e);
+            }
+        }
+
+        private static class WaitingState {
+            private final Deque<Long> starts = new ArrayDeque<>();
+            private boolean listenerOwnsCompletionRecord;
+            private boolean completionObserved;
+        }
+    }
+
     /**
      * State associated with a method in {@code METHOD_STATES}.
      */
@@ -751,8 +845,7 @@ class MethodInvoker implements FtSupplier<Object> {
         private final ReentrantLock lock = new ReentrantLock();
         private Retry retry;
         private Bulkhead bulkhead;
-        private ConcurrentMap<Supplier<?>, Long> bulkheadWaitingStarts;
-        private Set<Supplier<?>> bulkheadWaitingRecorded;
+        private BulkheadWaitingTracker bulkheadWaitingTracker;
         private CircuitBreaker breaker;
         private Timeout timeout;
         private State lastBreakerState;
