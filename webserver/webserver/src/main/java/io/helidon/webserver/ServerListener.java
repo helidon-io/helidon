@@ -316,13 +316,14 @@ class ServerListener implements ListenerContext {
 
     private Throwable stopResources() {
         Throwable failure = null;
+        // Stop listening for connections
+        closeServerSocketForStop();
+
         try {
             cancelIdleTimeoutHandler();
         } catch (RuntimeException | Error e) {
             failure = LifecycleFailures.add(failure, e);
         }
-        // Stop listening for connections
-        closeServerSocketForStop();
 
         try {
             // Stop handling any new requests on all accepted and active connections
@@ -374,11 +375,6 @@ class ServerListener implements ListenerContext {
     private void suspendForCheckpoint() {
         Throwable failure = null;
         try {
-            cancelIdleTimeoutHandler();
-        } catch (RuntimeException | Error e) {
-            failure = LifecycleFailures.add(failure, e);
-        }
-        try {
             // Stop listening for connections
             serverSocket.close();
             if (configuredAddress instanceof UnixDomainSocketAddress udsa) {
@@ -391,6 +387,11 @@ class ServerListener implements ListenerContext {
             }
         } catch (IOException e) {
             LOGGER.log(INFO, "Exception thrown on socket close", e);
+        }
+        try {
+            cancelIdleTimeoutHandler();
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
         }
         // Stop handling any new requests on all accepted and active connections
         failure = LifecycleFailures.add(failure, closeOpenConnections(false));
@@ -508,8 +509,8 @@ class ServerListener implements ListenerContext {
 
     private void rollbackFailedStart(Throwable startupFailure, boolean lifecycleStarted) {
         running = false;
-        suppressCleanupFailure(startupFailure, this::cancelIdleTimeoutHandler);
         suppressCleanupFailure(startupFailure, this::closeServerSocketOnFailure);
+        suppressCleanupFailure(startupFailure, this::cancelIdleTimeoutHandler);
         suppressCleanupFailure(startupFailure, this::shutdownReaderExecutor);
         suppressCleanupFailure(startupFailure, this::shutdownSharedExecutor);
         if (lifecycleStarted) {
