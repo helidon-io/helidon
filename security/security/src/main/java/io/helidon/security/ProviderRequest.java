@@ -16,6 +16,7 @@
 
 package io.helidon.security;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -36,7 +37,13 @@ import io.helidon.security.util.AbacSupport;
  * custom attributes</li>
  * </ul>
  */
-public interface ProviderRequest extends AbacSupport {
+public abstract class ProviderRequest implements AbacSupport {
+    /**
+     * Constructor for subclasses.
+     */
+    protected ProviderRequest() {
+    }
+
     /**
      * Create a new provider request.
      *
@@ -51,8 +58,8 @@ public interface ProviderRequest extends AbacSupport {
      * @param boundAttributes suppliers of bound attributes
      * @return a new provider request
      */
-    static ProviderRequest create(SecurityContext context,
-                                  Map<String, Supplier<Object>> boundAttributes) {
+    public static ProviderRequest create(SecurityContext context,
+                                         Map<String, Supplier<Object>> boundAttributes) {
         return new ProviderRequestImpl(context, boundAttributes);
     }
 
@@ -73,7 +80,7 @@ public interface ProviderRequest extends AbacSupport {
      * @param key    key of the attribute
      * @return value of the attribute if found
      */
-    static Optional<Object> getValue(Object object, String key) {
+    public static Optional<Object> getValue(Object object, String key) {
         return ProviderRequestImpl.getValue(object, key);
     }
 
@@ -81,31 +88,31 @@ public interface ProviderRequest extends AbacSupport {
      * Configuration of the invoked endpoint, such as annotations declared.
      * @return endpoint config
      */
-    EndpointConfig endpointConfig();
+    public abstract EndpointConfig endpointConfig();
 
     /**
      * Security context associated with current request.
      * @return security context
      */
-    SecurityContext securityContext();
+    public abstract SecurityContext securityContext();
 
     /**
      * Current user subject, if already authenticated.
      * @return user subject or empty
      */
-    Optional<Subject> subject();
+    public abstract Optional<Subject> subject();
 
     /**
      * Current service subject, if already authenticated.
      * @return service subject or empty.
      */
-    Optional<Subject> service();
+    public abstract Optional<Subject> service();
 
     /**
      * Environment of current request, such as the URI invoked, time to use for security decisions etc.
      * @return security environment
      */
-    SecurityEnvironment env();
+    public abstract SecurityEnvironment env();
 
     /**
      * The object of this request. Security request may be configured for a specific entity (e.g. if this is an entity
@@ -113,5 +120,22 @@ public interface ProviderRequest extends AbacSupport {
      *
      * @return the object or empty if not known
      */
-    Optional<Object> getObject();
+    public abstract Optional<Object> getObject();
+
+    /**
+     * Return the actual ABAC property value or {@code null} if not present.
+     *
+     * @param key key of the property
+     * @return value of the property or {@code null}
+     */
+    @Override
+    public abstract Object abacAttributeRaw(String key);
+
+    /**
+     * Return all ABAC property names.
+     *
+     * @return collection of keys
+     */
+    @Override
+    public abstract Collection<String> abacAttributeNames();
 }
