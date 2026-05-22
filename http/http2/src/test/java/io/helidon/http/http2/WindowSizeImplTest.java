@@ -35,7 +35,7 @@ class WindowSizeImplTest {
         long remaining = flowControl.incrementOutboundConnectionWindowSize(WindowSize.MAX_WIN_SIZE);
 
         assertThat(remaining, is((long) WindowSize.DEFAULT_WIN_SIZE + WindowSize.MAX_WIN_SIZE));
-        assertThat(flowControl.outbound().getRemainingWindowSize(), is(WindowSize.MAX_WIN_SIZE));
+        assertThat(flowControl.outbound().getRemainingWindowSize(), is(WindowSize.DEFAULT_WIN_SIZE));
     }
 
     @Test
@@ -49,5 +49,6 @@ class WindowSizeImplTest {
         long remaining = streamFlowControl.outbound().incrementStreamWindowSize(WindowSize.MAX_WIN_SIZE);
 
         assertThat(remaining, is((long) WindowSize.DEFAULT_WIN_SIZE + WindowSize.MAX_WIN_SIZE));
+        assertThat(streamFlowControl.outbound().getRemainingWindowSize(), is(WindowSize.DEFAULT_WIN_SIZE));
     }
 }

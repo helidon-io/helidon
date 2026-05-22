@@ -68,8 +68,8 @@ public interface FlowControl {
          * Increment stream window size.
          *
          * @param increment increment in bytes
-         * @return outbound stream window size after applying the increment, before overflow clamping; a value greater
-         *         than {@link WindowSize#MAX_WIN_SIZE} means the peer exceeded the maximum allowed flow-control window
+         * @return outbound stream window size after applying the increment; if this value is greater than
+         *         {@link WindowSize#MAX_WIN_SIZE}, the increment was rejected and the outbound stream window was not updated
          */
         long incrementStreamWindowSize(int increment);
 

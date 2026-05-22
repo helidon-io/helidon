@@ -454,6 +454,7 @@ class Http2ClientConnectionTest {
             assertThat(header.type(), is(Http2FrameType.GO_AWAY));
             assertThat(header.streamId(), is(0));
             assertThat(Http2GoAway.create(write).errorCode(), is(Http2ErrorCode.FLOW_CONTROL));
+            assertThat(connection.flowControl().outbound().getRemainingWindowSize(), is(WindowSize.DEFAULT_WIN_SIZE));
             assertThat(connection.closed(), is(true));
             test.assertConnectionClosed();
         }
@@ -477,6 +478,7 @@ class Http2ClientConnectionTest {
             assertThat(header.type(), is(Http2FrameType.RST_STREAM));
             assertThat(header.streamId(), is(stream.streamId()));
             assertThat(Http2RstStream.create(write).errorCode(), is(Http2ErrorCode.FLOW_CONTROL));
+            assertThat(stream.flowControl().outbound().getRemainingWindowSize(), is(WindowSize.DEFAULT_WIN_SIZE));
 
             test.awaitStreamClosed(stream);
             assertThrows(Http2Exception.class,
