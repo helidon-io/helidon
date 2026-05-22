@@ -93,8 +93,9 @@ public interface WindowSize {
     /**
      * Increment window size.
      *
-     * @param increment increment
-     * @return whether the increment succeeded
+     * @param increment increment in bytes
+     * @return window size after applying the increment, before overflow clamping; a value greater than
+     *         {@link #MAX_WIN_SIZE} means the peer exceeded the maximum allowed flow-control window
      */
     long incrementWindowSize(int increment);
 
