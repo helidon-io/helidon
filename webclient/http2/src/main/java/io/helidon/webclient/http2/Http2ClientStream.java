@@ -153,14 +153,12 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
         //6.9/2
         if (increment == 0) {
-            Http2RstStream frame = new Http2RstStream(Http2ErrorCode.PROTOCOL);
-            connection.writer().write(frame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+            resetStream(Http2ErrorCode.PROTOCOL);
             return;
         }
         //6.9.1/3
         if (flowControl.outbound().incrementStreamWindowSize(increment) > WindowSize.MAX_WIN_SIZE) {
-            Http2RstStream frame = new Http2RstStream(Http2ErrorCode.FLOW_CONTROL);
-            connection.writer().write(frame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+            resetStream(Http2ErrorCode.FLOW_CONTROL);
         }
     }
 
@@ -693,6 +691,22 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         this.state = newState;
         if (newState == Http2StreamState.CLOSED) {
             releaseReservation();
+        }
+    }
+
+    private void resetStream(Http2ErrorCode errorCode) {
+        Http2RstStream frame = new Http2RstStream(errorCode);
+        Http2FrameData frameData = frame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create());
+        Http2StreamState nextState = Http2StreamState.checkAndGetState(this.state,
+                                                                       Http2FrameType.RST_STREAM,
+                                                                       true,
+                                                                       false,
+                                                                       false);
+        try {
+            connection.writer().write(frameData);
+        } finally {
+            updateState(nextState);
+            close();
         }
     }
 

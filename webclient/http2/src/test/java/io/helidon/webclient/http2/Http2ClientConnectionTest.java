@@ -39,6 +39,7 @@ import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2ErrorCode;
+import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
@@ -50,6 +51,7 @@ import io.helidon.http.http2.Http2HuffmanEncoder;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2Setting;
 import io.helidon.http.http2.Http2Settings;
+import io.helidon.http.http2.Http2StreamState;
 import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.http.http2.WindowSize;
 import io.helidon.webclient.api.ClientConnection;
@@ -454,6 +456,36 @@ class Http2ClientConnectionTest {
             assertThat(Http2GoAway.create(write).errorCode(), is(Http2ErrorCode.FLOW_CONTROL));
             assertThat(connection.closed(), is(true));
             test.assertConnectionClosed();
+        }
+    }
+
+    @Test
+    void streamWindowOverflowWritesFlowControlRstStreamAndClosesStream() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            stream.writeHeaders(requestHeaders(), false);
+            assertNull(connection.tryStream(STREAM_CONFIG));
+            test.clearWrites();
+
+            test.offerInbound(windowUpdateFrame(stream.streamId(), WindowSize.MAX_WIN_SIZE));
+
+            BufferData write = test.awaitWrite(Http2FrameType.RST_STREAM);
+            Http2FrameHeader header = readFrameHeader(write);
+            assertThat(header.type(), is(Http2FrameType.RST_STREAM));
+            assertThat(header.streamId(), is(stream.streamId()));
+            assertThat(Http2RstStream.create(write).errorCode(), is(Http2ErrorCode.FLOW_CONTROL));
+
+            test.awaitStreamClosed(stream);
+            assertThrows(Http2Exception.class,
+                         () -> stream.writeData(BufferData.create("late".getBytes(StandardCharsets.UTF_8)), false));
+
+            Http2ClientStream recoveredStream = connection.tryStream(STREAM_CONFIG);
+            assertNotNull(recoveredStream);
+            recoveredStream.close();
+            connection.close();
         }
     }
 
@@ -906,6 +938,14 @@ class Http2ClientConnectionTest {
                 }
                 assertThat("Unexpected outbound frame before " + expectedType, header.type(), is(Http2FrameType.SETTINGS));
             }
+        }
+
+        private void awaitStreamClosed(Http2ClientStream stream) throws InterruptedException {
+            long deadline = System.nanoTime() + TEST_WAIT_TIMEOUT.toNanos();
+            while (stream.streamState() != Http2StreamState.CLOSED && System.nanoTime() < deadline) {
+                Thread.sleep(10);
+            }
+            assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
         }
 
         private void assertConnectionClosed() {
