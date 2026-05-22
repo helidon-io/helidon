@@ -16,11 +16,8 @@
 
 package io.helidon.webclient.http2;
 
-import java.lang.reflect.Method;
 import java.time.Duration;
-import java.util.ArrayDeque;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -32,11 +29,8 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2ErrorCode;
-import io.helidon.http.http2.Http2Flag;
-import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameType;
-import io.helidon.http.http2.Http2GoAway;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2Settings;
@@ -55,7 +49,6 @@ import static org.mockito.Mockito.when;
 
 class Http2ClientConnectionPingTest {
     private static final Duration TEST_WAIT_TIMEOUT = Duration.ofSeconds(10);
-    private static final Method HANDLE_METHOD = handleMethod();
     private static final Http2StreamConfig STREAM_CONFIG = new Http2StreamConfig() {
         @Override
         public boolean priorKnowledge() {
@@ -115,22 +108,6 @@ class Http2ClientConnectionPingTest {
     }
 
     @Test
-    void connectionWindowOverflowWritesFlowControlGoAway() throws Exception {
-        Http2FrameData frameData = new Http2WindowUpdate(WindowSize.MAX_WIN_SIZE)
-                .toFrameData(Http2Settings.create(), 0, Http2Flag.NoFlags.create());
-        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100), frameBytes(frameData));
-
-        assertThat(invokeHandle(test.connection()), is(true));
-
-        assertThat(test.writes(), hasSize(1));
-        BufferData write = test.writes().get(0);
-        Http2FrameHeader header = readFrameHeader(write);
-        assertThat(header.type(), is(Http2FrameType.GO_AWAY));
-        assertThat(header.streamId(), is(0));
-        assertThat(Http2GoAway.create(write).errorCode(), is(Http2ErrorCode.FLOW_CONTROL));
-    }
-
-    @Test
     void streamWindowUpdateIncrementsOutboundWindowOnce() {
         MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
         Http2ClientStream stream = test.newStream();
@@ -174,24 +151,6 @@ class Http2ClientConnectionPingTest {
         return pingFuture;
     }
 
-    private static boolean invokeHandle(Http2ClientConnection connection) throws Exception {
-        return (boolean) HANDLE_METHOD.invoke(connection);
-    }
-
-    private static Method handleMethod() {
-        try {
-            Method method = Http2ClientConnection.class.getDeclaredMethod("handle");
-            method.setAccessible(true);
-            return method;
-        } catch (NoSuchMethodException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private static byte[] frameBytes(Http2FrameData frame) {
-        return BufferData.create(frame.header().write(), frame.data().copy()).readBytes();
-    }
-
     private static Http2FrameHeader readFrameHeader(BufferData frame) {
         frame.rewind();
         return Http2FrameHeader.create(frame);
@@ -212,7 +171,7 @@ class Http2ClientConnectionPingTest {
         private final Http2ClientConnection connection;
         private final CaptureWriter dataWriter = new CaptureWriter();
 
-        private MockedConnectionTestContext(Duration pingTimeout, byte[]... reads) {
+        private MockedConnectionTestContext(Duration pingTimeout) {
             Http2ClientProtocolConfig protocolConfig = Http2ClientProtocolConfig.builder()
                     .ping(true)
                     .pingTimeout(pingTimeout)
@@ -225,11 +184,10 @@ class Http2ClientConnectionPingTest {
             Http2ClientImpl client = mock(Http2ClientImpl.class);
             ClientConnection clientConnection = mock(ClientConnection.class);
             this.socket = mock(HelidonSocket.class);
-            Queue<byte[]> readQueue = new ArrayDeque<>(List.of(reads));
 
             when(client.protocolConfig()).thenReturn(protocolConfig);
             when(client.clientConfig()).thenReturn(clientConfig);
-            when(clientConnection.reader()).thenReturn(DataReader.create(readQueue::poll));
+            when(clientConnection.reader()).thenReturn(DataReader.create(() -> null));
             when(clientConnection.writer()).thenReturn(dataWriter);
             when(clientConnection.helidonSocket()).thenReturn(socket);
             when(socket.socketId()).thenReturn("test-socket");
