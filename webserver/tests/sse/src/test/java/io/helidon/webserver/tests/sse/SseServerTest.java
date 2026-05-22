@@ -52,6 +52,7 @@ class SseServerTest extends SseBaseTest {
         rules.get("/sseJson2", SseServerTest::sseJson2);
         rules.get("/sseMixed", SseServerTest::sseMixed);
         rules.get("/sseIdComment", SseServerTest::sseIdComment);
+        rules.get("/sseCommentOnly", SseServerTest::sseCommentOnly);
     }
 
     @SetUpServer
@@ -125,6 +126,11 @@ class SseServerTest extends SseBaseTest {
     @Test
     void testIdComment() throws Exception {
         testSse("/sseIdComment", ":This is a comment\nid:1\ndata:hello");
+    }
+
+    @Test
+    void testCommentOnly() throws Exception {
+        testSse("/sseCommentOnly", ":This is a comment");
     }
 
     @Test
