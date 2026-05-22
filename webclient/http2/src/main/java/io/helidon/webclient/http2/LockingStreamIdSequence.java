@@ -27,13 +27,7 @@ public class LockingStreamIdSequence {
     private final AtomicInteger streamIdSeq = new AtomicInteger(0);
     private final Lock lock = new ReentrantLock();
 
-    /**
-     * Create a new locking stream ID sequence.
-     *
-     * @deprecated use {@link #create()} instead
-     */
-    @Deprecated(forRemoval = true, since = "27.0.0")
-    public LockingStreamIdSequence() {
+    private LockingStreamIdSequence() {
     }
 
     /**
