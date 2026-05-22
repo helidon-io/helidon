@@ -767,7 +767,7 @@ class MethodInvoker implements FtSupplier<Object> {
                 startNanos[0] = state.starts.removeFirst();
                 found[0] = true;
                 if (!state.completionObserved) {
-                    state.listenerOwnsCompletionRecord = true;
+                    state.recordedBeforeCompletion = true;
                 }
                 return state.starts.isEmpty() && state.completionObserved ? null : state;
             });
@@ -785,9 +785,11 @@ class MethodInvoker implements FtSupplier<Object> {
                     return state;
                 }
                 startNanos[0] = state.starts.removeFirst();
-                record[0] = state.completionObserved;
-                return state.starts.isEmpty() && (state.completionObserved || !state.listenerOwnsCompletionRecord)
-                        ? null : state;
+                record[0] = true;
+                if (!state.completionObserved) {
+                    state.recordedBeforeCompletion = true;
+                }
+                return state.starts.isEmpty() && state.completionObserved ? null : state;
             });
             if (record[0]) {
                 recordWaitingDuration(startNanos[0]);
@@ -805,11 +807,11 @@ class MethodInvoker implements FtSupplier<Object> {
                 }
                 if (!state.starts.isEmpty()) {
                     state.completionObserved = true;
-                    state.listenerOwnsCompletionRecord = false;
+                    state.recordedBeforeCompletion = false;
                     result[0] = true;
                     return state;
                 }
-                if (state.listenerOwnsCompletionRecord) {
+                if (state.recordedBeforeCompletion) {
                     result[0] = true;
                     return null;
                 }
@@ -833,7 +835,7 @@ class MethodInvoker implements FtSupplier<Object> {
 
         private static class WaitingState {
             private final Deque<Long> starts = new ArrayDeque<>();
-            private boolean listenerOwnsCompletionRecord;
+            private boolean recordedBeforeCompletion;
             private boolean completionObserved;
         }
     }

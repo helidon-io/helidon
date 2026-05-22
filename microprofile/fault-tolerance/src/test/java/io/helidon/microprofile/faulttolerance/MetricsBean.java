@@ -49,6 +49,8 @@ class MetricsBean {
     private final CountDownLatch retryingBulkheadRelease = new CountDownLatch(1);
     private final CountDownLatch timedBulkheadEntered = new CountDownLatch(1);
     private final CountDownLatch timedBulkheadRelease = new CountDownLatch(1);
+    private final CountDownLatch cancellableBulkheadEntered = new CountDownLatch(1);
+    private final CountDownLatch cancellableBulkheadRelease = new CountDownLatch(1);
     private final AtomicInteger retryingBulkheadAttempts = new AtomicInteger();
 
     Counter getCounter() {
@@ -232,6 +234,26 @@ class MetricsBean {
 
     void releaseTimedBulkhead() {
         timedBulkheadRelease.countDown();
+    }
+
+    @Asynchronous
+    @Bulkhead(value = 1, waitingTaskQueue = 1)
+    CompletableFuture<String> cancellableBulkhead(boolean block) {
+        FaultToleranceTest.printStatus("MetricsBean::cancellableBulkhead()", block ? "block" : "success");
+        if (block) {
+            cancellableBulkheadEntered.countDown();
+            await(cancellableBulkheadRelease);
+            return CompletableFuture.completedFuture("blocker");
+        }
+        return CompletableFuture.completedFuture("queued");
+    }
+
+    boolean awaitCancellableBulkheadEntered() throws InterruptedException {
+        return cancellableBulkheadEntered.await(5, TimeUnit.SECONDS);
+    }
+
+    void releaseCancellableBulkhead() {
+        cancellableBulkheadRelease.countDown();
     }
 
     private static void await(CountDownLatch latch) {
