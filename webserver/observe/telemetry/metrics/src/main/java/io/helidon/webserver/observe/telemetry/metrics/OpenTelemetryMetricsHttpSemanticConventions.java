@@ -42,6 +42,8 @@ import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
 
+import static java.lang.System.Logger.Level.DEBUG;
+
 /**
  * Provider of automatic metrics for HTTP requests which implements the OpenTelemetry server HTTP semantic conventions.
  * <p>
@@ -108,6 +110,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
     }
 
     static class MetricsRecordingFilter implements Filter {
+        private static final System.Logger LOGGER = System.getLogger(MetricsRecordingFilter.class.getName());
 
         private final DoubleHistogram httpRequestDuration;
         private final AutoHttpMetricsConfig config;
@@ -126,11 +129,21 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
              */
             try {
                 chain.proceed();
-                Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), null));
+                runAsyncMetricsUpdate(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), null));
             } catch (Exception e) {
-                Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), e));
+                runAsyncMetricsUpdate(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), e));
                 throw e;
             }
+        }
+
+        static void runAsyncMetricsUpdate(Runnable update) {
+            Thread.ofVirtual().start(() -> {
+                try {
+                    update.run();
+                } catch (Throwable e) {
+                    LOGGER.log(DEBUG, "Failed to record HTTP request metrics", e);
+                }
+            });
         }
 
         private static MetricsRecordingFilter create(DoubleHistogram httpRequestDuration, AutoHttpMetricsConfig config) {
