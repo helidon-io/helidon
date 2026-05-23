@@ -48,6 +48,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.concurrency.limits.Limit.InitializationContext;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.context.Context;
 import io.helidon.common.socket.SocketOptions;
@@ -55,6 +56,7 @@ import io.helidon.common.task.HelidonTaskExecutor;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
+import io.helidon.metrics.api.Tag;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ServerConnectionSelector;
@@ -144,8 +146,9 @@ class ServerListener implements ListenerContext {
                     .build();
         }
 
-        this.connectionLimit.init(socketName);
-        this.requestLimit.init(socketName);
+        InitializationContext limitContext = limitContext(socketName);
+        this.connectionLimit.init(limitContext);
+        this.requestLimit.init(limitContext);
 
         this.connectionProviders = ConnectionProviders.create(selectors);
         this.socketName = socketName;
@@ -305,6 +308,13 @@ class ServerListener implements ListenerContext {
         inCheckpoint = false;
     }
 
+    private static InitializationContext limitContext(String socketName) {
+        if (WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
+            return InitializationContext.create(socketName);
+        }
+        return InitializationContext.create(socketName, List.of(Tag.create("socketName", socketName)));
+    }
+
     private void initServerThread() {
         this.closeFuture = new CompletableFuture<>();
         this.serverThread = Thread.ofPlatform()
@@ -453,7 +463,6 @@ class ServerListener implements ListenerContext {
                                                    configuredAddress,
                                                    socketName));
                 }
-
 
                 if (LOGGER.isLoggable(TRACE)) {
                     if (listenerConfig.writeQueueLength() <= 1) {
