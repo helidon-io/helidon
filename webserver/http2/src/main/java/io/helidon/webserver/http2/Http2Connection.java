@@ -71,6 +71,7 @@ import static io.helidon.http.HeaderNames.X_FORWARDED_PORT;
 import static io.helidon.http.HeaderNames.X_HELIDON_CN;
 import static io.helidon.http.http2.Http2Util.PREFACE_LENGTH;
 import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.TRACE;
 
 /**
@@ -925,8 +926,10 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                     handlerThread.interrupt();
                     LOGGER.log(DEBUG, "Socket error on writer thread", e);
                 } else {
-                    throw e;
+                    LOGGER.log(ERROR, "Unhandled exception on HTTP/2 stream thread", e);
                 }
+            } catch (Throwable e) {
+                LOGGER.log(ERROR, "Unhandled exception on HTTP/2 stream thread", e);
             } finally {
                 // 5.1 - In HALF-CLOSED state we need to wait for either RST-STREAM or DATA with endStream flag
                 if (stream.streamState() == Http2StreamState.CLOSED) {
