@@ -559,8 +559,6 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         } finally {
             stateWriteLock.unlock();
         }
-
-        stateWriteLock.lock();
     }
 
     <T> void set(Class<T> contract, T[] instances) {
