@@ -41,7 +41,7 @@ class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
             entity = response.as(entityType);
             thrown = null;
         } catch (RuntimeException e) {
-            thrown = e;
+            thrown = closeOnDecodeFailure(response, e);
             entity = null;
         }
         this.thrown = thrown;
@@ -58,7 +58,7 @@ class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
             entity = entity(response, entityType);
             thrown = null;
         } catch (RuntimeException e) {
-            thrown = e;
+            thrown = closeOnDecodeFailure(response, e);
             entity = null;
         }
         this.thrown = thrown;
@@ -156,5 +156,14 @@ class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
             return null;
         }
         return GenericType.create(actualTypeArguments[0]);
+    }
+
+    private static RuntimeException closeOnDecodeFailure(HttpClientResponse response, RuntimeException cause) {
+        try {
+            response.close();
+        } catch (RuntimeException e) {
+            cause.addSuppressed(e);
+        }
+        return cause;
     }
 }
