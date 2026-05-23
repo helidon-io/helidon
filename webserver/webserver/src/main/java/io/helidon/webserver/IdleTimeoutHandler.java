@@ -20,7 +20,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
@@ -30,7 +29,7 @@ class IdleTimeoutHandler extends TimerTask {
     private final Duration timeout;
     private final Duration period;
     private final String taskName;
-    private final Lock runLock = new ReentrantLock();
+    private final ReentrantLock runLock = new ReentrantLock();
     private volatile boolean cancelled;
 
     IdleTimeoutHandler(Timer timer,
@@ -77,13 +76,27 @@ class IdleTimeoutHandler extends TimerTask {
     }
 
     void cancelAndAwait() {
+        cancelOnly();
+        awaitFinished();
+    }
+
+    void cancelOnly() {
         cancelled = true;
         cancel();
+    }
+
+    void awaitFinished() {
+        // Acquiring the lock acts as a barrier: if run() is scanning connections, this waits for that pass to finish.
         runLock.lock();
         try {
-            // Wait for an in-flight idle timeout pass to finish.
+            // Wait barrier only.
         } finally {
             runLock.unlock();
         }
+    }
+
+    // Intended for tests that need to observe cancellation waiting without stack walking.
+    boolean awaitingRunCompletion() {
+        return runLock.hasQueuedThreads();
     }
 }

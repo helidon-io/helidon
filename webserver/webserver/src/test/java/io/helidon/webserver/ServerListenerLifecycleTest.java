@@ -655,7 +655,7 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
-    void stopClosesListenerSocketBeforeWaitingForRunningIdleTimeoutTask() throws Exception {
+    void stopForcesConnectionsBeforeWaitingForRunningIdleTimeoutTask() throws Exception {
         CountDownLatch stopStarted = new CountDownLatch(1);
         CountDownLatch stopDone = new CountDownLatch(1);
         AtomicReference<Throwable> stopFailure = new AtomicReference<>();
@@ -679,7 +679,7 @@ class ServerListenerLifecycleTest {
             assertThat(connection.awaitIdleClose(), is(true));
 
             stopThread = Thread.ofPlatform()
-                    .name("test-stop-waits-for-idle-timeout")
+                    .name("test-stop-forces-before-idle-timeout-wait")
                     .start(() -> {
                         stopStarted.countDown();
                         try {
@@ -692,11 +692,10 @@ class ServerListenerLifecycleTest {
                     });
 
             assertThat(stopStarted.await(5, TimeUnit.SECONDS), is(true));
-            Thread localStopThread = stopThread;
-            waitFor(Duration.ofSeconds(5),
-                    () -> localStopThread.getState() == Thread.State.WAITING && stopDone.getCount() != 0,
-                    "stop did not wait for the running idle timeout task");
-            assertThat(connection.gracefulCloses(), is(1));
+            assertThat(connection.awaitForcedClose(), is(true));
+            assertThat("stop should wait for the running idle timeout task",
+                       stopDone.getCount(),
+                       is(1L));
             assertPortRefusesConnections(port);
 
             connection.releaseIdleClose();
@@ -715,7 +714,7 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
-    void suspendClosesListenerSocketBeforeWaitingForRunningIdleTimeoutTask() throws Exception {
+    void suspendForcesConnectionsBeforeWaitingForRunningIdleTimeoutTask() throws Exception {
         CountDownLatch suspendStarted = new CountDownLatch(1);
         CountDownLatch suspendDone = new CountDownLatch(1);
         AtomicReference<Throwable> suspendFailure = new AtomicReference<>();
@@ -739,7 +738,7 @@ class ServerListenerLifecycleTest {
             assertThat(connection.awaitIdleClose(), is(true));
 
             suspendThread = Thread.ofPlatform()
-                    .name("test-suspend-closes-listener-before-idle-timeout-wait")
+                    .name("test-suspend-forces-before-idle-timeout-wait")
                     .start(() -> {
                         suspendStarted.countDown();
                         try {
@@ -752,11 +751,10 @@ class ServerListenerLifecycleTest {
                     });
 
             assertThat(suspendStarted.await(5, TimeUnit.SECONDS), is(true));
-            Thread localSuspendThread = suspendThread;
-            waitFor(Duration.ofSeconds(5),
-                    () -> localSuspendThread.getState() == Thread.State.WAITING && suspendDone.getCount() != 0,
-                    "suspend did not wait for the running idle timeout task");
-            assertThat(connection.gracefulCloses(), is(1));
+            assertThat(connection.awaitForcedClose(), is(true));
+            assertThat("suspend should wait for the running idle timeout task",
+                       suspendDone.getCount(),
+                       is(1L));
             assertPortRefusesConnections(port);
 
             connection.releaseIdleClose();
@@ -1358,6 +1356,7 @@ class ServerListenerLifecycleTest {
     private static final class BlockingIdleCloseConnection implements ServerConnection {
         private final CountDownLatch handling = new CountDownLatch(1);
         private final CountDownLatch idleCloseEntered = new CountDownLatch(1);
+        private final CountDownLatch forcedCloseEntered = new CountDownLatch(1);
         private final CountDownLatch releaseIdleClose = new CountDownLatch(1);
         private final CountDownLatch releaseHandling = new CountDownLatch(1);
         private final AtomicInteger gracefulCloses = new AtomicInteger();
@@ -1382,15 +1381,19 @@ class ServerListenerLifecycleTest {
         @Override
         public void close(boolean interrupt) {
             if (interrupt) {
+                forcedCloseEntered.countDown();
                 releaseHandling.countDown();
                 return;
             }
             if (gracefulCloses.incrementAndGet() == 1) {
                 idleCloseEntered.countDown();
-                try {
-                    releaseIdleClose.await(5, TimeUnit.SECONDS);
-                } catch (InterruptedException _) {
-                    Thread.currentThread().interrupt();
+                while (releaseIdleClose.getCount() != 0) {
+                    try {
+                        releaseIdleClose.await(1, TimeUnit.SECONDS);
+                    } catch (InterruptedException _) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
                 }
             }
         }
@@ -1403,8 +1406,8 @@ class ServerListenerLifecycleTest {
             return idleCloseEntered.await(5, TimeUnit.SECONDS);
         }
 
-        private int gracefulCloses() {
-            return gracefulCloses.get();
+        private boolean awaitForcedClose() throws InterruptedException {
+            return forcedCloseEntered.await(5, TimeUnit.SECONDS);
         }
 
         private void releaseIdleClose() {
