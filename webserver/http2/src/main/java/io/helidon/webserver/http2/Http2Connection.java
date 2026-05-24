@@ -919,6 +919,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             } catch (SocketWriterException e) {
                 handlerThread.interrupt();
                 LOGGER.log(DEBUG, "Socket writer error on writer thread", e);
+            } catch (ServerConnectionException e) {
+                handlerThread.interrupt();
+                LOGGER.log(TRACE, "server I/O issue on HTTP/2 stream thread", e);
             } catch (UncheckedIOException e) {
                 // Broken connection
                 if (e.getCause() instanceof SocketException) {

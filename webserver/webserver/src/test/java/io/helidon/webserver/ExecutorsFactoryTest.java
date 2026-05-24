@@ -35,11 +35,20 @@ import static org.hamcrest.Matchers.sameInstance;
 class ExecutorsFactoryTest {
 
     @Test
+    void loomServerExecutorLogsUncaughtException() throws Exception {
+        assertExecutorLogsUncaughtException(ExecutorsFactory.newLoomServerVirtualThreadPerTaskExecutor());
+    }
+
+    @Test
     void sharedExecutorLogsUncaughtException() throws Exception {
+        assertExecutorLogsUncaughtException(ExecutorsFactory.newServerListenerSharedExecutor());
+    }
+
+    private static void assertExecutorLogsUncaughtException(ExecutorService executor) throws Exception {
         IllegalStateException failure = new IllegalStateException("test failure");
 
-        try (TestLogHandler handler = TestLogHandler.install();
-                ExecutorService executor = ExecutorsFactory.newServerListenerSharedExecutor()) {
+        try (TestLogHandler handler = TestLogHandler.install(ExecutorsFactory.class);
+                executor) {
             executor.execute(() -> {
                 throw failure;
             });
@@ -63,8 +72,8 @@ class ExecutorsFactoryTest {
             setLevel(Level.ALL);
         }
 
-        static TestLogHandler install() {
-            Logger logger = Logger.getLogger(ExecutorsFactory.class.getName());
+        static TestLogHandler install(Class<?> clazz) {
+            Logger logger = Logger.getLogger(clazz.getName());
             TestLogHandler handler = new TestLogHandler(logger);
             logger.setLevel(Level.ALL);
             logger.addHandler(handler);

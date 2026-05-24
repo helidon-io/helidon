@@ -52,6 +52,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -147,7 +148,7 @@ class Http2ConnectionTest {
         streams.put(new Http2Connection.StreamContext(1, 8192, stream));
 
         try (TestLogHandler handler = TestLogHandler.install()) {
-            new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run();
+            assertDoesNotThrow(() -> new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run());
             streams.doMaintenance(0);
             LogRecord record = handler.await();
 
@@ -170,7 +171,7 @@ class Http2ConnectionTest {
         streams.put(new Http2Connection.StreamContext(1, 8192, stream));
 
         try (TestLogHandler handler = TestLogHandler.install()) {
-            new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run();
+            assertDoesNotThrow(() -> new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run());
             streams.doMaintenance(0);
             LogRecord record = handler.await();
 
@@ -179,6 +180,39 @@ class Http2ConnectionTest {
                     () -> assertThat(record.getThrown(), sameInstance(failure)),
                     () -> assertThat(streams.get(1), is(nullValue()))
             );
+        }
+    }
+
+    @Test
+    void streamRunnableLogsServerConnectionExceptionAsServerIoIssue() throws Exception {
+        ServerConnectionException failure = new ServerConnectionException("stream failure", new IOException("closed"));
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        doThrow(failure).when(stream).run();
+        when(stream.streamId()).thenReturn(1);
+        when(stream.streamState()).thenReturn(Http2StreamState.CLOSED);
+        streams.put(new Http2Connection.StreamContext(1, 8192, stream));
+
+        boolean previouslyInterrupted = Thread.interrupted();
+        try (TestLogHandler handler = TestLogHandler.install()) {
+            assertDoesNotThrow(() -> new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run());
+            boolean interrupted = Thread.currentThread().isInterrupted();
+            Thread.interrupted();
+            streams.doMaintenance(0);
+            LogRecord record = handler.await();
+
+            assertAll(
+                    () -> assertThat(interrupted, is(true)),
+                    () -> assertThat(record.getMessage(), containsString("server I/O issue on HTTP/2 stream thread")),
+                    () -> assertThat(record.getLevel(), is(Level.FINER)),
+                    () -> assertThat(record.getThrown(), sameInstance(failure)),
+                    () -> assertThat(streams.get(1), is(nullValue()))
+            );
+        } finally {
+            Thread.interrupted();
+            if (previouslyInterrupted) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 

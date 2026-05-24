@@ -62,25 +62,8 @@ import static org.mockito.Mockito.when;
 class OpenTelemetryMetricsHttpSemanticConventionsTest {
 
     @Test
-    void asyncMetricsUpdateLogsUnhandledFailure() throws Exception {
-        IllegalStateException failure = new IllegalStateException("metrics failure");
-
-        try (TestLogHandler handler = TestLogHandler.install()) {
-            OpenTelemetryMetricsHttpSemanticConventions.MetricsRecordingFilter.runAsyncMetricsUpdate(() -> {
-                throw failure;
-            });
-
-            LogRecord record = handler.await();
-
-            assertThat(record.getMessage(), containsString("Failed to record HTTP request metrics"));
-            assertThat(record.getLevel(), is(Level.FINE));
-            assertThat(record.getThrown(), sameInstance(failure));
-        }
-    }
-
-    @Test
     void filterLogsMetricsFailureAfterSuccessfulChain() throws Exception {
-        IllegalStateException failure = new IllegalStateException("metrics failure");
+        AssertionError failure = new AssertionError("metrics failure");
         Filter filter = filter(failure);
 
         try (TestLogHandler handler = TestLogHandler.install()) {
@@ -88,14 +71,14 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
 
             LogRecord record = handler.await();
             assertThat(record.getMessage(), containsString("Failed to record HTTP request metrics"));
-            assertThat(record.getLevel(), is(Level.FINE));
+            assertThat(record.getLevel(), is(Level.WARNING));
             assertThat(record.getThrown(), sameInstance(failure));
         }
     }
 
     @Test
     void filterLogsMetricsFailureAfterExceptionalChain() throws Exception {
-        IllegalStateException metricsFailure = new IllegalStateException("metrics failure");
+        AssertionError metricsFailure = new AssertionError("metrics failure");
         IllegalArgumentException chainFailure = new IllegalArgumentException("chain failure");
         Filter filter = filter(metricsFailure);
         FilterChain chain = mock(FilterChain.class);
@@ -108,12 +91,12 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
 
             assertThat(exception, sameInstance(chainFailure));
             assertThat(record.getMessage(), containsString("Failed to record HTTP request metrics"));
-            assertThat(record.getLevel(), is(Level.FINE));
+            assertThat(record.getLevel(), is(Level.WARNING));
             assertThat(record.getThrown(), sameInstance(metricsFailure));
         }
     }
 
-    private static Filter filter(RuntimeException failure) {
+    private static Filter filter(Throwable failure) {
         OpenTelemetry openTelemetry = mock(OpenTelemetry.class);
         MeterBuilder meterBuilder = mock(MeterBuilder.class);
         Meter meter = mock(Meter.class);

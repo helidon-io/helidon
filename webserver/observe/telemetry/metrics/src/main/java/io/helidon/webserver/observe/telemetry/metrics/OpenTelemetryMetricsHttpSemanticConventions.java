@@ -42,7 +42,7 @@ import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
 
-import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.WARNING;
 
 /**
  * Provider of automatic metrics for HTTP requests which implements the OpenTelemetry server HTTP semantic conventions.
@@ -126,24 +126,26 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             /*
             Duplicating the synch/async handling in the normal and exception case avoids the overhead of using an Optional to hold
             the exception (if any) for use in a lambda.
-             */
+            */
             try {
                 chain.proceed();
-                runAsyncMetricsUpdate(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), null));
+                Thread.ofVirtual().start(() -> {
+                    try {
+                        updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), null);
+                    } catch (Throwable e) {
+                        LOGGER.log(WARNING, "Failed to record HTTP request metrics", e);
+                    }
+                });
             } catch (Exception e) {
-                runAsyncMetricsUpdate(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), e));
+                Thread.ofVirtual().start(() -> {
+                    try {
+                        updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), e);
+                    } catch (Throwable metricsUpdateFailure) {
+                        LOGGER.log(WARNING, "Failed to record HTTP request metrics", metricsUpdateFailure);
+                    }
+                });
                 throw e;
             }
-        }
-
-        static void runAsyncMetricsUpdate(Runnable update) {
-            Thread.ofVirtual().start(() -> {
-                try {
-                    update.run();
-                } catch (Throwable e) {
-                    LOGGER.log(DEBUG, "Failed to record HTTP request metrics", e);
-                }
-            });
         }
 
         private static MetricsRecordingFilter create(DoubleHistogram httpRequestDuration, AutoHttpMetricsConfig config) {

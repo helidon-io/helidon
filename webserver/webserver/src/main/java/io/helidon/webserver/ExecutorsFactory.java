@@ -59,7 +59,7 @@ final class ExecutorsFactory {
      * @return {@link ThreadPerTaskExecutor#create(java.util.concurrent.ThreadFactory)}
      */
     static HelidonTaskExecutor newServerListenerReaderExecutor() {
-        return ThreadPerTaskExecutor.create(virtualThreadFactory());
+        return ThreadPerTaskExecutor.create(Thread.ofVirtual().factory());
     }
 
     /**
