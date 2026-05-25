@@ -33,6 +33,7 @@ import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.HttpSupport;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 
@@ -76,14 +77,18 @@ class DeclarativeCodegenHttpTypesTest {
         checkField(toCheck, checked, fields, "HTTP_HEADER_NAMES", HeaderNames.class);
         checkField(toCheck, checked, fields, "HTTP_HEADER", Header.class);
         checkField(toCheck, checked, fields, "HTTP_HEADER_VALUES", HeaderValues.class);
+        checkField(toCheck, checked, fields, "HTTP_SUPPORT", HttpSupport.class);
         checkField(toCheck, checked, fields, "HTTP_PATH_ANNOTATION", Http.Path.class);
         checkField(toCheck, checked, fields, "HTTP_METHOD_ANNOTATION", Http.HttpMethod.class);
         checkField(toCheck, checked, fields, "HTTP_PRODUCES_ANNOTATION", Http.Produces.class);
         checkField(toCheck, checked, fields, "HTTP_CONSUMES_ANNOTATION", Http.Consumes.class);
         checkField(toCheck, checked, fields, "HTTP_PATH_PARAM_ANNOTATION", Http.PathParam.class);
+        checkField(toCheck, checked, fields, "HTTP_COOKIE_PARAM_ANNOTATION", Http.CookieParam.class);
         checkField(toCheck, checked, fields, "HTTP_QUERY_PARAM_ANNOTATION", Http.QueryParam.class);
+        checkField(toCheck, checked, fields, "HTTP_FORM_PARAM_ANNOTATION", Http.FormParam.class);
         checkField(toCheck, checked, fields, "HTTP_HEADER_PARAM_ANNOTATION", Http.HeaderParam.class);
         checkField(toCheck, checked, fields, "HTTP_ENTITY_ANNOTATION", Http.Entity.class);
+        checkField(toCheck, checked, fields, "HTTP_REQUEST_PARAMS_ANNOTATION", Http.RequestParams.class);
         checkField(toCheck, checked, fields, "HTTP_HEADER_FUNCTION", Http.HeaderFunction.class);
         checkField(toCheck, checked, fields, "HTTP_MEDIA_TYPE", HttpMediaType.class);
         checkField(toCheck, checked, fields, "HTTP_HEADERS", Headers.class);

@@ -82,8 +82,10 @@ public final class Http {
 
     /**
      * Inject entity into a method parameter.
+     * <p>
+     * Can also be used on {@link RequestParams} record components.
      */
-    @Target(ElementType.PARAMETER)
+    @Target({ElementType.PARAMETER, ElementType.RECORD_COMPONENT})
     @Retention(RetentionPolicy.CLASS)
     @Documented
     @Service.Qualifier
@@ -91,9 +93,23 @@ public final class Http {
     }
 
     /**
-     * Inject header into a method parameter.
+     * Inject a request header into a server method parameter, or send a header from a declarative client method
+     * parameter.
+     * <p>
+     * Can also be used on {@link RequestParams} record components.
+     * <p>
+     * Declarative server endpoints support {@code List<T>} for mandatory multi-value headers and
+     * {@code Optional<List<T>>} for optional multi-value headers. A mandatory list is rejected when the named header is
+     * missing, while an optional list is empty when the named header is missing. If the named header is present with no
+     * values, the injected list is empty.
+     * <p>
+     * Declarative clients send every value from {@code List<T>} and send {@code Optional<List<T>>} only when the
+     * optional is present.
+     * <p>
+     * Declarative client values must not be {@code null}. Use {@code Optional.empty()} to omit optional values.
+     * Client list values must not contain {@code null} elements.
      */
-    @Target(ElementType.PARAMETER)
+    @Target({ElementType.PARAMETER, ElementType.RECORD_COMPONENT})
     @Retention(RetentionPolicy.CLASS)
     @Documented
     @Service.Qualifier
@@ -107,9 +123,54 @@ public final class Http {
     }
 
     /**
-     * Inject query parameter into a method parameter.
+     * Inject a request cookie into a server method parameter, or send a cookie from a declarative client method
+     * parameter. Cookie names are validated during declarative code generation. Declarative clients do not escape
+     * cookie values; each value must already be a valid cookie-octet value.
+     * <p>
+     * Can also be used on {@link RequestParams} record components.
+     * <p>
+     * Declarative server endpoints support {@code List<T>} for mandatory multi-value cookies and
+     * {@code Optional<List<T>>} for optional multi-value cookies. A mandatory list is rejected when the named cookie is
+     * missing, while an optional list is empty when the named cookie is missing. Cookies are not represented as
+     * {@code Parameters}; a named cookie cannot be present with no values.
+     * <p>
+     * Declarative clients send cookie parameters as a single {@code Cookie} header. They send every value from
+     * {@code List<T>} and send {@code Optional<List<T>>} only when the optional is present. A mandatory client
+     * {@code List<T>} cookie parameter must contain at least one value.
+     * <p>
+     * Declarative client values must not be {@code null}. Use {@code Optional.empty()} to omit optional values.
+     * Client list values must not contain {@code null} elements.
      */
-    @Target(ElementType.PARAMETER)
+    @Target({ElementType.PARAMETER, ElementType.RECORD_COMPONENT})
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @Service.Qualifier
+    public @interface CookieParam {
+        /**
+         * Name of the cookie.
+         *
+         * @return name of the cookie
+         */
+        String value();
+    }
+
+    /**
+     * Inject query parameter into a method parameter.
+     * <p>
+     * Can also be used on {@link RequestParams} record components.
+     * <p>
+     * Declarative server endpoints support {@code List<T>} for mandatory multi-value query parameters and
+     * {@code Optional<List<T>>} for optional multi-value query parameters. A mandatory list is rejected when the named
+     * query parameter is missing, while an optional list is empty when the named query parameter is missing. If the
+     * query parameter name is present without any values, the injected list is empty.
+     * <p>
+     * Declarative clients send every value from {@code List<T>} and send {@code Optional<List<T>>} only when the
+     * optional is present.
+     * <p>
+     * Declarative client values must not be {@code null}. Use {@code Optional.empty()} to omit optional values.
+     * Client list values must not contain {@code null} elements.
+     */
+    @Target({ElementType.PARAMETER, ElementType.RECORD_COMPONENT})
     @Retention(RetentionPolicy.CLASS)
     @Documented
     @Service.Qualifier
@@ -122,12 +183,63 @@ public final class Http {
         String value();
     }
 
+    /**
+     * Inject a URL encoded form parameter into a server method parameter, or send a form parameter from a declarative
+     * client method parameter.
+     * <p>
+     * Can also be used on {@link RequestParams} record components.
+     * <p>
+     * Declarative endpoints and clients should use this annotation with
+     * {@code @Http.Consumes("application/x-www-form-urlencoded")}. Form parameters use the request entity and cannot be
+     * combined with {@link Entity} on the same declarative method.
+     * <p>
+     * Declarative server endpoints support {@code List<T>} for mandatory multi-value form parameters and
+     * {@code Optional<List<T>>} for optional multi-value form parameters. A mandatory list is rejected when the named
+     * form parameter is missing, while an optional list is empty when the named form parameter is missing. If the form
+     * parameter name is present without any values, the injected list is empty.
+     * <p>
+     * Declarative clients send every value from {@code List<T>} and send {@code Optional<List<T>>} only when the
+     * optional is present.
+     * <p>
+     * Declarative client values must not be {@code null}. Use {@code Optional.empty()} to omit optional values.
+     * Client list values must not contain {@code null} elements.
+     */
+    @Target({ElementType.PARAMETER, ElementType.RECORD_COMPONENT})
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @Service.Qualifier
+    public @interface FormParam {
+        /**
+         * Name of the form parameter.
+         *
+         * @return name of the form parameter
+         */
+        String value();
+    }
 
     /**
-     * Inject path parameter into a method parameter.
-     * Path parameters are obtained from the path template of the routing method.
+     * Inject a path parameter into a server method parameter, or provide a path template value from a declarative
+     * client method parameter.
+     * <p>
+     * Server path parameters are obtained from the path template of the routing method.
+     * <p>
+     * Declarative server endpoints may use {@code Optional<T>}, but the optional cannot be empty for a matched route;
+     * if the path parameter were missing, the route would not match.
+     * <p>
+     * Declarative clients use path parameter values as URI path text. They do not encode each value as a single path
+     * segment before constructing the request URI.
+     * <p>
+     * Declarative client path parameter values must not be {@code null}. If {@code Optional<T>} is used, the optional
+     * value itself must not be {@code null} and must be present; empty optional path values are rejected.
+     * <p>
+     * Can also be used on {@link RequestParams} record components.
+     * <p>
+     * Declarative server endpoints support {@code List<T>} for mandatory multi-value path parameters and
+     * {@code Optional<List<T>>} for optional multi-value path parameters. A matched route provides the named path
+     * parameter; if it were missing, the route would not match. If the named path parameter is present with no values,
+     * the injected list is empty.
      */
-    @Target(ElementType.PARAMETER)
+    @Target({ElementType.PARAMETER, ElementType.RECORD_COMPONENT})
     @Retention(RetentionPolicy.CLASS)
     @Documented
     @Service.Qualifier
@@ -138,6 +250,30 @@ public final class Http {
          * @return name of the path parameter
          */
         String value();
+    }
+
+    /**
+     * Inject grouped request parameters into a method parameter.
+     * <p>
+     * The annotated parameter type must be a record. This is a restriction on the supported parameter types for
+     * declarative code generation. Each record component may have at most one supported request parameter annotation:
+     * {@link HeaderParam}, {@link CookieParam}, {@link QueryParam}, {@link FormParam}, {@link PathParam}, or
+     * {@link Entity}. At most one {@link Entity} component is supported. Form parameter components use the request
+     * entity and cannot be combined with an entity component.
+     * <p>
+     * Declarative server endpoints may also use annotation-free record components whose type is a supported typed
+     * endpoint parameter, such as {@code ServerRequest} or {@code ServerResponse}. Declarative clients require every
+     * record component to use one supported request parameter annotation.
+     * <p>
+     * List-valued record components follow the same rules as list-valued endpoint method parameters.
+     * Declarative client request-params arguments and named-value component values must not be {@code null}; use
+     * {@code Optional.empty()} to omit optional named values.
+     */
+    @Target(ElementType.PARAMETER)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @Service.Qualifier
+    public @interface RequestParams {
     }
 
     /**

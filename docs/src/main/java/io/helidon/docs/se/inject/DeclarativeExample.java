@@ -66,6 +66,30 @@ public class DeclarativeExample {
     }
     // end::snippet_3[]
 
+    // tag::snippet_20[]
+    record MessageParams(
+            @Http.PathParam("id") String id,
+            @Http.QueryParam("lang") String language,
+            @Http.CookieParam("theme") String theme) {
+    }
+
+    @RestClient.Endpoint("${message-service.client.uri:http://localhost:8080}")
+    @Http.Path("/messages")
+    interface MessageClient {
+        @Http.GET
+        @Http.Path("/{id}")
+        @Http.Produces(MediaTypes.TEXT_PLAIN_VALUE)
+        String message(@Http.RequestParams MessageParams params);
+
+        @Http.POST
+        @Http.Path("/form")
+        @Http.Consumes(MediaTypes.APPLICATION_FORM_URLENCODED_VALUE)
+        @Http.Produces(MediaTypes.TEXT_PLAIN_VALUE)
+        String submit(@Http.FormParam("message") String message,
+                      @Http.CookieParam("session") String session);
+    }
+    // end::snippet_20[]
+
     // tag::snippet_1[]
     @Service.GenerateBinding // generated binding to bypass discovery and runtime binding
     public static class Main {
@@ -102,6 +126,29 @@ public class DeclarativeExample {
         }
     }
     // end::snippet_2[]
+
+    // tag::snippet_19[]
+    @RestServer.Endpoint
+    @Http.Path("/messages")
+    @Service.Singleton
+    static class MessageEndpoint {
+        @Http.GET
+        @Http.Path("/{id}")
+        @Http.Produces(MediaTypes.TEXT_PLAIN_VALUE)
+        String message(@Http.RequestParams MessageParams params) {
+            return params.id() + ":" + params.language() + ":" + params.theme();
+        }
+
+        @Http.POST
+        @Http.Path("/form")
+        @Http.Consumes(MediaTypes.APPLICATION_FORM_URLENCODED_VALUE)
+        @Http.Produces(MediaTypes.TEXT_PLAIN_VALUE)
+        String submit(@Http.FormParam("message") String message,
+                      @Http.CookieParam("session") String session) {
+            return session + ":" + message;
+        }
+    }
+    // end::snippet_19[]
 
     // tag::snippet_4[]
     @Service.Singleton
