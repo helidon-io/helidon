@@ -131,6 +131,9 @@ class DescribedService {
         providedTypeName = factoryInfo.providedTypeName();
         providedTypeInfo = factoryInfo.providedTypeInfo();
         providerFactoryContracts.removeAll(providedContracts);
+        if (providedTypeName != null) {
+            providerFactoryContracts.remove(ResolvedType.create(providedTypeName));
+        }
         Map<TypeName, TypeInfo> implementedInterfaceTypes = new HashMap<>(factoryInfo.remainingImplementedInterfaces());
 
         // add direct contracts
@@ -290,12 +293,10 @@ class DescribedService {
         return serviceType;
     }
 
-    Set<ResolvedType> directProviderContracts() {
-        return directProviderContracts;
-    }
-
-    Set<ResolvedType> providerFactoryContracts() {
-        return providerFactoryContracts;
+    Set<ResolvedType> providerContracts() {
+        Set<ResolvedType> result = new HashSet<>(directProviderContracts);
+        result.addAll(providerFactoryContracts);
+        return Set.copyOf(result);
     }
 
     boolean factoryInterceptionWrapper() {

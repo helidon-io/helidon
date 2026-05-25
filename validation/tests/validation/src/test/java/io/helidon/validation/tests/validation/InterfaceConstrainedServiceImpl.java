@@ -97,6 +97,11 @@ class InterfaceConstrainedServiceImpl
     }
 
     @Override
+    public String validateCustomGroup(String value) {
+        return value;
+    }
+
+    @Override
     public List<String> validateCustomStringList(List<String> values) {
         return values;
     }

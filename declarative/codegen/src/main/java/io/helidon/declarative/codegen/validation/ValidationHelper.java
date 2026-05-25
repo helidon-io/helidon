@@ -282,8 +282,7 @@ final class ValidationHelper {
         for (Annotation annotation : annotations) {
             if (processed.add(annotation)) {
                 // a constraint itself
-                if (constraintAnnotations.contains(annotation.typeName())
-                        && isConstraintAnnotation(annotation)) {
+                if (isConstraintAnnotation(constraintAnnotations, annotation)) {
                     result.add(annotation);
                 }
                 // maybe meta-annotated with a constraint
@@ -292,11 +291,22 @@ final class ValidationHelper {
         }
     }
 
+    private static boolean isConstraintAnnotation(Collection<TypeName> constraintAnnotations, Annotation annotation) {
+        if (constraintAnnotations.contains(annotation.typeName())) {
+            return isConstraintAnnotation(annotation);
+        }
+        return hasDirectConstraintMetaAnnotation(annotation);
+    }
+
     private static boolean isConstraintAnnotation(Annotation annotation) {
         return annotation.metaAnnotations().isEmpty()
-                || annotation.metaAnnotations()
-                        .stream()
-                        .anyMatch(it -> it.typeName().equals(ValidationTypes.VALIDATION_CONSTRAINT));
+                || hasDirectConstraintMetaAnnotation(annotation);
+    }
+
+    private static boolean hasDirectConstraintMetaAnnotation(Annotation annotation) {
+        return annotation.metaAnnotations()
+                .stream()
+                .anyMatch(it -> it.typeName().equals(ValidationTypes.VALIDATION_CONSTRAINT));
     }
 
     private static void addValidationOfContainerType(ValidationContext context,

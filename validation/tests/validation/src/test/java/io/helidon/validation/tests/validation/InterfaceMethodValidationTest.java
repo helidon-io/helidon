@@ -75,6 +75,7 @@ class InterfaceMethodValidationTest {
         assertThat(new InterfaceConstrainedServiceImpl().validateMinimum(5), is(5));
         assertThat(new InterfaceConstrainedServiceImpl().validateShared(""), is(""));
         assertThat(new InterfaceConstrainedServiceImpl().validateDuplicate(""), is(""));
+        assertThat(new InterfaceConstrainedServiceImpl().validateCustomGroup(""), is(""));
         assertThat(new InterfaceConstrainedServiceImpl().validateGeneric(""), is(""));
         assertThat(new InterfaceConstrainedServiceImpl().validateOrderedGeneric("", 42), is(42));
         assertThat(new InterfaceConstrainedServiceImpl().validateInheritedGeneric(""), is(""));
@@ -111,6 +112,7 @@ class InterfaceMethodValidationTest {
         assertThat(service.validateMinimum(10), is(10));
         assertThat(service.validateShared("valid"), is("valid"));
         assertThat(service.validateDuplicate("valid"), is("valid"));
+        assertThat(service.validateCustomGroup("valid"), is("valid"));
         assertThat(service.validateCustomStringList(List.of("good")), is(List.of("good")));
         assertThat(service.validateCustomIntegerList(List.of(42)), is(List.of(42)));
         assertThat(genericService.validateGeneric("valid"), is("valid"));
@@ -127,6 +129,26 @@ class InterfaceMethodValidationTest {
                         "is blank",
                         "",
                         TypeName.create(Validation.String.NotBlank.class));
+
+        result = assertThrows(ValidationException.class, () -> service.validateCustomGroup(""));
+        assertViolation(result,
+                        InterfaceConstrainedServiceImpl.class,
+                        List.of(PathElement.create(Location.TYPE, InterfaceConstrainedServiceImpl.class.getName()),
+                                PathElement.create(Location.METHOD, "validateCustomGroup(java.lang.String)"),
+                                PathElement.create(Location.PARAMETER, "value")),
+                        "is blank",
+                        "",
+                        TypeName.create(Validation.String.NotBlank.class));
+
+        result = assertThrows(ValidationException.class, () -> service.validateCustomGroup(null));
+        assertViolation(result,
+                        InterfaceConstrainedServiceImpl.class,
+                        List.of(PathElement.create(Location.TYPE, InterfaceConstrainedServiceImpl.class.getName()),
+                                PathElement.create(Location.METHOD, "validateCustomGroup(java.lang.String)"),
+                                PathElement.create(Location.PARAMETER, "value")),
+                        "is null",
+                        null,
+                        TypeName.create(Validation.NotNull.class));
 
         result = assertThrows(ValidationException.class, () -> service.validateCustomStringList(List.of("bad")));
         assertViolation(result,

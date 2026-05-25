@@ -83,8 +83,7 @@ public class QualifiedProvidersTest {
         assertThat(singletonProviderInstances, hasSize(1));
         assertThat(singletonProviderInstances.getFirst().get(), sameInstance(singletonProvider));
         assertThat(singletonProviderInstances.getFirst().contracts(),
-                   is(Set.of(ResolvedType.create(Object.class),
-                             ResolvedType.create(FirstQualifiedProvider.class))));
+                   is(Set.of(ResolvedType.create(FirstQualifiedProvider.class))));
 
         Lookup perLookupProviderLookup = Lookup.builder()
                 .serviceType(SecondQualifiedProvider.class)
@@ -98,8 +97,7 @@ public class QualifiedProvidersTest {
         assertThat(perLookupProviderInstances, hasSize(1));
         assertThat(perLookupProviderInstances.getFirst().get(), instanceOf(SecondQualifiedProvider.class));
         assertThat(perLookupProviderInstances.getFirst().contracts(),
-                   is(Set.of(ResolvedType.create(QualifiedContract.class),
-                             ResolvedType.create(SecondQualifiedProvider.class))));
+                   is(Set.of(ResolvedType.create(SecondQualifiedProvider.class))));
 
         Lookup providedLookup = Lookup.builder()
                 .addContract(QualifiedContract.class)

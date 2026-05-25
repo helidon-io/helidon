@@ -32,7 +32,7 @@ public interface DescriptorMetadata {
      * @param descriptor       type of the service descriptor (the generated file from {@code helidon-service-codegen})
      * @param weight           weight of the service descriptor
      * @param contracts        contracts the service implements
-     * @param factoryContracts factory contracts the service instance implements
+     * @param factoryContracts contracts that identify the factory provider itself, empty otherwise
      * @return a new descriptor metadata instance
      */
     static DescriptorMetadata create(TypeName descriptor,

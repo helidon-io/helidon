@@ -220,7 +220,7 @@ public class ServiceDescriptorCodegen {
         if (service.isFactory()) {
             if (service.factoryInterceptionWrapper()) {
                 contracts = service.providedDescriptor().contracts();
-                factoryContracts = service.providerFactoryContracts();
+                factoryContracts = service.providerContracts();
             } else {
                 // check if contracts are intercepted
                 var providedElements = service.providedDescriptor().elements();
@@ -228,14 +228,14 @@ public class ServiceDescriptorCodegen {
                 if (providedElements.methodsIntercepted()) {
                     // remove contracts from the original service, service descriptor will only be used to instantiate provider
                     contracts = Set.of();
-                    factoryContracts = service.directProviderContracts();
+                    factoryContracts = service.providerContracts();
                     // generate delegate injection (unless already generated) in current package
                     TypeName delegateType = generateProvidedInterceptionDelegate(roundCtx, service);
                     // then generate a service that injects the original service, and wraps provider method(s) using delegation
                     generateDelegationService(roundCtx, service, delegateType);
                 } else {
                     contracts = service.providedDescriptor().contracts();
-                    factoryContracts = service.serviceDescriptor().contracts();
+                    factoryContracts = service.providerContracts();
                 }
             }
         } else {

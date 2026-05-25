@@ -53,6 +53,8 @@ interface InterfaceConstrainedService {
 
     String validateDuplicate(@Validation.String.NotBlank String value);
 
+    String validateCustomGroup(@CustomGroup String value);
+
     List<String> validateCustomStringList(@CustomConstraint List<String> values);
 
     List<Integer> validateCustomIntegerList(@CustomConstraint List<Integer> values);

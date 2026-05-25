@@ -373,6 +373,9 @@ include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_7, indent=0]
 
 Constraint annotations and `@Validation.Valid` can also be declared on non-private instance methods of service interfaces.
 They are applied when the service instance is obtained from the service registry.
+Constraints declared on matching service interface and implementation methods are combined. Implementation constraints do not
+replace or loosen constraints declared by the service interface, even when both methods use the same constraint type with
+different values.
 The same applies to instances returned by registry-managed service factories, including `Supplier`,
 `Service.ServicesFactory`, `Service.InjectionPointFactory`, and `Service.QualifiedFactory` services.
 This can change runtime behavior for services that already declared interface validation: invalid calls through
