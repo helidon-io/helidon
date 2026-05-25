@@ -358,7 +358,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                     if (!result.isEmpty()) {
                         traceLookup(lookup, "by single contract", result);
                         if (cacheEnabled) {
-                            cache.put(lookup, result);
+                            return cacheLookupResult(lookup, result);
                         }
 
                         return result;
@@ -399,7 +399,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
             }
 
             if (cacheEnabled) {
-                cache.put(lookup, result);
+                result = cacheLookupResult(lookup, result);
             }
 
             traceLookup(lookup, "full result", result);
@@ -519,6 +519,12 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         } finally {
             stateWriteLock.unlock();
         }
+    }
+
+    private List<ServiceInfo> cacheLookupResult(Lookup lookup, List<ServiceInfo> result) {
+        List<ServiceInfo> cachedResult = List.copyOf(result);
+        cache.put(lookup, cachedResult);
+        return cachedResult;
     }
 
     private <T> void doAdd(ResolvedType contract, double weight, T instance, Set<Qualifier> qualifiers) {
