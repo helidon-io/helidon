@@ -35,7 +35,6 @@ module io.helidon.dbclient.mongodb {
 
     requires transitive io.helidon.dbclient;
     requires io.helidon.json;
-    requires transitive jakarta.json;
 
     exports io.helidon.dbclient.mongodb;
 

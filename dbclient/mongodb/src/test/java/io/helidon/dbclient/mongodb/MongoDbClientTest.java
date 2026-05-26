@@ -46,7 +46,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 
-import jakarta.json.Json;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.junit.jupiter.api.BeforeAll;
@@ -462,81 +461,6 @@ class MongoDbClientTest {
         verify(collection).find(captor.capture());
         assertThat(captor.getValue().getInteger("id"), is(25));
         assertThat(captor.getValue().getString("name"), is("Pikachu"));
-    }
-
-    @Test
-    void testJsonProcessingParamsDml() {
-        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
-        jakarta.json.JsonObject parameters = Json.createObjectBuilder()
-                .add("id", 94)
-                .add("name", "Gengar")
-                .build();
-        DbClient dbClient = createClient(collection, null);
-        long result = dbClient.execute()
-                .createInsert("""
-                                      {
-                                        "collection": "foo",
-                                        "operation": "insert",
-                                        "value": {
-                                          "id": $id,
-                                          "name": $name
-                                        }
-                                      }
-                                      """)
-                .params(parameters)
-                .execute();
-
-        assertThat(result, is(1L));
-        assertInsertedPokemon(collection, 94, "Gengar");
-    }
-
-    @Test
-    void testJsonProcessingIndexedParamsDml() {
-        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
-        jakarta.json.JsonArray parameters = Json.createArrayBuilder()
-                .add(129)
-                .add("Magikarp")
-                .build();
-        DbClient dbClient = createClient(collection, null);
-        long result = dbClient.execute()
-                .createInsert("""
-                                      {
-                                        "collection": "foo",
-                                        "operation": "insert",
-                                        "value": {
-                                          "id": ?,
-                                          "name": ?
-                                        }
-                                      }
-                                      """)
-                .params(parameters)
-                .execute();
-
-        assertThat(result, is(1L));
-        assertInsertedPokemon(collection, 129, "Magikarp");
-    }
-
-    @Test
-    void testJsonProcessingAddParamDml() {
-        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
-        jakarta.json.JsonValue parameter = Json.createObjectBuilder()
-                .add("id", 147)
-                .add("name", "Dratini")
-                .build();
-        DbClient dbClient = createClient(collection, null);
-        long result = dbClient.execute()
-                .createInsert("""
-                                      {
-                                        "collection": "foo",
-                                        "operation": "insert",
-                                        "value": ?
-                                      }
-                                      """)
-                .addParam(parameter)
-                .execute();
-
-        assertThat(result, is(1L));
-        assertInsertedPokemon(collection, 147, "Dratini");
     }
 
     @Test

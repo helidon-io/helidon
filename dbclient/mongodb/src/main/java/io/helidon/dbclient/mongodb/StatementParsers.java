@@ -53,9 +53,6 @@ final class StatementParsers {
         if (value instanceof JsonValue jsonValue) {
             return jsonValue.toString();
         }
-        if (value instanceof jakarta.json.JsonValue jsonValue) {
-            return jsonValue.toString();
-        }
         if (value instanceof Map<?, ?> map) {
             return toJsonObject(map);
         }

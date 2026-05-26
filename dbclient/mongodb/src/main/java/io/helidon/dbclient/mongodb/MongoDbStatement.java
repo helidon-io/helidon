@@ -254,8 +254,7 @@ abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBas
                 || value instanceof Boolean
                 || value instanceof Character
                 || value instanceof Enum<?>
-                || value instanceof JsonValue
-                || value instanceof jakarta.json.JsonValue;
+                || value instanceof JsonValue;
     }
 
     private record NamedParameter(Object value, Map<String, Object> flattenedValues) {
