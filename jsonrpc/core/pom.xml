@@ -30,7 +30,6 @@
 
     <properties>
         <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
-        <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
     </properties>
 
     <dependencies>
