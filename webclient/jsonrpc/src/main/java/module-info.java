@@ -33,6 +33,7 @@ module io.helidon.webclient.jsonrpc {
     requires transitive io.helidon.jsonrpc.core;
     requires io.helidon.builder.api;
     requires transitive io.helidon.webclient;
+    requires io.helidon.http.media.json;
     requires io.helidon.common.features.api;
 
     requires static io.helidon.config.metadata;
