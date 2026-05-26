@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,11 @@ class OciAvailabilityDefault implements OciAvailability {
             return false;
         }
 
-        return (Region.getRegionFromImds("http://" + ociConfig.imdsHostName() + OPC_PATH) != null);
+        try {
+            return (Region.getRegionFromImds("http://" + ociConfig.imdsHostName() + OPC_PATH) != null);
+        } catch (RuntimeException runtimeException) {
+            return false;
+        }
     }
 
     static boolean canReach(String address,
@@ -60,7 +64,7 @@ class OciAvailabilityDefault implements OciAvailability {
         try {
             imds = InetAddress.getByName(address);
         } catch (UnknownHostException unknownHostException) {
-            throw new UncheckedIOException(unknownHostException.getMessage(), unknownHostException);
+            return false;
         }
 
         try {

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023 Oracle and/or its affiliates.
+# Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,5 +14,7 @@
 # limitations under the License.
 #
 
-# should resolve to "config-file" as the configured (by probably not available) auth strategy
-auth-strategies: ["config-file", "resource-principal", "config", "instance-principals"]
+# should resolve to "config-file" as the configured but unavailable auth strategy
+auth-strategies: ["config-file"]
+config:
+  path: "./~bogus~"

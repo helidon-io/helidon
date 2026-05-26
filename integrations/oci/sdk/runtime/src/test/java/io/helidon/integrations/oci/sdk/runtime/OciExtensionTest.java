@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,13 @@ class OciExtensionTest {
                 .build();
     }
 
+    static Config createClasspathTestConfig(String configFile) {
+        return Config.builder(ConfigSources.classpath(configFile).optional())
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
+    }
+
     static MapConfigSource.Builder ociAuthConfigStrategies(String strategy,
                                                            String... strategies) {
         Map<String, String> map = new HashMap<>();
@@ -113,6 +120,12 @@ class OciExtensionTest {
             map.put(OciConfig.CONFIG_KEY + ".auth.region", region);
         }
         return ConfigSources.create(map, "config-oci-auth-simple");
+    }
+
+    static MapConfigSource.Builder ociImdsConfig(String hostName) {
+        Map<String, String> map = new HashMap<>();
+        map.put(OciConfig.CONFIG_KEY + ".imds.hostname", hostName);
+        return ConfigSources.create(map, "config-oci-imds");
     }
 
     @BeforeEach
@@ -306,22 +319,15 @@ class OciExtensionTest {
     @Test
     void ociYamlConfigFile() {
         // setup (tear down happens after each run)
-        OciExtension.ociConfigFileName("test-oci-resource-principal.yaml");
+        OciExtension.configSupplier(() -> createClasspathTestConfig("test-oci-resource-principal.yaml"));
 
         OciConfig ociConfig = OciExtension.ociConfig();
         assertThat(ociConfig.authStrategy(),
                    optionalValue(equalTo("resource-principal")));
-
-        // note that we can't actually instantiate these when there is no auth provider configured in the environment
-        IllegalArgumentException e = (IllegalArgumentException) assertThrows(ServiceRegistryException.class,
-                                                                             () -> OciExtension.ociAuthenticationProvider()
-                                                                                     .get()).getCause();
-        assertThat(e.getMessage(),
-                   equalTo(OciAuthenticationDetailsProvider.TAG_RESOURCE_PRINCIPAL_VERSION + " environment variable missing"));
         assertThat(OciExtension.configuredAuthenticationDetailsProvider(false),
                    equalTo(ResourcePrincipalAuthenticationDetailsProvider.class));
 
-        OciExtension.ociConfigFileName("test-oci-config-file.yaml");
+        OciExtension.configSupplier(() -> createClasspathTestConfig("test-oci-config-file.yaml"));
         Supplier<? extends AbstractAuthenticationDetailsProvider> authProvider = OciExtension.ociAuthenticationProvider();
 
         try {

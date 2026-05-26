@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,7 +128,8 @@ class OciAuthenticationDetailsProviderTest {
     void authStrategiesAvailability() {
         Config config = OciExtensionTest.createTestConfig(
                         OciExtensionTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
-                        OciExtensionTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"))
+                        OciExtensionTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"),
+                        OciExtensionTest.ociImdsConfig("metadata.invalid"))
                 .get(OciConfig.CONFIG_KEY);
         OciConfig cfg = OciConfig.create(config);
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.AUTO.isAvailable(cfg),
@@ -141,12 +142,13 @@ class OciAuthenticationDetailsProviderTest {
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.INSTANCE_PRINCIPALS.isAvailable(cfg),
                    is(false));
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.RESOURCE_PRINCIPAL.isAvailable(cfg),
-                   is(false));
+                   is(System.getenv(OciAuthenticationDetailsProvider.TAG_RESOURCE_PRINCIPAL_VERSION) != null));
 
         config = OciExtensionTest.createTestConfig(
                         OciExtensionTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
                         OciExtensionTest.ociAuthConfigFile("./target", null),
-                        OciExtensionTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", "pk", "pkp", null))
+                        OciExtensionTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", "pk", "pkp", null),
+                        OciExtensionTest.ociImdsConfig("metadata.invalid"))
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.AUTO.isAvailable(cfg),
@@ -158,7 +160,7 @@ class OciAuthenticationDetailsProviderTest {
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.INSTANCE_PRINCIPALS.isAvailable(cfg),
                    is(false));
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.RESOURCE_PRINCIPAL.isAvailable(cfg),
-                   is(false));
+                   is(System.getenv(OciAuthenticationDetailsProvider.TAG_RESOURCE_PRINCIPAL_VERSION) != null));
     }
 
     @Test
