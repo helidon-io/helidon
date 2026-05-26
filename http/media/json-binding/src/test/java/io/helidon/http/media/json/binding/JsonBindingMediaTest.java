@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
+import java.util.OptionalLong;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
@@ -32,6 +33,8 @@ import io.helidon.http.HttpException;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.media.EntityWriter;
+import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.json.binding.Json;
@@ -42,6 +45,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
@@ -68,11 +72,13 @@ class JsonBindingMediaTest {
 
         MediaSupport.WriterResponse<Book> res = support.writer(BOOK_TYPE, headers);
         assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
+        EntityWriter<Book> writer = res.supplier().get();
+        assertThat(writer.supportsInstanceWriter(), is(true));
+        assertInstanceWriter(writer.instanceWriter(BOOK_TYPE, new Book("test-title"), headers), "test-title");
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
-        res.supplier().get()
-                .write(BOOK_TYPE, new Book("test-title"), os, headers);
+        writer.write(BOOK_TYPE, new Book("test-title"), os, headers);
 
         assertThat(headers, HttpHeaderMatcher.hasHeader(HeaderValues.CONTENT_TYPE_JSON));
         String result = os.toString(StandardCharsets.UTF_8);
@@ -86,6 +92,24 @@ class JsonBindingMediaTest {
                 .read(BOOK_TYPE, new ByteArrayInputStream(os.toByteArray()), headers);
 
         assertThat(sanity.getTitle(), is("test-title"));
+    }
+
+    @Test
+    void testWriteServerInstance() {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        WritableHeaders<?> responseHeaders = WritableHeaders.create();
+
+        MediaSupport.WriterResponse<Book> res = support.writer(BOOK_TYPE, requestHeaders, responseHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
+        EntityWriter<Book> writer = res.supplier().get();
+
+        assertThat(writer.supportsInstanceWriter(), is(true));
+        assertInstanceWriter(writer.instanceWriter(BOOK_TYPE,
+                                                   new Book("server-title"),
+                                                   requestHeaders,
+                                                   responseHeaders),
+                             "server-title");
+        assertThat(responseHeaders, HttpHeaderMatcher.hasHeader(HeaderValues.CONTENT_TYPE_JSON));
     }
 
     @Test
@@ -228,6 +252,20 @@ class JsonBindingMediaTest {
                 .read(BOOK_TYPE, is, requestHeaders, responseHeaders));
 
         assertThat(httpException.status(), is(Status.UNSUPPORTED_MEDIA_TYPE_415));
+    }
+
+    private void assertInstanceWriter(InstanceWriter writer, String expectedTitle) {
+        byte[] bytes = writer.instanceBytes();
+        assertThat(writer.alwaysInMemory(), is(true));
+        assertThat(writer.contentLength(), is(OptionalLong.of(bytes.length)));
+
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        writer.write(os);
+        assertArrayEquals(bytes, os.toByteArray());
+
+        String result = new String(bytes, StandardCharsets.UTF_8);
+        assertThat(result, containsString("\"title\""));
+        assertThat(result, containsString("\"" + expectedTitle + "\""));
     }
 
     @Json.Entity

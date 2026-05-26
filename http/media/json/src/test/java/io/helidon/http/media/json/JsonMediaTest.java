@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalLong;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
@@ -33,6 +34,8 @@ import io.helidon.http.HttpMediaType;
 import io.helidon.http.HttpMediaTypes;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.media.EntityWriter;
+import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.json.JsonArray;
@@ -43,6 +46,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
@@ -71,11 +75,16 @@ class JsonMediaTest {
 
         MediaSupport.WriterResponse<JsonObject> res = provider.writer(JSON_OBJECT_TYPE, headers);
         assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
+        EntityWriter<JsonObject> writer = res.supplier().get();
+        assertThat(writer.supportsInstanceWriter(), is(true));
+        assertInstanceWriter(writer.instanceWriter(JSON_OBJECT_TYPE,
+                                                   createObject("test-title"),
+                                                   headers),
+                             "test-title");
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
-        res.supplier().get()
-                .write(JSON_OBJECT_TYPE, createObject("test-title"), os, headers);
+        writer.write(JSON_OBJECT_TYPE, createObject("test-title"), os, headers);
 
         assertThat(headers, HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, HttpMediaTypes.JSON.text()));
         String result = os.toString(StandardCharsets.UTF_8);
@@ -89,6 +98,26 @@ class JsonMediaTest {
                 .read(JSON_OBJECT_TYPE, new ByteArrayInputStream(os.toByteArray()), headers);
 
         assertThat(sanity.stringValue("title", "wrong"), is("test-title"));
+    }
+
+    @Test
+    void testWriteServerInstance() {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        WritableHeaders<?> responseHeaders = WritableHeaders.create();
+
+        MediaSupport.WriterResponse<JsonObject> res = provider.writer(JSON_OBJECT_TYPE,
+                                                                      requestHeaders,
+                                                                      responseHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
+        EntityWriter<JsonObject> writer = res.supplier().get();
+
+        assertThat(writer.supportsInstanceWriter(), is(true));
+        assertInstanceWriter(writer.instanceWriter(JSON_OBJECT_TYPE,
+                                                   createObject("server-title"),
+                                                   requestHeaders,
+                                                   responseHeaders),
+                             "server-title");
+        assertThat(responseHeaders, HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, HttpMediaTypes.JSON.text()));
     }
 
     @Test
@@ -244,5 +273,19 @@ class JsonMediaTest {
             objects.add(createObject(title));
         }
         return JsonArray.create(objects);
+    }
+
+    private void assertInstanceWriter(InstanceWriter writer, String expectedTitle) {
+        byte[] bytes = writer.instanceBytes();
+        assertThat(writer.alwaysInMemory(), is(true));
+        assertThat(writer.contentLength(), is(OptionalLong.of(bytes.length)));
+
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        writer.write(os);
+        assertArrayEquals(bytes, os.toByteArray());
+
+        String result = new String(bytes, StandardCharsets.UTF_8);
+        assertThat(result, containsString("\"title\""));
+        assertThat(result, containsString("\"" + expectedTitle + "\""));
     }
 }

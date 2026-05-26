@@ -21,12 +21,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
+import java.util.OptionalLong;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.media.EntityWriter;
+import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.json.JsonGenerator;
@@ -62,11 +65,13 @@ class SmileMediaTest {
 
         MediaSupport.WriterResponse<Book> res = support.writer(BOOK_TYPE, headers);
         assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
+        EntityWriter<Book> writer = res.supplier().get();
+        assertThat(writer.supportsInstanceWriter(), is(true));
+        assertInstanceWriter(writer.instanceWriter(BOOK_TYPE, new Book("test-title"), headers), headers, "test-title");
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
-        res.supplier().get()
-                .write(BOOK_TYPE, new Book("test-title"), os, headers);
+        writer.write(BOOK_TYPE, new Book("test-title"), os, headers);
 
         byte[] expected = concat(SMILE_HEADER_DEFAULT,
                                  new byte[] {(byte) 0xFA, (byte) 0x84, 't', 'i', 't', 'l', 'e', (byte) 0x49,
@@ -82,6 +87,25 @@ class SmileMediaTest {
                 .read(BOOK_TYPE, new ByteArrayInputStream(os.toByteArray()), headers);
 
         assertThat(sanity.getTitle(), is("test-title"));
+    }
+
+    @Test
+    void testWriteServerInstance() {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        WritableHeaders<?> responseHeaders = WritableHeaders.create();
+
+        MediaSupport.WriterResponse<Book> res = support.writer(BOOK_TYPE, requestHeaders, responseHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
+        EntityWriter<Book> writer = res.supplier().get();
+
+        assertThat(writer.supportsInstanceWriter(), is(true));
+        assertInstanceWriter(writer.instanceWriter(BOOK_TYPE,
+                                                   new Book("server-title"),
+                                                   requestHeaders,
+                                                   responseHeaders),
+                             responseHeaders,
+                             "server-title");
+        assertThat(responseHeaders, HttpHeaderMatcher.hasHeader(HeaderValues.CONTENT_TYPE_SMILE));
     }
 
     @Test
@@ -380,6 +404,23 @@ class SmileMediaTest {
         System.arraycopy(first, 0, out, 0, first.length);
         System.arraycopy(second, 0, out, first.length, second.length);
         return out;
+    }
+
+    private void assertInstanceWriter(InstanceWriter writer, WritableHeaders<?> headers, String expectedTitle) {
+        byte[] bytes = writer.instanceBytes();
+        assertThat(writer.alwaysInMemory(), is(true));
+        assertThat(writer.contentLength(), is(OptionalLong.of(bytes.length)));
+
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        writer.write(os);
+        assertArrayEquals(bytes, os.toByteArray());
+
+        Book sanity = support.reader(BOOK_TYPE, headers)
+                .supplier()
+                .get()
+                .read(BOOK_TYPE, new ByteArrayInputStream(bytes), headers);
+
+        assertThat(sanity.getTitle(), is(expectedTitle));
     }
 
     @Json.Entity

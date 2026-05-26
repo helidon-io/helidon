@@ -16,16 +16,21 @@
 
 package io.helidon.http.media.jsonp;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.nio.charset.Charset;
+import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.media.ByteArrayInstanceWriter;
 import io.helidon.http.media.EntityWriterBase;
+import io.helidon.http.media.InstanceWriter;
 
 import jakarta.json.JsonStructure;
 import jakarta.json.JsonWriter;
@@ -38,6 +43,26 @@ class JsonpWriter<T extends JsonStructure> extends EntityWriterBase<T> {
         super(config);
 
         this.writerFactory = config.writerFactory();
+    }
+
+    @Override
+    public boolean supportsInstanceWriter() {
+        return true;
+    }
+
+    @Override
+    public InstanceWriter instanceWriter(GenericType<T> type, T object, WritableHeaders<?> requestHeaders) {
+        return ByteArrayInstanceWriter.create(toBytes(object,
+                                                      clientRequestContentTypeAndCharset(requestHeaders)));
+    }
+
+    @Override
+    public InstanceWriter instanceWriter(GenericType<T> type,
+                                         T object,
+                                         Headers requestHeaders,
+                                         WritableHeaders<?> responseHeaders) {
+        var charset = serverResponseContentTypeAndCharset(requestHeaders, responseHeaders);
+        return ByteArrayInstanceWriter.create(toBytes(object, charset));
     }
 
     @Override
@@ -79,5 +104,16 @@ class JsonpWriter<T extends JsonStructure> extends EntityWriterBase<T> {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private byte[] toBytes(T object, Optional<Charset> charset) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        if (charset.isPresent()) {
+            write(object, new OutputStreamWriter(baos, charset.get()));
+        } else {
+            write(object, baos);
+        }
+        return baos.toByteArray();
     }
 }

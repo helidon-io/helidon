@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.OptionalLong;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
@@ -31,6 +32,8 @@ import io.helidon.http.HttpException;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.media.EntityWriter;
+import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
 
@@ -46,6 +49,7 @@ import static io.helidon.http.media.jsonp.JsonpSupport.JSON_OBJECT_TYPE;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
@@ -72,11 +76,16 @@ class JsonpMediaTest {
 
         MediaSupport.WriterResponse<JsonObject> res = provider.writer(JSON_OBJECT_TYPE, headers);
         assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
+        EntityWriter<JsonObject> writer = res.supplier().get();
+        assertThat(writer.supportsInstanceWriter(), is(true));
+        assertInstanceWriter(writer.instanceWriter(JSON_OBJECT_TYPE,
+                                                   createObject("test-title"),
+                                                   headers),
+                             "test-title");
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
-        res.supplier().get()
-                .write(JSON_OBJECT_TYPE, createObject("test-title"), os, headers);
+        writer.write(JSON_OBJECT_TYPE, createObject("test-title"), os, headers);
 
         assertThat(headers, HttpHeaderMatcher.hasHeader(HeaderValues.CONTENT_TYPE_JSON));
         String result = os.toString(StandardCharsets.UTF_8);
@@ -90,6 +99,26 @@ class JsonpMediaTest {
                 .read(JSON_OBJECT_TYPE, new ByteArrayInputStream(os.toByteArray()), headers);
 
         assertThat(sanity.getString("title"), is("test-title"));
+    }
+
+    @Test
+    void testWriteServerInstance() {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        WritableHeaders<?> responseHeaders = WritableHeaders.create();
+
+        MediaSupport.WriterResponse<JsonObject> res = provider.writer(JSON_OBJECT_TYPE,
+                                                                      requestHeaders,
+                                                                      responseHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
+        EntityWriter<JsonObject> writer = res.supplier().get();
+
+        assertThat(writer.supportsInstanceWriter(), is(true));
+        assertInstanceWriter(writer.instanceWriter(JSON_OBJECT_TYPE,
+                                                   createObject("server-title"),
+                                                   requestHeaders,
+                                                   responseHeaders),
+                             "server-title");
+        assertThat(responseHeaders, HttpHeaderMatcher.hasHeader(HeaderValues.CONTENT_TYPE_JSON));
     }
 
     @Test
@@ -246,5 +275,19 @@ class JsonpMediaTest {
         }
 
         return arrayBuilder.build();
+    }
+
+    private void assertInstanceWriter(InstanceWriter writer, String expectedTitle) {
+        byte[] bytes = writer.instanceBytes();
+        assertThat(writer.alwaysInMemory(), is(true));
+        assertThat(writer.contentLength(), is(OptionalLong.of(bytes.length)));
+
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        writer.write(os);
+        assertArrayEquals(bytes, os.toByteArray());
+
+        String result = new String(bytes, StandardCharsets.UTF_8);
+        assertThat(result, containsString("\"title\""));
+        assertThat(result, containsString("\"" + expectedTitle + "\""));
     }
 }

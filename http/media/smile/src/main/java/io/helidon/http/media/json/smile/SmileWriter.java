@@ -16,6 +16,7 @@
 
 package io.helidon.http.media.json.smile;
 
+import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 
 import io.helidon.common.GenericType;
@@ -24,7 +25,9 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.media.ByteArrayInstanceWriter;
 import io.helidon.http.media.EntityWriterBase;
+import io.helidon.http.media.InstanceWriter;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.json.smile.SmileConfig;
@@ -42,6 +45,26 @@ class SmileWriter<T> extends EntityWriterBase<T> {
         this.smileConfig = config.smileConfig();
         this.contentType = HeaderValues.create(HeaderNames.CONTENT_TYPE,
                                                config.contentType().text());
+    }
+
+    @Override
+    public boolean supportsInstanceWriter() {
+        return true;
+    }
+
+    @Override
+    public InstanceWriter instanceWriter(GenericType<T> type, T object, WritableHeaders<?> requestHeaders) {
+        requestHeaders.setIfAbsent(contentType);
+        return ByteArrayInstanceWriter.create(toBytes(type, object));
+    }
+
+    @Override
+    public InstanceWriter instanceWriter(GenericType<T> type,
+                                         T object,
+                                         Headers requestHeaders,
+                                         WritableHeaders<?> responseHeaders) {
+        responseHeaders.setIfAbsent(contentType);
+        return ByteArrayInstanceWriter.create(toBytes(type, object));
     }
 
     @Override
@@ -64,5 +87,11 @@ class SmileWriter<T> extends EntityWriterBase<T> {
         try (JsonGenerator generator = SmileGenerator.create(out, smileConfig)) {
             jsonBinding.serialize(generator, object, type);
         }
+    }
+
+    private byte[] toBytes(GenericType<T> type, T object) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        write(object, baos, type);
+        return baos.toByteArray();
     }
 }
