@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
+import io.helidon.json.JsonException;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonString;
 import io.helidon.webclient.api.WebClient;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
 class JsonRpcClientTest {
@@ -57,6 +59,12 @@ class JsonRpcClientTest {
             res.header(HeaderValues.CONTENT_TYPE_JSON);
             res.send("""
                     {"jsonrpc":"2.0","id":1,"result":{"status":"RUNNING"}}
+                    """.getBytes(StandardCharsets.UTF_8));
+        });
+        rules.post("/malformed", (req, res) -> {
+            res.header(HeaderValues.CONTENT_TYPE_JSON);
+            res.send("""
+                    {"jsonrpc":"2.0","id":1,"error":
                     """.getBytes(StandardCharsets.UTF_8));
         });
     }
@@ -110,6 +118,21 @@ class JsonRpcClientTest {
             assertThat(res.status(), is(Status.OK_200));
             assertThat(res.rpcId().map(value -> value.asNumber().intValue()), is(Optional.of(1)));
             assertThat(res.result().orElseThrow().getString("status"), is("RUNNING"));
+        }
+    }
+
+    @Test
+    void testMalformedResponseJsonPropagatesFromError() {
+        JsonRpcClient jsonRpcClient = JsonRpcClient.builder()
+                .baseUri(serverUri)
+                .build();
+
+        try (JsonRpcClientResponse res = jsonRpcClient.rpcMethod("start")
+                .path("/malformed")
+                .rpcId(1)
+                .submit()) {
+            assertThat(res.status(), is(Status.OK_200));
+            assertThrows(JsonException.class, res::error);
         }
     }
 }

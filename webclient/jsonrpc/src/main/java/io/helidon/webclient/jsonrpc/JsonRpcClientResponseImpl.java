@@ -65,8 +65,9 @@ class JsonRpcClientResponseImpl implements JsonRpcClientResponse {
 
     @Override
     public Optional<JsonRpcError> error() {
+        JsonObject object = asJsonObject();
         try {
-            return asJsonObject().objectValue("error")
+            return object.objectValue("error")
                     .map(JsonRpcError::create);
         } catch (JsonException e) {
             return Optional.empty();
