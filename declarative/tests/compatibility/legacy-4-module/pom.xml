@@ -22,10 +22,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.helidon.declarative.tests.compatibility</groupId>
-    <artifactId>helidon-declarative-tests-compatibility-4.4.1-module</artifactId>
+    <artifactId>helidon-declarative-tests-compatibility-legacy-4-module</artifactId>
     <version>27.0.0-SNAPSHOT</version>
-    <name>Helidon Declarative Tests Compatibility 4.4.1 Module</name>
-    <description>A Helidon 4.4.1 declarative library module with no application main class</description>
+    <name>Helidon Declarative Tests Compatibility Legacy 4 Module</name>
+    <description>A Helidon 4 declarative library module with no application main class</description>
 
     <properties>
         <helidon.compatibility.version>4.4.1</helidon.compatibility.version>

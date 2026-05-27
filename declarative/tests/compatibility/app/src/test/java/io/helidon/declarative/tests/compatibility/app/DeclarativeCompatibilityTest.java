@@ -20,12 +20,12 @@ import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.declarative.tests.compatibility.v44.LegacyFeatureEndpoint;
-import io.helidon.declarative.tests.compatibility.v44.LegacyRestClient;
-import io.helidon.declarative.tests.compatibility.v44.LegacyScheduledTask;
-import io.helidon.declarative.tests.compatibility.v44.LegacyWsClientEndpoint;
-import io.helidon.declarative.tests.compatibility.v44.LegacyWsClientEndpointFactory;
-import io.helidon.declarative.tests.compatibility.v44.LegacyWsEndpoint;
+import io.helidon.declarative.tests.compatibility.v4.LegacyFeatureEndpoint;
+import io.helidon.declarative.tests.compatibility.v4.LegacyRestClient;
+import io.helidon.declarative.tests.compatibility.v4.LegacyScheduledTask;
+import io.helidon.declarative.tests.compatibility.v4.LegacyWsClientEndpoint;
+import io.helidon.declarative.tests.compatibility.v4.LegacyWsClientEndpointFactory;
+import io.helidon.declarative.tests.compatibility.v4.LegacyWsEndpoint;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
@@ -181,9 +181,9 @@ class DeclarativeCompatibilityTest {
         assertThat(traced.status(), is(Status.OK_200));
         assertThat(traced.entity(), is("traced:compatibility-test"));
 
-        TestSpanExporter.RecordedSpan span = spanExporter.awaitSpan("legacy-4.4.1-traced");
+        TestSpanExporter.RecordedSpan span = spanExporter.awaitSpan("legacy-4-traced");
         assertThat(span.kind(), is(io.helidon.tracing.Span.Kind.SERVER));
-        assertThat(span.tags().get("module"), is("4.4.1"));
+        assertThat(span.tags().get("module"), is("4"));
         assertThat(span.tags().get("userAgent"), is("compatibility-test"));
     }
 
@@ -221,8 +221,8 @@ class DeclarativeCompatibilityTest {
         assertThat(clientEndpoint.lastError(), is((Throwable) null));
         assertThat(clientEndpoint.lastUser(), is("tester"));
         assertThat(clientEndpoint.lastShard(), is(7));
-        assertThat(clientEndpoint.lastText(), is("Hello 4.4.1"));
-        assertThat(clientEndpoint.lastBytes().readString(clientEndpoint.lastBytes().available()), is("Bytes 4.4.1"));
+        assertThat(clientEndpoint.lastText(), is("Hello 4"));
+        assertThat(clientEndpoint.lastBytes().readString(clientEndpoint.lastBytes().available()), is("Bytes 4"));
         assertThat(clientEndpoint.lastClose(), is(new LegacyWsEndpoint.Close("normal", WsCloseCodes.NORMAL_CLOSE)));
 
         assertThat(serverEndpoint.lastError(), is((Throwable) null));
