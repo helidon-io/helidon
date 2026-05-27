@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,13 @@ import io.helidon.common.uri.UriValidationException.Segment;
 public final class UriValidator {
     private static final Pattern IP_V4_PATTERN =
             Pattern.compile("^([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})$");
+    private static final String IP_V4_DEC_OCTET = "([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])";
+    private static final Pattern IP_V4_ADDRESS_PATTERN =
+            Pattern.compile("^" + IP_V4_DEC_OCTET
+                                    + "\\." + IP_V4_DEC_OCTET
+                                    + "\\." + IP_V4_DEC_OCTET
+                                    + "\\." + IP_V4_DEC_OCTET
+                                    + "$");
     private static final boolean[] HEXDIGIT = new boolean[256];
     private static final boolean[] UNRESERVED = new boolean[256];
     private static final boolean[] SUB_DELIMS = new boolean[256];
@@ -333,6 +340,40 @@ public final class UriValidator {
         }
     }
 
+    static String normalizeIpv6Literal(String ipLiteral) {
+        Objects.requireNonNull(ipLiteral);
+        checkNotBlank(Segment.HOST, "IP Literal", ipLiteral, ipLiteral);
+
+        if (ipLiteral.charAt(0) != '[') {
+            throw new UriValidationException(Segment.HOST,
+                                             ipLiteral.toCharArray(),
+                                             "Invalid IP literal, missing square bracket(s)",
+                                             0,
+                                             ipLiteral.charAt(0));
+        }
+        int lastIndex = ipLiteral.length() - 1;
+        if (ipLiteral.charAt(lastIndex) != ']') {
+            throw new UriValidationException(Segment.HOST,
+                                             ipLiteral.toCharArray(),
+                                             "Invalid IP literal, missing square bracket(s)",
+                                             lastIndex,
+                                             ipLiteral.charAt(lastIndex));
+        }
+
+        String host = ipLiteral.substring(1, ipLiteral.length() - 1);
+        checkNotBlank(Segment.HOST, "Host", ipLiteral, host);
+        if (host.charAt(0) == 'v') {
+            throw new UriValidationException(Segment.HOST,
+                                             ipLiteral.toCharArray(),
+                                             "IP Future is not an IPv6 literal");
+        }
+        return formatIpv6(parseIpv6Address(ipLiteral, host));
+    }
+
+    static boolean isIpv4Address(String host) {
+        return IP_V4_ADDRESS_PATTERN.matcher(host).matches();
+    }
+
     /**
      * Validate IPv4 address or a registered name.
      *
@@ -582,6 +623,177 @@ public final class UriValidator {
         if (octetInt > 255) {
             throw new UriValidationException(Segment.HOST, host.toCharArray(), message);
         }
+    }
+
+    private static int[] parseIpv6Address(String ipLiteral, String host) {
+        int[] segments = new int[8];
+        int doubleColon = host.indexOf("::");
+
+        if (doubleColon == -1) {
+            int count = parseIpv6Segments(ipLiteral, host, 0, host.length(), segments, 0);
+            if (count != 8) {
+                throw new UriValidationException(Segment.HOST,
+                                                 ipLiteral.toCharArray(),
+                                                 "Host is not a valid IPv6 literal");
+            }
+            return segments;
+        }
+
+        int leftCount = parseIpv6Segments(ipLiteral, host, 0, doubleColon, segments, 0);
+        int[] right = new int[8];
+        int rightCount = parseIpv6Segments(ipLiteral, host, doubleColon + 2, host.length(), right, 0);
+        int compressedCount = 8 - leftCount - rightCount;
+        if (compressedCount < 1) {
+            throw new UriValidationException(Segment.HOST,
+                                             ipLiteral.toCharArray(),
+                                             "Host is not a valid IPv6 literal");
+        }
+        System.arraycopy(right, 0, segments, leftCount + compressedCount, rightCount);
+        return segments;
+    }
+
+    private static int parseIpv6Segments(String ipLiteral,
+                                         String host,
+                                         int start,
+                                         int end,
+                                         int[] segments,
+                                         int offset) {
+        if (start == end) {
+            return 0;
+        }
+
+        int count = 0;
+        int segmentStart = start;
+        while (segmentStart < end) {
+            int segmentEnd = host.indexOf(':', segmentStart);
+            if (segmentEnd == -1 || segmentEnd > end) {
+                segmentEnd = end;
+            }
+            if (segmentEnd == segmentStart) {
+                throw new UriValidationException(Segment.HOST,
+                                                 ipLiteral.toCharArray(),
+                                                 "Host is not a valid IPv6 literal");
+            }
+            int dot = host.indexOf('.', segmentStart);
+            if (dot != -1 && dot < segmentEnd) {
+                if (segmentEnd != end) {
+                    throw new UriValidationException(Segment.HOST,
+                                                     ipLiteral.toCharArray(),
+                                                     "Host is not a valid IPv6 literal");
+                }
+                count += parseIpv4Tail(ipLiteral, host, segmentStart, segmentEnd, segments, offset + count);
+            } else {
+                if (offset + count >= segments.length) {
+                    throw new UriValidationException(Segment.HOST,
+                                                     ipLiteral.toCharArray(),
+                                                     "Host is not a valid IPv6 literal");
+                }
+                segments[offset + count] = parseIpv6Hextet(ipLiteral, host, segmentStart, segmentEnd);
+                count++;
+            }
+            segmentStart = segmentEnd + 1;
+        }
+        return count;
+    }
+
+    private static int parseIpv4Tail(String ipLiteral, String host, int start, int end, int[] segments, int offset) {
+        if (offset + 1 >= segments.length) {
+            throw new UriValidationException(Segment.HOST,
+                                             ipLiteral.toCharArray(),
+                                             "Host is not a valid IPv6 literal");
+        }
+
+        Matcher matcher = IP_V4_ADDRESS_PATTERN.matcher(host.substring(start, end));
+        if (!matcher.matches()) {
+            throw new UriValidationException(Segment.HOST,
+                                             ipLiteral.toCharArray(),
+                                             "Host IPv6 dual address contains invalid IPv4 address");
+        }
+
+        int first = (Integer.parseInt(matcher.group(1)) << 8) | Integer.parseInt(matcher.group(2));
+        int second = (Integer.parseInt(matcher.group(3)) << 8) | Integer.parseInt(matcher.group(4));
+        segments[offset] = first;
+        segments[offset + 1] = second;
+        return 2;
+    }
+
+    private static int parseIpv6Hextet(String ipLiteral, String host, int start, int end) {
+        if (end - start > 4) {
+            throw new UriValidationException(Segment.HOST,
+                                             ipLiteral.toCharArray(),
+                                             host.substring(start, end).toCharArray(),
+                                             "IPv6 segment has more than 4 chars");
+        }
+
+        int value = 0;
+        for (int i = start; i < end; i++) {
+            char c = host.charAt(i);
+            int digit = hexDigit(c);
+            if (digit == -1) {
+                throw new UriValidationException(Segment.HOST,
+                                                 ipLiteral.toCharArray(),
+                                                 host.substring(start, end).toCharArray(),
+                                                 "IPv6 segment has non hexadecimal char",
+                                                 i - start,
+                                                 c);
+            }
+            value = (value << 4) | digit;
+        }
+        return value;
+    }
+
+    private static int hexDigit(char c) {
+        if (c >= '0' && c <= '9') {
+            return c - '0';
+        }
+        if (c >= 'a' && c <= 'f') {
+            return c - 'a' + 10;
+        }
+        if (c >= 'A' && c <= 'F') {
+            return c - 'A' + 10;
+        }
+        return -1;
+    }
+
+    private static String formatIpv6(int[] segments) {
+        int bestStart = -1;
+        int bestLength = 0;
+        int currentStart = -1;
+        int currentLength = 0;
+
+        for (int i = 0; i < segments.length; i++) {
+            if (segments[i] == 0) {
+                if (currentStart == -1) {
+                    currentStart = i;
+                }
+                currentLength++;
+                continue;
+            }
+            if (currentLength > bestLength && currentLength > 1) {
+                bestStart = currentStart;
+                bestLength = currentLength;
+            }
+            currentStart = -1;
+            currentLength = 0;
+        }
+        if (currentLength > bestLength && currentLength > 1) {
+            bestStart = currentStart;
+            bestLength = currentLength;
+        }
+
+        StringBuilder result = new StringBuilder(39);
+        for (int i = 0; i < segments.length; i++) {
+            if (i == bestStart) {
+                result.append("::");
+                i += bestLength - 1;
+                continue;
+            }
+            if (i > 0 && i != bestStart + bestLength) {
+                result.append(':');
+            }
+            result.append(Integer.toHexString(segments[i]));
+        }
+        return result.toString();
     }
 
     private static void validateIpFuture(String ipLiteral, String host) {
