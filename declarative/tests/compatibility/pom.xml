@@ -33,7 +33,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>legacy-4.4.1-module</module>
+        <module>legacy-4-module</module>
         <module>app</module>
     </modules>
 </project>

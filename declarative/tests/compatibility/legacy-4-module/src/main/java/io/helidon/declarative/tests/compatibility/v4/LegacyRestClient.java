@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.declarative.tests.compatibility.v44;
+package io.helidon.declarative.tests.compatibility.v4;
 
 import java.util.Optional;
 

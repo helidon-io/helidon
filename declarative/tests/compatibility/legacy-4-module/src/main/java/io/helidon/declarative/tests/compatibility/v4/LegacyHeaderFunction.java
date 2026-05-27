@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.declarative.tests.compatibility.v44;
+package io.helidon.declarative.tests.compatibility.v4;
 
 import java.util.Optional;
 
@@ -28,7 +28,7 @@ import io.helidon.service.registry.Service;
 @Service.Singleton
 @Service.Named(LegacyHeaderFunction.SERVICE_NAME)
 public class LegacyHeaderFunction implements Http.HeaderFunction {
-    static final String SERVICE_NAME = "legacy-4.4.1-header-function";
+    static final String SERVICE_NAME = "legacy-4-header-function";
     static final String HEADER_NAME = "X-Legacy-Computed";
 
     @Override

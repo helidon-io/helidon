@@ -17,7 +17,7 @@
 @SuppressWarnings({"helidon:api:incubating", "requires-automatic"})
 module io.helidon.declarative.tests.compatibility.app {
     requires io.helidon.config.yaml;
-    requires io.helidon.declarative.tests.compatibility.v44;
+    requires io.helidon.declarative.tests.compatibility.v4;
     requires io.helidon.faulttolerance;
     requires io.helidon.http;
     requires io.helidon.http.media.json.binding;

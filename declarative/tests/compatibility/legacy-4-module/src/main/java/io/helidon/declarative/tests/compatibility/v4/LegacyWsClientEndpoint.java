@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.declarative.tests.compatibility.v44;
+package io.helidon.declarative.tests.compatibility.v4;
 
 import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
@@ -47,9 +47,9 @@ public class LegacyWsClientEndpoint {
         lastUser.set(user);
         lastShard.set(shard);
         session.send("Hello", false);
-        session.send(" 4.4.1", true);
+        session.send(" 4", true);
         session.send(BufferData.create("Bytes".getBytes()), false);
-        session.send(BufferData.create(" 4.4.1".getBytes()), true);
+        session.send(BufferData.create(" 4".getBytes()), true);
     }
 
     @WebSocket.OnMessage

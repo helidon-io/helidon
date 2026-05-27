@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.declarative.tests.compatibility.v44;
+package io.helidon.declarative.tests.compatibility.v4;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -166,8 +166,8 @@ public class LegacyFeatureEndpoint implements LegacyHttpApi {
     @Http.GET
     @Http.Path("/tracing/greet")
     @Http.Produces(MediaTypes.TEXT_PLAIN_VALUE)
-    @Tracing.Traced(value = "legacy-4.4.1-traced",
-                    tags = @Tracing.Tag(key = "module", value = "4.4.1"),
+    @Tracing.Traced(value = "legacy-4-traced",
+                    tags = @Tracing.Tag(key = "module", value = "4"),
                     kind = Span.Kind.SERVER)
     public String traced(@Http.HeaderParam(HeaderNames.USER_AGENT_NAME) @Tracing.ParamTag String userAgent) {
         return "traced:" + userAgent;
