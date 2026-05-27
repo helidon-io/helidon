@@ -17,7 +17,6 @@ package io.helidon.dbclient.mongodb;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,9 +33,6 @@ import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.DbStatementBase;
 import io.helidon.dbclient.DbStatementParameters;
 import io.helidon.dbclient.DbStatementType;
-import io.helidon.json.JsonArray;
-import io.helidon.json.JsonNull;
-import io.helidon.json.JsonObject;
 import io.helidon.json.JsonValue;
 
 import com.mongodb.client.MongoDatabase;
@@ -128,20 +124,6 @@ abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBas
         return statement;
     }
 
-    @Override
-    public S params(Object... parameters) {
-        if (parameters.length == 1) {
-            Object parameter = parameters[0];
-            if (parameter instanceof JsonObject jsonObject) {
-                return paramsJsonObject(jsonObject);
-            }
-            if (parameter instanceof JsonArray jsonArray) {
-                return paramsJsonArray(jsonArray);
-            }
-        }
-        return params(Arrays.asList(parameters));
-    }
-
     private Map<String, Object> prepareNamedParameters(DbNamedStatementParameters named) {
         Map<String, Object> params = new LinkedHashMap<>(named.parameters().size());
         Map<String, Object> flattened = new LinkedHashMap<>();
@@ -210,17 +192,6 @@ abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBas
             normalized.add(normalizeParameter(Array.get(value, i)));
         }
         return normalized;
-    }
-
-    private S paramsJsonObject(JsonObject parameters) {
-        parameters.keysAsStrings()
-                .forEach(name -> addParam(name, parameters.value(name).orElse(JsonNull.instance())));
-        return identity();
-    }
-
-    private S paramsJsonArray(JsonArray parameters) {
-        parameters.values().forEach(this::addParam);
-        return identity();
     }
 
     @SuppressWarnings("unchecked")

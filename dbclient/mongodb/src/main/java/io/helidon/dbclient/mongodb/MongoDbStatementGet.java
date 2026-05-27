@@ -62,12 +62,6 @@ public class MongoDbStatementGet extends MongoDbStatement<DbStatementGet> implem
     }
 
     @Override
-    public MongoDbStatementGet params(Object... parameters) {
-        theQuery.params(parameters);
-        return this;
-    }
-
-    @Override
     public MongoDbStatementGet namedParam(Object parameters) {
         theQuery.namedParam(parameters);
         return this;
