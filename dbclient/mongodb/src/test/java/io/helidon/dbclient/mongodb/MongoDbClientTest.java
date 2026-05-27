@@ -34,11 +34,19 @@ import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.spi.DbMapperProvider;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonNumber;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonString;
 
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
+
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -286,6 +294,134 @@ class MongoDbClientTest {
         assertThat(team.get(0).getString("name"), is("Bulbasaur"));
         assertThat(team.get(1).getInteger("id"), is(4));
         assertThat(team.get(1).getString("name"), is("Charmander"));
+    }
+
+    @Test
+    void testHelidonJsonNamedParamDml() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        JsonObject pokemon = JsonObject.builder()
+                .set("id", 54)
+                .set("name", "Psyduck")
+                .build();
+        MongoDbClient dbClient = createClient(collection, null);
+        long result = dbClient.execute()
+                .createInsert("""
+                                      {
+                                        "collection": "foo",
+                                        "operation": "insert",
+                                        "value": { "pokemon": $pokemon }
+                                      }
+                                      """)
+                .addParam("pokemon", pokemon)
+                .execute();
+
+        assertThat(result, is(1L));
+
+        ArgumentCaptor<Document> captor = ArgumentCaptor.forClass(Document.class);
+        verify(collection).insertOne(captor.capture());
+        Document inserted = captor.getValue().get("pokemon", Document.class);
+        assertThat(inserted.getInteger("id"), is(54));
+        assertThat(inserted.getString("name"), is("Psyduck"));
+    }
+
+    @Test
+    void testHelidonJsonAddParamDml() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        JsonObject pokemon = JsonObject.builder()
+                .set("id", 175)
+                .set("name", "Togepi")
+                .build();
+        MongoDbClient dbClient = createClient(collection, null);
+        long result = dbClient.execute()
+                .createInsert("""
+                                      {
+                                        "collection": "foo",
+                                        "operation": "insert",
+                                        "value": ?
+                                      }
+                                      """)
+                .addParam(pokemon)
+                .execute();
+
+        assertThat(result, is(1L));
+        assertInsertedPokemon(collection, 175, "Togepi");
+    }
+
+    @Test
+    void testHelidonJsonParamsObjectDml() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        JsonObject pokemon = JsonObject.builder()
+                .set("id", 143)
+                .set("name", "Snorlax")
+                .build();
+        MongoDbClient dbClient = createClient(collection, null);
+        long result = dbClient.execute()
+                .createInsert("""
+                                      {
+                                        "collection": "foo",
+                                        "operation": "insert",
+                                        "value": ?
+                                      }
+                                      """)
+                .params(pokemon)
+                .execute();
+
+        assertThat(result, is(1L));
+        assertInsertedPokemon(collection, 143, "Snorlax");
+    }
+
+    @Test
+    void testHelidonJsonParamsArrayDml() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        JsonArray team = JsonArray.create(
+                JsonNumber.create(25),
+                JsonString.create("Pikachu"));
+        MongoDbClient dbClient = createClient(collection, null);
+        long result = dbClient.execute()
+                .createInsert("""
+                                      {
+                                        "collection": "foo",
+                                        "operation": "insert",
+                                        "value": { "team": ? }
+                                      }
+                                      """)
+                .params(team)
+                .execute();
+
+        assertThat(result, is(1L));
+
+        ArgumentCaptor<Document> captor = ArgumentCaptor.forClass(Document.class);
+        verify(collection).insertOne(captor.capture());
+        assertThat(captor.getValue().getList("team", Object.class), is(List.of(25, "Pikachu")));
+    }
+
+    @Test
+    void testHelidonJsonParamsObjectGet() {
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        FindIterable<Document> finder = Mockito.mock(FindIterable.class);
+        MongoCursor<Document> cursor = Mockito.mock(MongoCursor.class);
+        when(collection.find(any(Bson.class))).thenReturn(finder);
+        when(finder.iterator()).thenReturn(cursor);
+        when(cursor.hasNext()).thenReturn(false);
+        JsonObject query = JsonObject.builder()
+                .set("id", 133)
+                .build();
+        Optional<DbRow> result = createClient(collection, null).execute()
+                .createGet("""
+                                   {
+                                     "collection": "foo",
+                                     "operation": "query",
+                                     "query": ?
+                                   }
+                                   """)
+                .params(query)
+                .execute();
+
+        assertThat(result.isEmpty(), is(true));
+
+        ArgumentCaptor<Document> captor = ArgumentCaptor.forClass(Document.class);
+        verify(collection).find(captor.capture());
+        assertThat(captor.getValue().getInteger("id"), is(133));
     }
 
     @Test

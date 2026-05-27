@@ -33,9 +33,9 @@ import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.DbStatementBase;
 import io.helidon.dbclient.DbStatementParameters;
 import io.helidon.dbclient.DbStatementType;
+import io.helidon.json.JsonValue;
 
 import com.mongodb.client.MongoDatabase;
-import jakarta.json.Json;
 import org.bson.Document;
 
 import static io.helidon.dbclient.mongodb.MongoDbStatement.MongoOperation.COMMAND;
@@ -56,7 +56,7 @@ abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBas
     /**
      * Empty JSON object.
      */
-    static final Document EMPTY = Document.parse(Json.createObjectBuilder().build().toString());
+    static final Document EMPTY = new Document();
 
     /**
      * Operation JSON parameter name.
@@ -225,7 +225,7 @@ abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBas
                 || value instanceof Boolean
                 || value instanceof Character
                 || value instanceof Enum<?>
-                || value instanceof jakarta.json.JsonValue;
+                || value instanceof JsonValue;
     }
 
     private record NamedParameter(Object value, Map<String, Object> flattenedValues) {

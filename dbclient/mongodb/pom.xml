@@ -38,12 +38,12 @@
             <artifactId>helidon-common-mapper</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongodb-driver-sync</artifactId>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.parsson</groupId>
-            <artifactId>parsson</artifactId>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>
