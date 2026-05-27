@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -128,53 +129,91 @@ class FlowControlTest {
         AtomicLong sentData = new AtomicLong();
 
         var client = Http2Client.builder()
+                // make sure we are not impacted by a connection that is closed by another test
+                .shareConnectionCache(false)
                 .protocolConfig(http2 -> http2.priorKnowledge(true)
                         .initialWindowSize(WindowSize.DEFAULT_WIN_SIZE)
                 )
                 .baseUri("http://localhost:" + server.port())
                 .build();
 
-        var req = client.method(PUT)
-                .path("/flow-control");
+        try {
+            var req = client.method(PUT)
+                    .path("/flow-control");
 
-        CompletableFuture<String> responded = new CompletableFuture<>();
+            Future<String> responseTask = exec.submit(() -> {
+                try (var res = req
+                        .outputStream(
+                                out -> {
+                                    for (int i = 0; i < 5; i++) {
+                                        byte[] bytes = DATA_10_K.getBytes();
+                                        LOGGER.log(DEBUG,
+                                                   () -> String.format("CL: Sending %d bytes", bytes.length));
+                                        out.write(bytes);
+                                        sentData.updateAndGet(o -> o + bytes.length);
+                                    }
+                                    for (int i = 0; i < 5; i++) {
+                                        byte[] bytes = DATA_10_K.toUpperCase().getBytes();
+                                        LOGGER.log(DEBUG,
+                                                   () -> String.format("CL: Sending %d bytes", bytes.length));
+                                        out.write(bytes);
+                                        sentData.updateAndGet(o -> o + bytes.length);
+                                    }
+                                    out.close();
+                                }
+                        )) {
+                    return res.as(String.class);
+                }
+            });
 
-        exec.submit(() -> {
-            try (var res = req
-                    .outputStream(
-                            out -> {
-                                for (int i = 0; i < 5; i++) {
-                                    byte[] bytes = DATA_10_K.getBytes();
-                                    LOGGER.log(DEBUG,
-                                               () -> String.format("CL: Sending %d bytes", bytes.length));
-                                    out.write(bytes);
-                                    sentData.updateAndGet(o -> o + bytes.length);
-                                }
-                                for (int i = 0; i < 5; i++) {
-                                    byte[] bytes = DATA_10_K.toUpperCase().getBytes();
-                                    LOGGER.log(DEBUG,
-                                               () -> String.format("CL: Sending %d bytes", bytes.length));
-                                    out.write(bytes);
-                                    sentData.updateAndGet(o -> o + bytes.length);
-                                }
-                                out.close();
-                            }
-                    )) {
-                responded.complete(res.as(String.class));
+            awaitFirstBodyRead(responseTask, sentData);
+            // Now client can't send more, because server didn't ask for it (Window update)
+            // Wait a bit if more than allowed is sent
+            Thread.sleep(300);
+            // Depends on the win update strategy, can't be full 100k
+            assertThat(sentData.get(), is(70_000L));
+            // Let server ask for the rest of the data
+            flowControlServerLatch.complete(null);
+            String response = responseTask.get(TIMEOUT_SEC, TimeUnit.SECONDS);
+            assertThat(sentData.get(), is(100_000L));
+            assertThat(response, is(EXPECTED));
+        } finally {
+            flowControlServerLatch.complete(null);
+            client.closeResource();
+        }
+    }
+
+    private static void awaitFirstBodyRead(Future<String> requestTask, AtomicLong sentData)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TIMEOUT_SEC);
+        while (true) {
+            if (flowControlClientLatch.isDone()) {
+                flowControlClientLatch.get(0, TimeUnit.SECONDS);
+                return;
             }
-        });
+            if (requestTask.isDone()) {
+                requestTask.get(0, TimeUnit.SECONDS);
+                throw new AssertionError("Client request completed before server read the first body chunk; sentData="
+                                                 + sentData.get());
+            }
 
-        flowControlClientLatch.get(TIMEOUT_SEC, TimeUnit.SECONDS);
-        // Now client can't send more, because server didn't ask for it (Window update)
-        // Wait a bit if more than allowed is sent
-        Thread.sleep(300);
-        // Depends on the win update strategy, can't be full 100k
-        assertThat(sentData.get(), is(70_000L));
-        // Let server ask for the rest of the data
-        flowControlServerLatch.complete(null);
-        String response = responded.get(TIMEOUT_SEC, TimeUnit.SECONDS);
-        assertThat(sentData.get(), is(100_000L));
-        assertThat(response, is(EXPECTED));
+            long remainingNanos = deadline - System.nanoTime();
+            if (remainingNanos <= 0) {
+                if (requestTask.isDone()) {
+                    requestTask.get(0, TimeUnit.SECONDS);
+                }
+                throw new TimeoutException("Timed out waiting for server to read the first body chunk; sentData="
+                                                   + sentData.get() + ", requestDone=" + requestTask.isDone());
+            }
+
+            long waitMillis = Math.clamp(TimeUnit.NANOSECONDS.toMillis(remainingNanos), 1, 100);
+            try {
+                flowControlClientLatch.get(waitMillis, TimeUnit.MILLISECONDS);
+                return;
+            } catch (TimeoutException e) {
+                // Poll again so a failed request task is reported before the full test timeout.
+            }
+        }
     }
 
     @Test
