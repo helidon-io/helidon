@@ -54,6 +54,7 @@
         <module>websocket</module>
         <module>cors</module>
         <module>grpc</module>
+        <module>compatibility</module>
     </modules>
 
 </project>
