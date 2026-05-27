@@ -16,18 +16,22 @@
 
 package io.helidon.http.media.json;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.media.ByteArrayInstanceWriter;
 import io.helidon.http.media.EntityWriterBase;
+import io.helidon.http.media.InstanceWriter;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonValue;
 
@@ -37,6 +41,26 @@ class JsonValueWriter<T extends JsonValue> extends EntityWriterBase<T> {
 
     JsonValueWriter(JsonSupportConfig config) {
         super(config);
+    }
+
+    @Override
+    public boolean supportsInstanceWriter() {
+        return true;
+    }
+
+    @Override
+    public InstanceWriter instanceWriter(GenericType<T> type, T object, WritableHeaders<?> requestHeaders) {
+        return ByteArrayInstanceWriter.create(toBytes(object,
+                                                      clientRequestContentTypeAndCharset(requestHeaders)));
+    }
+
+    @Override
+    public InstanceWriter instanceWriter(GenericType<T> type,
+                                         T object,
+                                         Headers requestHeaders,
+                                         WritableHeaders<?> responseHeaders) {
+        var charset = serverResponseContentTypeAndCharset(requestHeaders, responseHeaders);
+        return ByteArrayInstanceWriter.create(toBytes(object, charset));
     }
 
     @Override
@@ -90,5 +114,19 @@ class JsonValueWriter<T extends JsonValue> extends EntityWriterBase<T> {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private byte[] toBytes(T object, Optional<Charset> charset) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Optional<OutputStreamWriter> writer = charset
+                .filter(not(StandardCharsets.UTF_8::equals)) // We don't need writer to be applied for UTF-8
+                .map(it -> new OutputStreamWriter(baos, it));
+
+        if (writer.isPresent()) {
+            write(object, writer.get());
+        } else {
+            write(object, baos);
+        }
+        return baos.toByteArray();
     }
 }

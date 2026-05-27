@@ -16,18 +16,22 @@
 
 package io.helidon.http.media.json.binding;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.media.ByteArrayInstanceWriter;
 import io.helidon.http.media.EntityWriterBase;
+import io.helidon.http.media.InstanceWriter;
 import io.helidon.json.binding.JsonBinding;
 
 import static java.util.function.Predicate.not;
@@ -39,6 +43,27 @@ class JsonBindingWriter<T> extends EntityWriterBase<T> {
     JsonBindingWriter(JsonBindingSupportConfig config, JsonBinding jsonBinding) {
         super(config);
         this.jsonBinding = jsonBinding;
+    }
+
+    @Override
+    public boolean supportsInstanceWriter() {
+        return true;
+    }
+
+    @Override
+    public InstanceWriter instanceWriter(GenericType<T> type, T object, WritableHeaders<?> requestHeaders) {
+        return ByteArrayInstanceWriter.create(toBytes(type,
+                                                      object,
+                                                      clientRequestContentTypeAndCharset(requestHeaders)));
+    }
+
+    @Override
+    public InstanceWriter instanceWriter(GenericType<T> type,
+                                         T object,
+                                         Headers requestHeaders,
+                                         WritableHeaders<?> responseHeaders) {
+        var charset = serverResponseContentTypeAndCharset(requestHeaders, responseHeaders);
+        return ByteArrayInstanceWriter.create(toBytes(type, object, charset));
     }
 
     @Override
@@ -85,5 +110,15 @@ class JsonBindingWriter<T> extends EntityWriterBase<T> {
         }  catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private byte[] toBytes(GenericType<T> type, T object, Optional<Charset> charset) {
+        if (charset.isEmpty() || StandardCharsets.UTF_8.equals(charset.get())) {
+            return jsonBinding.serializeToBytes(object, type);
+        }
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        write(type, object, new OutputStreamWriter(baos, charset.get()));
+        return baos.toByteArray();
     }
 }

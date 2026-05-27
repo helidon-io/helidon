@@ -16,6 +16,7 @@
 
 package io.helidon.http.media.jackson;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -23,11 +24,15 @@ import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.nio.charset.Charset;
+import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.media.ByteArrayInstanceWriter;
 import io.helidon.http.media.EntityWriterBase;
+import io.helidon.http.media.InstanceWriter;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,6 +44,27 @@ class JacksonWriter<T> extends EntityWriterBase<T> {
     JacksonWriter(JacksonSupportConfig config, ObjectMapper objectMapper) {
         super(config);
         this.objectMapper = objectMapper;
+    }
+
+    @Override
+    public boolean supportsInstanceWriter() {
+        return true;
+    }
+
+    @Override
+    public InstanceWriter instanceWriter(GenericType<T> type, T object, WritableHeaders<?> requestHeaders) {
+        return ByteArrayInstanceWriter.create(toBytes(type,
+                                                      object,
+                                                      clientRequestContentTypeAndCharset(requestHeaders)));
+    }
+
+    @Override
+    public InstanceWriter instanceWriter(GenericType<T> type,
+                                         T object,
+                                         Headers requestHeaders,
+                                         WritableHeaders<?> responseHeaders) {
+        var charset = serverResponseContentTypeAndCharset(requestHeaders, responseHeaders);
+        return ByteArrayInstanceWriter.create(toBytes(type, object, charset));
     }
 
     @Override
@@ -99,5 +125,20 @@ class JacksonWriter<T> extends EntityWriterBase<T> {
         } else {
             return objectMapper.writerFor(type.rawType());
         }
+    }
+
+    private byte[] toBytes(GenericType<T> type, T object, Optional<Charset> charset) {
+        if (charset.isEmpty()) {
+            try {
+                return writer(type).writeValueAsBytes(object);
+            } catch (IOException e) {
+                throw new JacksonRuntimeException("Failed to serialize to JSON: " + type, e);
+            }
+        }
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        write(type, object, new OutputStreamWriter(baos, charset.get()));
+        return baos.toByteArray();
     }
 }

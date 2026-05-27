@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -49,6 +50,12 @@ class JsonbTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
         router.get("/jsonb", (req, res) -> res.send(MESSAGE))
+                .post("/jsonb/request-framing", (req, res) -> {
+                    req.content().as(JsonbMessage.class);
+                    long contentLength = req.headers().contentLength().orElse(-1);
+                    boolean transferEncoding = req.headers().contains(HeaderNames.TRANSFER_ENCODING);
+                    res.send(new JsonbMessage(contentLength + ":" + transferEncoding));
+                })
                 .post("/jsonb", (req, res) -> {
                     JsonbMessage message = req.content().as(JsonbMessage.class);
                     res.send(new JsonbMessage(message.message));
@@ -65,6 +72,12 @@ class JsonbTest {
                 () -> assertThat("Should contain content type application/json",
                                  response.headers().contentType(),
                                  is(Optional.of(HttpMediaType.create(MediaTypes.APPLICATION_JSON)))),
+                () -> assertThat("Should contain content length",
+                                 response.headers().contentLength().isPresent(),
+                                 is(true)),
+                () -> assertThat("Should not use chunked encoding",
+                                 response.headers().contains(HeaderNames.TRANSFER_ENCODING),
+                                 is(false)),
                 () -> assertThat(response.as(JsonbMessage.class), is(MESSAGE)));
     }
 
@@ -80,6 +93,22 @@ class JsonbTest {
                                  response.headers().contentType(),
                                  is(Optional.of(HttpMediaType.create(MediaTypes.APPLICATION_JSON)))),
                 () -> assertThat(response.as(JsonbMessage.class), is(MESSAGE)));
+    }
+
+    @Test
+    void testPostUsesContentLength() {
+        Http1ClientResponse response = client.method(Method.POST)
+                .uri("/jsonb/request-framing")
+                .submit(MESSAGE);
+
+        String[] framing = response.as(JsonbMessage.class).message.split(":");
+
+        assertAll(
+                () -> assertThat(response.status(), is(Status.OK_200)),
+                () -> assertThat(Long.parseLong(framing[0]) > 0, is(true)),
+                () -> assertThat("Should not use chunked encoding",
+                                 Boolean.parseBoolean(framing[1]),
+                                 is(false)));
     }
 
     public static class JsonbMessage {
