@@ -29,12 +29,12 @@
 
     <artifactId>helidon-declarative-tests-compatibility-app</artifactId>
     <name>Helidon Declarative Tests Compatibility App</name>
-    <description>Helidon 27 application consuming a Helidon 4.4.1 declarative library</description>
+    <description>Helidon 27 application consuming a legacy Helidon 4 declarative library</description>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.declarative.tests.compatibility</groupId>
-            <artifactId>helidon-declarative-tests-compatibility-4.4.1-module</artifactId>
+            <artifactId>helidon-declarative-tests-compatibility-legacy-4-module</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

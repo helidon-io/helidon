@@ -15,7 +15,7 @@
  */
 
 @SuppressWarnings("helidon:api:incubating")
-module io.helidon.declarative.tests.compatibility.v44 {
+module io.helidon.declarative.tests.compatibility.v4 {
     requires io.helidon.common;
     requires io.helidon.common.buffers;
     requires io.helidon.common.media.type;
@@ -34,5 +34,5 @@ module io.helidon.declarative.tests.compatibility.v44 {
     requires io.helidon.webserver.websocket;
     requires io.helidon.websocket;
 
-    exports io.helidon.declarative.tests.compatibility.v44;
+    exports io.helidon.declarative.tests.compatibility.v4;
 }
