@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.tests.integration.oidc;
 
+import io.helidon.microprofile.testing.junit5.AddConfig;
+
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Form;
@@ -25,7 +27,6 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.tests.integration.oidc.TestResource.EXPECTED_POST_LOGOUT_TEST_MESSAGE;
 import static io.helidon.tests.integration.oidc.TestResource.EXPECTED_TEST_MESSAGE;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class CookieBasedLoginIT extends CommonLoginBase {
@@ -61,42 +62,41 @@ class CookieBasedLoginIT extends CommonLoginBase {
     }
 
     @Test
-    public void testFallbackToDefaultIfTenantNotFound(WebTarget webTarget) {
+    public void testUnknownTenantRejected(WebTarget webTarget) {
+        try (Response response = client.target(webTarget.getUri()).path("/test")
+                .request()
+                .header("helidon-tenant", "nonexistent")
+                .get()) {
+            assertThat(response.getStatus(), is(Response.Status.UNAUTHORIZED.getStatusCode()));
+        }
+    }
+
+    @Test
+    @AddConfig(key = "security.providers.1.oidc.fallback-to-default-tenant-enabled", value = "true")
+    public void testUnknownTenantFallbackToDefaultEnabled(WebTarget webTarget) {
         String formUri;
 
-        //greet endpoint is protected, and we need to get JWT token out of the Keycloak. We will get redirected to the Keycloak.
         try (Response response = client.target(webTarget.getUri()).path("/test")
                 .request()
                 .header("helidon-tenant", "nonexistent")
                 .get()) {
             assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
-            //We need to get form URI out of the HTML
             formUri = getRequestUri(response.readEntity(String.class));
         }
 
-        //This user is defined in realm Test 1 which uses tenant "localhost",
-        //tenant which does not exist falls back to the default configuration.
-        //Default tenant uses realm Test 2, and it only has defined userone and usertwo.
-        Entity<Form> form = Entity.form(new Form().param("username", "userthree")
+        Entity<Form> form = Entity.form(new Form().param("username", "userone")
                                                 .param("password", "12345")
                                                 .param("credentialId", ""));
         try (Response response = client.target(formUri).request().post(form)) {
-            //Keycloak for some reason sends 200 OK even if login failed
-            assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
-            //Now we should not have our target endpoint response since authentication failed
-            String content = response.readEntity(String.class);
-            assertThat(content, not(EXPECTED_TEST_MESSAGE));
-            //We need to update form uri, since it has changed due to unsuccessful login
-            formUri = getRequestUri(content);
-        }
-
-        //Sending authentication to the Keycloak and getting redirected back to the running Helidon app.
-        form = Entity.form(new Form().param("username", "userone")
-                                   .param("password", "12345")
-                                   .param("credentialId", ""));
-        try (Response response = client.target(formUri).request().post(form)) {
             assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
             assertThat(response.readEntity(String.class), is(EXPECTED_TEST_MESSAGE));
+        }
+
+        try (Response response = client.target(webTarget.getUri()).path("/oidc/logout")
+                .request()
+                .get()) {
+            assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+            assertThat(response.readEntity(String.class), is(EXPECTED_POST_LOGOUT_TEST_MESSAGE));
         }
     }
 

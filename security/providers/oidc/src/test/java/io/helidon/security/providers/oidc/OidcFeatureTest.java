@@ -53,6 +53,7 @@ import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.security.providers.oidc.common.TenantConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
@@ -464,17 +465,32 @@ class OidcFeatureTest {
                 .start();
 
         try {
-            OidcConfig config = OidcConfig.builder()
+            URI identityUri = URI.create("http://localhost:" + tokenServer.port() + "/identity");
+            URI tokenEndpointUri = URI.create("http://localhost:" + tokenServer.port() + "/token");
+            URI authorizationEndpointUri = URI.create("http://localhost:" + tokenServer.port() + "/authorize");
+            OidcConfig.Builder builder = OidcConfig.builder()
                     .clientId("id")
                     .clientSecret("secret")
-                    .identityUri(URI.create("http://localhost:" + tokenServer.port() + "/identity"))
-                    .tokenEndpointUri(URI.create("http://localhost:" + tokenServer.port() + "/token"))
-                    .authorizationEndpointUri(URI.create("http://localhost:" + tokenServer.port() + "/authorize"))
+                    .identityUri(identityUri)
+                    .tokenEndpointUri(tokenEndpointUri)
+                    .authorizationEndpointUri(authorizationEndpointUri)
                     .signJwk(JwkKeys.builder().build())
                     .oidcMetadataWellKnown(false)
                     .useParam(useParam)
-                    .useCookie(false)
-                    .build();
+                    .useCookie(false);
+            if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+                builder.addTenantConfig(TenantConfig.tenantBuilder()
+                                                .name(tenantName)
+                                                .clientId("id")
+                                                .clientSecret("secret")
+                                                .identityUri(identityUri)
+                                                .tokenEndpointUri(tokenEndpointUri)
+                                                .authorizationEndpointUri(authorizationEndpointUri)
+                                                .signJwk(JwkKeys.builder().build())
+                                                .oidcMetadataWellKnown(false)
+                                                .build());
+            }
+            OidcConfig config = builder.build();
             WebServer callbackServer = WebServer.builder()
                     .host("localhost")
                     .routing(routing -> OidcFeature.create(config).setup(routing))

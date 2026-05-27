@@ -49,3 +49,10 @@ security:
     client-secret: "my-well-known-secret"
     oidc-metadata-well-known: false
     redirect-attempt-counter-strategy: COOKIE
+
+  oidc-fallback-to-default-tenant:
+    identity-uri: "https://my.identity"
+    client-id: "my-id"
+    client-secret: "my-well-known-secret"
+    oidc-metadata-well-known: false
+    fallback-to-default-tenant-enabled: true

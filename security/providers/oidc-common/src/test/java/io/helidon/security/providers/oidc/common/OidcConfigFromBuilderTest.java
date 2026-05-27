@@ -44,6 +44,7 @@ import static io.helidon.security.providers.oidc.common.BaseBuilder.DEFAULT_TIME
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_ATTEMPT_PARAM;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_COOKIE_NAME;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_COOKIE_USE;
+import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_FALLBACK_TO_DEFAULT_TENANT_ENABLED;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_FORCE_HTTPS_REDIRECTS;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_HEADER_USE;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_LOGOUT_URI;
@@ -121,6 +122,9 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Max Redirects", config.maxRedirects(), is(DEFAULT_MAX_REDIRECTS)),
                 () -> assertThat("Client Timeout", config.clientTimeout(), is(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS))),
                 () -> assertThat("Force HTTPS Redirects", config.forceHttpsRedirects(), is(DEFAULT_FORCE_HTTPS_REDIRECTS)),
+                () -> assertThat("Fallback to default tenant",
+                                 config.fallbackToDefaultTenantEnabled(),
+                                 is(DEFAULT_FALLBACK_TO_DEFAULT_TENANT_ENABLED)),
                 () -> assertThat("Token Refresh Skew", config.tokenRefreshSkew(), is(DEFAULT_TOKEN_REFRESH_SKEW)),
                 // cookie options should be separated by space as defined by the specification
                 () -> assertThat("Cookie options", tokenCookieHandler.createCookieOptions(), is("; Path=/; HttpOnly; SameSite=Lax")),
@@ -130,6 +134,19 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Client without authentication", config.generalWebClient(), notNullValue()),
                 () -> assertThat("Client with authentication", config.appWebClient(), notNullValue()),
                 () -> assertThat("JWK Keys", config.signJwk(), notNullValue()));
+    }
+
+    @Test
+    void testFallbackToDefaultTenantFromBuilder() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .fallbackToDefaultTenantEnabled(true)
+                .build();
+
+        assertThat(config.fallbackToDefaultTenantEnabled(), is(true));
     }
 
     @Test

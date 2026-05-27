@@ -376,6 +376,7 @@ public final class OidcConfig extends TenantConfigImpl {
     static final boolean DEFAULT_FORCE_HTTPS_REDIRECTS = false;
     static final Duration DEFAULT_TOKEN_REFRESH_SKEW = Duration.ofSeconds(5);
     static final boolean DEFAULT_RELATIVE_URIS = false;
+    static final boolean DEFAULT_FALLBACK_TO_DEFAULT_TENANT_ENABLED = false;
     static final int DEFAULT_PROXY_PORT = 80;
     static final String DEFAULT_PROXY_PROTOCOL = "http";
     static final String TENANT_IDENT = "name";
@@ -402,6 +403,7 @@ public final class OidcConfig extends TenantConfigImpl {
     private final boolean forceHttpsRedirects;
     private final Duration tokenRefreshSkew;
     private final boolean relativeUris;
+    private final boolean fallbackToDefaultTenantEnabled;
     private final WebClient webClient;
     private final Supplier<WebClientConfig.Builder> webClientBuilderSupplier;
     private final LazyValue<Tenant> defaultTenant;
@@ -442,6 +444,7 @@ public final class OidcConfig extends TenantConfigImpl {
         this.tenantConfigurations = Map.copyOf(builder.tenantConfigurations);
         this.webClient = builder.webClient;
         this.relativeUris = builder.relativeUris;
+        this.fallbackToDefaultTenantEnabled = builder.fallbackToDefaultTenantEnabled;
 
         this.useParam = builder.useParam;
         this.paramName = builder.paramName;
@@ -776,6 +779,15 @@ public final class OidcConfig extends TenantConfigImpl {
     }
 
     /**
+     * Whether unknown tenant ids fall back to the default tenant.
+     *
+     * @return whether unknown tenant ids use default tenant configuration
+     */
+    public boolean fallbackToDefaultTenantEnabled() {
+        return fallbackToDefaultTenantEnabled;
+    }
+
+    /**
      * Return {@link TenantConfig} bound to the provided tenant id.
      * If no {@link TenantConfig} found, default OIDC configuration should be returned.
      *
@@ -1054,6 +1066,7 @@ public final class OidcConfig extends TenantConfigImpl {
         private boolean useCookie = DEFAULT_COOKIE_USE;
         private boolean cookieSameSiteDefault = true;
         private boolean relativeUris = DEFAULT_RELATIVE_URIS;
+        private boolean fallbackToDefaultTenantEnabled = DEFAULT_FALLBACK_TO_DEFAULT_TENANT_ENABLED;
         private boolean tokenSignatureValidation = true;
         private boolean idTokenSignatureValidation = true;
         private boolean accessTokenIpCheck = true;
@@ -1212,6 +1225,7 @@ public final class OidcConfig extends TenantConfigImpl {
                     .ifPresent(this::redirectAttemptCounterStrategy);
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("force-https-redirects").asBoolean().ifPresent(this::forceHttpsRedirects);
+            config.get("fallback-to-default-tenant-enabled").asBoolean().ifPresent(this::fallbackToDefaultTenantEnabled);
 
             config.get("cors").as(CrossOriginConfig::create).ifPresent(this::crossOriginConfig);
 
@@ -1239,9 +1253,7 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * Amount of time access token should be refreshed before its expiration time.
-         * Default is 5 seconds.
-         *
+         * Amount of time access token should be refreshed before expiration.
          * @param tokenRefreshSkew time to refresh token before expiration
          * @return updated builder
          */
@@ -1252,12 +1264,9 @@ public final class OidcConfig extends TenantConfigImpl {
 
         /**
          * Assign cross-origin resource sharing settings.
-         *
          * @param crossOriginConfig cross-origin settings to apply to the redirect endpoint
          * @return updated builder instance
-         * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
-         *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
-         *  server feature
+         * @deprecated use config based CORS setup or the {@code io.helidon.webserver.cors.CorsFeature} server feature
          */
         @SuppressWarnings("removal")
         @Deprecated(forRemoval = true, since = "4.4.0")
@@ -1269,11 +1278,6 @@ public final class OidcConfig extends TenantConfigImpl {
 
         /**
          * Whether to enable logout support.
-         * When logout is enabled, we use two cookies (User token and user ID token) and we expose
-         * an endpoint {@link #logoutUri(String)} that can be used to log the user out from Helidon session
-         * and also from OIDC session (uses {@link #logoutEndpointUri(java.net.URI)} on OIDC server).
-         * Logout support is disabled by default.
-         *
          * @param logoutEnabled whether to enable logout
          * @return updated builder instance
          */
@@ -1283,12 +1287,8 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * By default, the client should redirect to the identity server for the user to log in.
-         * This behavior can be overridden by setting redirect to false. When token is not present in the request, the client
-         * will not redirect and just return appropriate error response code.
-         *
-         * @param redirect Whether to redirect to OIDC server in case the request does not contain sufficient information to
-         *                 authenticate the user, defaults to true
+         * Whether to redirect to OIDC server when authentication information is missing.
+         * @param redirect whether to redirect
          * @return updated builder instance
          */
         @ConfiguredOption("false")
@@ -1299,8 +1299,6 @@ public final class OidcConfig extends TenantConfigImpl {
 
         /**
          * Full URI of this application that is visible from user browser.
-         * Used to redirect request back from identity server after successful login.
-         *
          * @param uri the frontend URI, such as "http://my.server.com/myApp
          * @return updated builder instance
          */
@@ -1312,8 +1310,6 @@ public final class OidcConfig extends TenantConfigImpl {
 
         /**
          * Force HTTPS for redirects to identity provider.
-         * Defaults to {@code false}.
-         *
          * @param forceHttpsRedirects flag to redirect with https
          * @return updated builder instance
          */
@@ -1324,12 +1320,18 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * Can be set to {@code true} to force the use of relative URIs in all requests,
-         * regardless of the presence or absence of proxies or no-proxy lists. By default,
-         * requests that use the Proxy will have absolute URIs. Set this flag to {@code true}
-         * if the host is unable to accept absolute URIs.
-         * Defaults to {@value #DEFAULT_RELATIVE_URIS}.
-         *
+         * Whether unknown tenant ids should use default tenant configuration.
+         * @param enabled whether unknown tenant ids fall back to default tenant
+         * @return updated builder instance
+         */
+        @ConfiguredOption("false")
+        public Builder fallbackToDefaultTenantEnabled(boolean enabled) {
+            this.fallbackToDefaultTenantEnabled = enabled;
+            return this;
+        }
+
+        /**
+         * Whether to force relative URIs in all requests.
          * @param relativeUris relative URIs flag
          * @return updated builder instance
          * @deprecated use OIDC webclient configuration instead. See {@link #webclient(Consumer)}
@@ -1429,8 +1431,6 @@ public final class OidcConfig extends TenantConfigImpl {
 
         /**
          * Proxy protocol to use when proxy is used.
-         * Defaults to {@value DEFAULT_PROXY_PROTOCOL}.
-         *
          * @param protocol protocol to use (such as https)
          * @return updated builder instance
          * @deprecated use proxy configuration on the webclient. See {@link #webclient(Consumer)}
@@ -1443,9 +1443,7 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * Proxy host to use. When defined, triggers usage of proxy for HTTP requests.
-         * Setting to empty String has the same meaning as setting to null - disables proxy.
-         *
+         * Proxy host to use.
          * @param proxyHost host of the proxy
          * @return updated builder instance
          * @see #proxyProtocol(String)
@@ -1465,8 +1463,6 @@ public final class OidcConfig extends TenantConfigImpl {
 
         /**
          * Proxy port.
-         * Defaults to {@value DEFAULT_PROXY_PORT}
-         *
          * @param proxyPort port of the proxy server to use
          * @return updated builder instance
          * @deprecated use proxy configuration on the webclient. See {@link #webclient(Consumer)}

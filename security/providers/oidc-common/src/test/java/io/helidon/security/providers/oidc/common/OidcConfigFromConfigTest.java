@@ -65,4 +65,12 @@ class OidcConfigFromConfigTest extends OidcConfigAbstractTest {
         assertThat(oidcConfig.redirectAttemptCounterStrategy(), is(COOKIE));
     }
 
+    @Test
+    void testFallbackToDefaultTenant() {
+        assertThat(oidcConfig.fallbackToDefaultTenantEnabled(), is(false));
+
+        OidcConfig oidcConfig = OidcConfig.create(config.get("security.oidc-fallback-to-default-tenant"));
+        assertThat(oidcConfig.fallbackToDefaultTenantEnabled(), is(true));
+    }
+
 }
