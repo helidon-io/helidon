@@ -44,7 +44,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                            Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
-        this(http2Client, delegate, method, clientUri, properties, null);
+        this(http2Client, delegate, method, clientUri, properties, null, false);
     }
 
     private Http2ClientRequestImpl(Http2ClientImpl http2Client,
@@ -52,7 +52,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                                    Method method,
                                    ClientUri clientUri,
                                    Map<String, String> properties,
-                                   ClientUri redirectSourceUri) {
+                                   ClientUri redirectSourceUri,
+                                   boolean crossOriginRedirect) {
         super(http2Client.clientConfig(),
                 http2Client.webClient().cookieManager(),
                 Http2Client.PROTOCOL_ID,
@@ -60,7 +61,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                 clientUri,
                 null,
                 properties,
-                redirectSourceUri);
+                redirectSourceUri,
+                crossOriginRedirect);
 
         this.http2Client = http2Client;
         Http2ClientProtocolConfig protocolConfig = http2Client.protocolConfig();
@@ -72,7 +74,13 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                            Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
-        this(request.http2Client, request.delegate, method, clientUri, properties, request.resolvedUri());
+        this(request.http2Client,
+             request.delegate,
+             method,
+             clientUri,
+             properties,
+             request.resolvedUri(),
+             request.crossesRedirectOriginBoundary(clientUri));
 
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());

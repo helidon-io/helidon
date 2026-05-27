@@ -77,6 +77,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private final Method method;
     private final ClientUri clientUri;
     private final ClientUri redirectSourceUri;
+    private final boolean crossOriginRedirect;
     private final Map<String, String> properties;
     private final Set<HeaderName> redirectSensitiveHeaders;
     private final ClientRequestHeaders headers;
@@ -124,12 +125,33 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                                 Boolean sendExpectContinue,
                                 Map<String, String> properties,
                                 ClientUri redirectSourceUri) {
+        this(clientConfig,
+             cookieManager,
+             protocolId,
+             method,
+             clientUri,
+             sendExpectContinue,
+             properties,
+             redirectSourceUri,
+             false);
+    }
+
+    protected ClientRequestBase(HttpClientConfig clientConfig,
+                                WebClientCookieManager cookieManager,
+                                String protocolId,
+                                Method method,
+                                ClientUri clientUri,
+                                Boolean sendExpectContinue,
+                                Map<String, String> properties,
+                                ClientUri redirectSourceUri,
+                                boolean crossOriginRedirect) {
         this.clientConfig = clientConfig;
         this.cookieManager = cookieManager;
         this.protocolId = protocolId;
         this.method = method;
         this.clientUri = clientUri;
         this.redirectSourceUri = redirectSourceUri == null ? null : ClientUri.create(redirectSourceUri);
+        this.crossOriginRedirect = crossOriginRedirect;
         this.sendExpectContinue = sendExpectContinue;
         this.properties = new HashMap<>(properties);
         this.filterRedirectHeaders = clientConfig.filterRedirectHeaders();
@@ -453,7 +475,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                                                       ClientUri usedUri) {
 
         // include any stored cookies in request
-        cookieManager.request(usedUri, headers);
+        cookieManager.request(usedUri, headers, !redirectSensitiveHeadersShouldBeStripped(usedUri));
 
         WebClientServiceRequest serviceRequest = new ServiceRequestImpl(usedUri,
                                                                         method,
@@ -495,9 +517,25 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @param requestHeaders headers to sanitize
      */
     protected final void sanitizeRedirectSensitiveHeaders(ClientUri requestUri, ClientRequestHeaders requestHeaders) {
-        if (filterRedirectHeaders && redirectSourceUri != null && !sameOrigin(redirectSourceUri, requestUri)) {
+        if (redirectSensitiveHeadersShouldBeStripped(requestUri)) {
             redirectSensitiveHeaders.forEach(requestHeaders::remove);
+            cookieManager.request(requestUri, requestHeaders, false);
         }
+    }
+
+    /**
+     * Whether a redirect from this request to the provided URI would cross, or has already crossed, an origin boundary.
+     *
+     * @param requestUri redirect request URI
+     * @return whether redirect-sensitive headers should be stripped
+     */
+    protected final boolean crossesRedirectOriginBoundary(ClientUri requestUri) {
+        return crossOriginRedirect || !sameOrigin(resolvedUri(), requestUri);
+    }
+
+    private boolean redirectSensitiveHeadersShouldBeStripped(ClientUri requestUri) {
+        return filterRedirectHeaders
+                && (crossOriginRedirect || (redirectSourceUri != null && !sameOrigin(redirectSourceUri, requestUri)));
     }
 
     /**

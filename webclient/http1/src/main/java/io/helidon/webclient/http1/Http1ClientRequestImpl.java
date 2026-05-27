@@ -59,7 +59,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                            ClientUri clientUri,
                            Boolean sendExpectContinue,
                            Map<String, String> properties) {
-        this(http1Client, delegate, method, clientUri, sendExpectContinue, properties, null);
+        this(http1Client, delegate, method, clientUri, sendExpectContinue, properties, null, false);
     }
 
     private Http1ClientRequestImpl(Http1ClientImpl http1Client,
@@ -68,7 +68,8 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                                    ClientUri clientUri,
                                    Boolean sendExpectContinue,
                                    Map<String, String> properties,
-                                   ClientUri redirectSourceUri) {
+                                   ClientUri redirectSourceUri,
+                                   boolean crossOriginRedirect) {
         super(http1Client.clientConfig(),
               http1Client.webClient().cookieManager(),
               Http1Client.PROTOCOL_ID,
@@ -76,7 +77,8 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
               clientUri,
               sendExpectContinue,
               properties,
-              redirectSourceUri);
+              redirectSourceUri,
+              crossOriginRedirect);
         this.http1Client = http1Client;
         this.delegate = delegate;
     }
@@ -92,7 +94,8 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
              clientUri,
              null,
              properties,
-             request.resolvedUri());
+             request.resolvedUri(),
+             request.crossesRedirectOriginBoundary(clientUri));
 
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
