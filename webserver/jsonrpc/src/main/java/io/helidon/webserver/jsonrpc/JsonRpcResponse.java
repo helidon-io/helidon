@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ package io.helidon.webserver.jsonrpc;
 import java.util.Optional;
 
 import io.helidon.http.Status;
+import io.helidon.json.JsonNumber;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonString;
+import io.helidon.json.JsonValue;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.webserver.http.ServerResponse;
-
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 
 /**
  * A representation of a JSON-RPC response.
@@ -45,7 +45,7 @@ public interface JsonRpcResponse extends ServerResponse {
      * @return this response
      */
     default JsonRpcResponse rpcId(int rpcId) {
-        return rpcId(Json.createValue(rpcId));
+        return rpcId(JsonNumber.create(rpcId));
     }
 
     /**
@@ -55,7 +55,7 @@ public interface JsonRpcResponse extends ServerResponse {
      * @return this response
      */
     default JsonRpcResponse rpcId(String rpcId) {
-        return rpcId(Json.createValue(rpcId));
+        return rpcId(JsonString.create(rpcId));
     }
 
     /**
@@ -68,12 +68,15 @@ public interface JsonRpcResponse extends ServerResponse {
     JsonRpcResponse result(JsonValue result);
 
     /**
-     * Set a result as an arbitrary object that can be mapped to JSON. This
-     * method will serialize the parameter using JSONB.
+     * Set a result from an object that can be mapped to a JSON object by
+     * Helidon JSON binding.
+     * <p>
+     * Custom Java types passed to this method should be annotated with
+     * {@code io.helidon.json.binding.Json.Entity}.
      *
      * @param object the object
      * @return this response
-     * @throws jakarta.json.JsonException if an error occurs during serialization
+     * @throws io.helidon.json.binding.JsonBindingException if an error occurs during mapping
      * @see #error()
      */
     JsonRpcResponse result(Object object);
