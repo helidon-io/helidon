@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.telemetry.otelconfig;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
@@ -26,7 +27,7 @@ import io.opentelemetry.api.OpenTelemetry;
 
 @Service.Singleton
 @Service.RunLevel(Service.RunLevel.STARTUP)
-class HelidonOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
+class HelidonOpenTelemetryServiceFactory implements Supplier<Optional<OpenTelemetry>> {
 
     private final Config config;
 
@@ -36,9 +37,14 @@ class HelidonOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
     }
 
     @Override
-    public OpenTelemetry get() {
+    public Optional<OpenTelemetry> get() {
+        var telemetryConfig = config.get(HelidonOpenTelemetry.CONFIG_KEY);
+        if (!telemetryConfig.exists()) {
+            return Optional.empty();
+        }
+
         OpenTelemetry result;
-        var otelConfig = OpenTelemetryConfig.create(config.get(HelidonOpenTelemetry.CONFIG_KEY));
+        var otelConfig = OpenTelemetryConfig.create(telemetryConfig);
         try {
             result = HelidonOpenTelemetry.create(otelConfig)
                     .openTelemetry();
@@ -52,6 +58,6 @@ class HelidonOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
             result = GlobalOpenTelemetry.get();
         }
 
-        return result;
+        return Optional.of(result);
     }
 }
