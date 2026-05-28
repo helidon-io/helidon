@@ -96,8 +96,8 @@
         <!-- Force upgrade okhttp3 for dependency convergence -->
         <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
         <version.lib.opentelemetry.semconv>1.37.0</version.lib.opentelemetry.semconv>
-        <version.lib.opentelemetry>1.58.0</version.lib.opentelemetry>
-        <version.lib.opentelemetry.instrumentation.annotations>2.24.0</version.lib.opentelemetry.instrumentation.annotations>
+        <version.lib.opentelemetry>1.62.0</version.lib.opentelemetry>
+        <version.lib.opentelemetry.instrumentation.annotations>2.27.0</version.lib.opentelemetry.instrumentation.annotations>
         <version.lib.parsson>1.1.7</version.lib.parsson>
         <version.lib.postgresql>42.7.11</version.lib.postgresql>
         <version.lib.prometheus>0.16.0</version.lib.prometheus>
