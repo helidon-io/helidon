@@ -44,6 +44,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-config</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.openapi</groupId>
             <artifactId>helidon-openapi</artifactId>
             <scope>test</scope>

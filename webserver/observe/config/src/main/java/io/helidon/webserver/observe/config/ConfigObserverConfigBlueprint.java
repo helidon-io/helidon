@@ -57,11 +57,18 @@ interface ConfigObserverConfigBlueprint extends ObserverConfigBase, Prototype.Fa
      * Any pattern that matches a key will cause the output to be obfuscated and not contain the value.
      * Patterns are matched case-insensitively.
      * <p>
-     * Patterns always added:
+     * Built-in default patterns always added:
      * <ul>
-     *     <li>{@code .*password}</li>
-     *     <li>{@code .*passphrase}</li>
-     *     <li>{@code .*secret}</li>
+     *     <li>{@code .*password.*}</li>
+     *     <li>{@code .*passphrase.*}</li>
+     *     <li>{@code .*pwd.*}</li>
+     *     <li>{@code .*secret.*}</li>
+     *     <li>{@code .*credential.*}</li>
+     *     <li>{@code .*token.*}</li>
+     *     <li>{@code .*api[-_.]?key.*}</li>
+     *     <li>{@code .*access[-_.]?key.*}</li>
+     *     <li>{@code .*private[-_.]?key.*}</li>
+     *     <li>{@code .*connection[-_.]?url.*}</li>
      * </ul>
      *
      * @return set of regular expression patterns for keys, where values should be excluded from output
@@ -71,7 +78,14 @@ interface ConfigObserverConfigBlueprint extends ObserverConfigBase, Prototype.Fa
     @Option.Default({
             ConfigObserverConfigDefaults.SECRET_PASSWORD,
             ConfigObserverConfigDefaults.SECRET_PASSPHRASE,
-            ConfigObserverConfigDefaults.SECRET_SECRET
+            ConfigObserverConfigDefaults.SECRET_PWD,
+            ConfigObserverConfigDefaults.SECRET_SECRET,
+            ConfigObserverConfigDefaults.SECRET_CREDENTIAL,
+            ConfigObserverConfigDefaults.SECRET_TOKEN,
+            ConfigObserverConfigDefaults.SECRET_API_KEY,
+            ConfigObserverConfigDefaults.SECRET_ACCESS_KEY,
+            ConfigObserverConfigDefaults.SECRET_PRIVATE_KEY,
+            ConfigObserverConfigDefaults.SECRET_CONNECTION_URL
     })
     Set<String> secrets();
 
