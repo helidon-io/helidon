@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,28 @@
 
 package io.helidon.webclient.tests.http2;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.OptionalLong;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
@@ -27,7 +47,9 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
+import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.HttpClientRequest;
+import io.helidon.webclient.api.SniMode;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -47,6 +69,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @ServerTest
@@ -58,20 +81,17 @@ class Http2ClientTest {
     private final Http1Client http1Client;
     private final Supplier<Http2Client> tlsClient;
     private final Supplier<Http2Client> plainClient;
+    private final Tls clientTls;
     private final int tlsPort;
+    private final int sniTlsPort;
     private final int plainPort;
 
     Http2ClientTest(WebServer server, Http1Client http1Client) {
         plainPort = server.port();
         tlsPort = server.port("https");
+        sniTlsPort = server.port("https-sni");
         this.http1Client = http1Client;
-        Tls clientTls = Tls.builder()
-                .trust(trust -> trust
-                        .keystore(store -> store
-                                .passphrase("password")
-                                .trustStore(true)
-                                .keystore(Resource.create("client.p12"))))
-                .build();
+        this.clientTls = clientTls();
         this.tlsClient = () -> Http2Client.builder()
                 .baseUri("https://localhost:" + tlsPort + "/")
                 .shareConnectionCache(false)
@@ -96,8 +116,18 @@ class Http2ClientTest {
                 .privateKeyCertChain(privateKeyConfig)
                 .build();
 
+        SSLParameters sniParameters = new SSLParameters();
+        sniParameters.setSNIMatchers(List.of(SNIHostName.createSNIMatcher("(first|second|host-header)\\.example")));
+        Tls sniTls = Tls.builder()
+                .privateKey(privateKeyConfig)
+                .privateKeyCertChain(privateKeyConfig)
+                .sslParameters(sniParameters)
+                .build();
+
         serverBuilder.putSocket("https",
                                 socketBuilder -> socketBuilder.tls(tls));
+        serverBuilder.putSocket("https-sni",
+                                socketBuilder -> socketBuilder.tls(sniTls));
     }
 
     @SetUpRoute
@@ -113,6 +143,15 @@ class Http2ClientTest {
         router.route(Http2Route.route(Method.GET, "/", (req, res) -> res.header(TEST_HEADER)
                 .send(MESSAGE)));
     }
+
+    @SetUpRoute("https-sni")
+    static void routerHttpsSni(HttpRouting.Builder router) {
+        // explicitly on HTTP/2 only, to make sure we do upgrade
+        router.route(Http2Route.route(Method.GET, "/", (req, res) -> res.header(TEST_HEADER)
+                        .send(MESSAGE)))
+                .route(Http2Route.route(Method.GET, "/socket-id", (req, res) -> res.send(req.socketId())));
+    }
+
     @Test
     void testHttp1() {
         // make sure the HTTP/1 route is not working
@@ -186,6 +225,137 @@ class Http2ClientTest {
     }
 
     @Test
+    void testGenericHostHeaderSniNegotiatesHttp2OverTls() {
+        WebClient client = WebClient.builder()
+                .baseUri("https://localhost:" + tlsPort + "/")
+                .tls(clientTls)
+                .sni(it -> it.mode(SniMode.HOST_HEADER))
+                .build();
+        try (HttpClientResponse response = client.get()
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is(MESSAGE));
+            assertThat(TEST_HEADER + " header must be present in response",
+                       response.headers().contains(TEST_HEADER), is(true));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void testGenericHostHeaderSniUsesHostHeaderForTlsHandshake() {
+        Tls tlsWithoutEndpointIdentification = clientTlsWithoutEndpointIdentification();
+        WebClient client = WebClient.builder()
+                .baseUri("https://localhost:" + sniTlsPort + "/")
+                .tls(tlsWithoutEndpointIdentification)
+                .sni(it -> it.mode(SniMode.HOST_HEADER))
+                .build();
+        try (HttpClientResponse response = client.get()
+                .header(HeaderValues.create(HeaderNames.HOST, "host-header.example:" + sniTlsPort))
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is(MESSAGE));
+            assertThat(TEST_HEADER + " header must be present in response",
+                       response.headers().contains(TEST_HEADER), is(true));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void testGenericHostHeaderSniUsesServiceHostHeaderForTlsHandshake() {
+        Tls tlsWithoutEndpointIdentification = clientTlsWithoutEndpointIdentification();
+        WebClient client = WebClient.builder()
+                .baseUri("https://localhost:" + sniTlsPort + "/")
+                .tls(tlsWithoutEndpointIdentification)
+                .sni(it -> it.mode(SniMode.HOST_HEADER))
+                .addService((chain, request) -> {
+                    request.headers().set(HeaderValues.create(HeaderNames.HOST, "host-header.example:" + sniTlsPort));
+                    return chain.proceed(request);
+                })
+                .build();
+        try (HttpClientResponse response = client.get()
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is(MESSAGE));
+            assertThat(TEST_HEADER + " header must be present in response",
+                       response.headers().contains(TEST_HEADER), is(true));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void testGenericHostHeaderSniSeparatesHttp2ConnectionCache() {
+        Tls tlsWithoutEndpointIdentification = clientTlsWithoutEndpointIdentification();
+        WebClient client = WebClient.builder()
+                .baseUri("https://localhost:" + sniTlsPort + "/")
+                .tls(tlsWithoutEndpointIdentification)
+                .sni(it -> it.mode(SniMode.HOST_HEADER))
+                .build();
+        try {
+            String firstSocketId = client.get()
+                    .path("/socket-id")
+                    .header(HeaderValues.create(HeaderNames.HOST, "first.example:" + sniTlsPort))
+                    .requestEntity(String.class);
+            String secondSocketId = client.get()
+                    .path("/socket-id")
+                    .header(HeaderValues.create(HeaderNames.HOST, "second.example:" + sniTlsPort))
+                    .requestEntity(String.class);
+
+            assertThat(secondSocketId.equals(firstSocketId), is(false));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void testGenericHostHeaderSniFallsBackToHttp1WhenTlsDoesNotNegotiateAlpn() throws Exception {
+        NoAlpnHttp1TlsServer server = NoAlpnHttp1TlsServer.start();
+        WebClient client = WebClient.builder()
+                .baseUri("https://localhost:" + server.port() + "/")
+                .tls(clientTls)
+                .sni(it -> it.mode(SniMode.HOST_HEADER))
+                .build();
+        try (HttpClientResponse response = client.get()
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("http1"));
+
+            List<String> requestLines = server.requestLines();
+            assertThat(requestLines.getFirst(), is("GET / HTTP/1.1"));
+            assertThat(hasHeader(requestLines, HeaderNames.UPGRADE.defaultCase()), is(false));
+            assertThat(hasHeader(requestLines, "HTTP2-Settings"), is(false));
+        } finally {
+            client.closeResource();
+            server.close();
+        }
+    }
+
+    @Test
+    void testGenericHostHeaderSniHonorsH2OnlyProtocolPreferenceWhenTlsDoesNotNegotiateAlpn() throws Exception {
+        NoAlpnHttp1TlsServer server = NoAlpnHttp1TlsServer.start();
+        WebClient client = WebClient.builder()
+                .baseUri("https://localhost:" + server.port() + "/")
+                .protocolPreference(List.of(Http2Client.PROTOCOL_ID))
+                .tls(clientTls)
+                .sni(it -> it.mode(SniMode.HOST_HEADER))
+                .build();
+        try {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> client.get().request());
+
+            assertThat(e.getMessage(), startsWith("Cannot handle request"));
+        } finally {
+            client.closeResource();
+            server.close();
+        }
+    }
+
+    @Test
     void testPriorKnowledge() {
         try (Http2ClientResponse response = tlsClient.get()
                 .get("/")
@@ -196,6 +366,104 @@ class Http2ClientTest {
             assertThat(response.as(String.class), is(MESSAGE));
             assertThat(TEST_HEADER + " header must be present in response",
                        response.headers().contains(TEST_HEADER), is(true));
+        }
+    }
+
+    private static boolean hasHeader(List<String> requestLines, String headerName) {
+        String prefix = headerName.toLowerCase(Locale.ROOT) + ":";
+        return requestLines.stream()
+                .map(it -> it.toLowerCase(Locale.ROOT))
+                .anyMatch(it -> it.startsWith(prefix));
+    }
+
+    private static Tls clientTls() {
+        return Tls.builder()
+                .trust(trust -> trust
+                        .keystore(store -> store
+                                .passphrase("password")
+                                .trustStore(true)
+                                .keystore(Resource.create("client.p12"))))
+                .build();
+    }
+
+    private static Tls clientTlsWithoutEndpointIdentification() {
+        return Tls.builder()
+                .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
+                .trust(trust -> trust
+                        .keystore(store -> store
+                                .passphrase("password")
+                                .trustStore(true)
+                                .keystore(Resource.create("client.p12"))))
+                .build();
+    }
+
+    private static final class NoAlpnHttp1TlsServer implements AutoCloseable {
+        private static final char[] PASSWORD = "password".toCharArray();
+
+        private final SSLServerSocket serverSocket;
+        private final CompletableFuture<List<String>> requestLines = new CompletableFuture<>();
+
+        private NoAlpnHttp1TlsServer(SSLServerSocket serverSocket) {
+            this.serverSocket = serverSocket;
+            Thread.ofVirtual().start(this::serve);
+        }
+
+        static NoAlpnHttp1TlsServer start() throws Exception {
+            KeyStore store = KeyStore.getInstance("PKCS12");
+            try (InputStream input = Http2ClientTest.class.getClassLoader().getResourceAsStream("server.p12")) {
+                store.load(Objects.requireNonNull(input, "server.p12"), PASSWORD);
+            }
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keyManagerFactory.init(store, PASSWORD);
+            SSLContext context = SSLContext.getInstance("TLS");
+            context.init(keyManagerFactory.getKeyManagers(), null, null);
+            SSLServerSocket socket = (SSLServerSocket) context.getServerSocketFactory().createServerSocket(0);
+            return new NoAlpnHttp1TlsServer(socket);
+        }
+
+        int port() {
+            return serverSocket.getLocalPort();
+        }
+
+        List<String> requestLines() throws Exception {
+            return requestLines.get(10, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void close() throws Exception {
+            serverSocket.close();
+        }
+
+        private void serve() {
+            try {
+                while (!serverSocket.isClosed()) {
+                    try (SSLSocket socket = (SSLSocket) serverSocket.accept();
+                            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(),
+                                                                                             StandardCharsets.US_ASCII));
+                            Writer writer = new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.US_ASCII)) {
+
+                        socket.startHandshake();
+                        List<String> lines = new ArrayList<>();
+                        String line;
+                        while ((line = reader.readLine()) != null && !line.isEmpty()) {
+                            lines.add(line);
+                        }
+                        if (lines.isEmpty()) {
+                            continue;
+                        }
+                        requestLines.complete(List.copyOf(lines));
+                        writer.write("HTTP/1.1 200 OK\r\n"
+                                             + "Content-Length: 5\r\n"
+                                             + "Connection: close\r\n"
+                                             + "\r\n"
+                                             + "http1");
+                        writer.flush();
+                        return;
+                    }
+                }
+            } catch (Throwable t) {
+                requestLines.completeExceptionally(t);
+            }
         }
     }
 }

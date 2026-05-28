@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,6 +81,7 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
         clientRequest.connection().ifPresent(request::connection);
         clientRequest.pathParams().forEach(request::pathParam);
         clientRequest.address().ifPresent(request::address);
+        clientRequest.sni().ifPresent(request::sni);
 
         return request.readTimeout(clientRequest.readTimeout())
                 .followRedirects(clientRequest.followRedirects())

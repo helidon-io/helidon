@@ -84,6 +84,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
         clientRequest.connection().ifPresent(request::connection);
         clientRequest.pathParams().forEach(request::pathParam);
         clientRequest.address().ifPresent(request::address);
+        clientRequest.sni().ifPresent(request::sni);
 
         return request.readTimeout(clientRequest.readTimeout())
                 .followRedirects(clientRequest.followRedirects())

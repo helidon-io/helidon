@@ -33,6 +33,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.CompositeBufferData;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.grpc.core.GrpcHeadersUtil;
+import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -55,6 +56,7 @@ import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.DefaultDnsResolver;
 import io.helidon.webclient.api.DnsAddressLookup;
 import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.api.SniConfig;
 import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.UnixDomainSocketClientConnection;
 import io.helidon.webclient.api.WebClient;
@@ -296,34 +298,63 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     ClientConnection clientConnection(ClientUri clientUri) {
         WebClient webClient = grpcClient.webClient();
         GrpcClientConfig clientConfig = grpcClient.prototype();
+        SniConfig sni = clientConfig.sni().orElse(null);
 
         if (clientConfig.baseAddress().isPresent()
             && clientConfig.baseAddress().get() instanceof UnixDomainSocketAddress udsAddress) {
+            ConnectionKey connectionKey;
+            if (sni == null) {
+                connectionKey = ConnectionKey.createUnixDomainSocket(clientUri,
+                                                                     clientConfig.tls(),
+                                                                     clientConfig.dnsResolver(),
+                                                                     clientConfig.dnsAddressLookup(),
+                                                                     udsAddress);
+            } else {
+                connectionKey = ConnectionKey.createUnixDomainSocket(clientUri,
+                                                                     sni,
+                                                                     clientConfig.tls(),
+                                                                     clientConfig.dnsResolver(),
+                                                                     clientConfig.dnsAddressLookup(),
+                                                                     udsAddress,
+                                                                     emptyHeaders());
+            }
             return UnixDomainSocketClientConnection.create(
                 webClient,
-                clientConfig.tls(),
+                connectionKey,
                 List.of(Http2Client.PROTOCOL_ID),
                 udsAddress,
-                clientUri.host(),
-                clientUri.port(),
                 connection -> false,
                 connection -> {}).connect();
         }
 
-        ConnectionKey connectionKey = ConnectionKey.create(
-                clientUri.scheme(),
-                clientUri.host(),
-                clientUri.port(),
-                clientConfig.tls(),
-                DefaultDnsResolver.create(),
-                DnsAddressLookup.defaultLookup(),
-                Proxy.noProxy());
+        ConnectionKey connectionKey;
+        if (sni == null) {
+            connectionKey = ConnectionKey.create(
+                    clientUri,
+                    clientConfig.tls(),
+                    DefaultDnsResolver.create(),
+                    DnsAddressLookup.defaultLookup(),
+                    Proxy.noProxy());
+        } else {
+            connectionKey = ConnectionKey.create(
+                    clientUri,
+                    sni,
+                    clientConfig.tls(),
+                    DefaultDnsResolver.create(),
+                    DnsAddressLookup.defaultLookup(),
+                    Proxy.noProxy(),
+                    emptyHeaders());
+        }
         return TcpClientConnection.create(webClient,
                                           connectionKey,
                                           List.of(Http2Client.PROTOCOL_ID),
                                           connection -> false,
                                           connection -> {
                                           }).connect();
+    }
+
+    private static ClientRequestHeaders emptyHeaders() {
+        return ClientRequestHeaders.create(WritableHeaders.create());
     }
 
     boolean isRemoteOpen() {

@@ -61,6 +61,7 @@ class Http2ClientConnectionHandler {
     // h2c stands for HTTP/2 plaintext protocol (only used without TLS)
     private static final Header UPGRADE_HEADER = HeaderValues.createCached(HeaderNames.UPGRADE, "h2c");
     private static final HeaderName HTTP2_SETTINGS_HEADER = HeaderNames.create("HTTP2-Settings");
+    private static final String GENERIC_TCP_PROTOCOL_IDS_PROPERTY = "io.helidon.webclient.generic.tcp-protocol-ids";
 
     // todo requires handling of timeouts and removal from this queue
     private final Map<ClientConnection, Http2ClientConnection> h2ConnByConn =
@@ -175,14 +176,24 @@ class Http2ClientConnectionHandler {
                         this.activeConnection.set(connection);
                         return http2(http2Client, request, initialUri);
                     } else {
+                        if (!http1FallbackAllowed(request)) {
+                            closeClientConnection(clientConnection);
+                            throw unsupportedHttp1Fallback(initialUri, request);
+                        }
                         result.set(Result.HTTP_1);
                         request.connection(clientConnection);
                         return http1(http2Client, request, initialUri, http1EntityHandler);
                     }
                 } else {
-                    // this should not really happen, as H2 is depending on ALPN, but let's support it anyway, and hope we can
-                    // do this later
-                    request.connection(clientConnection);
+                    if (!request.priorKnowledge()) {
+                        if (!http1FallbackAllowed(request)) {
+                            closeClientConnection(clientConnection);
+                            throw unsupportedHttp1Fallback(initialUri, request);
+                        }
+                        request.connection(clientConnection);
+                        result.set(Result.HTTP_1);
+                        return http1(http2Client, request, initialUri, http1EntityHandler);
+                    }
                 }
             }
 
@@ -309,6 +320,7 @@ class Http2ClientConnectionHandler {
                 .followRedirects(request.followRedirects());
         request.connection().ifPresent(http1Request::connection);
         request.address().ifPresent(http1Request::address);
+        request.sni().ifPresent(http1Request::sni);
         return http1Request;
     }
 
@@ -409,6 +421,25 @@ class Http2ClientConnectionHandler {
         }
     }
 
+    private static boolean http1FallbackAllowed(Http2ClientRequestImpl request) {
+        String protocolIds = request.properties().get(GENERIC_TCP_PROTOCOL_IDS_PROPERTY);
+        if (protocolIds == null) {
+            return true;
+        }
+        for (String protocolId : protocolIds.split(",")) {
+            if (Http1Client.PROTOCOL_ID.equals(protocolId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static IllegalArgumentException unsupportedHttp1Fallback(ClientUri uri, Http2ClientRequestImpl request) {
+        return new IllegalArgumentException("Cannot handle request to " + uri
+                                                   + ", negotiated HTTP/1.1 fallback is not enabled. HTTP versions supported: "
+                                                   + request.properties().get(GENERIC_TCP_PROTOCOL_IDS_PROPERTY));
+    }
+
     private ClientConnection connectClient(WebClient webClient,
                                            Http2ClientRequestImpl request,
                                            ClientUri uri,
@@ -416,11 +447,9 @@ class Http2ClientConnectionHandler {
         var address = request.address();
         if (address.isPresent() && address.get() instanceof UnixDomainSocketAddress udsAddress) {
             return UnixDomainSocketClientConnection.create(webClient,
-                                                          connectionKey.tls(),
+                                                          connectionKey,
                                                           alpn,
                                                           udsAddress,
-                                                          uri.host(),
-                                                          uri.port(),
                                                           connection -> false,
                                                           connection -> {
                                                               Http2ClientConnection h2conn = h2ConnByConn.remove(

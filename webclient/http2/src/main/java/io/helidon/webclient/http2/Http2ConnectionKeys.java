@@ -18,47 +18,78 @@ package io.helidon.webclient.http2;
 
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
-import java.util.Optional;
 
 import io.helidon.common.tls.Tls;
+import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.FullClientRequest;
 import io.helidon.webclient.api.HttpClientConfig;
 import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.api.SniConfig;
 
 final class Http2ConnectionKeys {
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
+    private static final ClientRequestHeaders EMPTY_HEADERS = ClientRequestHeaders.create(WritableHeaders.create());
 
     private Http2ConnectionKeys() {
     }
 
     static ConnectionKey create(ClientUri uri, FullClientRequest<?> request, HttpClientConfig clientConfig) {
-        return create(uri, request.address(), request.tls(), request.proxy(), clientConfig);
+        return create(uri, request, clientConfig, EMPTY_HEADERS);
     }
 
     static ConnectionKey create(ClientUri uri,
-                                Optional<SocketAddress> address,
+                                FullClientRequest<?> request,
+                                HttpClientConfig clientConfig,
+                                ClientRequestHeaders headers) {
+        return create(uri,
+                      request.address().orElse(null),
+                      request.sni().or(clientConfig::sni).orElse(null),
+                      request.tls(),
+                      request.proxy(),
+                      clientConfig,
+                      headers);
+    }
+
+    static ConnectionKey create(ClientUri uri,
+                                SocketAddress address,
+                                SniConfig sni,
                                 Tls tls,
                                 Proxy proxy,
-                                HttpClientConfig clientConfig) {
+                                HttpClientConfig clientConfig,
+                                ClientRequestHeaders headers) {
         Tls effectiveTls = "https".equals(uri.scheme()) ? tls : NO_TLS;
-        return address
-                .filter(UnixDomainSocketAddress.class::isInstance)
-                .map(UnixDomainSocketAddress.class::cast)
-                .map(udsAddress -> ConnectionKey.createUnixDomainSocket(uri.scheme(),
-                                                                         uri.host(),
-                                                                         uri.port(),
-                                                                         effectiveTls,
-                                                                         clientConfig.dnsResolver(),
-                                                                         clientConfig.dnsAddressLookup(),
-                                                                         udsAddress))
-                .orElseGet(() -> ConnectionKey.create(uri.scheme(),
-                                                      uri.host(),
-                                                      uri.port(),
-                                                      effectiveTls,
-                                                      clientConfig.dnsResolver(),
-                                                      clientConfig.dnsAddressLookup(),
-                                                      proxy));
+        if (address instanceof UnixDomainSocketAddress udsAddress) {
+            if (sni == null) {
+                return ConnectionKey.createUnixDomainSocket(uri,
+                                                            effectiveTls,
+                                                            clientConfig.dnsResolver(),
+                                                            clientConfig.dnsAddressLookup(),
+                                                            udsAddress);
+            }
+            return ConnectionKey.createUnixDomainSocket(uri,
+                                                        sni,
+                                                        effectiveTls,
+                                                        clientConfig.dnsResolver(),
+                                                        clientConfig.dnsAddressLookup(),
+                                                        udsAddress,
+                                                        headers);
+        }
+        if (sni == null) {
+            return ConnectionKey.create(uri,
+                                        effectiveTls,
+                                        clientConfig.dnsResolver(),
+                                        clientConfig.dnsAddressLookup(),
+                                        proxy);
+        }
+        return ConnectionKey.create(uri,
+                                    sni,
+                                    effectiveTls,
+                                    clientConfig.dnsResolver(),
+                                    clientConfig.dnsAddressLookup(),
+                                    proxy,
+                                    headers);
     }
 }

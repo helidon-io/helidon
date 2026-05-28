@@ -32,7 +32,8 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
-import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.api.FullClientRequest;
+import io.helidon.webclient.api.SniConfig;
 import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.UnixDomainSocketClientConnection;
 import io.helidon.webclient.api.WebClient;
@@ -66,23 +67,22 @@ class Http1ConnectionCache extends ClientConnectionCache {
     }
 
     ClientConnection connection(Http1ClientImpl http1Client,
-                                Tls tls,
+                                FullClientRequest<?> request,
                                 ClientUri uri,
                                 ClientRequestHeaders headers,
                                 boolean defaultKeepAlive,
                                 UnixDomainSocketAddress address) {
 
         boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
-        Tls effectiveTls = HTTPS.equals(uri.scheme()) ? tls : NO_TLS;
+        Tls effectiveTls = HTTPS.equals(uri.scheme()) ? request.tls() : NO_TLS;
         if (keepAlive) {
-            return keepAliveUnixDomainConnection(http1Client, effectiveTls, uri, address);
+            return keepAliveUnixDomainConnection(http1Client, request, effectiveTls, uri, headers, address);
         } else {
+            ConnectionKey connectionKey = unixConnectionKey(request, effectiveTls, uri, headers, address, http1Client.clientConfig());
             return UnixDomainSocketClientConnection.create(http1Client.webClient(),
-                                                           effectiveTls,
+                                                           connectionKey,
                                                            ALPN_ID,
                                                            address,
-                                                           uri.host(),
-                                                           uri.port(),
                                                            it -> false,
                                                            it -> {
                                                            })
@@ -91,17 +91,16 @@ class Http1ConnectionCache extends ClientConnectionCache {
     }
 
     ClientConnection connection(Http1ClientImpl http1Client,
-                                Tls tls,
-                                Proxy proxy,
+                                FullClientRequest<?> request,
                                 ClientUri uri,
                                 ClientRequestHeaders headers,
                                 boolean defaultKeepAlive) {
         boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
-        Tls effectiveTls = HTTPS.equals(uri.scheme()) ? tls : NO_TLS;
+        Tls effectiveTls = HTTPS.equals(uri.scheme()) ? request.tls() : NO_TLS;
         if (keepAlive) {
-            return keepAliveConnection(http1Client, effectiveTls, uri, proxy);
+            return keepAliveConnection(http1Client, request, effectiveTls, uri, headers);
         } else {
-            return oneOffConnection(http1Client, effectiveTls, uri, proxy);
+            return oneOffConnection(http1Client, request, effectiveTls, uri, headers);
         }
     }
 
@@ -136,8 +135,10 @@ class Http1ConnectionCache extends ClientConnectionCache {
     }
 
     private ClientConnection keepAliveUnixDomainConnection(Http1ClientImpl http1Client,
+                                                           FullClientRequest<?> request,
                                                            Tls tls,
                                                            ClientUri uri,
+                                                           ClientRequestHeaders headers,
                                                            UnixDomainSocketAddress address) {
         if (closed.get()) {
             throw new IllegalStateException("Connection cache is closed");
@@ -145,7 +146,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
 
         Http1ClientConfig clientConfig = http1Client.clientConfig();
 
-        ConnectionKey connectionKey = unixConnectionKey(tls, uri, address, clientConfig);
+        ConnectionKey connectionKey = unixConnectionKey(request, tls, uri, headers, address, clientConfig);
 
         LinkedBlockingDeque<ClientConnection> connectionQueue =
                 cache.computeIfAbsent(connectionKey,
@@ -157,11 +158,9 @@ class Http1ConnectionCache extends ClientConnectionCache {
 
         if (connection == null) {
             connection = UnixDomainSocketClientConnection.create(http1Client.webClient(),
-                                                                 tls,
+                                                                 connectionKey,
                                                                  ALPN_ID,
                                                                  address,
-                                                                 uri.host(),
-                                                                 uri.port(),
                                                                  conn -> finishRequest(connectionQueue, conn),
                                                                  conn -> {
                                                                  })
@@ -176,23 +175,34 @@ class Http1ConnectionCache extends ClientConnectionCache {
         return connection;
     }
 
-    private static ConnectionKey unixConnectionKey(Tls tls,
+    private static ConnectionKey unixConnectionKey(FullClientRequest<?> request,
+                                                   Tls tls,
                                                    ClientUri uri,
+                                                   ClientRequestHeaders headers,
                                                    UnixDomainSocketAddress address,
                                                    Http1ClientConfig clientConfig) {
-        return ConnectionKey.createUnixDomainSocket(uri.scheme(),
-                                                    uri.host(),
-                                                    uri.port(),
+        SniConfig sni = effectiveSni(request, clientConfig);
+        if (sni == null) {
+            return ConnectionKey.createUnixDomainSocket(uri,
+                                                        tls,
+                                                        clientConfig.dnsResolver(),
+                                                        clientConfig.dnsAddressLookup(),
+                                                        address);
+        }
+        return ConnectionKey.createUnixDomainSocket(uri,
+                                                    sni,
                                                     tls,
                                                     clientConfig.dnsResolver(),
                                                     clientConfig.dnsAddressLookup(),
-                                                    address);
+                                                    address,
+                                                    headers);
     }
 
     private ClientConnection keepAliveConnection(Http1ClientImpl http1Client,
+                                                 FullClientRequest<?> request,
                                                  Tls tls,
                                                  ClientUri uri,
-                                                 Proxy proxy) {
+                                                 ClientRequestHeaders headers) {
 
         if (closed.get()) {
             throw new IllegalStateException("Connection cache is closed");
@@ -200,13 +210,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
 
         Http1ClientConfig clientConfig = http1Client.clientConfig();
 
-        ConnectionKey connectionKey = ConnectionKey.create(uri.scheme(),
-                                                           uri.host(),
-                                                           uri.port(),
-                                                           tls,
-                                                           clientConfig.dnsResolver(),
-                                                           clientConfig.dnsAddressLookup(),
-                                                           proxy);
+        ConnectionKey connectionKey = connectionKey(request, tls, uri, headers, clientConfig);
 
         Queue<ClientConnection> connectionQueue =
                 cache.computeIfAbsent(connectionKey,
@@ -235,27 +239,48 @@ class Http1ConnectionCache extends ClientConnectionCache {
     }
 
     private ClientConnection oneOffConnection(Http1ClientImpl http1Client,
+                                              FullClientRequest<?> request,
                                               Tls tls,
                                               ClientUri uri,
-                                              Proxy proxy) {
+                                              ClientRequestHeaders headers) {
 
         WebClient webClient = http1Client.webClient();
         Http1ClientConfig clientConfig = http1Client.clientConfig();
 
         return TcpClientConnection.create(webClient,
-                                          ConnectionKey.create(uri.scheme(),
-                                                               uri.host(),
-                                                               uri.port(),
-                                                               tls,
-                                                               clientConfig.dnsResolver(),
-                                                               clientConfig.dnsAddressLookup(),
-                                                               proxy),
+                                          connectionKey(request, tls, uri, headers, clientConfig),
                                           ALPN_ID,
                                           conn -> false, // always close connection
                                           conn -> {
                                           })
 
                 .connect();
+    }
+
+    private static ConnectionKey connectionKey(FullClientRequest<?> request,
+                                               Tls tls,
+                                               ClientUri uri,
+                                               ClientRequestHeaders headers,
+                                               Http1ClientConfig clientConfig) {
+        SniConfig sni = effectiveSni(request, clientConfig);
+        if (sni == null) {
+            return ConnectionKey.create(uri,
+                                        tls,
+                                        clientConfig.dnsResolver(),
+                                        clientConfig.dnsAddressLookup(),
+                                        request.proxy());
+        }
+        return ConnectionKey.create(uri,
+                                    sni,
+                                    tls,
+                                    clientConfig.dnsResolver(),
+                                    clientConfig.dnsAddressLookup(),
+                                    request.proxy(),
+                                    headers);
+    }
+
+    private static SniConfig effectiveSni(FullClientRequest<?> request, Http1ClientConfig clientConfig) {
+        return request.sni().or(clientConfig::sni).orElse(null);
     }
 
     private boolean finishRequest(Queue<ClientConnection> connectionQueue, ClientConnection conn) {

@@ -23,6 +23,8 @@ import java.util.Optional;
 
 import io.helidon.common.LruCache;
 import io.helidon.common.socket.HelidonSocket;
+import io.helidon.common.tls.Tls;
+import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Method;
 import io.helidon.webclient.spi.HttpClientSpi;
 
@@ -33,6 +35,8 @@ import io.helidon.webclient.spi.HttpClientSpi;
  */
 public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, HttpClientResponse> {
     private static final System.Logger LOGGER = System.getLogger(HttpClientRequest.class.getName());
+    private static final Tls NO_TLS = Tls.builder().enabled(false).build();
+    private static final String GENERIC_TCP_PROTOCOL_IDS_PROPERTY = "io.helidon.webclient.generic.tcp-protocol-ids";
 
     private final LruCache<LoomClient.EndpointKey, HttpClientSpi> clientSpiCache;
     private final WebClient webClient;
@@ -102,6 +106,7 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
 
     private ClientRequest<?> discoverHttpImplementation() {
         ClientUri resolvedUri = resolvedUri();
+        ClientRequestHeaderSupport.validate(headers());
 
         if (preferredProtocolId != null) {
             /*
@@ -116,10 +121,19 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
         }
 
         String transportKey = transportKey();
+        HttpClientConfig clientConfig = clientConfig();
+        Tls effectiveTls = effectiveTls(resolvedUri, tls());
+        SniConfig effectiveSni = effectiveSni(clientConfig);
+        if (requiresFinalHeaders(resolvedUri, effectiveSni, effectiveTls)) {
+            return firstTcpProtocol(resolvedUri);
+        }
+
+        SniSupport.Selection sni = sniSelection(resolvedUri, effectiveSni, effectiveTls, headers());
         LoomClient.EndpointKey endpointKey = new LoomClient.EndpointKey(resolvedUri.scheme(),
                                                                         resolvedUri.authority(),
                                                                         transportKey,
-                                                                        tls(),
+                                                                        effectiveTls,
+                                                                        sni.state(),
                                                                         transportKey == null ? proxy() : Proxy.noProxy());
         Optional<HttpClientSpi> spi = clientSpiCache.get(endpointKey);
         if (spi.isPresent()) {
@@ -138,7 +152,9 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
             HttpClientSpi client = protocol.spi();
             HttpClientSpi.SupportLevel supports = client.supports(this, resolvedUri);
             if (supports == HttpClientSpi.SupportLevel.SUPPORTED) {
-                clientSpiCache.put(endpointKey, client);
+                if (endpointKey != null) {
+                    clientSpiCache.put(endpointKey, client);
+                }
                 return client.clientRequest(this, resolvedUri);
             }
             if (supports == HttpClientSpi.SupportLevel.COMPATIBLE && compatible == null) {
@@ -149,7 +165,7 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
             }
         }
 
-        if ("https".equals(resolvedUri.scheme()) && tls().enabled() && !tcpProtocols.isEmpty()) {
+        if ("https".equals(resolvedUri.scheme()) && effectiveTls.enabled() && !tcpProtocols.isEmpty()) {
             // we may use UNIX domain socket here
             UnixDomainSocketAddress unixSocketAddress = null;
             if (address().isPresent()) {
@@ -162,13 +178,12 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
 
             if (unixSocketAddress == null) {
                 // use ALPN
-                ConnectionKey connectionKey = ConnectionKey.create(resolvedUri.scheme(),
-                                                                   resolvedUri.host(),
-                                                                   resolvedUri.port(),
-                                                                   tls(),
-                                                                   clientConfig().dnsResolver(),
-                                                                   clientConfig().dnsAddressLookup(),
-                                                                   proxy());
+                ConnectionKey connectionKey = connectionKey(resolvedUri,
+                                                            effectiveSni,
+                                                            effectiveTls,
+                                                            clientConfig,
+                                                            proxy(),
+                                                            headers());
 
                 // this is a temporary connection, used to determine which protocol is supported, next
                 // call to the same remote location will be obtained from cache
@@ -179,12 +194,16 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                                                         conn -> {
                                                         });
             } else {
+                ConnectionKey connectionKey = unixConnectionKey(resolvedUri,
+                                                                effectiveSni,
+                                                                effectiveTls,
+                                                                clientConfig,
+                                                                unixSocketAddress,
+                                                                headers());
                 connection = UnixDomainSocketClientConnection.create(webClient,
-                                                                     tls(),
+                                                                     connectionKey,
                                                                      tcpProtocolIds,
                                                                      unixSocketAddress,
-                                                                     resolvedUri.host(),
-                                                                     resolvedUri.port(),
                                                                      conn -> false,
                                                                      conn -> {
                                                                      });
@@ -217,7 +236,9 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
         }
 
         if (compatible != null) {
-            clientSpiCache.put(endpointKey, compatible);
+            if (endpointKey != null) {
+                clientSpiCache.put(endpointKey, compatible);
+            }
             return compatible.clientRequest(this, resolvedUri);
         }
 
@@ -236,5 +257,80 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                 .map(UnixDomainSocketAddress.class::cast)
                 .map(address -> "unix:" + address.getPath())
                 .orElse(null);
+    }
+
+    private SniConfig effectiveSni(HttpClientConfig clientConfig) {
+        return sni().or(clientConfig::sni).orElse(null);
+    }
+
+    private Tls effectiveTls(ClientUri uri, Tls tls) {
+        return "https".equals(uri.scheme()) ? tls : NO_TLS;
+    }
+
+    private boolean requiresFinalHeaders(ClientUri uri, SniConfig sni, Tls tls) {
+        return "https".equals(uri.scheme())
+                && tls.enabled()
+                && sni != null
+                && sni.mode() == SniMode.HOST_HEADER;
+    }
+
+    private ClientRequest<?> firstTcpProtocol(ClientUri resolvedUri) {
+        if (tcpProtocols.isEmpty()) {
+            throw new IllegalArgumentException("Cannot handle request to " + resolvedUri + ", did not discover any HTTP version "
+                                                       + "willing to handle it. HTTP versions supported: " + clients.keySet());
+        }
+        property(GENERIC_TCP_PROTOCOL_IDS_PROPERTY, String.join(",", tcpProtocolIds));
+        return tcpProtocols.getFirst().spi().clientRequest(this, resolvedUri);
+    }
+
+    private static SniSupport.Selection sniSelection(ClientUri uri,
+                                                     SniConfig sni,
+                                                     Tls tls,
+                                                     ClientRequestHeaders headers) {
+        return sni == null ? SniSupport.tlsDefault(uri, tls) : SniSupport.resolve(uri, sni, tls, headers);
+    }
+
+    private static ConnectionKey connectionKey(ClientUri uri,
+                                               SniConfig sni,
+                                               Tls tls,
+                                               HttpClientConfig clientConfig,
+                                               Proxy proxy,
+                                               ClientRequestHeaders headers) {
+        if (sni == null) {
+            return ConnectionKey.create(uri,
+                                        tls,
+                                        clientConfig.dnsResolver(),
+                                        clientConfig.dnsAddressLookup(),
+                                        proxy);
+        }
+        return ConnectionKey.create(uri,
+                                    sni,
+                                    tls,
+                                    clientConfig.dnsResolver(),
+                                    clientConfig.dnsAddressLookup(),
+                                    proxy,
+                                    headers);
+    }
+
+    private static ConnectionKey unixConnectionKey(ClientUri uri,
+                                                   SniConfig sni,
+                                                   Tls tls,
+                                                   HttpClientConfig clientConfig,
+                                                   UnixDomainSocketAddress address,
+                                                   ClientRequestHeaders headers) {
+        if (sni == null) {
+            return ConnectionKey.createUnixDomainSocket(uri,
+                                                        tls,
+                                                        clientConfig.dnsResolver(),
+                                                        clientConfig.dnsAddressLookup(),
+                                                        address);
+        }
+        return ConnectionKey.createUnixDomainSocket(uri,
+                                                    sni,
+                                                    tls,
+                                                    clientConfig.dnsResolver(),
+                                                    clientConfig.dnsAddressLookup(),
+                                                    address,
+                                                    headers);
     }
 }

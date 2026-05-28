@@ -32,7 +32,6 @@ import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
-import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Header;
@@ -77,7 +76,6 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     private final Http1ClientProtocolConfig protocolConfig;
     private final ClientConnection connection;
     private final Http1ClientRequestImpl originalRequest;
-    private final Tls tls;
     private final Proxy proxy;
     private final boolean keepAlive;
     private final CompletableFuture<WebClientServiceResponse> whenComplete;
@@ -93,7 +91,6 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         this.originalRequest = clientRequest;
         this.timeout = clientRequest.readTimeout();
         this.connection = clientRequest.connection().orElse(null);
-        this.tls = clientRequest.tls();
         this.proxy = clientRequest.effectiveProxy();
         this.keepAlive = clientRequest.keepAlive();
         this.http1Client = clientRequest.http1Client();
@@ -147,19 +144,21 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
     @Override
     public WebClientServiceResponse proceed(WebClientServiceRequest serviceRequest) {
+        ClientUri uri = serviceRequest.uri();
+        ClientRequestHeaders headers = serviceRequest.headers();
+
+        writeBuffer.clear();
+        originalRequest.sanitizeRedirectHeaders(uri, headers);
+        headers.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
+
         // either use the explicit connection, or obtain one (keep alive or one-off)
         effectiveConnection = connection == null ? obtainConnection(serviceRequest) : connection;
         effectiveConnection.readTimeout(this.timeout);
 
         DataWriter writer = effectiveConnection.writer();
         DataReader reader = effectiveConnection.reader();
-        ClientUri uri = serviceRequest.uri();
-        ClientRequestHeaders headers = serviceRequest.headers();
 
-        writeBuffer.clear();
-        originalRequest.sanitizeRedirectHeaders(uri, headers);
         prologue(effectiveConnection, writeBuffer, serviceRequest, uri);
-        headers.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
 
         return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
     }
@@ -325,15 +324,14 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         if (udsAddress == null) {
             return http1Client.connectionCache()
                     .connection(http1Client,
-                                tls,
-                                proxy,
+                                originalRequest,
                                 request.uri(),
                                 request.headers(),
                                 keepAlive);
         } else {
             return http1Client.connectionCache()
                     .connection(http1Client,
-                                tls,
+                                originalRequest,
                                 request.uri(),
                                 request.headers(),
                                 keepAlive,

@@ -30,8 +30,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLParameters;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
@@ -56,6 +58,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
     private final List<String> alpnId;
     private final String tlsPeerHost;
     private final int tlsPeerPort;
+    private final List<SNIServerName> serverNamesOverride;
     private final Function<UnixDomainSocketClientConnection, Boolean> releaseFunction;
     private final Consumer<UnixDomainSocketClientConnection> closeConsumer;
 
@@ -73,6 +76,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                                              List<String> alpnId,
                                              String tlsPeerHost,
                                              int tlsPeerPort,
+                                             List<SNIServerName> serverNamesOverride,
                                              Function<UnixDomainSocketClientConnection, Boolean> releaseFunction,
                                              Consumer<UnixDomainSocketClientConnection> closeConsumer) {
         this.webClient = Objects.requireNonNull(webClient, "webClient");
@@ -81,6 +85,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
         this.alpnId = Objects.requireNonNull(alpnId, "alpnId");
         this.tlsPeerHost = tlsPeerHost;
         this.tlsPeerPort = tlsPeerPort;
+        this.serverNamesOverride = serverNamesOverride;
         this.releaseFunction = Objects.requireNonNull(releaseFunction, "releaseFunction");
         this.closeConsumer = Objects.requireNonNull(closeConsumer, "closeConsumer");
     }
@@ -113,6 +118,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                                                     tcpProtocolIds,
                                                     null,
                                                     -1,
+                                                    null,
                                                     releaseFunction,
                                                     closeConsumer);
     }
@@ -146,6 +152,37 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                                                     tcpProtocolIds,
                                                     Objects.requireNonNull(tlsPeerHost, "tlsPeerHost"),
                                                     tlsPeerPort,
+                                                    null,
+                                                    releaseFunction,
+                                                    closeConsumer);
+    }
+
+    /**
+     * Create a new UNIX Domain Socket Connection.
+     *
+     * @param webClient       webclient, to get configuration
+     * @param connectionKey   connection key
+     * @param tcpProtocolIds  protocol IDs for ALPN (TLS protocol negotiation)
+     * @param address         address of the socket
+     * @param releaseFunction called when {@link #releaseResource()} is called, if {@code false} is returned, the connection will
+     *                        be closed instead kept open
+     * @param closeConsumer   called when {@link #closeResource()} is called, the connection is no longer usable after this moment
+     * @return a new UNIX domain socket connection, {@link #connect()} must be called to make it available for use
+     */
+    @Api.Internal
+    public static UnixDomainSocketClientConnection create(WebClient webClient,
+                                                          ConnectionKey connectionKey,
+                                                          List<String> tcpProtocolIds,
+                                                          UnixDomainSocketAddress address,
+                                                          Function<UnixDomainSocketClientConnection, Boolean> releaseFunction,
+                                                          Consumer<UnixDomainSocketClientConnection> closeConsumer) {
+        return new UnixDomainSocketClientConnection(webClient,
+                                                    connectionKey.tls(),
+                                                    address,
+                                                    tcpProtocolIds,
+                                                    connectionKey.tlsPeerHost(),
+                                                    connectionKey.tlsPeerPort(),
+                                                    connectionKey.serverNamesOverride(),
                                                     releaseFunction,
                                                     closeConsumer);
     }
@@ -327,6 +364,9 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
         SSLParameters source = this.tls.sslParameters();
         if (source.getServerNames() != null) {
             parameters.setServerNames(source.getServerNames());
+        }
+        if (serverNamesOverride != null) {
+            parameters.setServerNames(serverNamesOverride);
         }
         if (source.getCipherSuites() != null) {
             parameters.setCipherSuites(source.getCipherSuites());

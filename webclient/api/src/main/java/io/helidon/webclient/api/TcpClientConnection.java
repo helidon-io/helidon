@@ -33,6 +33,7 @@ import java.util.function.Function;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLSocket;
 
 import io.helidon.common.buffers.BufferData;
@@ -138,7 +139,15 @@ public class TcpClientConnection implements ClientConnection {
 
 
         if (tls.enabled()) {
-            SSLSocket sslSocket = tls.createSocket(tcpProtocolIds, socket, targetAddress);
+            List<SNIServerName> serverNamesOverride = connectionKey.serverNamesOverride();
+            SSLSocket sslSocket = serverNamesOverride == null
+                    ? tls.createSocket(tcpProtocolIds, socket, targetAddress)
+                    : tls.createSocket(tcpProtocolIds,
+                                       socket,
+                                       targetAddress,
+                                       connectionKey.tlsPeerHost(),
+                                       connectionKey.tlsPeerPort(),
+                                       serverNamesOverride);
             try {
                 sslSocket.startHandshake();
             } catch (IOException e) {

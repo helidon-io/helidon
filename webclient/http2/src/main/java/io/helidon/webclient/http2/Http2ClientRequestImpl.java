@@ -77,6 +77,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
         tls(request.tls());
+        request.sni().ifPresent(this::sni);
         if (sameOrigin(request.resolvedUri(), clientUri)) {
             request.address().ifPresent(this::address);
         }

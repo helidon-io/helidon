@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.common.GenericType;
@@ -75,6 +76,36 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @return updated request
      */
     T tls(Tls tls);
+
+    /**
+     * Configure client-side TLS SNI for this request.
+     * <p>
+     * Request-level SNI overrides client-level SNI. A configured SNI host is also used as the TLS peer host for
+     * endpoint identification.
+     *
+     * @param sni SNI configuration
+     * @return updated request
+     */
+    default T sni(SniConfig sni) {
+        Objects.requireNonNull(sni, "sni");
+        throw new UnsupportedOperationException("SNI configuration is not supported by this request implementation");
+    }
+
+    /**
+     * Configure client-side TLS SNI for this request.
+     * <p>
+     * Request-level SNI overrides client-level SNI. A configured SNI host is also used as the TLS peer host for
+     * endpoint identification.
+     *
+     * @param sni SNI configuration builder
+     * @return updated request
+     */
+    default T sni(Consumer<SniConfig.Builder> sni) {
+        Objects.requireNonNull(sni, "sni");
+        SniConfig.Builder builder = SniConfig.builder();
+        sni.accept(builder);
+        return sni(builder.buildPrototype());
+    }
 
     /**
      * Proxy configuration for this specific request.

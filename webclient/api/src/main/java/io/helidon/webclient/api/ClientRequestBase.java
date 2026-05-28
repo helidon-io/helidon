@@ -92,6 +92,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private Duration readTimeout;
     private Duration readContinueTimeout;
     private Tls tls;
+    private SniConfig sni;
     private Proxy proxy;
     private boolean keepAlive;
     private ClientConnection connection;
@@ -190,6 +191,12 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public T tls(Tls tls) {
         this.tls = tls;
+        return identity();
+    }
+
+    @Override
+    public T sni(SniConfig sni) {
+        this.sni = Objects.requireNonNull(sni);
         return identity();
     }
 
@@ -361,6 +368,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     public R outputStream(OutputStreamHandler outputStreamConsumer) {
         rejectHeadWithEntity();
         additionalHeaders();
+        validateRequest();
         return doOutputStream(outputStreamConsumer);
     }
 
@@ -410,6 +418,11 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public Tls tls() {
         return tls;
+    }
+
+    @Override
+    public Optional<SniConfig> sni() {
+        return Optional.ofNullable(sni);
     }
 
     @Override
@@ -510,7 +523,10 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                                                                         whenSent,
                                                                         properties);
 
-        WebClientService.Chain last = httpCallChain;
+        WebClientService.Chain last = request -> {
+            ClientRequestHeaderSupport.validate(request.headers());
+            return httpCallChain.proceed(request);
+        };
 
         List<WebClientService> services = clientConfig.services();
         ListIterator<WebClientService> serviceIterator = services.listIterator(services.size());
@@ -585,6 +601,11 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     private R validateAndSubmit(Object entity) {
+        validateRequest();
+        return doSubmit(entity);
+    }
+
+    private void validateRequest() {
         String scheme = uri().scheme();
         if (scheme == null || !SUPPORTED_SCHEMES.contains(scheme.toLowerCase())) {
             throw new IllegalArgumentException(
@@ -594,7 +615,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                     )
             );
         }
-        return doSubmit(entity);
     }
 
     private String resolvePathParams(String path) {

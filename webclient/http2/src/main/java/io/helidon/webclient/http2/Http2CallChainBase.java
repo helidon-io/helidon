@@ -104,7 +104,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         requestHeaders = serviceRequest.headers();
 
         clientRequest.sanitizeRedirectHeaders(uri, requestHeaders);
-        requestHeaders.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
+        alignHostHeader(uri, requestHeaders);
         requestHeaders.remove(HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
         requestHeaders.setIfAbsent(USER_AGENT_HEADER);
 
@@ -274,7 +274,13 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     }
 
     private ConnectionKey connectionKey(WebClientServiceRequest serviceRequest) {
-        return Http2ConnectionKeys.create(serviceRequest.uri(), clientRequest, clientConfig);
+        return Http2ConnectionKeys.create(serviceRequest.uri(), clientRequest, clientConfig, serviceRequest.headers());
+    }
+
+    static void alignHostHeader(ClientUri uri, ClientRequestHeaders requestHeaders) {
+        requestHeaders.first(Http2Headers.AUTHORITY_NAME)
+                .ifPresentOrElse(authority -> requestHeaders.set(HeaderValues.create(HeaderNames.HOST, authority)),
+                                 () -> requestHeaders.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority())));
     }
 
     private static final class LogHeaderConsumer implements Consumer<Header> {

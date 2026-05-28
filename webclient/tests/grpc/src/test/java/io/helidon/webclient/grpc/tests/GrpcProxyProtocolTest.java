@@ -40,6 +40,7 @@ import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionListener;
+import io.helidon.webclient.api.SniMode;
 import io.helidon.webclient.grpc.ClientUriSuppliers;
 import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webserver.ProxyProtocolData;
@@ -286,6 +287,34 @@ public class GrpcProxyProtocolTest {
         assertThat(response.getText(), is("HELLO"));
 
         server.stop();
+    }
+
+    @Test
+    public void testTlsOverTcpUsesConfiguredSni() {
+        var server = WebServer.builder()
+            .tls(serverTls())
+            .bindAddress(new InetSocketAddress(Inet4Address.getLoopbackAddress(), 0))
+            .addRouting(GrpcRouting.builder()
+                .unary(Strings.getDescriptor(), "StringService", "Upper", GrpcProxyProtocolTest::upper))
+            .build();
+        server.start();
+
+        try {
+            GrpcClient grpcClient = GrpcClient.create(b -> b
+                .config(Config.create().get("grpc-client"))
+                .tls(clientTls())
+                .sni(sni -> sni.mode(SniMode.EXPLICIT)
+                        .host(LOGICAL_HOST))
+                .baseUri(URI.create("https://127.0.0.1:" + server.port())));
+            var service = StringServiceGrpc.newBlockingStub(grpcClient.channel());
+            var response = service.upper(Strings.StringMessage.newBuilder()
+                                                 .setText("hello")
+                                                 .build());
+
+            assertThat(response.getText(), is("HELLO"));
+        } finally {
+            server.stop();
+        }
     }
 
     private ConnectionListener v1Listener(String proxyHeader) {
