@@ -900,7 +900,6 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         return actualContracts;
     }
 
-
     private record ScopeImpl(TypeName scopeType,
                              Service.ScopeHandler handler,
                              ScopedRegistry registry) implements Scope {

@@ -25,7 +25,7 @@
     </parent>
 
     <artifactId>helidon-tests-benchmark-jmh</artifactId>
-    <name>Helidon WebServer Benchmarks JMH</name>
+    <name>Helidon Benchmarks JMH</name>
 
     <dependencies>
         <dependency>
@@ -63,6 +63,10 @@
         <dependency>
             <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media-json-smile</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
         </dependency>
         <dependency>
             <groupId>org.openjdk.jmh</groupId>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ final class LookupSupport {
 
     static final class CustomMethods {
         /**
-         * Empty lookup matches anything and everything except for abstract types.
+         * Empty lookup matches anything and everything except for abstract types and hidden raw factory providers.
          */
         @Prototype.Constant
         static final Lookup EMPTY = createEmpty();

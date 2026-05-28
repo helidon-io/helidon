@@ -267,7 +267,7 @@ Helidon validation module:
 
 ==== Constraint Annotations
 
-A "Constraint Annotation" is any annotation directly annotated with `io.helidon.validation.Validation`.
+A "Constraint Annotation" is any annotation directly annotated with `io.helidon.validation.Validation.Constraint`.
 Helidon Validation provides a set of built-in validation constraints, though custom constraints can be created, or existing constraints can be combined.
 
 Existing constraints:
@@ -354,6 +354,8 @@ A type annotated with `@Validation.Validated` will have validation code generate
 `@Validation.Valid` - if such an annotation is present, and it is on a field of another validated type, or it is a parameter,
 return type, or a type argument of a parameter/return type of a service method, the object instance will be validated using
 a generated interceptor.
+Type-use validation is supported on nested `Optional`, `Collection`, `List`, `Set`, `Map` key/value types, array component
+types, and wildcard bounds.
 
 ==== Usage
 
@@ -367,6 +369,22 @@ include::{sourcedir}/se/ValidationSnippets.java[tag=snippet_1, indent=0]
 .Example of a validated method call using a validated type
 ----
 include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_7, indent=0]
+----
+
+Constraint annotations and `@Validation.Valid` can also be declared on non-private instance methods of service interfaces.
+They are applied when the service instance is obtained from the service registry.
+Constraints declared on matching service interface and implementation methods are combined. Implementation constraints do not
+replace or loosen constraints declared by the service interface, even when both methods use the same constraint type with
+different values.
+The same applies to instances returned by registry-managed service factories, including `Supplier`,
+`Service.ServicesFactory`, `Service.InjectionPointFactory`, and `Service.QualifiedFactory` services.
+This can change runtime behavior for services that already declared interface validation: invalid calls through
+registry-obtained services may now fail with a `ValidationException`, while directly constructed objects are not intercepted.
+
+[source,java]
+.Example of a validated service contract
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_7b, indent=0]
 ----
 
 A custom "compound" annotation can be created to simplify usage.

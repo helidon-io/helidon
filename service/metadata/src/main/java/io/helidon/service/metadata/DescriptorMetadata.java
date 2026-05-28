@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ public interface DescriptorMetadata {
      * @param descriptor       type of the service descriptor (the generated file from {@code helidon-service-codegen})
      * @param weight           weight of the service descriptor
      * @param contracts        contracts the service implements
-     * @param factoryContracts factory contracts the service instance implements
+     * @param factoryContracts contracts that identify the factory provider itself, empty otherwise
      * @return a new descriptor metadata instance
      */
     static DescriptorMetadata create(TypeName descriptor,
@@ -57,7 +57,7 @@ public interface DescriptorMetadata {
     Set<ResolvedType> contracts();
 
     /**
-     * Contracts of the factory service, if this describes a factory, empty otherwise.
+     * Contracts that identify the factory provider itself, if this describes a factory, empty otherwise.
      *
      * @return factory contracts
      */
