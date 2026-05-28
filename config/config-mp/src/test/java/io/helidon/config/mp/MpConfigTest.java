@@ -45,6 +45,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.arrayWithSize;
@@ -235,6 +236,40 @@ public class MpConfigTest {
                 .build();
 
         assertThat(mpConfig.getValue("foo", String.class), is("bar"));
+    }
+
+    @Test
+    void reRegisterConfigAfterServiceRegistryAccess() {
+        ConfigProviderResolver resolver = ConfigProviderResolver.instance();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        Config original = resolver.getConfig(classLoader);
+        if (original instanceof MpConfigProviderResolver.ConfigDelegate delegate) {
+            original = delegate.delegate();
+        }
+
+        try {
+            Config first = resolver.getBuilder()
+                    .withSources(MpConfigSources.create(io.helidon.config.Config.builder()
+                                                                .sources(ConfigSources.create(Map.of("foo", "bar")))
+                                                                .build()))
+                    .build();
+            Config second = resolver.getBuilder()
+                    .withSources(MpConfigSources.create(io.helidon.config.Config.builder()
+                                                                .sources(ConfigSources.create(Map.of("foo", "baz")))
+                                                                .build()))
+                    .build();
+
+            resolver.registerConfig(first, classLoader);
+            io.helidon.config.Config registryConfig = Services.get(io.helidon.config.Config.class);
+            resolver.registerConfig(second, classLoader);
+
+            Config current = resolver.getConfig(classLoader);
+            assertThat(current, sameInstance(registryConfig));
+            assertThat(current.getValue("foo", String.class), is("baz"));
+            assertThat(registryConfig.get("foo").asString().get(), is("baz"));
+        } finally {
+            resolver.registerConfig(original, classLoader);
+        }
     }
 
     @Test
