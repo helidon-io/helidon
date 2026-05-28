@@ -17,7 +17,9 @@
 package io.helidon.webserver;
 
 import java.io.UncheckedIOException;
+import java.net.ConnectException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -653,6 +655,124 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
+    void stopForcesConnectionsBeforeWaitingForRunningIdleTimeoutTask() throws Exception {
+        CountDownLatch stopStarted = new CountDownLatch(1);
+        CountDownLatch stopDone = new CountDownLatch(1);
+        AtomicReference<Throwable> stopFailure = new AtomicReference<>();
+        BlockingIdleCloseConnection connection = new BlockingIdleCloseConnection();
+        QueueingConnectionSelector selector = new QueueingConnectionSelector(connection);
+        LoomServer server = (LoomServer) WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .idleConnectionTimeout(Duration.ofMillis(1))
+                .idleConnectionPeriod(Duration.ofMillis(10))
+                .addConnectionSelector(selector)
+                .build()
+                .start();
+        Thread stopThread = null;
+        int port = server.port();
+
+        try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), port)) {
+            socket.getOutputStream().write('x');
+            assertThat(connection.awaitHandling(), is(true));
+            assertThat(connection.awaitIdleClose(), is(true));
+
+            stopThread = Thread.ofPlatform()
+                    .name("test-stop-forces-before-idle-timeout-wait")
+                    .start(() -> {
+                        stopStarted.countDown();
+                        try {
+                            server.stop();
+                        } catch (RuntimeException | Error e) {
+                            stopFailure.set(e);
+                        } finally {
+                            stopDone.countDown();
+                        }
+                    });
+
+            assertThat(stopStarted.await(5, TimeUnit.SECONDS), is(true));
+            assertThat(connection.awaitForcedClose(), is(true));
+            assertThat("stop should wait for the running idle timeout task",
+                       stopDone.getCount(),
+                       is(1L));
+            assertPortRefusesConnections(port);
+
+            connection.releaseIdleClose();
+            stopThread.join(TimeUnit.SECONDS.toMillis(5));
+
+            assertThat(stopThread.isAlive(), is(false));
+            assertThat(stopFailure.get(), nullValue());
+        } finally {
+            connection.releaseIdleClose();
+            connection.releaseHandling();
+            if (stopThread != null && stopThread.isAlive()) {
+                stopThread.interrupt();
+            }
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void suspendForcesConnectionsBeforeWaitingForRunningIdleTimeoutTask() throws Exception {
+        CountDownLatch suspendStarted = new CountDownLatch(1);
+        CountDownLatch suspendDone = new CountDownLatch(1);
+        AtomicReference<Throwable> suspendFailure = new AtomicReference<>();
+        BlockingIdleCloseConnection connection = new BlockingIdleCloseConnection();
+        QueueingConnectionSelector selector = new QueueingConnectionSelector(connection);
+        LoomServer server = (LoomServer) WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .idleConnectionTimeout(Duration.ofMillis(1))
+                .idleConnectionPeriod(Duration.ofMillis(10))
+                .addConnectionSelector(selector)
+                .build()
+                .start();
+        Thread suspendThread = null;
+        int port = server.port();
+
+        try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), port)) {
+            socket.getOutputStream().write('x');
+            assertThat(connection.awaitHandling(), is(true));
+            assertThat(connection.awaitIdleClose(), is(true));
+
+            suspendThread = Thread.ofPlatform()
+                    .name("test-suspend-forces-before-idle-timeout-wait")
+                    .start(() -> {
+                        suspendStarted.countDown();
+                        try {
+                            server.suspend();
+                        } catch (RuntimeException | Error e) {
+                            suspendFailure.set(e);
+                        } finally {
+                            suspendDone.countDown();
+                        }
+                    });
+
+            assertThat(suspendStarted.await(5, TimeUnit.SECONDS), is(true));
+            assertThat(connection.awaitForcedClose(), is(true));
+            assertThat("suspend should wait for the running idle timeout task",
+                       suspendDone.getCount(),
+                       is(1L));
+            assertPortRefusesConnections(port);
+
+            connection.releaseIdleClose();
+            suspendThread.join(TimeUnit.SECONDS.toMillis(5));
+
+            assertThat(suspendThread.isAlive(), is(false));
+            assertThat(suspendFailure.get(), nullValue());
+        } finally {
+            connection.releaseIdleClose();
+            connection.releaseHandling();
+            if (suspendThread != null && suspendThread.isAlive()) {
+                suspendThread.interrupt();
+            }
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
     void webServerStopFailureThrowsAfterStoppingAllListeners() {
         LifecycleService defaultService = new LifecycleService("default", true);
         LifecycleService adminService = new LifecycleService("admin", true);
@@ -811,6 +931,16 @@ class ServerListenerLifecycleTest {
         assertThat(port > 0, is(true));
         try (ServerSocket _ = new ServerSocket(port, 50, InetAddress.getLoopbackAddress())) {
             // validates that failed startup cleanup released the socket
+        }
+    }
+
+    private static void assertPortRefusesConnections(int port) throws Exception {
+        assertThat(port > 0, is(true));
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), 250);
+            throw new AssertionError("Listener socket still accepted connections on port " + port);
+        } catch (ConnectException | SocketTimeoutException _) {
+            // validates that the listener socket is closed while shutdown waits for idle-timeout cleanup
         }
     }
 
@@ -1220,6 +1350,72 @@ class ServerListenerLifecycleTest {
 
         private void release() {
             release.countDown();
+        }
+    }
+
+    private static final class BlockingIdleCloseConnection implements ServerConnection {
+        private final CountDownLatch handling = new CountDownLatch(1);
+        private final CountDownLatch idleCloseEntered = new CountDownLatch(1);
+        private final CountDownLatch forcedCloseEntered = new CountDownLatch(1);
+        private final CountDownLatch releaseIdleClose = new CountDownLatch(1);
+        private final CountDownLatch releaseHandling = new CountDownLatch(1);
+        private final AtomicInteger gracefulCloses = new AtomicInteger();
+
+        @Override
+        public void handle(io.helidon.common.concurrency.limits.Limit limit) {
+            handling.countDown();
+            while (releaseHandling.getCount() != 0) {
+                try {
+                    releaseHandling.await(1, TimeUnit.SECONDS);
+                } catch (InterruptedException _) {
+                    // Deliberately ignore interrupts so shutdown must close the connection.
+                }
+            }
+        }
+
+        @Override
+        public Duration idleTime() {
+            return Duration.ofMinutes(1);
+        }
+
+        @Override
+        public void close(boolean interrupt) {
+            if (interrupt) {
+                forcedCloseEntered.countDown();
+                releaseHandling.countDown();
+                return;
+            }
+            if (gracefulCloses.incrementAndGet() == 1) {
+                idleCloseEntered.countDown();
+                while (releaseIdleClose.getCount() != 0) {
+                    try {
+                        releaseIdleClose.await(1, TimeUnit.SECONDS);
+                    } catch (InterruptedException _) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                }
+            }
+        }
+
+        private boolean awaitHandling() throws InterruptedException {
+            return handling.await(5, TimeUnit.SECONDS);
+        }
+
+        private boolean awaitIdleClose() throws InterruptedException {
+            return idleCloseEntered.await(5, TimeUnit.SECONDS);
+        }
+
+        private boolean awaitForcedClose() throws InterruptedException {
+            return forcedCloseEntered.await(5, TimeUnit.SECONDS);
+        }
+
+        private void releaseIdleClose() {
+            releaseIdleClose.countDown();
+        }
+
+        private void releaseHandling() {
+            releaseHandling.countDown();
         }
     }
 

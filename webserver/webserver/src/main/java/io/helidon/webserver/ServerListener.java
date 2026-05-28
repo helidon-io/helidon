@@ -40,6 +40,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BooleanSupplier;
 
 import javax.net.ssl.SSLParameters;
@@ -86,6 +88,8 @@ class ServerListener implements ListenerContext {
     private final SocketOptions connectionOptions;
     private final SocketAddress configuredAddress;
     private final Duration gracePeriod;
+    private final Timer idleConnectionTimer;
+    private final Lock idleTimeoutLock = new ReentrantLock();
 
     private final MediaContext mediaContext;
     private final ContentEncodingContext contentEncodingContext;
@@ -100,6 +104,7 @@ class ServerListener implements ListenerContext {
     private volatile ServerSocketChannel serverSocket;
     private volatile Thread serverThread;
     private volatile CompletableFuture<Void> closeFuture;
+    private volatile IdleTimeoutHandler idleTimeoutHandler;
 
     @SuppressWarnings("unchecked")
     ServerListener(String socketName,
@@ -182,12 +187,7 @@ class ServerListener implements ListenerContext {
                 });
 
         this.router = router;
-
-        // handle idle connection timeout
-        IdleTimeoutHandler ith = new IdleTimeoutHandler(idleConnectionTimer,
-                                                        listenerConfig,
-                                                        this::connectionHandlers);
-        ith.start();
+        this.idleConnectionTimer = idleConnectionTimer;
     }
 
     @Override
@@ -328,6 +328,14 @@ class ServerListener implements ListenerContext {
         Throwable failure = null;
         // Stop listening for connections
         closeServerSocketForStop();
+        IdleTimeoutHandler cancelledIdleTimeoutHandler = null;
+
+        try {
+            cancelledIdleTimeoutHandler = cancelIdleTimeoutHandler();
+            purgeCancelledIdleTimeoutHandler(cancelledIdleTimeoutHandler);
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
+        }
 
         try {
             // Stop handling any new requests on all accepted and active connections
@@ -353,6 +361,12 @@ class ServerListener implements ListenerContext {
         try {
             // Interrupt and close any accepted and active connections
             failure = LifecycleFailures.add(failure, closeOpenConnections(true));
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
+        }
+
+        try {
+            awaitIdleTimeoutHandler(cancelledIdleTimeoutHandler);
         } catch (RuntimeException | Error e) {
             failure = LifecycleFailures.add(failure, e);
         }
@@ -392,10 +406,22 @@ class ServerListener implements ListenerContext {
         } catch (IOException e) {
             LOGGER.log(INFO, "Exception thrown on socket close", e);
         }
+        IdleTimeoutHandler cancelledIdleTimeoutHandler = null;
+        try {
+            cancelledIdleTimeoutHandler = cancelIdleTimeoutHandler();
+            purgeCancelledIdleTimeoutHandler(cancelledIdleTimeoutHandler);
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
+        }
         // Stop handling any new requests on all accepted and active connections
         failure = LifecycleFailures.add(failure, closeOpenConnections(false));
         // Interrupt and close any accepted and active connections
         failure = LifecycleFailures.add(failure, closeOpenConnections(true));
+        try {
+            awaitIdleTimeoutHandler(cancelledIdleTimeoutHandler);
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
+        }
 
         Thread localServerThread = serverThread;
         if (localServerThread != null) {
@@ -437,6 +463,7 @@ class ServerListener implements ListenerContext {
             String serverChannelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(serverSocket));
 
             running = true;
+            startIdleTimeoutHandler();
 
             if (LOGGER.isLoggable(INFO)) {
                 if (configuredAddress instanceof InetSocketAddress inetAddress) {
@@ -507,6 +534,7 @@ class ServerListener implements ListenerContext {
     private void rollbackFailedStart(Throwable startupFailure, boolean lifecycleStarted) {
         running = false;
         suppressCleanupFailure(startupFailure, this::closeServerSocketOnFailure);
+        suppressCleanupFailure(startupFailure, this::cancelAndAwaitIdleTimeoutHandler);
         suppressCleanupFailure(startupFailure, this::shutdownReaderExecutor);
         suppressCleanupFailure(startupFailure, this::shutdownSharedExecutor);
         if (lifecycleStarted) {
@@ -624,6 +652,62 @@ class ServerListener implements ListenerContext {
         List<Runnable> running = sharedExecutor.shutdownNow();
         if (!running.isEmpty()) {
             LOGGER.log(DEBUG, running.size() + " tasks in shared executor did not terminate gracefully");
+        }
+    }
+
+    private void startIdleTimeoutHandler() {
+        idleTimeoutLock.lock();
+        try {
+            IdleTimeoutHandler handler = new IdleTimeoutHandler(idleConnectionTimer,
+                                                                listenerConfig,
+                                                                this::connectionHandlers);
+            handler.start();
+            idleTimeoutHandler = handler;
+        } finally {
+            idleTimeoutLock.unlock();
+        }
+    }
+
+    private IdleTimeoutHandler cancelIdleTimeoutHandler() {
+        idleTimeoutLock.lock();
+        try {
+            IdleTimeoutHandler handler = idleTimeoutHandler;
+            if (handler == null) {
+                return null;
+            }
+            idleTimeoutHandler = null;
+            handler.cancelOnly();
+            return handler;
+        } finally {
+            idleTimeoutLock.unlock();
+        }
+    }
+
+    private void cancelAndAwaitIdleTimeoutHandler() {
+        IdleTimeoutHandler handler = cancelIdleTimeoutHandler();
+        Throwable failure = null;
+        try {
+            purgeCancelledIdleTimeoutHandler(handler);
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
+        }
+        try {
+            awaitIdleTimeoutHandler(handler);
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
+        }
+        LifecycleFailures.throwIfFailed(failure, "Failed to cancel listener idle timeout task for " + socketName);
+    }
+
+    private void purgeCancelledIdleTimeoutHandler(IdleTimeoutHandler handler) {
+        if (handler != null) {
+            idleConnectionTimer.purge();
+        }
+    }
+
+    private static void awaitIdleTimeoutHandler(IdleTimeoutHandler handler) {
+        if (handler != null) {
+            handler.awaitFinished();
         }
     }
 
