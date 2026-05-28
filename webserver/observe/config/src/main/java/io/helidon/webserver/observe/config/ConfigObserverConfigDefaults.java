@@ -19,12 +19,26 @@ package io.helidon.webserver.observe.config;
 import java.util.Set;
 
 final class ConfigObserverConfigDefaults {
-    static final String SECRET_PASSWORD = ".*password";
-    static final String SECRET_PASSPHRASE = ".*passphrase";
-    static final String SECRET_SECRET = ".*secret";
+    static final String SECRET_PASSWORD = ".*password.*";
+    static final String SECRET_PASSPHRASE = ".*passphrase.*";
+    static final String SECRET_PWD = ".*pwd.*";
+    static final String SECRET_SECRET = ".*secret.*";
+    static final String SECRET_CREDENTIAL = ".*credential.*";
+    static final String SECRET_TOKEN = ".*token.*";
+    static final String SECRET_API_KEY = ".*api[-_.]?key.*";
+    static final String SECRET_ACCESS_KEY = ".*access[-_.]?key.*";
+    static final String SECRET_PRIVATE_KEY = ".*private[-_.]?key.*";
+    static final String SECRET_CONNECTION_URL = ".*connection[-_.]?url.*";
     static final Set<String> SECRETS = Set.of(SECRET_PASSWORD,
                                               SECRET_PASSPHRASE,
-                                              SECRET_SECRET);
+                                              SECRET_PWD,
+                                              SECRET_SECRET,
+                                              SECRET_CREDENTIAL,
+                                              SECRET_TOKEN,
+                                              SECRET_API_KEY,
+                                              SECRET_ACCESS_KEY,
+                                              SECRET_PRIVATE_KEY,
+                                              SECRET_CONNECTION_URL);
 
     static final String SAFE_KEY_SERVER_HOST = "server[.]host";
     static final String SAFE_KEY_SERVER_PORT = "server[.]port";
