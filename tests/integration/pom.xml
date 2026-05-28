@@ -70,6 +70,7 @@
         <module>mp-telemetry</module>
         <module>mp-jaxrs-preserve-headers</module>
         <module>mp-metrics-gh-9995</module>
+        <module>mp-tracing-no-telemetry</module>
         <module>context-http-propagation</module>
     </modules>
 
