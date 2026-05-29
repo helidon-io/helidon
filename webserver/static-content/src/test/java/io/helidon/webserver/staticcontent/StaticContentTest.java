@@ -311,15 +311,14 @@ class StaticContentTest {
     }
 
     @Test
-    void testFileSystemPreCompressedUsesWildcardSidecar() {
+    void testFileSystemPreCompressedWildcardDoesNotSelectSidecar() {
         try (Http1ClientResponse response = testClient.get("/path/resource.txt")
                 .header(HeaderNames.ACCEPT_ENCODING, "*, identity;q=0")
                 .request()) {
 
-            assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
+            assertThat(response.status(), is(Status.NOT_ACCEPTABLE_406));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
-            assertThat(response.as(String.class), is("Brotli content"));
         }
     }
 
