@@ -257,11 +257,13 @@ class Http2ClientTest {
     @Test
     void testFailedH2cUpgradeWithoutEntityCompletesWhenSent() throws Exception {
         PlainHttp1Server server = PlainHttp1Server.start();
+        AtomicInteger serviceInvocations = new AtomicInteger();
         AtomicReference<CompletableFuture<WebClientServiceRequest>> whenSent = new AtomicReference<>();
         Http2Client client = Http2Client.builder()
                 .baseUri("http://localhost:" + server.port() + "/")
                 .shareConnectionCache(false)
                 .addService((chain, request) -> {
+                    serviceInvocations.incrementAndGet();
                     whenSent.set(request.whenSent().toCompletableFuture());
                     return chain.proceed(request);
                 })
@@ -272,6 +274,7 @@ class Http2ClientTest {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is("http1"));
             assertThat(whenSent.get().get(10, TimeUnit.SECONDS).method(), is(Method.GET));
+            assertThat(serviceInvocations.get(), is(1));
 
             List<String> requestLines = server.requestLines();
             assertThat(requestLines.getFirst(), is("GET / HTTP/1.1"));

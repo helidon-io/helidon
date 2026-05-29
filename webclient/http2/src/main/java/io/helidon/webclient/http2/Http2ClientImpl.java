@@ -161,6 +161,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
                     .addService(new Http1FallbackService())
                     .cookieManager(WebClientCookieManager.builder().build())
                     .protocolPreference(List.of(Http1Client.PROTOCOL_ID))
+                    .shareConnectionCache(false)
                     .build();
             try {
                 Http1Client http1Client = fallbackWebClient.client(Http1Client.PROTOCOL);
@@ -196,7 +197,19 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
         return connectionCache;
     }
 
-    private record Http1FallbackResources(WebClient webClient, Http1Client http1Client) {
+    private static final class Http1FallbackResources {
+        private final WebClient webClient;
+        private final Http1Client http1Client;
+
+        private Http1FallbackResources(WebClient webClient, Http1Client http1Client) {
+            this.webClient = webClient;
+            this.http1Client = http1Client;
+        }
+
+        private Http1Client http1Client() {
+            return http1Client;
+        }
+
         void closeResource() {
             try {
                 http1Client.closeResource();

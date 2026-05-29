@@ -206,7 +206,6 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
      *
      * @param alpnProtocols       protocol(s) to use (order is significant)
      * @param socket              existing socket
-     * @param address             physical peer address of the existing socket
      * @param tlsPeerHost         TLS peer host for SNI and endpoint identification
      * @param tlsPeerPort         TLS peer port for endpoint identification
      * @param serverNamesOverride server names to use for this socket
@@ -215,11 +214,9 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
     @Api.Internal
     public SSLSocket createSocket(List<String> alpnProtocols,
                                   Socket socket,
-                                  InetSocketAddress address,
                                   String tlsPeerHost,
                                   int tlsPeerPort,
                                   List<SNIServerName> serverNamesOverride) {
-        Objects.requireNonNull(address, "address");
         Objects.requireNonNull(tlsPeerHost, "tlsPeerHost");
         Objects.requireNonNull(serverNamesOverride, "serverNamesOverride");
         return createSocketInternal(alpnProtocols, socket, tlsPeerHost, tlsPeerPort, serverNamesOverride);

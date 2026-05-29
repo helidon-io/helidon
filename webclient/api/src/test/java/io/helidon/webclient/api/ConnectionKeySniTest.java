@@ -118,6 +118,36 @@ class ConnectionKeySniTest {
     }
 
     @Test
+    void hostHeaderModeSuppressesSniForIpLiteral() {
+        ClientRequestHeaders headers = emptyHeaders();
+        headers.set(HeaderNames.HOST, "127.0.0.1:9444");
+        SniConfig hostHeaderSni = SniConfig.builder()
+                .mode(SniMode.HOST_HEADER)
+                .build();
+
+        ConnectionKey key = key("https://service.example:443", hostHeaderSni, TLS, headers);
+
+        assertThat(key.tlsPeerHost(), is("127.0.0.1"));
+        assertThat(key.tlsPeerPort(), is(9444));
+        assertThat(key.serverNamesOverride(), is(empty()));
+    }
+
+    @Test
+    void hostHeaderModeSuppressesSniForBracketedIpv6Literal() {
+        ClientRequestHeaders headers = emptyHeaders();
+        headers.set(HeaderNames.HOST, "[::1]:9444");
+        SniConfig hostHeaderSni = SniConfig.builder()
+                .mode(SniMode.HOST_HEADER)
+                .build();
+
+        ConnectionKey key = key("https://service.example:443", hostHeaderSni, TLS, headers);
+
+        assertThat(key.tlsPeerHost(), is("::1"));
+        assertThat(key.tlsPeerPort(), is(9444));
+        assertThat(key.serverNamesOverride(), is(empty()));
+    }
+
+    @Test
     void hostHeaderModeFallsBackToUriAuthorityWhenHostIsAbsent() {
         ClientRequestHeaders headers = emptyHeaders();
         SniConfig hostHeaderSni = SniConfig.builder()
@@ -183,6 +213,30 @@ class ConnectionKeySniTest {
 
         assertThat(key, is(not(uriHostKey)));
         assertThat(key.tlsPeerHost(), is("service.example"));
+        assertThat(key.serverNamesOverride(), is(empty()));
+    }
+
+    @Test
+    void explicitModeSuppressesSniForIpLiteral() {
+        ConnectionKey key = key("https://service.example:9443",
+                                explicit("127.0.0.1"),
+                                TLS,
+                                emptyHeaders());
+
+        assertThat(key.tlsPeerHost(), is("127.0.0.1"));
+        assertThat(key.tlsPeerPort(), is(9443));
+        assertThat(key.serverNamesOverride(), is(empty()));
+    }
+
+    @Test
+    void explicitModeSuppressesSniForBracketedIpv6Literal() {
+        ConnectionKey key = key("https://service.example:9443",
+                                explicit("[::1]"),
+                                TLS,
+                                emptyHeaders());
+
+        assertThat(key.tlsPeerHost(), is("::1"));
+        assertThat(key.tlsPeerPort(), is(9443));
         assertThat(key.serverNamesOverride(), is(empty()));
     }
 

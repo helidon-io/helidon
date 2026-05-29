@@ -348,8 +348,7 @@ public final class ConnectionKey {
      *
      * @return TLS peer host
      */
-    @Api.Internal
-    public String tlsPeerHost() {
+    String tlsPeerHost() {
         return tlsPeerHost;
     }
 
@@ -358,8 +357,7 @@ public final class ConnectionKey {
      *
      * @return TLS peer port
      */
-    @Api.Internal
-    public int tlsPeerPort() {
+    int tlsPeerPort() {
         return tlsPeerPort;
     }
 

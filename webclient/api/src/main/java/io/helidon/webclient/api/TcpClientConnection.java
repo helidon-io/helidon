@@ -144,7 +144,6 @@ public class TcpClientConnection implements ClientConnection {
                     ? tls.createSocket(tcpProtocolIds, socket, targetAddress)
                     : tls.createSocket(tcpProtocolIds,
                                        socket,
-                                       targetAddress,
                                        connectionKey.tlsPeerHost(),
                                        connectionKey.tlsPeerPort(),
                                        serverNamesOverride);
