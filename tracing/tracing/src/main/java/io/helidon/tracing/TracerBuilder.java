@@ -29,8 +29,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * Each tracer implementation may use different options, though these are the common ones.
  * To keep service implementation abstracted from specific tracer, use {@link #config(Config)}
  * to load configuration of the tracer, as that supports externalization of
- * specific configuration options (e.g. you may use api-version for Zipkin tracer
- * and sampler-type for Jaeger).
+ * specific configuration options (e.g. you may use exporter-type and sampler-type for OpenTelemetry).
  * <p>
  * The following table lists common configuration options that must be honored by each integration (if supported by it).
  * <table class="config">
@@ -86,9 +85,9 @@ import io.helidon.config.metadata.ConfiguredOption;
  * tracing:
  *   # usually must be provided, as it is used as a service identifier
  *   service: "basket-service"
- *   # host of the collector server - example for zipkin in docker environment
+ *   # host of the collector server - example for an OpenTelemetry collector in docker environment
  *   #  would use default host, port and path
- *   host: "zipkin"
+ *   host: "otel-collector"
  *   # example of a tracer-wide tag
  *   tags:
  *      env: "stage-1"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ class TestSpanAndBaggage {
                        currentJustAfterActivation.get().context().spanId(),
                        is(outerSpan.context().spanId()));
 
-            outerSpan.baggage("myItem", "myValue");
+            outerSpan.baggage().set("myItem", "myValue");
             outerSpan.end();
         } catch (Exception e) {
             outerSpan.end(e);
