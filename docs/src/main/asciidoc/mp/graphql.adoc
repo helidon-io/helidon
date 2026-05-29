@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -126,9 +126,10 @@ NOTE: As per the instructions xref:introduction/microprofile.adoc[here] ensure y
 === Accessing the GraphQL endpoints
 
 After starting your application you should see a log message indicating that GraphQL
-is in the list of features. You can access the GraphQL endpoint at `http://host:port/graphql`, and
-the corresponding schema at `http://host:port/graphql/schema.graphql`. See <<Configuration>> for
-additional information on how to change the location of these resources.
+is in the list of features. The GraphQL endpoint is available at `http://host:port/graphql`, and
+the corresponding schema at `http://host:port/graphql/schema.graphql`, once access is authenticated
+or `graphql.permit-all` is set to `true`. See <<Configuration>> for additional information on how
+to change the location of these resources.
 
 If you wish to use the
 link:https://github.com/graphql/graphiql[GraphQL UI] then please see the

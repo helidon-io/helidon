@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -53,19 +53,21 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == API
 
-An instance of `GraphQlSupport` must be registered in the Helidon WebServer routes to enable
+An instance of `GraphQlService` must be registered in the Helidon WebServer routes to enable
 GraphQL support in your application. In addition, a GraphQL schema needs to be specified
 to verify and execute queries.
 
-The following code fragment creates an instance of `GraphQlSupport` and registers it in the
-Helidon WebServer.
+The following code fragment creates an instance of `GraphQlService`, disables authentication for
+the public example endpoint, and registers it in the Helidon WebServer.
 
 [source,java]
 ----
 include::{sourcedir}/se/GraphQlSnippets.java[tag=snippet_1, indent=0]
 ----
 
-By default, `GraphQlSupport` will reserve  `/graphql` as the URI path to process queries.
+By default, `GraphQlService` will reserve `/graphql` as the URI path to process queries and
+require requests to be authenticated. Set `permitAll` to `true` only for endpoints intended to
+be public.
 The `buildSchema` method creates the schema and defines 2 types of queries for this
 application:
 
