@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,9 @@ public class OidcCookieHandler {
         if (builder.encryptionEnabled) {
             var cookieEncryption = OidcEncryption.create("Cookie(" + cookieName + ")",
                                                          builder.encryptionName,
-                                                         builder.encryptionPassword);
+                                                         builder.encryptionPassword,
+                                                         builder.legacyCookieEncryption,
+                                                         builder.legacyCookieFallback);
             this.encryptFunction = it -> cookieEncryption.encrypt(it.getBytes(StandardCharsets.UTF_8));
             this.decryptFunction = it -> new String(cookieEncryption.decrypt(it), StandardCharsets.UTF_8);
         } else {
@@ -208,6 +210,8 @@ public class OidcCookieHandler {
         private String encryptionName;
         private char[] encryptionPassword;
         private boolean encryptionEnabled;
+        private boolean legacyCookieEncryption;
+        private boolean legacyCookieFallback;
 
         private Builder() {
         }
@@ -264,6 +268,16 @@ public class OidcCookieHandler {
 
         public Builder encryptionEnabled(Boolean encryptionEnabled) {
             this.encryptionEnabled = encryptionEnabled;
+            return this;
+        }
+
+        Builder legacyCookieEncryption(boolean legacyCookieEncryption) {
+            this.legacyCookieEncryption = legacyCookieEncryption;
+            return this;
+        }
+
+        Builder legacyCookieFallback(boolean legacyCookieFallback) {
+            this.legacyCookieFallback = legacyCookieFallback;
             return this;
         }
     }

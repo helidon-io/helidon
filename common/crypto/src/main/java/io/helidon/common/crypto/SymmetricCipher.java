@@ -91,6 +91,7 @@ public class SymmetricCipher implements CommonCipher {
     private static final LazyValue<SecureRandom> SECURE_RANDOM = LazyValue.create(SecureRandom::new);
     private static final Pattern PATTERN_ALGORITHM = Pattern.compile("^(\\S+)/\\S+/\\S+$");
     private static final int SALT_LENGTH = 16;
+    private static final int DEFAULT_NUMBER_OF_ITERATIONS = 600_000;
 
     private final String algorithm;
     private final String provider;
@@ -330,7 +331,7 @@ public class SymmetricCipher implements CommonCipher {
 
         private String algorithm = ALGORITHM_AES_GCM;
         private String provider = null;
-        private Integer numberOfIterations = 10000;
+        private Integer numberOfIterations = DEFAULT_NUMBER_OF_ITERATIONS;
         private Integer keySize = 256;
         private char[] password;
         private byte[] additionalAuthenticatedData;
@@ -390,7 +391,7 @@ public class SymmetricCipher implements CommonCipher {
         /**
          * Number of iterations which will be used for key derivation from the password.
          *
-         * Default value is 10000.
+         * Default value is 600000.
          *
          * @param numberOfIterations number of iterations
          * @return updated builder instance
