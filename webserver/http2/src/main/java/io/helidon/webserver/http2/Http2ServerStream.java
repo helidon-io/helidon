@@ -36,6 +36,7 @@ import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.socket.SocketWriterException;
+import io.helidon.http.BadRequestException;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
@@ -577,6 +578,16 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 throw writeFailure;
             }
             // no sense in throwing an exception, as this is invoked from an executor service directly
+        } catch (BadRequestException e) {
+            if (!handleRequestException(RequestException.builder()
+                                                .message(e.getMessage())
+                                                .cause(e)
+                                                .type(DirectHandler.EventType.BAD_REQUEST)
+                                                .status(e.status())
+                                                .build())) {
+                return;
+            }
+            completed = true;
         } catch (RequestException e) {
             if (!handleRequestException(e)) {
                 return;

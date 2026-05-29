@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,9 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
     private final MemoryCache memoryCache;
     private final TemporaryStorage temporaryStorage;
     private final Map<String, MediaType> contentTypeMapping;
+    private final Map<String, String> preCompressedEncodings;
     private final boolean enabled;
+    private final boolean preCompressedEnabled;
     private final Set<String> sockets;
     private final Optional<String> welcome;
 
@@ -54,6 +56,9 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
         this.enabled = config.enabled() && !(config.classpath().isEmpty() && config.path().isEmpty());
         if (enabled) {
             this.contentTypeMapping = config.contentTypes();
+            this.preCompressedEnabled = config.preCompressedEnabled();
+            this.preCompressedEncodings = StaticContentConfigSupport.normalizePreCompressedEncodings(
+                    config.preCompressedEncodings());
             this.memoryCache = config.memoryCache()
                         .orElseGet(MemoryCache::create);
             this.sockets = config.sockets();
@@ -71,6 +76,8 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
             this.memoryCache = null;
             this.temporaryStorage = null;
             this.contentTypeMapping = null;
+            this.preCompressedEnabled = false;
+            this.preCompressedEncodings = Map.of();
         }
     }
 
@@ -199,11 +206,15 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
                     continue;
                 }
 
+                ClasspathHandlerConfig sourceConfig = handlerConfig;
                 handlerConfig = ClasspathHandlerConfig.builder()
-                        .from(handlerConfig)
+                        .from(sourceConfig)
                         .memoryCache(handlerCache)
                         .temporaryStorage(handlerTmpStorage)
                         .update(it -> welcome.ifPresent(it::welcome))
+                        .preCompressedEnabled(sourceConfig.preCompressedEnabled().orElse(preCompressedEnabled))
+                        .preCompressedEncodings(sourceConfig.preCompressedEncodings()
+                                                        .orElse(preCompressedEncodings))
                         .classLoader(handlerClassLoader)
                         .contentTypes(contentTypeMap)
                         .build();
@@ -233,9 +244,13 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
                     continue;
                 }
 
+                FileSystemHandlerConfig sourceConfig = handlerConfig;
                 handlerConfig = FileSystemHandlerConfig.builder()
-                        .from(handlerConfig)
+                        .from(sourceConfig)
                         .memoryCache(handlerCache)
+                        .preCompressedEnabled(sourceConfig.preCompressedEnabled().orElse(preCompressedEnabled))
+                        .preCompressedEncodings(sourceConfig.preCompressedEncodings()
+                                                        .orElse(preCompressedEncodings))
                         .contentTypes(contentTypeMap)
                         .build();
 

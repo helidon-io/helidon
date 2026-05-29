@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,5 +150,27 @@ interface StaticContentConfigBlueprint extends Prototype.Factory<StaticContentFe
     @Option.Configured
     @Option.Singular
     Set<String> sockets();
+
+    /**
+     * Whether pre-compressed sidecar resources should be selected by default for feature-registered handlers.
+     *
+     * @return whether pre-compressed sidecar resources should be used
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean preCompressedEnabled();
+
+    /**
+     * Maps response content codings to pre-compressed file suffixes; the default map is br to br and gzip to gz, and
+     * handler-level maps replace this map rather than merging with it. An explicit empty map disables sidecar lookups
+     * by default. Map keys must be concrete content codings, not {@code identity} or {@code *}, and must be valid HTTP
+     * tokens. Map values are file suffixes; leading dots are ignored, and path separators are rejected.
+     *
+     * @return content coding to file suffix map
+     */
+    @Option.Configured
+    @Option.DefaultMethod(type = StaticContentConfigSupport.class, value = "defaultPreCompressedEncodings")
+    @Option.Singular
+    Map<String, String> preCompressedEncodings();
 
 }

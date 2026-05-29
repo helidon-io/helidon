@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,15 @@ interface ClasspathHandlerConfigBlueprint extends BaseHandlerConfigBlueprint {
      * @return class loader to use
      */
     Optional<ClassLoader> classLoader();
+
+    /**
+     * Whether sidecar resources may be sourced from a different classpath origin than the logical resource.
+     *
+     * @return whether cross-origin classpath sidecar sourcing is enabled
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    boolean preCompressedCrossOriginSourcingEnabled();
 
     /**
      * Classpath content usually starts from a {@link ClasspathHandlerConfig#location()} on classpath, and resolves all

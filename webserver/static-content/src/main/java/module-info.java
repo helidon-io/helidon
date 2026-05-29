@@ -33,6 +33,7 @@ module io.helidon.webserver.staticcontent {
     requires transitive io.helidon.webserver;
     requires transitive io.helidon.builder.api;
     requires io.helidon;
+    requires io.helidon.http.encoding;
 
     exports io.helidon.webserver.staticcontent;
 

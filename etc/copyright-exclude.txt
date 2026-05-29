@@ -59,5 +59,8 @@ persistence_3_0.xjb
 persistence_3_0.xsd
 src/main/proto/
 src/test/resources/keystore/
+src/test/resources/web/resource.txt.br
+src/test/resources/web/resource.txt.gz
+src/test/resources/web/resource.txt.zz
 src/test/resources/static/classpath/index.html
 target/
