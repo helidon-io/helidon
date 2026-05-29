@@ -47,7 +47,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                            Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
-        this(http2Client, delegate, method, clientUri, properties, null, defaultTcpProtocolIds());
+        this(http2Client, delegate, method, clientUri, properties, null, false, defaultTcpProtocolIds());
     }
 
     Http2ClientRequestImpl(Http2ClientImpl http2Client,
@@ -56,7 +56,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                            ClientUri clientUri,
                            Map<String, String> properties,
                            List<String> tcpProtocolIds) {
-        this(http2Client, delegate, method, clientUri, properties, null, tcpProtocolIds);
+        this(http2Client, delegate, method, clientUri, properties, null, false, tcpProtocolIds);
     }
 
     private Http2ClientRequestImpl(Http2ClientImpl http2Client,
@@ -65,6 +65,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                                    ClientUri clientUri,
                                    Map<String, String> properties,
                                    ClientUri redirectSourceUri,
+                                   boolean crossOriginRedirect,
                                    List<String> tcpProtocolIds) {
         super(http2Client.clientConfig(),
                 http2Client.webClient().cookieManager(),
@@ -73,7 +74,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                 clientUri,
                 null,
                 properties,
-                redirectSourceUri);
+                redirectSourceUri,
+                crossOriginRedirect);
 
         this.http2Client = http2Client;
         Http2ClientProtocolConfig protocolConfig = http2Client.protocolConfig();
@@ -92,6 +94,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
              clientUri,
              properties,
              request.resolvedUri(),
+             request.crossesRedirectOriginBoundary(clientUri),
              request.tcpProtocolIds);
 
         followRedirects(request.followRedirects());

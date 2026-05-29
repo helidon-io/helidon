@@ -155,14 +155,15 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      * Request header names to strip on cross-origin redirects.
      * <p>
      * Header names are matched case-insensitively.
-     * The returned set always contains {@value io.helidon.http.HeaderNames#AUTHORIZATION_NAME},
-     * even if it was not explicitly configured.
+     * The returned set always contains {@value io.helidon.http.HeaderNames#AUTHORIZATION_NAME} and
+     * {@value io.helidon.http.HeaderNames#COOKIE_NAME}, even if either was not explicitly configured.
      *
      * @return sensitive redirect headers
      */
     @Option.Configured
     @Option.Singular
-    @Option.DefaultCode("new @java.util.LinkedHashSet@<>(@java.util.Set@.of(@io.helidon.http.HeaderNames@.AUTHORIZATION))")
+    @Option.DefaultCode("new @java.util.LinkedHashSet@<>(@java.util.Set@.of(@io.helidon.http.HeaderNames@.AUTHORIZATION, "
+            + "@io.helidon.http.HeaderNames@.COOKIE))")
     Set<HeaderName> redirectSensitiveHeaders();
 
     /**
