@@ -951,6 +951,8 @@ keeps the identity representation. If two sidecars have the same quality, Helido
 `pre-compressed-encodings` order; the default order prefers `br` before `gzip`. If no acceptable sidecar or runtime
 encoder exists and the client rejects `identity`, Helidon responds with `406 Not Acceptable`. Dynamically encoded
 static responses ignore byte ranges, omit `Content-Length`, and use weak entity tags.
+Malformed `Accept-Encoding` values, such as invalid coding tokens, unsupported parameters, or invalid `q` values, are
+rejected with `400 Bad Request`.
 
 [source,yaml]
 .application.yaml
@@ -1231,6 +1233,8 @@ HTTP compression negotiation is controlled by clients using the `Accept-Encoding
 The value of this header is a comma-separated list of encodings. The WebServer
 will select one of these encodings for compression purposes; it currently supports `gzip`
 and `deflate`.
+Malformed `Accept-Encoding` values, such as invalid coding tokens, unsupported parameters, or invalid `q` values, are
+rejected with `400 Bad Request`.
 
 For example, if the request includes `Accept-Encoding: gzip, deflate`, and HTTP compression
 has been enabled as shown above, the response shall include the header `Content-Encoding: gzip`

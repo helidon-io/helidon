@@ -193,13 +193,15 @@ public final class AcceptEncoding {
      * @return best coding, or identity
      */
     public Optional<Quality> best(List<String> codings) {
-        List<Quality> candidates = new ArrayList<>();
-        identity().ifPresent(candidates::add);
-        for (String coding : codings) {
-            match(coding, true).ifPresent(candidates::add);
+        List<BestCandidate> candidates = new ArrayList<>();
+        identity().ifPresent(quality -> candidates.add(new BestCandidate(quality, IMPLICIT_IDENTITY_ORDER)));
+        for (int i = 0; i < codings.size(); i++) {
+            int serverOrder = i;
+            match(codings.get(i), true).ifPresent(quality -> candidates.add(new BestCandidate(quality, serverOrder)));
         }
         return candidates.stream()
-                .min(AcceptEncoding::compare);
+                .min(AcceptEncoding::compareBest)
+                .map(BestCandidate::quality);
     }
 
     private static Entry parse(String value, int order) {
@@ -255,6 +257,22 @@ public final class AcceptEncoding {
     }
 
     private static int compare(Quality first, Quality second) {
+        int result = compareQuality(first, second);
+        if (result != 0) {
+            return result;
+        }
+        return Integer.compare(first.order(), second.order());
+    }
+
+    private static int compareBest(BestCandidate first, BestCandidate second) {
+        int result = compareQuality(first.quality(), second.quality());
+        if (result != 0) {
+            return result;
+        }
+        return Integer.compare(first.serverOrder(), second.serverOrder());
+    }
+
+    private static int compareQuality(Quality first, Quality second) {
         int q = Double.compare(second.q(), first.q());
         if (q != 0) {
             return q;
@@ -277,9 +295,6 @@ public final class AcceptEncoding {
             return 1;
         }
 
-        if (first.order() != second.order()) {
-            return Integer.compare(first.order(), second.order());
-        }
         return 0;
     }
 
@@ -414,6 +429,9 @@ public final class AcceptEncoding {
     }
 
     private record Entry(String coding, double q, int order) {
+    }
+
+    private record BestCandidate(Quality quality, int serverOrder) {
     }
 
 }
