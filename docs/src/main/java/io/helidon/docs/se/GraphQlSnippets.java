@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@ package io.helidon.docs.se;
 
 import java.util.List;
 
+import io.helidon.config.Config;
+import io.helidon.graphql.server.InvocationHandler;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.graphql.GraphQlService;
 
@@ -68,8 +71,18 @@ class GraphQlSnippets {
 
     void snippet_1() {
         // tag::snippet_1[]
+        Config graphQlConfig = Services.get(Config.class).get("graphql");
+
+        InvocationHandler invocationHandler = InvocationHandler.builder()
+                .config(graphQlConfig)
+                .schema(buildSchema())
+                .build();
+
         WebServer server = WebServer.builder()
-                .routing(r -> r.register(GraphQlService.create(buildSchema())))
+                .routing(r -> r.register(GraphQlService.builder()
+                                         .config(graphQlConfig)
+                                         .invocationHandler(invocationHandler)
+                                         .build()))
                 .build();
         // end::snippet_1[]
     }
