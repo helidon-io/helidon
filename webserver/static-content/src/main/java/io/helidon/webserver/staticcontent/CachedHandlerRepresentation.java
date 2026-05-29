@@ -61,4 +61,9 @@ record CachedHandlerRepresentation(CachedHandler delegate, ResponseRepresentatio
     public SidecarCache sidecarCache() {
         return delegate.sidecarCache();
     }
+
+    @Override
+    public boolean available() throws IOException {
+        return delegate.available();
+    }
 }

@@ -110,13 +110,9 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             if (cachedHandler instanceof CachedHandlerRedirect) {
                 return cachedHandler.handle(handlerCache(), method, req, res, requestedResource);
             }
-            String logicalResource = requestedResource;
             Path logicalPath = path;
             String welcomeFileName = welcomePageName();
             if (welcomeFileName != null && rawPath.endsWith("/") && Files.isDirectory(path)) {
-                logicalResource = requestedResource
-                        + (requestedResource.endsWith("/") ? "" : "/")
-                        + welcomeFileName;
                 logicalPath = resolveWelcomeFile(path, welcomeFileName);
             }
             CachedHandler handler = selectFileSystemHandler(cachedHandler, req, logicalPath);
@@ -144,8 +140,6 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             return false;
         }
 
-        String logicalResource = requestedResource;
-
         // we know the file exists, though it may be a directory
         // First doHandle a directory case
         String welcomeFileName = welcomePageName();
@@ -169,7 +163,6 @@ class FileSystemContentHandler extends FileBasedContentHandler {
 
                     // Try to find welcome file
                     path = resolveWelcomeFile(path, welcomePageName());
-                    logicalResource = welcomeFileResource;
                 } else {
                     // Or redirect to slash ended
                     String redirectLocation = rawPath + "/";

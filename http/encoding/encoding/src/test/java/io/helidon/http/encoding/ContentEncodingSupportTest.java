@@ -49,7 +49,7 @@ class ContentEncodingSupportTest {
         assertQuality(acceptEncoding.match("gzip", false).orElseThrow(), "gzip", 1D, false);
         assertQuality(acceptEncoding.match("compress", false).orElseThrow(), "compress", 1D, false);
         assertQuality(acceptEncoding.match("br", false).orElseThrow(), "br", 1D, false);
-        assertThat(acceptEncoding.best(List.of("br", "compress", "gzip")).orElseThrow().coding(), is("gzip"));
+        assertThat(acceptEncoding.best(List.of("br", "compress", "gzip")).orElseThrow().coding(), is("br"));
     }
 
     @Test
@@ -229,6 +229,18 @@ class ContentEncodingSupportTest {
         ContentEncodingContext context = context(gzipEncoder);
 
         assertThat(context.encoder(headers("*")), sameInstance(gzipEncoder));
+    }
+
+    @Test
+    void testRuntimeEncoderUsesProviderOrderForEqualQualityCodings() {
+        ContentEncoder brEncoder = gzipEncoder();
+        ContentEncoder gzipEncoder = gzipEncoder();
+        ContentEncodingContext context = ContentEncodingContext.builder()
+                .addContentEncoding(new TestEncoding(brEncoder, Set.of("br"), true, false, "br"))
+                .addContentEncoding(new TestEncoding(gzipEncoder, Set.of("gzip"), true, false, "gzip"))
+                .build();
+
+        assertThat(context.encoder(headers("gzip, br")), sameInstance(brEncoder));
     }
 
     @Test

@@ -39,6 +39,7 @@ import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.BadRequestException;
 import io.helidon.http.DateTime;
+import io.helidon.http.ForbiddenException;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -409,7 +410,7 @@ abstract class StaticContentHandler implements HttpService {
                 return Optional.empty();
             }
             if (cachedHandler.available()) {
-                return Optional.of(new CachedHandlerSelection(cachedHandler, sidecarCache, coding));
+                return Optional.of(new CachedHandlerSelection(cachedHandler, identityHandler, sidecarCache, coding));
             }
             sidecarCache.remove(coding);
         }
@@ -417,7 +418,7 @@ abstract class StaticContentHandler implements HttpService {
         Optional<CachedHandler> resolved = resolver.resolve(coding, suffix);
         resolved.ifPresentOrElse(handler -> sidecarCache.put(coding, handler),
                                  () -> sidecarCache.putMissing(coding));
-        return resolved.map(handler -> new CachedHandlerSelection(handler, sidecarCache, coding));
+        return resolved.map(handler -> new CachedHandlerSelection(handler, identityHandler, sidecarCache, coding));
     }
 
     static String sidecarMemoryCacheKey(String requestedResource, String coding) {
@@ -699,7 +700,10 @@ abstract class StaticContentHandler implements HttpService {
     private record RuntimeEncoding(AcceptEncoding.Quality quality, ContentEncoder encoder, String contentEncoding) {
     }
 
-    private record CachedHandlerSelection(CachedHandler delegate, SidecarCache sidecarCache, String coding)
+    private record CachedHandlerSelection(CachedHandler delegate,
+                                          CachedHandler identityHandler,
+                                          SidecarCache sidecarCache,
+                                          String coding)
             implements CachedHandler {
         @Override
         public boolean handle(LruCache<String, CachedHandler> cache,
@@ -707,12 +711,23 @@ abstract class StaticContentHandler implements HttpService {
                               ServerRequest request,
                               ServerResponse response,
                               String requestedResource) throws IOException {
-            return delegate.handleSidecar(sidecarCache, coding, cache, method, request, response, requestedResource);
+            if (!identityHandler.available()) {
+                return identityHandler.handle(cache, method, request, response, requestedResource);
+            }
+            try {
+                return delegate.handleSidecar(sidecarCache, coding, cache, method, request, response, requestedResource);
+            } catch (ForbiddenException e) {
+                return identityHandler.withRepresentation(ResponseRepresentation.identity(true))
+                        .handle(cache, method, request, response, requestedResource);
+            }
         }
 
         @Override
         public CachedHandler withRepresentation(ResponseRepresentation representation) {
-            return new CachedHandlerSelection(delegate.withRepresentation(representation), sidecarCache, coding);
+            return new CachedHandlerSelection(delegate.withRepresentation(representation),
+                                              identityHandler,
+                                              sidecarCache,
+                                              coding);
         }
 
         @Override

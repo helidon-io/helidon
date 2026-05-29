@@ -103,14 +103,8 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
         try {
             sizeLock.lock();
             cacheLock.writeLock().lock();
-            Map<String, CachedHandlerInMemory> removed = cache.remove(staticContentHandler);
-            if (removed != null) {
-                long removedSize = removed.values()
-                        .stream()
-                        .mapToLong(CachedHandlerInMemory::contentLength)
-                        .sum();
-                adjustSize(-removedSize);
-            }
+            cache.remove(staticContentHandler);
+            updateCurrentSize();
         } finally {
             cacheLock.writeLock().unlock();
             sizeLock.unlock();
@@ -141,42 +135,35 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
             // either we are not enabled, or the size would be bigger than maximal size
             return Optional.empty();
         }
-        long oldSize;
         try {
             sizeLock.lock();
-            try {
-                cacheLock.readLock().lock();
-                Map<String, CachedHandlerInMemory> resourceCache = cache.get(handler);
-                oldSize = contentLength(resourceCache == null ? null : resourceCache.get(resource));
-            } finally {
-                cacheLock.readLock().unlock();
-            }
-            if (currentSize - oldSize + size > maxSize) {
+            if (currentSize + size > maxSize) {
                 return Optional.empty();
-            }
-            adjustSize(size - oldSize);
-            CachedHandlerInMemory cachedHandlerInMemory;
-            try {
-                cachedHandlerInMemory = handlerSupplier.get();
-            } catch (RuntimeException | Error e) {
-                adjustSize(oldSize - size);
-                throw e;
-            }
-            long newSize = cachedHandlerInMemory.contentLength();
-            if (currentSize - size + newSize > maxSize) {
-                adjustSize(oldSize - size);
-                return Optional.empty();
-            }
-            cacheLock.writeLock().lock();
-            try {
-                cache.computeIfAbsent(handler, k -> new HashMap<>())
-                        .put(resource, cachedHandlerInMemory);
-                adjustSize(newSize - size);
-                return Optional.of(cachedHandlerInMemory);
-            } finally {
-                cacheLock.writeLock().unlock();
             }
         } finally {
+            sizeLock.unlock();
+        }
+
+        CachedHandlerInMemory cachedHandlerInMemory = handlerSupplier.get();
+        try {
+            sizeLock.lock();
+            cacheLock.writeLock().lock();
+            Map<String, CachedHandlerInMemory> resourceCache = cache.computeIfAbsent(handler, k -> new HashMap<>());
+            CachedHandlerInMemory previous = resourceCache.put(resource, cachedHandlerInMemory);
+            long updatedSize = contentSize();
+            if (updatedSize > maxSize) {
+                if (previous == null) {
+                    resourceCache.remove(resource);
+                } else {
+                    resourceCache.put(resource, previous);
+                }
+                updateCurrentSize();
+                return Optional.empty();
+            }
+            updateCurrentSize(updatedSize);
+            return Optional.of(cachedHandlerInMemory);
+        } finally {
+            cacheLock.writeLock().unlock();
             sizeLock.unlock();
         }
     }
@@ -186,9 +173,9 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
         try {
             sizeLock.lock();
             cacheLock.writeLock().lock();
-            Map<String, CachedHandlerInMemory> resourceCache = cache.computeIfAbsent(handler, k -> new HashMap<>());
-            CachedHandlerInMemory oldValue = resourceCache.put(resource, inMemoryHandler);
-            adjustSize(inMemoryHandler.contentLength() - contentLength(oldValue));
+            cache.computeIfAbsent(handler, k -> new HashMap<>())
+                    .put(resource, inMemoryHandler);
+            updateCurrentSize();
         } finally {
             cacheLock.writeLock().unlock();
             sizeLock.unlock();
@@ -208,13 +195,29 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
         }
     }
 
-    private void adjustSize(long sizeDelta) {
-        if (maxSize != 0) {
-            currentSize = Math.max(0, currentSize + sizeDelta);
+    private void updateCurrentSize() {
+        if (maxSize == 0) {
+            return;
         }
+        currentSize = contentSize();
     }
 
-    private static long contentLength(CachedHandlerInMemory handler) {
-        return handler == null ? 0 : handler.contentLength();
+    private void updateCurrentSize(long updatedSize) {
+        currentSize = updatedSize;
+    }
+
+    private long contentSize() {
+        Map<CachedHandlerInMemory, Boolean> uniqueHandlers = new IdentityHashMap<>();
+        for (Map<String, CachedHandlerInMemory> resourceCache : cache.values()) {
+            for (CachedHandlerInMemory cached : resourceCache.values()) {
+                uniqueHandlers.put(cached, Boolean.TRUE);
+            }
+        }
+
+        long result = 0;
+        for (CachedHandlerInMemory cached : uniqueHandlers.keySet()) {
+            result += cached.contentLength();
+        }
+        return result;
     }
 }
