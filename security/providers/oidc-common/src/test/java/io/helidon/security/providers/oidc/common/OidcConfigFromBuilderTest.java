@@ -22,11 +22,16 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.Base64Value;
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.crypto.CryptoException;
+import io.helidon.common.crypto.SymmetricCipher;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.http.HeaderNames;
@@ -66,6 +71,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Unit test for {@link OidcConfig}.
  */
 class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
+    private static final String COOKIE_VALUE = "cookieValue";
+    private static final String COOKIE_ENCRYPTION_PASSWORD = "test-password";
+    private static final byte CURRENT_VERSION = 1;
+    private static final byte[] CURRENT_VERSION_HEADER = {CURRENT_VERSION};
+    private static final int CURRENT_NUMBER_OF_ITERATIONS = 600_000;
+    private static final int LEGACY_NUMBER_OF_ITERATIONS = 10_000;
+    private static final String LEGACY_ENCRYPTED_COOKIE =
+            "9WmBEiNX4CF9l4lj+1axdgAAAAySayWBmiIG5e2hIYy7ilR2iML6S+qvr2M4U7593tCWI/SjCZsZ2XQ=";
 
     private final OidcConfig oidcConfig;
 
@@ -248,6 +261,57 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
             assertThat(cookieEncryptionPasswordValue[0], is(passwordValue));
             // reset the value
             cookieEncryptionPasswordValue[0] = null;
+        }
+    }
+
+    @Test
+    void testLegacyCookieEncryptionFromBuilderConfig() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("cookie-encryption-enabled", "true",
+                                                                     "cookie-encryption-password",
+                                                                     COOKIE_ENCRYPTION_PASSWORD,
+                                                                     "legacy-cookie-encryption", "true")))
+                                .build())
+                .build();
+
+        for (OidcCookieHandler cookieHandler : cookieHandlers(config)) {
+            String encrypted = cookieHandler.createCookie(COOKIE_VALUE).build().value();
+
+            assertAll("legacy cookie encryption from config for " + cookieHandler.cookieName(),
+                      () -> assertThat(legacyCipher()
+                                               .decrypt(Base64Value.createFromEncoded(encrypted))
+                                               .toDecodedString(),
+                                       is(COOKIE_VALUE)),
+                      () -> assertThrows(CryptoException.class,
+                                         () -> currentCipher().decrypt(Base64Value.createFromEncoded(encrypted))));
+        }
+    }
+
+    @Test
+    void testLegacyCookieFallbackFromBuilderConfig() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("cookie-encryption-enabled", "true",
+                                                                     "cookie-encryption-password",
+                                                                     COOKIE_ENCRYPTION_PASSWORD,
+                                                                     "legacy-cookie-fallback", "true")))
+                                .build())
+                .build();
+
+        for (OidcCookieHandler cookieHandler : cookieHandlers(config)) {
+            Optional<String> cookie = cookieHandler
+                    .findCookie(Map.of("Cookie", List.of(cookieHandler.cookieName() + "=" + LEGACY_ENCRYPTED_COOKIE)));
+
+            assertThat(cookieHandler.cookieName(), cookie, is(Optional.of(COOKIE_VALUE)));
         }
     }
 
@@ -471,6 +535,29 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 .submit("")) {
             response.as(String.class);
         }
+    }
+
+    private static List<OidcCookieHandler> cookieHandlers(OidcConfig config) {
+        return List.of(config.tokenCookieHandler(),
+                       config.idTokenCookieHandler(),
+                       config.tenantCookieHandler(),
+                       config.refreshTokenCookieHandler(),
+                       config.stateCookieHandler());
+    }
+
+    private static SymmetricCipher currentCipher() {
+        return SymmetricCipher.builder()
+                .password(COOKIE_ENCRYPTION_PASSWORD.toCharArray())
+                .numberOfIterations(CURRENT_NUMBER_OF_ITERATIONS)
+                .additionalAuthenticatedData(CURRENT_VERSION_HEADER)
+                .build();
+    }
+
+    private static SymmetricCipher legacyCipher() {
+        return SymmetricCipher.builder()
+                .password(COOKIE_ENCRYPTION_PASSWORD.toCharArray())
+                .numberOfIterations(LEGACY_NUMBER_OF_ITERATIONS)
+                .build();
     }
 
     @Test

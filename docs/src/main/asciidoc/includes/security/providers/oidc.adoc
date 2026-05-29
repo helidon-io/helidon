@@ -89,6 +89,16 @@ file only when it is a regular file with owner-only read or read/write permissio
 On non-POSIX file systems, Helidon still rejects symlinks and non-regular existing files, and creates the fallback file
 with an exclusive best-effort create operation.
 
+For rolling upgrades from nodes that used the legacy password-based cookie encryption defaults, set
+`legacy-cookie-encryption` to `true` while both old and new nodes are running.
+This makes upgraded nodes keep writing cookies that older nodes can decrypt.
+After all nodes run the new version, set `legacy-cookie-encryption` to `false` and set `legacy-cookie-fallback` to
+`true` for at least one cookie lifetime or session grace period.
+After legacy cookies have expired, set both flags to `false`.
+These flags are temporary compatibility controls for upgrades, not steady-state security settings.
+These flags only affect password-based OIDC cookie encryption; named Security encryption configured with
+`cookie-encryption-name` uses its own encryption configuration.
+
 Helidon obtains a token from request (from cookie, header, or query parameter):
 
 1. Token is parsed as a singed JWT
