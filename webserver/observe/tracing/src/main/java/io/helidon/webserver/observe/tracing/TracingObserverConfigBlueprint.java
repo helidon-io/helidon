@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ interface TracingObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
     TracingConfig envConfig();
 
     /*
-     * OpenTracing spec states that certain MP paths need to be disabled by default.
+     * Certain observe endpoints need to be disabled by default.
      * Note that if a user changes the default location of any of these using
      * web-context's, then they would need to provide these exclusions manually.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,22 +141,6 @@ class OpenTelemetrySpan implements Span {
         var result = new OpenTelemetryScope(this, scope, spanListeners);
         HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, listener -> listener.activated(limited(), result.limited()));
         return result;
-    }
-
-    @Override
-    public Span baggage(String key, String value) {
-        if (baggage instanceof WritableBaggage writableBaggage) {
-            writableBaggage.set(key, value);
-        } else {
-            throw new SpanListener.ForbiddenOperationException(
-                    "Attempt to set baggage on a span with read-only baggage (perhaps from context");
-        }
-        return this;
-    }
-
-    @Override
-    public Optional<String> baggage(String key) {
-        return Optional.ofNullable(baggage.getEntryValue(key));
     }
 
     @Override
@@ -304,17 +288,6 @@ class OpenTelemetrySpan implements Span {
         @Override
         public Scope activate() {
             throw new SpanListener.ForbiddenOperationException();
-        }
-
-        @Override
-        public Span baggage(String key, String value) {
-            delegate.baggage().set(key, value);
-            return this;
-        }
-
-        @Override
-        public Optional<String> baggage(String key) {
-            return delegate.baggage().get(key);
         }
 
         @Override

@@ -38,9 +38,8 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 Distributed tracing is a critical feature of microservice-based applications, since it traces workflow both
 within a service and across multiple services.  This provides insight to sequence and timing data for specific blocks of work,
-which helps you identify performance and operational issues. Helidon includes support for distributed tracing through its own API, backed by either
-through the https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API], or by
-https://opentracing.io[OpenTracing API].
+which helps you identify performance and operational issues. Helidon includes support for distributed tracing through its own API, backed by
+the https://opentelemetry.io/docs/languages/java/api/[OpenTelemetry API].
 
 === Tracing Concepts
 
@@ -137,7 +136,7 @@ default host and port, `localhost:4317`.
 <2> Observability features for tracing.
 <3> OpenTelemetry tracing provider.
 
-Helidon offers several tracing providers: OpenTelemetry, Zipkin, and Jaeger (deprecated).
+Helidon offers tracing through OpenTelemetry.
 All spans sent by Helidon to the backend need to be associated with a service, assigned by the `tracing.service` setting in the example below.
 
 [source,bash]
@@ -253,7 +252,7 @@ Note the row for `mychildSpan`--the custom span created by the added code.
 Helidon automatically traces across services if the services propagate span information.
 This means a single trace can include spans from multiple services and hosts. Helidon uses a `SpanContext` to
 propagate tracing information across process boundaries.  When you make client API calls, Helidon will
-internally call OpenTelemetry APIs or OpenTracing APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
+internally call OpenTelemetry APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
 
 To demonstrate distributed tracing, create a second project where the server listens to on port 8081.
 Create a new directory to hold this new project, then do the following steps, similar to

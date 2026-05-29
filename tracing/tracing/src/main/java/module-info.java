@@ -18,7 +18,7 @@ import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
- * Opentracing support for helidon, with an abstraction API and SPI for tracing collectors.
+ * Tracing support for Helidon, with an abstraction API and SPI for tracing collectors.
  *
  * @see io.helidon.tracing.spi.TracerProvider
  * @see io.helidon.tracing.TracerBuilder

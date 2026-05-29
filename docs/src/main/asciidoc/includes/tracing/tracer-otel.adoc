@@ -24,7 +24,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 // tag::intro[]
 Helidon supports configuration of OpenTelemetry and OpenTelemetry tracing in two primary ways: using tracing or using telemetry.
 ifdef::se-flavor[]
-This page describes support for controlling OpenTelemetry tracing using the `tracing` config section and link:{javadoc-base-url}/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/OpenTelemetryTracerConfig.html[`OpenTelemetryConfig` builder]. Users typically adopt this approach to ease migration from other tracing providers (such as Jaeger) to OpenTelemetry because the tracing settings supported for OpenTelemetry are very similar to those for Jaeger.
+This page describes support for controlling OpenTelemetry tracing using the `tracing` config section and link:{javadoc-base-url}/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/OpenTelemetryTracerConfig.html[`OpenTelemetryConfig` builder]. Users typically adopt this approach to ease migration from older tracing configuration to OpenTelemetry.
 
 That said, Helidon's support for OpenTelemetry using _tracing_ does not afford as much control as do the Helidon _telemetry_ settings. For example, using OpenTelemetry `tracing` config you can choose either the OTLP gRPC span exporter or the OTLP HTTP one; additional span exporters are available only using the `telemetry` settings.
 
