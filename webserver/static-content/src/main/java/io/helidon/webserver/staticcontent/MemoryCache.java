@@ -99,26 +99,12 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
     }
 
     void clear(StaticContentHandler staticContentHandler) {
-        Map<String, CachedHandlerInMemory> removed;
         try {
             cacheLock.writeLock().lock();
-            removed = cache.remove(staticContentHandler);
+            cache.remove(staticContentHandler);
+            updateCurrentSize();
         } finally {
             cacheLock.writeLock().unlock();
-        }
-        if (removed == null || maxSize == 0) {
-            return;
-        }
-
-        long removedSize = 0;
-        for (CachedHandlerInMemory cached : removed.values()) {
-            removedSize += cached.contentLength();
-        }
-        try {
-            sizeLock.lock();
-            currentSize = Math.max(0, currentSize - removedSize);
-        } finally {
-            sizeLock.unlock();
         }
     }
 
@@ -143,16 +129,26 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
                 // either we are not enabled, or the size would be bigger than maximal size
                 return Optional.empty();
             }
-            // increase current size
-            currentSize += size;
         } finally {
             sizeLock.unlock();
         }
+
+        CachedHandlerInMemory cachedHandlerInMemory = handlerSupplier.get();
         try {
             cacheLock.writeLock().lock();
-            CachedHandlerInMemory cachedHandlerInMemory = handlerSupplier.get();
-            cache.computeIfAbsent(handler, k -> new HashMap<>())
-                    .put(resource, cachedHandlerInMemory);
+            Map<String, CachedHandlerInMemory> resourceCache = cache.computeIfAbsent(handler, k -> new HashMap<>());
+            CachedHandlerInMemory previous = resourceCache.put(resource, cachedHandlerInMemory);
+            long updatedSize = contentSize();
+            if (updatedSize > maxSize) {
+                if (previous == null) {
+                    resourceCache.remove(resource);
+                } else {
+                    resourceCache.put(resource, previous);
+                }
+                updateCurrentSize();
+                return Optional.empty();
+            }
+            updateCurrentSize(updatedSize);
             return Optional.of(cachedHandlerInMemory);
         } finally {
             cacheLock.writeLock().unlock();
@@ -162,18 +158,10 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
     // hard add to cache, even if disabled (for explicitly configured resources to cache in memory)
     void cache(StaticContentHandler handler, String resource, CachedHandlerInMemory inMemoryHandler) {
         try {
-            sizeLock.lock();
-            if (maxSize != 0) {
-                // only increase current size if enabled, otherwise it does not matter
-                currentSize += inMemoryHandler.contentLength();
-            }
-        } finally {
-            sizeLock.unlock();
-        }
-        try {
             cacheLock.writeLock().lock();
             cache.computeIfAbsent(handler, k -> new HashMap<>())
                     .put(resource, inMemoryHandler);
+            updateCurrentSize();
         } finally {
             cacheLock.writeLock().unlock();
         }
@@ -190,5 +178,36 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
         } finally {
             cacheLock.readLock().unlock();
         }
+    }
+
+    private void updateCurrentSize() {
+        if (maxSize == 0) {
+            return;
+        }
+        updateCurrentSize(contentSize());
+    }
+
+    private void updateCurrentSize(long updatedSize) {
+        try {
+            sizeLock.lock();
+            currentSize = updatedSize;
+        } finally {
+            sizeLock.unlock();
+        }
+    }
+
+    private long contentSize() {
+        Map<CachedHandlerInMemory, Boolean> uniqueHandlers = new IdentityHashMap<>();
+        for (Map<String, CachedHandlerInMemory> resourceCache : cache.values()) {
+            for (CachedHandlerInMemory cached : resourceCache.values()) {
+                uniqueHandlers.put(cached, Boolean.TRUE);
+            }
+        }
+
+        long result = 0;
+        for (CachedHandlerInMemory cached : uniqueHandlers.keySet()) {
+            result += cached.contentLength();
+        }
+        return result;
     }
 }

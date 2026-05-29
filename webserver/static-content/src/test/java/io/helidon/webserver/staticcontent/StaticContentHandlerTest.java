@@ -42,6 +42,7 @@ import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.BadRequestException;
+import io.helidon.http.ForbiddenException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
@@ -399,8 +400,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.of(sidecarHandler));
+                request,
+                (coding, suffix) -> Optional.of(sidecarHandler));
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
@@ -408,6 +409,74 @@ class StaticContentHandlerTest {
         assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
         assertThat(new String(sent.get(), StandardCharsets.UTF_8), is("Brotli content"));
         verify(response, never()).status(Status.NOT_ACCEPTABLE_406);
+    }
+
+    @Test
+    void preCompressedSidecarRechecksIdentityAvailabilityWhenHandled() throws IOException, URISyntaxException {
+        Path identity = tempDir.resolve("resource.txt");
+        Path sidecar = tempDir.resolve("resource.txt.gz");
+        Files.writeString(identity, "Content");
+        Files.writeString(sidecar, "Gzip content");
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = new CachedHandlerPath(identity,
+                                                              MediaTypes.TEXT_PLAIN,
+                                                              path -> Optional.of(Instant.EPOCH),
+                                                              ServerResponseHeaders::lastModified);
+        CachedHandler sidecarHandler = new CachedHandlerPath(sidecar,
+                                                             MediaTypes.TEXT_PLAIN,
+                                                             path -> Optional.of(Instant.EPOCH),
+                                                             ServerResponseHeaders::lastModified)
+                .withRepresentation(ResponseRepresentation.encoded("gzip"));
+        ServerRequest request = mockRequestWithHeaders("gzip, identity;q=0", null, ContentEncodingContext.create());
+        ServerResponse response = mock(ServerResponse.class);
+
+        CachedHandler selected = handler.selectHandler(
+                identityHandler,
+                request,
+                (coding, suffix) -> Optional.of(sidecarHandler));
+
+        Files.delete(identity);
+
+        assertThrows(ForbiddenException.class,
+                     () -> selected.handle(LruCache.create(), Method.GET, request, response, "resource.txt"));
+    }
+
+    @Test
+    void preCompressedDeletedSidecarFallsBackToIdentityWhenHandled() throws IOException, URISyntaxException {
+        Path identity = tempDir.resolve("resource.txt");
+        Path sidecar = tempDir.resolve("resource.txt.gz");
+        Files.writeString(identity, "Content");
+        Files.writeString(sidecar, "Gzip content");
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = new CachedHandlerPath(identity,
+                                                              MediaTypes.TEXT_PLAIN,
+                                                              path -> Optional.of(Instant.EPOCH),
+                                                              ServerResponseHeaders::lastModified);
+        CachedHandler sidecarHandler = new CachedHandlerPath(sidecar,
+                                                             MediaTypes.TEXT_PLAIN,
+                                                             path -> Optional.of(Instant.EPOCH),
+                                                             ServerResponseHeaders::lastModified)
+                .withRepresentation(ResponseRepresentation.encoded("gzip"));
+        ServerRequest request = mockRequestWithHeaders("gzip", null, ContentEncodingContext.create());
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse response = mock(ServerResponse.class);
+        ByteArrayOutputStream sent = new ByteArrayOutputStream();
+
+        when(response.headers()).thenReturn(responseHeaders);
+        when(response.outputStream()).thenReturn(sent);
+
+        CachedHandler selected = handler.selectHandler(
+                identityHandler,
+                request,
+                (coding, suffix) -> Optional.of(sidecarHandler));
+
+        Files.delete(sidecar);
+
+        selected.handle(LruCache.create(), Method.GET, request, response, "resource.txt");
+
+        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
+        assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+        assertThat(sent.toString(StandardCharsets.UTF_8), is("Content"));
     }
 
     @Test
@@ -938,6 +1007,28 @@ class StaticContentHandlerTest {
                                                            true);
 
         assertThat(handler.cacheInMemory("first", 5, () -> inMemoryHandler("12345")).isPresent(), is(true));
+        assertThat(handler.canCacheInMemory(6), is(false));
+
+        handler.releaseCache();
+
+        assertThat(handler.canCacheInMemory(10), is(true));
+    }
+
+    @Test
+    void memoryCacheCountsAliasedHandlerOnce() {
+        MemoryCache memoryCache = MemoryCache.create(builder -> builder.enabled(true)
+                .capacity(Size.create(10)));
+        TestContentHandler handler = new TestContentHandler(FileSystemHandlerConfig.builder()
+                                                               .location(Paths.get("."))
+                                                               .memoryCache(memoryCache)
+                                                               .build(),
+                                                           true);
+        CachedHandlerInMemory cached = inMemoryHandler("12345");
+
+        handler.cacheInMemory("first", cached);
+        handler.cacheInMemory("alias", cached);
+
+        assertThat(handler.canCacheInMemory(5), is(true));
         assertThat(handler.canCacheInMemory(6), is(false));
 
         handler.releaseCache();
