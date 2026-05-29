@@ -195,16 +195,6 @@ public class TestTracerFactory implements Supplier<Tracer> {
         }
 
         @Override
-        public Span baggage(String key, String value) {
-            return this;
-        }
-
-        @Override
-        public Optional<String> baggage(String key) {
-            return Optional.empty();
-        }
-
-        @Override
         public WritableBaggage baggage() {
             return EMPTY_BAGGAGE;
         }
