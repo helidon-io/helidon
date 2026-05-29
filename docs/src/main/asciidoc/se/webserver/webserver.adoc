@@ -923,6 +923,59 @@ server:
 
 See xref:{rootdir}/config/io_helidon_webserver_staticcontent_StaticContentFeature.adoc[Static Content Feature Configuration Reference] for details of configuration options.
 
+=== Pre-compressed Files
+
+Static content handlers can serve existing pre-compressed sidecar files when a request advertises a matching
+`Accept-Encoding` value. For a logical resource named `big-file.html`, Helidon checks for sidecars such as
+`big-file.html.br` and `big-file.html.gz` after the logical resource has been resolved by the normal static-content
+rules.
+
+The feature is enabled by default. The default sidecar suffix map is `br -> br` and `gzip -> gz`. A custom
+`pre-compressed-encodings` map replaces the defaults, so include `br` and `gzip` explicitly if they should remain
+available. An explicitly empty `pre-compressed-encodings` map disables sidecar lookup for that configuration level.
+Map keys must be concrete content codings, not `identity` or `*`, and must be valid HTTP tokens. Map values are file
+suffixes; Helidon ignores leading dots and rejects values that contain path separators.
+
+When pre-compressed negotiation runs, Helidon merges `Vary: Accept-Encoding`. When a sidecar is selected, Helidon sends
+the logical resource media type and sets `Content-Encoding`. Direct requests for literal sidecar filenames, such as
+`/big-file.html.gz`, are handled as ordinary static-file requests. `Accept-Encoding: *` can select any available
+sidecar coding that is not explicitly rejected. Sidecar lookup hits and misses are cached with the resolved logical
+resource, so newly added sidecars are discovered after cache eviction or handler restart. Classpath sidecar bytes
+cached in memory still count against the configured memory cache capacity.
+
+When listener content encoding is configured, static content can dynamically encode the logical resource when that
+runtime candidate is the best acceptable representation. Wildcard values can select sidecars or runtime encoders.
+Pre-compressed sidecars win ties over runtime encoders, while an explicitly accepted identity coding at the same quality
+keeps the identity representation. If two sidecars have the same quality, Helidon uses the
+`pre-compressed-encodings` order; the default order prefers `br` before `gzip`. If no acceptable sidecar or runtime
+encoder exists and the client rejects `identity`, Helidon responds with `406 Not Acceptable`. Dynamically encoded
+static responses ignore byte ranges, omit `Content-Length`, and use weak entity tags.
+
+[source,yaml]
+.application.yaml
+----
+server:
+  features:
+    static-content:
+      pre-compressed-enabled: true
+      pre-compressed-encodings:
+        br: br
+        gzip: gz
+      classpath:
+        - context: "/assets"
+          location: "/public"
+          pre-compressed-cross-origin-sourcing-enabled: false
+      path:
+        - context: "/"
+          location: "/var/www/public"
+          pre-compressed-enabled: false
+----
+
+Classpath sidecars must come from the same classpath resource origin as the logical resource by default. The
+classpath handler-level `pre-compressed-cross-origin-sourcing-enabled` option can be set to `true` only when the
+application intentionally sources sidecars from different classpath entries. Helidon does not validate that sidecar files
+are fresher than the logical resource.
+
 
 == Media types support
 WebServer and WebClient share the HTTP media support of Helidon, and any supported media type can be used in both.

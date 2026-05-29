@@ -23,8 +23,13 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.chrono.ChronoZonedDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -32,6 +37,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.http.BadRequestException;
 import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
@@ -44,6 +50,10 @@ import io.helidon.http.PathMatchers;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
+import io.helidon.http.encoding.AcceptEncoding;
+import io.helidon.http.encoding.ContentEncoder;
+import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -55,20 +65,33 @@ import io.helidon.webserver.http.ServerResponse;
  */
 abstract class StaticContentHandler implements HttpService {
     private static final System.Logger LOGGER = System.getLogger(StaticContentHandler.class.getName());
+    private static final String SIDECAR_MEMORY_CACHE_PREFIX = "\u0000sidecar\u0000";
 
     private final LruCache<String, CachedHandler> handlerCache;
     private final String welcomeFilename;
     private final Function<String, String> resolvePathFunction;
     private final AtomicInteger webServerCounter = new AtomicInteger();
     private final MemoryCache memoryCache;
+    private final boolean preCompressedEnabled;
+    private final boolean preCompressedCrossOriginSourcingEnabled;
+    private final Map<String, String> preCompressedEncodings;
 
     StaticContentHandler(BaseHandlerConfig config) {
+        this(config, false);
+    }
+
+    StaticContentHandler(BaseHandlerConfig config, boolean preCompressedCrossOriginSourcingEnabled) {
         this.welcomeFilename = config.welcome().orElse(null);
         this.resolvePathFunction = config.pathMapper();
         this.handlerCache = config.recordCacheCapacity()
                 .map(LruCache::<String, CachedHandler>create)
                 .orElseGet(LruCache::create);
         this.memoryCache = config.memoryCache().orElseGet(MemoryCache::create);
+        this.preCompressedEnabled = config.preCompressedEnabled().orElse(true);
+        this.preCompressedCrossOriginSourcingEnabled = preCompressedCrossOriginSourcingEnabled;
+        this.preCompressedEncodings = StaticContentConfigSupport.normalizePreCompressedEncodings(
+                config.preCompressedEncodings()
+                        .orElseGet(StaticContentConfigSupport::defaultPreCompressedEncodings));
     }
 
     /**
@@ -78,20 +101,29 @@ abstract class StaticContentHandler implements HttpService {
      * @param etag            the proposed ETag. If {@code null} then method returns false
      * @param requestHeaders  an HTTP request headers
      * @param responseHeaders an HTTP response headers
+     * @return whether {@code If-None-Match} was present
      * @throws io.helidon.http.RequestException if ETag is checked
      */
-    static void processEtag(String etag, ServerRequestHeaders requestHeaders, ServerResponseHeaders responseHeaders) {
+    static boolean processEtag(String etag, ServerRequestHeaders requestHeaders, ServerResponseHeaders responseHeaders) {
+        return processEtag(etag, false, requestHeaders, responseHeaders);
+    }
+
+    static boolean processEtag(String etag,
+                               boolean weak,
+                               ServerRequestHeaders requestHeaders,
+                               ServerResponseHeaders responseHeaders) {
         if (etag == null || etag.isEmpty()) {
-            return;
+            return false;
         }
         etag = unquoteETag(etag);
 
-        Header newEtag = HeaderValues.create(HeaderNames.ETAG, true, false, '"' + etag + '"');
+        Header newEtag = HeaderValues.create(HeaderNames.ETAG, true, false, (weak ? "W/" : "") + '"' + etag + '"');
         // Put ETag into the response
         responseHeaders.set(newEtag);
 
         // Process If-None-Match header
-        if (requestHeaders.contains(HeaderNames.IF_NONE_MATCH)) {
+        boolean ifNoneMatchPresent = requestHeaders.contains(HeaderNames.IF_NONE_MATCH);
+        if (ifNoneMatchPresent) {
             List<String> ifNoneMatches = requestHeaders.get(HeaderNames.IF_NONE_MATCH).allValues();
             for (String ifNoneMatch : ifNoneMatches) {
                 ifNoneMatch = unquoteETag(ifNoneMatch);
@@ -109,8 +141,9 @@ abstract class StaticContentHandler implements HttpService {
             if (!ifMatches.isEmpty()) {
                 boolean ifMatchChecked = false;
                 for (String ifMatch : ifMatches) {
+                    boolean ifMatchWeak = isWeakETag(ifMatch);
                     ifMatch = unquoteETag(ifMatch);
-                    if ("*".equals(ifMatch) || ifMatch.equals(etag)) {
+                    if ("*".equals(ifMatch) || (!weak && !ifMatchWeak && ifMatch.equals(etag))) {
                         ifMatchChecked = true;
                         break;
                     }
@@ -121,24 +154,35 @@ abstract class StaticContentHandler implements HttpService {
                 }
             }
         }
+        return ifNoneMatchPresent;
     }
 
     static void processModifyHeaders(Instant modified,
                                      ServerRequestHeaders requestHeaders,
                                      ServerResponseHeaders responseHeaders,
                                      BiConsumer<ServerResponseHeaders, Instant> setModified) {
+        processModifyHeaders(modified, requestHeaders, responseHeaders, setModified, true);
+    }
+
+    static void processModifyHeaders(Instant modified,
+                                     ServerRequestHeaders requestHeaders,
+                                     ServerResponseHeaders responseHeaders,
+                                     BiConsumer<ServerResponseHeaders, Instant> setModified,
+                                     boolean processIfModifiedSince) {
         if (modified == null) {
             return;
         }
 
         // Last-Modified
         setModified.accept(responseHeaders, modified);
-        // If-Modified-Since
-        Optional<Instant> ifModSince = requestHeaders
-                .ifModifiedSince()
-                .map(ChronoZonedDateTime::toInstant);
-        if (ifModSince.isPresent() && !ifModSince.get().isBefore(modified)) {
-            throw new HttpException("Not valid for If-Modified-Since header", Status.NOT_MODIFIED_304, true);
+        if (processIfModifiedSince) {
+            // If-Modified-Since
+            Optional<Instant> ifModSince = requestHeaders
+                    .ifModifiedSince()
+                    .map(ChronoZonedDateTime::toInstant);
+            if (ifModSince.isPresent() && !ifModSince.get().isBefore(modified)) {
+                throw new HttpException("Not valid for If-Modified-Since header", Status.NOT_MODIFIED_304, true);
+            }
         }
         // If-Unmodified-Since
         Optional<Instant> ifUnmodSince = requestHeaders
@@ -272,6 +316,240 @@ abstract class StaticContentHandler implements HttpService {
         return welcomeFilename;
     }
 
+    boolean preCompressedCrossOriginSourcingEnabled() {
+        return preCompressedCrossOriginSourcingEnabled;
+    }
+
+    CachedHandler selectHandler(CachedHandler identityHandler,
+                                ServerRequest request,
+                                SidecarResolver sidecarResolver) throws IOException, URISyntaxException {
+        if (!preCompressedEnabled) {
+            return identityHandler;
+        }
+
+        AcceptEncoding acceptEncoding = AcceptEncoding.create(request.headers());
+        ResponseRepresentation identityRepresentation = ResponseRepresentation.identity(true);
+        if (!acceptEncoding.present()) {
+            return new CachedHandlerRepresentation(identityHandler, identityRepresentation);
+        }
+        if (!acceptEncoding.valid()) {
+            throw new BadRequestException("Invalid Accept-Encoding header");
+        }
+
+        List<RepresentationCandidate> candidates = new ArrayList<>();
+        acceptEncoding.identity()
+                .ifPresent(quality -> candidates.add(RepresentationCandidate.identity(quality, identityHandler)));
+
+        int order = 0;
+        for (Map.Entry<String, String> entry : preCompressedEncodings.entrySet()) {
+            String coding = entry.getKey();
+            Optional<AcceptEncoding.Quality> quality = acceptEncoding.match(coding, true);
+            if (quality.isEmpty()) {
+                order++;
+                continue;
+            }
+            Optional<CachedHandler> sidecar = sidecarHandler(identityHandler,
+                                                            coding,
+                                                            entry.getValue(),
+                                                            sidecarResolver
+            );
+            int candidateOrder = order;
+            sidecar.ifPresent(handler -> candidates.add(RepresentationCandidate.sidecar(quality.get(),
+                                                                                        handler,
+                                                                                        candidateOrder)));
+            order++;
+        }
+
+        RepresentationCandidate bestStaticCandidate = candidates.stream()
+                .min(StaticContentHandler::compareCandidates)
+                .orElse(null);
+        List<RuntimeEncoding> runtimeEncodings = runtimeEncodings(request, acceptEncoding, bestStaticCandidate);
+        for (int i = 0; i < runtimeEncodings.size(); i++) {
+            RuntimeEncoding runtimeEncoding = runtimeEncodings.get(i);
+            candidates.add(RepresentationCandidate.runtime(runtimeEncoding.quality(),
+                                                           identityHandler,
+                                                           i,
+                                                           runtimeEncoding.encoder(),
+                                                           runtimeEncoding.contentEncoding()));
+        }
+
+        if (candidates.isEmpty()) {
+            if (!identityHandler.available()) {
+                return identityHandler;
+            }
+            return new CachedHandlerNotAcceptable(identityRepresentation);
+        }
+
+        RepresentationCandidate selected = candidates.stream()
+                .min(StaticContentHandler::compareCandidates)
+                .orElseThrow();
+
+        if (selected.type() == CandidateType.SIDECAR) {
+            if (!identityHandler.available()) {
+                return identityHandler;
+            }
+            return selected.handler();
+        }
+        if (selected.type() == CandidateType.RUNTIME) {
+            return identityHandler.withRepresentation(ResponseRepresentation.runtime(selected.contentEncoding(),
+                                                                                    selected.encoder()));
+        }
+        return identityHandler.withRepresentation(identityRepresentation);
+    }
+
+    private Optional<CachedHandler> sidecarHandler(CachedHandler identityHandler,
+                                                  String coding,
+                                                  String suffix,
+                                                  SidecarResolver resolver) throws IOException, URISyntaxException {
+        SidecarCache identitySidecarCache = identityHandler.sidecarCache();
+        SidecarCache sidecarCache = identitySidecarCache == null ? SidecarCache.disabled() : identitySidecarCache;
+        CachedHandler cachedHandler = sidecarCache.get(coding);
+        if (cachedHandler != null) {
+            if (sidecarCache.missing(cachedHandler)) {
+                return Optional.empty();
+            }
+            if (cachedHandler.available()) {
+                return Optional.of(new CachedHandlerSelection(cachedHandler, sidecarCache, coding));
+            }
+            sidecarCache.remove(coding);
+        }
+
+        Optional<CachedHandler> resolved = resolver.resolve(coding, suffix);
+        resolved.ifPresentOrElse(handler -> sidecarCache.put(coding, handler),
+                                 () -> sidecarCache.putMissing(coding));
+        return resolved.map(handler -> new CachedHandlerSelection(handler, sidecarCache, coding));
+    }
+
+    static String sidecarMemoryCacheKey(String requestedResource, String coding) {
+        return SIDECAR_MEMORY_CACHE_PREFIX + coding + '\u0000' + requestedResource;
+    }
+
+    private static List<RuntimeEncoding> runtimeEncodings(ServerRequest request,
+                                                          AcceptEncoding acceptEncoding,
+                                                          RepresentationCandidate bestStaticCandidate) {
+        var listenerContext = request.listenerContext();
+        if (listenerContext == null) {
+            return List.of();
+        }
+        ContentEncodingContext contentEncodingContext = listenerContext.contentEncodingContext();
+        if (contentEncodingContext == null || !contentEncodingContext.contentEncodingEnabled()) {
+            return List.of();
+        }
+        if (!runtimeEncodingsNeeded(acceptEncoding, bestStaticCandidate, contentEncodingContext)) {
+            return List.of();
+        }
+
+        Set<String> seen = new LinkedHashSet<>();
+        List<RuntimeEncoding> result = new ArrayList<>();
+        for (String id : contentEncodingContext.contentEncodingIds()) {
+            addRuntimeEncoding(result, seen, contentEncodingContext, acceptEncoding, bestStaticCandidate, id);
+        }
+        for (AcceptEncoding.Quality quality : acceptEncoding.acceptedCodings(false)) {
+            if (!AcceptEncoding.WILDCARD.equals(quality.coding())) {
+                addRuntimeEncoding(result, seen, contentEncodingContext, acceptEncoding, bestStaticCandidate, quality.coding());
+            }
+        }
+        return result;
+    }
+
+    private static void addRuntimeEncoding(List<RuntimeEncoding> result,
+                                           Set<String> seen,
+                                           ContentEncodingContext contentEncodingContext,
+                                           AcceptEncoding acceptEncoding,
+                                           RepresentationCandidate bestStaticCandidate,
+                                           String id) {
+        String normalized = id.toLowerCase(Locale.ROOT);
+        if (!seen.add(normalized)) {
+            return;
+        }
+
+        Optional<AcceptEncoding.Quality> quality = acceptEncoding.match(normalized, true);
+        if (quality.isEmpty() || !contentEncodingContext.contentEncodingSupported(normalized)) {
+            return;
+        }
+
+        ContentEncoder encoder = contentEncodingContext.encoder(normalized);
+        String responseCoding = responseCoding(normalized, encoder);
+        AcceptEncoding.Quality selectedQuality = quality.get();
+        if (!responseCoding.equals(normalized)) {
+            Optional<AcceptEncoding.Quality> actualQuality = acceptEncoding.match(responseCoding, true);
+            if (actualQuality.isEmpty()) {
+                return;
+            }
+            selectedQuality = actualQuality.get();
+        }
+
+        if (runtimeCanBeatStatic(selectedQuality, bestStaticCandidate)) {
+            result.add(new RuntimeEncoding(selectedQuality, encoder, responseCoding));
+        }
+    }
+
+    private static String responseCoding(String coding, ContentEncoder encoder) {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        encoder.headers(headers);
+        if (headers.contains(HeaderNames.CONTENT_ENCODING)) {
+            return headers.get(HeaderNames.CONTENT_ENCODING).get().toLowerCase(Locale.ROOT);
+        }
+        return coding;
+    }
+
+    private static boolean runtimeEncodingsNeeded(AcceptEncoding acceptEncoding,
+                                                  RepresentationCandidate bestStaticCandidate,
+                                                  ContentEncodingContext contentEncodingContext) {
+        for (AcceptEncoding.Quality quality : acceptEncoding.acceptedCodings(true)) {
+            if (!runtimeCanBeatStatic(quality, bestStaticCandidate)) {
+                continue;
+            }
+            String coding = quality.coding();
+            if (AcceptEncoding.WILDCARD.equals(coding)) {
+                return contentEncodingContext.contentEncodingEnabled();
+            }
+            if (contentEncodingContext.contentEncodingSupported(coding)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean runtimeCanBeatStatic(AcceptEncoding.Quality quality,
+                                                RepresentationCandidate bestStaticCandidate) {
+        if (bestStaticCandidate == null) {
+            return true;
+        }
+        RepresentationCandidate runtimeCandidate = RepresentationCandidate.runtime(quality, null, 0, null, quality.coding());
+        return compareCandidates(runtimeCandidate, bestStaticCandidate) < 0;
+    }
+
+    private static int compareCandidates(RepresentationCandidate first, RepresentationCandidate second) {
+        int q = Double.compare(second.quality().q(), first.quality().q());
+        if (q != 0) {
+            return q;
+        }
+        boolean firstImplicitIdentity = implicitIdentity(first);
+        boolean secondImplicitIdentity = implicitIdentity(second);
+        if (firstImplicitIdentity != secondImplicitIdentity) {
+            return firstImplicitIdentity ? 1 : -1;
+        }
+        if (first.quality().wildcard() != second.quality().wildcard()) {
+            return first.quality().wildcard() ? 1 : -1;
+        }
+        if (first.type() == CandidateType.IDENTITY) {
+            return -1;
+        }
+        if (second.type() == CandidateType.IDENTITY) {
+            return 1;
+        }
+        int type = Integer.compare(first.type().priority(), second.type().priority());
+        if (type != 0) {
+            return type;
+        }
+        return Integer.compare(first.order(), second.order());
+    }
+
+    private static boolean implicitIdentity(RepresentationCandidate candidate) {
+        return candidate.type() == CandidateType.IDENTITY && candidate.quality().order() == Integer.MAX_VALUE;
+    }
+
     /**
      * Cache in memory.
      * Only use when explicitly requested by a user, we NEVER clear the cache during runtime. If you cache too much,
@@ -346,7 +624,7 @@ abstract class StaticContentHandler implements HttpService {
 
             inMemoryResource = new CachedHandlerInMemory(contentType,
                                                          lastModified.get(),
-                                                         (headers, instant) -> headers.set(lastModifiedHeader),
+                                                         (headers, _) -> headers.set(lastModifiedHeader),
                                                          bytes,
                                                          contentLength,
                                                          contentLengthHeader);
@@ -366,5 +644,99 @@ abstract class StaticContentHandler implements HttpService {
             etag = etag.substring(1, etag.length() - 1);
         }
         return etag;
+    }
+
+    private static boolean isWeakETag(String etag) {
+        return etag != null && (etag.startsWith("W/") || etag.startsWith("w/"));
+    }
+
+    @FunctionalInterface
+    interface SidecarResolver {
+        Optional<CachedHandler> resolve(String coding, String suffix) throws IOException, URISyntaxException;
+    }
+
+    private enum CandidateType {
+        SIDECAR(0),
+        RUNTIME(1),
+        IDENTITY(2);
+
+        private final int priority;
+
+        CandidateType(int priority) {
+            this.priority = priority;
+        }
+
+        int priority() {
+            return priority;
+        }
+    }
+
+    private record RepresentationCandidate(CandidateType type,
+                                           AcceptEncoding.Quality quality,
+                                           CachedHandler handler,
+                                           int order,
+                                           ContentEncoder encoder,
+                                           String contentEncoding) {
+        private static RepresentationCandidate identity(AcceptEncoding.Quality quality, CachedHandler handler) {
+            return new RepresentationCandidate(CandidateType.IDENTITY, quality, handler, 0, null, null);
+        }
+
+        private static RepresentationCandidate sidecar(AcceptEncoding.Quality quality,
+                                                       CachedHandler handler,
+                                                       int order) {
+            return new RepresentationCandidate(CandidateType.SIDECAR, quality, handler, order, null, null);
+        }
+
+        private static RepresentationCandidate runtime(AcceptEncoding.Quality quality,
+                                                       CachedHandler handler,
+                                                       int order,
+                                                       ContentEncoder encoder,
+                                                       String contentEncoding) {
+            return new RepresentationCandidate(CandidateType.RUNTIME, quality, handler, order, encoder, contentEncoding);
+        }
+    }
+
+    private record RuntimeEncoding(AcceptEncoding.Quality quality, ContentEncoder encoder, String contentEncoding) {
+    }
+
+    private record CachedHandlerSelection(CachedHandler delegate, SidecarCache sidecarCache, String coding)
+            implements CachedHandler {
+        @Override
+        public boolean handle(LruCache<String, CachedHandler> cache,
+                              Method method,
+                              ServerRequest request,
+                              ServerResponse response,
+                              String requestedResource) throws IOException {
+            return delegate.handleSidecar(sidecarCache, coding, cache, method, request, response, requestedResource);
+        }
+
+        @Override
+        public CachedHandler withRepresentation(ResponseRepresentation representation) {
+            return new CachedHandlerSelection(delegate.withRepresentation(representation), sidecarCache, coding);
+        }
+
+        @Override
+        public boolean available() throws IOException {
+            return delegate.available();
+        }
+
+        @Override
+        public SidecarCache sidecarCache() {
+            return delegate.sidecarCache();
+        }
+    }
+
+    private record CachedHandlerNotAcceptable(ResponseRepresentation representation) implements CachedHandler {
+        @Override
+        public boolean handle(LruCache<String, CachedHandler> cache,
+                              Method method,
+                              ServerRequest request,
+                              ServerResponse response,
+                              String requestedResource) {
+            representation.apply(response);
+            response.status(Status.NOT_ACCEPTABLE_406);
+            response.send();
+            return true;
+        }
     }
 }

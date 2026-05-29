@@ -26,11 +26,23 @@ import java.time.Instant;
 import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.Method;
+import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-record CachedHandlerUrlStream(MediaType mediaType, URL url) implements CachedHandler {
+record CachedHandlerUrlStream(MediaType mediaType,
+                              URL url,
+                              ResponseRepresentation representation,
+                              SidecarCache sidecarCache) implements CachedHandler {
     private static final System.Logger LOGGER = System.getLogger(CachedHandlerUrlStream.class.getName());
+
+    CachedHandlerUrlStream(MediaType mediaType, URL url) {
+        this(mediaType, url, ResponseRepresentation.plain());
+    }
+
+    CachedHandlerUrlStream(MediaType mediaType, URL url, ResponseRepresentation representation) {
+        this(mediaType, url, representation, SidecarCache.create());
+    }
 
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,
@@ -45,22 +57,51 @@ record CachedHandlerUrlStream(MediaType mediaType, URL url) implements CachedHan
 
         URLConnection urlConnection = url.openConnection();
         long lastModified = urlConnection.getLastModified();
+        long contentLength = urlConnection.getContentLengthLong();
 
         if (lastModified != 0) {
-            StaticContentHandler.processEtag(String.valueOf(lastModified), request.headers(), response.headers());
-            StaticContentHandler.processModifyHeaders(Instant.ofEpochMilli(lastModified), request.headers(), response.headers());
+            String etag = representation.etag(String.valueOf(lastModified), contentLength);
+            try {
+                boolean ifNoneMatchPresent = StaticContentHandler.processEtag(etag,
+                                                                              representation.weakEtag(),
+                                                                              request.headers(),
+                                                                              response.headers());
+                StaticContentHandler.processModifyHeaders(Instant.ofEpochMilli(lastModified),
+                                                          request.headers(),
+                                                          response.headers(),
+                                                          ServerResponseHeaders::lastModified,
+                                                          !ifNoneMatchPresent);
+            } catch (io.helidon.http.HttpException e) {
+                representation.apply(e);
+                e.header(representation.etagHeader(etag));
+                throw e;
+            }
         }
 
         response.headers().contentType(mediaType);
 
         if (method == Method.HEAD) {
+            representation.apply(response);
             response.send();
             return true;
         }
 
-        try (InputStream in = url.openStream(); OutputStream outputStream = response.outputStream()) {
-            in.transferTo(outputStream);
+        try (InputStream in = url.openStream()) {
+            representation.apply(response);
+            try (OutputStream outputStream = representation.outputStream(response.outputStream())) {
+                in.transferTo(outputStream);
+            }
         }
         return true;
+    }
+
+    @Override
+    public CachedHandler withRepresentation(ResponseRepresentation representation) {
+        return new CachedHandlerUrlStream(mediaType, url, representation, sidecarCache);
+    }
+
+    @Override
+    public SidecarCache sidecarCache() {
+        return sidecarCache;
     }
 }

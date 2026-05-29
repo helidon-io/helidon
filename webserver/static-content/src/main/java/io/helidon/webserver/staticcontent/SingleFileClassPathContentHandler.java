@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -52,6 +53,7 @@ class SingleFileClassPathContentHandler extends ClassPathContentHandler {
                                                            + "not exist on classpath for single file classpath static content "
                                                            + "handler.");
             }
+            cacheResource(location, location, resourceUrl);
 
             if (cacheInMemory && populatedInMemoryCache.compareAndSet(false, true)) {
                 addToInMemoryCache(location, resourceUrl);
@@ -76,14 +78,16 @@ class SingleFileClassPathContentHandler extends ClassPathContentHandler {
     @Override
     void releaseCache() {
         populatedInMemoryCache.set(false);
+        super.releaseCache();
     }
 
     @Override
     boolean doHandle(Method method, String requestedPath, ServerRequest request, ServerResponse response, boolean mapped)
-            throws IOException {
+            throws IOException, URISyntaxException {
 
         var handler = cacheHandler(location)
                 .orElseThrow(() -> new IllegalStateException("Handler must be cached during startup " + location));
+        handler = selectCachedClassPathHandler(location, request.prologue().uriPath().rawPath(), handler, request);
 
         return handler.handle(handlerCache(), method, request, response, requestedPath);
     }

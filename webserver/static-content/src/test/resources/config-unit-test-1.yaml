@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024 Oracle and/or its affiliates.
+# Copyright (c) 2024, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@
 server:
   features:
     static-content:
+      pre-compressed-enabled: false
+      pre-compressed-encodings:
+        gzip: zz
       temporary-storage:
         directory: "./target/helidon/tmp"
         file-prefix: "helidon-custom"
@@ -38,5 +41,17 @@ server:
       path:
         - context: "/path"
           location: "./src/test/resources/web"
+        - context: "/path-enabled"
+          location: "./src/test/resources/web"
+          pre-compressed-enabled: true
+        - context: "/path-empty-encodings"
+          location: "./src/test/resources/web"
+          pre-compressed-enabled: true
+          pre-compressed-encodings: {}
+        - context: "/path-custom-encodings"
+          location: "./src/test/resources/web"
+          pre-compressed-enabled: true
+          pre-compressed-encodings:
+            gzip: gz
         - context: "/singlepath"
           location: "./src/test/resources/web/resource.txt"

@@ -28,6 +28,7 @@ import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
@@ -117,10 +118,12 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 actualLength = actualBytes.length;
             }
 
-            headers.setIfAbsent(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
-                                                    true,
-                                                    false,
-                                                    String.valueOf(actualLength)));
+            if (!omitImplicitContentLength(actualLength)) {
+                headers.setIfAbsent(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
+                                                        true,
+                                                        false,
+                                                        String.valueOf(actualLength)));
+            }
             headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true,
                                                     false,
                                                     DateTime.rfc1123String()));
@@ -228,6 +231,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         headers.clear();
         streamingEntity = false;
         outputStream = null;
+        resetAutomaticContentEncoding();
         return true;
     }
 
@@ -238,6 +242,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
         streamingEntity = false;
         outputStream = null;
+        resetAutomaticContentEncoding();
         return true;
     }
 
@@ -268,6 +273,12 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     private static boolean sendTrailers(ServerResponseHeaders headers) {
         return headers.contains(HeaderNames.TRAILER);
+    }
+
+    private boolean omitImplicitContentLength(int length) {
+        return length == 0
+                && request.prologue().method() == Method.HEAD
+                && headers.contains(HeaderNames.CONTENT_ENCODING);
     }
 
     private void validateResponse(Http2Headers http2Headers) {

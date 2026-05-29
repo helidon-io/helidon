@@ -79,6 +79,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     private boolean reroute;
     private UriQuery rerouteQuery;
     private String reroutePath;
+    private boolean automaticContentEncoding = true;
     private Consumer<ServerResponseTrailers> beforeTrailers;
 
     /**
@@ -134,6 +135,12 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     @Override
     public ServerResponse beforeSend(Runnable listener) {
         beforeSend.add(listener);
+        return (T) this;
+    }
+
+    @Override
+    public T automaticContentEncoding(boolean enabled) {
+        this.automaticContentEncoding = enabled;
         return (T) this;
     }
 
@@ -252,7 +259,8 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      */
     protected byte[] entityBytes(byte[] configuredEntity, int position, int length) {
         byte[] entity = configuredEntity;
-        if (contentEncodingContext.contentEncodingEnabled()
+        if (automaticContentEncoding
+                && contentEncodingContext.contentEncodingEnabled()
                 && length > 0
                 && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
@@ -278,13 +286,22 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      * @return output stream to write plain data to
      */
     protected OutputStream contentEncode(OutputStream outputStream) {
-        if (contentEncodingContext.contentEncodingEnabled() && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
+        if (automaticContentEncoding
+                && contentEncodingContext.contentEncodingEnabled()
+                && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
             encoder.headers(headers());
 
             return encoder.apply(outputStream);
         }
         return outputStream;
+    }
+
+    /**
+     * Reset response-layer automatic content encoding to its default behavior.
+     */
+    protected void resetAutomaticContentEncoding() {
+        this.automaticContentEncoding = true;
     }
 
     /**
