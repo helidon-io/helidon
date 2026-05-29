@@ -343,7 +343,7 @@ abstract class StaticContentHandler implements HttpService {
         int order = 0;
         for (Map.Entry<String, String> entry : preCompressedEncodings.entrySet()) {
             String coding = entry.getKey();
-            Optional<AcceptEncoding.Quality> quality = acceptEncoding.match(coding, true);
+            Optional<AcceptEncoding.Quality> quality = acceptEncoding.match(coding, false);
             if (quality.isEmpty()) {
                 order++;
                 continue;
