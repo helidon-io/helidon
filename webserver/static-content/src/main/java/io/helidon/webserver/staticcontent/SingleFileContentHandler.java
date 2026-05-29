@@ -96,10 +96,7 @@ class SingleFileContentHandler extends FileBasedContentHandler {
         try {
             return selectHandler(identityHandler, request, (coding, suffix) -> {
                 Path sidecar = path.resolveSibling(logicalFileName + "." + suffix);
-                if (!Files.exists(sidecar)
-                        || !Files.isRegularFile(sidecar)
-                        || !Files.isReadable(sidecar)
-                        || Files.isHidden(sidecar)) {
+                if (!available(sidecar)) {
                     return Optional.empty();
                 }
                 return fileHandler(sidecar, logicalFileName, ResponseRepresentation.encoded(coding));

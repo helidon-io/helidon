@@ -88,15 +88,15 @@ record CachedHandlerPath(Path path,
             LOGGER.log(System.Logger.Level.TRACE, "Sending static content from path: " + path);
         }
 
-        // now it exists and is a file
-        if (!Files.exists(path) || !Files.isRegularFile(path) || !Files.isReadable(path) || Files.isHidden(path)) {
-            // check if file still exists (the tmp may have been removed, file may have been removed
-            // there is still a race change, but we do not want to keep cached records for invalid files
-            invalidate.accept(requestedResource);
-            throw new ForbiddenException("File is not accessible");
-        }
+        ensureAvailable(invalidate, requestedResource);
 
-        Instant lastModified = lastModified().apply(path).orElse(null);
+        Instant lastModified;
+        try {
+            lastModified = lastModified().apply(path).orElse(null);
+        } catch (IOException e) {
+            throwForbiddenIfUnavailable(invalidate, requestedResource, e);
+            throw e;
+        }
         Long contentLength = null;
 
         // etag etc.
@@ -144,11 +144,35 @@ record CachedHandlerPath(Path path,
 
     @Override
     public boolean available() throws IOException {
-        return Files.exists(path) && Files.isRegularFile(path) && Files.isReadable(path) && !Files.isHidden(path);
+        return isAvailable();
     }
 
     @Override
     public SidecarCache sidecarCache() {
         return sidecarCache;
+    }
+
+    private void ensureAvailable(Consumer<String> invalidate, String requestedResource) {
+        if (!isAvailable()) {
+            invalidate.accept(requestedResource);
+            throw new ForbiddenException("File is not accessible");
+        }
+    }
+
+    private void throwForbiddenIfUnavailable(Consumer<String> invalidate,
+                                             String requestedResource,
+                                             IOException cause) {
+        if (!isAvailable()) {
+            invalidate.accept(requestedResource);
+            throw new ForbiddenException("File is not accessible", cause);
+        }
+    }
+
+    private boolean isAvailable() {
+        try {
+            return Files.exists(path) && Files.isRegularFile(path) && Files.isReadable(path) && !Files.isHidden(path);
+        } catch (IOException e) {
+            return false;
+        }
     }
 }

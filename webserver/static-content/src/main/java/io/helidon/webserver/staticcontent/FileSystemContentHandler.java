@@ -21,8 +21,10 @@ import java.io.IOException;
 import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.http.Method;
@@ -40,6 +42,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     private final AtomicBoolean populatedInMemoryCache = new AtomicBoolean();
     private final Path root;
     private final Set<String> cacheInMemory;
+    private final Map<String, Path> inMemoryLogicalPaths = new ConcurrentHashMap<>();
 
     FileSystemContentHandler(FileSystemHandlerConfig config) {
         super(config);
@@ -74,6 +77,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     @Override
     void releaseCache() {
         populatedInMemoryCache.set(false);
+        inMemoryLogicalPaths.clear();
         super.releaseCache();
     }
 
@@ -106,11 +110,9 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             if (cachedHandler instanceof CachedHandlerRedirect) {
                 return cachedHandler.handle(handlerCache(), method, req, res, requestedResource);
             }
-            Path logicalPath = path;
-            String welcomeFileName = welcomePageName();
-            if (welcomeFileName != null && rawPath.endsWith("/") && Files.isDirectory(path)) {
-                logicalPath = resolveWelcomeFile(path, welcomeFileName);
-            }
+            Path logicalPath = cachedHandler instanceof CachedHandlerPath pathHandler
+                    ? pathHandler.path()
+                    : inMemoryLogicalPaths.getOrDefault(requestedResource, path);
             CachedHandler handler = selectFileSystemHandler(cachedHandler, req, logicalPath);
             // this requested resource is cached and can be safely returned
             return handler.handle(handlerCache(), method, req, res, requestedResource);
@@ -145,12 +147,14 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                 if (rawPath.endsWith("/")) {
                     Optional<CachedHandlerInMemory> inMemoryMaybe = cacheInMemory(welcomeFileResource);
                     if (inMemoryMaybe.isPresent()) {
+                        Path logicalPath = requestedPath(welcomeFileResource);
                         // reference to the same definition, never times out
                         cacheInMemory(requestedResource, inMemoryMaybe.get());
+                        cacheInMemoryLogicalPath(requestedResource, logicalPath);
                         CachedHandler handler = selectFileSystemHandler(
                                 inMemoryMaybe.get(),
                                                                         req,
-                                                                        requestedPath(welcomeFileResource));
+                                                                        logicalPath);
                         return handler.handle(handlerCache(), method, req, res, requestedResource);
                     }
 
@@ -217,6 +221,11 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     private void addToInMemoryCache(String resource, Path path) throws IOException {
         byte[] fileBytes = Files.readAllBytes(path);
         cacheInMemory(resource, detectType(fileName(path)), fileBytes, lastModified(path));
+        cacheInMemoryLogicalPath(resource, path);
+    }
+
+    private void cacheInMemoryLogicalPath(String resource, Path logicalPath) {
+        inMemoryLogicalPaths.put(resource, logicalPath);
     }
 
     private Path requestedPath(String requestedPath) {
@@ -234,10 +243,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             return selectHandler(identityHandler, request, (coding, suffix) -> {
                 Path sidecar = path.resolveSibling(logicalFileName + "." + suffix);
                 if (!sidecar.startsWith(root)
-                        || !Files.exists(sidecar)
-                        || !Files.isRegularFile(sidecar)
-                        || !Files.isReadable(sidecar)
-                        || Files.isHidden(sidecar)) {
+                        || !available(sidecar)) {
                     return Optional.empty();
                 }
                 return fileHandler(sidecar, logicalFileName, ResponseRepresentation.encoded(coding));

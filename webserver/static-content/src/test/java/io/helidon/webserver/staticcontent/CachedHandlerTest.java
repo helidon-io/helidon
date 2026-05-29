@@ -215,6 +215,36 @@ class CachedHandlerTest {
     }
 
     @Test
+    void testJarExtractedPathUnavailableFallsBackToJarStream() throws IOException, URISyntaxException {
+        Path jarFile = createTmpJarFile();
+        CachedHandlerJar handler = CachedHandlerJar.create(TemporaryStorage.create(builder -> builder
+                                                                      .directory(tempDir)
+                                                                      .deleteOnExit(false)),
+                                                           jarUrl(jarFile, "resource.txt"),
+                                                           null,
+                                                           MediaTypes.TEXT_PLAIN,
+                                                           7);
+        List<Path> extractedFiles;
+        try (Stream<Path> files = Files.list(tempDir)) {
+            extractedFiles = files.toList();
+        }
+        Path extractedFile = extractedFiles.getFirst();
+        Files.delete(extractedFile);
+        Files.createDirectory(extractedFile);
+        ServerRequest req = mock(ServerRequest.class);
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse res = mock(ServerResponse.class);
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+
+        when(req.headers()).thenReturn(ServerRequestHeaders.create());
+        when(res.headers()).thenReturn(responseHeaders);
+        when(res.outputStream()).thenReturn(body);
+
+        assertThat(handler.handle(LruCache.create(), Method.GET, req, res, "resource.txt"), is(true));
+        assertThat(body.toString(StandardCharsets.UTF_8), is("Content"));
+    }
+
+    @Test
     void testClasspathCacheHitDoesNotResolveIdentityUrlAgain() throws IOException, URISyntaxException {
         CountingClassLoader classLoader = new CountingClassLoader("web/resource.txt", "web/resource.txt.br");
         ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
@@ -392,6 +422,55 @@ class CachedHandlerTest {
         assertThat(body.toString(StandardCharsets.UTF_8), is("br-data!"));
         assertThat(handler.canCacheInMemory(4), is(true));
         assertThat(handler.canCacheInMemory(5), is(false));
+    }
+
+    @Test
+    void testClasspathCachedSidecarBytesSurviveRecordCacheEviction() throws IOException, URISyntaxException {
+        Path identityJar = createTmpJarFile(Map.of("web/resource.txt", "Content larger than memory",
+                                                   "web/other.txt", "Other larger than memory"));
+        Path sidecarJar = createTmpJarFile(Map.of("web/resource.txt.br", "br-data!"));
+        ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
+                ClasspathHandlerConfig.builder()
+                        .location("/web")
+                        .classLoader(new MappedJarResourceClassLoader(
+                                Map.of("web/resource.txt", List.of(identityJar),
+                                       "web/resource.txt.br", List.of(sidecarJar),
+                                       "web/other.txt", List.of(identityJar)),
+                                true))
+                        .memoryCache(MemoryCache.create(builder -> builder.enabled(true)
+                                .capacity(Size.create(8))))
+                        .recordCacheCapacity(1)
+                        .preCompressedCrossOriginSourcingEnabled(true)
+                        .build());
+
+        ServerResponseHeaders firstHeaders = ServerResponseHeaders.create();
+        ByteArrayOutputStream firstBody = new ByteArrayOutputStream();
+        assertThat(handler.doHandle(Method.GET,
+                                    "resource.txt",
+                                    request("/resource.txt", acceptEncodingHeaders("br")),
+                                    response(firstHeaders, firstBody),
+                                    false), is(true));
+        assertThat(firstHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
+        assertThat(firstBody.toString(StandardCharsets.UTF_8), is("br-data!"));
+        assertThat(handler.canCacheInMemory(1), is(false));
+
+        assertThat(handler.doHandle(Method.GET,
+                                    "other.txt",
+                                    request("/other.txt", ServerRequestHeaders.create()),
+                                    response(ServerResponseHeaders.create(), new ByteArrayOutputStream()),
+                                    false), is(true));
+
+        Files.delete(sidecarJar);
+
+        ServerResponseHeaders secondHeaders = ServerResponseHeaders.create();
+        ByteArrayOutputStream secondBody = new ByteArrayOutputStream();
+        assertThat(handler.doHandle(Method.GET,
+                                    "resource.txt",
+                                    request("/resource.txt", acceptEncodingHeaders("br")),
+                                    response(secondHeaders, secondBody),
+                                    false), is(true));
+        assertThat(secondHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
+        assertThat(secondBody.toString(StandardCharsets.UTF_8), is("br-data!"));
     }
 
     @Test

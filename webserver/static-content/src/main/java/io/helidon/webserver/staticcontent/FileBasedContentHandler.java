@@ -34,6 +34,7 @@ import java.util.Optional;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.ForbiddenException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
@@ -75,6 +76,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         try {
             return Files.size(path);
         } catch (IOException e) {
+            throwForbiddenIfUnavailable(path, e);
             throw new UncheckedIOException(e);
         }
     }
@@ -111,7 +113,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                 ByteRangeRequest range = ranges.getFirst();
 
                 // only send a part of the file
-                try (SeekableByteChannel channel = Files.newByteChannel(path)) {
+                try (SeekableByteChannel channel = newByteChannel(path)) {
                     representation.apply(response);
                     range.setContentRange(response);
                     try (OutputStream out = response.outputStream()) {
@@ -133,7 +135,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
             } else {
                 // multipart response not yet supported, send all
                 // send the full file
-                try (InputStream in = Files.newInputStream(path)) {
+                try (InputStream in = newInputStream(path)) {
                     representation.apply(response);
                     processContentLength(contentLength, response.headers());
                     try (OutputStream out = response.outputStream()) {
@@ -144,7 +146,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         } else {
             // send the full file
             long contentLength = contentLength(path, knownContentLength);
-            try (InputStream in = Files.newInputStream(path)) {
+            try (InputStream in = newInputStream(path)) {
                 representation.apply(response);
                 processContentLength(contentLength, response.headers());
                 try (OutputStream out = response.outputStream()) {
@@ -157,11 +159,43 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
     private static void sendRuntimeEncoded(ServerResponse response,
                                            Path path,
                                            ResponseRepresentation representation) throws IOException {
-        try (InputStream in = Files.newInputStream(path)) {
+        try (InputStream in = newInputStream(path)) {
             representation.apply(response);
             try (OutputStream out = representation.outputStream(response.outputStream())) {
                 in.transferTo(out);
             }
+        }
+    }
+
+    private static InputStream newInputStream(Path path) throws IOException {
+        try {
+            return Files.newInputStream(path);
+        } catch (IOException e) {
+            throwForbiddenIfUnavailable(path, e);
+            throw e;
+        }
+    }
+
+    private static SeekableByteChannel newByteChannel(Path path) throws IOException {
+        try {
+            return Files.newByteChannel(path);
+        } catch (IOException e) {
+            throwForbiddenIfUnavailable(path, e);
+            throw e;
+        }
+    }
+
+    private static void throwForbiddenIfUnavailable(Path path, IOException cause) {
+        if (!available(path)) {
+            throw new ForbiddenException("File is not accessible", cause);
+        }
+    }
+
+    static boolean available(Path path) {
+        try {
+            return Files.exists(path) && Files.isRegularFile(path) && Files.isReadable(path) && !Files.isHidden(path);
+        } catch (IOException e) {
+            return false;
         }
     }
 

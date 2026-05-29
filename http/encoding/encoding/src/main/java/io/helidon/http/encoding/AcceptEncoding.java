@@ -265,9 +265,32 @@ public final class AcceptEncoding {
     }
 
     private static int compareBest(BestCandidate first, BestCandidate second) {
-        int result = compareQuality(first.quality(), second.quality());
-        if (result != 0) {
-            return result;
+        Quality firstQuality = first.quality();
+        Quality secondQuality = second.quality();
+
+        int q = Double.compare(secondQuality.q(), firstQuality.q());
+        if (q != 0) {
+            return q;
+        }
+
+        boolean firstImplicitIdentity = implicitIdentity(firstQuality);
+        boolean secondImplicitIdentity = implicitIdentity(secondQuality);
+        if (firstImplicitIdentity != secondImplicitIdentity) {
+            return firstImplicitIdentity ? 1 : -1;
+        }
+
+        boolean firstIdentity = IDENTITY.equals(firstQuality.coding());
+        boolean secondIdentity = IDENTITY.equals(secondQuality.coding());
+        if (firstIdentity != secondIdentity) {
+            int order = Integer.compare(firstQuality.order(), secondQuality.order());
+            if (order != 0) {
+                return order;
+            }
+            return firstIdentity ? 1 : -1;
+        }
+
+        if (firstQuality.wildcard() != secondQuality.wildcard()) {
+            return firstQuality.wildcard() ? 1 : -1;
         }
         return Integer.compare(first.serverOrder(), second.serverOrder());
     }
@@ -296,6 +319,10 @@ public final class AcceptEncoding {
         }
 
         return 0;
+    }
+
+    private static boolean implicitIdentity(Quality quality) {
+        return IDENTITY.equals(quality.coding()) && quality.order() == IMPLICIT_IDENTITY_ORDER;
     }
 
     private static String normalize(String coding) {
