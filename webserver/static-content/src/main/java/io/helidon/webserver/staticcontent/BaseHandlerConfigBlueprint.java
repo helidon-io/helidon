@@ -148,9 +148,9 @@ interface BaseHandlerConfigBlueprint {
 
     /**
      * Maps response content codings to pre-compressed file suffixes; handler maps replace inherited feature-level maps
-     * rather than merging with them. An explicit empty map disables sidecar lookups for this handler. Map keys must be
-     * concrete content codings, not {@code identity} or {@code *}, and must be valid HTTP tokens. Map values are file
-     * suffixes; leading dots are ignored, and path separators are rejected.
+     * rather than merging with them, an explicit empty map disables sidecar lookups for this handler, keys must be
+     * concrete valid HTTP-token content codings other than {@code identity} and {@code *}, and values are suffixes whose
+     * leading dots are ignored and whose path separators are rejected.
      *
      * @return content coding to file suffix map
      */

@@ -161,10 +161,10 @@ interface StaticContentConfigBlueprint extends Prototype.Factory<StaticContentFe
     boolean preCompressedEnabled();
 
     /**
-     * Maps response content codings to pre-compressed file suffixes; the default map is br to br and gzip to gz, and
-     * handler-level maps replace this map rather than merging with it. An explicit empty map disables sidecar lookups
-     * by default. Map keys must be concrete content codings, not {@code identity} or {@code *}, and must be valid HTTP
-     * tokens. Map values are file suffixes; leading dots are ignored, and path separators are rejected.
+     * Maps response content codings to pre-compressed file suffixes; the default map is br to br and gzip to gz,
+     * handler-level maps replace this map rather than merging with it, an explicit empty map disables sidecar lookups by
+     * default, keys must be concrete valid HTTP-token content codings other than {@code identity} and {@code *}, and
+     * values are suffixes whose leading dots are ignored and whose path separators are rejected.
      *
      * @return content coding to file suffix map
      */

@@ -332,30 +332,9 @@ class StaticContentHandlerTest {
     }
 
     @Test
-    void preCompressedExplicitIdentityTieSuppressesRuntimeEncoding() throws IOException, URISyntaxException {
-        TestContentHandler handler = TestContentHandler.create(true);
-        CachedHandler identityHandler = inMemoryHandler("Nested content");
-        ServerRequest request = mockRequestWithHeaders("gzip, identity", null, runtimeContentEncodingContext());
-        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
-        ServerResponse response = mock(ServerResponse.class);
-        AtomicReference<byte[]> sent = new AtomicReference<>();
-
-        when(response.headers()).thenReturn(responseHeaders);
-        Mockito.doAnswer(inv -> {
-            sent.set(inv.getArgument(0));
-            return null;
-        }).when(response).send(any(byte[].class));
-
-        CachedHandler selected = handler.selectHandler(
-                identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
-
-        selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
-
-        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
-        assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
-        assertThat(new String(sent.get(), StandardCharsets.UTF_8), is("Nested content"));
+    void preCompressedExplicitIdentityTieUsesRuntimeEncoding() throws IOException, URISyntaxException {
+        assertRuntimeEncodingSelected("gzip, identity");
+        assertRuntimeEncodingSelected("identity, gzip");
     }
 
     @Test
@@ -477,6 +456,123 @@ class StaticContentHandlerTest {
         assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
         assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
         assertThat(sent.toString(StandardCharsets.UTF_8), is("Content"));
+    }
+
+    @Test
+    void preCompressedDeletedSidecarWithRejectedIdentityReturnsNotAcceptableWhenHandled()
+            throws IOException, URISyntaxException {
+        Path identity = tempDir.resolve("resource.txt");
+        Path sidecar = tempDir.resolve("resource.txt.gz");
+        Files.writeString(identity, "Content");
+        Files.writeString(sidecar, "Gzip content");
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = new CachedHandlerPath(identity,
+                                                              MediaTypes.TEXT_PLAIN,
+                                                              path -> Optional.of(Instant.EPOCH),
+                                                              ServerResponseHeaders::lastModified);
+        CachedHandler sidecarHandler = new CachedHandlerPath(sidecar,
+                                                             MediaTypes.TEXT_PLAIN,
+                                                             path -> Optional.of(Instant.EPOCH),
+                                                             ServerResponseHeaders::lastModified)
+                .withRepresentation(ResponseRepresentation.encoded("gzip"));
+        ServerRequest request = mockRequestWithHeaders("gzip, identity;q=0", null, ContentEncodingContext.create());
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse response = mock(ServerResponse.class);
+
+        when(response.headers()).thenReturn(responseHeaders);
+
+        CachedHandler selected = handler.selectHandler(
+                identityHandler,
+                request,
+                (coding, suffix) -> Optional.of(sidecarHandler));
+
+        Files.delete(sidecar);
+
+        selected.handle(LruCache.create(), Method.GET, request, response, "resource.txt");
+
+        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
+        assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+        verify(response).status(Status.NOT_ACCEPTABLE_406);
+        verify(response).send();
+    }
+
+    @Test
+    void preCompressedDeletedSidecarDuringSendUsesRuntimeFallback() throws IOException, URISyntaxException {
+        Path identity = tempDir.resolve("resource.txt");
+        Path sidecar = tempDir.resolve("resource.txt.gz");
+        Files.writeString(identity, "Content");
+        Files.writeString(sidecar, "Gzip content");
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = new CachedHandlerPath(identity,
+                                                              MediaTypes.TEXT_PLAIN,
+                                                              path -> Optional.of(Instant.EPOCH),
+                                                              ServerResponseHeaders::lastModified);
+        CachedHandler sidecarHandler = new CachedHandlerPath(sidecar,
+                                                             MediaTypes.TEXT_PLAIN,
+                                                             path -> {
+                                                                 Files.delete(path);
+                                                                 return Optional.empty();
+                                                             },
+                                                             ServerResponseHeaders::lastModified)
+                .withRepresentation(ResponseRepresentation.encoded("gzip"));
+        ServerRequest request = mockRequestWithHeaders("gzip, identity;q=0", null, runtimeContentEncodingContext());
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse response = mock(ServerResponse.class);
+        ByteArrayOutputStream sent = new ByteArrayOutputStream();
+
+        when(response.headers()).thenReturn(responseHeaders);
+        when(response.outputStream()).thenReturn(sent);
+
+        CachedHandler selected = handler.selectHandler(
+                identityHandler,
+                request,
+                (coding, suffix) -> Optional.of(sidecarHandler));
+
+        selected.handle(LruCache.create(), Method.GET, request, response, "resource.txt");
+
+        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+        assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+        assertThat(sent.toString(StandardCharsets.UTF_8), is("runtime:Content"));
+    }
+
+    @Test
+    void preCompressedDeletedHeadSidecarFallbackClearsSelectedHeaders() throws IOException, URISyntaxException {
+        Path identity = tempDir.resolve("resource.txt");
+        Path sidecar = tempDir.resolve("resource.txt.gz");
+        Files.writeString(identity, "Content");
+        Files.writeString(sidecar, "Gzip content");
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = new CachedHandlerPath(identity,
+                                                              MediaTypes.TEXT_PLAIN,
+                                                              path -> Optional.of(Instant.EPOCH),
+                                                              ServerResponseHeaders::lastModified);
+        CachedHandler sidecarHandler = new CachedHandlerPath(sidecar,
+                                                             MediaTypes.TEXT_PLAIN,
+                                                             path -> {
+                                                                 sidecar.toFile().delete();
+                                                                 return Optional.empty();
+                                                             },
+                                                             ServerResponseHeaders::lastModified)
+                .withRepresentation(ResponseRepresentation.encoded("gzip"));
+        ServerRequest request = mockRequestWithHeaders("gzip, identity;q=0", null, ContentEncodingContext.create());
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse response = mock(ServerResponse.class);
+
+        when(response.headers()).thenReturn(responseHeaders);
+
+        CachedHandler selected = handler.selectHandler(
+                identityHandler,
+                request,
+                (coding, suffix) -> Optional.of(sidecarHandler));
+
+        selected.handle(LruCache.create(), Method.HEAD, request, response, "resource.txt");
+
+        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
+        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_LENGTH));
+        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_TYPE));
+        assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+        verify(response).status(Status.NOT_ACCEPTABLE_406);
+        verify(response).send();
     }
 
     @Test
@@ -1037,6 +1133,28 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void memoryCacheReservesCapacityWhileSupplierLoads() {
+        MemoryCache memoryCache = MemoryCache.create(builder -> builder.enabled(true)
+                .capacity(Size.create(5)));
+        TestContentHandler handler = new TestContentHandler(FileSystemHandlerConfig.builder()
+                                                               .location(Paths.get("."))
+                                                               .memoryCache(memoryCache)
+                                                               .build(),
+                                                           true);
+        AtomicInteger supplierCalls = new AtomicInteger();
+
+        Optional<CachedHandlerInMemory> cached = handler.cacheInMemory("first", 5, () -> {
+            supplierCalls.incrementAndGet();
+            assertThat(handler.canCacheInMemory(1), is(false));
+            return inMemoryHandler("12345");
+        });
+
+        assertThat(cached.isPresent(), is(true));
+        assertThat(supplierCalls.get(), is(1));
+        assertThat(handler.canCacheInMemory(1), is(false));
+    }
+
+    @Test
     void preCompressedPreconditionErrorDoesNotSetResponseContentEncoding() {
         byte[] bytes = "Brotli content".getBytes(StandardCharsets.UTF_8);
         CachedHandler handler = new CachedHandlerInMemory(MediaTypes.TEXT_PLAIN,
@@ -1150,6 +1268,29 @@ class StaticContentHandlerTest {
         assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
         assertThat(new String(sent.get(), StandardCharsets.UTF_8), is("otli"));
         verify(response).status(Status.PARTIAL_CONTENT_206);
+    }
+
+    private void assertRuntimeEncodingSelected(String acceptEncoding) throws IOException, URISyntaxException {
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = inMemoryHandler("Nested content");
+        ServerRequest request = mockRequestWithHeaders(acceptEncoding, null, runtimeContentEncodingContext());
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse response = mock(ServerResponse.class);
+        ByteArrayOutputStream sent = new ByteArrayOutputStream();
+
+        when(response.headers()).thenReturn(responseHeaders);
+        when(response.outputStream()).thenReturn(sent);
+
+        CachedHandler selected = handler.selectHandler(
+                identityHandler,
+                                                       request,
+                                                       (coding, suffix) -> Optional.empty());
+
+        selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
+
+        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+        assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+        assertThat(sent.toString(StandardCharsets.UTF_8), is("runtime:Nested content"));
     }
 
     private static void assertHttpException(Runnable runnable, Status status) {

@@ -120,10 +120,12 @@ class ContentEncodingSupportTest {
     }
 
     @Test
-    void testRuntimeEncoderHonorsExplicitIdentityAtEqualQuality() {
-        ContentEncodingContext context = context(gzipEncoder());
+    void testRuntimeEncoderUsesHeaderOrderBetweenExplicitIdentityAndCoding() {
+        ContentEncoder gzipEncoder = gzipEncoder();
+        ContentEncodingContext context = context(gzipEncoder);
 
-        assertThat(context.encoder(headers("gzip, identity")), sameInstance(ContentEncoder.NO_OP));
+        assertThat(context.encoder(headers("gzip, identity")), sameInstance(gzipEncoder));
+        assertThat(context.encoder(headers("identity, gzip")), sameInstance(ContentEncoder.NO_OP));
     }
 
     @Test

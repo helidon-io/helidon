@@ -397,15 +397,17 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         String logicalFileName = fileName(logicalResource);
         return selectHandler(identityHandler, request, (coding, suffix) -> {
             String sidecarResource = logicalResource + "." + suffix;
+            String sidecarCacheKey = sidecarMemoryCacheKey(logicalResource, coding);
             Enumeration<URL> sidecarUrls = classLoader.getResources(sidecarResource);
             while (sidecarUrls.hasMoreElements()) {
                 URL sidecarUrl = sidecarUrls.nextElement();
                 if (sameOrigin(logicalResource, identityUrl, sidecarResource, sidecarUrl, suffix)) {
                     // Sidecar bytes still use the shared in-memory cache so the memory limit remains global.
-                    return cachedHandler(sidecarMemoryCacheKey(logicalResource, coding),
-                                         sidecarUrl,
-                                         logicalFileName,
-                                         ResponseRepresentation.encoded(coding));
+                    Optional<CachedHandlerInMemory> cached = cacheInMemory(sidecarCacheKey);
+                    if (cached.isPresent()) {
+                        return Optional.of(cached.get());
+                    }
+                    return cachedHandler(sidecarCacheKey, sidecarUrl, logicalFileName, ResponseRepresentation.encoded(coding));
                 }
             }
             return Optional.empty();

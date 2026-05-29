@@ -337,9 +337,9 @@ abstract class StaticContentHandler implements HttpService {
             throw new BadRequestException("Invalid Accept-Encoding header");
         }
 
-        List<RepresentationCandidate> candidates = new ArrayList<>();
+        List<RepresentationCandidate> staticCandidates = new ArrayList<>();
         acceptEncoding.identity()
-                .ifPresent(quality -> candidates.add(RepresentationCandidate.identity(quality, identityHandler)));
+                .ifPresent(quality -> staticCandidates.add(RepresentationCandidate.identity(quality, identityHandler)));
 
         int order = 0;
         for (Map.Entry<String, String> entry : preCompressedEncodings.entrySet()) {
@@ -355,13 +355,22 @@ abstract class StaticContentHandler implements HttpService {
                                                             sidecarResolver
             );
             int candidateOrder = order;
-            sidecar.ifPresent(handler -> candidates.add(RepresentationCandidate.sidecar(quality.get(),
-                                                                                        handler,
-                                                                                        candidateOrder)));
+            sidecar.ifPresent(handler -> staticCandidates.add(RepresentationCandidate.sidecar(quality.get(),
+                                                                                              handler,
+                                                                                              candidateOrder)));
             order++;
         }
 
-        RepresentationCandidate bestStaticCandidate = candidates.stream()
+        return selectCandidate(staticCandidates, acceptEncoding, request, identityHandler, identityRepresentation);
+    }
+
+    private CachedHandler selectCandidate(List<RepresentationCandidate> staticCandidates,
+                                          AcceptEncoding acceptEncoding,
+                                          ServerRequest request,
+                                          CachedHandler identityHandler,
+                                          ResponseRepresentation identityRepresentation) throws IOException {
+        List<RepresentationCandidate> candidates = new ArrayList<>(staticCandidates);
+        RepresentationCandidate bestStaticCandidate = staticCandidates.stream()
                 .min(StaticContentHandler::compareCandidates)
                 .orElse(null);
         List<RuntimeEncoding> runtimeEncodings = runtimeEncodings(request, acceptEncoding, bestStaticCandidate);
@@ -386,10 +395,11 @@ abstract class StaticContentHandler implements HttpService {
                 .orElseThrow();
 
         if (selected.type() == CandidateType.SIDECAR) {
-            if (!identityHandler.available()) {
-                return identityHandler;
-            }
-            return selected.handler();
+            return ((CachedHandlerSelection) selected.handler()).withFallback(() -> {
+                List<RepresentationCandidate> fallbackCandidates = new ArrayList<>(staticCandidates);
+                fallbackCandidates.removeIf(candidate -> candidate == selected);
+                return selectCandidate(fallbackCandidates, acceptEncoding, request, identityHandler, identityRepresentation);
+            });
         }
         if (selected.type() == CandidateType.RUNTIME) {
             return identityHandler.withRepresentation(ResponseRepresentation.runtime(selected.contentEncoding(),
@@ -531,14 +541,11 @@ abstract class StaticContentHandler implements HttpService {
         if (firstImplicitIdentity != secondImplicitIdentity) {
             return firstImplicitIdentity ? 1 : -1;
         }
+        if ((first.type() == CandidateType.IDENTITY) != (second.type() == CandidateType.IDENTITY)) {
+            return first.type() == CandidateType.IDENTITY ? 1 : -1;
+        }
         if (first.quality().wildcard() != second.quality().wildcard()) {
             return first.quality().wildcard() ? 1 : -1;
-        }
-        if (first.type() == CandidateType.IDENTITY) {
-            return -1;
-        }
-        if (second.type() == CandidateType.IDENTITY) {
-            return 1;
         }
         int type = Integer.compare(first.type().priority(), second.type().priority());
         if (type != 0) {
@@ -700,10 +707,16 @@ abstract class StaticContentHandler implements HttpService {
     private record RuntimeEncoding(AcceptEncoding.Quality quality, ContentEncoder encoder, String contentEncoding) {
     }
 
+    @FunctionalInterface
+    private interface SidecarFallback {
+        CachedHandler handler() throws IOException;
+    }
+
     private record CachedHandlerSelection(CachedHandler delegate,
                                           CachedHandler identityHandler,
                                           SidecarCache sidecarCache,
-                                          String coding)
+                                          String coding,
+                                          SidecarFallback fallback)
             implements CachedHandler {
         @Override
         public boolean handle(LruCache<String, CachedHandler> cache,
@@ -717,9 +730,21 @@ abstract class StaticContentHandler implements HttpService {
             try {
                 return delegate.handleSidecar(sidecarCache, coding, cache, method, request, response, requestedResource);
             } catch (ForbiddenException e) {
-                return identityHandler.withRepresentation(ResponseRepresentation.identity(true))
-                        .handle(cache, method, request, response, requestedResource);
+                sidecarCache.remove(coding);
+                clearSelectedRepresentationHeaders(response.headers());
+                return fallback.handler().handle(cache, method, request, response, requestedResource);
             }
+        }
+
+        private CachedHandlerSelection(CachedHandler delegate,
+                                       CachedHandler identityHandler,
+                                       SidecarCache sidecarCache,
+                                       String coding) {
+            this(delegate, identityHandler, sidecarCache, coding, () -> identityHandler);
+        }
+
+        CachedHandlerSelection withFallback(SidecarFallback fallback) {
+            return new CachedHandlerSelection(delegate, identityHandler, sidecarCache, coding, fallback);
         }
 
         @Override
@@ -727,7 +752,8 @@ abstract class StaticContentHandler implements HttpService {
             return new CachedHandlerSelection(delegate.withRepresentation(representation),
                                               identityHandler,
                                               sidecarCache,
-                                              coding);
+                                              coding,
+                                              fallback);
         }
 
         @Override
@@ -739,6 +765,15 @@ abstract class StaticContentHandler implements HttpService {
         public SidecarCache sidecarCache() {
             return delegate.sidecarCache();
         }
+    }
+
+    private static void clearSelectedRepresentationHeaders(ServerResponseHeaders headers) {
+        headers.remove(HeaderNames.CONTENT_ENCODING);
+        headers.remove(HeaderNames.CONTENT_LENGTH);
+        headers.remove(HeaderNames.CONTENT_RANGE);
+        headers.remove(HeaderNames.CONTENT_TYPE);
+        headers.remove(HeaderNames.ETAG);
+        headers.remove(HeaderNames.LAST_MODIFIED);
     }
 
     private record CachedHandlerNotAcceptable(ResponseRepresentation representation) implements CachedHandler {
