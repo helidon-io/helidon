@@ -560,10 +560,16 @@ final class GenerateAbstractBuilder {
                 .anyMatch(it -> it.provider().isPresent());
     }
 
-    private static boolean optionalProviderList(TypeName typeName) {
+    private static boolean optionalProviderContainer(TypeName typeName) {
         return typeName.isOptional()
                 && !typeName.typeArguments().isEmpty()
-                && typeName.typeArguments().getFirst().isList();
+                && (typeName.typeArguments().getFirst().isList() || typeName.typeArguments().getFirst().isSet());
+    }
+
+    private static boolean optionalProviderSet(TypeName typeName) {
+        return typeName.isOptional()
+                && !typeName.typeArguments().isEmpty()
+                && typeName.typeArguments().getFirst().isSet();
     }
 
     private static TypeName providerContainerType(TypeName typeName) {
@@ -581,19 +587,40 @@ final class GenerateAbstractBuilder {
         return optionHandler.typeHandler().type();
     }
 
-    private static void optionalProviderListExisting(ContentBuilder<?> content, OptionInfo option) {
+    private static void optionalProviderExisting(ContentBuilder<?> content, OptionInfo option, boolean optionalSet) {
         content.addContent(option.name())
                 .addContent(" == null ? ")
                 .addContent(List.class)
-                .addContent(".of() : ")
-                .addContent(option.name());
+                .addContent(".of() : ");
+        if (optionalSet) {
+            content.addContent(List.class)
+                    .addContent(".copyOf(")
+                    .addContent(option.name())
+                    .addContent(")");
+        } else {
+            content.addContent(option.name());
+        }
     }
 
-    private static void optionalProviderListEmpty(ContentBuilder<?> content, TypeName providerValueType) {
+    private static void optionalProviderEmpty(ContentBuilder<?> content, TypeName providerValueType) {
         content.addContent(List.class)
                 .addContent(".<")
                 .addContent(providerValueType.genericTypeName())
                 .addContent(">of()");
+    }
+
+    private static void addOptionalProviderDiscovered(Method.Builder preBuildBuilder, OptionInfo option, boolean optionalSet) {
+        preBuildBuilder.addContent("this.add")
+                .addContent(capitalize(option.name()))
+                .addContent("(");
+        if (optionalSet) {
+            preBuildBuilder.addContent("new ")
+                    .addContent(LinkedHashSet.class)
+                    .addContent("<>(discovered)");
+        } else {
+            preBuildBuilder.addContent("discovered");
+        }
+        preBuildBuilder.addContentLine(");");
     }
 
     private static void serviceLoaderPropertyDiscovery(Method.Builder preBuildBuilder,
@@ -609,7 +636,8 @@ final class GenerateAbstractBuilder {
         if (propertyConfigured) {
             OptionConfigured configured = option.configured().get();
 
-            if (optionalProviderList(typeName)) {
+            if (optionalProviderContainer(typeName)) {
+                boolean optionalSet = optionalProviderSet(typeName);
                 preBuildBuilder.addContentLine("{")
                         .addContent("var optionConfig = config.get(\"")
                         .addContent(configured.configKey())
@@ -620,7 +648,7 @@ final class GenerateAbstractBuilder {
                         .increaseContentPadding()
                         .increaseContentPadding()
                         .addContent("? ")
-                        .update(it -> optionalProviderListEmpty(it, providerValueType))
+                        .update(it -> optionalProviderEmpty(it, providerValueType))
                         .addContentLine("")
                         .addContent(": ")
                         .addContent(CONFIG_BUILDER_SUPPORT)
@@ -633,17 +661,15 @@ final class GenerateAbstractBuilder {
                         .addContent(".class, ")
                         .addContent(option.name())
                         .addContent("DiscoverServices, ")
-                        .update(it -> optionalProviderListExisting(it, option))
+                        .update(it -> optionalProviderExisting(it, option, optionalSet))
                         .addContentLine(");")
                         .decreaseContentPadding()
                         .decreaseContentPadding()
                         .addContent("if (optionConfig.exists() || ")
                         .addContent(option.name())
-                        .addContentLine(" != null || !discovered.isEmpty()) {")
-                        .addContent("this.add")
-                        .addContent(capitalize(option.name()))
-                        .addContentLine("(discovered);")
-                        .addContentLine("}")
+                        .addContentLine(" != null || !discovered.isEmpty()) {");
+                addOptionalProviderDiscovered(preBuildBuilder, option, optionalSet);
+                preBuildBuilder.addContentLine("}")
                         .addContentLine("}");
             } else if (typeName.isList() || typeName.isSet()) {
                 preBuildBuilder.addContent("this.add")
@@ -681,7 +707,8 @@ final class GenerateAbstractBuilder {
                         .addContentLine(");");
             }
         } else {
-            if (optionalProviderList(typeName)) {
+            if (optionalProviderContainer(typeName)) {
+                boolean optionalSet = optionalProviderSet(typeName);
                 preBuildBuilder.addContentLine("{")
                         .addContent("var discovered = ")
                         .addContent(BUILDER_SUPPORT)
@@ -690,15 +717,13 @@ final class GenerateAbstractBuilder {
                         .addContent(".class, ")
                         .addContent(option.name())
                         .addContent("DiscoverServices, ")
-                        .update(it -> optionalProviderListExisting(it, option))
+                        .update(it -> optionalProviderExisting(it, option, optionalSet))
                         .addContentLine(");")
                         .addContent("if (")
                         .addContent(option.name())
-                        .addContentLine(" != null || !discovered.isEmpty()) {")
-                        .addContent("this.add")
-                        .addContent(capitalize(option.name()))
-                        .addContentLine("(discovered);")
-                        .addContentLine("}")
+                        .addContentLine(" != null || !discovered.isEmpty()) {");
+                addOptionalProviderDiscovered(preBuildBuilder, option, optionalSet);
+                preBuildBuilder.addContentLine("}")
                         .addContentLine("}");
             } else if (typeName.isList() || typeName.isSet()) {
                 preBuildBuilder.addContent("this.add")
@@ -865,12 +890,13 @@ final class GenerateAbstractBuilder {
         if (propertyConfigured) {
             OptionConfigured configured = option.configured().get();
 
-            if (optionalProviderList(typeName)) {
-                serviceRegistryConfiguredOptionalProviderList(preBuildBuilder,
-                                                              option,
-                                                              configured,
-                                                              providerType,
-                                                              providerValueType);
+            if (optionalProviderContainer(typeName)) {
+                serviceRegistryConfiguredOptionalProviderContainer(preBuildBuilder,
+                                                                   option,
+                                                                   configured,
+                                                                   providerType,
+                                                                   providerValueType,
+                                                                   optionalProviderSet(typeName));
             } else if (typeName.isList() || typeName.isSet()) {
                 preBuildBuilder.addContent("this.add")
                         .addContent(capitalize(option.name()))
@@ -924,24 +950,31 @@ final class GenerateAbstractBuilder {
                         .decreaseContentPadding();
             }
         } else {
-            if (optionalProviderList(typeName)) {
+            if (optionalProviderContainer(typeName)) {
+                boolean optionalSet = optionalProviderSet(typeName);
                 preBuildBuilder.addContentLine("{")
                         .addContent("var discovered = ")
-                        .addContent(REGISTRY_BUILDER_SUPPORT)
-                        .addContent(".<")
-                        .addContent(providerValueType.genericTypeName())
-                        .addContent(">serviceList(registry, ")
-                        .addContentCreate(providerValueType)
-                        .addContent(", ")
-                        .addContent(option.name())
+                        .addContent(REGISTRY_BUILDER_SUPPORT);
+                if (optionalSet) {
+                    preBuildBuilder.addContent(".<")
+                            .addContent(providerValueType.genericTypeName())
+                            .addContent(">serviceSet(registry, ")
+                            .addContentCreate(providerValueType)
+                            .addContent(", ");
+                } else {
+                    preBuildBuilder.addContent(".<")
+                            .addContent(providerValueType.genericTypeName())
+                            .addContent(">serviceList(registry, ")
+                            .addContentCreate(providerValueType)
+                            .addContent(", ");
+                }
+                preBuildBuilder.addContent(option.name())
                         .addContentLine("DiscoverServices);")
                         .addContent("if (")
                         .addContent(option.name())
-                        .addContentLine(" != null || !discovered.isEmpty()) {")
-                        .addContent("this.add")
-                        .addContent(capitalize(option.name()))
-                        .addContentLine("(discovered);")
-                        .addContentLine("}")
+                        .addContentLine(" != null || !discovered.isEmpty()) {");
+                addOptionalProviderDiscovered(preBuildBuilder, option, false);
+                preBuildBuilder.addContentLine("}")
                         .addContentLine("}");
             } else if (typeName.isList()) {
                 preBuildBuilder
@@ -983,11 +1016,12 @@ final class GenerateAbstractBuilder {
         }
     }
 
-    private static void serviceRegistryConfiguredOptionalProviderList(Method.Builder preBuildBuilder,
-                                                                     OptionInfo option,
-                                                                     OptionConfigured configured,
-                                                                     TypeName providerType,
-                                                                     TypeName providerValueType) {
+    private static void serviceRegistryConfiguredOptionalProviderContainer(Method.Builder preBuildBuilder,
+                                                                          OptionInfo option,
+                                                                          OptionConfigured configured,
+                                                                          TypeName providerType,
+                                                                          TypeName providerValueType,
+                                                                          boolean optionalSet) {
         preBuildBuilder.addContentLine("{")
                 .addContent("var optionConfig = config.get(\"")
                 .addContent(configured.configKey())
@@ -998,7 +1032,7 @@ final class GenerateAbstractBuilder {
                 .increaseContentPadding()
                 .increaseContentPadding()
                 .addContent("? ")
-                .update(it -> optionalProviderListEmpty(it, providerValueType))
+                .update(it -> optionalProviderEmpty(it, providerValueType))
                 .addContentLine("")
                 .addContent(": ")
                 .addContent(CONFIG_BUILDER_SUPPORT)
@@ -1016,7 +1050,7 @@ final class GenerateAbstractBuilder {
                 .addContentLine(".class,")
                 .addContent(option.name())
                 .addContentLine("DiscoverServices,")
-                .update(it -> optionalProviderListExisting(it, option))
+                .update(it -> optionalProviderExisting(it, option, optionalSet))
                 .addContentLine(");")
                 .decreaseContentPadding()
                 .decreaseContentPadding()
@@ -1025,11 +1059,9 @@ final class GenerateAbstractBuilder {
                 .decreaseContentPadding()
                 .addContent("if (optionConfig.exists() || ")
                 .addContent(option.name())
-                .addContentLine(" != null || !discovered.isEmpty()) {")
-                .addContent("this.add")
-                .addContent(capitalize(option.name()))
-                .addContentLine("(discovered);")
-                .addContentLine("}")
+                .addContentLine(" != null || !discovered.isEmpty()) {");
+        addOptionalProviderDiscovered(preBuildBuilder, option, optionalSet);
+        preBuildBuilder.addContentLine("}")
                 .addContentLine("}");
     }
 
@@ -1450,6 +1482,12 @@ final class GenerateAbstractBuilder {
                         .addContent(Collections.class)
                         .addContent(".unmodifiableSet(new ")
                         .addContent(LinkedHashSet.class)
+                        .addContentLine("<>(it)));");
+            } else if (declaredType.isOptional() && optionHandler.typeHandler().type().isMap()) {
+                constructor.addContent("builder." + getterName + "().map(it -> ")
+                        .addContent(Collections.class)
+                        .addContent(".unmodifiableMap(new ")
+                        .addContent(LinkedHashMap.class)
                         .addContentLine("<>(it)));");
             } else if (declaredType.isOptional()) {
                 constructor.addContent("builder." + getterName + "().map(")

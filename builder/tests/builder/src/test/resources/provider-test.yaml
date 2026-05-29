@@ -42,12 +42,22 @@ all-defined:
       prop: "config"
     some-2:
       prop: "config2"
+  optional-set-discover:
+    some-1:
+      prop: "config"
+    some-2:
+      prop: "config2"
   list-not-discover:
     some-1:
       prop: "config"
     some-2:
       prop: "config2"
   optional-list-not-discover:
+    some-1:
+      prop: "config"
+    some-2:
+      prop: "config2"
+  optional-set-not-discover:
     some-1:
       prop: "config"
     some-2:
@@ -63,26 +73,37 @@ single-list:
   optional-list-discover:
     some-1:
       prop: "config"
+  optional-set-discover:
+    some-1:
+      prop: "config"
   list-not-discover:
     some-2:
       prop: "config2"
   optional-list-not-discover:
     some-2:
       prop: "config2"
-empty-optional-list-object:
+  optional-set-not-discover:
+    some-2:
+      prop: "config2"
+empty-optional-containers-object:
   one-not-discover:
     some-1:
       prop: "config"
   optional-list-discover: {}
+  optional-set-discover: {}
   optional-list-not-discover: {}
-empty-optional-list-array:
+  optional-set-not-discover: {}
+empty-optional-containers-array:
   one-not-discover:
     some-1:
       prop: "config"
   optional-list-discover: []
+  optional-set-discover: []
   optional-list-not-discover: []
-discover-optional-list-from-config:
+  optional-set-not-discover: []
+discover-optional-containers-from-config:
   one-not-discover:
     some-1:
       prop: "config"
   optional-list-not-discover-discover-services: true
+  optional-set-not-discover-discover-services: true

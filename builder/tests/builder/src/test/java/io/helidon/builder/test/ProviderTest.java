@@ -17,7 +17,9 @@
 package io.helidon.builder.test;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import io.helidon.builder.test.testsubjects.SomeProvider;
 import io.helidon.builder.test.testsubjects.WithInheritedProvider;
@@ -36,6 +38,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -61,12 +64,15 @@ class ProviderTest {
         assertThat(value.optionalNotDiscover().map(SomeProvider.SomeService::prop), optionalEmpty());
 
         assertThat(value.listDiscover(), hasSize(2));
-        List<SomeProvider.SomeService> services = value.optionalListDiscover().orElseThrow();
-        assertThat(services, hasSize(2));
-        assertThat(services.get(0).prop(), is("some-1"));
-        assertThat(services.get(1).prop(), is("some-2"));
+        List<SomeProvider.SomeService> optionalListDiscover = value.optionalListDiscover().orElseThrow();
+        Collection<SomeProvider.SomeService> optionalSetDiscover = value.optionalSetDiscover().orElseThrow();
+        assertServicePropsInOrder(optionalListDiscover, "some-1", "some-2");
+        assertServiceProps(optionalSetDiscover, "some-1", "some-2");
+        assertUnmodifiable(optionalListDiscover);
+        assertUnmodifiable(optionalSetDiscover);
         assertThat(value.listNotDiscover(), hasSize(0));
         assertThat(value.optionalListNotDiscover(), optionalEmpty());
+        assertThat(value.optionalSetNotDiscover(), optionalEmpty());
 
         /*
         Test all the methods for a provider with no implementations
@@ -75,6 +81,7 @@ class ProviderTest {
         assertThat(value.optionalNoImplNotDiscover(), optionalEmpty());
         assertThat(value.listNoImplDiscover(), hasSize(0));
         assertThat(value.optionalListNoImplDiscoverNoConfig(), optionalEmpty());
+        assertThat(value.optionalSetNoImplDiscoverNoConfig(), optionalEmpty());
         assertThat(value.listNoImplNotDiscover(), hasSize(0));
     }
 
@@ -106,10 +113,10 @@ class ProviderTest {
         assertThat(services.get(0).prop(), is("config"));
         assertThat(services.get(1).prop(), is("config2"));
 
-        services = value.optionalListNotDiscover().orElseThrow();
-        assertThat(services, hasSize(2));
-        assertThat(services.get(0).prop(), is("config"));
-        assertThat(services.get(1).prop(), is("config2"));
+        assertServicePropsInOrder(value.optionalListDiscover().orElseThrow(), "config", "config2");
+        assertServiceProps(value.optionalSetDiscover().orElseThrow(), "config", "config2");
+        assertServicePropsInOrder(value.optionalListNotDiscover().orElseThrow(), "config", "config2");
+        assertServiceProps(value.optionalSetNotDiscover().orElseThrow(), "config", "config2");
     }
 
     @Test
@@ -148,46 +155,58 @@ class ProviderTest {
         assertThat(value.listNotDiscover(), hasSize(1));
         assertThat(services.get(0).prop(), is("config2"));
 
-        services = value.optionalListNotDiscover().orElseThrow();
-        assertThat(services, hasSize(1));
-        assertThat(services.get(0).prop(), is("config2"));
+        assertServicePropsInOrder(value.optionalListDiscover().orElseThrow(), "config", "some-2");
+        assertServiceProps(value.optionalSetDiscover().orElseThrow(), "config", "some-2");
+        assertServicePropsInOrder(value.optionalListNotDiscover().orElseThrow(), "config2");
+        assertServiceProps(value.optionalSetNotDiscover().orElseThrow(), "config2");
     }
 
     @Test
-    void testEmptyOptionalList() {
-        WithProvider value = WithProvider.create(config.get("empty-optional-list-object"));
+    void testEmptyOptionalProviderContainers() {
+        WithProvider value = WithProvider.create(config.get("empty-optional-containers-object"));
 
         assertThat(value.optionalListDiscover(), optionalValue(is(List.of())));
+        assertThat(value.optionalSetDiscover(), optionalValue(is(Set.of())));
         assertThat(value.optionalListNotDiscover(), optionalValue(is(List.of())));
+        assertThat(value.optionalSetNotDiscover(), optionalValue(is(Set.of())));
 
-        value = WithProvider.create(config.get("empty-optional-list-array"));
+        value = WithProvider.create(config.get("empty-optional-containers-array"));
 
         assertThat(value.optionalListDiscover(), optionalValue(is(List.of())));
+        assertThat(value.optionalSetDiscover(), optionalValue(is(Set.of())));
         assertThat(value.optionalListNotDiscover(), optionalValue(is(List.of())));
+        assertThat(value.optionalSetNotDiscover(), optionalValue(is(Set.of())));
     }
 
     @Test
-    void testOptionalListBuilderMethods() {
+    void testOptionalProviderContainerBuilderMethods() {
         SomeProvider.SomeService someService = new DummyService();
 
         WithProvider value = WithProvider.builder()
                 .oneNotDiscover(someService)
                 .optionalListNotDiscover(List.of())
+                .optionalSetNotDiscover(Set.of())
                 .build();
         assertThat(value.optionalListNotDiscover(), optionalValue(is(List.of())));
+        assertThat(value.optionalSetNotDiscover(), optionalValue(is(Set.of())));
 
         value = WithProvider.builder()
                 .oneNotDiscover(someService)
                 .addOptionalListNotDiscover(List.of(someService))
+                .addOptionalSetNotDiscover(Set.of(someService))
                 .build();
         assertThat(value.optionalListNotDiscover(), optionalValue(is(List.of(someService))));
+        assertThat(value.optionalSetNotDiscover(), optionalValue(is(Set.of(someService))));
 
         value = WithProvider.builder()
                 .oneNotDiscover(someService)
                 .optionalListNotDiscover(List.of(someService))
+                .optionalSetNotDiscover(Set.of(someService))
                 .clearOptionalListNotDiscover()
+                .clearOptionalSetNotDiscover()
                 .build();
         assertThat(value.optionalListNotDiscover(), optionalEmpty());
+        assertThat(value.optionalSetNotDiscover(), optionalEmpty());
     }
 
     @Test
@@ -208,29 +227,26 @@ class ProviderTest {
     }
 
     @Test
-    void testOptionalListDiscoveryEnabled() {
+    void testOptionalProviderContainerDiscoveryEnabled() {
         SomeProvider.SomeService someService = new DummyService();
 
         WithProvider value = WithProvider.builder()
                 .config(config.get("min-defined"))
                 .oneNotDiscover(someService)
                 .optionalListNotDiscoverDiscoverServices(true)
+                .optionalSetNotDiscoverDiscoverServices(true)
                 .build();
 
-        List<SomeProvider.SomeService> services = value.optionalListNotDiscover().orElseThrow();
-        assertThat(services, hasSize(2));
-        assertThat(services.get(0).prop(), is("some-1"));
-        assertThat(services.get(1).prop(), is("some-2"));
+        assertServicePropsInOrder(value.optionalListNotDiscover().orElseThrow(), "some-1", "some-2");
+        assertServiceProps(value.optionalSetNotDiscover().orElseThrow(), "some-1", "some-2");
     }
 
     @Test
-    void testOptionalListDiscoveryEnabledFromConfig() {
-        WithProvider value = WithProvider.create(config.get("discover-optional-list-from-config"));
+    void testOptionalProviderContainerDiscoveryEnabledFromConfig() {
+        WithProvider value = WithProvider.create(config.get("discover-optional-containers-from-config"));
 
-        List<SomeProvider.SomeService> services = value.optionalListNotDiscover().orElseThrow();
-        assertThat(services, hasSize(2));
-        assertThat(services.get(0).prop(), is("some-1"));
-        assertThat(services.get(1).prop(), is("some-2"));
+        assertServicePropsInOrder(value.optionalListNotDiscover().orElseThrow(), "some-1", "some-2");
+        assertServiceProps(value.optionalSetNotDiscover().orElseThrow(), "some-1", "some-2");
     }
 
     @Test
@@ -259,6 +275,68 @@ class ProviderTest {
                 .from(value)
                 .build();
         assertThat(copy.listDiscover(), is(List.of()));
+    }
+
+    @Test
+    void testDisabledOptionalContainerDiscoveryOnTheCopy() {
+        SomeProvider.SomeService someService = new DummyService();
+        WithProvider value = WithProvider.builder()
+                .optionalListDiscoverDiscoverServices(false)
+                .optionalSetDiscoverDiscoverServices(false)
+                .optionalListDiscover(List.of())
+                .optionalSetDiscover(Set.of())
+                .oneNotDiscover(someService)
+                .build();
+        assertThat(value.optionalListDiscover(), optionalValue(is(List.of())));
+        assertThat(value.optionalSetDiscover(), optionalValue(is(Set.of())));
+
+        WithProvider copy = WithProvider.builder()
+                .from(value)
+                .build();
+        assertThat(copy.optionalListDiscover(), optionalValue(is(List.of())));
+        assertThat(copy.optionalSetDiscover(), optionalValue(is(Set.of())));
+
+        value = WithProvider.builder()
+                .optionalListDiscoverDiscoverServices(false)
+                .optionalSetDiscoverDiscoverServices(false)
+                .optionalListDiscover(List.of(someService))
+                .optionalSetDiscover(Set.of(someService))
+                .oneNotDiscover(someService)
+                .build();
+        copy = WithProvider.builder()
+                .from(value)
+                .build();
+        assertThat(copy.optionalListDiscover(), optionalValue(is(List.of(someService))));
+        assertThat(copy.optionalSetDiscover(), optionalValue(is(Set.of(someService))));
+    }
+
+    @Test
+    void testDisabledOptionalContainerDiscoveryOnTheCopiedBuilder() {
+        SomeProvider.SomeService someService = new DummyService();
+        WithProvider.Builder value = WithProvider.builder()
+                .optionalListDiscoverDiscoverServices(false)
+                .optionalSetDiscoverDiscoverServices(false)
+                .optionalListDiscover(List.of())
+                .optionalSetDiscover(Set.of())
+                .oneNotDiscover(someService);
+
+        WithProvider copy = WithProvider.builder()
+                .from(value)
+                .build();
+        assertThat(copy.optionalListDiscover(), optionalValue(is(List.of())));
+        assertThat(copy.optionalSetDiscover(), optionalValue(is(Set.of())));
+
+        value = WithProvider.builder()
+                .optionalListDiscoverDiscoverServices(false)
+                .optionalSetDiscoverDiscoverServices(false)
+                .optionalListDiscover(List.of(someService))
+                .optionalSetDiscover(Set.of(someService))
+                .oneNotDiscover(someService);
+        copy = WithProvider.builder()
+                .from(value)
+                .build();
+        assertThat(copy.optionalListDiscover(), optionalValue(is(List.of(someService))));
+        assertThat(copy.optionalSetDiscover(), optionalValue(is(Set.of(someService))));
     }
 
     @Test
@@ -316,6 +394,18 @@ class ProviderTest {
         public String type() {
             return null;
         }
+    }
+
+    private static void assertServiceProps(Collection<SomeProvider.SomeService> services, String... props) {
+        assertThat(services.stream().map(SomeProvider.SomeService::prop).toList(), containsInAnyOrder(props));
+    }
+
+    private static void assertServicePropsInOrder(List<SomeProvider.SomeService> services, String... props) {
+        assertThat(services.stream().map(SomeProvider.SomeService::prop).toList(), is(List.of(props)));
+    }
+
+    private static void assertUnmodifiable(Collection<SomeProvider.SomeService> services) {
+        assertThrows(UnsupportedOperationException.class, () -> services.add(new DummyService()));
     }
 
 }
