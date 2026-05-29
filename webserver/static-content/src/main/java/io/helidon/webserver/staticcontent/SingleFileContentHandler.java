@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,9 @@ class SingleFileContentHandler extends FileBasedContentHandler {
         if ("".equals(requestedPath) || "/".equals(requestedPath)) {
             Optional<CachedHandler> cachedHandler = cacheHandler(".");
             if (cachedHandler.isPresent()) {
-                return cachedHandler.get().handle(handlerCache(), method, req, res, requestedPath);
+                CachedHandler identityHandler = cachedHandler.get();
+                CachedHandler handler = selectSingleFileHandler(identityHandler, req);
+                return handler.handle(handlerCache(), method, req, res, ".");
             }
             return doHandle(method, req, res);
         }
@@ -74,7 +76,8 @@ class SingleFileContentHandler extends FileBasedContentHandler {
     }
 
     private boolean doHandle(Method method, ServerRequest req, ServerResponse res) throws IOException {
-        return cacheFileHandler().handle(handlerCache(), method, req, res, ".");
+        CachedHandler handler = cacheFileHandler();
+        return selectSingleFileHandler(handler, req).handle(handlerCache(), method, req, res, ".");
     }
 
     private CachedHandler cacheFileHandler() {
@@ -85,5 +88,24 @@ class SingleFileContentHandler extends FileBasedContentHandler {
         cacheHandler(".", handler);
 
         return handler;
+    }
+
+    private CachedHandler selectSingleFileHandler(CachedHandler identityHandler, ServerRequest request)
+            throws IOException {
+        String logicalFileName = fileName(path);
+        try {
+            return selectHandler(identityHandler, request, (coding, suffix) -> {
+                Path sidecar = path.resolveSibling(logicalFileName + "." + suffix);
+                if (!Files.exists(sidecar)
+                        || !Files.isRegularFile(sidecar)
+                        || !Files.isReadable(sidecar)
+                        || Files.isHidden(sidecar)) {
+                    return Optional.empty();
+                }
+                return fileHandler(sidecar, logicalFileName, ResponseRepresentation.encoded(coding));
+            });
+        } catch (java.net.URISyntaxException e) {
+            throw new IOException(e);
+        }
     }
 }

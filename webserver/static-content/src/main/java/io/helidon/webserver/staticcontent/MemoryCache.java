@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,11 +99,26 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
     }
 
     void clear(StaticContentHandler staticContentHandler) {
+        Map<String, CachedHandlerInMemory> removed;
         try {
             cacheLock.writeLock().lock();
-            cache.remove(staticContentHandler);
+            removed = cache.remove(staticContentHandler);
         } finally {
             cacheLock.writeLock().unlock();
+        }
+        if (removed == null || maxSize == 0) {
+            return;
+        }
+
+        long removedSize = 0;
+        for (CachedHandlerInMemory cached : removed.values()) {
+            removedSize += cached.contentLength();
+        }
+        try {
+            sizeLock.lock();
+            currentSize = Math.max(0, currentSize - removedSize);
+        } finally {
+            sizeLock.unlock();
         }
     }
 

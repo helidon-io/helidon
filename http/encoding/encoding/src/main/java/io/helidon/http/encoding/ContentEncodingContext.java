@@ -16,10 +16,12 @@
 
 package io.helidon.http.encoding;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.http.Headers;
 
@@ -98,6 +100,17 @@ public interface ContentEncodingContext extends RuntimeType.Api<ContentEncodingC
      * @return whether a provider exists for this id
      */
     boolean contentEncodingSupported(String encodingId);
+
+    /**
+     * Content encoding ids that can be applied to response bodies by configured providers, in server preference order.
+     * The implicit {@code identity} content coding is not included.
+     *
+     * @return available response content encoding provider ids
+     */
+    @Api.Incubating
+    default List<String> contentEncodingIds() {
+        return ContentEncodingSupportImpl.contentEncodingIds(prototype().contentEncodings());
+    }
 
     /**
      * Whether there is a content decoder for the provided id.

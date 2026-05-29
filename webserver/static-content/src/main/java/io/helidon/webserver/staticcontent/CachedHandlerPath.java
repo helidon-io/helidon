@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
@@ -37,8 +38,25 @@ import static io.helidon.webserver.staticcontent.StaticContentHandler.processMod
 record CachedHandlerPath(Path path,
                          MediaType mediaType,
                          IoFunction<Path, Optional<Instant>> lastModified,
-                         BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader) implements CachedHandler {
+                         BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
+                         ResponseRepresentation representation,
+                         SidecarCache sidecarCache) implements CachedHandler {
     private static final System.Logger LOGGER = System.getLogger(CachedHandlerPath.class.getName());
+
+    CachedHandlerPath(Path path,
+                      MediaType mediaType,
+                      IoFunction<Path, Optional<Instant>> lastModified,
+                      BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader) {
+        this(path, mediaType, lastModified, setLastModifiedHeader, ResponseRepresentation.plain());
+    }
+
+    CachedHandlerPath(Path path,
+                      MediaType mediaType,
+                      IoFunction<Path, Optional<Instant>> lastModified,
+                      BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
+                      ResponseRepresentation representation) {
+        this(path, mediaType, lastModified, setLastModifiedHeader, representation, SidecarCache.create());
+    }
 
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,
@@ -47,6 +65,25 @@ record CachedHandlerPath(Path path,
                           ServerResponse response,
                           String requestedResource) throws IOException {
 
+        return handle(method, request, response, cache::remove, requestedResource);
+    }
+
+    @Override
+    public boolean handleSidecar(SidecarCache sidecarCache,
+                                 String coding,
+                                 LruCache<String, CachedHandler> cache,
+                                 Method method,
+                                 ServerRequest request,
+                                 ServerResponse response,
+                                 String requestedResource) throws IOException {
+        return handle(method, request, response, resource -> sidecarCache.remove(coding), requestedResource);
+    }
+
+    private boolean handle(Method method,
+                           ServerRequest request,
+                           ServerResponse response,
+                           Consumer<String> invalidate,
+                           String requestedResource) throws IOException {
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Sending static content from path: " + path);
         }
@@ -55,27 +92,63 @@ record CachedHandlerPath(Path path,
         if (!Files.exists(path) || !Files.isRegularFile(path) || !Files.isReadable(path) || Files.isHidden(path)) {
             // check if file still exists (the tmp may have been removed, file may have been removed
             // there is still a race change, but we do not want to keep cached records for invalid files
-            cache.remove(requestedResource);
+            invalidate.accept(requestedResource);
             throw new ForbiddenException("File is not accessible");
         }
 
         Instant lastModified = lastModified().apply(path).orElse(null);
+        Long contentLength = null;
 
         // etag etc.
         if (lastModified != null) {
-            processEtag(String.valueOf(lastModified.toEpochMilli()), request.headers(), response.headers());
-            processModifyHeaders(lastModified, request.headers(), response.headers(), setLastModifiedHeader());
+            long etagContentLength = -1;
+            if (representation.etagRequiresContentLength()) {
+                contentLength = FileBasedContentHandler.contentLength(path);
+                etagContentLength = contentLength;
+            }
+            String etag = representation.etag(String.valueOf(lastModified.toEpochMilli()), etagContentLength);
+            try {
+                boolean ifNoneMatchPresent = processEtag(etag, representation.weakEtag(), request.headers(), response.headers());
+                processModifyHeaders(lastModified,
+                                     request.headers(),
+                                     response.headers(),
+                                     setLastModifiedHeader(),
+                                     !ifNoneMatchPresent);
+            } catch (io.helidon.http.HttpException e) {
+                representation.apply(e);
+                e.header(representation.etagHeader(etag));
+                throw e;
+            }
         }
 
         response.headers().contentType(mediaType);
 
         if (method == Method.GET) {
-            FileBasedContentHandler.send(request, response, path);
+            FileBasedContentHandler.send(request, response, path, representation, contentLength);
         } else {
-            FileBasedContentHandler.processContentLength(path, response.headers());
+            representation.apply(response);
+            if (!representation.runtimeEncoded()) {
+                FileBasedContentHandler.processContentLength(FileBasedContentHandler.contentLength(path, contentLength),
+                                                            response.headers());
+            }
             response.send();
         }
 
         return true;
+    }
+
+    @Override
+    public CachedHandler withRepresentation(ResponseRepresentation representation) {
+        return new CachedHandlerPath(path, mediaType, lastModified, setLastModifiedHeader, representation, sidecarCache);
+    }
+
+    @Override
+    public boolean available() throws IOException {
+        return Files.exists(path) && Files.isRegularFile(path) && Files.isReadable(path) && !Files.isHidden(path);
+    }
+
+    @Override
+    public SidecarCache sidecarCache() {
+        return sidecarCache;
     }
 }

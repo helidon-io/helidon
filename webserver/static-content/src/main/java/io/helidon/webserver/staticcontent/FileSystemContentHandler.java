@@ -74,6 +74,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     @Override
     void releaseCache() {
         populatedInMemoryCache.set(false);
+        super.releaseCache();
     }
 
     @Override
@@ -101,8 +102,22 @@ class FileSystemContentHandler extends FileBasedContentHandler {
         Optional<CachedHandler> cached = cacheHandler(requestedResource);
 
         if (cached.isPresent()) {
+            CachedHandler cachedHandler = cached.get();
+            if (cachedHandler instanceof CachedHandlerRedirect) {
+                return cachedHandler.handle(handlerCache(), method, req, res, requestedResource);
+            }
+            String logicalResource = requestedResource;
+            Path logicalPath = path;
+            String welcomeFileName = welcomePageName();
+            if (welcomeFileName != null && rawPath.endsWith("/") && Files.isDirectory(path)) {
+                logicalResource = requestedResource
+                        + (requestedResource.endsWith("/") ? "" : "/")
+                        + welcomeFileName;
+                logicalPath = resolveWelcomeFile(path, welcomeFileName);
+            }
+            CachedHandler handler = selectFileSystemHandler(cachedHandler, req, logicalPath);
             // this requested resource is cached and can be safely returned
-            return cached.get().handle(handlerCache(), method, req, res, requestedResource);
+            return handler.handle(handlerCache(), method, req, res, requestedResource);
         }
 
         // if it is not cached, find the resource and cache it (or return 404 and do not cache)
@@ -122,6 +137,8 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             return false;
         }
 
+        String logicalResource = requestedResource;
+
         // we know the file exists, though it may be a directory
         // First doHandle a directory case
         String welcomeFileName = welcomePageName();
@@ -136,15 +153,16 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                     if (inMemoryMaybe.isPresent()) {
                         // reference to the same definition, never times out
                         cacheInMemory(requestedResource, inMemoryMaybe.get());
-                        return inMemoryMaybe.get().handle(handlerCache(),
-                                                          method,
-                                                          req,
-                                                          res,
-                                                          requestedResource);
+                        CachedHandler handler = selectFileSystemHandler(
+                                inMemoryMaybe.get(),
+                                                                        req,
+                                                                        requestedPath(welcomeFileResource));
+                        return handler.handle(handlerCache(), method, req, res, requestedResource);
                     }
 
                     // Try to find welcome file
                     path = resolveWelcomeFile(path, welcomePageName());
+                    logicalResource = welcomeFileResource;
                 } else {
                     // Or redirect to slash ended
                     String redirectLocation = rawPath + "/";
@@ -160,7 +178,8 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                                                       FileBasedContentHandler::lastModified,
                                                       ServerResponseHeaders::lastModified);
         cacheHandler(requestedResource, handler);
-        return handler.handle(handlerCache(), method, req, res, requestedResource);
+        CachedHandler selected = selectFileSystemHandler(handler, req, path);
+        return selected.handle(handlerCache(), method, req, res, requestedResource);
     }
 
     private void addToInMemoryCache(String resource) throws IOException {
@@ -212,5 +231,26 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             return root;
         }
         return root.resolve(requestedPath).toAbsolutePath().normalize();
+    }
+
+    private CachedHandler selectFileSystemHandler(CachedHandler identityHandler,
+                                                  ServerRequest request,
+                                                  Path path) throws IOException {
+        String logicalFileName = fileName(path);
+        try {
+            return selectHandler(identityHandler, request, (coding, suffix) -> {
+                Path sidecar = path.resolveSibling(logicalFileName + "." + suffix);
+                if (!sidecar.startsWith(root)
+                        || !Files.exists(sidecar)
+                        || !Files.isRegularFile(sidecar)
+                        || !Files.isReadable(sidecar)
+                        || Files.isHidden(sidecar)) {
+                    return Optional.empty();
+                }
+                return fileHandler(sidecar, logicalFileName, ResponseRepresentation.encoded(coding));
+            });
+        } catch (java.net.URISyntaxException e) {
+            throw new IOException(e);
+        }
     }
 }
