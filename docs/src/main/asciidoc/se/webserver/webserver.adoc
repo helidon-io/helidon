@@ -946,11 +946,12 @@ cached in memory still count against the configured memory cache capacity.
 
 When listener content encoding is configured, static content can dynamically encode the logical resource when that
 runtime candidate is the best acceptable representation. Wildcard values can select runtime encoders.
-Pre-compressed sidecars win ties over runtime encoders, while an explicitly accepted identity coding at the same quality
-keeps the identity representation. If two sidecars have the same quality, Helidon uses the
-`pre-compressed-encodings` order; the default order prefers `br` before `gzip`. If no acceptable sidecar or runtime
-encoder exists and the client rejects `identity`, Helidon responds with `406 Not Acceptable`. Dynamically encoded
-static responses ignore byte ranges, omit `Content-Length`, and use weak entity tags.
+Pre-compressed sidecars win ties over runtime encoders, and non-identity candidates at the same quality win over
+`identity`; identity wins only with a higher quality or when no acceptable sidecar or runtime encoder is available. If
+two sidecars have the same quality, Helidon uses the `pre-compressed-encodings` order; the default order prefers `br`
+before `gzip`. If no acceptable sidecar or runtime encoder exists and the client rejects `identity`, Helidon responds
+with `406 Not Acceptable`. Dynamically encoded static responses ignore byte ranges, omit `Content-Length`, and use weak
+entity tags.
 Malformed `Accept-Encoding` values, such as invalid coding tokens, unsupported parameters, or invalid `q` values, are
 rejected with `400 Bad Request`.
 

@@ -28,6 +28,7 @@ import java.util.function.BiConsumer;
 
 import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.http.ForbiddenException;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -176,7 +177,7 @@ class CachedHandlerJar implements CachedHandler {
                     }
                     return true;
                 }
-            } catch (IOException e) {
+            } catch (IOException | ForbiddenException e) {
                 if (LOGGER.isLoggable(Level.TRACE)) {
                     LOGGER.log(Level.TRACE, "Failed to send jar entry from extracted path: " + path
                                        + ", will send directly from jar",
