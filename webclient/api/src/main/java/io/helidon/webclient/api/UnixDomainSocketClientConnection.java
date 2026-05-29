@@ -29,8 +29,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SNIServerName;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 
 import io.helidon.common.Api;

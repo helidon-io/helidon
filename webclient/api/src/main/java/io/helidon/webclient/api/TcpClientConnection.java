@@ -30,10 +30,10 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLSocket;
 
 import io.helidon.common.buffers.BufferData;

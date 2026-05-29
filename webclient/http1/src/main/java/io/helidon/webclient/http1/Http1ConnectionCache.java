@@ -78,7 +78,12 @@ class Http1ConnectionCache extends ClientConnectionCache {
         if (keepAlive) {
             return keepAliveUnixDomainConnection(http1Client, request, effectiveTls, uri, headers, address);
         } else {
-            ConnectionKey connectionKey = unixConnectionKey(request, effectiveTls, uri, headers, address, http1Client.clientConfig());
+            ConnectionKey connectionKey = unixConnectionKey(request,
+                                                            effectiveTls,
+                                                            uri,
+                                                            headers,
+                                                            address,
+                                                            http1Client.clientConfig());
             return UnixDomainSocketClientConnection.create(http1Client.webClient(),
                                                            connectionKey,
                                                            ALPN_ID,
