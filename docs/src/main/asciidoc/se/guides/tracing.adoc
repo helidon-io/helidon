@@ -516,8 +516,11 @@ spec:
 kubectl apply -f ./jaeger.yaml
 ----
 
+The ClusterIP service `jaeger` exposes the OTLP gRPC port `4317` for Helidon to export spans to Jaeger.
+To access the Jaeger UI from outside Kubernetes, expose the UI separately.
+
 [source,bash]
-.Create a Jaeger external server to view the UI and expose it on port 16687:
+.Create an external Jaeger UI service on port 16687:
 ----
 kubectl expose pod  jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer
 ----
