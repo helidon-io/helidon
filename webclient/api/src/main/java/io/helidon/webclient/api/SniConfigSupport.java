@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.uri.UriAuthority;
+import io.helidon.common.uri.UriHost;
 
 final class SniConfigSupport {
     private SniConfigSupport() {
@@ -35,11 +36,7 @@ final class SniConfigSupport {
                 if (host.isEmpty() || host.get().isBlank()) {
                     throw new IllegalArgumentException("SNI host must be configured when SNI mode is explicit");
                 }
-                UriAuthority authority = UriAuthority.create(host.get());
-                if (authority.hasPort()) {
-                    throw new IllegalArgumentException("SNI host must not include a port");
-                }
-                target.host(authority.host().value());
+                target.host(normalizeHost(host.get()).value());
                 return;
             }
 
@@ -47,5 +44,28 @@ final class SniConfigSupport {
                 throw new IllegalArgumentException("SNI host can only be configured when SNI mode is explicit");
             }
         }
+    }
+
+    private static UriHost normalizeHost(String host) {
+        if (host.startsWith("[")) {
+            return normalizeAuthority(host);
+        }
+        if (hasSingleColon(host)) {
+            throw new IllegalArgumentException("SNI host must not include a port");
+        }
+        return UriHost.create(host);
+    }
+
+    private static UriHost normalizeAuthority(String authorityText) {
+        UriAuthority authority = UriAuthority.create(authorityText);
+        if (authority.hasPort()) {
+            throw new IllegalArgumentException("SNI host must not include a port");
+        }
+        return authority.host();
+    }
+
+    private static boolean hasSingleColon(String host) {
+        int firstColon = host.indexOf(':');
+        return firstColon != -1 && host.indexOf(':', firstColon + 1) == -1;
     }
 }

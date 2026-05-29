@@ -64,6 +64,17 @@ class SniConfigTest {
     }
 
     @Test
+    void explicitModeBracketedIpv6HostIsCopyBuildable() {
+        SniConfig config = SniConfig.builder()
+                .mode(SniMode.EXPLICIT)
+                .host("[::1]")
+                .build();
+        SniConfig copy = SniConfig.builder(config).build();
+
+        assertThat(copy.host().orElseThrow(), is("::1"));
+    }
+
+    @Test
     void explicitModeRejectsPort() {
         assertThrows(IllegalArgumentException.class,
                      () -> SniConfig.builder()

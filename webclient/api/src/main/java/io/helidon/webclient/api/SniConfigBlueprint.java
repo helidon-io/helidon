@@ -44,6 +44,9 @@ interface SniConfigBlueprint {
      * Explicit TLS peer host used when {@code mode} is {@code explicit}.
      * DNS hosts are sent as SNI server names and used for endpoint identification. IP literals are used for endpoint
      * identification without a DNS SNI server name.
+     * <p>
+     * The host must be configured only when {@code mode} is {@code explicit}, and it must not include a port.
+     * Bracketed IPv6 literals are accepted and normalized to the host value without brackets.
      *
      * @return explicit TLS peer host
      */

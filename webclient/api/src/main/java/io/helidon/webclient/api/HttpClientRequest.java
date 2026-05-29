@@ -36,7 +36,6 @@ import io.helidon.webclient.spi.HttpClientSpi;
 public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, HttpClientResponse> {
     private static final System.Logger LOGGER = System.getLogger(HttpClientRequest.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
-    private static final String GENERIC_TCP_PROTOCOL_IDS_PROPERTY = "io.helidon.webclient.generic.tcp-protocol-ids";
 
     private final LruCache<LoomClient.EndpointKey, HttpClientSpi> clientSpiCache;
     private final WebClient webClient;
@@ -279,7 +278,6 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
             throw new IllegalArgumentException("Cannot handle request to " + resolvedUri + ", did not discover any HTTP version "
                                                        + "willing to handle it. HTTP versions supported: " + clients.keySet());
         }
-        property(GENERIC_TCP_PROTOCOL_IDS_PROPERTY, String.join(",", tcpProtocolIds));
         return tcpProtocols.getFirst().spi().clientRequest(this, resolvedUri);
     }
 

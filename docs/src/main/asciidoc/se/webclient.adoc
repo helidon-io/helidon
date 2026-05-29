@@ -433,6 +433,8 @@ The `uri-host` mode uses the resolved request URI host.
 The `host-header` mode uses the effective HTTP `Host` authority.
 HTTP/2 requests use the same effective authority for the generated `:authority` pseudo header.
 The `explicit` mode uses `host` as the TLS peer host.
+Configure `host` only with `explicit` mode.
+The configured value must be a host without a port; bracketed IPv6 literals are accepted and normalized without brackets.
 The `disabled` mode clears the SNI server name.
 
 [source,yaml]

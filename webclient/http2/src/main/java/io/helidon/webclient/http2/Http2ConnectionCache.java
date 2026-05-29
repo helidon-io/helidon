@@ -20,13 +20,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 
 import io.helidon.common.LruCache;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
-import io.helidon.webclient.http1.Http1ClientRequest;
-import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.spi.ClientConnectionCache;
 
 /**
@@ -87,7 +85,8 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
                                            ConnectionKey connectionKey,
                                            Http2ClientRequestImpl request,
                                            ClientUri initialUri,
-                                           Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
+                                           WebClientServiceRequest serviceRequest,
+                                           Http1FallbackHandler http1FallbackHandler) {
 
         if (closed.get()) {
             throw new IllegalStateException("Connection cache is closed");
@@ -100,7 +99,8 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
                 .newStream(http2Client,
                            request,
                            initialUri,
-                           http1EntityHandler);
+                           serviceRequest,
+                           http1FallbackHandler);
         if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2
                 && (request.connection().isEmpty()
                         || Http2ClientConnectionHandler.ownsExplicitConnection(request))) {

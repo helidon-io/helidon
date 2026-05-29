@@ -17,6 +17,7 @@
 package io.helidon.webclient.http2;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -27,6 +28,7 @@ import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
+import io.helidon.webclient.http1.Http1Client;
 
 class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2ClientResponse>
         implements Http2ClientRequest, Http2StreamConfig, FullClientRequest<Http2ClientRequest> {
@@ -38,13 +40,23 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
     private Duration flowControlTimeout = Duration.ofMillis(100);
     private boolean outputStreamRedirect = false;
     private final FullClientRequest<?> delegate;
+    private final List<String> tcpProtocolIds;
 
     Http2ClientRequestImpl(Http2ClientImpl http2Client,
                            FullClientRequest<?> delegate,
                            Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
-        this(http2Client, delegate, method, clientUri, properties, null);
+        this(http2Client, delegate, method, clientUri, properties, null, defaultTcpProtocolIds());
+    }
+
+    Http2ClientRequestImpl(Http2ClientImpl http2Client,
+                           FullClientRequest<?> delegate,
+                           Method method,
+                           ClientUri clientUri,
+                           Map<String, String> properties,
+                           List<String> tcpProtocolIds) {
+        this(http2Client, delegate, method, clientUri, properties, null, tcpProtocolIds);
     }
 
     private Http2ClientRequestImpl(Http2ClientImpl http2Client,
@@ -52,7 +64,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                                    Method method,
                                    ClientUri clientUri,
                                    Map<String, String> properties,
-                                   ClientUri redirectSourceUri) {
+                                   ClientUri redirectSourceUri,
+                                   List<String> tcpProtocolIds) {
         super(http2Client.clientConfig(),
                 http2Client.webClient().cookieManager(),
                 Http2Client.PROTOCOL_ID,
@@ -66,13 +79,20 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         Http2ClientProtocolConfig protocolConfig = http2Client.protocolConfig();
         this.priorKnowledge = protocolConfig.priorKnowledge();
         this.delegate = delegate;
+        this.tcpProtocolIds = List.copyOf(tcpProtocolIds);
     }
 
     Http2ClientRequestImpl(Http2ClientRequestImpl request,
                            Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
-        this(request.http2Client, request.delegate, method, clientUri, properties, request.resolvedUri());
+        this(request.http2Client,
+             request.delegate,
+             method,
+             clientUri,
+             properties,
+             request.resolvedUri(),
+             request.tcpProtocolIds);
 
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
@@ -178,6 +198,10 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         return delegate != null && delegate.connection().isEmpty() && connection().isPresent();
     }
 
+    List<String> tcpProtocolIds() {
+        return tcpProtocolIds;
+    }
+
     void sanitizeRedirectHeaders(ClientUri requestUri, ClientRequestHeaders requestHeaders) {
         super.sanitizeRedirectSensitiveHeaders(requestUri, requestHeaders);
     }
@@ -186,6 +210,10 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         return sourceUri.scheme().equalsIgnoreCase(targetUri.scheme())
                 && sourceUri.host().equalsIgnoreCase(targetUri.host())
                 && sourceUri.port() == targetUri.port();
+    }
+
+    private static List<String> defaultTcpProtocolIds() {
+        return List.of(Http2Client.PROTOCOL_ID, Http1Client.PROTOCOL_ID);
     }
 
     Http2ClientResponseImpl invokeEntity(Object entity) {

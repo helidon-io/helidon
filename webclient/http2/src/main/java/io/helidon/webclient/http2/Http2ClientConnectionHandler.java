@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
@@ -43,9 +42,9 @@ import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.UnixDomainSocketClientConnection;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
-import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.http1.UpgradeResponse;
 import io.helidon.webclient.http2.Http2ConnectionAttemptResult.Result;
 
@@ -61,7 +60,6 @@ class Http2ClientConnectionHandler {
     // h2c stands for HTTP/2 plaintext protocol (only used without TLS)
     private static final Header UPGRADE_HEADER = HeaderValues.createCached(HeaderNames.UPGRADE, "h2c");
     private static final HeaderName HTTP2_SETTINGS_HEADER = HeaderNames.create("HTTP2-Settings");
-    private static final String GENERIC_TCP_PROTOCOL_IDS_PROPERTY = "io.helidon.webclient.generic.tcp-protocol-ids";
 
     // todo requires handling of timeouts and removal from this queue
     private final Map<ClientConnection, Http2ClientConnection> h2ConnByConn =
@@ -95,27 +93,40 @@ class Http2ClientConnectionHandler {
     Http2ConnectionAttemptResult newStream(Http2ClientImpl http2Client,
                                            Http2ClientRequestImpl request,
                                            ClientUri initialUri,
-                                           Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
+                                           WebClientServiceRequest serviceRequest,
+                                           Http1FallbackHandler http1FallbackHandler) {
+        try {
+            Optional<ClientConnection> maybeConnection = request.connection();
+            if (maybeConnection.isPresent()) {
+                return explicitConnection(http2Client,
+                                          request,
+                                          initialUri,
+                                          serviceRequest,
+                                          http1FallbackHandler,
+                                          maybeConnection.get());
+            }
 
-        Optional<ClientConnection> maybeConnection = request.connection();
-        if (maybeConnection.isPresent()) {
-            return explicitConnection(http2Client,
-                                      request,
-                                      initialUri,
-                                      http1EntityHandler,
-                                      maybeConnection.get());
+            return switch (result.get()) {
+                case HTTP_1 -> {
+                    if (!http1FallbackAllowed(request)) {
+                        throw unsupportedHttp1Fallback(initialUri, request, http1FallbackHandler);
+                    }
+                    yield http1(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
+                }
+                case HTTP_2 -> http2(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
+                case UNKNOWN -> httpX(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
+            };
+        } catch (RuntimeException | Error e) {
+            http1FallbackHandler.completeSentExceptionally(e);
+            throw e;
         }
-
-        return switch (result.get()) {
-            case HTTP_1 -> http1(http2Client, request, initialUri, http1EntityHandler);
-            case HTTP_2 -> http2(http2Client, request, initialUri);
-            case UNKNOWN -> httpX(http2Client, request, initialUri, http1EntityHandler);
-        };
     }
 
     Http2ConnectionAttemptResult http2(Http2ClientImpl http2Client,
                                        Http2ClientRequestImpl request,
-                                       ClientUri initialUri) {
+                                       ClientUri initialUri,
+                                       WebClientServiceRequest serviceRequest,
+                                       Http1FallbackHandler http1FallbackHandler) {
         try {
             lock.lockInterruptibly();
         } catch (InterruptedException e) {
@@ -126,14 +137,14 @@ class Http2ClientConnectionHandler {
             Http2ClientConnection conn = activeConnection.updateAndGet(c -> c != null && c.closed() ? null : c);
             Http2ClientStream stream;
             if (conn == null) {
-                conn = createConnection(http2Client, request, initialUri);
+                conn = createConnection(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
                 // we must assume that a new connection can handle a new stream
                 stream = createStreamOnNewConnection(conn, request);
             } else {
                 stream = conn.tryStream(request);
                 if (stream == null) {
                     // either the connection is closed, or it ran out of streams
-                    conn = createConnection(http2Client, request, initialUri);
+                    conn = createConnection(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
                     stream = createStreamOnNewConnection(conn, request);
                 }
             }
@@ -147,7 +158,8 @@ class Http2ClientConnectionHandler {
     private Http2ConnectionAttemptResult httpX(Http2ClientImpl http2Client,
                                                Http2ClientRequestImpl request,
                                                ClientUri initialUri,
-                                               Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
+                                               WebClientServiceRequest serviceRequest,
+                                               Http1FallbackHandler http1FallbackHandler) {
         try {
             lock.lockInterruptibly();
         } catch (InterruptedException e) {
@@ -156,13 +168,8 @@ class Http2ClientConnectionHandler {
         try {
             WebClient webClient = http2Client.webClient();
             if (request.tls().enabled() && "https".equals(initialUri.scheme())) {
-                // use ALPN, not upgrade, if prior, only h2, otherwise both
-                List<String> alpn;
-                if (request.priorKnowledge()) {
-                    alpn = List.of(Http2Client.PROTOCOL_ID);
-                } else {
-                    alpn = List.of(Http2Client.PROTOCOL_ID, Http1Client.PROTOCOL_ID);
-                }
+                // use ALPN, not upgrade
+                List<String> alpn = alpnProtocolIds(request);
                 ClientConnection clientConnection = connectClient(webClient, request, initialUri, alpn);
                 if (clientConnection.helidonSocket().protocolNegotiated()) {
                     if (Http2Client.PROTOCOL_ID.equals(clientConnection.helidonSocket().protocol())) {
@@ -174,52 +181,77 @@ class Http2ClientConnectionHandler {
                         allConnections.put(connection, true);
                         h2ConnByConn.put(clientConnection, connection);
                         this.activeConnection.set(connection);
-                        return http2(http2Client, request, initialUri);
+                        return http2(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
                     } else {
                         if (!http1FallbackAllowed(request)) {
                             closeClientConnection(clientConnection);
-                            throw unsupportedHttp1Fallback(initialUri, request);
+                            throw unsupportedHttp1Fallback(initialUri, request, http1FallbackHandler);
                         }
                         result.set(Result.HTTP_1);
-                        request.connection(clientConnection);
-                        return http1(http2Client, request, initialUri, http1EntityHandler);
+                        return http1WithProbeConnection(http2Client,
+                                                        request,
+                                                        initialUri,
+                                                        serviceRequest,
+                                                        http1FallbackHandler,
+                                                        clientConnection);
                     }
                 } else {
                     if (!request.priorKnowledge()) {
                         if (!http1FallbackAllowed(request)) {
                             closeClientConnection(clientConnection);
-                            throw unsupportedHttp1Fallback(initialUri, request);
+                            throw unsupportedHttp1Fallback(initialUri, request, http1FallbackHandler);
                         }
-                        request.connection(clientConnection);
                         result.set(Result.HTTP_1);
-                        return http1(http2Client, request, initialUri, http1EntityHandler);
+                        return http1WithProbeConnection(http2Client,
+                                                        request,
+                                                        initialUri,
+                                                        serviceRequest,
+                                                        http1FallbackHandler,
+                                                        clientConnection);
                     }
+                    result.set(Result.HTTP_2);
+                    Http2ClientConnection connection = createHttp2Connection(http2Client,
+                                                                             clientConnection,
+                                                                             true);
+                    allConnections.put(connection, true);
+                    h2ConnByConn.put(clientConnection, connection);
+                    this.activeConnection.set(connection);
+                    return http2(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
                 }
             }
 
             if (result.get() != Result.UNKNOWN) {
-                return http2(http2Client, request, initialUri);
+                return http2(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
             }
             // we need to connect
             if (request.priorKnowledge()) {
                 // there is no fallback to HTTP/1 with prior knowledge - it must work or fail
-                return http2(http2Client, request, initialUri);
+                return http2(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
             }
             // attempt an upgrade to HTTP/2
-            UpgradeResponse upgradeResponse = http1Request(webClient, request, initialUri)
-                    .header(UPGRADE_HEADER)
-                    .header(CONNECTION_UPGRADE_HEADER)
-                    .header(HTTP2_SETTINGS_HEADER, settingsForUpgrade(http2Client.protocolConfig()))
-                    .upgrade("h2c");
+            UpgradeResponse upgradeResponse = upgrade(http2Client,
+                                                      request,
+                                                      initialUri,
+                                                      serviceRequest,
+                                                      http1FallbackHandler,
+                                                      http2Client.protocolConfig());
             if (upgradeResponse.isUpgraded()) {
                 result.set(Result.HTTP_2);
                 Http2ClientConnection conn = createHttp2Connection(http2Client,
                                                                    upgradeResponse.connection(),
                                                                    false);
                 activeConnection.set(conn);
-                return http2(http2Client, request, initialUri);
+                return http2(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
             } else {
+                if (!http1FallbackHandler.upgradeFailureResponseAllowed()) {
+                    try (HttpClientResponse response = upgradeResponse.response()) {
+                        IllegalStateException failure = unsupportedUpgradeFallback(request, response);
+                        http1FallbackHandler.completeSentExceptionally(failure);
+                        throw failure;
+                    }
+                }
                 result.set(Result.HTTP_1);
+                http1FallbackHandler.completeSent(serviceRequest);
                 return new Http2ConnectionAttemptResult(Result.HTTP_1,
                                                         null,
                                                         upgradeResponse.response());
@@ -229,15 +261,53 @@ class Http2ClientConnectionHandler {
         }
     }
 
+    private Http2ConnectionAttemptResult http1WithProbeConnection(Http2ClientImpl http2Client,
+                                                                  Http2ClientRequestImpl request,
+                                                                  ClientUri initialUri,
+                                                                  WebClientServiceRequest serviceRequest,
+                                                                  Http1FallbackHandler http1FallbackHandler,
+                                                                  ClientConnection clientConnection) {
+        request.connection(clientConnection);
+        try {
+            return http1(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
+        } catch (RuntimeException | Error e) {
+            closeClientConnection(clientConnection);
+            throw e;
+        }
+    }
+
+    private UpgradeResponse upgrade(Http2ClientImpl http2Client,
+                                    Http2ClientRequestImpl request,
+                                    ClientUri requestUri,
+                                    WebClientServiceRequest serviceRequest,
+                                    Http1FallbackHandler http1FallbackHandler,
+                                    Http2ClientProtocolConfig protocolConfig) {
+        try {
+            Http1ClientRequest upgradeRequest = http1Request(http2Client.http1FallbackClient(), request, requestUri);
+            Http1FallbackHandler.copyFinalHeaders(upgradeRequest, serviceRequest);
+            UpgradeResponse upgradeResponse = upgradeRequest.header(UPGRADE_HEADER)
+                    .header(CONNECTION_UPGRADE_HEADER)
+                    .header(HTTP2_SETTINGS_HEADER, settingsForUpgrade(protocolConfig))
+                    .upgrade("h2c");
+            return upgradeResponse;
+        } catch (RuntimeException | Error e) {
+            http1FallbackHandler.completeSentExceptionally(e);
+            throw e;
+        }
+    }
+
     private Http2ConnectionAttemptResult explicitConnection(Http2ClientImpl http2Client,
                                                             Http2ClientRequestImpl request,
                                                             ClientUri initialUri,
-                                                            Function<Http1ClientRequest,
-                                                                    Http1ClientResponse> http1EntityHandler,
+                                                            WebClientServiceRequest serviceRequest,
+                                                            Http1FallbackHandler http1FallbackHandler,
                                                             ClientConnection clientConnection) {
         if (clientConnection.helidonSocket().protocolNegotiated()
                 && !Http2Client.PROTOCOL_ID.equals(clientConnection.helidonSocket().protocol())) {
-            return http1(http2Client, request, initialUri, http1EntityHandler);
+            if (!http1FallbackAllowed(request)) {
+                throw unsupportedHttp1Fallback(initialUri, request, http1FallbackHandler);
+            }
+            return http1(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
         }
         return http2ExplicitConnection(http2Client, request, clientConnection);
     }
@@ -297,18 +367,21 @@ class Http2ClientConnectionHandler {
 
     private Http2ConnectionAttemptResult http1(Http2ClientImpl http2Client,
                                                Http2ClientRequestImpl request, ClientUri initialUri,
-                                               Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
-        return new Http2ConnectionAttemptResult(Result.HTTP_1,
-                                                null,
-                                                http1EntityHandler.apply(http1Request(
-                                                        http2Client.webClient(),
-                                                        request,
-                                                        initialUri)));
+                                               WebClientServiceRequest serviceRequest,
+                                               Http1FallbackHandler http1FallbackHandler) {
+        try {
+            Http1ClientRequest http1Request = http1Request(http2Client.http1FallbackClient(), request, initialUri);
+            return new Http2ConnectionAttemptResult(Result.HTTP_1,
+                                                    null,
+                                                    http1FallbackHandler.apply(http1Request, serviceRequest));
+        } catch (RuntimeException | Error e) {
+            http1FallbackHandler.completeSentExceptionally(e);
+            throw e;
+        }
     }
 
-    private Http1ClientRequest http1Request(WebClient webClient, Http2ClientRequestImpl request, ClientUri initialUri) {
-        Http1ClientRequest http1Request = webClient.client(Http1Client.PROTOCOL)
-                .method(request.method())
+    private Http1ClientRequest http1Request(Http1Client http1Client, Http2ClientRequestImpl request, ClientUri initialUri) {
+        Http1ClientRequest http1Request = http1Client.method(request.method())
                 .uri(initialUri)
                 .keepAlive(request.keepAlive())
                 .headers(request.headers())
@@ -326,7 +399,9 @@ class Http2ClientConnectionHandler {
 
     private Http2ClientConnection createConnection(Http2ClientImpl http2Client,
                                                    Http2ClientRequestImpl request,
-                                                   ClientUri requestUri) {
+                                                   ClientUri requestUri,
+                                                   WebClientServiceRequest serviceRequest,
+                                                   Http1FallbackHandler http1FallbackHandler) {
         WebClient webClient = http2Client.webClient();
         Http2ClientProtocolConfig protocolConfig = http2Client.protocolConfig();
         Optional<ClientConnection> maybeConnection = request.connection();
@@ -349,11 +424,12 @@ class Http2ClientConnectionHandler {
                     usedConnection = createHttp2Connection(http2Client, connection, true);
                 } else {
                     // attempt an upgrade to HTTP/2
-                    UpgradeResponse upgradeResponse = http1Request(webClient, request, requestUri)
-                            .header(UPGRADE_HEADER)
-                            .header(CONNECTION_UPGRADE_HEADER)
-                            .header(HTTP2_SETTINGS_HEADER, settingsForUpgrade(protocolConfig))
-                            .upgrade("h2c");
+                    UpgradeResponse upgradeResponse = upgrade(http2Client,
+                                                              request,
+                                                              requestUri,
+                                                              serviceRequest,
+                                                              http1FallbackHandler,
+                                                              protocolConfig);
                     if (upgradeResponse.isUpgraded()) {
                         result.set(Result.HTTP_2);
                         connection = upgradeResponse.connection();
@@ -361,13 +437,13 @@ class Http2ClientConnectionHandler {
                     } else {
                         try (HttpClientResponse response = upgradeResponse.response()) {
                             if (LOGGER.isLoggable(TRACE)) {
-                                upgradeResponse.connection().helidonSocket()
-                                        .log(LOGGER, TRACE, "Failed to upgrade to HTTP/2");
+                                LOGGER.log(TRACE, "Failed to upgrade to HTTP/2");
                             }
-                            upgradeResponse.connection().closeResource();
-                            throw new IllegalStateException(
+                            IllegalStateException failure = new IllegalStateException(
                                     "Failed to upgrade to HTTP/2, even though it succeeded before. Status: "
                                             + response.status());
+                            http1FallbackHandler.completeSentExceptionally(failure);
+                            throw failure;
                         }
                     }
                 }
@@ -422,22 +498,33 @@ class Http2ClientConnectionHandler {
     }
 
     private static boolean http1FallbackAllowed(Http2ClientRequestImpl request) {
-        String protocolIds = request.properties().get(GENERIC_TCP_PROTOCOL_IDS_PROPERTY);
-        if (protocolIds == null) {
-            return true;
-        }
-        for (String protocolId : protocolIds.split(",")) {
-            if (Http1Client.PROTOCOL_ID.equals(protocolId)) {
-                return true;
-            }
-        }
-        return false;
+        return request.tcpProtocolIds().contains(Http1Client.PROTOCOL_ID);
     }
 
     private static IllegalArgumentException unsupportedHttp1Fallback(ClientUri uri, Http2ClientRequestImpl request) {
         return new IllegalArgumentException("Cannot handle request to " + uri
                                                    + ", negotiated HTTP/1.1 fallback is not enabled. HTTP versions supported: "
-                                                   + request.properties().get(GENERIC_TCP_PROTOCOL_IDS_PROPERTY));
+                                                   + request.tcpProtocolIds());
+    }
+
+    private static IllegalArgumentException unsupportedHttp1Fallback(ClientUri uri,
+                                                                     Http2ClientRequestImpl request,
+                                                                     Http1FallbackHandler http1FallbackHandler) {
+        IllegalArgumentException failure = unsupportedHttp1Fallback(uri, request);
+        http1FallbackHandler.completeSentExceptionally(failure);
+        return failure;
+    }
+
+    private static IllegalStateException unsupportedUpgradeFallback(Http2ClientRequestImpl request,
+                                                                    HttpClientResponse response) {
+        return new IllegalStateException("Cannot use failed h2c upgrade response as HTTP/1.1 fallback for "
+                                                 + request.method()
+                                                 + " request with an entity. Status: "
+                                                 + response.status());
+    }
+
+    private static List<String> alpnProtocolIds(Http2ClientRequestImpl request) {
+        return request.priorKnowledge() ? List.of(Http2Client.PROTOCOL_ID) : request.tcpProtocolIds();
     }
 
     private ClientConnection connectClient(WebClient webClient,
