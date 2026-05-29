@@ -938,13 +938,14 @@ suffixes; Helidon ignores leading dots and rejects values that contain path sepa
 
 When pre-compressed negotiation runs, Helidon merges `Vary: Accept-Encoding`. When a sidecar is selected, Helidon sends
 the logical resource media type and sets `Content-Encoding`. Direct requests for literal sidecar filenames, such as
-`/big-file.html.gz`, are handled as ordinary static-file requests. `Accept-Encoding: *` can select any available
-sidecar coding that is not explicitly rejected. Sidecar lookup hits and misses are cached with the resolved logical
-resource, so newly added sidecars are discovered after cache eviction or handler restart. Classpath sidecar bytes
+`/big-file.html.gz`, are handled as ordinary static-file requests. A sidecar is selected only when the request explicitly
+accepts that concrete coding; `Accept-Encoding: *` does not select pre-compressed sidecars. Sidecar lookup hits and
+misses are cached with the resolved logical resource, so newly added sidecars are discovered after cache eviction or
+handler restart. Classpath sidecar bytes
 cached in memory still count against the configured memory cache capacity.
 
 When listener content encoding is configured, static content can dynamically encode the logical resource when that
-runtime candidate is the best acceptable representation. Wildcard values can select sidecars or runtime encoders.
+runtime candidate is the best acceptable representation. Wildcard values can select runtime encoders.
 Pre-compressed sidecars win ties over runtime encoders, while an explicitly accepted identity coding at the same quality
 keeps the identity representation. If two sidecars have the same quality, Helidon uses the
 `pre-compressed-encodings` order; the default order prefers `br` before `gzip`. If no acceptable sidecar or runtime
