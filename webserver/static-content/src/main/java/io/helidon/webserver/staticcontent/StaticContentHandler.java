@@ -344,7 +344,7 @@ abstract class StaticContentHandler implements HttpService {
         int order = 0;
         for (Map.Entry<String, String> entry : preCompressedEncodings.entrySet()) {
             String coding = entry.getKey();
-            Optional<AcceptEncoding.Quality> quality = acceptEncoding.match(coding, false);
+            Optional<AcceptEncoding.CodingQuality> quality = acceptEncoding.match(coding, false);
             if (quality.isEmpty()) {
                 order++;
                 continue;
@@ -455,7 +455,7 @@ abstract class StaticContentHandler implements HttpService {
         for (String id : contentEncodingContext.contentEncodingIds()) {
             addRuntimeEncoding(result, seen, contentEncodingContext, acceptEncoding, bestStaticCandidate, id);
         }
-        for (AcceptEncoding.Quality quality : acceptEncoding.acceptedCodings(false)) {
+        for (AcceptEncoding.CodingQuality quality : acceptEncoding.acceptedCodings(false)) {
             if (!AcceptEncoding.WILDCARD.equals(quality.coding())) {
                 addRuntimeEncoding(result, seen, contentEncodingContext, acceptEncoding, bestStaticCandidate, quality.coding());
             }
@@ -474,16 +474,16 @@ abstract class StaticContentHandler implements HttpService {
             return;
         }
 
-        Optional<AcceptEncoding.Quality> quality = acceptEncoding.match(normalized, true);
+        Optional<AcceptEncoding.CodingQuality> quality = acceptEncoding.match(normalized, true);
         if (quality.isEmpty() || !contentEncodingContext.contentEncodingSupported(normalized)) {
             return;
         }
 
         ContentEncoder encoder = contentEncodingContext.encoder(normalized);
         String responseCoding = responseCoding(normalized, encoder);
-        AcceptEncoding.Quality selectedQuality = quality.get();
+        AcceptEncoding.CodingQuality selectedQuality = quality.get();
         if (!responseCoding.equals(normalized)) {
-            Optional<AcceptEncoding.Quality> actualQuality = acceptEncoding.match(responseCoding, true);
+            Optional<AcceptEncoding.CodingQuality> actualQuality = acceptEncoding.match(responseCoding, true);
             if (actualQuality.isEmpty()) {
                 return;
             }
@@ -507,7 +507,7 @@ abstract class StaticContentHandler implements HttpService {
     private static boolean runtimeEncodingsNeeded(AcceptEncoding acceptEncoding,
                                                   RepresentationCandidate bestStaticCandidate,
                                                   ContentEncodingContext contentEncodingContext) {
-        for (AcceptEncoding.Quality quality : acceptEncoding.acceptedCodings(true)) {
+        for (AcceptEncoding.CodingQuality quality : acceptEncoding.acceptedCodings(true)) {
             if (!runtimeCanBeatStatic(quality, bestStaticCandidate)) {
                 continue;
             }
@@ -522,7 +522,7 @@ abstract class StaticContentHandler implements HttpService {
         return false;
     }
 
-    private static boolean runtimeCanBeatStatic(AcceptEncoding.Quality quality,
+    private static boolean runtimeCanBeatStatic(AcceptEncoding.CodingQuality quality,
                                                 RepresentationCandidate bestStaticCandidate) {
         if (bestStaticCandidate == null) {
             return true;
@@ -680,22 +680,22 @@ abstract class StaticContentHandler implements HttpService {
     }
 
     private record RepresentationCandidate(CandidateType type,
-                                           AcceptEncoding.Quality quality,
+                                           AcceptEncoding.CodingQuality quality,
                                            CachedHandler handler,
                                            int order,
                                            ContentEncoder encoder,
                                            String contentEncoding) {
-        private static RepresentationCandidate identity(AcceptEncoding.Quality quality, CachedHandler handler) {
+        private static RepresentationCandidate identity(AcceptEncoding.CodingQuality quality, CachedHandler handler) {
             return new RepresentationCandidate(CandidateType.IDENTITY, quality, handler, 0, null, null);
         }
 
-        private static RepresentationCandidate sidecar(AcceptEncoding.Quality quality,
+        private static RepresentationCandidate sidecar(AcceptEncoding.CodingQuality quality,
                                                        CachedHandler handler,
                                                        int order) {
             return new RepresentationCandidate(CandidateType.SIDECAR, quality, handler, order, null, null);
         }
 
-        private static RepresentationCandidate runtime(AcceptEncoding.Quality quality,
+        private static RepresentationCandidate runtime(AcceptEncoding.CodingQuality quality,
                                                        CachedHandler handler,
                                                        int order,
                                                        ContentEncoder encoder,
@@ -704,7 +704,7 @@ abstract class StaticContentHandler implements HttpService {
         }
     }
 
-    private record RuntimeEncoding(AcceptEncoding.Quality quality, ContentEncoder encoder, String contentEncoding) {
+    private record RuntimeEncoding(AcceptEncoding.CodingQuality quality, ContentEncoder encoder, String contentEncoding) {
     }
 
     @FunctionalInterface

@@ -143,14 +143,14 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
         }
 
         Set<String> selectableEncodingIds = new LinkedHashSet<>(contentEncodingIds);
-        for (AcceptEncoding.Quality quality : acceptEncoding.acceptedCodings(false)) {
+        for (AcceptEncoding.CodingQuality quality : acceptEncoding.acceptedCodings(false)) {
             String coding = quality.coding();
             if (contentEncodingSupported(coding)) {
                 selectableEncodingIds.add(coding);
             }
         }
 
-        Optional<AcceptEncoding.Quality> selected = acceptEncoding.best(List.copyOf(selectableEncodingIds));
+        Optional<AcceptEncoding.CodingQuality> selected = acceptEncoding.best(List.copyOf(selectableEncodingIds));
         if (selected.isEmpty() || AcceptEncoding.IDENTITY.equals(selected.get().coding())) {
             return ContentEncoder.NO_OP;
         }

@@ -316,7 +316,7 @@ class ContentEncodingSupportTest {
         return headers;
     }
 
-    private static void assertQuality(AcceptEncoding.Quality actual, String coding, double q, boolean wildcard) {
+    private static void assertQuality(AcceptEncoding.CodingQuality actual, String coding, double q, boolean wildcard) {
         assertThat(actual.coding(), is(coding));
         assertThat(actual.q(), is(q));
         assertThat(actual.wildcard(), is(wildcard));
