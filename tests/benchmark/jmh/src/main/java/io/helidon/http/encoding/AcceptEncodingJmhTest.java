@@ -31,13 +31,20 @@ import org.openjdk.jmh.annotations.State;
 public class AcceptEncodingJmhTest {
     private Headers weighted;
     private Headers wildcard;
+    private Headers malformedToken;
     private List<String> serverOrder;
 
     @Setup
     public void setup() {
         weighted = headers("gzip;q=1.0, identity, br;q=1.0, deflate;q=0.6");
         wildcard = headers("*, gzip;q=0.8, identity;q=0");
+        malformedToken = headers("g zip, br");
         serverOrder = List.of("br", "gzip", "deflate");
+    }
+
+    @Benchmark
+    public AcceptEncoding parseWeighted() {
+        return AcceptEncoding.create(weighted);
     }
 
     @Benchmark
@@ -51,6 +58,11 @@ public class AcceptEncodingJmhTest {
     public List<AcceptEncoding.CodingQuality> parseAcceptedWildcard() {
         return AcceptEncoding.create(wildcard)
                 .acceptedCodings(true);
+    }
+
+    @Benchmark
+    public AcceptEncoding parseMalformedToken() {
+        return AcceptEncoding.create(malformedToken);
     }
 
     private static Headers headers(String acceptEncoding) {

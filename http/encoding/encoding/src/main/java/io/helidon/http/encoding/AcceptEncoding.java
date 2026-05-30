@@ -237,16 +237,14 @@ public final class AcceptEncoding {
         codingStart = skipWhitespace(value, codingStart, codingEnd);
         codingEnd = trimWhitespace(value, codingStart, codingEnd);
 
-        String coding = normalize(value, codingStart, codingEnd);
-        if (coding.isEmpty()) {
+        if (codingStart == codingEnd) {
             return null;
         }
         // RFC 9110, sections 12.5.3 and 8.4.1: codings are content-coding tokens, identity, or *.
-        try {
-            HttpToken.validate(coding);
-        } catch (IllegalArgumentException e) {
+        if (!HttpToken.isValid(value, codingStart, codingEnd)) {
             return null;
         }
+        String coding = normalize(value, codingStart, codingEnd);
 
         int q = Q_ONE;
         if (semicolon != -1) {
