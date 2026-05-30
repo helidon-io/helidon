@@ -325,6 +325,27 @@ public final class AcceptEncoding {
         return IDENTITY.equals(quality.coding()) && quality.order() == IMPLICIT_IDENTITY_ORDER;
     }
 
+    private static boolean codingQualityEquals(CodingQuality first, Object second) {
+        if (first == second) {
+            return true;
+        }
+        if (!(second instanceof CodingQuality that)) {
+            return false;
+        }
+        return Double.compare(first.q(), that.q()) == 0
+                && first.order() == that.order()
+                && first.wildcard() == that.wildcard()
+                && first.coding().equals(that.coding());
+    }
+
+    private static int codingQualityHashCode(CodingQuality quality) {
+        int result = quality.coding().hashCode();
+        result = 31 * result + Double.hashCode(quality.q());
+        result = 31 * result + quality.order();
+        result = 31 * result + Boolean.hashCode(quality.wildcard());
+        return result;
+    }
+
     private static String normalize(String coding) {
         return coding.trim().toLowerCase(Locale.ROOT);
     }
@@ -416,6 +437,16 @@ public final class AcceptEncoding {
         public boolean wildcard() {
             return wildcard;
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            return codingQualityEquals(this, obj);
+        }
+
+        @Override
+        public int hashCode() {
+            return codingQualityHashCode(this);
+        }
     }
 
     private static final class FullCodingQuality implements CodingQuality {
@@ -452,6 +483,16 @@ public final class AcceptEncoding {
         @Override
         public boolean wildcard() {
             return wildcard;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return codingQualityEquals(this, obj);
+        }
+
+        @Override
+        public int hashCode() {
+            return codingQualityHashCode(this);
         }
     }
 

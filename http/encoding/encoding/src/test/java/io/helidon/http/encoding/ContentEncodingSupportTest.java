@@ -80,6 +80,17 @@ class ContentEncodingSupportTest {
     }
 
     @Test
+    void testCodingQualityEqualityWorksAcrossImplementations() {
+        AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("*;q=0.5"));
+        AcceptEncoding.CodingQuality wildcardEntry = acceptEncoding.acceptedCodings(true).getFirst();
+        AcceptEncoding.CodingQuality wildcardMatch = acceptEncoding.match("*", true).orElseThrow();
+
+        assertThat(wildcardEntry, is(wildcardMatch));
+        assertThat(wildcardMatch, is(wildcardEntry));
+        assertThat(wildcardEntry.hashCode(), is(wildcardMatch.hashCode()));
+    }
+
+    @Test
     void testAcceptEncodingParserRejectsInvalidCodingToken() {
         AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("g zip, identity;q=0"));
 
