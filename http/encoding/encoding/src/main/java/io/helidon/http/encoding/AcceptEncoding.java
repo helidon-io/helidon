@@ -56,6 +56,8 @@ public final class AcceptEncoding {
     private final boolean valid;
     private final Map<String, Entry> entries;
     private final Entry wildcard;
+    private volatile List<CodingQuality> acceptedCodings;
+    private volatile List<CodingQuality> acceptedCodingsWithWildcard;
 
     private AcceptEncoding(boolean present, boolean valid, Map<String, Entry> entries, Entry wildcard) {
         this.present = present;
@@ -179,20 +181,55 @@ public final class AcceptEncoding {
      * Accepted non-identity coding qualities from this header.
      *
      * @param wildcardAllowed whether wildcard should be included
-     * @return accepted non-identity coding qualities
+     * @return immutable accepted non-identity coding qualities
      */
     public List<CodingQuality> acceptedCodings(boolean wildcardAllowed) {
+        if (wildcardAllowed) {
+            if (wildcard == null || wildcard.q() <= Q_ZERO) {
+                return acceptedCodings(false);
+            }
+
+            List<CodingQuality> result = acceptedCodingsWithWildcard;
+            if (result == null) {
+                List<CodingQuality> noWildcard = acceptedCodings;
+                if (noWildcard == null) {
+                    noWildcard = createAcceptedCodings();
+                    acceptedCodings = noWildcard;
+                }
+                result = createAcceptedCodingsWithWildcard(noWildcard);
+                acceptedCodingsWithWildcard = result;
+            }
+            return result;
+        }
+
+        List<CodingQuality> result = acceptedCodings;
+        if (result == null) {
+            result = createAcceptedCodings();
+            acceptedCodings = result;
+        }
+        return result;
+    }
+
+    private List<CodingQuality> createAcceptedCodings() {
         List<CodingQuality> result = new ArrayList<>();
         for (Entry entry : entries.values()) {
             if (!IDENTITY.equals(entry.coding()) && entry.q() > Q_ZERO) {
                 result.add(new EntryCodingQuality(entry, false));
             }
         }
-        if (wildcardAllowed && wildcard != null && wildcard.q() > Q_ZERO) {
-            result.add(new EntryCodingQuality(wildcard, true));
+        if (result.isEmpty()) {
+            return List.of();
         }
         result.sort(AcceptEncoding::compare);
-        return result;
+        return List.copyOf(result);
+    }
+
+    private List<CodingQuality> createAcceptedCodingsWithWildcard(List<CodingQuality> noWildcard) {
+        List<CodingQuality> result = new ArrayList<>(noWildcard.size() + 1);
+        result.addAll(noWildcard);
+        result.add(new EntryCodingQuality(wildcard, true));
+        result.sort(AcceptEncoding::compare);
+        return List.copyOf(result);
     }
 
     /**
