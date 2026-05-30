@@ -239,7 +239,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         Optional<Instant> lastModified = lastModified(url);
         MediaType contentType = detectType(fileName(url));
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (InputStream in = url.openStream()) {
+        try (InputStream in = ResourceConnections.openStream(url)) {
             in.transferTo(baos);
         }
         byte[] entityBytes = baos.toByteArray();
@@ -288,25 +288,21 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                                                URL url,
                                                String logicalFileName,
                                                ResponseRepresentation representation) throws IOException {
-        JarURLConnection jarUrlConnection = (JarURLConnection) url.openConnection();
-        JarEntry jarEntry = jarUrlConnection.getJarEntry();
+        JarURLConnection jarUrlConnection = ResourceConnections.openJarConnection(url);
 
-        if (jarEntry.isDirectory()) {
-            // we cannot cache this - as we consider this to be 404
-            return Optional.empty();
-        }
-
-        var contentLength = jarEntry.getSize();
+        long contentLength;
         var contentType = detectType(logicalFileName);
         Optional<Instant> lastModified;
 
-        JarFile jarFile = jarUrlConnection.getJarFile();
-        try {
-            lastModified = lastModified(jarFile.getName());
-        } finally {
-            if (!jarUrlConnection.getUseCaches()) {
-                jarFile.close();
+        try (JarFile jarFile = jarUrlConnection.getJarFile()) {
+            JarEntry jarEntry = jarUrlConnection.getJarEntry();
+            if (jarEntry.isDirectory()) {
+                // we cannot cache this - as we consider this to be 404
+                return Optional.empty();
             }
+
+            contentLength = jarEntry.getSize();
+            lastModified = lastModified(jarFile.getName());
         }
 
         var lastModifiedHandler = lastModifiedHandler(lastModified);
@@ -368,7 +364,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                                                          contentLength);
         return () -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (InputStream in = url.openStream()) {
+            try (InputStream in = ResourceConnections.openStream(url)) {
                 in.transferTo(baos);
             } catch (IOException e) {
                 throw new InternalServerException("Cannot load resource", e);
@@ -483,8 +479,8 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                                          URL identityUrl,
                                          String sidecarResource,
                                          URL sidecarUrl) throws IOException {
-        JarURLConnection identityConnection = (JarURLConnection) identityUrl.openConnection();
-        JarURLConnection sidecarConnection = (JarURLConnection) sidecarUrl.openConnection();
+        JarURLConnection identityConnection = ResourceConnections.openJarConnection(identityUrl);
+        JarURLConnection sidecarConnection = ResourceConnections.openJarConnection(sidecarUrl);
         return Objects.equals(identityConnection.getJarFileURL(), sidecarConnection.getJarFileURL())
                 && logicalResource.equals(identityConnection.getEntryName())
                 && sidecarResource.equals(sidecarConnection.getEntryName());
@@ -540,9 +536,10 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     }
 
     private Optional<Instant> lastModifiedFromJar(URL url) throws IOException {
-        JarURLConnection jarUrlConnection = (JarURLConnection) url.openConnection();
-        JarFile jarFile = jarUrlConnection.getJarFile();
-        return lastModified(jarFile.getName());
+        JarURLConnection jarUrlConnection = ResourceConnections.openJarConnection(url);
+        try (JarFile jarFile = jarUrlConnection.getJarFile()) {
+            return lastModified(jarFile.getName());
+        }
     }
 
     private Optional<Instant> lastModified(String path) throws IOException {

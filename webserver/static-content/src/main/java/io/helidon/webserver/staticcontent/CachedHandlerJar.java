@@ -102,7 +102,7 @@ class CachedHandlerJar implements CachedHandler {
             Path tmpFile = createdTmpFile.get();
             boolean extracted = false;
             long extractedContentLength = contentLength;
-            try (InputStream is = fileUrl.openStream()) {
+            try (InputStream is = ResourceConnections.openStream(fileUrl)) {
                 Files.copy(is, tmpFile, StandardCopyOption.REPLACE_EXISTING);
                 long tmpFileContentLength = Files.size(tmpFile);
                 extracted = contentLength < 0 || tmpFileContentLength == contentLength;
@@ -183,7 +183,7 @@ class CachedHandlerJar implements CachedHandler {
                                e);
                 }
             }
-            try (var in = url.openStream()) {
+            try (var in = ResourceConnections.openStream(url)) {
                 representation.apply(response);
                 try (var out = representation.outputStream(response.outputStream())) {
                     // no support for ranges when using jar stream
