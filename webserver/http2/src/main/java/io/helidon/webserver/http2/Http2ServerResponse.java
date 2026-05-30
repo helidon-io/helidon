@@ -103,7 +103,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 throw new IllegalStateException("When output stream is used, response is completed by closing the output stream"
                                                         + ", do not call send().");
             }
-            isSent = true;
 
             // handle content encoding
             int actualLength = length;
@@ -138,6 +137,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             beforeSend();
 
             http2Headers.validateResponse();
+            isSent = true;
             bytesWritten += stream.writeHeadersWithData(http2Headers, actualLength,
                                                         BufferData.create(actualBytes, actualPosition, actualLength),
                                                         !sendTrailers);

@@ -23,6 +23,8 @@ import java.util.Set;
 import io.helidon.http.BadRequestException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
+import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 
 import org.junit.jupiter.api.Test;
@@ -285,7 +287,7 @@ class ContentEncodingSupportTest {
     void testRuntimeEncoderTreatsUnknownCodingAsUnavailable() {
         ContentEncodingContext context = context();
 
-        assertThat(context.encoder(headers("zstd, identity;q=0")), sameInstance(ContentEncoder.NO_OP));
+        assertThat(context.encoder(headers("zstd")), sameInstance(ContentEncoder.NO_OP));
     }
 
     @Test
@@ -357,9 +359,11 @@ class ContentEncodingSupportTest {
 
     @Test
     void testRuntimeEncoderFallsBackWhenNoRepresentationAccepted() {
-        ContentEncodingContext context = ContentEncodingContext.create();
+        ContentEncodingContext context = context();
 
-        assertThat(context.encoder(headers("identity;q=0")), sameInstance(ContentEncoder.NO_OP));
+        assertNotAcceptable(context, "identity;q=0");
+        assertNotAcceptable(context, "zstd, identity;q=0");
+        assertNotAcceptable(context, "gzip;q=0, *;q=0");
     }
 
     private static ContentEncodingContext context() {
@@ -395,6 +399,12 @@ class ContentEncodingSupportTest {
 
     private static void assertInvalidAcceptEncoding(String headerValue) {
         assertThat(AcceptEncoding.create(headers(headerValue)).valid(), is(false));
+    }
+
+    private static void assertNotAcceptable(ContentEncodingContext context, String headerValue) {
+        HttpException actual = assertThrows(HttpException.class, () -> context.encoder(headers(headerValue)));
+
+        assertThat(actual.status(), is(Status.NOT_ACCEPTABLE_406));
     }
 
     private record TestEncoding(ContentEncoder encoder,
