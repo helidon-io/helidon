@@ -62,16 +62,6 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
         private static final String SERVER_ADDRESS = ServerAttributes.SERVER_ADDRESS.getKey();
         private static final String USER_AGENT_ORIGINAL = UserAgentAttributes.USER_AGENT_ORIGINAL.getKey();
 
-        // The following are for maintaining compatibility with MicroProfile Telemetry 1.x.
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        private static final String NET_HOST_NAME = "net.host.name";
-
-        @Deprecated(since = "4.4.0", forRemoval = true)
-        private static final String NET_HOST_PORT = "net.host.port";
-        // end of compatibility
-
-
-
         private static final String HELIDON_SOCKET = "helidon.socket";
 
         private final String socketName;
@@ -110,8 +100,6 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
                         }
                     })
                     .tag(SERVER_ADDRESS, request.requestedUri().host())
-                    .tag(NET_HOST_NAME, request.requestedUri().host())
-                    .tag(NET_HOST_PORT, request.localPeer().port())
                     .update(b -> request.headers().first(HeaderNames.USER_AGENT)
                             .ifPresent(agent -> b.tag(USER_AGENT_ORIGINAL, agent)));
 
