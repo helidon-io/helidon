@@ -173,7 +173,7 @@ public final class ErrorHandlers {
         }
         ctx.listenerContext()
                 .directHandlers()
-                .handle(e, response, keepAlive);
+                .handle(e, response.automaticContentEncoding(false), keepAlive);
 
         response.commit();
     }
