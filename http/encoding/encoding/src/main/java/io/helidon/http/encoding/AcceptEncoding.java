@@ -125,25 +125,25 @@ public final class AcceptEncoding {
      *
      * @param coding coding
      * @param wildcardAllowed whether wildcard may match the coding
-     * @return quality if the coding is acceptable
+     * @return coding quality if the coding is acceptable
      */
-    public Optional<Quality> match(String coding, boolean wildcardAllowed) {
+    public Optional<CodingQuality> match(String coding, boolean wildcardAllowed) {
         Objects.requireNonNull(coding);
         String normalized = normalize(coding);
         if (IDENTITY.equals(normalized)) {
             return identity();
         }
         if (!present) {
-            return Optional.of(new FullQuality(normalized, 1, IMPLICIT_IDENTITY_ORDER, false));
+            return Optional.of(new FullCodingQuality(normalized, 1, IMPLICIT_IDENTITY_ORDER, false));
         }
         Entry specific = entries.get(normalized);
         if (specific != null) {
             return specific.q() > 0
-                    ? Optional.of(new EntryQuality(specific, false))
+                    ? Optional.of(new EntryCodingQuality(specific, false))
                     : Optional.empty();
         }
         if (wildcardAllowed && wildcard != null && wildcard.q() > 0) {
-            return Optional.of(new FullQuality(normalized, wildcard.q(), wildcard.order(), true));
+            return Optional.of(new FullCodingQuality(normalized, wildcard.q(), wildcard.order(), true));
         }
         return Optional.empty();
     }
@@ -151,19 +151,19 @@ public final class AcceptEncoding {
     /**
      * Match identity.
      *
-     * @return quality if identity is acceptable
+     * @return coding quality if identity is acceptable
      */
-    public Optional<Quality> identity() {
+    public Optional<CodingQuality> identity() {
         Entry identity = entries.get(IDENTITY);
         if (identity != null) {
             return identity.q() > 0
-                    ? Optional.of(new EntryQuality(identity, false))
+                    ? Optional.of(new EntryCodingQuality(identity, false))
                     : Optional.empty();
         }
         if (wildcard != null && wildcard.q() == 0) {
             return Optional.empty();
         }
-        return Optional.of(new FullQuality(IDENTITY, 1, IMPLICIT_IDENTITY_ORDER, false));
+        return Optional.of(new FullCodingQuality(IDENTITY, 1, IMPLICIT_IDENTITY_ORDER, false));
     }
 
     /**
@@ -172,15 +172,15 @@ public final class AcceptEncoding {
      * @param wildcardAllowed whether wildcard should be included
      * @return accepted non-identity coding qualities
      */
-    public List<Quality> acceptedCodings(boolean wildcardAllowed) {
-        List<Quality> result = new ArrayList<>();
+    public List<CodingQuality> acceptedCodings(boolean wildcardAllowed) {
+        List<CodingQuality> result = new ArrayList<>();
         for (Entry entry : entries.values()) {
             if (!IDENTITY.equals(entry.coding()) && entry.q() > 0) {
-                result.add(new EntryQuality(entry, false));
+                result.add(new EntryCodingQuality(entry, false));
             }
         }
         if (wildcardAllowed && wildcard != null && wildcard.q() > 0) {
-            result.add(new EntryQuality(wildcard, true));
+            result.add(new EntryCodingQuality(wildcard, true));
         }
         result.sort(AcceptEncoding::compare);
         return result;
@@ -192,7 +192,7 @@ public final class AcceptEncoding {
      * @param codings available concrete codings in server preference order
      * @return best coding, or identity
      */
-    public Optional<Quality> best(List<String> codings) {
+    public Optional<CodingQuality> best(List<String> codings) {
         List<BestCandidate> candidates = new ArrayList<>();
         identity().ifPresent(quality -> candidates.add(new BestCandidate(quality, IMPLICIT_IDENTITY_ORDER)));
         for (int i = 0; i < codings.size(); i++) {
@@ -256,7 +256,7 @@ public final class AcceptEncoding {
         return current;
     }
 
-    private static int compare(Quality first, Quality second) {
+    private static int compare(CodingQuality first, CodingQuality second) {
         int result = compareQuality(first, second);
         if (result != 0) {
             return result;
@@ -265,8 +265,8 @@ public final class AcceptEncoding {
     }
 
     private static int compareBest(BestCandidate first, BestCandidate second) {
-        Quality firstQuality = first.quality();
-        Quality secondQuality = second.quality();
+        CodingQuality firstQuality = first.quality();
+        CodingQuality secondQuality = second.quality();
 
         int q = Double.compare(secondQuality.q(), firstQuality.q());
         if (q != 0) {
@@ -295,7 +295,7 @@ public final class AcceptEncoding {
         return Integer.compare(first.serverOrder(), second.serverOrder());
     }
 
-    private static int compareQuality(Quality first, Quality second) {
+    private static int compareQuality(CodingQuality first, CodingQuality second) {
         int q = Double.compare(second.q(), first.q());
         if (q != 0) {
             return q;
@@ -321,7 +321,7 @@ public final class AcceptEncoding {
         return 0;
     }
 
-    private static boolean implicitIdentity(Quality quality) {
+    private static boolean implicitIdentity(CodingQuality quality) {
         return IDENTITY.equals(quality.coding()) && quality.order() == IMPLICIT_IDENTITY_ORDER;
     }
 
@@ -358,9 +358,9 @@ public final class AcceptEncoding {
     }
 
     /**
-     * Effective quality of a coding.
+     * Content coding with its effective quality.
      */
-    public interface Quality {
+    public interface CodingQuality {
         /**
          * Content coding.
          *
@@ -388,11 +388,11 @@ public final class AcceptEncoding {
         boolean wildcard();
     }
 
-    private static final class EntryQuality implements Quality {
+    private static final class EntryCodingQuality implements CodingQuality {
         private final Entry entry;
         private final boolean wildcard;
 
-        private EntryQuality(Entry entry, boolean wildcard) {
+        private EntryCodingQuality(Entry entry, boolean wildcard) {
             this.entry = entry;
             this.wildcard = wildcard;
         }
@@ -418,16 +418,16 @@ public final class AcceptEncoding {
         }
     }
 
-    private static final class FullQuality implements Quality {
+    private static final class FullCodingQuality implements CodingQuality {
         private final String coding;
         private final double q;
         private final int order;
         private final boolean wildcard;
 
-        private FullQuality(String coding, double q, int order, boolean wildcard) {
+        private FullCodingQuality(String coding, double q, int order, boolean wildcard) {
             this.coding = Objects.requireNonNull(coding);
             if (!Double.isFinite(q) || q < 0 || q > 1) {
-                throw new IllegalArgumentException("Quality must be within 0 and 1: " + q);
+                throw new IllegalArgumentException("q value must be within 0 and 1: " + q);
             }
             this.q = q;
             this.order = order;
@@ -458,7 +458,7 @@ public final class AcceptEncoding {
     private record Entry(String coding, double q, int order) {
     }
 
-    private record BestCandidate(Quality quality, int serverOrder) {
+    private record BestCandidate(CodingQuality quality, int serverOrder) {
     }
 
 }
