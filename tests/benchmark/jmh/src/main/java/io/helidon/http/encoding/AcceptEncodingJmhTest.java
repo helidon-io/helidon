@@ -30,19 +30,28 @@ import org.openjdk.jmh.infra.Blackhole;
 
 @State(Scope.Benchmark)
 public class AcceptEncodingJmhTest {
+    private Headers absent;
     private Headers weighted;
     private Headers wildcard;
     private Headers malformedToken;
+    private AcceptEncoding parsedWeighted;
     private AcceptEncoding parsedWildcard;
     private List<String> serverOrder;
 
     @Setup
     public void setup() {
+        absent = WritableHeaders.create();
         weighted = headers("gzip;q=1.0, identity, br;q=1.0, deflate;q=0.6");
         wildcard = headers("*, gzip;q=0.8, identity;q=0");
         malformedToken = headers("g zip, br");
+        parsedWeighted = AcceptEncoding.create(weighted);
         parsedWildcard = AcceptEncoding.create(wildcard);
         serverOrder = List.of("br", "gzip", "deflate");
+    }
+
+    @Benchmark
+    public AcceptEncoding parseAbsent() {
+        return AcceptEncoding.create(absent);
     }
 
     @Benchmark
@@ -54,6 +63,12 @@ public class AcceptEncodingJmhTest {
     public AcceptEncoding.CodingQuality parseBestWeighted() {
         return AcceptEncoding.create(weighted)
                 .best(serverOrder)
+                .orElseThrow();
+    }
+
+    @Benchmark
+    public AcceptEncoding.CodingQuality bestWeighted() {
+        return parsedWeighted.best(serverOrder)
                 .orElseThrow();
     }
 
