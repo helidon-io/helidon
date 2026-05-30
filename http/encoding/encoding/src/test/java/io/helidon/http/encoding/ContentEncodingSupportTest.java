@@ -43,6 +43,18 @@ class ContentEncodingSupportTest {
     }
 
     @Test
+    void testAcceptEncodingParserAbsentUsesSingleton() {
+        Headers headers = WritableHeaders.create();
+
+        AcceptEncoding first = AcceptEncoding.create(headers);
+        AcceptEncoding second = AcceptEncoding.create(headers);
+
+        assertThat(first.present(), is(false));
+        assertThat(first.valid(), is(true));
+        assertThat(second, sameInstance(first));
+    }
+
+    @Test
     void testAcceptEncodingParserMany() {
         AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("gzip,compress,  br  "));
 
@@ -171,6 +183,20 @@ class ContentEncodingSupportTest {
         AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("gzip, identity, br"));
 
         assertThat(acceptEncoding.best(List.of("br", "gzip")).orElseThrow().coding(), is("br"));
+    }
+
+    @Test
+    void testBestUsesIdentityWhenItPrecedesEqualQualityCodings() {
+        AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("identity, gzip, br"));
+
+        assertQuality(acceptEncoding.best(List.of("br", "gzip")).orElseThrow(), "identity", 1D, false);
+    }
+
+    @Test
+    void testBestWildcardReturnsConcreteServerCoding() {
+        AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("*;q=0.5, identity;q=0"));
+
+        assertQuality(acceptEncoding.best(List.of("br")).orElseThrow(), "br", 0.5D, true);
     }
 
     @Test
