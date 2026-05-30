@@ -193,15 +193,32 @@ public final class AcceptEncoding {
      * @return best coding, or identity
      */
     public Optional<CodingQuality> best(List<String> codings) {
-        List<BestCandidate> candidates = new ArrayList<>();
-        identity().ifPresent(quality -> candidates.add(new BestCandidate(quality, IMPLICIT_IDENTITY_ORDER)));
+        CodingQuality identity = identity().orElse(null);
+        List<BestCandidate> codingCandidates = new ArrayList<>();
         for (int i = 0; i < codings.size(); i++) {
             int serverOrder = i;
-            match(codings.get(i), true).ifPresent(quality -> candidates.add(new BestCandidate(quality, serverOrder)));
+            match(codings.get(i), true).ifPresent(quality -> codingCandidates.add(new BestCandidate(quality, serverOrder)));
         }
-        return candidates.stream()
-                .min(AcceptEncoding::compareBest)
-                .map(BestCandidate::quality);
+
+        BestCandidate bestCoding = codingCandidates.stream()
+                .min(AcceptEncoding::compareBestCoding)
+                .orElse(null);
+        if (identity == null) {
+            return Optional.ofNullable(bestCoding).map(BestCandidate::quality);
+        }
+        if (bestCoding == null) {
+            return Optional.of(identity);
+        }
+
+        CodingQuality coding = bestCoding.quality();
+        int q = Double.compare(coding.q(), identity.q());
+        if (q > 0) {
+            return Optional.of(coding);
+        }
+        if (q < 0 || identityBeforeAcceptedCoding(identity, codingCandidates)) {
+            return Optional.of(identity);
+        }
+        return Optional.of(coding);
     }
 
     private static Entry parse(String value, int order) {
@@ -264,7 +281,7 @@ public final class AcceptEncoding {
         return Integer.compare(first.order(), second.order());
     }
 
-    private static int compareBest(BestCandidate first, BestCandidate second) {
+    private static int compareBestCoding(BestCandidate first, BestCandidate second) {
         CodingQuality firstQuality = first.quality();
         CodingQuality secondQuality = second.quality();
 
@@ -273,26 +290,23 @@ public final class AcceptEncoding {
             return q;
         }
 
-        boolean firstImplicitIdentity = implicitIdentity(firstQuality);
-        boolean secondImplicitIdentity = implicitIdentity(secondQuality);
-        if (firstImplicitIdentity != secondImplicitIdentity) {
-            return firstImplicitIdentity ? 1 : -1;
-        }
-
-        boolean firstIdentity = IDENTITY.equals(firstQuality.coding());
-        boolean secondIdentity = IDENTITY.equals(secondQuality.coding());
-        if (firstIdentity != secondIdentity) {
-            int order = Integer.compare(firstQuality.order(), secondQuality.order());
-            if (order != 0) {
-                return order;
-            }
-            return firstIdentity ? 1 : -1;
-        }
-
         if (firstQuality.wildcard() != secondQuality.wildcard()) {
             return firstQuality.wildcard() ? 1 : -1;
         }
         return Integer.compare(first.serverOrder(), second.serverOrder());
+    }
+
+    private static boolean identityBeforeAcceptedCoding(CodingQuality identity, List<BestCandidate> candidates) {
+        if (implicitIdentity(identity)) {
+            return false;
+        }
+        for (BestCandidate candidate : candidates) {
+            CodingQuality quality = candidate.quality();
+            if (Double.compare(quality.q(), identity.q()) == 0 && identity.order() > quality.order()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static int compareQuality(CodingQuality first, CodingQuality second) {

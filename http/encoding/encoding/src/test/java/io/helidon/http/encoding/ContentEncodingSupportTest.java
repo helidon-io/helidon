@@ -140,6 +140,13 @@ class ContentEncodingSupportTest {
     }
 
     @Test
+    void testBestUsesServerOrderWhenIdentityIsBetweenConcreteCodings() {
+        AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("gzip, identity, br"));
+
+        assertThat(acceptEncoding.best(List.of("br", "gzip")).orElseThrow().coding(), is("br"));
+    }
+
+    @Test
     void testContentEncodingIdsExcludeIdentity() {
         assertThat(context().contentEncodingIds(), is(List.of("gzip")));
         assertThat(ContentEncodingContext.create().contentEncodingIds(), is(List.of()));
