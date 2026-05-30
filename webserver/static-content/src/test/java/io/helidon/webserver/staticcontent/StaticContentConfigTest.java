@@ -168,7 +168,7 @@ class StaticContentConfigTest {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
-            assertThat(response.as(String.class), is("Custom gzip content\n"));
+            assertThat(response.as(String.class), is("Custom gzip content"));
         }
     }
 
@@ -192,7 +192,7 @@ class StaticContentConfigTest {
 
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
-            assertThat(response.as(String.class), is("Gzip content\n"));
+            assertThat(response.as(String.class), is("Gzip content"));
         }
     }
 

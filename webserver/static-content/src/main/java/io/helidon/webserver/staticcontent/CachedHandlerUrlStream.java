@@ -55,7 +55,7 @@ record CachedHandlerUrlStream(MediaType mediaType,
             LOGGER.log(System.Logger.Level.DEBUG, "Sending static content using stream from classpath: " + url);
         }
 
-        URLConnection urlConnection = url.openConnection();
+        URLConnection urlConnection = ResourceConnections.openConnection(url);
         long lastModified = urlConnection.getLastModified();
         long contentLength = urlConnection.getContentLengthLong();
 
@@ -86,7 +86,7 @@ record CachedHandlerUrlStream(MediaType mediaType,
             return true;
         }
 
-        try (InputStream in = url.openStream()) {
+        try (InputStream in = ResourceConnections.openStream(url)) {
             representation.apply(response);
             try (OutputStream outputStream = representation.outputStream(response.outputStream())) {
                 in.transferTo(outputStream);
