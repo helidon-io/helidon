@@ -48,6 +48,9 @@ public final class AcceptEncoding {
     public static final String WILDCARD = "*";
 
     private static final int IMPLICIT_IDENTITY_ORDER = Integer.MAX_VALUE;
+    private static final int INVALID_Q = -1;
+    private static final int Q_ZERO = 0;
+    private static final int Q_ONE = 1000;
 
     private final boolean present;
     private final boolean valid;
@@ -79,13 +82,19 @@ public final class AcceptEncoding {
         int order = 0;
 
         for (String headerValue : headers.get(HeaderNames.ACCEPT_ENCODING).allValues()) {
-            String[] parts = headerValue.split(",");
-            for (String part : parts) {
-                String value = part.trim();
-                if (value.isEmpty()) {
+            int start = 0;
+            int length = headerValue.length();
+            for (int i = 0; i <= length; i++) {
+                if (i != length && headerValue.charAt(i) != ',') {
                     continue;
                 }
-                Entry entry = parse(value, order++);
+                int valueStart = skipWhitespace(headerValue, start, i);
+                int valueEnd = trimWhitespace(headerValue, valueStart, i);
+                start = i + 1;
+                if (valueStart == valueEnd) {
+                    continue;
+                }
+                Entry entry = parse(headerValue, valueStart, valueEnd, order++);
                 if (entry == null) {
                     valid = false;
                     continue;
@@ -94,7 +103,7 @@ public final class AcceptEncoding {
                 if (WILDCARD.equals(entry.coding())) {
                     wildcard = better(wildcard, entry);
                 } else {
-                    entries.compute(entry.coding(), (_, current) -> better(current, entry));
+                    entries.put(entry.coding(), better(entries.get(entry.coding()), entry));
                 }
             }
         }
@@ -134,15 +143,15 @@ public final class AcceptEncoding {
             return identity();
         }
         if (!present) {
-            return Optional.of(new FullCodingQuality(normalized, 1, IMPLICIT_IDENTITY_ORDER, false));
+            return Optional.of(new FullCodingQuality(normalized, Q_ONE, IMPLICIT_IDENTITY_ORDER, false));
         }
         Entry specific = entries.get(normalized);
         if (specific != null) {
-            return specific.q() > 0
+            return specific.q() > Q_ZERO
                     ? Optional.of(new EntryCodingQuality(specific, false))
                     : Optional.empty();
         }
-        if (wildcardAllowed && wildcard != null && wildcard.q() > 0) {
+        if (wildcardAllowed && wildcard != null && wildcard.q() > Q_ZERO) {
             return Optional.of(new FullCodingQuality(normalized, wildcard.q(), wildcard.order(), true));
         }
         return Optional.empty();
@@ -156,14 +165,14 @@ public final class AcceptEncoding {
     public Optional<CodingQuality> identity() {
         Entry identity = entries.get(IDENTITY);
         if (identity != null) {
-            return identity.q() > 0
+            return identity.q() > Q_ZERO
                     ? Optional.of(new EntryCodingQuality(identity, false))
                     : Optional.empty();
         }
-        if (wildcard != null && wildcard.q() == 0) {
+        if (wildcard != null && wildcard.q() == Q_ZERO) {
             return Optional.empty();
         }
-        return Optional.of(new FullCodingQuality(IDENTITY, 1, IMPLICIT_IDENTITY_ORDER, false));
+        return Optional.of(new FullCodingQuality(IDENTITY, Q_ONE, IMPLICIT_IDENTITY_ORDER, false));
     }
 
     /**
@@ -175,11 +184,11 @@ public final class AcceptEncoding {
     public List<CodingQuality> acceptedCodings(boolean wildcardAllowed) {
         List<CodingQuality> result = new ArrayList<>();
         for (Entry entry : entries.values()) {
-            if (!IDENTITY.equals(entry.coding()) && entry.q() > 0) {
+            if (!IDENTITY.equals(entry.coding()) && entry.q() > Q_ZERO) {
                 result.add(new EntryCodingQuality(entry, false));
             }
         }
-        if (wildcardAllowed && wildcard != null && wildcard.q() > 0) {
+        if (wildcardAllowed && wildcard != null && wildcard.q() > Q_ZERO) {
             result.add(new EntryCodingQuality(wildcard, true));
         }
         result.sort(AcceptEncoding::compare);
@@ -211,7 +220,7 @@ public final class AcceptEncoding {
         }
 
         CodingQuality coding = bestCoding.quality();
-        int q = Double.compare(coding.q(), identity.q());
+        int q = Integer.compare(qValue(coding), qValue(identity));
         if (q > 0) {
             return Optional.of(coding);
         }
@@ -221,9 +230,14 @@ public final class AcceptEncoding {
         return Optional.of(coding);
     }
 
-    private static Entry parse(String value, int order) {
-        String[] parts = value.split(";", -1);
-        String coding = normalize(parts[0]);
+    private static Entry parse(String value, int start, int end, int order) {
+        int semicolon = indexOf(value, ';', start, end);
+        int codingStart = start;
+        int codingEnd = semicolon == -1 ? end : semicolon;
+        codingStart = skipWhitespace(value, codingStart, codingEnd);
+        codingEnd = trimWhitespace(value, codingStart, codingEnd);
+
+        String coding = normalize(value, codingStart, codingEnd);
         if (coding.isEmpty()) {
             return null;
         }
@@ -234,28 +248,28 @@ public final class AcceptEncoding {
             return null;
         }
 
-        double q = 1;
-        for (int i = 1; i < parts.length; i++) {
+        int q = Q_ONE;
+        if (semicolon != -1) {
             // RFC 9110, sections 12.5.3 and 12.4.2: Accept-Encoding permits only codings [ weight ].
-            String parameter = parts[i].trim();
-            if (parameter.isEmpty()) {
+            int parameterStart = semicolon + 1;
+            if (indexOf(value, ';', parameterStart, end) != -1) {
                 return null;
             }
-            if (i != 1) {
+            parameterStart = skipWhitespace(value, parameterStart, end);
+            int parameterEnd = trimWhitespace(value, parameterStart, end);
+            if (parameterStart == parameterEnd
+                    || parameterEnd - parameterStart < 3
+                    || value.charAt(parameterStart + 1) != '=') {
                 return null;
             }
-            if (parameter.length() < 3 || parameter.charAt(1) != '=') {
-                return null;
-            }
-            char name = parameter.charAt(0);
+            char name = value.charAt(parameterStart);
             if (name != 'q' && name != 'Q') {
                 return null;
             }
-            Optional<Double> parsed = parseQvalue(parameter.substring(2));
-            if (parsed.isEmpty()) {
+            q = parseQvalue(value, parameterStart + 2, parameterEnd);
+            if (q == INVALID_Q) {
                 return null;
             }
-            q = parsed.get();
         }
         return new Entry(coding, q, order);
     }
@@ -285,7 +299,7 @@ public final class AcceptEncoding {
         CodingQuality firstQuality = first.quality();
         CodingQuality secondQuality = second.quality();
 
-        int q = Double.compare(secondQuality.q(), firstQuality.q());
+        int q = Integer.compare(qValue(secondQuality), qValue(firstQuality));
         if (q != 0) {
             return q;
         }
@@ -300,9 +314,10 @@ public final class AcceptEncoding {
         if (implicitIdentity(identity)) {
             return false;
         }
+        int identityQ = qValue(identity);
         for (BestCandidate candidate : candidates) {
             CodingQuality quality = candidate.quality();
-            if (Double.compare(quality.q(), identity.q()) == 0 && identity.order() > quality.order()) {
+            if (qValue(quality) == identityQ && identity.order() > quality.order()) {
                 return false;
             }
         }
@@ -310,7 +325,7 @@ public final class AcceptEncoding {
     }
 
     private static int compareQuality(CodingQuality first, CodingQuality second) {
-        int q = Double.compare(second.q(), first.q());
+        int q = Integer.compare(qValue(second), qValue(first));
         if (q != 0) {
             return q;
         }
@@ -346,7 +361,7 @@ public final class AcceptEncoding {
         if (!(second instanceof CodingQuality that)) {
             return false;
         }
-        return Double.compare(first.q(), that.q()) == 0
+        return qValue(first) == qValue(that)
                 && first.order() == that.order()
                 && first.wildcard() == that.wildcard()
                 && first.coding().equals(that.coding());
@@ -354,7 +369,7 @@ public final class AcceptEncoding {
 
     private static int codingQualityHashCode(CodingQuality quality) {
         int result = quality.coding().hashCode();
-        result = 31 * result + Double.hashCode(quality.q());
+        result = 31 * result + qValue(quality);
         result = 31 * result + quality.order();
         result = 31 * result + Boolean.hashCode(quality.wildcard());
         return result;
@@ -364,32 +379,83 @@ public final class AcceptEncoding {
         return coding.trim().toLowerCase(Locale.ROOT);
     }
 
-    private static Optional<Double> parseQvalue(String value) {
+    private static String normalize(String value, int start, int end) {
+        return value.substring(start, end).toLowerCase(Locale.ROOT);
+    }
+
+    private static int parseQvalue(String value, int start, int end) {
         // RFC 9110, section 12.4.2: qvalue is 0 or 1 with up to three fractional digits.
-        if (value.isEmpty()) {
-            return Optional.empty();
+        int length = end - start;
+        if (length == 0) {
+            return INVALID_Q;
         }
-        int length = value.length();
-        char first = value.charAt(0);
+        char first = value.charAt(start);
         if (first != '0' && first != '1') {
-            return Optional.empty();
+            return INVALID_Q;
         }
         if (length == 1) {
-            return Optional.of((double) (first - '0'));
+            return first == '1' ? Q_ONE : Q_ZERO;
         }
-        if (value.charAt(1) != '.' || length > 5) {
-            return Optional.empty();
+        if (value.charAt(start + 1) != '.' || length > 5) {
+            return INVALID_Q;
         }
-        for (int i = 2; i < length; i++) {
+        int result = Q_ZERO;
+        int multiplier = 100;
+        for (int i = start + 2; i < end; i++) {
             char c = value.charAt(i);
             if (c < '0' || c > '9') {
-                return Optional.empty();
+                return INVALID_Q;
             }
-            if (first == '1' && c != '0') {
-                return Optional.empty();
+            int digit = c - '0';
+            if (first == '1') {
+                if (digit != 0) {
+                    return INVALID_Q;
+                }
+            } else {
+                result += digit * multiplier;
+                multiplier /= 10;
             }
         }
-        return Optional.of(Double.parseDouble(value));
+        return first == '1' ? Q_ONE : result;
+    }
+
+    private static int indexOf(String value, char c, int start, int end) {
+        for (int i = start; i < end; i++) {
+            if (value.charAt(i) == c) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static int skipWhitespace(String value, int start, int end) {
+        int result = start;
+        while (result < end && value.charAt(result) <= ' ') {
+            result++;
+        }
+        return result;
+    }
+
+    private static int trimWhitespace(String value, int start, int end) {
+        int result = end;
+        while (result > start && value.charAt(result - 1) <= ' ') {
+            result--;
+        }
+        return result;
+    }
+
+    private static int qValue(CodingQuality quality) {
+        if (quality instanceof EntryCodingQuality entryQuality) {
+            return entryQuality.entry.q();
+        }
+        if (quality instanceof FullCodingQuality fullQuality) {
+            return fullQuality.q;
+        }
+        return (int) Math.round(quality.q() * Q_ONE);
+    }
+
+    private static double qAsDouble(int q) {
+        return q / (double) Q_ONE;
     }
 
     /**
@@ -439,7 +505,7 @@ public final class AcceptEncoding {
 
         @Override
         public double q() {
-            return entry.q();
+            return qAsDouble(entry.q());
         }
 
         @Override
@@ -465,13 +531,13 @@ public final class AcceptEncoding {
 
     private static final class FullCodingQuality implements CodingQuality {
         private final String coding;
-        private final double q;
+        private final int q;
         private final int order;
         private final boolean wildcard;
 
-        private FullCodingQuality(String coding, double q, int order, boolean wildcard) {
+        private FullCodingQuality(String coding, int q, int order, boolean wildcard) {
             this.coding = Objects.requireNonNull(coding);
-            if (!Double.isFinite(q) || q < 0 || q > 1) {
+            if (q < Q_ZERO || q > Q_ONE) {
                 throw new IllegalArgumentException("q value must be within 0 and 1: " + q);
             }
             this.q = q;
@@ -486,7 +552,7 @@ public final class AcceptEncoding {
 
         @Override
         public double q() {
-            return q;
+            return qAsDouble(q);
         }
 
         @Override
@@ -510,7 +576,7 @@ public final class AcceptEncoding {
         }
     }
 
-    private record Entry(String coding, double q, int order) {
+    private record Entry(String coding, int q, int order) {
     }
 
     private record BestCandidate(CodingQuality quality, int serverOrder) {
