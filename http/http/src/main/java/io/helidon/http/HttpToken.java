@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.http;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import io.helidon.common.buffers.BufferData;
 
@@ -35,9 +36,9 @@ public final class HttpToken {
      * @throws IllegalArgumentException in case the token is not valid
      */
     public static void validate(String token) throws IllegalArgumentException {
-        char[] chars = token.toCharArray();
-        for (int i = 0; i < chars.length; i++) {
-            char aChar = chars[i];
+        Objects.requireNonNull(token);
+        for (int i = 0; i < token.length(); i++) {
+            char aChar = token.charAt(i);
             if (aChar > 254) {
                 throw new IllegalArgumentException("Token contains non-ASCII character at position "
                                                            + hex(i)
@@ -70,8 +71,48 @@ public final class HttpToken {
         }
     }
 
+    /**
+     * Whether this is a valid HTTP token.
+     *
+     * @param token token to check
+     * @return whether the token is valid
+     */
+    public static boolean isValid(String token) {
+        Objects.requireNonNull(token);
+        return isValid(token, 0, token.length());
+    }
+
+    /**
+     * Whether this is a valid HTTP token.
+     *
+     * @param token token to check
+     * @param start token start offset, inclusive
+     * @param end token end offset, exclusive
+     * @return whether the token is valid
+     */
+    public static boolean isValid(String token, int start, int end) {
+        Objects.requireNonNull(token);
+        Objects.checkFromToIndex(start, end, token.length());
+        for (int i = start; i < end; i++) {
+            if (!isTokenCharacter(token.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static String hex(int i) {
         return Integer.toHexString(i);
+    }
+
+    private static boolean isTokenCharacter(char aChar) {
+        if (aChar > 254 || Character.isISOControl(aChar) || Character.isWhitespace(aChar)) {
+            return false;
+        }
+        return switch (aChar) {
+        case '(', ')', '<', '>', '@', ',', ';', ':', '\\', '"', '/', '[', ']', '?', '=', '{', '}' -> false;
+        default -> true;
+        };
     }
 
     private static String debugToken(String token) {
