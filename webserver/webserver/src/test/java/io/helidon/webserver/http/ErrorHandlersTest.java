@@ -202,6 +202,7 @@ class ErrorHandlersTest {
         RoutingRequest req = mock(RoutingRequest.class);
         RoutingResponse res = mock(RoutingResponse.class);
         when(res.resetStream()).thenReturn(true);
+        when(res.automaticContentEncoding(false)).thenReturn(res);
 
         when(req.prologue()).thenReturn(HttpPrologue.create("http/1.0",
                                                             "http",
