@@ -91,6 +91,33 @@ class ContentEncodingSupportTest {
     }
 
     @Test
+    void testAcceptedCodingsUsesCachedImmutableViews() {
+        AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("gzip;q=0.8, br, identity, *;q=0.7"));
+
+        List<AcceptEncoding.CodingQuality> noWildcard = acceptEncoding.acceptedCodings(false);
+        List<AcceptEncoding.CodingQuality> wildcard = acceptEncoding.acceptedCodings(true);
+
+        assertThat(acceptEncoding.acceptedCodings(false), sameInstance(noWildcard));
+        assertThat(acceptEncoding.acceptedCodings(true), sameInstance(wildcard));
+        assertThat(noWildcard.size(), is(2));
+        assertQuality(noWildcard.get(0), "br", 1D, false);
+        assertQuality(noWildcard.get(1), "gzip", 0.8D, false);
+        assertThat(wildcard.size(), is(3));
+        assertQuality(wildcard.get(2), "*", 0.7D, true);
+        assertThrows(UnsupportedOperationException.class, noWildcard::clear);
+
+        AcceptEncoding wildcardFirst = AcceptEncoding.create(headers("gzip;q=0.8, br, identity, *;q=0.7"));
+        List<AcceptEncoding.CodingQuality> wildcardFirstWithWildcard = wildcardFirst.acceptedCodings(true);
+        List<AcceptEncoding.CodingQuality> wildcardFirstNoWildcard = wildcardFirst.acceptedCodings(false);
+        assertThat(wildcardFirst.acceptedCodings(true), sameInstance(wildcardFirstWithWildcard));
+        assertThat(wildcardFirst.acceptedCodings(false), sameInstance(wildcardFirstNoWildcard));
+
+        AcceptEncoding rejectedWildcard = AcceptEncoding.create(headers("gzip, *;q=0"));
+        List<AcceptEncoding.CodingQuality> rejectedWildcardNoWildcard = rejectedWildcard.acceptedCodings(false);
+        assertThat(rejectedWildcard.acceptedCodings(true), sameInstance(rejectedWildcardNoWildcard));
+    }
+
+    @Test
     void testAcceptEncodingParserRejectsInvalidCodingToken() {
         AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("g zip, identity;q=0"));
 

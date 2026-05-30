@@ -26,12 +26,14 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.infra.Blackhole;
 
 @State(Scope.Benchmark)
 public class AcceptEncodingJmhTest {
     private Headers weighted;
     private Headers wildcard;
     private Headers malformedToken;
+    private AcceptEncoding parsedWildcard;
     private List<String> serverOrder;
 
     @Setup
@@ -39,6 +41,7 @@ public class AcceptEncodingJmhTest {
         weighted = headers("gzip;q=1.0, identity, br;q=1.0, deflate;q=0.6");
         wildcard = headers("*, gzip;q=0.8, identity;q=0");
         malformedToken = headers("g zip, br");
+        parsedWildcard = AcceptEncoding.create(wildcard);
         serverOrder = List.of("br", "gzip", "deflate");
     }
 
@@ -58,6 +61,21 @@ public class AcceptEncodingJmhTest {
     public List<AcceptEncoding.CodingQuality> parseAcceptedWildcard() {
         return AcceptEncoding.create(wildcard)
                 .acceptedCodings(true);
+    }
+
+    @Benchmark
+    public void parseAcceptedWildcardRepeated(Blackhole blackhole) {
+        AcceptEncoding acceptEncoding = AcceptEncoding.create(wildcard);
+        blackhole.consume(acceptEncoding.acceptedCodings(true));
+        blackhole.consume(acceptEncoding.acceptedCodings(false));
+        blackhole.consume(acceptEncoding.acceptedCodings(true));
+    }
+
+    @Benchmark
+    public void acceptedWildcardRepeated(Blackhole blackhole) {
+        blackhole.consume(parsedWildcard.acceptedCodings(true));
+        blackhole.consume(parsedWildcard.acceptedCodings(false));
+        blackhole.consume(parsedWildcard.acceptedCodings(true));
     }
 
     @Benchmark
