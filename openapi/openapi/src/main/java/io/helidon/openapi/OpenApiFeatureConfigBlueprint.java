@@ -24,6 +24,8 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.openapi.spi.OpenApiManagerProvider;
 import io.helidon.openapi.spi.OpenApiServiceProvider;
+import io.helidon.openapi.spi.OpenApiVersion;
+import io.helidon.openapi.spi.OpenApiVersionProvider;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
@@ -32,6 +34,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 @Prototype.Blueprint
 @Prototype.Configured("openapi")
 @Prototype.Provides(ServerFeatureProvider.class)
+@Prototype.RegistrySupport
 interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature> {
     /**
      * Weight of the OpenAPI feature. This is quite low, to be registered after routing.
@@ -68,6 +71,24 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      */
     @Option.Configured
     Optional<String> staticFile();
+
+    /**
+     * Generated document source handling mode.
+     *
+     * @return generated document source handling mode
+     */
+    @Option.Configured("generated.mode")
+    @Option.Default("STATIC_FIRST")
+    OpenApiGeneratedMode generatedMode();
+
+    /**
+     * OpenAPI version implementation.
+     *
+     * @return OpenAPI version implementation
+     */
+    @Option.Configured("document")
+    @Option.Provider(OpenApiVersionProvider.class)
+    Optional<OpenApiVersion> openApiVersion();
 
     /**
      * OpenAPI services.

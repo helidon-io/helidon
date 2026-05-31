@@ -1,0 +1,159 @@
+#
+# Copyright (c) 2026 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+openapi: 3.2.0
+jsonSchemaDialect: https://spec.openapis.org/oas/3.1/dialect/base
+$self: https://example.com/openapi/static-3.2.yaml
+info:
+  title: Static 3.2 API
+  summary: Static document using OpenAPI 3.2 features.
+  version: 1.0.0
+servers:
+  - name: local
+    url: https://api.example.com
+tags:
+  - name: static
+    summary: Static
+    description: Static document operations.
+    kind: nav
+  - name: internal
+    summary: Internal
+    description: Internal static document operations.
+    parent: static
+    kind: badge
+paths:
+  /static/{id}:
+    get:
+      tags:
+        - static
+      operationId: staticGet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          summary: Static item
+          description: Static response.
+          headers:
+            X-Request-Id:
+              description: Request correlation id.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaticItem"
+              examples:
+                active:
+                  value:
+                    id: "42"
+                    status: active
+    query:
+      tags:
+        - static
+      operationId: queryStatic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filter:
+                  type: string
+      responses:
+        "200":
+          summary: Static query stream
+          description: Static query response stream.
+          content:
+            application/jsonl:
+              itemSchema:
+                $ref: "#/components/schemas/StaticItem"
+    additionalOperations:
+      COPY:
+        tags:
+          - internal
+        operationId: copyStatic
+        responses:
+          "202":
+            description: Static copy accepted.
+  /search:
+    get:
+      tags:
+        - static
+      operationId: searchStatic
+      parameters:
+        - in: querystring
+          content:
+            application/x-www-form-urlencoded:
+              schema:
+                type: object
+                properties:
+                  q:
+                    type: string
+                  active:
+                    type: boolean
+              examples:
+                form:
+                  dataValue:
+                    q: static item
+                    active: true
+                  serializedValue: q=static+item&active=true
+      responses:
+        "204":
+          description: Search accepted.
+components:
+  schemas:
+    StaticItem:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+        status:
+          type:
+            - string
+            - "null"
+          enum:
+            - active
+            - inactive
+            - null
+        payload: true
+        mode:
+          const: modern
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      deprecated: true
+    oauthDevice:
+      type: oauth2
+      flows:
+        deviceAuthorization:
+          deviceAuthorizationUrl: https://auth.example.com/device
+          tokenUrl: https://auth.example.com/token
+          scopes:
+            read: Read access.
+        authorizationCode:
+          authorizationUrl: https://auth.example.com/authorize
+          tokenUrl: https://auth.example.com/token
+          scopes:
+            read: Read access.
+security:
+  - bearerAuth: []
