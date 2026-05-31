@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
+    Copyright (c) 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,27 +23,34 @@
         <artifactId>helidon-openapi-project</artifactId>
         <version>27.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-openapi</artifactId>
-    <name>Helidon OpenAPI</name>
+    <artifactId>helidon-openapi-32</artifactId>
+    <name>Helidon OpenAPI 3.2</name>
 
     <description>
-        Helidon OpenAPI implementation
+        Helidon OpenAPI 3.2 document version support
     </description>
 
     <properties>
         <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
-        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.common.features</groupId>
-            <artifactId>helidon-common-features-api</artifactId>
-            <optional>true</optional>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-media-type</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.openapi</groupId>
+            <artifactId>helidon-openapi</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -54,24 +61,22 @@
             <artifactId>helidon-config-metadata</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-media-type</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.json.schema</groupId>
-            <artifactId>helidon-json-schema</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-registry</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver</artifactId>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json</artifactId>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.openapi</groupId>
+            <artifactId>helidon-openapi-31</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -83,26 +88,6 @@
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.webserver.testing.junit5</groupId>
-            <artifactId>helidon-webserver-testing-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.parsson</groupId>
-            <artifactId>parsson</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -112,11 +97,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <annotationProcessorPaths>
-                        <path>
-                            <groupId>io.helidon.common.features</groupId>
-                            <artifactId>helidon-common-features-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
                         <path>
                             <groupId>io.helidon.config.metadata</groupId>
                             <artifactId>helidon-config-metadata-codegen</artifactId>
@@ -145,11 +125,6 @@
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
-                    <dependency>
-                        <groupId>io.helidon.common.features</groupId>
-                        <artifactId>helidon-common-features-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
                     <dependency>
                         <groupId>io.helidon.config.metadata</groupId>
                         <artifactId>helidon-config-metadata-codegen</artifactId>
