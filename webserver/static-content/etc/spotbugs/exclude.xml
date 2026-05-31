@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -49,6 +49,12 @@
     <Match>
         <!-- URL is obtained from classloader for a resource on classpath and then used to read it -->
         <Class name="io.helidon.webserver.staticcontent.CachedHandlerJar"/>
+        <Bug pattern="URLCONNECTION_SSRF_FD"/>
+    </Match>
+
+    <Match>
+        <!-- URL is obtained from classloader for a resource on classpath and then used to read it -->
+        <Class name="io.helidon.webserver.staticcontent.ResourceConnections"/>
         <Bug pattern="URLCONNECTION_SSRF_FD"/>
     </Match>
 </FindBugsFilter>
