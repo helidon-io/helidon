@@ -17,21 +17,16 @@
 package io.helidon.declarative.codegen.http.webserver;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
-import io.helidon.codegen.ElementInfoPredicates;
-import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.codegen.classmodel.Method;
@@ -43,9 +38,7 @@ import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
-import io.helidon.common.types.TypedElementInfo;
 import io.helidon.declarative.codegen.DeclarativeTypes;
-import io.helidon.declarative.codegen.DeclarativeUtils;
 import io.helidon.declarative.codegen.http.HttpCodegenValidation;
 import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.RestExtensionBase;
@@ -67,21 +60,9 @@ import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.declarative.codegen.DeclarativeTypes.SINGLETON_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_ENTITY_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_FORM_PARAM_ANNOTATION;
-import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_HEADER_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_METHOD;
-import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_METHOD_ANNOTATION;
-import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_PATH_PARAM_ANNOTATION;
-import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_QUERY_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_REQUEST_PARAMS_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_SUPPORT;
-import static io.helidon.declarative.codegen.http.webserver.WebServerCodegenTypes.REST_SERVER_COMPUTED_HEADER;
-import static io.helidon.declarative.codegen.http.webserver.WebServerCodegenTypes.REST_SERVER_COMPUTED_HEADERS;
-import static io.helidon.declarative.codegen.http.webserver.WebServerCodegenTypes.REST_SERVER_ENDPOINT;
-import static io.helidon.declarative.codegen.http.webserver.WebServerCodegenTypes.REST_SERVER_HEADER;
-import static io.helidon.declarative.codegen.http.webserver.WebServerCodegenTypes.REST_SERVER_HEADERS;
-import static io.helidon.declarative.codegen.http.webserver.WebServerCodegenTypes.REST_SERVER_LISTENER;
-import static io.helidon.declarative.codegen.http.webserver.WebServerCodegenTypes.REST_SERVER_STATUS;
-import static java.util.function.Predicate.not;
 
 /*
 Generates:
@@ -96,20 +77,18 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
 
     private final RegistryCodegenContext ctx;
     private final List<HttpParameterCodegenProvider> paramProviders;
+    private final ServerEndpointAnalyzer endpointAnalyzer;
 
     RestServerExtension(RegistryCodegenContext ctx) {
         this.ctx = ctx;
         this.paramProviders = loadParamProviders(RestServerExtension.class.getClassLoader(), ctx);
+        this.endpointAnalyzer = new ServerEndpointAnalyzer(ctx);
     }
 
     @Override
     public void process(RegistryRoundContext roundContext) {
         // for each @RestServer.Endpoint generate a service that implements it
-        Collection<TypeInfo> serverEndpoints = roundContext.annotatedTypes(REST_SERVER_ENDPOINT);
-
-        List<ServerEndpoint> endpoints = serverEndpoints.stream()
-                .map(this::toEndpoint)
-                .collect(Collectors.toUnmodifiableList());
+        List<ServerEndpoint> endpoints = endpointAnalyzer.endpoints(roundContext);
 
         for (ServerEndpoint endpoint : endpoints) {
             process(roundContext, endpoint);
@@ -235,131 +214,6 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                 .type(singleton ? endpointType : supplierOf(endpointType))
                 .name("endpoint")
         );
-    }
-
-    private ServerEndpoint toEndpoint(TypeInfo typeInfo) {
-        var builder = ServerEndpoint.builder()
-                .type(typeInfo);
-
-        Set<Annotation> typeAnnotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx, typeInfo));
-        builder.annotations(typeAnnotations);
-
-        Annotations.findFirst(REST_SERVER_LISTENER, typeAnnotations)
-                .flatMap(listener -> listener.stringValue())
-                .ifPresent(builder::listener);
-        builder.listenerRequired(true);
-
-        path(typeAnnotations, builder);
-        produces(typeAnnotations, builder);
-        consumes(typeAnnotations, builder);
-        headers(typeAnnotations, builder, REST_SERVER_HEADERS, REST_SERVER_HEADER);
-        computedHeaders(typeAnnotations, builder, REST_SERVER_COMPUTED_HEADERS, REST_SERVER_COMPUTED_HEADER);
-
-        typeInfo.elementInfo()
-                .stream()
-                .filter(ElementInfoPredicates::isMethod)
-                .filter(not(ElementInfoPredicates::isPrivate))
-                .filter(not(ElementInfoPredicates::isStatic))
-                .forEach(it -> toMethod(typeInfo, builder, it));
-
-        return builder.build();
-    }
-
-    private void toMethod(TypeInfo endpoint,
-                          ServerEndpoint.Builder endpointBuilder,
-                          TypedElementInfo method) {
-        Set<Annotation> annotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx, endpoint, method));
-
-        Optional<Annotation> httpMethodAnnotation = DeclarativeUtils.findMetaAnnotated(annotations, HTTP_METHOD_ANNOTATION);
-        if (httpMethodAnnotation.isEmpty()) {
-            // this method does not have an Http.Method meta annotation present, we can skip it
-            return;
-        }
-
-        String methodName = method.elementName();
-        String uniqueName = ctx.uniqueName(endpoint, method);
-
-        var builder = RestMethod.builder()
-                .returnType(method.typeName())
-                .type(endpoint)
-                .name(methodName)
-                .uniqueName(uniqueName)
-                .method(method)
-                .annotations(annotations)
-                .httpMethod(httpMethodFromAnnotation(method, httpMethodAnnotation.get()));
-
-        path(annotations, builder);
-        consumes(annotations, builder);
-        produces(annotations, builder);
-        headers(annotations, builder, REST_SERVER_HEADERS, REST_SERVER_HEADER);
-        computedHeaders(annotations, builder, REST_SERVER_COMPUTED_HEADERS, REST_SERVER_COMPUTED_HEADER);
-
-        if (builder.consumes().isEmpty()) {
-            builder.consumes(endpointBuilder.consumes());
-        }
-        if (builder.produces().isEmpty()) {
-            builder.produces(endpointBuilder.produces());
-        }
-        builder.addHeaders(endpointBuilder.headers());
-        builder.addComputedHeaders(endpointBuilder.computedHeaders());
-
-        Annotations.findFirst(REST_SERVER_STATUS, annotations)
-                .ifPresent(annotation -> {
-                    int code = annotation.intValue().orElse(200);
-                    Optional<String> reason = annotation
-                            .stringValue("reason")
-                            .filter(not(String::isBlank));
-                    builder.status(new HttpStatus(code, reason));
-                });
-
-        int index = 0;
-        for (TypedElementInfo parameterInfo : method.parameterArguments()) {
-            processEndpointParameter(endpoint, method, parameterInfo, builder, index);
-            index++;
-        }
-
-        endpointBuilder.addMethod(builder.build());
-    }
-
-    private void processEndpointParameter(TypeInfo typeInfo,
-                                          TypedElementInfo methodInfo,
-                                          TypedElementInfo parameterInfo,
-                                          RestMethod.Builder method,
-                                          int index) {
-        Set<Annotation> annotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx,
-                                                                                       typeInfo,
-                                                                                       methodInfo,
-                                                                                       parameterInfo,
-                                                                                       index));
-        HttpCodegenValidation.validateMethodParameterAnnotationCount(
-                annotations,
-                "Parameter '" + parameterInfo.elementName() + "' of declarative server method "
-                        + typeInfo.typeName().fqName() + "." + methodInfo.elementName()
-                        + "() must have at most one supported request parameter annotation.",
-                parameterInfo.originatingElementValue());
-        var parameter = RestMethodParameter.builder()
-                .annotations(annotations)
-                .name(parameterInfo.elementName())
-                .typeName(parameterInfo.typeName())
-                .index(index)
-                .method(methodInfo)
-                .type(typeInfo)
-                .parameter(parameterInfo)
-                .build();
-
-        method.addParameter(parameter);
-        if (Annotations.findFirst(HTTP_HEADER_PARAM_ANNOTATION, annotations).isPresent()) {
-            method.addHeaderParameter(parameter);
-        }
-        if (Annotations.findFirst(HTTP_QUERY_PARAM_ANNOTATION, annotations).isPresent()) {
-            method.addQueryParameter(parameter);
-        }
-        if (Annotations.findFirst(HTTP_PATH_PARAM_ANNOTATION, annotations).isPresent()) {
-            method.addPathParameter(parameter);
-        }
-        if (Annotations.findFirst(HTTP_ENTITY_ANNOTATION, annotations).isPresent()) {
-            method.entityParameter(parameter);
-        }
     }
 
     private void process(RegistryRoundContext roundContext, ServerEndpoint endpoint) {

@@ -28,9 +28,28 @@ import io.helidon.webserver.WebServer;
  */
 @OpenApi.Document
 @OpenApi.Info(title = "Declarative OpenAPI Test", version = "1.0.0")
+@OpenApi.Contact(value = "Helidon Team", url = "https://helidon.io", email = "helidon@example.com")
+@OpenApi.License(value = "Apache License 2.0",
+                 identifier = "Apache-2.0",
+                 url = "https://www.apache.org/licenses/LICENSE-2.0")
 @OpenApi.Server(value = "http://localhost:${server.port}", description = "Test server")
 @OpenApi.Tag(value = "greeting", description = "Greeting operations")
 @OpenApi.Tag(value = "farewell", description = "Farewell operations")
+@OpenApi.ExternalDocs(value = "https://helidon.io/docs", description = "Helidon documentation")
+@OpenApi.Extension(name = "x-test-document", value = "declarative-openapi")
+@OpenApi.SecurityScheme(name = "bearerAuth",
+                        type = "http",
+                        description = "Bearer token authentication",
+                        scheme = "bearer",
+                        bearerFormat = "JWT")
+@OpenApi.SecurityScheme(name = "oauth2",
+                        type = "oauth2",
+                        description = "OAuth2 client credentials",
+                        flows = @OpenApi.OAuthFlows(clientCredentials = @OpenApi.OAuthFlow(
+                                tokenUrl = "https://id.example.com/oauth2/token",
+                                scopes = @OpenApi.OAuthScope(value = "greeting:read", description = "Read greetings"))))
+@OpenApi.SecurityRequirement("bearerAuth")
+@OpenApi.SecurityRequirement(value = "oauth2", scopes = "greeting:read")
 @Service.GenerateBinding // annotation is required to generate application binding
 public final class Main {
     static {
