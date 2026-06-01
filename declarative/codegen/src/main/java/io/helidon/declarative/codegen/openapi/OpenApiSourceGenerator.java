@@ -18,11 +18,14 @@ package io.helidon.declarative.codegen.openapi;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -232,6 +235,7 @@ final class OpenApiSourceGenerator {
                                     List<SchemaBinding> schemaBindings,
                                     Method.Builder method) {
         String endpointTag = endpointName(endpoint.type().typeName());
+        Map<TypeName, String> componentNames = componentNames(schemaBindings);
         for (SchemaBinding schemaBinding : schemaBindings) {
             addSchemaComponent(method, schemaBinding);
         }
@@ -239,7 +243,7 @@ final class OpenApiSourceGenerator {
             if (hasAnnotation(restMethod.annotations(), OPENAPI_HIDDEN_ANNOTATION)) {
                 continue;
             }
-            addOperation(method, endpoint, restMethod, endpointTag);
+            addOperation(method, endpoint, restMethod, endpointTag, componentNames);
         }
     }
 
@@ -594,7 +598,8 @@ final class OpenApiSourceGenerator {
     private void addOperation(Method.Builder method,
                               ServerEndpoint endpoint,
                               RestMethod restMethod,
-                              String endpointTag) {
+                              String endpointTag,
+                              Map<TypeName, String> componentNames) {
         method.addContent("document.path(")
                 .addContent(stringLiteral(openApiPath(endpoint, restMethod)))
                 .addContentLine(",")
@@ -613,9 +618,9 @@ final class OpenApiSourceGenerator {
                 .ifPresentOrElse(operation -> addExplicitOperation(method, operation, restMethod, endpointTag),
                                  () -> addInferredOperation(method, restMethod, endpointTag));
         addOperationMetadata(method, restMethod);
-        addParameters(method, restMethod);
-        addRequestBody(method, restMethod);
-        addResponses(method, restMethod);
+        addParameters(method, restMethod, componentNames);
+        addRequestBody(method, restMethod, componentNames);
+        addResponses(method, restMethod, componentNames);
 
         method.addContentLine("));")
                 .decreaseContentPadding()
@@ -702,13 +707,23 @@ final class OpenApiSourceGenerator {
                 + CodegenUtil.capitalize(restMethod.uniqueName());
     }
 
-    private void addParameters(Method.Builder method, RestMethod restMethod) {
+    private void addParameters(Method.Builder method, RestMethod restMethod, Map<TypeName, String> componentNames) {
         List<Annotation> methodParameters = new ArrayList<>(methodParameterAnnotations(restMethod));
         for (RestMethodParameter parameter : restMethod.pathParameters()) {
-            addParameter(method, restMethod, parameter, "path", matchingMethodParameters(methodParameters, parameter, "path"));
+            addParameter(method,
+                         restMethod,
+                         parameter,
+                         "path",
+                         matchingMethodParameters(methodParameters, parameter, "path"),
+                         componentNames);
         }
         for (RestMethodParameter parameter : restMethod.queryParameters()) {
-            addParameter(method, restMethod, parameter, "query", matchingMethodParameters(methodParameters, parameter, "query"));
+            addParameter(method,
+                         restMethod,
+                         parameter,
+                         "query",
+                         matchingMethodParameters(methodParameters, parameter, "query"),
+                         componentNames);
         }
         for (RestMethodParameter parameter : restMethod.headerParameters()) {
             String name = parameterName(parameter, "header");
@@ -719,7 +734,8 @@ final class OpenApiSourceGenerator {
                          restMethod,
                          parameter,
                          "header",
-                         matchingMethodParameters(methodParameters, parameter, "header"));
+                         matchingMethodParameters(methodParameters, parameter, "header"),
+                         componentNames);
         }
         if (!methodParameters.isEmpty()) {
             throw unmatchedMethodParameter(restMethod, methodParameters.getFirst());
@@ -730,7 +746,8 @@ final class OpenApiSourceGenerator {
                               RestMethod restMethod,
                               RestMethodParameter parameter,
                               String in,
-                              List<Annotation> methodAnnotations) {
+                              List<Annotation> methodAnnotations,
+                              Map<TypeName, String> componentNames) {
         List<Annotation> annotations = new ArrayList<>(methodAnnotations);
         annotations.addAll(repeatableAnnotations(parameter.annotations(),
                                                  OPENAPI_PARAMETERS_ANNOTATION,
@@ -756,11 +773,11 @@ final class OpenApiSourceGenerator {
                 .addContentLine(")");
         if (hasExplicitContent) {
             for (Annotation content : contentAnnotations) {
-                addContent(method, List.of(DEFAULT_MEDIA_TYPE), content, schemaType, true);
+                addContent(method, List.of(DEFAULT_MEDIA_TYPE), content, schemaType, true, componentNames);
             }
         } else {
             method.addContent(".schema(")
-                    .addContent(schemaExpression(schemaType))
+                    .addContent(schemaExpression(schemaType, componentNames))
                     .addContentLine(")");
         }
 
@@ -796,7 +813,7 @@ final class OpenApiSourceGenerator {
                 .decreaseContentPadding();
     }
 
-    private void addRequestBody(Method.Builder method, RestMethod restMethod) {
+    private void addRequestBody(Method.Builder method, RestMethod restMethod, Map<TypeName, String> componentNames) {
         Optional<Annotation> requestBodyMetadata = requestBodyAnnotation(restMethod);
         if (restMethod.entityParameter().isEmpty()) {
             if (requestBodyMetadata.isPresent()) {
@@ -836,12 +853,12 @@ final class OpenApiSourceGenerator {
                     method.addContent(".content(")
                             .addContent(stringLiteral(mediaType))
                             .addContent(", ")
-                            .addContent(mediaTypeConsumer(schemaExpression(entityType)))
+                            .addContent(mediaTypeConsumer(schemaExpression(entityType, componentNames)))
                             .addContentLine(")");
                 }
             } else {
                 for (Annotation content : contentAnnotations) {
-                    addContent(method, restMethod.consumes(), content, entityType, true);
+                    addContent(method, restMethod.consumes(), content, entityType, true, componentNames);
                 }
             }
             method.addContentLine(")")
@@ -850,20 +867,23 @@ final class OpenApiSourceGenerator {
         });
     }
 
-    private void addResponses(Method.Builder method, RestMethod restMethod) {
+    private void addResponses(Method.Builder method, RestMethod restMethod, Map<TypeName, String> componentNames) {
         List<Annotation> explicitResponses = repeatableAnnotations(restMethod.annotations(),
                                                                     OPENAPI_RESPONSES_ANNOTATION,
                                                                     OPENAPI_RESPONSE_ANNOTATION);
         if (explicitResponses.isEmpty()) {
-            addInferredResponses(method, restMethod);
+            addInferredResponses(method, restMethod, componentNames);
             return;
         }
         for (Annotation response : explicitResponses) {
-            addResponse(method, restMethod, response);
+            addResponse(method, restMethod, response, componentNames);
         }
     }
 
-    private void addResponse(Method.Builder method, RestMethod restMethod, Annotation response) {
+    private void addResponse(Method.Builder method,
+                             RestMethod restMethod,
+                             Annotation response,
+                             Map<TypeName, String> componentNames) {
         int status = response.intValue("status")
                 .orElseThrow(() -> new CodegenException("@OpenApi.Response status is required"));
         TypeName responseType = responseType(restMethod.returnType());
@@ -881,7 +901,7 @@ final class OpenApiSourceGenerator {
                 .ifPresent(summary -> method.addContent(".summary(")
                         .addContent(stringLiteral(summary))
                         .addContentLine(")"));
-        addResponseHeaders(method, restMethod, response);
+        addResponseHeaders(method, restMethod, response, componentNames);
 
         List<Annotation> contentAnnotations = response.annotationValues("content").orElseGet(List::of);
         if (contentAnnotations.isEmpty() && hasEntity) {
@@ -889,12 +909,12 @@ final class OpenApiSourceGenerator {
                 method.addContent(".content(")
                         .addContent(stringLiteral(mediaType))
                         .addContent(", ")
-                        .addContent(mediaTypeConsumer(schemaExpression(responseType)))
+                        .addContent(mediaTypeConsumer(schemaExpression(responseType, componentNames)))
                         .addContentLine(")");
             }
         } else {
             for (Annotation content : contentAnnotations) {
-                addContent(method, restMethod.produces(), content, responseType, hasEntity);
+                addContent(method, restMethod.produces(), content, responseType, hasEntity, componentNames);
             }
         }
 
@@ -903,7 +923,7 @@ final class OpenApiSourceGenerator {
                 .decreaseContentPadding();
     }
 
-    private void addInferredResponses(Method.Builder method, RestMethod restMethod) {
+    private void addInferredResponses(Method.Builder method, RestMethod restMethod, Map<TypeName, String> componentNames) {
         TypeName returnType = restMethod.returnType();
         int status = restMethod.status()
                 .map(it -> it.code())
@@ -926,7 +946,7 @@ final class OpenApiSourceGenerator {
                 method.addContent(".content(")
                         .addContent(stringLiteral(mediaType))
                         .addContent(", ")
-                        .addContent(mediaTypeConsumer(schemaExpression(responseType)))
+                        .addContent(mediaTypeConsumer(schemaExpression(responseType, componentNames)))
                         .addContentLine(")");
             }
         }
@@ -939,11 +959,14 @@ final class OpenApiSourceGenerator {
         }
     }
 
-    private void addResponseHeaders(Method.Builder method, RestMethod restMethod, Annotation response) {
+    private void addResponseHeaders(Method.Builder method,
+                                    RestMethod restMethod,
+                                    Annotation response,
+                                    Map<TypeName, String> componentNames) {
         addInferredResponseHeaders(method, restMethod);
         response.annotationValues("headers")
                 .orElseGet(List::of)
-                .forEach(header -> addResponseHeader(method, header));
+                .forEach(header -> addResponseHeader(method, header, componentNames));
     }
 
     private void addInferredResponseHeaders(Method.Builder method, RestMethod restMethod) {
@@ -969,7 +992,7 @@ final class OpenApiSourceGenerator {
                 .addContentLine("))");
     }
 
-    private void addResponseHeader(Method.Builder method, Annotation header) {
+    private void addResponseHeader(Method.Builder method, Annotation header, Map<TypeName, String> componentNames) {
         String name = header.stringValue("name")
                 .filter(not(String::isBlank))
                 .orElseThrow(() -> new CodegenException("@OpenApi.Header name is required"));
@@ -997,11 +1020,11 @@ final class OpenApiSourceGenerator {
                 .ifPresent(deprecated -> method.addContentLine(".deprecated(true)"));
         if (contentAnnotations.isEmpty()) {
             method.addContent(".schema(")
-                    .addContent(schemaExpression(schemaType))
+                    .addContent(schemaExpression(schemaType, componentNames))
                     .addContentLine(")");
         } else {
             for (Annotation content : contentAnnotations) {
-                addContent(method, List.of(DEFAULT_MEDIA_TYPE), content, schemaType, true);
+                addContent(method, List.of(DEFAULT_MEDIA_TYPE), content, schemaType, true, componentNames);
             }
         }
         method.addContentLine(")")
@@ -1013,7 +1036,8 @@ final class OpenApiSourceGenerator {
                             List<String> inferredMediaTypes,
                             Annotation content,
                             TypeName inferredSchemaType,
-                            boolean hasInferredSchema) {
+                            boolean hasInferredSchema,
+                            Map<TypeName, String> componentNames) {
         List<String> mediaTypes = content.stringValue()
                 .filter(not(String::isBlank))
                 .map(List::of)
@@ -1022,7 +1046,7 @@ final class OpenApiSourceGenerator {
             method.addContent(".content(")
                     .addContent(stringLiteral(mediaType))
                     .addContent(", ")
-                    .addContent(mediaTypeConsumer(content, inferredSchemaType, hasInferredSchema))
+                    .addContent(mediaTypeConsumer(content, inferredSchemaType, hasInferredSchema, componentNames))
                     .addContentLine(")");
         }
     }
@@ -1037,9 +1061,10 @@ final class OpenApiSourceGenerator {
         }
 
         List<SchemaBinding> result = new ArrayList<>();
+        Map<String, Integer> schemaNameCounts = schemaNameCounts(schemaTypes);
         Set<String> usedFieldNames = new HashSet<>();
         for (TypeName schemaType : schemaTypes) {
-            String schemaName = schemaName(schemaType);
+            String schemaName = schemaName(schemaType, schemaNameCounts);
             result.add(new SchemaBinding(schemaType,
                                          schemaName,
                                          uniqueFieldName(schemaFieldName(schemaName), usedFieldNames)));
@@ -1197,38 +1222,53 @@ final class OpenApiSourceGenerator {
                 .addContentLine(");");
     }
 
+    private Map<TypeName, String> componentNames(List<SchemaBinding> schemaBindings) {
+        Map<TypeName, String> result = new LinkedHashMap<>();
+        for (SchemaBinding schemaBinding : schemaBindings) {
+            result.put(schemaBinding.type(), schemaBinding.name());
+        }
+        return result;
+    }
+
     private String mediaTypeConsumer(String schemaExpression) {
         return "content -> content.schema(" + schemaExpression + ")";
     }
 
-    private String mediaTypeConsumer(Annotation content, TypeName inferredSchemaType, boolean hasInferredSchema) {
+    private String mediaTypeConsumer(Annotation content,
+                                     TypeName inferredSchemaType,
+                                     boolean hasInferredSchema,
+                                     Map<TypeName, String> componentNames) {
         Optional<TypeName> explicitSchema = content.typeValue("schema")
                 .filter(Predicate.not(VOID::equals));
         TypeName schemaType = explicitSchema.orElse(inferredSchemaType);
         boolean hasSchema = explicitSchema.isPresent() || hasInferredSchema;
         StringBuilder result = new StringBuilder("content -> content.schema(")
-                .append(hasSchema ? schemaExpression(schemaType) : JSON_OBJECT.fqName() + ".builder().build()")
+                .append(hasSchema ? schemaExpression(schemaType, componentNames) : JSON_OBJECT.fqName() + ".builder().build()")
                 .append(")");
         content.typeValue("itemSchema")
                 .filter(Predicate.not(VOID::equals))
                 .ifPresent(itemSchema -> result.append(".itemSchema(")
-                        .append(schemaExpression(itemSchema))
+                        .append(schemaExpression(itemSchema, componentNames))
                         .append(")"));
         addExamples(result, content.annotationValues("examples").orElseGet(List::of));
         return result.toString();
     }
 
     private String schemaExpression(TypeName type) {
+        return schemaExpression(type, Map.of());
+    }
+
+    private String schemaExpression(TypeName type, Map<TypeName, String> componentNames) {
         TypeName schemaType = schemaType(type);
         if (schemaType.isList()) {
             TypeName itemType = schemaType.typeArguments().isEmpty()
                     ? TypeNames.STRING
                     : schemaType.typeArguments().getFirst();
-            return "arraySchema(" + schemaExpression(itemType) + ")";
+            return "arraySchema(" + schemaExpression(itemType, componentNames) + ")";
         }
         return jsonType(schemaType)
                 .map(it -> "schema(" + stringLiteral(it) + ")")
-                .orElseGet(() -> schemaRefExpression(schemaType));
+                .orElseGet(() -> schemaRefExpression(schemaType, componentNames));
     }
 
     private String stringSchemaWithDefaultExpression(String value) {
@@ -1239,7 +1279,13 @@ final class OpenApiSourceGenerator {
     }
 
     private String schemaRefExpression(TypeName type) {
-        return "schemaRef(" + stringLiteral(schemaName(schemaType(type))) + ")";
+        return schemaRefExpression(type, Map.of());
+    }
+
+    private String schemaRefExpression(TypeName type, Map<TypeName, String> componentNames) {
+        TypeName schemaType = schemaType(type);
+        String schemaName = componentNames.getOrDefault(schemaType, schemaName(schemaType));
+        return "schemaRef(" + stringLiteral(schemaName) + ")";
     }
 
     private TypeName schemaType(TypeName type) {
@@ -1640,6 +1686,23 @@ final class OpenApiSourceGenerator {
 
     private String schemaName(TypeName typeName) {
         return typeName.classNameWithEnclosingNames().replace('.', '_');
+    }
+
+    private String schemaName(TypeName typeName, Map<String, Integer> schemaNameCounts) {
+        String schemaName = schemaName(typeName);
+        if (schemaNameCounts.getOrDefault(schemaName, 0) <= 1) {
+            return schemaName;
+        }
+        String packageName = typeName.packageName();
+        return packageName.isBlank() ? schemaName : packageName.replace('.', '_') + "_" + schemaName;
+    }
+
+    private Map<String, Integer> schemaNameCounts(Set<TypeName> schemaTypes) {
+        Map<String, Integer> result = new HashMap<>();
+        for (TypeName schemaType : schemaTypes) {
+            result.merge(schemaName(schemaType), 1, Integer::sum);
+        }
+        return result;
     }
 
     private String schemaFieldName(String schemaName) {
