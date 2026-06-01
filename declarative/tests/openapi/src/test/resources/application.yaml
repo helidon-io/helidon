@@ -16,6 +16,9 @@
 
 server:
   port: 0
+  sockets:
+    - name: "admin"
+      port: 0
   features:
     openapi:
       web-context: "/openapi"

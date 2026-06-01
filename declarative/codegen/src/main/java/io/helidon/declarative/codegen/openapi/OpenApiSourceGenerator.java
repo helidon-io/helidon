@@ -83,6 +83,7 @@ import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SOURCE_BASE;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_TAGS_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_TAG_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.WEB_SERVER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED_BY_TYPE;
 import static java.util.function.Predicate.not;
@@ -143,19 +144,7 @@ final class OpenApiSourceGenerator {
         List<SchemaBinding> schemaBindings = schemaBindings(endpoint);
         ClassModel.Builder classModel = sourceClass(typeInfo.typeName(), generatedType);
         addSchemaInjection(classModel, schemaBindings);
-
-        endpoint.listener()
-                .ifPresent(listener -> classModel.addMethod(method -> method
-                        .accessModifier(AccessModifier.PUBLIC)
-                        .addAnnotation(Annotations.OVERRIDE)
-                        .returnType(TypeNames.PRIMITIVE_BOOLEAN)
-                        .name("supports")
-                        .addParameter(context -> context
-                                .type(OPENAPI_DOCUMENT_CONTEXT)
-                                .name("context"))
-                        .addContent("return ")
-                        .addContent(stringLiteral(listener))
-                        .addContentLine(".equals(context.listener());")));
+        addSupports(classModel, endpoint.listener());
 
         classModel.addMethod(method -> method
                 .accessModifier(AccessModifier.PUBLIC)
@@ -173,6 +162,22 @@ final class OpenApiSourceGenerator {
                                       classModel,
                                       typeInfo.typeName(),
                                       typeInfo.originatingElementValue());
+    }
+
+    private void addSupports(ClassModel.Builder classModel, Optional<String> listener) {
+        classModel.addMethod(method -> method
+                .accessModifier(AccessModifier.PUBLIC)
+                .addAnnotation(Annotations.OVERRIDE)
+                .returnType(TypeNames.PRIMITIVE_BOOLEAN)
+                .name("supports")
+                .addParameter(context -> context
+                        .type(OPENAPI_DOCUMENT_CONTEXT)
+                        .name("context"))
+                .addContent("return ")
+                .update(it -> listener.ifPresentOrElse(explicit -> it.addContent(stringLiteral(explicit)),
+                                                        () -> it.addContent(WEB_SERVER)
+                                                                .addContent(".DEFAULT_SOCKET_NAME")))
+                .addContentLine(".equals(context.listener());"));
     }
 
     private ClassModel.Builder sourceClass(TypeName sourceType, TypeName generatedType) {
