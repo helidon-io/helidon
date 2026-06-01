@@ -70,11 +70,68 @@ class GreetingEndpoint {
         return new Message("Hello everybody");
     }
 
+    @Http.GET
+    @Http.Path("/parameters/{id}")
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    @OpenApi.Parameter(name = "search",
+                       in = "query",
+                       value = "Search text",
+                       required = OpenApi.Required.FALSE,
+                       style = OpenApi.Style.FORM,
+                       explode = OpenApi.Explode.FALSE,
+                       allowReserved = true,
+                       deprecated = true,
+                       example = "hello/world",
+                       examples = @OpenApi.Example(name = "search-example",
+                                                   summary = "Search example",
+                                                   value = "hi"))
+    @OpenApi.Parameter(name = "filter",
+                       in = "query",
+                       style = OpenApi.Style.PIPE_DELIMITED,
+                       explode = OpenApi.Explode.FALSE)
+    @OpenApi.Parameter(name = "packed",
+                       in = "query",
+                       value = "Packed JSON filter",
+                       content = @OpenApi.Content(value = MediaTypes.APPLICATION_JSON_VALUE,
+                                                  schema = MessageRequest.class,
+                                                  examples = @OpenApi.Example(name = "packed-example",
+                                                                              value = "{\"prefix\":\"Hello\","
+                                                                                      + "\"name\":\"Ada\"}")))
+    Message parameters(@OpenApi.Parameter(value = "Greeting identifier", example = "42")
+                       @Http.PathParam("id") String id,
+                       @Http.QueryParam("search") Optional<String> search,
+                       @Http.QueryParam("filter") List<String> filter,
+                       @Http.QueryParam("packed") String packed,
+                       @OpenApi.Parameter(value = "Trace header",
+                                          required = OpenApi.Required.FALSE,
+                                          style = OpenApi.Style.SIMPLE,
+                                          explode = OpenApi.Explode.FALSE,
+                                          examples = @OpenApi.Example(name = "trace-example", value = "abc-123"))
+                       @Http.HeaderParam("X-Trace") Optional<String> trace,
+                       @Http.HeaderParam("X-Modes") List<String> modes) {
+        return new Message("Hello " + id);
+    }
+
     @Http.POST
     @Http.Consumes(MediaTypes.APPLICATION_JSON_VALUE)
     @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
     @RestServer.Status(Status.CREATED_201_CODE)
+    @OpenApi.RequestBody(value = "Greeting payload",
+                         required = OpenApi.Required.TRUE,
+                         content = @OpenApi.Content(value = MediaTypes.APPLICATION_JSON_VALUE,
+                                                    examples = @OpenApi.Example(name = "create-request",
+                                                                                value = "{\"prefix\":\"Hello\","
+                                                                                        + "\"name\":\"Ada\"}")))
     Message create(@Http.Entity MessageRequest request) {
+        return new Message(request.prefix() + " " + request.name());
+    }
+
+    @Http.PUT
+    @Http.Path("/inferred-body")
+    @Http.Consumes(MediaTypes.APPLICATION_JSON_VALUE)
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    @OpenApi.RequestBody(value = "Inferred greeting payload", required = OpenApi.Required.FALSE)
+    Message inferredBody(@Http.Entity MessageRequest request) {
         return new Message(request.prefix() + " " + request.name());
     }
 
