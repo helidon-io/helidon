@@ -771,6 +771,7 @@ final class OpenApiSourceGenerator {
         boolean hasExplicitContent = !contentAnnotations.isEmpty();
         Optional<String> configuredStyle = style(annotations);
         Optional<Boolean> configuredExplode = explode(annotations);
+        validateParameterContent(restMethod, in, name, contentAnnotations);
         validateParameterContentSerialization(restMethod, in, name, hasExplicitContent, configuredStyle, configuredExplode);
         validateParameterSerialization(restMethod, in, schemaType, configuredStyle, configuredExplode);
         boolean allowReserved = booleanFlag(annotations, "allowReserved");
@@ -1419,6 +1420,17 @@ final class OpenApiSourceGenerator {
         if (example.isPresent() && !examples.isEmpty()) {
             throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
                                                + " cannot define both example and examples for " + in
+                                               + " parameter " + name);
+        }
+    }
+
+    private void validateParameterContent(RestMethod restMethod,
+                                          String in,
+                                          String name,
+                                          List<Annotation> contentAnnotations) {
+        if (contentAnnotations.size() > 1) {
+            throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                               + " cannot define more than one content entry for " + in
                                                + " parameter " + name);
         }
     }
