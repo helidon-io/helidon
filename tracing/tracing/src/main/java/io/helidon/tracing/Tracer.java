@@ -32,31 +32,6 @@ public interface Tracer {
     }
 
     /**
-     * Get the currently registered global tracer.
-     *
-     * @return global tracer
-     * @deprecated we are switching to service registry for global instances, kindly use
-     * {@link io.helidon.service.registry.Services#get(Class)} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    static Tracer global() {
-        return TracerProviderHelper.global();
-    }
-
-    /**
-     * Register a global tracer, behavior depends on implementation.
-     *
-     * @param tracer tracer to use as a global tracer
-     * @deprecated we are switching to Service registry for global instances, kindly use
-     * {@link io.helidon.service.registry.Services#set(Class, Object[])} before using tracing instead
-     * of calling this method
-     */
-    @Deprecated(forRemoval = true, since = "4.4.0")
-    static void global(Tracer tracer) {
-        TracerProviderHelper.global(tracer);
-    }
-
-    /**
      * Whether this tracer is enabled or not.
      * A no op tracer is disabled.
      *

@@ -89,27 +89,41 @@ The link:https://opentelemetry.io/docs/languages/java/sdk/#sdk-components[OpenTe
 [NOTE]
 Many applications do not need to use either the Helidon OpenTelemetry API or the OpenTelemetry API directly. They can instead rely completely on declarative Helidon configuration of OpenTelemetry.
 
-=== Managing the Global `OpenTelemetry` Instance
-Typically, an application uses the same `OpenTelemetry` instance throughout its execution. OpenTelemetry offers a global `OpenTelemetry` instance to make it easy for application code to set and obtain the global instance.
+=== Managing the Application `OpenTelemetry` Instance
+Typically, an application uses the same `OpenTelemetry` instance throughout its execution. Helidon exposes the application
+`OpenTelemetry` instance through the service registry.
 
-Similarly, the Helidon tracing API has a global `Tracer`.
+Helidon exposes the corresponding application `Tracer` through the Helidon service registry.
 
-In most cases, an application that prepares OpenTelemetry programmatically should initialize both of those by including code as shown in the following example.
+In most cases, an application that prepares OpenTelemetry programmatically and then bypasses Helidon's OpenTelemetry
+ownership should initialize both of those before either contract is requested from the registry, as shown in the following
+example.
 
 [source,java]
-.Setting the global `OpenTelemetry` and `Tracer` instances in Helidon
+.Setting the service-registry `OpenTelemetry` and `Tracer` instances in Helidon
 ----
 include::{sourcedir}/se/TelemetrySnippets.java[tags=snippet_1_imports;snippet_1, indent=0]
 ----
 
 [[effects-of-setting-global]]
-==== Assigning the Global Instance
-Using Helidon to set the global `OpenTelemetry` instance has these effects:
+==== Assigning the Application Instance
+Using Helidon configuration to prepare the application `OpenTelemetry` instance has these effects:
 
-* Assigns the instance as the OpenTelemetry global instance.
-* Creates a Helidon `Tracer` using the OpenTelemetry instance and makes that the Helidon global `Tracer`.
+* Registers the instance in the Helidon service registry.
+* Creates a Helidon `Tracer` using the OpenTelemetry instance and registers that tracer in the Helidon service registry.
 
-NOTE: Helidon is deprecating its use of "global" Helidon objects in favor of retrieving the correct instance from the Helidon service registry. Applications should migrate toward using, for example, `Services.get(Tracer.class)` instead of `Tracer.global()`.
+NOTE: Application code should retrieve the Helidon `OpenTelemetry` and `Tracer` instances from the service registry, for
+example using `Services.get(OpenTelemetry.class)` and `Services.get(Tracer.class)`.
+
+Some third-party OpenTelemetry instrumentation uses `GlobalOpenTelemetry` directly. For that interop case, set
+`global-open-telemetry` to `true` so Helidon publishes the selected application `OpenTelemetry` instance to the
+OpenTelemetry global. This must happen before any other code initializes `GlobalOpenTelemetry`; OpenTelemetry allows the
+global to be assigned only once.
+
+The `global-open-telemetry` setting applies when Helidon's OpenTelemetry ownership path creates or adopts the application
+instance. If application code manually registers both `OpenTelemetry` and `Tracer` using `Services.set(...)`, then Helidon's
+ownership factories are bypassed; publish the same `OpenTelemetry` instance to `GlobalOpenTelemetry` directly before
+anything else initializes the OpenTelemetry global.
 
 
 // Dependencies
@@ -128,7 +142,6 @@ Helidon offers an implementation of its xref:{rootdir}/se/tracing.adoc[ neutral 
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
-    <scope>runtime</scope>
 </dependency>
 
 ----
@@ -228,7 +241,10 @@ include::{rootdir}/config/io_helidon_telemetry_otelconfig_HelidonOpenTelemetry.a
 Notes:
 
 * OpenTelemetry uses default propagators of `tracecontext` and `baggage`. (See the `otel.propagators` property in link:https://opentelemetry.io/docs/languages/java/configuration/#properties-general[this OpenTelemetry guide].)
-* Setting `global` to `true` has the effect described in the <<effects-of-setting-global, section>> about global instances.
+* Setting `global` to `true` has the effect described in the <<effects-of-setting-global, section>> about application
+  instances in the Helidon service registry.
+* Setting `global-open-telemetry` to `true` also publishes that application instance to `GlobalOpenTelemetry` for
+  OpenTelemetry instrumentation that reads the JVM-wide OpenTelemetry global.
 
 [[common-config]]
 === Common Configuration Across Signals

@@ -205,7 +205,7 @@ The following code replaces the generated `getDefaultMessageHandler` method to a
 ----
 include::{sourcedir}/se/guides/TracingSnippets.java[tag=snippet_1, indent=0]
 ----
-<1> Create a new `Span` using the global tracer.
+<1> Create a new `Span` using the application tracer from the service registry.
 <2> Set the parent of the new span to the span from the `Request` if available.
 <3> Start the span.
 <4> Make the new span the current span, returning a `Scope` which is auto-closed.

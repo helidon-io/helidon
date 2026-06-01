@@ -17,10 +17,12 @@ package io.helidon.dbclient.tracing;
 
 import java.util.Map;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClientServiceBase;
 import io.helidon.dbclient.DbClientServiceContext;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tag;
@@ -37,8 +39,11 @@ public class DbClientTracing extends DbClientServiceBase {
 
     private static final Tag<? super String> DBCLIENT_TAG = Tag.COMPONENT.create("dbclient");
 
+    private final LazyValue<Tracer> applicationTracer;
+
     private DbClientTracing(Builder builder) {
         super(builder);
+        this.applicationTracer = LazyValue.create(() -> Services.get(Tracer.class));
     }
 
     /**
@@ -78,7 +83,7 @@ public class DbClientTracing extends DbClientServiceBase {
         }
 
         Context context = serviceContext.context();
-        Tracer tracer = context.get(Tracer.class).orElseGet(Tracer::global);
+        Tracer tracer = context.get(Tracer.class).orElseGet(applicationTracer);
 
         // now if span context is missing, we build a span without a parent
         Span.Builder<?> spanBuilder = tracer.spanBuilder(serviceContext.statementName());

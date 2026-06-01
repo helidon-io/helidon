@@ -25,7 +25,10 @@ import io.helidon.service.registry.Service;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,6 +37,16 @@ import static org.hamcrest.Matchers.notNullValue;
 @Testing.Test
 class TestServiceBootstrap {
 
+    @BeforeEach
+    void resetGlobalOpenTelemetryBefore() {
+        GlobalOpenTelemetry.resetForTest();
+    }
+
+    @AfterEach
+    void resetGlobalOpenTelemetryAfter() {
+        GlobalOpenTelemetry.resetForTest();
+    }
+
     @Test
     void testServiceBootstrap() {
 
@@ -41,7 +54,6 @@ class TestServiceBootstrap {
                 """
                         telemetry:
                           service: "test-otel"
-                          global: false
                           signals:
                             tracing:
                               sampler:
@@ -63,7 +75,7 @@ class TestServiceBootstrap {
         The following is not really needed in a test, because our first attempt to get the HelidonOpenTelemetry
         would trigger its supplier on demand. But SE user code should do something like this to make sure that
         we can initialize OpenTelemetry via config (if that's how the user wants to do it) early, before some other
-        code might assign the OpenTelemetry global instance.
+        code might request the service-registry OpenTelemetry instance.
          */
         GlobalServiceRegistry.registry().all(Lookup.builder()
                                                      .runLevel(Service.RunLevel.STARTUP)

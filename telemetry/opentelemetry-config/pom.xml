@@ -249,7 +249,7 @@
                         <id>default-test</id>
                         <configuration>
                             <excludes>
-                                <exclude>**/TestGlobalTracerAssignment.java</exclude>
+                                <exclude>**/TestOpenTelemetryOwnership.java</exclude>
                             </excludes>
                             <systemPropertyVariables>
                                 <otel.java.global-autoconfigure.enabled>true</otel.java.global-autoconfigure.enabled>
@@ -257,13 +257,13 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>test-global-tracer-assignment</id>
+                        <id>test-opentelemetry-ownership</id>
                         <goals>
                             <goal>test</goal>
                         </goals>
                         <configuration>
                             <includes>
-                                <include>**/TestGlobalTracerAssignment.java</include>
+                                <include>**/TestOpenTelemetryOwnership.java</include>
                             </includes>
                             <systemPropertyVariables>
                                 <otel.java.global-autoconfigure.enabled>true</otel.java.global-autoconfigure.enabled>
@@ -277,7 +277,7 @@
                         </goals>
                         <configuration>
                             <excludes>
-                                <exclude>**/TestGlobalTracerAssignment.java</exclude>
+                                <exclude>**/TestOpenTelemetryOwnership.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>

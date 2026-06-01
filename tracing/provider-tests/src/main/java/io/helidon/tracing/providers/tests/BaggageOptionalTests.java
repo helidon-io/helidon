@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 
@@ -57,7 +58,7 @@ class BaggageOptionalTests {
     }
 
     private void runWithSpanHarness(final Consumer<Span> spanConsumer) {
-        final var span = Tracer.global().spanBuilder("BaggageOptionalTest").start();
+        final var span = Services.get(Tracer.class).spanBuilder("BaggageOptionalTest").start();
         try {
             spanConsumer.accept(span);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.security;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
 
@@ -220,8 +221,7 @@ public interface SecurityContext extends io.helidon.common.security.SecurityCont
 
     /**
      * Provides the tracer to create new spans. If you use this, we can control whether tracing is enabled or disabled
-     * as part of security.
-     * If you use {@link io.helidon.tracing.Tracer#global()} you will get around this.
+     * as part of security. If you obtain a tracer directly from the service registry, you will get around this.
      *
      * @return {@link Tracer} to build custom {@link io.helidon.tracing.Span Spans}.
      * Use in combination with {@link #tracingSpan()} to
@@ -338,7 +338,7 @@ public interface SecurityContext extends io.helidon.common.security.SecurityCont
                 ec = EndpointConfig.builder().build();
             }
             if (null == tracingTracer) {
-                tracingTracer = Tracer.global();
+                tracingTracer = Services.get(Tracer.class);
             }
             return new SecurityContextImpl(this);
         }

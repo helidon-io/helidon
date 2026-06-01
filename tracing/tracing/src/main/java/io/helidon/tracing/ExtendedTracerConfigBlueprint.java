@@ -117,9 +117,10 @@ interface ExtendedTracerConfigBlueprint {
     boolean enabled();
 
     /**
-     * Whether to create and register a tracer as the global tracer.
+     * Whether this tracer configuration should be treated as an application-wide ownership candidate when it is built
+     * from Helidon configuration. Direct builder use does not publish the tracer to the service registry.
      *
-     * @return whether to register the configured tracer as global
+     * @return whether this configuration should be treated as an application-wide ownership candidate
      */
     @Option.Configured("global")
     @Option.DefaultBoolean(true)

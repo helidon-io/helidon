@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
@@ -28,6 +29,7 @@ import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
@@ -45,14 +47,17 @@ import io.helidon.webclient.spi.WebClientService;
  * can form a hierarchy in a tracer, such as Jaeger.
  */
 public class WebClientTracing implements WebClientService {
+    private final LazyValue<Tracer> applicationTracer;
     private final Function<Context, Tracer> tracerFunction;
 
     private WebClientTracing() {
+        this.applicationTracer = LazyValue.create(() -> Services.get(Tracer.class));
         tracerFunction = ctx -> ctx.get(Tracer.class)
-                .orElseGet(Tracer::global);
+                .orElseGet(applicationTracer);
     }
 
     private WebClientTracing(Tracer tracer) {
+        this.applicationTracer = LazyValue.create(tracer);
         this.tracerFunction = ctx -> tracer;
     }
 

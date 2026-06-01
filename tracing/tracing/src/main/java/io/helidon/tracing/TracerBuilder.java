@@ -255,9 +255,10 @@ public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tr
     T enabled(boolean enabled);
 
     /**
-     * When enabled, the created instance is also registered as a global tracer.
+     * Whether this tracer configuration should be treated as an application-wide ownership candidate when it is built
+     * from Helidon configuration. Direct builder use does not publish the tracer to the service registry.
      *
-     * @param global whether to register this tracer as a global tracer once built
+     * @param global whether this configuration should be treated as an application-wide ownership candidate
      * @return updated builder instance
      */
     @ConfiguredOption(key = "global", value = "true")

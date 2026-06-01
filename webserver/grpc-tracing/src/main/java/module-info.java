@@ -22,6 +22,7 @@ module io.helidon.webserver.grpc.tracing {
     requires static io.helidon.config.metadata;
 
     requires io.helidon.common.context;
+    requires io.helidon.service.registry;
     requires transitive io.helidon.config;
     requires transitive io.helidon.webserver.grpc;
     requires io.helidon.tracing;

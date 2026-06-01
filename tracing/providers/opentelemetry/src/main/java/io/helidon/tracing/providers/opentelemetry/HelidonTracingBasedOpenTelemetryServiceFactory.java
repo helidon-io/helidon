@@ -16,67 +16,53 @@
 
 package io.helidon.tracing.providers.opentelemetry;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
+import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
-import io.helidon.tracing.Tracer;
+import io.helidon.service.registry.ServiceRegistry;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 
 @Service.Singleton
 @Service.RunLevel(Service.RunLevel.STARTUP)
-@Weight(Weighted.DEFAULT_WEIGHT - 80)
 class HelidonTracingBasedOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
+    private static final TypeName SERVICE_TYPE = TypeName.create(HelidonTracingBasedOpenTelemetryServiceFactory.class);
 
+    private final ServiceRegistry registry;
     private final Config config;
+    private final Supplier<List<OpenTelemetryOwnershipStrategy>> strategies;
 
     @Service.Inject
-    HelidonTracingBasedOpenTelemetryServiceFactory(Config config) {
+    HelidonTracingBasedOpenTelemetryServiceFactory(ServiceRegistry registry,
+                                                   Config config,
+                                                   Supplier<List<OpenTelemetryOwnershipStrategy>> strategies) {
+        this.registry = registry;
         this.config = config;
+        this.strategies = strategies;
     }
 
     @Override
     public OpenTelemetry get() {
-        OpenTelemetry result;
-        if (config.get(OpenTelemetryTracerConfigBlueprint.TRACING_CONFIG_KEY).exists()) {
-            /*
-            Creating the impl also initializes the global tracer if the config specifies global = true.
-             */
-            var helidonOtelTracer = OpenTelemetryTracerBuilder.create()
-                    .config(config.get(OpenTelemetryTracerConfigBlueprint.TRACING_CONFIG_KEY))
-                    .build();
+        return HelidonOpenTelemetry.applicationOpenTelemetry(registry,
+                                                            config,
+                                                            strategies.get(),
+                                                            () -> registryOpenTelemetry().orElse(null));
+    }
 
-            try {
-                result = helidonOtelTracer.prototype().openTelemetry();
-            } catch (Exception e) {
-                /*
-                The configuration set global to "true" and so OpenTelemetryTracerImpl tried to tell OTel to use the
-                OpenTelemetry instance created from the tracing config as the global one. The exception probably is because
-                the OTel global instance was already set. In that case, register the current global instance in our
-                service registry so code that retrieves it from there uses the actual OTel global instance.
-                 */
-                result = GlobalOpenTelemetry.get();
-            }
-        } else {
-            /*
-            For backward compatibility with unconfigured OpenTelemetry tracing support, if the tracing config node is absent
-            let OpenTelemetry decide (probably either the no-op implementation or one using the OpenTelemetry auto-configure
-            feature.)
-             */
+    private Optional<OpenTelemetry> registryOpenTelemetry() {
+        return registry.allServices(OpenTelemetry.class)
+                .stream()
+                .filter(service -> !SERVICE_TYPE.equals(service.serviceType()))
+                .findFirst()
+                .flatMap(service -> registry.get(service));
+    }
 
-            result = GlobalOpenTelemetry.get();
-            var oTelTracerConfig = OpenTelemetryTracerBuilder.create()
-                    .serviceName("helidon-service")
-                    .openTelemetry(result)
-                    .delegate(result.getTracer("helidon-service"))
-                    .build();
-            Tracer.global(oTelTracerConfig);
-        }
-
-        return result;
+    @Service.PreDestroy
+    void preDestroy() {
+        HelidonOpenTelemetry.clearApplicationTelemetry(registry);
     }
 }

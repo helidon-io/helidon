@@ -114,6 +114,7 @@ class TestBasicConfig {
         OpenTelemetryConfig openTelemetry = OpenTelemetryConfig.create(config.get("telemetry"));
 
         assertThat("Global", openTelemetry.global(), is(true));
+        assertThat("Global OpenTelemetry", openTelemetry.globalOpenTelemetry(), is(false));
         assertThat("Enabled", openTelemetry.enabled(), is(true));
     }
 }

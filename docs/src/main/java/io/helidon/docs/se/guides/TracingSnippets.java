@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.docs.se.guides;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Status;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
@@ -42,7 +43,7 @@ class TracingSnippets {
         // tag::snippet_1[]
         private void getDefaultMessageHandler(ServerRequest request,
                                               ServerResponse response) {
-            var spanBuilder = Tracer.global().spanBuilder("secondchildSpan"); // <1>
+            var spanBuilder = Services.get(Tracer.class).spanBuilder("secondchildSpan"); // <1>
             request.context().get(SpanContext.class).ifPresent(sc -> sc.asParent(spanBuilder)); // <2>
             var span = spanBuilder.start(); // <3>
 
@@ -62,7 +63,7 @@ class TracingSnippets {
         private void getDefaultMessageHandler(ServerRequest request,
                                               ServerResponse response) {
 
-            var spanBuilder = Tracer.global().spanBuilder("getDefaultMessageHandler");
+            var spanBuilder = Services.get(Tracer.class).spanBuilder("getDefaultMessageHandler");
             request.context().get(SpanContext.class).ifPresent(spanBuilder::parent);
             Span span = spanBuilder.start();
 
@@ -113,7 +114,7 @@ class TracingSnippets {
         // tag::snippet_6[]
         private void outboundMessageHandler(ServerRequest request,
                                             ServerResponse response) {
-            var spanBuilder = Tracer.global().spanBuilder("outboundMessageHandler");
+            var spanBuilder = Services.get(Tracer.class).spanBuilder("outboundMessageHandler");
             request.context().get(SpanContext.class).ifPresent(spanBuilder::parent);
             var span = spanBuilder.start();
 

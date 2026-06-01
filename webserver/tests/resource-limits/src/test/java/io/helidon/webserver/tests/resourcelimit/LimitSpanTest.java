@@ -26,6 +26,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Tracer;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
@@ -84,7 +85,7 @@ class LimitSpanTest {
         ObserveFeature observe = ObserveFeature.builder()
                 .addObserver(TracingObserver.builder()
                                      .waitTracingEnabled(true)
-                                     .tracer(Tracer.global())
+                                     .tracer(Services.get(Tracer.class))
                                      .build())
                 .build();
         builder.config(config.get("server"))

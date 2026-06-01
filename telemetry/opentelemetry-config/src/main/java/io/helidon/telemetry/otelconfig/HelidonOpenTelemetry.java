@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.service.registry.Services;
-import io.helidon.tracing.Tracer;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 
 /**
@@ -66,26 +63,16 @@ public interface HelidonOpenTelemetry extends RuntimeType.Api<OpenTelemetryConfi
     }
 
     /**
-     * Initializes the specified {@link io.opentelemetry.api.OpenTelemetry} instance as global:
-     * <ol>
-     *     <li>Sets it as the global OpenTelemetry instance.</li>
-     *     <li>Creates a new Helidon {@link io.helidon.tracing.Tracer} using the {@code OpenTelemetry} instance.</li>
-     *     <li>Makes the Helidon {@code Tracer} the global tracer.</li>
-     *     <li>Registers the {@code OpenTelemetry} instance in the Helidon service registry.</li>
-     * </ol>
-     * @param openTelemetry the {@code OpenTelemetry} instance to make global
-     * @param serviceName service name with which to create the new global tracer
-     * @param tags tags to be applied to every span
-     * @throws IllegalStateException if other code has already established the OpenTelemetry global instance
+     * This method is now a no-op.
+     *
+     * @param openTelemetry ignored OpenTelemetry instance
+     * @param serviceName ignored service name
+     * @param tags ignored tracer tags
+     * @deprecated Use {@link io.helidon.service.registry.Services#set(Class, Object[])} to configure a custom telemetry
+     *             instance, or let Helidon resolve the correct instance.
      */
-    static void global(OpenTelemetry openTelemetry, String serviceName, Map<String, String> tags) throws IllegalStateException {
-        GlobalOpenTelemetry.set(openTelemetry);
-        var otelTracer = openTelemetry.getTracer(serviceName);
-        var helidonTracer = io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry.create(openTelemetry,
-                                                                                                   otelTracer,
-                                                                                                   tags);
-        Tracer.global(helidonTracer);
-        Services.set(OpenTelemetry.class, openTelemetry);
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    static void global(OpenTelemetry openTelemetry, String serviceName, Map<String, String> tags) {
     }
 
     /**

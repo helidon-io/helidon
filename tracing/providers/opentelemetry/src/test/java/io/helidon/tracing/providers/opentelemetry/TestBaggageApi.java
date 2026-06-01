@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Baggage;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
@@ -39,7 +40,7 @@ class TestBaggageApi {
 
     @Test
     void testWritableBaggageFromSpan() {
-        Span span = Tracer.global().spanBuilder("otel-span").start();
+        Span span = Services.get(Tracer.class).spanBuilder("otel-span").start();
         WritableBaggage baggage = span.baggage();
         span.baggage().set("keyA", "valA");
         assertThat("Assigned baggage via span is present", baggage.containsKey("keyA"), is(true));
@@ -59,7 +60,7 @@ class TestBaggageApi {
 
     @Test
     void testImmutableBaggageFromSpanContext() {
-        Optional<SpanContext> spanContextOpt = Tracer.global()
+        Optional<SpanContext> spanContextOpt = Services.get(Tracer.class)
                 .extract(HeaderProvider.create(Map.of("baggage", List.of("keyC=valC,keyD=valD"))));
 
         assertThat("Span context", spanContextOpt, OptionalMatcher.optionalPresent());

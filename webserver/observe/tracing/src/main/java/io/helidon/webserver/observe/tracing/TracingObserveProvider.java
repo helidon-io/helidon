@@ -52,7 +52,7 @@ public class TracingObserveProvider implements ObserveProvider {
                         return TracerBuilder.create(tracingConfig)
                                 .build();
                     }
-                    return Tracer.global();
+                    return Tracer.noOp();
                 });
 
         return TracingObserverConfig.builder()

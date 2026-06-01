@@ -119,6 +119,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.testing</groupId>
+            <artifactId>helidon-testing-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
@@ -207,19 +212,19 @@
                         <id>default-test</id>
                         <configuration>
                             <excludes>
-                                <exclude>**/TestGlobalTracerAssignment.java</exclude>
+                                <exclude>**/TestApplicationOpenTelemetryOwnership.java</exclude>
                                 <exclude>**/TestMdc.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>test-global-tracer-assignment</id>
+                        <id>test-application-opentelemetry-ownership</id>
                         <goals>
                             <goal>test</goal>
                         </goals>
                         <configuration>
                             <includes>
-                                <include>**/TestGlobalTracerAssignment.java</include>
+                                <include>**/TestApplicationOpenTelemetryOwnership.java</include>
                             </includes>
                         </configuration>
                     </execution>

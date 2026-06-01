@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.testing.junit5.OptionalMatcher;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
@@ -70,7 +71,7 @@ class TestDataPropagation {
     @Test
     void testAsyncPropagation() {
         Context context = Context.create();
-        Tracer tracer = Tracer.global();
+        Tracer tracer = Services.get(Tracer.class);
         context.register(tracer);
         Span span = tracer.spanBuilder("test-async-span").start();
         context.register(span);
