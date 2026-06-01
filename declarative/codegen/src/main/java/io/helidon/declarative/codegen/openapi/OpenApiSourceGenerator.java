@@ -774,6 +774,9 @@ final class OpenApiSourceGenerator {
         validateParameterSerialization(restMethod, in, schemaType, configuredStyle, configuredExplode);
         boolean allowReserved = booleanFlag(annotations, "allowReserved");
         validateParameterAllowReserved(restMethod, in, allowReserved);
+        Optional<String> example = explicitStringValue(annotations, "example");
+        List<Annotation> examples = annotationValues(annotations, "examples");
+        validateParameterExamples(restMethod, in, name, example, examples);
 
         method.addContent(".parameter(parameter -> parameter.name(")
                 .addContent(stringLiteral(name))
@@ -817,13 +820,12 @@ final class OpenApiSourceGenerator {
         if (booleanFlag(annotations, "deprecated")) {
             method.addContentLine(".deprecated(true)");
         }
-        explicitStringValue(annotations, "example")
-                .ifPresent(example -> method.addContent(".example(")
+        example.ifPresent(it -> method.addContent(".example(")
                         .addContent(JSON_STRING)
                         .addContent(".create(")
-                        .addContent(stringLiteral(example))
+                        .addContent(stringLiteral(it))
                         .addContentLine("))"));
-        addExamples(method, annotationValues(annotations, "examples"));
+        addExamples(method, examples);
         method.addContentLine(")")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
@@ -1405,6 +1407,18 @@ final class OpenApiSourceGenerator {
         if (allowReserved && !"query".equals(in)) {
             throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
                                                + " cannot use allowReserved=true for a " + in + " parameter");
+        }
+    }
+
+    private void validateParameterExamples(RestMethod restMethod,
+                                           String in,
+                                           String name,
+                                           Optional<String> example,
+                                           List<Annotation> examples) {
+        if (example.isPresent() && !examples.isEmpty()) {
+            throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                               + " cannot define both example and examples for " + in
+                                               + " parameter " + name);
         }
     }
 
