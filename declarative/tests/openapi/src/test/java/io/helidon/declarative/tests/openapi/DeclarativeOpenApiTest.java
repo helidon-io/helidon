@@ -186,10 +186,14 @@ class DeclarativeOpenApiTest {
         Map<String, Object> headers = object(response, "headers");
         Map<String, Object> staticHeader = object(headers, "X-Static");
         assertThat(staticHeader.get("required"), is(true));
-        assertThat(object(staticHeader, "schema").get("type"), is("string"));
+        Map<String, Object> staticHeaderSchema = object(staticHeader, "schema");
+        assertThat(staticHeaderSchema.get("type"), is("string"));
+        assertThat(staticHeaderSchema.get("default"), is("static"));
         Map<String, Object> computedHeader = object(headers, "X-Computed");
         assertThat(computedHeader, not(hasKey("required")));
-        assertThat(object(computedHeader, "schema").get("type"), is("string"));
+        Map<String, Object> computedHeaderSchema = object(computedHeader, "schema");
+        assertThat(computedHeaderSchema.get("type"), is("string"));
+        assertThat(computedHeaderSchema, not(hasKey("default")));
         Map<String, Object> documentedHeader = object(headers, "X-Documented");
         assertThat(documentedHeader.get("description"), is("Documented response header"));
         assertThat(documentedHeader.get("required"), is(true));

@@ -957,7 +957,7 @@ final class OpenApiSourceGenerator {
         method.addContent(".header(")
                 .addContent(stringLiteral(header.name()))
                 .addContent(", header -> header.required(true).schema(")
-                .addContent(schemaExpression(TypeNames.STRING))
+                .addContent(stringSchemaWithDefaultExpression(header.value()))
                 .addContentLine("))");
     }
 
@@ -1229,6 +1229,13 @@ final class OpenApiSourceGenerator {
         return jsonType(schemaType)
                 .map(it -> "schema(" + stringLiteral(it) + ")")
                 .orElseGet(() -> schemaRefExpression(schemaType));
+    }
+
+    private String stringSchemaWithDefaultExpression(String value) {
+        return JSON_OBJECT.fqName() + ".builder()"
+                + ".set(\"type\", \"string\")"
+                + ".set(\"default\", " + stringLiteral(value) + ")"
+                + ".build()";
     }
 
     private String schemaRefExpression(TypeName type) {
