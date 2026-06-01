@@ -145,6 +145,53 @@ class DeclarativeOpenApiTest {
     }
 
     @Test
+    void generatedDocumentMergesExplicitParameterMetadata() {
+        Map<String, Object> operation = operation(document(), "/greetings/parameters/{id}", "get");
+
+        Map<String, Object> id = parameter(operation, "id", "path");
+        assertThat(id.get("required"), is(true));
+        assertThat(id.get("description"), is("Greeting identifier"));
+        assertThat(id.get("example"), is("42"));
+
+        Map<String, Object> search = parameter(operation, "search", "query");
+        assertThat(search.get("required"), is(false));
+        assertThat(search.get("description"), is("Search text"));
+        assertThat(search.get("style"), is("form"));
+        assertThat(search.get("explode"), is(false));
+        assertThat(search.get("allowReserved"), is(true));
+        assertThat(search.get("deprecated"), is(true));
+        assertThat(search.get("example"), is("hello/world"));
+        Map<String, Object> searchExample = example(search, "search-example");
+        assertThat(searchExample.get("summary"), is("Search example"));
+        assertThat(searchExample.get("value"), is("hi"));
+
+        Map<String, Object> filter = parameter(operation, "filter", "query");
+        assertThat(filter.get("style"), is("pipeDelimited"));
+        assertThat(filter.get("explode"), is(false));
+        assertThat(object(object(filter, "schema"), "items").get("type"), is("string"));
+
+        Map<String, Object> packed = parameter(operation, "packed", "query");
+        assertThat(packed.get("description"), is("Packed JSON filter"));
+        assertThat(packed, not(hasKey("schema")));
+        assertThat(ref(content(packed, MediaTypes.APPLICATION_JSON_VALUE)), is("#/components/schemas/MessageRequest"));
+        assertThat(example(mediaTypeObject(packed, MediaTypes.APPLICATION_JSON_VALUE), "packed-example").get("value"),
+                   is("{\"prefix\":\"Hello\",\"name\":\"Ada\"}"));
+
+        Map<String, Object> trace = parameter(operation, "X-Trace", "header");
+        assertThat(trace.get("required"), is(false));
+        assertThat(trace.get("description"), is("Trace header"));
+        assertThat(trace.get("style"), is("simple"));
+        assertThat(trace.get("explode"), is(false));
+        assertThat(example(trace, "trace-example").get("value"), is("abc-123"));
+
+        Map<String, Object> modes = parameter(operation, "X-Modes", "header");
+        assertThat(modes.get("required"), is(true));
+        assertThat(modes.get("style"), is("simple"));
+        assertThat(modes.get("explode"), is(false));
+        assertThat(object(object(modes, "schema"), "items").get("type"), is("string"));
+    }
+
+    @Test
     void generatedDocumentIncludesOperationLevelMetadata() {
         Map<String, Object> document = document();
         Map<String, Object> operation = operation(document, "/greetings/documented/{name}", "get");
@@ -178,11 +225,20 @@ class DeclarativeOpenApiTest {
 
         Map<String, Object> create = operation(document, "/greetings", "post");
         assertThat(create.get("operationId"), is("greetingPostCreate"));
-        assertThat(ref(content(object(create, "requestBody"), MediaTypes.APPLICATION_JSON_VALUE)),
-                   is("#/components/schemas/MessageRequest"));
+        Map<String, Object> createBody = object(create, "requestBody");
+        assertThat(createBody.get("description"), is("Greeting payload"));
+        assertThat(createBody.get("required"), is(true));
+        assertThat(ref(content(createBody, MediaTypes.APPLICATION_JSON_VALUE)), is("#/components/schemas/MessageRequest"));
+        assertThat(example(mediaTypeObject(createBody, MediaTypes.APPLICATION_JSON_VALUE), "create-request").get("value"),
+                   is("{\"prefix\":\"Hello\",\"name\":\"Ada\"}"));
         assertThat(response(create, "201").get("description"), is("Created"));
         assertThat(ref(content(response(create, "201"), MediaTypes.APPLICATION_JSON_VALUE)),
                    is("#/components/schemas/Message"));
+
+        Map<String, Object> inferredBody = object(operation(document, "/greetings/inferred-body", "put"), "requestBody");
+        assertThat(inferredBody.get("description"), is("Inferred greeting payload"));
+        assertThat(inferredBody.get("required"), is(false));
+        assertThat(ref(content(inferredBody, MediaTypes.APPLICATION_JSON_VALUE)), is("#/components/schemas/MessageRequest"));
 
         Map<String, Object> optional = operation(document, "/greetings/optional/{name}", "get");
         assertThat(optional.get("operationId"), is("greetingGetMaybeFind"));
@@ -246,7 +302,15 @@ class DeclarativeOpenApiTest {
     }
 
     private static Map<String, Object> content(Map<String, Object> owner, String mediaType) {
-        return object(object(object(owner, "content"), mediaType), "schema");
+        return object(mediaTypeObject(owner, mediaType), "schema");
+    }
+
+    private static Map<String, Object> mediaTypeObject(Map<String, Object> owner, String mediaType) {
+        return object(object(owner, "content"), mediaType);
+    }
+
+    private static Map<String, Object> example(Map<String, Object> owner, String name) {
+        return object(object(owner, "examples"), name);
     }
 
     private static String ref(Map<String, Object> schema) {

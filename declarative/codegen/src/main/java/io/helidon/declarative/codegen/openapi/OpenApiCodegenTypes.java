@@ -40,6 +40,8 @@ final class OpenApiCodegenTypes {
             TypeName.create("io.helidon.openapi.OpenApi.SecurityRequirements");
     static final TypeName OPENAPI_OPERATION_ANNOTATION = TypeName.create("io.helidon.openapi.OpenApi.Operation");
     static final TypeName OPENAPI_PARAMETER_ANNOTATION = TypeName.create("io.helidon.openapi.OpenApi.Parameter");
+    static final TypeName OPENAPI_PARAMETERS_ANNOTATION = TypeName.create("io.helidon.openapi.OpenApi.Parameters");
+    static final TypeName OPENAPI_REQUEST_BODY_ANNOTATION = TypeName.create("io.helidon.openapi.OpenApi.RequestBody");
     static final TypeName OPENAPI_RESPONSE_ANNOTATION = TypeName.create("io.helidon.openapi.OpenApi.Response");
     static final TypeName OPENAPI_RESPONSES_ANNOTATION = TypeName.create("io.helidon.openapi.OpenApi.Responses");
     static final TypeName OPENAPI_HIDDEN_ANNOTATION = TypeName.create("io.helidon.openapi.OpenApi.Hidden");
@@ -58,6 +60,7 @@ final class OpenApiCodegenTypes {
     static final TypeName OPENAPI_DOCUMENT_RESPONSE = TypeName.create("io.helidon.openapi.OpenApiDocument.Response");
     static final TypeName OPENAPI_DOCUMENT_MEDIA_TYPE_OBJECT =
             TypeName.create("io.helidon.openapi.OpenApiDocument.MediaTypeObject");
+    static final TypeName OPENAPI_DOCUMENT_EXAMPLE = TypeName.create("io.helidon.openapi.OpenApiDocument.Example");
 
     static final TypeName JSON_OBJECT = TypeName.create("io.helidon.json.JsonObject");
     static final TypeName JSON_STRING = TypeName.create("io.helidon.json.JsonString");

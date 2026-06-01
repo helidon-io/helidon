@@ -19,6 +19,7 @@ package io.helidon.declarative.codegen.openapi;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -55,6 +56,7 @@ import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_DOCUMENT_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_DOCUMENT_BUILDER;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_DOCUMENT_CONTEXT;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_DOCUMENT_EXAMPLE;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_EXTENSIONS_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_EXTENSION_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_EXTERNAL_DOCS_ANNOTATION;
@@ -62,7 +64,9 @@ import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_INFO_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_LICENSE_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_OPERATION_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_PARAMETERS_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_PARAMETER_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_REQUEST_BODY_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_RESPONSES_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_RESPONSE_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION;
@@ -80,6 +84,7 @@ import static java.util.function.Predicate.not;
 
 final class OpenApiSourceGenerator {
     private static final TypeName GENERATOR = TypeName.create(OpenApiSourceGenerator.class);
+    private static final TypeName VOID = TypeName.create(Void.class);
     private static final String DEFAULT_MEDIA_TYPE = "application/json";
 
     private final RegistryCodegenContext ctx;
@@ -696,27 +701,44 @@ final class OpenApiSourceGenerator {
     }
 
     private void addParameters(Method.Builder method, RestMethod restMethod) {
+        List<Annotation> methodParameters = new ArrayList<>(methodParameterAnnotations(restMethod));
         for (RestMethodParameter parameter : restMethod.pathParameters()) {
-            addParameter(method, parameter, "path");
+            addParameter(method, restMethod, parameter, "path", matchingMethodParameters(methodParameters, parameter, "path"));
         }
         for (RestMethodParameter parameter : restMethod.queryParameters()) {
-            addParameter(method, parameter, "query");
+            addParameter(method, restMethod, parameter, "query", matchingMethodParameters(methodParameters, parameter, "query"));
         }
         for (RestMethodParameter parameter : restMethod.headerParameters()) {
             String name = parameterName(parameter, "header");
             if (isSpecialHeader(name)) {
                 continue;
             }
-            addParameter(method, parameter, "header");
+            addParameter(method,
+                         restMethod,
+                         parameter,
+                         "header",
+                         matchingMethodParameters(methodParameters, parameter, "header"));
+        }
+        if (!methodParameters.isEmpty()) {
+            throw unmatchedMethodParameter(restMethod, methodParameters.getFirst());
         }
     }
 
-    private void addParameter(Method.Builder method, RestMethodParameter parameter, String in) {
-        Annotation annotation = Annotations.findFirst(OPENAPI_PARAMETER_ANNOTATION, parameter.annotations())
-                .orElse(null);
+    private void addParameter(Method.Builder method,
+                              RestMethod restMethod,
+                              RestMethodParameter parameter,
+                              String in,
+                              List<Annotation> methodAnnotations) {
+        List<Annotation> annotations = new ArrayList<>(methodAnnotations);
+        annotations.addAll(repeatableAnnotations(parameter.annotations(),
+                                                 OPENAPI_PARAMETERS_ANNOTATION,
+                                                 OPENAPI_PARAMETER_ANNOTATION));
         TypeName type = parameter.typeName();
         TypeName schemaType = schemaType(type);
-        String name = parameterName(parameter, in);
+        String location = explicitStringValue(annotations, "in").orElse(in);
+        String name = explicitStringValue(annotations, "name").orElseGet(() -> parameterName(parameter, in));
+        List<Annotation> contentAnnotations = annotationValues(annotations, "content");
+        boolean hasExplicitContent = !contentAnnotations.isEmpty();
 
         method.addContent(".parameter(parameter -> parameter.name(")
                 .addContent(stringLiteral(name))
@@ -725,61 +747,100 @@ final class OpenApiSourceGenerator {
                 .increaseContentPadding()
                 .increaseContentPadding()
                 .addContent(".in(")
-                .addContent(stringLiteral(in))
+                .addContent(stringLiteral(location))
                 .addContentLine(")")
                 .addContent(".required(")
-                .addContent(Boolean.toString(required(in, type)))
-                .addContentLine(")")
-                .addContent(".schema(")
-                .addContent(schemaExpression(schemaType))
+                .addContent(Boolean.toString(required(restMethod, location, type, annotations)))
                 .addContentLine(")");
-
-        if (schemaType.isList()) {
-            if ("query".equals(in)) {
-                method.addContentLine(".style(\"form\")")
-                        .addContentLine(".explode(true)");
-            } else if ("header".equals(in)) {
-                method.addContentLine(".style(\"simple\")")
-                        .addContentLine(".explode(false)");
+        if (hasExplicitContent) {
+            for (Annotation content : contentAnnotations) {
+                addContent(method, List.of(DEFAULT_MEDIA_TYPE), content, schemaType, true);
             }
+        } else {
+            method.addContent(".schema(")
+                    .addContent(schemaExpression(schemaType))
+                    .addContentLine(")");
         }
-        if (annotation != null) {
-            annotation.stringValue()
-                    .filter(not(String::isBlank))
-                    .ifPresent(description -> method.addContent(".description(")
-                            .addContent(stringLiteral(description))
-                            .addContentLine(")"));
-            annotation.stringValue("example")
-                    .filter(not(String::isBlank))
-                    .ifPresent(example -> method.addContent(".example(")
-                            .addContent(JSON_STRING)
-                            .addContent(".create(")
-                            .addContent(stringLiteral(example))
-                            .addContentLine("))"));
-            annotation.booleanValue("deprecated")
-                    .filter(Boolean::booleanValue)
-                    .ifPresent(deprecated -> method.addContentLine(".deprecated(true)"));
+
+        explicitStringValue(annotations)
+                .ifPresent(description -> method.addContent(".description(")
+                        .addContent(stringLiteral(description))
+                        .addContentLine(")"));
+        style(annotations)
+                .or(() -> hasExplicitContent ? Optional.empty() : inferredStyle(schemaType, location))
+                .ifPresent(style -> method.addContent(".style(")
+                        .addContent(stringLiteral(style))
+                        .addContentLine(")"));
+        explode(annotations)
+                .or(() -> hasExplicitContent ? Optional.empty() : inferredExplode(schemaType, location))
+                .ifPresent(explode -> method.addContent(".explode(")
+                        .addContent(Boolean.toString(explode))
+                        .addContentLine(")"));
+        if (booleanFlag(annotations, "allowReserved")) {
+            method.addContentLine(".allowReserved(true)");
         }
+        if (booleanFlag(annotations, "deprecated")) {
+            method.addContentLine(".deprecated(true)");
+        }
+        explicitStringValue(annotations, "example")
+                .ifPresent(example -> method.addContent(".example(")
+                        .addContent(JSON_STRING)
+                        .addContent(".create(")
+                        .addContent(stringLiteral(example))
+                        .addContentLine("))"));
+        addExamples(method, annotationValues(annotations, "examples"));
         method.addContentLine(")")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
     }
 
     private void addRequestBody(Method.Builder method, RestMethod restMethod) {
+        Optional<Annotation> requestBodyMetadata = requestBodyAnnotation(restMethod);
+        if (restMethod.entityParameter().isEmpty()) {
+            if (requestBodyMetadata.isPresent()) {
+                throw new CodegenException("@OpenApi.RequestBody on " + restMethodDescription(restMethod)
+                                                   + " requires an @Http.Entity parameter");
+            }
+            return;
+        }
+
         restMethod.entityParameter().ifPresent(parameter -> {
+            Annotation requestBody = requestBodyMetadata.orElse(null);
             TypeName entityType = schemaType(parameter.typeName());
+            List<Annotation> contentAnnotations = requestBody == null
+                    ? List.of()
+                    : requestBody.annotationValues("content").orElseGet(List::of);
             method.addContentLine(".requestBody(requestBody -> requestBody")
                     .increaseContentPadding()
                     .increaseContentPadding();
-            if (!parameter.typeName().isOptional()) {
-                method.addContentLine(".required(true)");
+            if (requestBody != null) {
+                requestBody.stringValue()
+                        .filter(not(String::isBlank))
+                        .ifPresent(description -> method.addContent(".description(")
+                                .addContent(stringLiteral(description))
+                                .addContentLine(")"));
             }
-            for (String mediaType : mediaTypes(restMethod.consumes())) {
-                method.addContent(".content(")
-                        .addContent(stringLiteral(mediaType))
-                        .addContent(", ")
-                        .addContent(mediaTypeConsumer(schemaExpression(entityType)))
+            Optional<Boolean> requiredOverride = requestBody == null
+                    ? Optional.empty()
+                    : required(requestBody);
+            boolean required = requiredOverride.orElse(!parameter.typeName().isOptional());
+            if (required || requiredOverride.isPresent()) {
+                method.addContent(".required(")
+                        .addContent(Boolean.toString(required))
                         .addContentLine(")");
+            }
+            if (contentAnnotations.isEmpty()) {
+                for (String mediaType : mediaTypes(restMethod.consumes())) {
+                    method.addContent(".content(")
+                            .addContent(stringLiteral(mediaType))
+                            .addContent(", ")
+                            .addContent(mediaTypeConsumer(schemaExpression(entityType)))
+                            .addContentLine(")");
+                }
+            } else {
+                for (Annotation content : contentAnnotations) {
+                    addContent(method, restMethod.consumes(), content, entityType, true);
+                }
             }
             method.addContentLine(")")
                     .decreaseContentPadding()
@@ -879,10 +940,6 @@ final class OpenApiSourceGenerator {
                             Annotation content,
                             TypeName inferredSchemaType,
                             boolean hasInferredSchema) {
-        Optional<TypeName> explicitSchema = content.typeValue("schema")
-                .filter(Predicate.not(TypeName.create(Void.class)::equals));
-        TypeName schemaType = explicitSchema.orElse(inferredSchemaType);
-        boolean hasSchema = explicitSchema.isPresent() || hasInferredSchema;
         List<String> mediaTypes = content.stringValue()
                 .filter(not(String::isBlank))
                 .map(List::of)
@@ -891,9 +948,7 @@ final class OpenApiSourceGenerator {
             method.addContent(".content(")
                     .addContent(stringLiteral(mediaType))
                     .addContent(", ")
-                    .addContent(mediaTypeConsumer(hasSchema
-                                                          ? schemaExpression(schemaType)
-                                                          : JSON_OBJECT.fqName() + ".builder().build()"))
+                    .addContent(mediaTypeConsumer(content, inferredSchemaType, hasInferredSchema))
                     .addContentLine(")");
         }
     }
@@ -919,12 +974,33 @@ final class OpenApiSourceGenerator {
     }
 
     private void collectOperationSchemaComponents(Set<TypeName> schemaTypes, RestMethod restMethod) {
-        restMethod.pathParameters().forEach(parameter -> collectSchemaComponent(schemaTypes, parameter.typeName()));
-        restMethod.queryParameters().forEach(parameter -> collectSchemaComponent(schemaTypes, parameter.typeName()));
+        List<Annotation> methodParameters = methodParameterAnnotations(restMethod);
+        restMethod.pathParameters()
+                .forEach(parameter -> collectParameterSchemaComponents(schemaTypes,
+                                                                       parameter,
+                                                                       "path",
+                                                                       methodParameters));
+        restMethod.queryParameters()
+                .forEach(parameter -> collectParameterSchemaComponents(schemaTypes,
+                                                                       parameter,
+                                                                       "query",
+                                                                       methodParameters));
         restMethod.headerParameters().stream()
                 .filter(parameter -> !isSpecialHeader(parameterName(parameter, "header")))
-                .forEach(parameter -> collectSchemaComponent(schemaTypes, parameter.typeName()));
-        restMethod.entityParameter().ifPresent(parameter -> collectSchemaComponent(schemaTypes, parameter.typeName()));
+                .forEach(parameter -> collectParameterSchemaComponents(schemaTypes,
+                                                                       parameter,
+                                                                       "header",
+                                                                       methodParameters));
+        restMethod.entityParameter().ifPresent(parameter -> {
+            collectSchemaComponent(schemaTypes, parameter.typeName());
+            requestBodyAnnotation(restMethod)
+                    .ifPresent(requestBody -> requestBody.annotationValues("content")
+                            .orElseGet(List::of)
+                            .forEach(content -> collectContentSchemaComponent(schemaTypes,
+                                                                              content,
+                                                                              schemaType(parameter.typeName()),
+                                                                              true)));
+        });
 
         TypeName responseType = responseType(restMethod.returnType());
         boolean hasResponseEntity = hasResponseEntity(restMethod.returnType());
@@ -952,15 +1028,32 @@ final class OpenApiSourceGenerator {
         }
     }
 
+    private void collectParameterSchemaComponents(Set<TypeName> schemaTypes,
+                                                  RestMethodParameter parameter,
+                                                  String in,
+                                                  List<Annotation> methodParameters) {
+        collectSchemaComponent(schemaTypes, parameter.typeName());
+        List<Annotation> annotations = new ArrayList<>(matchingMethodParameters(methodParameters, parameter, in, false));
+        annotations.addAll(repeatableAnnotations(parameter.annotations(),
+                                                 OPENAPI_PARAMETERS_ANNOTATION,
+                                                 OPENAPI_PARAMETER_ANNOTATION));
+        TypeName inferredSchemaType = schemaType(parameter.typeName());
+        annotationValues(annotations, "content")
+                .forEach(content -> collectContentSchemaComponent(schemaTypes, content, inferredSchemaType, true));
+    }
+
     private void collectContentSchemaComponent(Set<TypeName> schemaTypes,
                                                Annotation content,
                                                TypeName inferredSchemaType,
                                                boolean hasInferredSchema) {
         Optional<TypeName> explicitSchema = content.typeValue("schema")
-                .filter(Predicate.not(TypeName.create(Void.class)::equals));
+                .filter(Predicate.not(VOID::equals));
         if (explicitSchema.isPresent() || hasInferredSchema) {
             collectSchemaComponent(schemaTypes, explicitSchema.orElse(inferredSchemaType));
         }
+        content.typeValue("itemSchema")
+                .filter(Predicate.not(VOID::equals))
+                .ifPresent(itemSchema -> collectSchemaComponent(schemaTypes, itemSchema));
     }
 
     private void collectSchemaComponent(Set<TypeName> schemaTypes, TypeName type) {
@@ -1019,6 +1112,23 @@ final class OpenApiSourceGenerator {
 
     private String mediaTypeConsumer(String schemaExpression) {
         return "content -> content.schema(" + schemaExpression + ")";
+    }
+
+    private String mediaTypeConsumer(Annotation content, TypeName inferredSchemaType, boolean hasInferredSchema) {
+        Optional<TypeName> explicitSchema = content.typeValue("schema")
+                .filter(Predicate.not(VOID::equals));
+        TypeName schemaType = explicitSchema.orElse(inferredSchemaType);
+        boolean hasSchema = explicitSchema.isPresent() || hasInferredSchema;
+        StringBuilder result = new StringBuilder("content -> content.schema(")
+                .append(hasSchema ? schemaExpression(schemaType) : JSON_OBJECT.fqName() + ".builder().build()")
+                .append(")");
+        content.typeValue("itemSchema")
+                .filter(Predicate.not(VOID::equals))
+                .ifPresent(itemSchema -> result.append(".itemSchema(")
+                        .append(schemaExpression(itemSchema))
+                        .append(")"));
+        addExamples(result, content.annotationValues("examples").orElseGet(List::of));
+        return result.toString();
     }
 
     private String schemaExpression(TypeName type) {
@@ -1089,11 +1199,16 @@ final class OpenApiSourceGenerator {
                 .orElse(parameter.name());
     }
 
-    private boolean required(String in, TypeName type) {
+    private boolean required(RestMethod restMethod, String in, TypeName type, List<Annotation> annotations) {
+        Optional<Boolean> explicit = required(annotations);
         if ("path".equals(in)) {
+            if (explicit.filter(Predicate.not(Boolean::booleanValue)).isPresent()) {
+                throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                                   + " cannot make a path parameter optional");
+            }
             return true;
         }
-        return !type.isOptional();
+        return explicit.orElse(!type.isOptional());
     }
 
     private List<String> mediaTypes(List<String> mediaTypes) {
@@ -1109,6 +1224,238 @@ final class OpenApiSourceGenerator {
 
     private Optional<Annotation> operationAnnotation(RestMethod method) {
         return Annotations.findFirst(OPENAPI_OPERATION_ANNOTATION, method.annotations());
+    }
+
+    private Optional<Annotation> requestBodyAnnotation(RestMethod method) {
+        return Annotations.findFirst(OPENAPI_REQUEST_BODY_ANNOTATION, method.annotations());
+    }
+
+    private List<Annotation> methodParameterAnnotations(RestMethod method) {
+        return repeatableAnnotations(method.annotations(), OPENAPI_PARAMETERS_ANNOTATION, OPENAPI_PARAMETER_ANNOTATION);
+    }
+
+    private List<Annotation> matchingMethodParameters(List<Annotation> methodParameters,
+                                                      RestMethodParameter parameter,
+                                                      String in) {
+        return matchingMethodParameters(methodParameters, parameter, in, true);
+    }
+
+    private List<Annotation> matchingMethodParameters(List<Annotation> methodParameters,
+                                                      RestMethodParameter parameter,
+                                                      String in,
+                                                      boolean remove) {
+        List<Annotation> result = new ArrayList<>();
+        String name = parameterName(parameter, in);
+        for (Iterator<Annotation> iterator = methodParameters.iterator(); iterator.hasNext();) {
+            Annotation annotation = iterator.next();
+            Optional<String> annotationName = annotation.stringValue("name").filter(not(String::isBlank));
+            Optional<String> annotationIn = annotation.stringValue("in").filter(not(String::isBlank));
+            if (annotationName.filter(name::equals).isPresent() && annotationIn.filter(in::equals).isPresent()) {
+                result.add(annotation);
+                if (remove) {
+                    iterator.remove();
+                }
+            }
+        }
+        return result;
+    }
+
+    private CodegenException unmatchedMethodParameter(RestMethod restMethod, Annotation annotation) {
+        Optional<String> name = annotation.stringValue("name").filter(not(String::isBlank));
+        Optional<String> in = annotation.stringValue("in").filter(not(String::isBlank));
+        if (name.isEmpty() || in.isEmpty()) {
+            return new CodegenException("Method-level @OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                                + " must declare non-blank name and in values");
+        }
+        return new CodegenException("Method-level @OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                            + " does not match a generated parameter: " + in.get() + " " + name.get());
+    }
+
+    private String restMethodDescription(RestMethod restMethod) {
+        return restMethod.type().typeName().fqName() + "." + restMethod.name();
+    }
+
+    private Optional<String> explicitStringValue(List<Annotation> annotations) {
+        return explicitStringValue(annotations, "value");
+    }
+
+    private Optional<String> explicitStringValue(List<Annotation> annotations, String property) {
+        for (int i = annotations.size() - 1; i >= 0; i--) {
+            Optional<String> value = "value".equals(property)
+                    ? annotations.get(i).stringValue()
+                    : annotations.get(i).stringValue(property);
+            if (value.filter(not(String::isBlank)).isPresent()) {
+                return value;
+            }
+        }
+        return Optional.empty();
+    }
+
+    private List<Annotation> annotationValues(List<Annotation> annotations, String property) {
+        List<Annotation> result = new ArrayList<>();
+        annotations.forEach(annotation -> annotation.annotationValues(property).ifPresent(result::addAll));
+        return result;
+    }
+
+    private boolean booleanFlag(List<Annotation> annotations, String property) {
+        return annotations.stream()
+                .flatMap(annotation -> annotation.booleanValue(property).stream())
+                .anyMatch(Boolean::booleanValue);
+    }
+
+    private Optional<Boolean> required(List<Annotation> annotations) {
+        for (int i = annotations.size() - 1; i >= 0; i--) {
+            Optional<Boolean> required = required(annotations.get(i));
+            if (required.isPresent()) {
+                return required;
+            }
+        }
+        return Optional.empty();
+    }
+
+    private Optional<Boolean> required(Annotation annotation) {
+        return triState(annotation, "required", "Required");
+    }
+
+    private Optional<Boolean> explode(List<Annotation> annotations) {
+        for (int i = annotations.size() - 1; i >= 0; i--) {
+            Optional<Boolean> explode = triState(annotations.get(i), "explode", "Explode");
+            if (explode.isPresent()) {
+                return explode;
+            }
+        }
+        return Optional.empty();
+    }
+
+    private Optional<Boolean> triState(Annotation annotation, String property, String enumName) {
+        return annotation.stringValue(property)
+                .map(this::enumName)
+                .flatMap(value -> switch (value) {
+                case "UNSPECIFIED" -> Optional.empty();
+                case "TRUE" -> Optional.of(true);
+                case "FALSE" -> Optional.of(false);
+                default -> throw new CodegenException("@OpenApi." + enumName + " has unsupported value: " + value);
+                });
+    }
+
+    private Optional<String> style(List<Annotation> annotations) {
+        for (int i = annotations.size() - 1; i >= 0; i--) {
+            Optional<String> style = annotations.get(i).stringValue("style")
+                    .map(this::enumName)
+                    .filter(value -> !"UNSPECIFIED".equals(value))
+                    .map(this::styleName);
+            if (style.isPresent()) {
+                return style;
+            }
+        }
+        return Optional.empty();
+    }
+
+    private String enumName(String value) {
+        int dot = value.lastIndexOf('.');
+        return dot == -1 ? value : value.substring(dot + 1);
+    }
+
+    private String styleName(String style) {
+        return switch (style) {
+        case "MATRIX" -> "matrix";
+        case "LABEL" -> "label";
+        case "FORM" -> "form";
+        case "SIMPLE" -> "simple";
+        case "SPACE_DELIMITED" -> "spaceDelimited";
+        case "PIPE_DELIMITED" -> "pipeDelimited";
+        case "DEEP_OBJECT" -> "deepObject";
+        default -> throw new CodegenException("@OpenApi.Style has unsupported value: " + style);
+        };
+    }
+
+    private Optional<String> inferredStyle(TypeName schemaType, String in) {
+        if (!schemaType.isList()) {
+            return Optional.empty();
+        }
+        return switch (in) {
+        case "query" -> Optional.of("form");
+        case "header" -> Optional.of("simple");
+        default -> Optional.empty();
+        };
+    }
+
+    private Optional<Boolean> inferredExplode(TypeName schemaType, String in) {
+        if (!schemaType.isList()) {
+            return Optional.empty();
+        }
+        return switch (in) {
+        case "query" -> Optional.of(true);
+        case "header" -> Optional.of(false);
+        default -> Optional.empty();
+        };
+    }
+
+    private void addExamples(Method.Builder method, List<Annotation> examples) {
+        for (int i = 0; i < examples.size(); i++) {
+            Annotation example = examples.get(i);
+            method.addContent(".example(")
+                    .addContent(stringLiteral(exampleName(example, i)))
+                    .addContent(", ")
+                    .addContent(exampleExpression(example))
+                    .addContentLine(")");
+        }
+    }
+
+    private void addExamples(StringBuilder builder, List<Annotation> examples) {
+        for (int i = 0; i < examples.size(); i++) {
+            Annotation example = examples.get(i);
+            builder.append(".example(")
+                    .append(stringLiteral(exampleName(example, i)))
+                    .append(", ")
+                    .append(exampleExpression(example))
+                    .append(")");
+        }
+    }
+
+    private String exampleName(Annotation example, int index) {
+        return example.stringValue("name")
+                .filter(not(String::isBlank))
+                .orElse(index == 0 ? "example" : "example" + (index + 1));
+    }
+
+    private String exampleExpression(Annotation example) {
+        StringBuilder result = new StringBuilder(OPENAPI_DOCUMENT_EXAMPLE.fqName()).append(".builder()");
+        example.stringValue("summary")
+                .filter(not(String::isBlank))
+                .ifPresent(summary -> result.append(".summary(")
+                        .append(stringLiteral(summary))
+                        .append(")"));
+        example.stringValue("description")
+                .filter(not(String::isBlank))
+                .ifPresent(description -> result.append(".description(")
+                        .append(stringLiteral(description))
+                        .append(")"));
+        example.stringValue("value")
+                .filter(not(String::isBlank))
+                .ifPresent(value -> result.append(".value(")
+                        .append(JSON_STRING.fqName())
+                        .append(".create(")
+                        .append(stringLiteral(value))
+                        .append("))"));
+        example.stringValue("dataValue")
+                .filter(not(String::isBlank))
+                .ifPresent(value -> result.append(".dataValue(")
+                        .append(JSON_STRING.fqName())
+                        .append(".create(")
+                        .append(stringLiteral(value))
+                        .append("))"));
+        example.stringValue("serializedValue")
+                .filter(not(String::isBlank))
+                .ifPresent(value -> result.append(".serializedValue(")
+                        .append(stringLiteral(value))
+                        .append(")"));
+        example.stringValue("externalValue")
+                .filter(not(String::isBlank))
+                .ifPresent(value -> result.append(".externalValue(")
+                        .append(stringLiteral(value))
+                        .append(")"));
+        return result.append(".build()").toString();
     }
 
     private static boolean hasAnnotation(Set<Annotation> annotations, TypeName annotationType) {
