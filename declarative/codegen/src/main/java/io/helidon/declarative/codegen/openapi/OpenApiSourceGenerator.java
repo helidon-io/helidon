@@ -764,6 +764,9 @@ final class OpenApiSourceGenerator {
         String name = explicitStringValue(annotations, "name").orElseGet(() -> parameterName(parameter, in));
         List<Annotation> contentAnnotations = annotationValues(annotations, "content");
         boolean hasExplicitContent = !contentAnnotations.isEmpty();
+        Optional<String> configuredStyle = style(annotations);
+        Optional<Boolean> configuredExplode = explode(annotations);
+        validateParameterSerialization(restMethod, in, schemaType, configuredStyle, configuredExplode);
 
         method.addContent(".parameter(parameter -> parameter.name(")
                 .addContent(stringLiteral(name))
@@ -791,12 +794,12 @@ final class OpenApiSourceGenerator {
                 .ifPresent(description -> method.addContent(".description(")
                         .addContent(stringLiteral(description))
                         .addContentLine(")"));
-        style(annotations)
+        configuredStyle
                 .or(() -> hasExplicitContent ? Optional.empty() : inferredStyle(schemaType, location))
                 .ifPresent(style -> method.addContent(".style(")
                         .addContent(stringLiteral(style))
                         .addContentLine(")"));
-        explode(annotations)
+        configuredExplode
                 .or(() -> hasExplicitContent ? Optional.empty() : inferredExplode(schemaType, location))
                 .ifPresent(explode -> method.addContent(".explode(")
                         .addContent(Boolean.toString(explode))
@@ -1369,6 +1372,68 @@ final class OpenApiSourceGenerator {
         }
 
         return DefaultsCodegen.findDefault(new HashSet<>(annotations), type).isEmpty();
+    }
+
+    private void validateParameterSerialization(RestMethod restMethod,
+                                                String in,
+                                                TypeName schemaType,
+                                                Optional<String> style,
+                                                Optional<Boolean> explode) {
+        style.ifPresent(it -> validateParameterStyle(restMethod, in, schemaType, it));
+        if ("header".equals(in) && explode.filter(Boolean::booleanValue).isPresent()) {
+            throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                               + " cannot use explode=true for a header parameter");
+        }
+        if ("query".equals(in)
+                && style.filter(OpenApiSourceGenerator::isDelimitedQueryStyle).isPresent()
+                && explode.filter(Boolean::booleanValue).isPresent()) {
+            throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                               + " cannot use explode=true with " + style.orElseThrow()
+                                               + " style for a query parameter");
+        }
+    }
+
+    private void validateParameterStyle(RestMethod restMethod, String in, TypeName schemaType, String style) {
+        switch (in) {
+        case "path" -> {
+            if (!"simple".equals(style)) {
+                throw unsupportedStyle(restMethod, in, style);
+            }
+        }
+        case "query" -> {
+            switch (style) {
+            case "pipeDelimited", "spaceDelimited" -> {
+                if (!schemaType.isList()) {
+                    throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                                       + " cannot use " + style + " style for a scalar query parameter");
+                }
+            }
+            case "deepObject" -> throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                                                    + " cannot use deepObject style because declarative"
+                                                                    + " HTTP parameters do not support deep object binding");
+            default -> {
+                if (!"form".equals(style)) {
+                    throw unsupportedStyle(restMethod, in, style);
+                }
+            }
+            }
+        }
+        case "header" -> {
+            if (!"simple".equals(style)) {
+                throw unsupportedStyle(restMethod, in, style);
+            }
+        }
+        default -> throw new CodegenException("Unsupported OpenAPI parameter location: " + in);
+        }
+    }
+
+    private CodegenException unsupportedStyle(RestMethod restMethod, String in, String style) {
+        return new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                            + " cannot use " + style + " style for a " + in + " parameter");
+    }
+
+    private static boolean isDelimitedQueryStyle(String style) {
+        return "pipeDelimited".equals(style) || "spaceDelimited".equals(style);
     }
 
     private List<String> mediaTypes(List<String> mediaTypes) {
