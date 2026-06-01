@@ -1788,6 +1788,21 @@ public final class OpenApiDocument {
         }
 
         /**
+         * Set security requirements.
+         * <p>
+         * An empty list declares that this operation overrides document-level security requirements with no security.
+         *
+         * @param requirements security requirements
+         * @return updated builder
+         */
+        public OperationBuilder security(List<SecurityRequirement> requirements) {
+            List<Object> result = new ArrayList<>();
+            Objects.requireNonNull(requirements).forEach(requirement -> result.add(requirement.toNode()));
+            node.put("security", result);
+            return this;
+        }
+
+        /**
          * Add server.
          *
          * @param server server
@@ -1808,6 +1823,18 @@ public final class OpenApiDocument {
             ServerBuilder builder = Server.builder();
             server.accept(builder);
             return server(builder.build());
+        }
+
+        /**
+         * Add an extension.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public OperationBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
+            return this;
         }
 
         @Override

@@ -55,8 +55,8 @@ import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_DOCUMENT_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_DOCUMENT_BUILDER;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_DOCUMENT_CONTEXT;
-import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_EXTENSION_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_EXTENSIONS_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_EXTENSION_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_EXTERNAL_DOCS_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_HIDDEN_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_INFO_ANNOTATION;
@@ -203,19 +203,22 @@ final class OpenApiSourceGenerator {
         addInfo(method, info, annotations);
 
         repeatableAnnotations(annotations, OPENAPI_SERVERS_ANNOTATION, OPENAPI_SERVER_ANNOTATION)
-                .forEach(server -> writeServer(method, server));
+                .forEach(server -> writeServer(method, "document.server", true, server));
         repeatableAnnotations(annotations, OPENAPI_TAGS_ANNOTATION, OPENAPI_TAG_ANNOTATION)
                 .forEach(tag -> writeTag(method, tag));
         Annotations.findFirst(OPENAPI_EXTERNAL_DOCS_ANNOTATION, annotations)
-                .ifPresent(externalDocs -> writeExternalDocs(method, externalDocs));
+                .ifPresent(externalDocs -> writeExternalDocs(method, "document.externalDocs", true, externalDocs));
         repeatableAnnotations(annotations, OPENAPI_EXTENSIONS_ANNOTATION, OPENAPI_EXTENSION_ANNOTATION)
-                .forEach(extension -> writeExtension(method, extension));
+                .forEach(extension -> writeExtension(method, "document.extension", true, extension));
         repeatableAnnotations(annotations, OPENAPI_SECURITY_SCHEMES_ANNOTATION, OPENAPI_SECURITY_SCHEME_ANNOTATION)
                 .forEach(scheme -> writeSecurityScheme(method, scheme));
         repeatableAnnotations(annotations,
                               OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION,
                               OPENAPI_SECURITY_REQUIREMENT_ANNOTATION)
-                .forEach(requirement -> writeSecurityRequirement(method, requirement));
+                .forEach(requirement -> writeSecurityRequirement(method,
+                                                                 "document.securityRequirement",
+                                                                 true,
+                                                                 requirement));
     }
 
     private void endpointSourceBody(ServerEndpoint endpoint,
@@ -326,11 +329,12 @@ final class OpenApiSourceGenerator {
                 .decreaseContentPadding();
     }
 
-    private void writeServer(Method.Builder method, Annotation server) {
+    private void writeServer(Method.Builder method, String call, boolean statement, Annotation server) {
         String url = server.stringValue()
                 .filter(not(String::isBlank))
                 .orElseThrow(() -> new CodegenException("@OpenApi.Server value is required"));
-        method.addContent("document.server(server -> server.url(")
+        method.addContent(call)
+                .addContent("(server -> server.url(")
                 .addContent(stringLiteral(url))
                 .addContentLine(")")
                 .increaseContentPadding()
@@ -345,7 +349,7 @@ final class OpenApiSourceGenerator {
                 .ifPresent(name -> method.addContent(".name(")
                         .addContent(stringLiteral(name))
                         .addContentLine(")"));
-        method.addContentLine(");")
+        method.addContentLine(statement ? ");" : ")")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
     }
@@ -384,11 +388,12 @@ final class OpenApiSourceGenerator {
                 .decreaseContentPadding();
     }
 
-    private void writeExternalDocs(Method.Builder method, Annotation externalDocs) {
+    private void writeExternalDocs(Method.Builder method, String call, boolean statement, Annotation externalDocs) {
         String url = externalDocs.stringValue()
                 .filter(not(String::isBlank))
                 .orElseThrow(() -> new CodegenException("@OpenApi.ExternalDocs value is required"));
-        method.addContent("document.externalDocs(externalDocs -> externalDocs.url(")
+        method.addContent(call)
+                .addContent("(externalDocs -> externalDocs.url(")
                 .addContent(stringLiteral(url))
                 .addContentLine(")")
                 .increaseContentPadding()
@@ -398,12 +403,12 @@ final class OpenApiSourceGenerator {
                 .ifPresent(description -> method.addContent(".description(")
                         .addContent(stringLiteral(description))
                         .addContentLine(")"));
-        method.addContentLine(");")
+        method.addContentLine(statement ? ");" : ")")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
     }
 
-    private void writeExtension(Method.Builder method, Annotation extension) {
+    private void writeExtension(Method.Builder method, String call, boolean statement, Annotation extension) {
         String name = extension.stringValue("name")
                 .filter(not(String::isBlank))
                 .orElseThrow(() -> new CodegenException("@OpenApi.Extension name is required"));
@@ -412,13 +417,14 @@ final class OpenApiSourceGenerator {
         }
         String value = extension.stringValue("value")
                 .orElseThrow(() -> new CodegenException("@OpenApi.Extension value is required"));
-        method.addContent("document.extension(")
+        method.addContent(call)
+                .addContent("(")
                 .addContent(stringLiteral(name))
                 .addContent(", ")
                 .addContent(JSON_STRING)
                 .addContent(".create(")
                 .addContent(stringLiteral(value))
-                .addContentLine("));");
+                .addContentLine(statement ? "));" : "))");
     }
 
     private void writeSecurityScheme(Method.Builder method, Annotation scheme) {
@@ -488,14 +494,19 @@ final class OpenApiSourceGenerator {
                 .decreaseContentPadding();
     }
 
-    private void writeSecurityRequirement(Method.Builder method, Annotation requirement) {
+    private void writeSecurityRequirement(Method.Builder method,
+                                          String call,
+                                          boolean statement,
+                                          Annotation requirement) {
         List<String> schemes = requirement.stringValues().orElseGet(List::of);
         if (schemes.isEmpty()) {
-            method.addContentLine("document.securityRequirement(security -> { });");
+            method.addContent(call)
+                    .addContentLine(statement ? "(security -> { });" : "(security -> { })");
             return;
         }
         List<String> scopes = requirement.stringValues("scopes").orElseGet(List::of);
-        method.addContent("document.securityRequirement(security -> security")
+        method.addContent(call)
+                .addContent("(security -> security")
                 .addContentLine()
                 .increaseContentPadding()
                 .increaseContentPadding();
@@ -504,7 +515,7 @@ final class OpenApiSourceGenerator {
                 .addContent(", ")
                 .addContent(stringListExpression(scopes))
                 .addContentLine(")"));
-        method.addContentLine(");")
+        method.addContentLine(statement ? ");" : ")")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
     }
@@ -594,6 +605,7 @@ final class OpenApiSourceGenerator {
         operationAnnotation(restMethod)
                 .ifPresentOrElse(operation -> addExplicitOperation(method, operation, restMethod, endpointTag),
                                  () -> addInferredOperation(method, restMethod, endpointTag));
+        addOperationMetadata(method, restMethod);
         addParameters(method, restMethod);
         addRequestBody(method, restMethod);
         addResponses(method, restMethod);
@@ -648,6 +660,24 @@ final class OpenApiSourceGenerator {
         operation.booleanValue("deprecated")
                 .filter(Boolean::booleanValue)
                 .ifPresent(deprecated -> method.addContentLine(".deprecated(true)"));
+    }
+
+    private void addOperationMetadata(Method.Builder method, RestMethod restMethod) {
+        Set<Annotation> annotations = restMethod.annotations();
+        repeatableAnnotations(annotations, OPENAPI_SERVERS_ANNOTATION, OPENAPI_SERVER_ANNOTATION)
+                .forEach(server -> writeServer(method, ".server", false, server));
+        Annotations.findFirst(OPENAPI_EXTERNAL_DOCS_ANNOTATION, annotations)
+                .ifPresent(externalDocs -> writeExternalDocs(method, ".externalDocs", false, externalDocs));
+        repeatableAnnotations(annotations, OPENAPI_EXTENSIONS_ANNOTATION, OPENAPI_EXTENSION_ANNOTATION)
+                .forEach(extension -> writeExtension(method, ".extension", false, extension));
+        if (hasEmptySecurityRequirements(annotations)) {
+            method.addContentLine(".security(java.util.List.of())");
+            return;
+        }
+        repeatableAnnotations(annotations,
+                              OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION,
+                              OPENAPI_SECURITY_REQUIREMENT_ANNOTATION)
+                .forEach(requirement -> writeSecurityRequirement(method, ".securityRequirement", false, requirement));
     }
 
     private void addInferredOperation(Method.Builder method, RestMethod restMethod, String endpointTag) {
@@ -1083,6 +1113,14 @@ final class OpenApiSourceGenerator {
 
     private static boolean hasAnnotation(Set<Annotation> annotations, TypeName annotationType) {
         return Annotations.findFirst(annotationType, annotations).isPresent();
+    }
+
+    private boolean hasEmptySecurityRequirements(Set<Annotation> annotations) {
+        return Annotations.findFirst(OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION, annotations)
+                .flatMap(Annotation::annotationValues)
+                .filter(List::isEmpty)
+                .isPresent()
+                && Annotations.findFirst(OPENAPI_SECURITY_REQUIREMENT_ANNOTATION, annotations).isEmpty();
     }
 
     private List<Annotation> repeatableAnnotations(Set<Annotation> annotations,

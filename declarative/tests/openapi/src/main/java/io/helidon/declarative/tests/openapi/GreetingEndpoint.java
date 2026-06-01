@@ -44,13 +44,30 @@ class GreetingEndpoint {
     @Http.GET
     @Http.Path("/documented/{name}")
     @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
-    @OpenApi.Operation(value = "Find a greeting", description = "Returns a documented greeting.")
+    @OpenApi.Operation(value = "Find a greeting",
+                       operationId = "findDocumentedGreeting",
+                       description = "Returns a documented greeting.",
+                       tags = {"greeting", "documented"},
+                       deprecated = true)
+    @OpenApi.Server(value = "https://api.example.com/greetings", description = "Operation server")
+    @OpenApi.ExternalDocs(value = "https://helidon.io/docs/openapi", description = "Operation documentation")
+    @OpenApi.Extension(name = "x-test-operation", value = "documented-greeting")
+    @OpenApi.SecurityRequirement({"bearerAuth", "oauth2"})
+    @OpenApi.SecurityRequirement(value = "oauth2", scopes = "greeting:read")
     @OpenApi.Response(status = Status.OK_200_CODE,
                       description = "Greeting found",
                       content = @OpenApi.Content)
     Message documented(@OpenApi.Parameter(value = "Greeting recipient", example = "Tomas")
                        @Http.PathParam("name") String name) {
         return new Message("Hello " + name);
+    }
+
+    @Http.GET
+    @Http.Path("/public")
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    @OpenApi.SecurityRequirements({})
+    Message publicGreeting() {
+        return new Message("Hello everybody");
     }
 
     @Http.POST

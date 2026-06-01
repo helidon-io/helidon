@@ -104,6 +104,7 @@ class DeclarativeOpenApiTest {
         Map<String, Object> operation = operation(document, "/greetings/{name}", "get");
 
         assertThat(list(operation, "tags"), contains("greeting"));
+        assertThat(operation, not(hasKey("security")));
 
         Map<String, Object> name = parameter(operation, "name", "path");
         assertThat(name.get("required"), is(true));
@@ -130,7 +131,9 @@ class DeclarativeOpenApiTest {
 
         assertThat(operation.get("summary"), is("Find a greeting"));
         assertThat(operation.get("description"), is("Returns a documented greeting."));
-        assertThat(operation.get("operationId"), is("greetingGetDocumented"));
+        assertThat(operation.get("operationId"), is("findDocumentedGreeting"));
+        assertThat(list(operation, "tags"), contains("greeting", "documented"));
+        assertThat(operation.get("deprecated"), is(true));
 
         Map<String, Object> parameter = parameter(operation, "name", "path");
         assertThat(parameter.get("description"), is("Greeting recipient"));
@@ -139,6 +142,34 @@ class DeclarativeOpenApiTest {
         Map<String, Object> response = response(operation, "200");
         assertThat(response.get("description"), is("Greeting found"));
         assertThat(ref(content(response, MediaTypes.APPLICATION_JSON_VALUE)), is("#/components/schemas/Message"));
+    }
+
+    @Test
+    void generatedDocumentIncludesOperationLevelMetadata() {
+        Map<String, Object> document = document();
+        Map<String, Object> operation = operation(document, "/greetings/documented/{name}", "get");
+
+        Map<String, Object> server = object(list(operation, "servers").getFirst());
+        assertThat(server.get("url"), is("https://api.example.com/greetings"));
+        assertThat(server.get("description"), is("Operation server"));
+
+        Map<String, Object> externalDocs = object(operation, "externalDocs");
+        assertThat(externalDocs.get("url"), is("https://helidon.io/docs/openapi"));
+        assertThat(externalDocs.get("description"), is("Operation documentation"));
+        assertThat(operation.get("x-test-operation"), is("documented-greeting"));
+
+        List<Object> security = list(operation, "security");
+        Map<String, Object> allRequired = object(security.getFirst());
+        assertThat(list(allRequired, "bearerAuth"), is(List.of()));
+        assertThat(list(allRequired, "oauth2"), is(List.of()));
+        assertThat(list(object(security.get(1)), "oauth2"), contains("greeting:read"));
+    }
+
+    @Test
+    void generatedDocumentCanClearOperationSecurity() {
+        Map<String, Object> operation = operation(document(), "/greetings/public", "get");
+
+        assertThat(list(operation, "security"), is(List.of()));
     }
 
     @Test
