@@ -898,6 +898,9 @@ final class OpenApiSourceGenerator {
         for (Annotation response : explicitResponses) {
             addResponse(method, restMethod, response, componentNames);
         }
+        if (restMethod.returnType().isOptional() && !hasExplicitResponse(explicitResponses, 404)) {
+            addNotFoundResponse(method);
+        }
     }
 
     private void addResponse(Method.Builder method,
@@ -975,8 +978,21 @@ final class OpenApiSourceGenerator {
                 .decreaseContentPadding();
 
         if (returnType.isOptional()) {
-            method.addContentLine(".response(\"404\", response -> response.description(\"Not Found\"))");
+            addNotFoundResponse(method);
         }
+    }
+
+    private boolean hasExplicitResponse(List<Annotation> explicitResponses, int status) {
+        for (Annotation response : explicitResponses) {
+            if (response.intValue("status").orElse(-1) == status) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void addNotFoundResponse(Method.Builder method) {
+        method.addContentLine(".response(\"404\", response -> response.description(\"Not Found\"))");
     }
 
     private void addResponseHeaders(Method.Builder method,
