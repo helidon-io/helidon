@@ -986,7 +986,7 @@ final class OpenApiSourceGenerator {
         addInferredResponseHeaders(method, restMethod);
         response.annotationValues("headers")
                 .orElseGet(List::of)
-                .forEach(header -> addResponseHeader(method, header, componentNames));
+                .forEach(header -> addResponseHeader(method, restMethod, header, componentNames));
     }
 
     private void addInferredResponseHeaders(Method.Builder method, RestMethod restMethod) {
@@ -1012,7 +1012,10 @@ final class OpenApiSourceGenerator {
                 .addContentLine("))");
     }
 
-    private void addResponseHeader(Method.Builder method, Annotation header, Map<TypeName, String> componentNames) {
+    private void addResponseHeader(Method.Builder method,
+                                   RestMethod restMethod,
+                                   Annotation header,
+                                   Map<TypeName, String> componentNames) {
         String name = header.stringValue("name")
                 .filter(not(String::isBlank))
                 .orElseThrow(() -> new CodegenException("@OpenApi.Header name is required"));
@@ -1020,6 +1023,7 @@ final class OpenApiSourceGenerator {
         TypeName schemaType = header.typeValue("schema")
                 .filter(Predicate.not(VOID::equals))
                 .orElse(TypeNames.STRING);
+        validateResponseHeaderContent(restMethod, name, contentAnnotations);
 
         method.addContent(".header(")
                 .addContent(stringLiteral(name))
@@ -1050,6 +1054,16 @@ final class OpenApiSourceGenerator {
         method.addContentLine(")")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
+    }
+
+    private void validateResponseHeaderContent(RestMethod restMethod,
+                                               String name,
+                                               List<Annotation> contentAnnotations) {
+        if (contentAnnotations.size() > 1) {
+            throw new CodegenException("@OpenApi.Header on " + restMethodDescription(restMethod)
+                                               + " cannot define more than one content entry for response header "
+                                               + name);
+        }
     }
 
     private void addContent(Method.Builder method,
