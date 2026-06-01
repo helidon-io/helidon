@@ -37,6 +37,7 @@ import io.helidon.json.JsonBoolean;
 import io.helidon.json.JsonNull;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonString;
+import io.helidon.openapi.spi.OpenApiDocumentSource;
 import io.helidon.openapi.spi.OpenApiVersion;
 import io.helidon.openapi.spi.OpenApiVersionProvider;
 import io.helidon.openapi.v30.OpenApi30Version;
@@ -250,6 +251,24 @@ class OpenApiFeatureTest {
     }
 
     @Test
+    void generatedFallbackWithoutStaticDocumentUsesGeneratedSources() {
+        RecordingOpenApiManager manager = new RecordingOpenApiManager();
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .generatedMode(OpenApiGeneratedMode.STATIC_FIRST)
+                .openApiVersion(OpenApi30Version.create())
+                .manager(manager)
+                .buildPrototype();
+        OpenApiFeature feature = new OpenApiFeature(config, () -> List.of(generatedSource()), List::of);
+
+        feature.initialize();
+
+        Map<String, Object> document = parse(manager.content());
+        assertThat(map(document, "info").get("title"), is("Generated API"));
+        assertThat(map(document, "paths").containsKey("/generated"), is(true));
+    }
+
+    @Test
     void openApi30ParserRequiresOpenApi30Document() {
         OpenApiDocumentContext context = context(OpenApi30Version.create());
 
@@ -409,6 +428,14 @@ class OpenApiFeatureTest {
                 return version;
             }
         };
+    }
+
+    private static OpenApiDocumentSource generatedSource() {
+        return (context, document) -> document.info("Generated API", "1.0.0")
+                .path("/generated",
+                      path -> path.operation("GET",
+                                             operation -> operation.operationId("generatedGet")
+                                                     .response("200", "Generated response.")));
     }
 
     private static final String OPENAPI_31_DOCUMENT = """

@@ -260,7 +260,8 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
                                                                     listener,
                                                                     mode,
                                                                     openApiVersion);
-        return OpenApiDocumentComposer.compose(context, staticOpenApiVersion(), content, contentMediaType, sources);
+        OpenApiVersion staticVersion = hasStaticContent ? staticOpenApiVersion() : openApiVersion;
+        return OpenApiDocumentComposer.compose(context, staticVersion, content, contentMediaType, sources);
     }
 
     private String finalStaticContent(String listener) {

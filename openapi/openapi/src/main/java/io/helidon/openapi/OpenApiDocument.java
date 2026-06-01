@@ -315,6 +315,10 @@ public final class OpenApiDocument {
                     && existing instanceof Map<?, ?> existingMap
                     && value instanceof Map<?, ?> valueMap) {
                 mergePathItems((Map<String, Object>) existingMap, (Map<String, Object>) valueMap, childPath);
+            } else if (mergeableTopLevelArray(childPath)
+                    && existing instanceof List<?> existingList
+                    && value instanceof List<?> valueList) {
+                mergeArray((List<Object>) existingList, valueList, childPath);
             } else if (existing instanceof Map<?, ?> existingMap && value instanceof Map<?, ?> valueMap) {
                 merge((Map<String, Object>) existingMap, (Map<String, Object>) valueMap, childPath);
             } else if (!Objects.equals(existing, value)) {
@@ -323,13 +327,59 @@ public final class OpenApiDocument {
         });
     }
 
+    private static boolean mergeableTopLevelArray(String path) {
+        return "tags".equals(path) || "security".equals(path);
+    }
+
+    private static void mergeArray(List<Object> target, List<?> source, String path) {
+        for (Object item : source) {
+            if ("tags".equals(path)) {
+                mergeTag(target, item);
+            } else if (!target.contains(item)) {
+                target.add(item);
+            }
+        }
+    }
+
+    private static void mergeTag(List<Object> target, Object source) {
+        Optional<String> sourceName = tagName(source);
+        if (sourceName.isEmpty()) {
+            if (!target.contains(source)) {
+                target.add(source);
+            }
+            return;
+        }
+
+        for (Object existing : target) {
+            if (sourceName.equals(tagName(existing))) {
+                if (!Objects.equals(existing, source)) {
+                    throw new IllegalStateException("Conflicting OpenAPI tag at tags." + sourceName.get());
+                }
+                return;
+            }
+        }
+        target.add(source);
+    }
+
+    private static Optional<String> tagName(Object tag) {
+        if (tag instanceof Map<?, ?> map) {
+            return Optional.ofNullable(map.get("name")).map(String::valueOf);
+        }
+        return Optional.empty();
+    }
+
     @SuppressWarnings("unchecked")
     private static void mergePathItems(Map<String, Object> target, Map<String, Object> source, String fieldName) {
         source.forEach((path, value) -> {
-            Object existing = target.get(path);
+            String existingPathTemplate = equivalentPathTemplate(target, path);
+            Object existing = existingPathTemplate == null ? null : target.get(existingPathTemplate);
             if (existing == null) {
                 target.put(path, value);
                 return;
+            }
+            if (!existingPathTemplate.equals(path)) {
+                throw new IllegalStateException("Conflicting OpenAPI path template at " + fieldName + "."
+                                                        + existingPathTemplate + " and " + fieldName + "." + path);
             }
             if (!(existing instanceof Map<?, ?> existingPath) || !(value instanceof Map<?, ?> sourcePath)) {
                 throw new IllegalStateException("Conflicting OpenAPI document value at " + fieldName + "." + path);
@@ -350,6 +400,36 @@ public final class OpenApiDocument {
                 merge((Map<String, Object>) existingPath, operation, fieldName + "." + path);
             }
         });
+    }
+
+    private static String equivalentPathTemplate(Map<String, Object> target, String path) {
+        if (target.containsKey(path)) {
+            return path;
+        }
+        String normalizedPath = normalizedPathTemplate(path);
+        for (String existingPath : target.keySet()) {
+            if (normalizedPathTemplate(existingPath).equals(normalizedPath)) {
+                return existingPath;
+            }
+        }
+        return null;
+    }
+
+    private static String normalizedPathTemplate(String path) {
+        StringBuilder result = new StringBuilder(path.length());
+        boolean inTemplate = false;
+        for (int i = 0; i < path.length(); i++) {
+            char current = path.charAt(i);
+            if (current == '{') {
+                inTemplate = true;
+                result.append("{}");
+            } else if (current == '}') {
+                inTemplate = false;
+            } else if (!inTemplate) {
+                result.append(current);
+            }
+        }
+        return result.toString();
     }
 
     @SuppressWarnings("unchecked")
