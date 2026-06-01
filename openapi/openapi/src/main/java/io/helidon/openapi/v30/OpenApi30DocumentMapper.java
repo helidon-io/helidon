@@ -165,7 +165,8 @@ final class OpenApi30DocumentMapper {
                                                              "externalValue");
     private static final Set<String> EXTERNAL_DOCS_FIELDS = Set.of("description",
                                                                    "url");
-    private static final Set<String> SCHEMA_FIELDS = Set.of("title",
+    private static final Set<String> SCHEMA_FIELDS = Set.of("$ref",
+                                                            "title",
                                                             "multipleOf",
                                                             "maximum",
                                                             "exclusiveMaximum",

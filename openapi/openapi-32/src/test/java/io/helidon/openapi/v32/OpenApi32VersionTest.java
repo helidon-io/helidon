@@ -154,12 +154,10 @@ class OpenApi32VersionTest {
     void arbitraryHttpMethodUsesAdditionalOperations() {
         OpenApiDocument document = OpenApiDocument.builder()
                 .info("Generated API", "1.0.0")
-                .putOperation("/static/{id}",
-                              "COPY",
-                              OpenApiDocument.Operation.builder()
-                                      .operationId("copyStatic")
-                                      .response("200", "Copied.")
-                                      .build())
+                .path("/static/{id}",
+                      path -> path.operation("COPY",
+                                             operation -> operation.operationId("copyStatic")
+                                                     .response("200", "Copied.")))
                 .build();
 
         Map<String, Object> rendered32 = parse(OpenApi32Version.create().render(null, document));

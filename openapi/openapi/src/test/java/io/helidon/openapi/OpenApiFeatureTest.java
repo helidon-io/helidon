@@ -322,38 +322,34 @@ class OpenApiFeatureTest {
     private static OpenApiDocument newerVersionDocument() {
         return OpenApiDocument.builder()
                 .openapi("3.2.0")
-                .info("Static 3.2 API", "3.2.0")
-                .infoSummary("Static fixture with OpenAPI 3.2-only fields.")
-                .addServer(OpenApiDocument.Server.builder("https://api.example.test")
-                                   .name("primary")
-                                   .build())
-                .addTag(OpenApiDocument.Tag.builder("static")
-                                .description("Static resources")
-                                .summary("Static")
-                                .kind("nav")
-                                .parent("root")
-                                .build())
-                .putOperation("/static/{id}",
-                              "GET",
-                              OpenApiDocument.Operation.builder()
-                                      .operationId("staticGet")
-                                      .response("200", "Static response.")
-                                      .build())
-                .putSchema("StaticItem",
-                           JsonObject.builder()
-                                   .set("type", "object")
-                                   .set("properties", properties -> properties
-                                           .set("status", statusSchema())
-                                           .set("payload", JsonBoolean.TRUE)
-                                           .set("mode", JsonObject.builder()
-                                                   .set("const", "modern")
-                                                   .build()))
-                                   .build())
-                .putSecurityScheme("bearerAuth",
-                                   OpenApiDocument.SecurityScheme.builder("http")
-                                           .scheme("bearer")
-                                           .deprecated(true)
-                                           .build())
+                .info(info -> info.title("Static 3.2 API")
+                        .version("3.2.0")
+                        .summary("Static fixture with OpenAPI 3.2-only fields."))
+                .server(server -> server.url("https://api.example.test")
+                        .name("primary"))
+                .tag(tag -> tag.name("static")
+                        .description("Static resources")
+                        .summary("Static")
+                        .kind("nav")
+                        .parent("root"))
+                .path("/static/{id}",
+                      path -> path.operation("GET",
+                                             operation -> operation.operationId("staticGet")
+                                                     .response("200", "Static response.")))
+                .components(components -> components
+                        .schema("StaticItem",
+                                JsonObject.builder()
+                                        .set("type", "object")
+                                        .set("properties", properties -> properties
+                                                .set("status", statusSchema())
+                                                .set("payload", JsonBoolean.TRUE)
+                                                .set("mode", JsonObject.builder()
+                                                        .set("const", "modern")
+                                                        .build()))
+                                        .build())
+                        .securityScheme("bearerAuth", security -> security.type("http")
+                                .scheme("bearer")
+                                .deprecated(true)))
                 .build();
     }
 

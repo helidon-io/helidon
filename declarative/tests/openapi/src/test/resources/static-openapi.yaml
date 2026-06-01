@@ -21,7 +21,7 @@ info:
 paths:
   /static/status:
     get:
-      operationId: static.get.status
+      operationId: staticGetStatus
       summary: Static status
       responses:
         "200":

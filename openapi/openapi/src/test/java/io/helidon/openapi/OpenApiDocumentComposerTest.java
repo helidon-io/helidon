@@ -103,13 +103,37 @@ class OpenApiDocumentComposerTest {
     }
 
     @Test
+    void generatedSourcesCanContributeOperationsToSamePath() {
+        OpenApiDocumentSource first = (context, document) -> document.info("Generated API", "1.0.0")
+                .path("/generated",
+                      path -> path.operation("GET",
+                                             operation -> operation.operationId("generatedGet")
+                                                     .response("200", "Generated response.")));
+        OpenApiDocumentSource second = (context, document) -> document.path("/generated",
+                                                                            path -> path.operation(
+                                                                                    "POST",
+                                                                                    responseOperation("generatedPost")));
+        OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
+
+        String content = OpenApiDocumentComposer.compose(context,
+                                                        context.openApiVersion(),
+                                                        "",
+                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
+                                                        List.of(first, second));
+
+        Map<String, Object> path = map(map(parse(content), "paths"), "/generated");
+        assertThat(path.containsKey("get"), is(true));
+        assertThat(path.containsKey("post"), is(true));
+    }
+
+    @Test
     void mergeStaticFailsOnConflictingOperation() {
-        OpenApiDocumentSource conflicting = (context, document) -> document.putOperation(
+        OpenApiDocumentSource conflicting = (context, document) -> document.path(
                 "/static",
-                "GET",
-                OpenApiDocument.Operation.builder()
+                path -> path.operation("GET",
+                                       operation -> operation
                         .operationId("other")
-                        .build());
+                                               .response("200", "Other response.")));
 
         assertThrows(IllegalStateException.class,
                      () -> {
@@ -151,8 +175,9 @@ class OpenApiDocumentComposerTest {
                                                                     OpenApiGeneratedMode.MERGE,
                                                                     RawOpenApiVersion.INSTANCE);
         OpenApiDocumentSource generated = (ignored, document) -> document
-                .putOperation("/static", "COPY", responseOperation("copyStatic"))
-                .putOperation("/static", "POST", responseOperation("createStatic"));
+                .path("/static",
+                      path -> path.operation("COPY", responseOperation("copyStatic"))
+                              .operation("POST", responseOperation("createStatic")));
 
         String content = OpenApiDocumentComposer.compose(context,
                                                         RawOpenApiVersion.INSTANCE,
@@ -172,9 +197,10 @@ class OpenApiDocumentComposerTest {
                                                                     "default",
                                                                     OpenApiGeneratedMode.MERGE,
                                                                     RawOpenApiVersion.INSTANCE);
-        OpenApiDocumentSource generated = (ignored, document) -> document.putOperation("/static",
-                                                                                      "COPY",
-                                                                                      responseOperation("copyOther"));
+        OpenApiDocumentSource generated = (ignored, document) -> document.path("/static",
+                                                                               path -> path.operation(
+                                                                                       "COPY",
+                                                                                       responseOperation("copyOther")));
 
         assertThrows(IllegalStateException.class,
                      () -> OpenApiDocumentComposer.compose(context,
@@ -185,14 +211,14 @@ class OpenApiDocumentComposerTest {
     }
 
     @Test
-    void putSchemaUsesJsonSchemaModelWithoutRootKeywords() {
+    void componentSchemaUsesJsonSchemaModelWithoutRootKeywords() {
         Schema schema = Schema.builder()
                 .id(URI.create("https://example.com/schemas/item"))
                 .rootObject(builder -> builder.addStringProperty("name", name -> name.description("Item name")))
                 .build();
         OpenApiDocument document = OpenApiDocument.builder()
                 .info("Generated API", "1.0.0")
-                .putSchema("Item", schema)
+                .components(components -> components.schema("Item", schema.generateObjectNoKeywords()))
                 .build();
 
         Map<String, Object> item = map(map(map(parse(OpenApi30Version.create().render(context(OpenApiGeneratedMode.STATIC_ONLY),
@@ -209,21 +235,19 @@ class OpenApiDocumentComposerTest {
 
     private static OpenApiDocumentSource source() {
         return (context, document) -> document.info("Generated API", "1.0.0")
-                .putOperation("/generated",
-                              "GET",
-                              OpenApiDocument.Operation.builder()
-                                      .operationId("generatedGet")
-                                      .response("200", "Generated response.")
-                                      .build());
+                .path("/generated",
+                      path -> path.operation("GET",
+                                             operation -> operation.operationId("generatedGet")
+                                                     .response("200", "Generated response.")));
     }
 
     private static OpenApiDocumentSource operationSource() {
-        return (context, document) -> document.putOperation("/generated",
-                                                            "GET",
-                                                            OpenApiDocument.Operation.builder()
-                                                                    .operationId("generatedGet")
-                                                                    .response("200", "Generated response.")
-                                                                    .build());
+        return (context, document) -> document.path("/generated",
+                                                    path -> path.operation("GET",
+                                                                           operation -> operation
+                                                                                   .operationId("generatedGet")
+                                                                                   .response("200",
+                                                                                             "Generated response.")));
     }
 
     private static OpenApiDocument.Operation responseOperation(String operationId) {
@@ -287,7 +311,7 @@ class OpenApiDocumentComposerTest {
             if (content.contains("operationId: staticCopy")) {
                 return OpenApiDocument.builder()
                         .merge(document)
-                        .putOperation("/static", "COPY", responseOperation("staticCopy"))
+                        .path("/static", path -> path.operation("COPY", responseOperation("staticCopy")))
                         .build();
             }
             return document;

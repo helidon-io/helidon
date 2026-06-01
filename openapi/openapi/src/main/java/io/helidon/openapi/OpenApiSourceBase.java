@@ -1,0 +1,88 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.openapi;
+
+import io.helidon.common.Api;
+import io.helidon.json.JsonObject;
+import io.helidon.json.schema.spi.JsonSchemaProvider;
+import io.helidon.openapi.spi.OpenApiDocumentSource;
+
+/**
+ * Base class for generated OpenAPI document sources.
+ */
+@Api.Internal
+public abstract class OpenApiSourceBase implements OpenApiDocumentSource {
+
+    /**
+     * Constructor with no side effects.
+     */
+    @Api.Internal
+    protected OpenApiSourceBase() {
+    }
+
+    /**
+     * Create a schema reference object.
+     *
+     * @param name schema name
+     * @return schema reference JSON object
+     */
+    @Api.Internal
+    protected static JsonObject schemaRef(String name) {
+        return JsonObject.builder()
+                .set("$ref", "#/components/schemas/" + name)
+                .build();
+    }
+
+    /**
+     * Create a simple schema object for a JSON type.
+     *
+     * @param type JSON schema type
+     * @return schema JSON object
+     */
+    @Api.Internal
+    protected static JsonObject schema(String type) {
+        return JsonObject.builder()
+                .set("type", type)
+                .build();
+    }
+
+    /**
+     * Create an array schema object.
+     *
+     * @param items array item schema
+     * @return array schema JSON object
+     */
+    @Api.Internal
+    protected static JsonObject arraySchema(JsonObject items) {
+        return JsonObject.builder()
+                .set("type", "array")
+                .set("items", items)
+                .build();
+    }
+
+    /**
+     * Add a component schema from a JSON schema provider to the OpenAPI document.
+     *
+     * @param document OpenAPI document builder
+     * @param provider JSON schema provider
+     * @param name schema name
+     */
+    @Api.Internal
+    protected static void componentSchema(OpenApiDocument.Builder document, JsonSchemaProvider provider, String name) {
+        document.components(components -> components.schema(name, provider.schema().generateObjectNoKeywords()));
+    }
+}

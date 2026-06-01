@@ -45,24 +45,27 @@ class OpenApi31VersionTest {
         OpenApiDocument document = OpenApiDocument.builder()
                 .openapi("3.1.0")
                 .jsonSchemaDialect("https://json-schema.org/draft/2020-12/schema")
-                .info("Generated API", "1.0.0")
-                .infoSummary("Generated summary.")
-                .putSchema("Item",
-                           JsonObject.builder()
-                                   .set("type", "object")
-                                   .set("properties", properties -> properties
-                                           .set("status", JsonObject.builder()
-                                                   .setValues("type", List.of(JsonString.create("string"),
-                                                                              JsonString.create("null")))
-                                                   .setValues("enum", List.of(JsonString.create("new"),
-                                                                              JsonString.create("done"),
-                                                                              JsonNull.instance()))
-                                                   .build())
-                                           .set("payload", JsonBoolean.TRUE)
-                                           .set("mode", JsonObject.builder()
-                                                   .set("const", "modern")
-                                                   .build()))
-                                   .build())
+                .info(info -> info.title("Generated API")
+                        .version("1.0.0")
+                        .summary("Generated summary."))
+                .components(components -> components.schema("Item",
+                                                            JsonObject.builder()
+                                                                    .set("type", "object")
+                                                                    .set("properties", properties -> properties
+                                                                            .set("status", JsonObject.builder()
+                                                                                    .setValues("type", List.of(
+                                                                                            JsonString.create("string"),
+                                                                                            JsonString.create("null")))
+                                                                                    .setValues("enum", List.of(
+                                                                                            JsonString.create("new"),
+                                                                                            JsonString.create("done"),
+                                                                                            JsonNull.instance()))
+                                                                                    .build())
+                                                                            .set("payload", JsonBoolean.TRUE)
+                                                                            .set("mode", JsonObject.builder()
+                                                                                    .set("const", "modern")
+                                                                                    .build()))
+                                                                    .build()))
                 .build();
 
         Map<String, Object> rendered = parse(OpenApi31Version.create().render(null, document));
