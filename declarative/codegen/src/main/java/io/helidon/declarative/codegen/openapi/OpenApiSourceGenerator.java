@@ -117,7 +117,7 @@ final class OpenApiSourceGenerator {
     }
 
     private void processDocument(RegistryRoundContext roundContext, TypeInfo typeInfo) {
-        TypeName generatedType = generatedType(typeInfo.typeName(), "OpenApi");
+        TypeName generatedType = generatedType(typeInfo.typeName(), "OpenApiDocument");
         ClassModel.Builder classModel = sourceClass(typeInfo.typeName(), generatedType);
 
         classModel.addMethod(method -> method
@@ -140,7 +140,7 @@ final class OpenApiSourceGenerator {
 
     private void processEndpoint(RegistryRoundContext roundContext, ServerEndpoint endpoint) {
         TypeInfo typeInfo = endpoint.type();
-        TypeName generatedType = generatedType(typeInfo.typeName(), "OpenApi");
+        TypeName generatedType = generatedType(typeInfo.typeName(), "OpenApiEndpoint");
         List<SchemaBinding> schemaBindings = schemaBindings(endpoint);
         ClassModel.Builder classModel = sourceClass(typeInfo.typeName(), generatedType);
         addSchemaInjection(classModel, schemaBindings);

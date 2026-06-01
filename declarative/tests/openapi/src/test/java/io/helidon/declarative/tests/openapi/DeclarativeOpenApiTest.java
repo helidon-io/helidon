@@ -44,6 +44,7 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 
@@ -362,6 +363,18 @@ class DeclarativeOpenApiTest {
                    is("#/components/schemas/" + otherMessage));
         assertThat(ref(content(response(create, "200"), MediaTypes.APPLICATION_JSON_VALUE)),
                    is("#/components/schemas/" + localMessage));
+    }
+
+    @Test
+    void generatedDocumentAndEndpointSourcesHaveDistinctNames() {
+        List<String> sourceNames = Services.all(OpenApiDocumentSource.class)
+                .stream()
+                .map(source -> source.getClass().getSimpleName())
+                .toList();
+
+        assertThat(sourceNames,
+                   hasItems("CollisionEndpoint__OpenApiDocumentSource",
+                            "CollisionEndpoint__OpenApiEndpointSource"));
     }
 
     @Test
