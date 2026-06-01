@@ -58,6 +58,33 @@ class DeclarativeOpenApiTest {
         Map<String, Object> farewellFind = operation(document, "/farewells/{name}", "get");
         assertThat(farewellFind.get("operationId"), is("farewellGetFind"));
         assertThat(list(farewellFind, "tags"), contains("farewell"));
+
+        Map<String, Object> greetingCreate = operation(document, "/greetings", "post");
+        assertThat(greetingCreate.get("operationId"), is("greetingPostCreate"));
+        assertThat(list(greetingCreate, "tags"), contains("greeting"));
+
+        Map<String, Object> farewellCreate = operation(document, "/farewells", "post");
+        assertThat(farewellCreate.get("operationId"), is("farewellPostCreate"));
+        assertThat(list(farewellCreate, "tags"), contains("farewell"));
+    }
+
+    @Test
+    void generatedDocumentIncludesRoundTripAlignmentEdges() {
+        Map<String, Object> document = document();
+
+        Map<String, Object> noContent = operation(document, "/greetings/{name}", "delete");
+        assertThat(noContent.get("operationId"), is("greetingDeleteRemove"));
+        Map<String, Object> removeResponse = response(noContent, "204");
+        assertThat(removeResponse.get("description"), is("No Content"));
+        assertThat(removeResponse, not(hasKey("content")));
+
+        Map<String, Object> plain = operation(document, "/farewells/plain", "post");
+        assertThat(plain.get("operationId"), is("farewellPostCreatePlain"));
+        Map<String, Object> plainBody = object(plain, "requestBody");
+        assertThat(object(content(plainBody, MediaTypes.TEXT_PLAIN_VALUE)).get("type"), is("string"));
+        Map<String, Object> plainResponse = response(plain, "200");
+        assertThat(plainResponse.get("description"), is("OK"));
+        assertThat(object(content(plainResponse, MediaTypes.TEXT_PLAIN_VALUE)).get("type"), is("string"));
     }
 
     @Test
