@@ -769,6 +769,8 @@ final class OpenApiSourceGenerator {
         Optional<String> configuredStyle = style(annotations);
         Optional<Boolean> configuredExplode = explode(annotations);
         validateParameterSerialization(restMethod, in, schemaType, configuredStyle, configuredExplode);
+        boolean allowReserved = booleanFlag(annotations, "allowReserved");
+        validateParameterAllowReserved(restMethod, in, allowReserved);
 
         method.addContent(".parameter(parameter -> parameter.name(")
                 .addContent(stringLiteral(name))
@@ -806,7 +808,7 @@ final class OpenApiSourceGenerator {
                 .ifPresent(explode -> method.addContent(".explode(")
                         .addContent(Boolean.toString(explode))
                         .addContentLine(")"));
-        if (booleanFlag(annotations, "allowReserved")) {
+        if (allowReserved) {
             method.addContentLine(".allowReserved(true)");
         }
         if (booleanFlag(annotations, "deprecated")) {
@@ -1382,6 +1384,13 @@ final class OpenApiSourceGenerator {
                     throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
                                                        + " cannot document a " + in + " parameter as " + it);
                 });
+    }
+
+    private void validateParameterAllowReserved(RestMethod restMethod, String in, boolean allowReserved) {
+        if (allowReserved && !"query".equals(in)) {
+            throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                               + " cannot use allowReserved=true for a " + in + " parameter");
+        }
     }
 
     private void validateParameterSerialization(RestMethod restMethod,
