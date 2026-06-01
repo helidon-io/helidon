@@ -21,10 +21,14 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.stream.Stream;
 
+import io.helidon.common.Builder;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
@@ -44,8 +48,11 @@ import io.helidon.openapi.v30.OpenApi30Version;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webserver.ListenerConfig;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.testing.junit5.RoutingTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
@@ -269,6 +276,31 @@ class OpenApiFeatureTest {
     }
 
     @Test
+    void initializeWarmsConfiguredListenerModelsAfterSetup() {
+        RecordingOpenApiManager manager = new RecordingOpenApiManager();
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .openApiVersion(OpenApi30Version.create())
+                .manager(manager)
+                .buildPrototype();
+        OpenApiFeature feature = new OpenApiFeature(config, () -> List.of(
+                generatedSource(WebServer.DEFAULT_SOCKET_NAME, "/default"),
+                generatedSource("admin", "/admin")), List::of);
+
+        feature.setup(new TestFeatureContext("admin"));
+        feature.initialize();
+
+        List<Map<String, Object>> documents = manager.contents()
+                .stream()
+                .map(OpenApiFeatureTest::parse)
+                .toList();
+        assertThat(documents.size(), is(2));
+        assertThat(documents.stream().anyMatch(it -> map(it, "paths").containsKey("/default")), is(true));
+        assertThat(documents.stream().anyMatch(it -> map(it, "paths").containsKey("/admin")), is(true));
+    }
+
+    @Test
     void openApi30ParserRequiresOpenApi30Document() {
         OpenApiDocumentContext context = context(OpenApi30Version.create());
 
@@ -438,6 +470,25 @@ class OpenApiFeatureTest {
                                                      .response("200", "Generated response.")));
     }
 
+    private static OpenApiDocumentSource generatedSource(String listener, String path) {
+        return new OpenApiDocumentSource() {
+            @Override
+            public boolean supports(OpenApiDocumentContext context) {
+                return listener.equals(context.listener());
+            }
+
+            @Override
+            public void describe(OpenApiDocumentContext context, OpenApiDocument.Builder document) {
+                document.info("Generated API", "1.0.0")
+                        .path(path,
+                              targetPath -> targetPath.operation("GET",
+                                                                 operation -> operation
+                                                                         .operationId(path.substring(1) + "Get")
+                                                                         .response("200", "Generated response.")));
+            }
+        };
+    }
+
     private static final String OPENAPI_31_DOCUMENT = """
             openapi: 3.1.0
             info:
@@ -469,11 +520,11 @@ class OpenApiFeatureTest {
     }
 
     private static final class RecordingOpenApiManager implements OpenApiManager<String> {
-        private String content;
+        private final List<String> contents = new ArrayList<>();
 
         @Override
         public String load(String content) {
-            this.content = content;
+            contents.add(content);
             return content;
         }
 
@@ -493,7 +544,72 @@ class OpenApiFeatureTest {
         }
 
         String content() {
-            return content;
+            return contents.getLast();
+        }
+
+        List<String> contents() {
+            return contents;
+        }
+    }
+
+    private static final class TestFeatureContext implements ServerFeature.ServerFeatureContext {
+        private final Set<String> sockets;
+
+        private TestFeatureContext(String... sockets) {
+            this.sockets = Set.of(sockets);
+        }
+
+        @Override
+        public WebServerConfig serverConfig() {
+            return WebServerConfig.create();
+        }
+
+        @Override
+        public Set<String> sockets() {
+            return sockets;
+        }
+
+        @Override
+        public boolean socketExists(String socketName) {
+            return WebServer.DEFAULT_SOCKET_NAME.equals(socketName) || sockets.contains(socketName);
+        }
+
+        @Override
+        public ServerFeature.SocketBuilders socket(String socketName) {
+            if (!socketExists(socketName)) {
+                throw new NoSuchElementException("Socket " + socketName + " is not defined");
+            }
+            return new TestSocketBuilders();
+        }
+    }
+
+    private static final class TestSocketBuilders implements ServerFeature.SocketBuilders {
+        @Override
+        public ListenerConfig listener() {
+            return ListenerConfig.create();
+        }
+
+        @Override
+        public HttpRouting.Builder httpRouting() {
+            return HttpRouting.builder();
+        }
+
+        @Override
+        public ServerFeature.RoutingBuilders routingBuilders() {
+            return new ServerFeature.RoutingBuilders() {
+                @Override
+                public boolean hasRouting(Class<?> builderType) {
+                    return false;
+                }
+
+                @Override
+                public <T extends Builder<T, ?>> T routingBuilder(Class<T> builderType) {
+                    if (builderType == HttpRouting.Builder.class) {
+                        return builderType.cast(HttpRouting.builder());
+                    }
+                    throw new NoSuchElementException("Routing not available for type: " + builderType);
+                }
+            };
         }
     }
 }
