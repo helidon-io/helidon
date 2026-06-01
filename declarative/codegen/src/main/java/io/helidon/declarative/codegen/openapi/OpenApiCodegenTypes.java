@@ -65,6 +65,7 @@ final class OpenApiCodegenTypes {
     static final TypeName JSON_OBJECT = TypeName.create("io.helidon.json.JsonObject");
     static final TypeName JSON_STRING = TypeName.create("io.helidon.json.JsonString");
     static final TypeName JSON_SCHEMA_PROVIDER = TypeName.create("io.helidon.json.schema.spi.JsonSchemaProvider");
+    static final TypeName WEB_SERVER = TypeName.create("io.helidon.webserver.WebServer");
 
     private OpenApiCodegenTypes() {
     }

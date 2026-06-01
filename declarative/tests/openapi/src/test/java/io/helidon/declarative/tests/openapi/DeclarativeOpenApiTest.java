@@ -35,6 +35,7 @@ import io.helidon.service.registry.Services;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.Socket;
 
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
@@ -50,9 +51,11 @@ import static org.hamcrest.Matchers.not;
 @SuppressWarnings("helidon:api:preview")
 class DeclarativeOpenApiTest {
     private final Http1Client client;
+    private final Http1Client adminClient;
 
-    DeclarativeOpenApiTest(Http1Client client) {
+    DeclarativeOpenApiTest(Http1Client client, @Socket("admin") Http1Client adminClient) {
         this.client = client;
+        this.adminClient = adminClient;
     }
 
     @Test
@@ -375,6 +378,20 @@ class DeclarativeOpenApiTest {
     }
 
     @Test
+    void generatedEndpointsContributeOnlyToDefaultListenerDocument() {
+        Map<String, Object> defaultDocument = document();
+        Map<String, Object> adminDocument = document(adminClient);
+
+        assertThat(object(defaultDocument, "paths"), hasKey("/greetings/{name}"));
+        assertThat(object(defaultDocument, "paths"), not(hasKey("/admin/status")));
+        assertThat(object(adminDocument, "paths"), hasKey("/static/status"));
+        assertThat(object(adminDocument, "paths"), hasKey("/admin/status"));
+        assertThat(object(adminDocument, "paths"), not(hasKey("/greetings/{name}")));
+        assertThat(object(adminDocument, "paths"), not(hasKey("/farewells/{name}")));
+        assertThat(object(adminDocument, "paths"), not(hasKey("/collisions")));
+    }
+
+    @Test
     void generatedDocumentRendersThroughSupportedOpenApiVersions() {
         assertGeneratedVersion(generatedDocument(OpenApi30Version.create()), "3.0.3");
         assertGeneratedVersion(generatedDocument(OpenApi31Version.create()), "3.1.1");
@@ -425,14 +442,16 @@ class DeclarativeOpenApiTest {
     private static OpenApiDocument generatedDocument() {
         OpenApiDocument.Builder builder = OpenApiDocument.builder();
         for (OpenApiDocumentSource source : Services.all(OpenApiDocumentSource.class)) {
-            if (source.supports(null)) {
-                source.describe(null, builder);
-            }
+            source.describe(null, builder);
         }
         return builder.build();
     }
 
     private Map<String, Object> document() {
+        return document(client);
+    }
+
+    private static Map<String, Object> document(Http1Client client) {
         try (Http1ClientResponse response = client.get("/openapi")
                 .accept(MediaTypes.APPLICATION_OPENAPI_YAML)
                 .request()) {
