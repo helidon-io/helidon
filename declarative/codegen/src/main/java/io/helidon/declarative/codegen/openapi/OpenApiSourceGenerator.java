@@ -760,7 +760,9 @@ final class OpenApiSourceGenerator {
                                                  OPENAPI_PARAMETER_ANNOTATION));
         TypeName type = parameter.typeName();
         TypeName schemaType = schemaType(type);
-        String location = explicitStringValue(annotations, "in").orElse(in);
+        Optional<String> configuredLocation = explicitStringValue(annotations, "in");
+        validateParameterLocation(restMethod, in, configuredLocation);
+        String location = configuredLocation.orElse(in);
         String name = explicitStringValue(annotations, "name").orElseGet(() -> parameterName(parameter, in));
         List<Annotation> contentAnnotations = annotationValues(annotations, "content");
         boolean hasExplicitContent = !contentAnnotations.isEmpty();
@@ -1372,6 +1374,14 @@ final class OpenApiSourceGenerator {
         }
 
         return DefaultsCodegen.findDefault(new HashSet<>(annotations), type).isEmpty();
+    }
+
+    private void validateParameterLocation(RestMethod restMethod, String in, Optional<String> location) {
+        location.filter(not(in::equals))
+                .ifPresent(it -> {
+                    throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                                       + " cannot document a " + in + " parameter as " + it);
+                });
     }
 
     private void validateParameterSerialization(RestMethod restMethod,
