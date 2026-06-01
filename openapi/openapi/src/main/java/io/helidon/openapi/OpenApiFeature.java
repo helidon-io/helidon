@@ -22,6 +22,7 @@ import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -75,9 +76,10 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     private final Optional<String> contentOpenApiVersion;
     private final OpenApiFeatureConfig config;
     private final OpenApiManager<?> manager;
-    private final LazyValue<Object> model;
+    private final LazyValue<Object> defaultModel;
     private final LazyValue<List<OpenApiDocumentSource>> documentSources;
     private final LazyValue<List<OpenApiVersion>> openApiVersions;
+    private volatile List<LazyValue<Object>> listenerModels = List.of();
 
     OpenApiFeature(OpenApiFeatureConfig config) {
         this(config, List::of, OpenApiFeature::openApiVersionProviders);
@@ -137,7 +139,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         contentFormat = defaultContentFormat;
         contentOpenApiVersion = openApiVersion(defaultContent);
         manager = config.manager().orElseGet(SimpleOpenApiManager::new);
-        model = LazyValue.create(() -> manager.load(documentContent(WebServer.DEFAULT_SOCKET_NAME, documentSources())));
+        defaultModel = model(WebServer.DEFAULT_SOCKET_NAME);
     }
 
     /**
@@ -205,8 +207,10 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
             sockets.add(WebServer.DEFAULT_SOCKET_NAME);
         }
 
+        List<LazyValue<Object>> models = new ArrayList<>(sockets.size());
         for (String socket : sockets) {
-            LazyValue<Object> socketModel = LazyValue.create(() -> manager.load(documentContent(socket, documentSources())));
+            LazyValue<Object> socketModel = model(socket);
+            models.add(socketModel);
             featureContext.socket(socket)
                     .httpRouting()
                     .addFeature(new OpenApiHttpFeature(config,
@@ -215,6 +219,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
                                                        exactStaticContent(),
                                                        contentFormat));
         }
+        listenerModels = List.copyOf(models);
     }
 
     @Override
@@ -236,7 +241,15 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
      * Initialize the model.
      */
     public void initialize() {
-        model.get();
+        if (listenerModels.isEmpty()) {
+            defaultModel.get();
+            return;
+        }
+        listenerModels.forEach(LazyValue::get);
+    }
+
+    private LazyValue<Object> model(String listener) {
+        return LazyValue.create(() -> manager.load(documentContent(listener, documentSources())));
     }
 
     private String documentContent(String listener, List<OpenApiDocumentSource> sources) {
