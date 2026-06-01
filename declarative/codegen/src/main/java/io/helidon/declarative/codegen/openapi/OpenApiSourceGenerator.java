@@ -771,6 +771,7 @@ final class OpenApiSourceGenerator {
         boolean hasExplicitContent = !contentAnnotations.isEmpty();
         Optional<String> configuredStyle = style(annotations);
         Optional<Boolean> configuredExplode = explode(annotations);
+        validateParameterContentSerialization(restMethod, in, name, hasExplicitContent, configuredStyle, configuredExplode);
         validateParameterSerialization(restMethod, in, schemaType, configuredStyle, configuredExplode);
         boolean allowReserved = booleanFlag(annotations, "allowReserved");
         validateParameterAllowReserved(restMethod, in, allowReserved);
@@ -1418,6 +1419,27 @@ final class OpenApiSourceGenerator {
         if (example.isPresent() && !examples.isEmpty()) {
             throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
                                                + " cannot define both example and examples for " + in
+                                               + " parameter " + name);
+        }
+    }
+
+    private void validateParameterContentSerialization(RestMethod restMethod,
+                                                       String in,
+                                                       String name,
+                                                       boolean hasExplicitContent,
+                                                       Optional<String> configuredStyle,
+                                                       Optional<Boolean> configuredExplode) {
+        if (!hasExplicitContent) {
+            return;
+        }
+        if (configuredStyle.isPresent()) {
+            throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                               + " cannot define style when content is defined for " + in
+                                               + " parameter " + name);
+        }
+        if (configuredExplode.isPresent()) {
+            throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                               + " cannot define explode when content is defined for " + in
                                                + " parameter " + name);
         }
     }
