@@ -25,7 +25,6 @@ import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -36,7 +35,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 
-@Disabled("Enable after declarative OpenAPI code generation is implemented.")
 @ServerTest
 class DeclarativeOpenApiTest {
     private final Http1Client client;
@@ -54,12 +52,50 @@ class DeclarativeOpenApiTest {
         assertThat(object(document, "info").get("version"), is("1.0.0"));
 
         Map<String, Object> greetingFind = operation(document, "/greetings/{name}", "get");
-        assertThat(greetingFind.get("operationId"), is("greeting.get.find"));
+        assertThat(greetingFind.get("operationId"), is("greetingGetFind"));
         assertThat(list(greetingFind, "tags"), contains("greeting"));
 
         Map<String, Object> farewellFind = operation(document, "/farewells/{name}", "get");
-        assertThat(farewellFind.get("operationId"), is("farewell.get.find"));
+        assertThat(farewellFind.get("operationId"), is("farewellGetFind"));
         assertThat(list(farewellFind, "tags"), contains("farewell"));
+    }
+
+    @Test
+    void generatedDocumentIncludesApplicationMetadata() {
+        Map<String, Object> document = document();
+        Map<String, Object> info = object(document, "info");
+
+        Map<String, Object> contact = object(info, "contact");
+        assertThat(contact.get("name"), is("Helidon Team"));
+        assertThat(contact.get("url"), is("https://helidon.io"));
+        assertThat(contact.get("email"), is("helidon@example.com"));
+
+        Map<String, Object> license = object(info, "license");
+        assertThat(license.get("name"), is("Apache License 2.0"));
+        assertThat(license.get("identifier"), is("Apache-2.0"));
+        assertThat(license.get("url"), is("https://www.apache.org/licenses/LICENSE-2.0"));
+
+        Map<String, Object> externalDocs = object(document, "externalDocs");
+        assertThat(externalDocs.get("url"), is("https://helidon.io/docs"));
+        assertThat(externalDocs.get("description"), is("Helidon documentation"));
+        assertThat(document.get("x-test-document"), is("declarative-openapi"));
+
+        Map<String, Object> securitySchemes = object(object(document, "components"), "securitySchemes");
+        Map<String, Object> bearerAuth = object(securitySchemes, "bearerAuth");
+        assertThat(bearerAuth.get("type"), is("http"));
+        assertThat(bearerAuth.get("description"), is("Bearer token authentication"));
+        assertThat(bearerAuth.get("scheme"), is("bearer"));
+        assertThat(bearerAuth.get("bearerFormat"), is("JWT"));
+
+        Map<String, Object> oauth2 = object(securitySchemes, "oauth2");
+        assertThat(oauth2.get("type"), is("oauth2"));
+        Map<String, Object> clientCredentials = object(object(oauth2, "flows"), "clientCredentials");
+        assertThat(clientCredentials.get("tokenUrl"), is("https://id.example.com/oauth2/token"));
+        assertThat(object(clientCredentials, "scopes").get("greeting:read"), is("Read greetings"));
+
+        List<Object> security = list(document, "security");
+        assertThat(list(object(security.getFirst()), "bearerAuth"), is(List.of()));
+        assertThat(list(object(security.get(1)), "oauth2"), contains("greeting:read"));
     }
 
     @Test
@@ -94,7 +130,7 @@ class DeclarativeOpenApiTest {
 
         assertThat(operation.get("summary"), is("Find a greeting"));
         assertThat(operation.get("description"), is("Returns a documented greeting."));
-        assertThat(operation.get("operationId"), is("greeting.get.documented"));
+        assertThat(operation.get("operationId"), is("greetingGetDocumented"));
 
         Map<String, Object> parameter = parameter(operation, "name", "path");
         assertThat(parameter.get("description"), is("Greeting recipient"));
@@ -110,7 +146,7 @@ class DeclarativeOpenApiTest {
         Map<String, Object> document = document();
 
         Map<String, Object> create = operation(document, "/greetings", "post");
-        assertThat(create.get("operationId"), is("greeting.post.create"));
+        assertThat(create.get("operationId"), is("greetingPostCreate"));
         assertThat(ref(content(object(create, "requestBody"), MediaTypes.APPLICATION_JSON_VALUE)),
                    is("#/components/schemas/MessageRequest"));
         assertThat(response(create, "201").get("description"), is("Created"));
@@ -118,7 +154,7 @@ class DeclarativeOpenApiTest {
                    is("#/components/schemas/Message"));
 
         Map<String, Object> optional = operation(document, "/greetings/optional/{name}", "get");
-        assertThat(optional.get("operationId"), is("greeting.get.maybeFind"));
+        assertThat(optional.get("operationId"), is("greetingGetMaybeFind"));
         assertThat(response(optional, "200").get("description"), is("OK"));
         assertThat(response(optional, "404").get("description"), is("Not Found"));
     }
@@ -156,8 +192,8 @@ class DeclarativeOpenApiTest {
     void staticDocumentIsMergedWithGeneratedDocument() {
         Map<String, Object> document = document();
 
-        assertThat(operation(document, "/static/status", "get").get("operationId"), is("static.get.status"));
-        assertThat(operation(document, "/greetings/{name}", "get").get("operationId"), is("greeting.get.find"));
+        assertThat(operation(document, "/static/status", "get").get("operationId"), is("staticGetStatus"));
+        assertThat(operation(document, "/greetings/{name}", "get").get("operationId"), is("greetingGetFind"));
     }
 
     private Map<String, Object> document() {

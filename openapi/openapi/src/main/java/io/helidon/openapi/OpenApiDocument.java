@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import io.helidon.common.Api;
 import io.helidon.json.JsonArray;
@@ -35,7 +36,6 @@ import io.helidon.json.JsonNumber;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonString;
 import io.helidon.json.JsonValue;
-import io.helidon.json.schema.Schema;
 
 /**
  * Version-neutral OpenAPI document model.
@@ -311,10 +311,10 @@ public final class OpenApiDocument {
             Object existing = target.get(key);
             if (existing == null) {
                 target.put(key, value);
-            } else if ("paths".equals(childPath)
+            } else if (("paths".equals(childPath) || "webhooks".equals(childPath))
                     && existing instanceof Map<?, ?> existingMap
                     && value instanceof Map<?, ?> valueMap) {
-                mergePaths((Map<String, Object>) existingMap, (Map<String, Object>) valueMap);
+                mergePathItems((Map<String, Object>) existingMap, (Map<String, Object>) valueMap, childPath);
             } else if (existing instanceof Map<?, ?> existingMap && value instanceof Map<?, ?> valueMap) {
                 merge((Map<String, Object>) existingMap, (Map<String, Object>) valueMap, childPath);
             } else if (!Objects.equals(existing, value)) {
@@ -324,7 +324,7 @@ public final class OpenApiDocument {
     }
 
     @SuppressWarnings("unchecked")
-    private static void mergePaths(Map<String, Object> target, Map<String, Object> source) {
+    private static void mergePathItems(Map<String, Object> target, Map<String, Object> source, String fieldName) {
         source.forEach((path, value) -> {
             Object existing = target.get(path);
             if (existing == null) {
@@ -332,31 +332,35 @@ public final class OpenApiDocument {
                 return;
             }
             if (!(existing instanceof Map<?, ?> existingPath) || !(value instanceof Map<?, ?> sourcePath)) {
-                throw new IllegalStateException("Conflicting OpenAPI document value at paths." + path);
+                throw new IllegalStateException("Conflicting OpenAPI document value at " + fieldName + "." + path);
             }
             for (Map.Entry<String, Object> entry : ((Map<String, Object>) sourcePath).entrySet()) {
                 String methodOrField = entry.getKey();
                 if (isFixedPathOperationField(methodOrField)
                         && existingPath.containsKey(methodOrField)) {
-                    throw new IllegalStateException("Conflicting OpenAPI operation at paths." + path + "." + methodOrField);
+                    throw new IllegalStateException("Conflicting OpenAPI operation at " + fieldName + "." + path + "."
+                                                            + methodOrField);
                 }
                 if ("additionalOperations".equals(methodOrField)) {
-                    mergeAdditionalOperations((Map<String, Object>) existingPath, entry.getValue(), path);
+                    mergeAdditionalOperations((Map<String, Object>) existingPath, entry.getValue(), fieldName, path);
                     continue;
                 }
                 Map<String, Object> operation = new LinkedHashMap<>();
                 operation.put(methodOrField, entry.getValue());
-                merge((Map<String, Object>) existingPath, operation, "paths." + path);
+                merge((Map<String, Object>) existingPath, operation, fieldName + "." + path);
             }
         });
     }
 
     @SuppressWarnings("unchecked")
-    private static void mergeAdditionalOperations(Map<String, Object> targetPath, Object sourceValue, String path) {
+    private static void mergeAdditionalOperations(Map<String, Object> targetPath,
+                                                  Object sourceValue,
+                                                  String fieldName,
+                                                  String path) {
         if (!(sourceValue instanceof Map<?, ?> sourceOperations)) {
             Map<String, Object> additionalOperations = new LinkedHashMap<>();
             additionalOperations.put("additionalOperations", sourceValue);
-            merge(targetPath, additionalOperations, "paths." + path);
+            merge(targetPath, additionalOperations, fieldName + "." + path);
             return;
         }
 
@@ -366,13 +370,14 @@ public final class OpenApiDocument {
             return;
         }
         if (!(existing instanceof Map<?, ?> existingOperations)) {
-            throw new IllegalStateException("Conflicting OpenAPI document value at paths." + path + ".additionalOperations");
+            throw new IllegalStateException("Conflicting OpenAPI document value at " + fieldName + "." + path
+                                                    + ".additionalOperations");
         }
 
         sourceOperations.forEach((method, operation) -> {
             String methodName = String.valueOf(method);
             if (existingOperations.containsKey(methodName)) {
-                throw new IllegalStateException("Conflicting OpenAPI operation at paths." + path
+                throw new IllegalStateException("Conflicting OpenAPI operation at " + fieldName + "." + path
                                                         + ".additionalOperations." + methodName);
             }
             ((Map<String, Object>) existingOperations).put(methodName, operation);
@@ -415,6 +420,22 @@ public final class OpenApiDocument {
         node.put(name, jsonValue(value));
     }
 
+    private static void requireString(Map<String, Object> node, String field, String objectName) {
+        if (stringValue(node.get(field)).filter(it -> !it.isBlank()).isEmpty()) {
+            throw new IllegalStateException(objectName + " requires " + field);
+        }
+    }
+
+    private static void requireValue(Map<String, Object> node, String field, String objectName) {
+        if (!node.containsKey(field) || node.get(field) == null) {
+            throw new IllegalStateException(objectName + " requires " + field);
+        }
+    }
+
+    private static boolean isReference(Map<String, Object> node) {
+        return node.containsKey("$ref");
+    }
+
     /**
      * OpenAPI Info Object.
      */
@@ -437,12 +458,10 @@ public final class OpenApiDocument {
         /**
          * Create a new info builder.
          *
-         * @param title API title
-         * @param version API version
          * @return builder
          */
-        public static InfoBuilder builder(String title, String version) {
-            return new InfoBuilder(title, version);
+        public static InfoBuilder builder() {
+            return new InfoBuilder();
         }
 
         /**
@@ -520,9 +539,29 @@ public final class OpenApiDocument {
     public static final class InfoBuilder implements io.helidon.common.Builder<InfoBuilder, Info> {
         private final Map<String, Object> node = new LinkedHashMap<>();
 
-        private InfoBuilder(String title, String version) {
+        private InfoBuilder() {
+        }
+
+        /**
+         * Set title.
+         *
+         * @param title title
+         * @return updated builder
+         */
+        public InfoBuilder title(String title) {
             node.put("title", Objects.requireNonNull(title));
+            return this;
+        }
+
+        /**
+         * Set version.
+         *
+         * @param version version
+         * @return updated builder
+         */
+        public InfoBuilder version(String version) {
             node.put("version", Objects.requireNonNull(version));
+            return this;
         }
 
         /**
@@ -570,6 +609,18 @@ public final class OpenApiDocument {
         }
 
         /**
+         * Set contact.
+         *
+         * @param contact consumer to update contact builder
+         * @return updated builder
+         */
+        public InfoBuilder contact(Consumer<ContactBuilder> contact) {
+            ContactBuilder builder = Contact.builder();
+            contact.accept(builder);
+            return contact(builder.build());
+        }
+
+        /**
          * Set license.
          *
          * @param license license
@@ -578,6 +629,18 @@ public final class OpenApiDocument {
         public InfoBuilder license(License license) {
             node.put("license", Objects.requireNonNull(license).toNode());
             return this;
+        }
+
+        /**
+         * Set license.
+         *
+         * @param license consumer to update license builder
+         * @return updated builder
+         */
+        public InfoBuilder license(Consumer<LicenseBuilder> license) {
+            LicenseBuilder builder = License.builder();
+            license.accept(builder);
+            return license(builder.build());
         }
 
         /**
@@ -594,6 +657,8 @@ public final class OpenApiDocument {
 
         @Override
         public Info build() {
+            requireString(node, "title", "OpenAPI Info");
+            requireString(node, "version", "OpenAPI Info");
             return new Info(node);
         }
     }
@@ -686,11 +751,10 @@ public final class OpenApiDocument {
         /**
          * Create a new license builder.
          *
-         * @param value license name
          * @return builder
          */
-        public static LicenseBuilder builder(String value) {
-            return new LicenseBuilder(value);
+        public static LicenseBuilder builder() {
+            return new LicenseBuilder();
         }
 
         private Map<String, Object> toNode() {
@@ -705,8 +769,18 @@ public final class OpenApiDocument {
     public static final class LicenseBuilder implements io.helidon.common.Builder<LicenseBuilder, License> {
         private final Map<String, Object> node = new LinkedHashMap<>();
 
-        private LicenseBuilder(String value) {
-            node.put("name", Objects.requireNonNull(value));
+        private LicenseBuilder() {
+        }
+
+        /**
+         * Set license name.
+         *
+         * @param name license name
+         * @return updated builder
+         */
+        public LicenseBuilder name(String name) {
+            node.put("name", Objects.requireNonNull(name));
+            return this;
         }
 
         /**
@@ -733,6 +807,7 @@ public final class OpenApiDocument {
 
         @Override
         public License build() {
+            requireString(node, "name", "OpenAPI License");
             return new License(node);
         }
     }
@@ -751,11 +826,10 @@ public final class OpenApiDocument {
         /**
          * Create a new external documentation builder.
          *
-         * @param url documentation URL
          * @return builder
          */
-        public static ExternalDocsBuilder builder(String url) {
-            return new ExternalDocsBuilder(url);
+        public static ExternalDocsBuilder builder() {
+            return new ExternalDocsBuilder();
         }
 
         private Map<String, Object> toNode() {
@@ -770,8 +844,18 @@ public final class OpenApiDocument {
     public static final class ExternalDocsBuilder implements io.helidon.common.Builder<ExternalDocsBuilder, ExternalDocs> {
         private final Map<String, Object> node = new LinkedHashMap<>();
 
-        private ExternalDocsBuilder(String url) {
+        private ExternalDocsBuilder() {
+        }
+
+        /**
+         * Set URL.
+         *
+         * @param url URL
+         * @return updated builder
+         */
+        public ExternalDocsBuilder url(String url) {
             node.put("url", Objects.requireNonNull(url));
+            return this;
         }
 
         /**
@@ -787,6 +871,7 @@ public final class OpenApiDocument {
 
         @Override
         public ExternalDocs build() {
+            requireString(node, "url", "OpenAPI ExternalDocs");
             return new ExternalDocs(node);
         }
     }
@@ -814,11 +899,10 @@ public final class OpenApiDocument {
         /**
          * Create a new server builder.
          *
-         * @param url server URL
          * @return builder
          */
-        public static ServerBuilder builder(String url) {
-            return new ServerBuilder(url);
+        public static ServerBuilder builder() {
+            return new ServerBuilder();
         }
 
         /**
@@ -842,8 +926,18 @@ public final class OpenApiDocument {
     public static final class ServerBuilder implements io.helidon.common.Builder<ServerBuilder, Server> {
         private final Map<String, Object> node = new LinkedHashMap<>();
 
-        private ServerBuilder(String url) {
+        private ServerBuilder() {
+        }
+
+        /**
+         * Set server URL.
+         *
+         * @param url URL
+         * @return updated builder
+         */
+        public ServerBuilder url(String url) {
             node.put("url", Objects.requireNonNull(url));
+            return this;
         }
 
         /**
@@ -880,8 +974,22 @@ public final class OpenApiDocument {
             return this;
         }
 
+        /**
+         * Add a server variable.
+         *
+         * @param name variable name
+         * @param variable consumer to update server variable builder
+         * @return updated builder
+         */
+        public ServerBuilder variable(String name, Consumer<ServerVariableBuilder> variable) {
+            ServerVariableBuilder builder = ServerVariable.builder();
+            variable.accept(builder);
+            return variable(name, builder.build());
+        }
+
         @Override
         public Server build() {
+            requireString(node, "url", "OpenAPI Server");
             return new Server(node);
         }
     }
@@ -900,11 +1008,10 @@ public final class OpenApiDocument {
         /**
          * Create a new server variable builder.
          *
-         * @param value default value
          * @return builder
          */
-        public static ServerVariableBuilder builder(String value) {
-            return new ServerVariableBuilder(value);
+        public static ServerVariableBuilder builder() {
+            return new ServerVariableBuilder();
         }
 
         private Map<String, Object> toNode() {
@@ -919,8 +1026,18 @@ public final class OpenApiDocument {
     public static final class ServerVariableBuilder implements io.helidon.common.Builder<ServerVariableBuilder, ServerVariable> {
         private final Map<String, Object> node = new LinkedHashMap<>();
 
-        private ServerVariableBuilder(String value) {
+        private ServerVariableBuilder() {
+        }
+
+        /**
+         * Set default value.
+         *
+         * @param value default value
+         * @return updated builder
+         */
+        public ServerVariableBuilder value(String value) {
             node.put("default", Objects.requireNonNull(value));
+            return this;
         }
 
         /**
@@ -947,6 +1064,7 @@ public final class OpenApiDocument {
 
         @Override
         public ServerVariable build() {
+            requireString(node, "default", "OpenAPI ServerVariable");
             return new ServerVariable(node);
         }
     }
@@ -967,11 +1085,10 @@ public final class OpenApiDocument {
         /**
          * Create a new tag builder.
          *
-         * @param name tag name
          * @return builder
          */
-        public static TagBuilder builder(String name) {
-            return new TagBuilder(name);
+        public static TagBuilder builder() {
+            return new TagBuilder();
         }
 
         /**
@@ -1004,8 +1121,18 @@ public final class OpenApiDocument {
     public static final class TagBuilder implements io.helidon.common.Builder<TagBuilder, Tag> {
         private final Map<String, Object> node = new LinkedHashMap<>();
 
-        private TagBuilder(String name) {
+        private TagBuilder() {
+        }
+
+        /**
+         * Set tag name.
+         *
+         * @param name tag name
+         * @return updated builder
+         */
+        public TagBuilder name(String name) {
             node.put("name", Objects.requireNonNull(name));
+            return this;
         }
 
         /**
@@ -1044,6 +1171,18 @@ public final class OpenApiDocument {
         }
 
         /**
+         * Set external documentation.
+         *
+         * @param externalDocs consumer to update external documentation builder
+         * @return updated builder
+         */
+        public TagBuilder externalDocs(Consumer<ExternalDocsBuilder> externalDocs) {
+            ExternalDocsBuilder builder = ExternalDocs.builder();
+            externalDocs.accept(builder);
+            return externalDocs(builder.build());
+        }
+
+        /**
          * Set tag kind.
          *
          * @param kind kind
@@ -1067,6 +1206,7 @@ public final class OpenApiDocument {
 
         @Override
         public Tag build() {
+            requireString(node, "name", "OpenAPI Tag");
             return new Tag(node);
         }
     }
@@ -1217,8 +1357,22 @@ public final class OpenApiDocument {
             if (fixedField == null) {
                 return additionalOperation(methodName, operation);
             }
+            failIfOperationExists(fixedField);
             node.put(fixedField, Objects.requireNonNull(operation).toNode());
             return this;
+        }
+
+        /**
+         * Add an HTTP operation.
+         *
+         * @param method HTTP method
+         * @param operation consumer to update operation builder
+         * @return updated builder
+         */
+        public PathItemBuilder operation(String method, Consumer<OperationBuilder> operation) {
+            OperationBuilder builder = Operation.builder();
+            operation.accept(builder);
+            return operation(method, builder.build());
         }
 
         /**
@@ -1228,8 +1382,21 @@ public final class OpenApiDocument {
          * @return updated builder
          */
         public PathItemBuilder query(Operation operation) {
+            failIfOperationExists("query");
             node.put("query", Objects.requireNonNull(operation).toNode());
             return this;
+        }
+
+        /**
+         * Set the OpenAPI 3.2 query operation.
+         *
+         * @param operation consumer to update operation builder
+         * @return updated builder
+         */
+        public PathItemBuilder query(Consumer<OperationBuilder> operation) {
+            OperationBuilder builder = Operation.builder();
+            operation.accept(builder);
+            return query(builder.build());
         }
 
         /**
@@ -1240,8 +1407,26 @@ public final class OpenApiDocument {
          * @return updated builder
          */
         public PathItemBuilder additionalOperation(String method, Operation operation) {
-            object(node, "additionalOperations").put(Objects.requireNonNull(method), Objects.requireNonNull(operation).toNode());
+            String methodName = Objects.requireNonNull(method);
+            Map<String, Object> operations = object(node, "additionalOperations");
+            if (operations.containsKey(methodName)) {
+                throw new IllegalStateException("Conflicting OpenAPI operation: additionalOperations." + methodName);
+            }
+            operations.put(methodName, Objects.requireNonNull(operation).toNode());
             return this;
+        }
+
+        /**
+         * Add an OpenAPI 3.2 additional operation.
+         *
+         * @param method method name
+         * @param operation consumer to update operation builder
+         * @return updated builder
+         */
+        public PathItemBuilder additionalOperation(String method, Consumer<OperationBuilder> operation) {
+            OperationBuilder builder = Operation.builder();
+            operation.accept(builder);
+            return additionalOperation(method, builder.build());
         }
 
         /**
@@ -1256,6 +1441,18 @@ public final class OpenApiDocument {
         }
 
         /**
+         * Add server.
+         *
+         * @param server consumer to update server builder
+         * @return updated builder
+         */
+        public PathItemBuilder server(Consumer<ServerBuilder> server) {
+            ServerBuilder builder = Server.builder();
+            server.accept(builder);
+            return server(builder.build());
+        }
+
+        /**
          * Add common parameter.
          *
          * @param parameter parameter
@@ -1266,9 +1463,27 @@ public final class OpenApiDocument {
             return this;
         }
 
+        /**
+         * Add common parameter.
+         *
+         * @param parameter consumer to update parameter builder
+         * @return updated builder
+         */
+        public PathItemBuilder parameter(Consumer<ParameterBuilder> parameter) {
+            ParameterBuilder builder = Parameter.builder();
+            parameter.accept(builder);
+            return parameter(builder.build());
+        }
+
         @Override
         public PathItem build() {
             return new PathItem("", node);
+        }
+
+        private void failIfOperationExists(String field) {
+            if (node.containsKey(field)) {
+                throw new IllegalStateException("Conflicting OpenAPI operation: " + field);
+            }
         }
     }
 
@@ -1368,7 +1583,7 @@ public final class OpenApiDocument {
          * @param tag tag name
          * @return updated builder
          */
-        public OperationBuilder addTag(String tag) {
+        public OperationBuilder tag(String tag) {
             array(node, "tags").add(Objects.requireNonNull(tag));
             return this;
         }
@@ -1407,6 +1622,18 @@ public final class OpenApiDocument {
         }
 
         /**
+         * Set external documentation.
+         *
+         * @param externalDocs consumer to update external documentation builder
+         * @return updated builder
+         */
+        public OperationBuilder externalDocs(Consumer<ExternalDocsBuilder> externalDocs) {
+            ExternalDocsBuilder builder = ExternalDocs.builder();
+            externalDocs.accept(builder);
+            return externalDocs(builder.build());
+        }
+
+        /**
          * Set operation id.
          *
          * @param operationId operation id
@@ -1429,6 +1656,18 @@ public final class OpenApiDocument {
         }
 
         /**
+         * Add parameter.
+         *
+         * @param parameter consumer to update parameter builder
+         * @return updated builder
+         */
+        public OperationBuilder parameter(Consumer<ParameterBuilder> parameter) {
+            ParameterBuilder builder = Parameter.builder();
+            parameter.accept(builder);
+            return parameter(builder.build());
+        }
+
+        /**
          * Set request body.
          *
          * @param requestBody request body
@@ -1440,6 +1679,18 @@ public final class OpenApiDocument {
         }
 
         /**
+         * Set request body.
+         *
+         * @param requestBody consumer to update request body builder
+         * @return updated builder
+         */
+        public OperationBuilder requestBody(Consumer<RequestBodyBuilder> requestBody) {
+            RequestBodyBuilder builder = RequestBody.builder();
+            requestBody.accept(builder);
+            return requestBody(builder.build());
+        }
+
+        /**
          * Add a response.
          *
          * @param status status code or {@code default}
@@ -1447,7 +1698,9 @@ public final class OpenApiDocument {
          * @return updated builder
          */
         public OperationBuilder response(String status, String description) {
-            return response(status, Response.builder(description).build());
+            return response(status, Response.builder()
+                    .description(description)
+                    .build());
         }
 
         /**
@@ -1463,6 +1716,19 @@ public final class OpenApiDocument {
         }
 
         /**
+         * Add a response.
+         *
+         * @param status status code or {@code default}
+         * @param response consumer to update response builder
+         * @return updated builder
+         */
+        public OperationBuilder response(String status, Consumer<ResponseBuilder> response) {
+            ResponseBuilder builder = Response.builder();
+            response.accept(builder);
+            return response(status, builder.build());
+        }
+
+        /**
          * Add callback.
          *
          * @param expression callback expression
@@ -1472,6 +1738,19 @@ public final class OpenApiDocument {
         public OperationBuilder callback(String expression, PathItem callback) {
             object(node, "callbacks").put(Objects.requireNonNull(expression), Objects.requireNonNull(callback).toNode());
             return this;
+        }
+
+        /**
+         * Add callback.
+         *
+         * @param expression callback expression
+         * @param callback consumer to update callback path item builder
+         * @return updated builder
+         */
+        public OperationBuilder callback(String expression, Consumer<PathItemBuilder> callback) {
+            PathItemBuilder builder = PathItem.builder();
+            callback.accept(builder);
+            return callback(expression, builder.build());
         }
 
         /**
@@ -1497,6 +1776,18 @@ public final class OpenApiDocument {
         }
 
         /**
+         * Add security requirement.
+         *
+         * @param requirement consumer to update security requirement builder
+         * @return updated builder
+         */
+        public OperationBuilder securityRequirement(Consumer<SecurityRequirementBuilder> requirement) {
+            SecurityRequirementBuilder builder = SecurityRequirement.builder();
+            requirement.accept(builder);
+            return securityRequirement(builder.build());
+        }
+
+        /**
          * Add server.
          *
          * @param server server
@@ -1507,8 +1798,21 @@ public final class OpenApiDocument {
             return this;
         }
 
+        /**
+         * Add server.
+         *
+         * @param server consumer to update server builder
+         * @return updated builder
+         */
+        public OperationBuilder server(Consumer<ServerBuilder> server) {
+            ServerBuilder builder = Server.builder();
+            server.accept(builder);
+            return server(builder.build());
+        }
+
         @Override
         public Operation build() {
+            requireValue(node, "responses", "OpenAPI Operation");
             return new Operation(node);
         }
     }
@@ -1531,27 +1835,6 @@ public final class OpenApiDocument {
          */
         public static ParameterBuilder builder() {
             return new ParameterBuilder();
-        }
-
-        /**
-         * Create a new parameter builder.
-         *
-         * @param name parameter name
-         * @param in parameter location
-         * @return builder
-         */
-        public static ParameterBuilder builder(String name, String in) {
-            return new ParameterBuilder().name(name).in(in);
-        }
-
-        /**
-         * Create a new parameter builder for a location without an individual parameter name.
-         *
-         * @param in parameter location
-         * @return builder
-         */
-        public static ParameterBuilder builder(String in) {
-            return new ParameterBuilder().in(in);
         }
 
         /**
@@ -1735,8 +2018,31 @@ public final class OpenApiDocument {
             return this;
         }
 
+        /**
+         * Add content entry.
+         *
+         * @param mediaType media type
+         * @param content consumer to update media type object builder
+         * @return updated builder
+         */
+        public ParameterBuilder content(String mediaType, Consumer<MediaTypeObjectBuilder> content) {
+            MediaTypeObjectBuilder builder = MediaTypeObject.builder();
+            content.accept(builder);
+            return content(mediaType, builder.build());
+        }
+
+        private Map<String, Object> toNode() {
+            return node;
+        }
+
         @Override
         public Parameter build() {
+            if (!isReference(node)) {
+                requireString(node, "in", "OpenAPI Parameter");
+                if (!"querystring".equals(stringValue(node.get("in")).orElse(""))) {
+                    requireString(node, "name", "OpenAPI Parameter");
+                }
+            }
             return new Parameter(node);
         }
     }
@@ -1853,9 +2159,21 @@ public final class OpenApiDocument {
             return this;
         }
 
+        /**
+         * Add content entry.
+         *
+         * @param mediaType media type
+         * @param content consumer to update media type object builder
+         * @return updated builder
+         */
+        public HeaderBuilder content(String mediaType, Consumer<MediaTypeObjectBuilder> content) {
+            delegate.content(mediaType, content);
+            return this;
+        }
+
         @Override
         public Header build() {
-            Map<String, Object> node = new LinkedHashMap<>(delegate.build().toNode());
+            Map<String, Object> node = new LinkedHashMap<>(delegate.toNode());
             node.remove("name");
             node.remove("in");
             return new Header(node);
@@ -1942,6 +2260,19 @@ public final class OpenApiDocument {
         }
 
         /**
+         * Add content entry.
+         *
+         * @param mediaType media type
+         * @param content consumer to update media type object builder
+         * @return updated builder
+         */
+        public RequestBodyBuilder content(String mediaType, Consumer<MediaTypeObjectBuilder> content) {
+            MediaTypeObjectBuilder builder = MediaTypeObject.builder();
+            content.accept(builder);
+            return content(mediaType, builder.build());
+        }
+
+        /**
          * Set required flag.
          *
          * @param required required flag
@@ -1954,6 +2285,9 @@ public final class OpenApiDocument {
 
         @Override
         public RequestBody build() {
+            if (!isReference(node)) {
+                requireValue(node, "content", "OpenAPI RequestBody");
+            }
             return new RequestBody(node);
         }
     }
@@ -1972,22 +2306,12 @@ public final class OpenApiDocument {
         }
 
         /**
-         * Create a new response builder.
-         *
-         * @param value response description
-         * @return builder
-         */
-        public static ResponseBuilder builder(String value) {
-            return new ResponseBuilder(value);
-        }
-
-        /**
          * Create an empty response builder.
          *
          * @return builder
          */
         public static ResponseBuilder builder() {
-            return new ResponseBuilder(null);
+            return new ResponseBuilder();
         }
 
         /**
@@ -2030,10 +2354,7 @@ public final class OpenApiDocument {
     public static final class ResponseBuilder implements io.helidon.common.Builder<ResponseBuilder, Response> {
         private final Map<String, Object> node = new LinkedHashMap<>();
 
-        private ResponseBuilder(String value) {
-            if (value != null) {
-                node.put("description", value);
-            }
+        private ResponseBuilder() {
         }
 
         /**
@@ -2082,6 +2403,19 @@ public final class OpenApiDocument {
         }
 
         /**
+         * Add header.
+         *
+         * @param name header name
+         * @param header consumer to update header builder
+         * @return updated builder
+         */
+        public ResponseBuilder header(String name, Consumer<HeaderBuilder> header) {
+            HeaderBuilder builder = Header.builder();
+            header.accept(builder);
+            return header(name, builder.build());
+        }
+
+        /**
          * Add content entry.
          *
          * @param mediaType media type
@@ -2091,6 +2425,19 @@ public final class OpenApiDocument {
         public ResponseBuilder content(String mediaType, MediaTypeObject content) {
             object(node, "content").put(Objects.requireNonNull(mediaType), Objects.requireNonNull(content).toNode());
             return this;
+        }
+
+        /**
+         * Add content entry.
+         *
+         * @param mediaType media type
+         * @param content consumer to update media type object builder
+         * @return updated builder
+         */
+        public ResponseBuilder content(String mediaType, Consumer<MediaTypeObjectBuilder> content) {
+            MediaTypeObjectBuilder builder = MediaTypeObject.builder();
+            content.accept(builder);
+            return content(mediaType, builder.build());
         }
 
         /**
@@ -2105,8 +2452,24 @@ public final class OpenApiDocument {
             return this;
         }
 
+        /**
+         * Add link.
+         *
+         * @param name link name
+         * @param link consumer to update link builder
+         * @return updated builder
+         */
+        public ResponseBuilder link(String name, Consumer<LinkBuilder> link) {
+            LinkBuilder builder = Link.builder();
+            link.accept(builder);
+            return link(name, builder.build());
+        }
+
         @Override
         public Response build() {
+            if (!isReference(node)) {
+                requireString(node, "description", "OpenAPI Response");
+            }
             return new Response(node);
         }
     }
@@ -2654,7 +3017,7 @@ public final class OpenApiDocument {
         }
 
         /**
-         * Put schema.
+         * Set schema.
          *
          * @param name schema name
          * @param schema schema
@@ -2666,7 +3029,7 @@ public final class OpenApiDocument {
         }
 
         /**
-         * Put response.
+         * Set response.
          *
          * @param name response name
          * @param response response
@@ -2678,7 +3041,20 @@ public final class OpenApiDocument {
         }
 
         /**
-         * Put parameter.
+         * Set response.
+         *
+         * @param name response name
+         * @param response consumer to update response builder
+         * @return updated builder
+         */
+        public ComponentsBuilder response(String name, Consumer<ResponseBuilder> response) {
+            ResponseBuilder builder = Response.builder();
+            response.accept(builder);
+            return response(name, builder.build());
+        }
+
+        /**
+         * Set parameter.
          *
          * @param name parameter name
          * @param parameter parameter
@@ -2690,7 +3066,20 @@ public final class OpenApiDocument {
         }
 
         /**
-         * Put example.
+         * Set parameter.
+         *
+         * @param name parameter name
+         * @param parameter consumer to update parameter builder
+         * @return updated builder
+         */
+        public ComponentsBuilder parameter(String name, Consumer<ParameterBuilder> parameter) {
+            ParameterBuilder builder = Parameter.builder();
+            parameter.accept(builder);
+            return parameter(name, builder.build());
+        }
+
+        /**
+         * Set example.
          *
          * @param name example name
          * @param example example
@@ -2702,7 +3091,20 @@ public final class OpenApiDocument {
         }
 
         /**
-         * Put request body.
+         * Set example.
+         *
+         * @param name example name
+         * @param example consumer to update example builder
+         * @return updated builder
+         */
+        public ComponentsBuilder example(String name, Consumer<ExampleBuilder> example) {
+            ExampleBuilder builder = Example.builder();
+            example.accept(builder);
+            return example(name, builder.build());
+        }
+
+        /**
+         * Set request body.
          *
          * @param name request body name
          * @param requestBody request body
@@ -2714,7 +3116,20 @@ public final class OpenApiDocument {
         }
 
         /**
-         * Put header.
+         * Set request body.
+         *
+         * @param name request body name
+         * @param requestBody consumer to update request body builder
+         * @return updated builder
+         */
+        public ComponentsBuilder requestBody(String name, Consumer<RequestBodyBuilder> requestBody) {
+            RequestBodyBuilder builder = RequestBody.builder();
+            requestBody.accept(builder);
+            return requestBody(name, builder.build());
+        }
+
+        /**
+         * Set header.
          *
          * @param name header name
          * @param header header
@@ -2726,7 +3141,20 @@ public final class OpenApiDocument {
         }
 
         /**
-         * Put security scheme.
+         * Set header.
+         *
+         * @param name header name
+         * @param header consumer to update header builder
+         * @return updated builder
+         */
+        public ComponentsBuilder header(String name, Consumer<HeaderBuilder> header) {
+            HeaderBuilder builder = Header.builder();
+            header.accept(builder);
+            return header(name, builder.build());
+        }
+
+        /**
+         * Set security scheme.
          *
          * @param name security scheme name
          * @param securityScheme security scheme
@@ -2738,7 +3166,20 @@ public final class OpenApiDocument {
         }
 
         /**
-         * Put link.
+         * Set security scheme.
+         *
+         * @param name security scheme name
+         * @param securityScheme consumer to update security scheme builder
+         * @return updated builder
+         */
+        public ComponentsBuilder securityScheme(String name, Consumer<SecuritySchemeBuilder> securityScheme) {
+            SecuritySchemeBuilder builder = SecurityScheme.builder();
+            securityScheme.accept(builder);
+            return securityScheme(name, builder.build());
+        }
+
+        /**
+         * Set link.
          *
          * @param name link name
          * @param link link
@@ -2750,7 +3191,20 @@ public final class OpenApiDocument {
         }
 
         /**
-         * Put callback.
+         * Set link.
+         *
+         * @param name link name
+         * @param link consumer to update link builder
+         * @return updated builder
+         */
+        public ComponentsBuilder link(String name, Consumer<LinkBuilder> link) {
+            LinkBuilder builder = Link.builder();
+            link.accept(builder);
+            return link(name, builder.build());
+        }
+
+        /**
+         * Set callback.
          *
          * @param name callback name
          * @param callback callback path item
@@ -2762,7 +3216,20 @@ public final class OpenApiDocument {
         }
 
         /**
-         * Put path item.
+         * Set callback.
+         *
+         * @param name callback name
+         * @param callback consumer to update callback path item builder
+         * @return updated builder
+         */
+        public ComponentsBuilder callback(String name, Consumer<PathItemBuilder> callback) {
+            PathItemBuilder builder = PathItem.builder();
+            callback.accept(builder);
+            return callback(name, builder.build());
+        }
+
+        /**
+         * Set path item.
          *
          * @param name path item name
          * @param pathItem path item
@@ -2774,7 +3241,20 @@ public final class OpenApiDocument {
         }
 
         /**
-         * Put OpenAPI 3.2 media type.
+         * Set path item.
+         *
+         * @param name path item name
+         * @param pathItem consumer to update path item builder
+         * @return updated builder
+         */
+        public ComponentsBuilder pathItem(String name, Consumer<PathItemBuilder> pathItem) {
+            PathItemBuilder builder = PathItem.builder();
+            pathItem.accept(builder);
+            return pathItem(name, builder.build());
+        }
+
+        /**
+         * Set OpenAPI 3.2 media type.
          *
          * @param name media type name
          * @param mediaType media type object
@@ -2783,6 +3263,19 @@ public final class OpenApiDocument {
         public ComponentsBuilder mediaType(String name, MediaTypeObject mediaType) {
             object(node, "mediaTypes").put(Objects.requireNonNull(name), Objects.requireNonNull(mediaType).toNode());
             return this;
+        }
+
+        /**
+         * Set OpenAPI 3.2 media type.
+         *
+         * @param name media type name
+         * @param mediaType consumer to update media type object builder
+         * @return updated builder
+         */
+        public ComponentsBuilder mediaType(String name, Consumer<MediaTypeObjectBuilder> mediaType) {
+            MediaTypeObjectBuilder builder = MediaTypeObject.builder();
+            mediaType.accept(builder);
+            return mediaType(name, builder.build());
         }
 
         @Override
@@ -2805,11 +3298,10 @@ public final class OpenApiDocument {
         /**
          * Create a new security scheme builder.
          *
-         * @param type security scheme type
          * @return builder
          */
-        public static SecuritySchemeBuilder builder(String type) {
-            return new SecuritySchemeBuilder(type);
+        public static SecuritySchemeBuilder builder() {
+            return new SecuritySchemeBuilder();
         }
 
         /**
@@ -2819,7 +3311,7 @@ public final class OpenApiDocument {
          * @return security scheme
          */
         public static SecurityScheme reference(String ref) {
-            return new SecuritySchemeBuilder(null).ref(ref).build();
+            return new SecuritySchemeBuilder().ref(ref).build();
         }
 
         private Map<String, Object> toNode() {
@@ -2834,10 +3326,7 @@ public final class OpenApiDocument {
     public static final class SecuritySchemeBuilder implements io.helidon.common.Builder<SecuritySchemeBuilder, SecurityScheme> {
         private final Map<String, Object> node = new LinkedHashMap<>();
 
-        private SecuritySchemeBuilder(String type) {
-            if (type != null) {
-                node.put("type", type);
-            }
+        private SecuritySchemeBuilder() {
         }
 
         /**
@@ -2848,6 +3337,17 @@ public final class OpenApiDocument {
          */
         public SecuritySchemeBuilder ref(String ref) {
             node.put("$ref", Objects.requireNonNull(ref));
+            return this;
+        }
+
+        /**
+         * Set security scheme type.
+         *
+         * @param type security scheme type
+         * @return updated builder
+         */
+        public SecuritySchemeBuilder type(String type) {
+            node.put("type", Objects.requireNonNull(type));
             return this;
         }
 
@@ -2952,6 +3452,9 @@ public final class OpenApiDocument {
 
         @Override
         public SecurityScheme build() {
+            if (!isReference(node)) {
+                requireString(node, "type", "OpenAPI SecurityScheme");
+            }
             return new SecurityScheme(node);
         }
     }
@@ -3016,7 +3519,7 @@ public final class OpenApiDocument {
          * @param scopes required scopes
          * @return updated builder
          */
-        public SecurityRequirementBuilder addScheme(String name, List<String> scopes) {
+        public SecurityRequirementBuilder scheme(String name, List<String> scopes) {
             node.put(Objects.requireNonNull(name), List.copyOf(scopes));
             return this;
         }
@@ -3110,7 +3613,10 @@ public final class OpenApiDocument {
          * @return updated builder
          */
         public Builder info(String title, String version) {
-            return info(Info.builder(title, version).build());
+            return info(Info.builder()
+                                .title(title)
+                                .version(version)
+                                .build());
         }
 
         /**
@@ -3125,25 +3631,15 @@ public final class OpenApiDocument {
         }
 
         /**
-         * Set the Info object summary.
+         * Set the Info object.
          *
-         * @param summary API summary
+         * @param info consumer to update info builder
          * @return updated builder
          */
-        public Builder infoSummary(String summary) {
-            object(node, "info").put("summary", Objects.requireNonNull(summary));
-            return this;
-        }
-
-        /**
-         * Set the Info object description.
-         *
-         * @param description API description
-         * @return updated builder
-         */
-        public Builder infoDescription(String description) {
-            object(node, "info").put("description", Objects.requireNonNull(description));
-            return this;
+        public Builder info(Consumer<InfoBuilder> info) {
+            InfoBuilder builder = Info.builder();
+            info.accept(builder);
+            return info(builder.build());
         }
 
         /**
@@ -3152,101 +3648,100 @@ public final class OpenApiDocument {
          * @param server server model
          * @return updated builder
          */
-        public Builder addServer(Server server) {
+        public Builder server(Server server) {
             array(node, "servers").add(mutableMap(Objects.requireNonNull(server).toNode()));
             return this;
         }
 
         /**
-         * Put a path item.
+         * Add a server.
+         *
+         * @param server consumer to update server builder
+         * @return updated builder
+         */
+        public Builder server(Consumer<ServerBuilder> server) {
+            ServerBuilder builder = Server.builder();
+            server.accept(builder);
+            return server(builder.build());
+        }
+
+        /**
+         * Add or merge a path item.
          *
          * @param path OpenAPI path
          * @param pathItem path item
          * @return updated builder
          */
-        public Builder putPath(String path, PathItem pathItem) {
-            object(node, "paths").put(Objects.requireNonNull(path), mutableMap(Objects.requireNonNull(pathItem).toNode()));
+        public Builder path(String path, PathItem pathItem) {
+            Map<String, Object> source = new LinkedHashMap<>();
+            source.put(Objects.requireNonNull(path), mutableMap(Objects.requireNonNull(pathItem).toNode()));
+            mergePathItems(object(node, "paths"), source, "paths");
             return this;
         }
 
         /**
-         * Put an operation into the document paths.
+         * Add or merge a path item.
          *
          * @param path OpenAPI path
-         * @param method HTTP method
-         * @param operation operation model
+         * @param pathItem consumer to update path item builder
          * @return updated builder
          */
-        public Builder putOperation(String path, String method, Operation operation) {
-            Map<String, Object> pathItem = object(object(node, "paths"), Objects.requireNonNull(path));
-            String methodName = Objects.requireNonNull(method);
-            String fixedField = fixedPathOperationField(methodName);
-            if (fixedField == null) {
-                object(pathItem, "additionalOperations")
-                        .put(methodName, mutableMap(Objects.requireNonNull(operation).toNode()));
-                return this;
-            }
-            pathItem.put(fixedField, mutableMap(Objects.requireNonNull(operation).toNode()));
-            return this;
+        public Builder path(String path, Consumer<PathItemBuilder> pathItem) {
+            PathItemBuilder builder = PathItem.builder();
+            pathItem.accept(builder);
+            return path(path, builder.build());
         }
 
         /**
-         * Put a webhook path item.
+         * Add or merge a webhook path item.
          *
          * @param name webhook name
          * @param pathItem path item
          * @return updated builder
          */
-        public Builder putWebhook(String name, PathItem pathItem) {
-            object(node, "webhooks").put(Objects.requireNonNull(name), mutableMap(Objects.requireNonNull(pathItem).toNode()));
+        public Builder webhook(String name, PathItem pathItem) {
+            Map<String, Object> source = new LinkedHashMap<>();
+            source.put(Objects.requireNonNull(name), mutableMap(Objects.requireNonNull(pathItem).toNode()));
+            mergePathItems(object(node, "webhooks"), source, "webhooks");
             return this;
         }
 
         /**
-         * Set components.
+         * Add or merge a webhook path item.
+         *
+         * @param name webhook name
+         * @param pathItem consumer to update path item builder
+         * @return updated builder
+         */
+        public Builder webhook(String name, Consumer<PathItemBuilder> pathItem) {
+            PathItemBuilder builder = PathItem.builder();
+            pathItem.accept(builder);
+            return webhook(name, builder.build());
+        }
+
+        /**
+         * Add or merge components.
          *
          * @param components components
          * @return updated builder
          */
         public Builder components(Components components) {
-            node.put("components", mutableMap(Objects.requireNonNull(components).toNode()));
+            OpenApiDocument.merge(object(node, "components"),
+                                  mutableMap(Objects.requireNonNull(components).toNode()),
+                                  "components");
             return this;
         }
 
         /**
-         * Put a schema into the components object.
+         * Add or merge components.
          *
-         * @param name schema name
-         * @param schema schema model
+         * @param components consumer to update components builder
          * @return updated builder
          */
-        public Builder putSchema(String name, Schema schema) {
-            return putSchema(name, schema.generateObjectNoKeywords());
-        }
-
-        /**
-         * Put a schema into the components object.
-         *
-         * @param name schema name
-         * @param schema schema value
-         * @return updated builder
-         */
-        public Builder putSchema(String name, JsonValue schema) {
-            object(object(node, "components"), "schemas").put(Objects.requireNonNull(name), jsonValue(schema));
-            return this;
-        }
-
-        /**
-         * Put a security scheme into the components object.
-         *
-         * @param name security scheme name
-         * @param securityScheme security scheme model
-         * @return updated builder
-         */
-        public Builder putSecurityScheme(String name, SecurityScheme securityScheme) {
-            object(object(node, "components"), "securitySchemes")
-                    .put(Objects.requireNonNull(name), mutableMap(Objects.requireNonNull(securityScheme).toNode()));
-            return this;
+        public Builder components(Consumer<ComponentsBuilder> components) {
+            ComponentsBuilder builder = Components.builder();
+            components.accept(builder);
+            return components(builder.build());
         }
 
         /**
@@ -3256,10 +3751,10 @@ public final class OpenApiDocument {
          * @param scopes security scopes
          * @return updated builder
          */
-        public Builder addSecurityRequirement(String name, List<String> scopes) {
-            return addSecurityRequirement(SecurityRequirement.builder()
-                                                  .addScheme(name, scopes)
-                                                  .build());
+        public Builder securityRequirement(String name, List<String> scopes) {
+            return securityRequirement(SecurityRequirement.builder()
+                                               .scheme(name, scopes)
+                                               .build());
         }
 
         /**
@@ -3268,9 +3763,21 @@ public final class OpenApiDocument {
          * @param requirement security requirement
          * @return updated builder
          */
-        public Builder addSecurityRequirement(SecurityRequirement requirement) {
+        public Builder securityRequirement(SecurityRequirement requirement) {
             array(node, "security").add(mutableMap(Objects.requireNonNull(requirement).toNode()));
             return this;
+        }
+
+        /**
+         * Add a security requirement.
+         *
+         * @param requirement consumer to update security requirement builder
+         * @return updated builder
+         */
+        public Builder securityRequirement(Consumer<SecurityRequirementBuilder> requirement) {
+            SecurityRequirementBuilder builder = SecurityRequirement.builder();
+            requirement.accept(builder);
+            return securityRequirement(builder.build());
         }
 
         /**
@@ -3280,10 +3787,11 @@ public final class OpenApiDocument {
          * @param description tag description
          * @return updated builder
          */
-        public Builder addTag(String name, String description) {
-            return addTag(Tag.builder(name)
-                                  .description(description)
-                                  .build());
+        public Builder tag(String name, String description) {
+            return tag(Tag.builder()
+                       .name(name)
+                       .description(description)
+                       .build());
         }
 
         /**
@@ -3292,9 +3800,21 @@ public final class OpenApiDocument {
          * @param tag tag model
          * @return updated builder
          */
-        public Builder addTag(Tag tag) {
+        public Builder tag(Tag tag) {
             array(node, "tags").add(mutableMap(Objects.requireNonNull(tag).toNode()));
             return this;
+        }
+
+        /**
+         * Add a document tag.
+         *
+         * @param tag consumer to update tag builder
+         * @return updated builder
+         */
+        public Builder tag(Consumer<TagBuilder> tag) {
+            TagBuilder builder = Tag.builder();
+            tag.accept(builder);
+            return tag(builder.build());
         }
 
         /**
@@ -3306,6 +3826,18 @@ public final class OpenApiDocument {
         public Builder externalDocs(ExternalDocs externalDocs) {
             node.put("externalDocs", mutableMap(Objects.requireNonNull(externalDocs).toNode()));
             return this;
+        }
+
+        /**
+         * Set external documentation.
+         *
+         * @param externalDocs consumer to update external documentation builder
+         * @return updated builder
+         */
+        public Builder externalDocs(Consumer<ExternalDocsBuilder> externalDocs) {
+            ExternalDocsBuilder builder = ExternalDocs.builder();
+            externalDocs.accept(builder);
+            return externalDocs(builder.build());
         }
 
         /**
