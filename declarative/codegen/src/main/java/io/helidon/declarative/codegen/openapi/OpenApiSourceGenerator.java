@@ -763,7 +763,10 @@ final class OpenApiSourceGenerator {
         Optional<String> configuredLocation = explicitStringValue(annotations, "in");
         validateParameterLocation(restMethod, in, configuredLocation);
         String location = configuredLocation.orElse(in);
-        String name = explicitStringValue(annotations, "name").orElseGet(() -> parameterName(parameter, in));
+        String parameterName = parameterName(parameter, in);
+        Optional<String> configuredName = explicitStringValue(annotations, "name");
+        validateParameterName(restMethod, in, parameterName, configuredName);
+        String name = configuredName.orElse(parameterName);
         List<Annotation> contentAnnotations = annotationValues(annotations, "content");
         boolean hasExplicitContent = !contentAnnotations.isEmpty();
         Optional<String> configuredStyle = style(annotations);
@@ -1383,6 +1386,18 @@ final class OpenApiSourceGenerator {
                 .ifPresent(it -> {
                     throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
                                                        + " cannot document a " + in + " parameter as " + it);
+                });
+    }
+
+    private void validateParameterName(RestMethod restMethod,
+                                       String in,
+                                       String parameterName,
+                                       Optional<String> configuredName) {
+        configuredName.filter(not(parameterName::equals))
+                .ifPresent(it -> {
+                    throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                                       + " cannot document a " + in + " parameter named "
+                                                       + parameterName + " as " + it);
                 });
     }
 
