@@ -165,6 +165,11 @@ class GreetingEndpoint {
         return name.isBlank() ? Optional.empty() : Optional.of(new Message("Hello " + name));
     }
 
+    @Http.DELETE
+    @Http.Path("/{name}")
+    void remove(@Http.PathParam("name") String name) {
+    }
+
     @Http.GET
     @Http.Path("/internal")
     @OpenApi.Hidden

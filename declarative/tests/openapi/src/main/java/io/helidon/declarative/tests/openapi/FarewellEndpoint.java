@@ -40,4 +40,12 @@ class FarewellEndpoint {
     Message create(@Http.Entity MessageRequest request) {
         return new Message("Goodbye " + request.name());
     }
+
+    @Http.POST
+    @Http.Path("/plain")
+    @Http.Consumes(MediaTypes.TEXT_PLAIN_VALUE)
+    @Http.Produces(MediaTypes.TEXT_PLAIN_VALUE)
+    String createPlain(@Http.Entity String message) {
+        return "Goodbye " + message;
+    }
 }
