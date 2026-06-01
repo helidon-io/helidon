@@ -344,6 +344,24 @@ class DeclarativeOpenApiTest {
     }
 
     @Test
+    void generatedDocumentDisambiguatesCollidingSchemaNames() {
+        Map<String, Object> document = document();
+        Map<String, Object> schemas = object(object(document, "components"), "schemas");
+
+        String localMessage = "io_helidon_declarative_tests_openapi_Message";
+        String otherMessage = "io_helidon_declarative_tests_openapi_other_Message";
+        assertThat(schemas, hasKey(localMessage));
+        assertThat(schemas, hasKey(otherMessage));
+        assertThat(object(schemas, otherMessage).get("description"), is("Other package message entity"));
+
+        Map<String, Object> create = operation(document, "/collisions", "post");
+        assertThat(ref(content(object(create, "requestBody"), MediaTypes.APPLICATION_JSON_VALUE)),
+                   is("#/components/schemas/" + otherMessage));
+        assertThat(ref(content(response(create, "200"), MediaTypes.APPLICATION_JSON_VALUE)),
+                   is("#/components/schemas/" + localMessage));
+    }
+
+    @Test
     void generatedDocumentExcludesHiddenOperations() {
         assertThat(object(document(), "paths"), not(hasKey("/greetings/internal")));
     }
