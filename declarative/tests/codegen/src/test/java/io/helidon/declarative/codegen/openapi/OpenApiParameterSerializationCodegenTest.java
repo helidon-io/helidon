@@ -270,6 +270,53 @@ class OpenApiParameterSerializationCodegenTest {
     }
 
     @Test
+    void pathParameterCannotUseAllowReserved() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-path-allow-reserved"))
+                .addSource("InvalidOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/invalid")
+                        class InvalidOpenApiEndpoint {
+                            @Http.GET
+                            @Http.Path("/{id}")
+                            String get(@OpenApi.Parameter(allowReserved = true)
+                                       @Http.PathParam("id") String id) {
+                                return id;
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertCompilationFails(result,
+                               "@OpenApi.Parameter on com.example.InvalidOpenApiEndpoint.get",
+                               "cannot use allowReserved=true for a path parameter");
+    }
+
+    @Test
     void listQueryParameterCannotUseDelimitedStyleWithExplodeTrue() {
         var result = TestCompiler.builder()
                 .currentRelease()
@@ -362,6 +409,97 @@ class OpenApiParameterSerializationCodegenTest {
         assertCompilationFails(result,
                                "@OpenApi.Parameter on com.example.InvalidOpenApiEndpoint.get",
                                "cannot use explode=true for a header parameter");
+    }
+
+    @Test
+    void headerParameterCannotUseAllowReserved() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-header-allow-reserved"))
+                .addSource("InvalidOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/invalid")
+                        class InvalidOpenApiEndpoint {
+                            @Http.GET
+                            String get(@OpenApi.Parameter(allowReserved = true)
+                                       @Http.HeaderParam("X-Value") String value) {
+                                return value;
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertCompilationFails(result,
+                               "@OpenApi.Parameter on com.example.InvalidOpenApiEndpoint.get",
+                               "cannot use allowReserved=true for a header parameter");
+    }
+
+    @Test
+    void queryParameterCanUseAllowReserved() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-query-allow-reserved"))
+                .addSource("ValidOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/valid")
+                        class ValidOpenApiEndpoint {
+                            @Http.GET
+                            String get(@OpenApi.Parameter(allowReserved = true)
+                                       @Http.QueryParam("value") String value) {
+                                return value;
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
     }
 
     @Test
