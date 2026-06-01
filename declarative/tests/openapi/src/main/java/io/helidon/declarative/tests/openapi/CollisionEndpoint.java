@@ -18,6 +18,7 @@ package io.helidon.declarative.tests.openapi;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Http;
+import io.helidon.openapi.OpenApi;
 import io.helidon.webserver.http.RestServer;
 
 /**
@@ -25,6 +26,8 @@ import io.helidon.webserver.http.RestServer;
  */
 @RestServer.Endpoint
 @Http.Path("/collisions")
+@OpenApi.Document
+@OpenApi.Info(title = "Declarative OpenAPI Test", version = "1.0.0")
 class CollisionEndpoint {
 
     @Http.POST
