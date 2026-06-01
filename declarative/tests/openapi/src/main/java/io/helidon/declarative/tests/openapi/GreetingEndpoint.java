@@ -31,6 +31,7 @@ import io.helidon.webserver.http.RestServer;
 @RestServer.Endpoint
 @Http.Path("/greetings")
 class GreetingEndpoint {
+    private static final String ACCEPTED_MEDIA_TYPE = "application/vnd.greeting+json";
 
     @Http.GET
     @Http.Path("/{name}")
@@ -68,6 +69,28 @@ class GreetingEndpoint {
     @OpenApi.SecurityRequirements({})
     Message publicGreeting() {
         return new Message("Hello everybody");
+    }
+
+    @Http.GET
+    @Http.Path("/responses")
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    @RestServer.Status(Status.ACCEPTED_202_CODE)
+    @RestServer.Header(name = "X-Static", value = "static")
+    @RestServer.ComputedHeader(name = ResponseHeaderFunction.HEADER_NAME, function = ResponseHeaderFunction.SERVICE_NAME)
+    @OpenApi.Response(status = Status.ACCEPTED_202_CODE,
+                      description = "Accepted greeting",
+                      summary = "Accepted response",
+                      headers = @OpenApi.Header(name = "X-Documented",
+                                                value = "Documented response header",
+                                                required = OpenApi.Required.TRUE,
+                                                deprecated = true),
+                      content = @OpenApi.Content(value = ACCEPTED_MEDIA_TYPE,
+                                                 schema = Message.class,
+                                                 examples = @OpenApi.Example(name = "accepted-response",
+                                                                             summary = "Accepted example",
+                                                                             value = "{\"message\":\"Accepted\"}")))
+    Message responses() {
+        return new Message("Accepted");
     }
 
     @Http.GET

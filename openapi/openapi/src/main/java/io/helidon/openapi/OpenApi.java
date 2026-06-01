@@ -585,6 +585,63 @@ public final class OpenApi {
          * @return content
          */
         Content[] content() default {};
+
+        /**
+         * Response headers.
+         *
+         * @return headers
+         */
+        Header[] headers() default {};
+    }
+
+    /**
+     * OpenAPI Header Object metadata.
+     */
+    @Target({})
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface Header {
+        /**
+         * Header name.
+         *
+         * @return header name
+         */
+        String name();
+
+        /**
+         * Header description.
+         *
+         * @return description
+         */
+        String value() default "";
+
+        /**
+         * Requiredness override.
+         *
+         * @return requiredness
+         */
+        Required required() default Required.UNSPECIFIED;
+
+        /**
+         * Whether the header is deprecated.
+         *
+         * @return deprecated flag
+         */
+        boolean deprecated() default false;
+
+        /**
+         * Schema class. Defaults to {@link String}.
+         *
+         * @return schema class
+         */
+        Class<?> schema() default Void.class;
+
+        /**
+         * Header content entries.
+         *
+         * @return content
+         */
+        Content[] content() default {};
     }
 
     /**
