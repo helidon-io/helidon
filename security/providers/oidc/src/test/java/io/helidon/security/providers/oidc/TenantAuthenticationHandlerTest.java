@@ -17,8 +17,10 @@
 package io.helidon.security.providers.oidc;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -122,6 +124,32 @@ class TenantAuthenticationHandlerTest {
                    is(SecurityResponse.SecurityStatus.SUCCESS));
         Subject subject = authenticationResponse.user().orElseThrow();
         assertThat(subject.grants(Role.class), hasItems(Role.create("inventory:read"), Role.create("inventory:write")));
+    }
+
+    @Test
+    public void testPlainAccessTokenCookieWithEncryptedDefaultFailsAuthentication() {
+        OidcConfig oidcConfig = OidcConfig.builder()
+                .clientId("test")
+                .clientSecret("123")
+                .identityUri(URI.create("http://localhost:1234"))
+                .oidcMetadataWellKnown(false)
+                .useCookie(true)
+                .useHeader(false)
+                .redirect(false)
+                .build();
+        Tenant tenant = mock(Tenant.class);
+        when(tenant.tenantConfig()).thenReturn(oidcConfig);
+        TenantAuthenticationHandler authenticationHandler = new TenantAuthenticationHandler(oidcConfig, tenant, false, false);
+        String tokenJson = "{\"accessToken\":\"dummy\",\"remotePeer\":\"127.0.0.1\"}";
+        String oldPlainCookie = OidcConfig.DEFAULT_COOKIE_NAME + "="
+                + Base64.getEncoder().encodeToString(tokenJson.getBytes(StandardCharsets.UTF_8));
+
+        AuthenticationResponse response = authenticationHandler.authenticate(DEFAULT_TENANT_ID,
+                                                                             requestWithCookies(oldPlainCookie));
+
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElseThrow(), is(401));
+        assertThat(response.description().orElseThrow(), is("Invalid access token"));
     }
 
     @Test

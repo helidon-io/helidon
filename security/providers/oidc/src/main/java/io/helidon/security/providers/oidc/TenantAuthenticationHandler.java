@@ -281,13 +281,13 @@ class TenantAuthenticationHandler {
 
             if (oidcConfig.useCookie()) {
                 if (token.isEmpty()) {
-                    // only do this for cookies
-                    Optional<String> cookie = oidcConfig.tokenCookieHandler()
-                            .findCookie(providerRequest.env().headers());
-                    if (cookie.isEmpty()) {
-                        missingLocations.add("cookie");
-                    } else {
-                        try {
+                    try {
+                        // only do this for cookies
+                        Optional<String> cookie = oidcConfig.tokenCookieHandler()
+                                .findCookie(providerRequest.env().headers());
+                        if (cookie.isEmpty()) {
+                            missingLocations.add("cookie");
+                        } else {
                             String tokenValue = cookie.get();
                             String decodedJson = new String(Base64.getDecoder().decode(tokenValue), StandardCharsets.UTF_8);
                             JsonObject jsonObject = JsonParser.create(decodedJson).readJsonObject();
@@ -315,16 +315,16 @@ class TenantAuthenticationHandler {
                                                        providerRequest,
                                                        accessToken,
                                                        idToken);
-                        } catch (Exception e) {
-                            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                                LOGGER.log(System.Logger.Level.DEBUG, "Invalid access token in cookie", e);
-                            }
-                            return errorResponse(providerRequest,
-                                                 Status.UNAUTHORIZED_401,
-                                                 null,
-                                                 "Invalid access token",
-                                                 tenantId);
                         }
+                    } catch (Exception e) {
+                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                            LOGGER.log(System.Logger.Level.DEBUG, "Invalid access token in cookie", e);
+                        }
+                        return errorResponse(providerRequest,
+                                             Status.UNAUTHORIZED_401,
+                                             null,
+                                             "Invalid access token",
+                                             tenantId);
                     }
                 }
             }
