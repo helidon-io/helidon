@@ -129,6 +129,52 @@ class OpenApiParameterSerializationCodegenTest {
     }
 
     @Test
+    void queryParameterCannotOverrideName() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-query-name-override"))
+                .addSource("InvalidOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/invalid")
+                        class InvalidOpenApiEndpoint {
+                            @Http.GET
+                            String get(@OpenApi.Parameter(name = "documented")
+                                       @Http.QueryParam("actual") String value) {
+                                return value;
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertCompilationFails(result,
+                               "@OpenApi.Parameter on com.example.InvalidOpenApiEndpoint.get",
+                               "cannot document a query parameter named actual as documented");
+    }
+
+    @Test
     void headerParameterCannotUseQueryStyle() {
         var result = TestCompiler.builder()
                 .currentRelease()
@@ -481,6 +527,51 @@ class OpenApiParameterSerializationCodegenTest {
                         class ValidOpenApiEndpoint {
                             @Http.GET
                             String get(@OpenApi.Parameter(allowReserved = true)
+                                       @Http.QueryParam("value") String value) {
+                                return value;
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+    }
+
+    @Test
+    void queryParameterCanUseMatchingName() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-query-matching-name"))
+                .addSource("ValidOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/valid")
+                        class ValidOpenApiEndpoint {
+                            @Http.GET
+                            String get(@OpenApi.Parameter(name = "value")
                                        @Http.QueryParam("value") String value) {
                                 return value;
                             }
