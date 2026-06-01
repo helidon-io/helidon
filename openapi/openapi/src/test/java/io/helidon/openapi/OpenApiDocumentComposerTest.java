@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.json.JsonObject;
 import io.helidon.json.schema.Schema;
 import io.helidon.openapi.spi.OpenApiDocumentSource;
 import io.helidon.openapi.spi.OpenApiVersion;
@@ -88,6 +89,18 @@ class OpenApiDocumentComposerTest {
     }
 
     @Test
+    void ignoreGeneratedKeepsStaticDocument() {
+        OpenApiDocumentContext context = context(OpenApiGeneratedMode.STATIC_ONLY);
+        String content = OpenApiDocumentComposer.compose(context,
+                                                        context.openApiVersion(),
+                                                        STATIC_DOCUMENT,
+                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
+                                                        List.of(source()));
+
+        assertThat(content, is(STATIC_DOCUMENT));
+    }
+
+    @Test
     void generatedOnlyIgnoresStaticDocument() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
         String content = OpenApiDocumentComposer.compose(context,
@@ -100,6 +113,33 @@ class OpenApiDocumentComposerTest {
         assertThat(((Map<?, ?>) parsed.get("info")).get("title"), is("Generated API"));
         assertThat(((Map<?, ?>) parsed.get("paths")).containsKey("/static"), is(false));
         assertThat(((Map<?, ?>) parsed.get("paths")).containsKey("/generated"), is(true));
+    }
+
+    @Test
+    void mergeStaticKeepsStaticAndGeneratedDocumentSections() {
+        OpenApiDocumentContext context = context(OpenApiGeneratedMode.MERGE);
+
+        String content = OpenApiDocumentComposer.compose(context,
+                                                        context.openApiVersion(),
+                                                        STATIC_MERGE_DOCUMENT,
+                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
+                                                        List.of(mergeSource()));
+
+        Map<String, Object> parsed = parse(content);
+        Map<String, Object> paths = map(parsed, "paths");
+        assertThat(paths.containsKey("/static"), is(true));
+        assertThat(paths.containsKey("/generated"), is(true));
+
+        Map<String, Object> components = map(parsed, "components");
+        assertThat(map(components, "schemas").containsKey("StaticItem"), is(true));
+        assertThat(map(components, "schemas").containsKey("GeneratedItem"), is(true));
+        assertThat(map(components, "securitySchemes").containsKey("staticAuth"), is(true));
+        assertThat(map(components, "securitySchemes").containsKey("generatedAuth"), is(true));
+
+        assertThat(((Map<?, ?>) list(parsed, "tags").get(0)).get("name"), is("static"));
+        assertThat(((Map<?, ?>) list(parsed, "tags").get(1)).get("name"), is("generated"));
+        assertThat(((Map<?, ?>) list(parsed, "security").get(0)).get("staticAuth"), is(List.of()));
+        assertThat(((Map<?, ?>) list(parsed, "security").get(1)).get("generatedAuth"), is(List.of("generated:read")));
     }
 
     @Test
@@ -144,6 +184,29 @@ class OpenApiDocumentComposerTest {
                                                          MediaTypes.APPLICATION_OPENAPI_YAML,
                                                          List.of(conflicting));
                      });
+    }
+
+    @Test
+    void mergeStaticFailsOnConflictingNormalizedPathTemplate() {
+        OpenApiDocumentSource conflicting = (context, document) -> document.path(
+                "/static/{name}",
+                path -> path.operation("GET",
+                                       operation -> operation
+                                               .operationId("other")
+                                               .response("200", "Other response.")));
+
+        IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                                                    () -> {
+                                                        OpenApiDocumentContext context = context(OpenApiGeneratedMode.MERGE);
+                                                        OpenApiDocumentComposer.compose(context,
+                                                                                        context.openApiVersion(),
+                                                                                        STATIC_TEMPLATE_DOCUMENT,
+                                                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
+                                                                                        List.of(conflicting));
+                                                    });
+
+        assertThat(thrown.getMessage(),
+                   is("Conflicting OpenAPI path template at paths./static/{id} and paths./static/{name}"));
     }
 
     @Test
@@ -247,7 +310,35 @@ class OpenApiDocumentComposerTest {
                                                                            operation -> operation
                                                                                    .operationId("generatedGet")
                                                                                    .response("200",
-                                                                                             "Generated response.")));
+                                                                                           "Generated response.")));
+    }
+
+    private static OpenApiDocumentSource mergeSource() {
+        return (context, document) -> document
+                .tag(tag -> tag.name("generated")
+                        .description("Generated resources"))
+                .components(components -> components
+                        .schema("GeneratedItem",
+                                JsonObject.builder()
+                                        .set("type", "object")
+                                        .build())
+                        .securityScheme("generatedAuth", security -> security
+                                .type("oauth2")
+                                .flows(JsonObject.builder()
+                                               .set("clientCredentials",
+                                                    JsonObject.builder()
+                                                            .set("tokenUrl", "https://id.example.test/token")
+                                                            .set("scopes",
+                                                                 JsonObject.builder()
+                                                                         .set("generated:read", "Read generated")
+                                                                         .build())
+                                                            .build())
+                                               .build())))
+                .securityRequirement("generatedAuth", List.of("generated:read"))
+                .path("/generated",
+                      path -> path.operation("GET",
+                                             operation -> operation.operationId("generatedGet")
+                                                     .response("200", "Generated response.")));
     }
 
     private static OpenApiDocument.Operation responseOperation(String operationId) {
@@ -273,6 +364,11 @@ class OpenApiDocumentComposerTest {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> map(Map<?, ?> map, String name) {
         return (Map<String, Object>) map.get(name);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Object> list(Map<?, ?> map, String name) {
+        return (List<Object>) map.get(name);
     }
 
     private record TestOpenApiVersion(String type, String version, boolean failParse) implements OpenApiVersion {
@@ -351,5 +447,46 @@ class OpenApiDocumentComposerTest {
                     responses:
                       "200":
                         description: Static copy response.
+            """;
+
+    private static final String STATIC_MERGE_DOCUMENT = """
+            openapi: 3.0.3
+            info:
+              title: Static API
+              version: 1.0.0
+            tags:
+              - name: static
+                description: Static resources
+            security:
+              - staticAuth: []
+            paths:
+              /static:
+                get:
+                  operationId: staticGet
+                  responses:
+                    "200":
+                      description: Static response.
+            components:
+              schemas:
+                StaticItem:
+                  type: object
+              securitySchemes:
+                staticAuth:
+                  type: http
+                  scheme: bearer
+            """;
+
+    private static final String STATIC_TEMPLATE_DOCUMENT = """
+            openapi: 3.0.3
+            info:
+              title: Static API
+              version: 1.0.0
+            paths:
+              /static/{id}:
+                get:
+                  operationId: staticGet
+                  responses:
+                    "200":
+                      description: Static response.
             """;
 }
