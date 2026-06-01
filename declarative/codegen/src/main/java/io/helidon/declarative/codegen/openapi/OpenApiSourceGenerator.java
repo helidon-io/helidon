@@ -1278,10 +1278,6 @@ final class OpenApiSourceGenerator {
                 + ".build()";
     }
 
-    private String schemaRefExpression(TypeName type) {
-        return schemaRefExpression(type, Map.of());
-    }
-
     private String schemaRefExpression(TypeName type, Map<TypeName, String> componentNames) {
         TypeName schemaType = schemaType(type);
         String schemaName = componentNames.getOrDefault(schemaType, schemaName(schemaType));
