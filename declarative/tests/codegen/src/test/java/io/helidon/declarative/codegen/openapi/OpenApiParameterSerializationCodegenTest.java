@@ -317,6 +317,53 @@ class OpenApiParameterSerializationCodegenTest {
     }
 
     @Test
+    void queryParameterCannotUseMultipleContentEntries() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-query-multiple-content"))
+                .addSource("InvalidOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/invalid")
+                        class InvalidOpenApiEndpoint {
+                            @Http.GET
+                            String get(@OpenApi.Parameter(content = {@OpenApi.Content("application/json"),
+                                                                     @OpenApi.Content("text/plain")})
+                                       @Http.QueryParam("value") String value) {
+                                return value;
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertCompilationFails(result,
+                               "@OpenApi.Parameter on com.example.InvalidOpenApiEndpoint.get",
+                               "cannot define more than one content entry for query parameter value");
+    }
+
+    @Test
     void headerParameterCannotUseQueryStyle() {
         var result = TestCompiler.builder()
                 .currentRelease()
