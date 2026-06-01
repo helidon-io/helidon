@@ -47,6 +47,7 @@ import io.helidon.declarative.codegen.model.http.HeaderValue;
 import io.helidon.declarative.codegen.model.http.RestMethod;
 import io.helidon.declarative.codegen.model.http.RestMethodParameter;
 import io.helidon.declarative.codegen.model.http.ServerEndpoint;
+import io.helidon.service.codegen.DefaultsCodegen;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 
@@ -774,7 +775,7 @@ final class OpenApiSourceGenerator {
                 .addContent(stringLiteral(location))
                 .addContentLine(")")
                 .addContent(".required(")
-                .addContent(Boolean.toString(required(restMethod, location, type, annotations)))
+                .addContent(Boolean.toString(required(restMethod, parameter, in, type, annotations)))
                 .addContentLine(")");
         if (hasExplicitContent) {
             for (Annotation content : contentAnnotations) {
@@ -1340,7 +1341,11 @@ final class OpenApiSourceGenerator {
                 .orElse(parameter.name());
     }
 
-    private boolean required(RestMethod restMethod, String in, TypeName type, List<Annotation> annotations) {
+    private boolean required(RestMethod restMethod,
+                             RestMethodParameter parameter,
+                             String in,
+                             TypeName type,
+                             List<Annotation> annotations) {
         Optional<Boolean> explicit = required(annotations);
         if ("path".equals(in)) {
             if (explicit.filter(Predicate.not(Boolean::booleanValue)).isPresent()) {
@@ -1349,7 +1354,21 @@ final class OpenApiSourceGenerator {
             }
             return true;
         }
-        return explicit.orElse(!type.isOptional());
+        boolean required = parameterRequired(type, parameter.annotations());
+        if (required && explicit.filter(Predicate.not(Boolean::booleanValue)).isPresent()
+                && ("query".equals(in) || "header".equals(in))) {
+            throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
+                                               + " cannot make a required " + in + " parameter optional");
+        }
+        return explicit.orElse(required);
+    }
+
+    private boolean parameterRequired(TypeName type, Collection<Annotation> annotations) {
+        if (type.isOptional()) {
+            return false;
+        }
+
+        return DefaultsCodegen.findDefault(new HashSet<>(annotations), type).isEmpty();
     }
 
     private List<String> mediaTypes(List<String> mediaTypes) {
