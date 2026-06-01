@@ -23,6 +23,8 @@ module io.helidon.declarative.tests.openapi {
     requires io.helidon.json.schema;
     requires io.helidon.logging.common;
     requires io.helidon.openapi;
+    requires io.helidon.openapi.v31;
+    requires io.helidon.openapi.v32;
     requires io.helidon.service.registry;
     requires io.helidon.webserver;
     requires io.helidon.webclient.api;

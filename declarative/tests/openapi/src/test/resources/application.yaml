@@ -20,5 +20,7 @@ server:
     openapi:
       web-context: "/openapi"
       static-file: "static-openapi.yaml"
+      document:
+        - type: "3.0"
       generated:
         mode: "MERGE"

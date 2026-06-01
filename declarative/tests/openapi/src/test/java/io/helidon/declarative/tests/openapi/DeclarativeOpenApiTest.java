@@ -16,11 +16,22 @@
 
 package io.helidon.declarative.tests.openapi;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Status;
+import io.helidon.openapi.OpenApiDocument;
+import io.helidon.openapi.spi.OpenApiDocumentSource;
+import io.helidon.openapi.spi.OpenApiVersion;
+import io.helidon.openapi.v30.OpenApi30Version;
+import io.helidon.openapi.v31.OpenApi31Version;
+import io.helidon.openapi.v32.OpenApi32Version;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -36,6 +47,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 
 @ServerTest
+@SuppressWarnings("helidon:api:preview")
 class DeclarativeOpenApiTest {
     private final Http1Client client;
 
@@ -344,13 +356,86 @@ class DeclarativeOpenApiTest {
         assertThat(operation(document, "/greetings/{name}", "get").get("operationId"), is("greetingGetFind"));
     }
 
+    @Test
+    void generatedDocumentRendersThroughSupportedOpenApiVersions() {
+        assertGeneratedVersion(generatedDocument(OpenApi30Version.create()), "3.0.3");
+        assertGeneratedVersion(generatedDocument(OpenApi31Version.create()), "3.1.1");
+        assertGeneratedVersion(generatedDocument(OpenApi32Version.create()), "3.2.0");
+    }
+
+    @Test
+    void staticAndGeneratedDocumentRendersThroughSupportedOpenApiVersions() {
+        assertMergedVersion(mergedDocument(OpenApi30Version.create()), "3.0.3");
+        assertMergedVersion(mergedDocument(OpenApi31Version.create()), "3.1.1");
+        assertMergedVersion(mergedDocument(OpenApi32Version.create()), "3.2.0");
+    }
+
+    private static void assertGeneratedVersion(Map<String, Object> document, String version) {
+        assertThat(document.get("openapi"), is(version));
+        assertThat(object(document, "paths"), not(hasKey("/static/status")));
+        assertThat(operation(document, "/greetings/{name}", "get").get("operationId"), is("greetingGetFind"));
+        assertThat(ref(content(response(operation(document, "/greetings/{name}", "get"), "200"),
+                               MediaTypes.APPLICATION_JSON_VALUE)),
+                   is("#/components/schemas/Message"));
+        assertThat(object(object(document, "components"), "schemas"), hasKey("MessageRequest"));
+    }
+
+    private static void assertMergedVersion(Map<String, Object> document, String version) {
+        assertThat(document.get("openapi"), is(version));
+        assertThat(operation(document, "/static/status", "get").get("operationId"), is("staticGetStatus"));
+        assertThat(operation(document, "/greetings/{name}", "get").get("operationId"), is("greetingGetFind"));
+        assertThat(object(object(document, "components"), "schemas"), hasKey("Message"));
+    }
+
+    private static Map<String, Object> generatedDocument(OpenApiVersion version) {
+        OpenApiDocument document = generatedDocument();
+        return parse(version.render(null, document));
+    }
+
+    private static Map<String, Object> mergedDocument(OpenApiVersion version) {
+        OpenApiVersion staticVersion = OpenApi30Version.create();
+        OpenApiDocument staticDocument = staticVersion.parse(null, resource("static-openapi.yaml"),
+                                                             MediaTypes.APPLICATION_OPENAPI_YAML);
+        OpenApiDocument generatedDocument = generatedDocument();
+        OpenApiDocument mergedDocument = OpenApiDocument.builder()
+                .merge(staticDocument)
+                .merge(generatedDocument)
+                .build();
+        return parse(version.render(null, mergedDocument));
+    }
+
+    private static OpenApiDocument generatedDocument() {
+        OpenApiDocument.Builder builder = OpenApiDocument.builder();
+        for (OpenApiDocumentSource source : Services.all(OpenApiDocumentSource.class)) {
+            if (source.supports(null)) {
+                source.describe(null, builder);
+            }
+        }
+        return builder.build();
+    }
+
     private Map<String, Object> document() {
         try (Http1ClientResponse response = client.get("/openapi")
                 .accept(MediaTypes.APPLICATION_OPENAPI_YAML)
                 .request()) {
 
             assertThat(response.status(), is(Status.OK_200));
-            return object(new Yaml().load(response.as(String.class)));
+            return parse(response.as(String.class));
+        }
+    }
+
+    private static Map<String, Object> parse(String yaml) {
+        return object(new Yaml().load(yaml));
+    }
+
+    private static String resource(String resourceName) {
+        try (InputStream is = DeclarativeOpenApiTest.class.getResourceAsStream("/" + resourceName)) {
+            if (is == null) {
+                throw new IllegalArgumentException("Resource not found: " + resourceName);
+            }
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
