@@ -895,6 +895,7 @@ final class OpenApiSourceGenerator {
             addInferredResponses(method, restMethod, componentNames);
             return;
         }
+        validateResponseStatuses(restMethod, explicitResponses);
         for (Annotation response : explicitResponses) {
             addResponse(method, restMethod, response, componentNames);
         }
@@ -979,6 +980,18 @@ final class OpenApiSourceGenerator {
 
         if (returnType.isOptional()) {
             addNotFoundResponse(method);
+        }
+    }
+
+    private void validateResponseStatuses(RestMethod restMethod, List<Annotation> explicitResponses) {
+        Set<Integer> statuses = new HashSet<>();
+        for (Annotation response : explicitResponses) {
+            int status = response.intValue("status")
+                    .orElseThrow(() -> new CodegenException("@OpenApi.Response status is required"));
+            if (!statuses.add(status)) {
+                throw new CodegenException("@OpenApi.Response on " + restMethodDescription(restMethod)
+                                                   + " cannot define response status " + status + " more than once");
+            }
         }
     }
 

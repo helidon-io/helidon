@@ -139,6 +139,53 @@ class OpenApiResponseCodegenTest {
         assertThat(generated, containsString(".response(\"404\", response -> response.description(\"Not Found\"))"));
     }
 
+    @Test
+    void responseCannotDeclareDuplicateStatus() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-duplicate-response-status"))
+                .addSource("InvalidOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/invalid")
+                        class InvalidOpenApiEndpoint {
+                            @Http.GET
+                            @OpenApi.Response(status = 200, description = "First")
+                            @OpenApi.Response(status = 200, description = "Second")
+                            String get() {
+                                return "ok";
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertCompilationFails(result,
+                               "@OpenApi.Response on com.example.InvalidOpenApiEndpoint.get",
+                               "cannot define response status 200 more than once");
+    }
+
     private static String generatedSource(TestCompiler.Result result) throws IOException {
         StringBuilder generatedContent = new StringBuilder();
         var generatedSources = Files.walk(result.sourceOutput())
@@ -149,5 +196,13 @@ class OpenApiResponseCodegenTest {
             generatedContent.append('\n');
         }
         return generatedContent.toString();
+    }
+
+    private static void assertCompilationFails(TestCompiler.Result result, String... diagnosticParts) {
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat("Build should fail", result.success(), is(false));
+        for (String diagnosticPart : diagnosticParts) {
+            assertThat(diagnostics, containsString(diagnosticPart));
+        }
     }
 }
