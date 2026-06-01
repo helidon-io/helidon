@@ -39,6 +39,8 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.declarative.codegen.DeclarativeTypes;
+import io.helidon.declarative.codegen.model.http.ComputedHeader;
+import io.helidon.declarative.codegen.model.http.HeaderValue;
 import io.helidon.declarative.codegen.model.http.RestMethod;
 import io.helidon.declarative.codegen.model.http.RestMethodParameter;
 import io.helidon.declarative.codegen.model.http.ServerEndpoint;
@@ -879,6 +881,7 @@ final class OpenApiSourceGenerator {
                 .ifPresent(summary -> method.addContent(".summary(")
                         .addContent(stringLiteral(summary))
                         .addContentLine(")"));
+        addResponseHeaders(method, restMethod, response);
 
         List<Annotation> contentAnnotations = response.annotationValues("content").orElseGet(List::of);
         if (contentAnnotations.isEmpty() && hasEntity) {
@@ -917,6 +920,7 @@ final class OpenApiSourceGenerator {
                 .addContentLine(")")
                 .increaseContentPadding()
                 .increaseContentPadding();
+        addInferredResponseHeaders(method, restMethod);
         if (hasEntity) {
             for (String mediaType : mediaTypes(restMethod.produces())) {
                 method.addContent(".content(")
@@ -933,6 +937,76 @@ final class OpenApiSourceGenerator {
         if (returnType.isOptional()) {
             method.addContentLine(".response(\"404\", response -> response.description(\"Not Found\"))");
         }
+    }
+
+    private void addResponseHeaders(Method.Builder method, RestMethod restMethod, Annotation response) {
+        addInferredResponseHeaders(method, restMethod);
+        response.annotationValues("headers")
+                .orElseGet(List::of)
+                .forEach(header -> addResponseHeader(method, header));
+    }
+
+    private void addInferredResponseHeaders(Method.Builder method, RestMethod restMethod) {
+        restMethod.headers()
+                .forEach(header -> addResponseHeader(method, header));
+        restMethod.computedHeaders()
+                .forEach(header -> addResponseHeader(method, header));
+    }
+
+    private void addResponseHeader(Method.Builder method, HeaderValue header) {
+        method.addContent(".header(")
+                .addContent(stringLiteral(header.name()))
+                .addContent(", header -> header.required(true).schema(")
+                .addContent(schemaExpression(TypeNames.STRING))
+                .addContentLine("))");
+    }
+
+    private void addResponseHeader(Method.Builder method, ComputedHeader header) {
+        method.addContent(".header(")
+                .addContent(stringLiteral(header.headerName()))
+                .addContent(", header -> header.schema(")
+                .addContent(schemaExpression(TypeNames.STRING))
+                .addContentLine("))");
+    }
+
+    private void addResponseHeader(Method.Builder method, Annotation header) {
+        String name = header.stringValue("name")
+                .filter(not(String::isBlank))
+                .orElseThrow(() -> new CodegenException("@OpenApi.Header name is required"));
+        List<Annotation> contentAnnotations = header.annotationValues("content").orElseGet(List::of);
+        TypeName schemaType = header.typeValue("schema")
+                .filter(Predicate.not(VOID::equals))
+                .orElse(TypeNames.STRING);
+
+        method.addContent(".header(")
+                .addContent(stringLiteral(name))
+                .addContentLine(", header -> header")
+                .increaseContentPadding()
+                .increaseContentPadding();
+        header.stringValue()
+                .filter(not(String::isBlank))
+                .ifPresent(description -> method.addContent(".description(")
+                        .addContent(stringLiteral(description))
+                        .addContentLine(")"));
+        required(header)
+                .ifPresent(required -> method.addContent(".required(")
+                        .addContent(Boolean.toString(required))
+                        .addContentLine(")"));
+        header.booleanValue("deprecated")
+                .filter(Boolean::booleanValue)
+                .ifPresent(deprecated -> method.addContentLine(".deprecated(true)"));
+        if (contentAnnotations.isEmpty()) {
+            method.addContent(".schema(")
+                    .addContent(schemaExpression(schemaType))
+                    .addContentLine(")");
+        } else {
+            for (Annotation content : contentAnnotations) {
+                addContent(method, List.of(DEFAULT_MEDIA_TYPE), content, schemaType, true);
+            }
+        }
+        method.addContentLine(")")
+                .decreaseContentPadding()
+                .decreaseContentPadding();
     }
 
     private void addContent(Method.Builder method,
@@ -1025,7 +1099,20 @@ final class OpenApiSourceGenerator {
                     collectContentSchemaComponent(schemaTypes, content, responseType, hasResponseEntity);
                 }
             }
+            response.annotationValues("headers")
+                    .orElseGet(List::of)
+                    .forEach(header -> collectHeaderSchemaComponent(schemaTypes, header));
         }
+    }
+
+    private void collectHeaderSchemaComponent(Set<TypeName> schemaTypes, Annotation header) {
+        Optional<TypeName> explicitSchema = header.typeValue("schema")
+                .filter(Predicate.not(VOID::equals));
+        explicitSchema.ifPresent(schemaType -> collectSchemaComponent(schemaTypes, schemaType));
+        TypeName inferredSchemaType = explicitSchema.orElse(TypeNames.STRING);
+        header.annotationValues("content")
+                .orElseGet(List::of)
+                .forEach(content -> collectContentSchemaComponent(schemaTypes, content, inferredSchemaType, true));
     }
 
     private void collectParameterSchemaComponents(Set<TypeName> schemaTypes,

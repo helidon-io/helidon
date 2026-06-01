@@ -145,6 +145,32 @@ class DeclarativeOpenApiTest {
     }
 
     @Test
+    void generatedDocumentIncludesRichResponseMetadata() {
+        Map<String, Object> operation = operation(document(), "/greetings/responses", "get");
+
+        Map<String, Object> response = response(operation, "202");
+        assertThat(response.get("description"), is("Accepted greeting"));
+        assertThat(ref(content(response, "application/vnd.greeting+json")), is("#/components/schemas/Message"));
+        Map<String, Object> responseExample = example(mediaTypeObject(response, "application/vnd.greeting+json"),
+                                                      "accepted-response");
+        assertThat(responseExample.get("summary"), is("Accepted example"));
+        assertThat(responseExample.get("value"), is("{\"message\":\"Accepted\"}"));
+
+        Map<String, Object> headers = object(response, "headers");
+        Map<String, Object> staticHeader = object(headers, "X-Static");
+        assertThat(staticHeader.get("required"), is(true));
+        assertThat(object(staticHeader, "schema").get("type"), is("string"));
+        Map<String, Object> computedHeader = object(headers, "X-Computed");
+        assertThat(computedHeader, not(hasKey("required")));
+        assertThat(object(computedHeader, "schema").get("type"), is("string"));
+        Map<String, Object> documentedHeader = object(headers, "X-Documented");
+        assertThat(documentedHeader.get("description"), is("Documented response header"));
+        assertThat(documentedHeader.get("required"), is(true));
+        assertThat(documentedHeader.get("deprecated"), is(true));
+        assertThat(object(documentedHeader, "schema").get("type"), is("string"));
+    }
+
+    @Test
     void generatedDocumentMergesExplicitParameterMetadata() {
         Map<String, Object> operation = operation(document(), "/greetings/parameters/{id}", "get");
 
@@ -242,8 +268,12 @@ class DeclarativeOpenApiTest {
 
         Map<String, Object> optional = operation(document, "/greetings/optional/{name}", "get");
         assertThat(optional.get("operationId"), is("greetingGetMaybeFind"));
-        assertThat(response(optional, "200").get("description"), is("OK"));
-        assertThat(response(optional, "404").get("description"), is("Not Found"));
+        Map<String, Object> optionalFound = response(optional, "200");
+        assertThat(optionalFound.get("description"), is("OK"));
+        assertThat(ref(content(optionalFound, MediaTypes.APPLICATION_JSON_VALUE)), is("#/components/schemas/Message"));
+        Map<String, Object> optionalMissing = response(optional, "404");
+        assertThat(optionalMissing.get("description"), is("Not Found"));
+        assertThat(optionalMissing, not(hasKey("content")));
     }
 
     @Test
