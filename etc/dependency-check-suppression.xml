@@ -364,6 +364,35 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
     <packageUrl regex="true">^pkg:maven/org\.neo4j\.bolt/neo4j-bolt-connection.*@.*$</packageUrl>
     <cve>CVE-2026-1497</cve>
 </suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: neo4j-bolt-connection-1.0.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j\.bolt/neo4j-bolt-connection.*@.*$</packageUrl>
+    <cve>CVE-2026-1471</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: neo4j-bolt-connection-1.0.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j\.bolt/neo4j-bolt-connection.*@.*$</packageUrl>
+    <cve>CVE-2026-1524</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j-health:4.5.0-M1-SNAPSHOT
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j.*@.*$</packageUrl>
+    <cve>CVE-2026-1471</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j-health:4.5.0-M1-SNAPSHOT
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j.*@.*$</packageUrl>
+    <cve>CVE-2026-1524</cve>
+</suppress>
+
 
 <!-- 
      This CVE is old and was fixed in Kotlin 1.4.21. The CPE recently changed in NVD.
