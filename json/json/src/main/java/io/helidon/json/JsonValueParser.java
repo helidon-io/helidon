@@ -119,10 +119,7 @@ class JsonValueParser implements JsonParser {
     void ensureCapacity(int capacity) {
         int required = Math.max(0, index) + capacity + 1;
         if (required > values.length) {
-            int newLength = values.length;
-            while (newLength < required) {
-                newLength *= 2;
-            }
+            int newLength = Math.max(values.length * 2, required);
             JsonValue[] newValues = new JsonValue[newLength];
             System.arraycopy(values, 0, newValues, 0, Math.max(0, index));
             values = newValues;
