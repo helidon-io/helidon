@@ -67,6 +67,8 @@ The link:https://opentelemetry.io/docs/languages/java/configuration/[OpenTelemet
 This approach prepares the OpenTelemetry runtime using OpenTelemetry's autoconfiguration instead of Helidon's integration with OpenTelemetry, but from there the programmatic use of the OpenTelemetry API is essentially the same in those two options: obtain the `OpenTelemetry` instance and then use it to create and update spans and metrics.
 If the external setup has already installed `GlobalOpenTelemetry` before Helidon resolves `OpenTelemetry`, and no Helidon
 telemetry or tracing owner is active, service look-up adopts that global automatically.
+A Helidon owner is active when a `telemetry` or `tracing` configuration section is enabled and its `registered` setting is
+`true`.
 As a separate option, if no Helidon owner is active and the application enables OpenTelemetry global autoconfiguration with
 the `otel.java.global-autoconfigure.enabled=true` system property or the
 `OTEL_JAVA_GLOBAL_AUTOCONFIGURE_ENABLED=true` environment variable, Helidon service look-up triggers that

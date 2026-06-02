@@ -241,8 +241,8 @@ include::{rootdir}/config/io_helidon_telemetry_otelconfig_HelidonOpenTelemetry.a
 Notes:
 
 * OpenTelemetry uses default propagators of `tracecontext` and `baggage`. (See the `otel.propagators` property in link:https://opentelemetry.io/docs/languages/java/configuration/#properties-general[this OpenTelemetry guide].)
-* Setting `registered` to `true` has the effect described in the <<effects-of-setting-global, section>> about
-  application instances in the Helidon service registry.
+* Setting `registered` to `true` makes the configured owner active and has the effect described in the
+  <<effects-of-setting-global, section>> about application instances in the Helidon service registry.
 * Setting `global` to `true` publishes that application instance to `GlobalOpenTelemetry` for OpenTelemetry
   instrumentation that reads the JVM-wide OpenTelemetry global.
 
