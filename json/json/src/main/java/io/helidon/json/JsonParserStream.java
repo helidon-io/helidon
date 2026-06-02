@@ -118,7 +118,7 @@ final class JsonParserStream extends JsonParserBase {
                 // 1. Compact: shift unneeded prefix out so the required bytes can fit.
                 int preserveFrom;
                 if (replayMarked && mark >= 0 && mark <= currentIndex) {
-                    preserveFrom = mark;
+                    preserveFrom = bufferingJsonValue ? Math.min(mark, jsonValueStart) : mark;
                 } else if (bufferingJsonValue) {
                     preserveFrom = jsonValueStart;
                 } else {
@@ -133,6 +133,9 @@ final class JsonParserStream extends JsonParserBase {
                 }
                 bufferLength = kept;
                 currentIndex -= shift;
+                if (bufferingJsonValue) {
+                    jsonValueStart -= shift;
+                }
                 if (mark >= 0) {
                     mark = Math.max(0, mark - shift);
                 }
