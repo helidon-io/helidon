@@ -109,17 +109,22 @@ class JsonValueParser implements JsonParser {
         if (--replayIndex < 0) {
             int previousLength = replay.length;
             JsonValue[] newArray = new JsonValue[previousLength * 2];
-            System.arraycopy(replay, 0, newArray, newArray.length - previousLength - 1, previousLength);
+            System.arraycopy(replay, 0, newArray, newArray.length - previousLength, previousLength);
             replay = newArray;
-            replayIndex = newArray.length - previousLength - 2;
+            replayIndex = newArray.length - previousLength - 1;
         }
         replay[replayIndex] = current;
     }
 
     void ensureCapacity(int capacity) {
-        if (index + capacity > values.length) {
-            JsonValue[] newValues = new JsonValue[values.length * 2];
-            System.arraycopy(values, 0, newValues, 0, index);
+        int required = Math.max(0, index) + capacity + 1;
+        if (required > values.length) {
+            int newLength = values.length;
+            while (newLength < required) {
+                newLength *= 2;
+            }
+            JsonValue[] newValues = new JsonValue[newLength];
+            System.arraycopy(values, 0, newValues, 0, Math.max(0, index));
             values = newValues;
         }
     }
