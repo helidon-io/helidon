@@ -389,4 +389,23 @@ class JsonValueParserTest {
         assertThat(parser.nextToken(), is((byte) '0'));
     }
 
+    @Test
+    public void testJsonValueParserNextTokenForNegativeFraction() {
+        JsonValue value = JsonParser.create("[-0.5]").readJsonValue();
+        JsonParser parser = JsonParser.create(value);
+
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is((byte) '-'));
+        assertThat(parser.readBigDecimal(), is(new BigDecimal("-0.5")));
+    }
+
+    @Test
+    public void testJsonValueParserNextTokenForConstructedNegativeFraction() {
+        JsonParser parser = JsonParser.create(JsonArray.create(List.of(JsonNumber.create(new BigDecimal("-0.5")))));
+
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is((byte) '-'));
+        assertThat(parser.readBigDecimal(), is(new BigDecimal("-0.5")));
+    }
+
 }
