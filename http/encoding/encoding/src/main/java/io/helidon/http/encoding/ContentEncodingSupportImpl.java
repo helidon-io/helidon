@@ -31,6 +31,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
 
 class ContentEncodingSupportImpl implements ContentEncodingContext {
     private final boolean encodingEnabled;
@@ -156,11 +157,17 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
         if (selected.isEmpty()) {
             throw new HttpException("No acceptable response content encoding", Status.NOT_ACCEPTABLE_406, true);
         }
-        if (AcceptEncoding.IDENTITY.equals(selected.get().coding())) {
+        String selectedCoding = selected.get().coding();
+        if (AcceptEncoding.IDENTITY.equals(selectedCoding)) {
             return ContentEncoder.NO_OP;
         }
 
-        return encoders.get(selected.get().coding());
+        ContentEncoder encoder = encoders.get(selectedCoding);
+        String emittedCoding = responseCoding(selectedCoding, encoder);
+        if (!emittedCoding.equals(selectedCoding) && acceptEncoding.match(emittedCoding, true).isEmpty()) {
+            throw new HttpException("No acceptable response content encoding", Status.NOT_ACCEPTABLE_406, true);
+        }
+        return encoder;
     }
 
     @Override
@@ -182,6 +189,15 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
                 .filter(id -> !AcceptEncoding.IDENTITY.equals(id))
                 .sorted()
                 .findFirst();
+    }
+
+    private static String responseCoding(String coding, ContentEncoder encoder) {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        encoder.headers(headers);
+        if (headers.contains(HeaderNames.CONTENT_ENCODING)) {
+            return headers.get(HeaderNames.CONTENT_ENCODING).get().toLowerCase(Locale.ROOT);
+        }
+        return coding;
     }
 
 }
