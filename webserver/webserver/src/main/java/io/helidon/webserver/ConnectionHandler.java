@@ -56,6 +56,7 @@ import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.spi.ServerConnectionSelector;
 
 import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
 
@@ -126,7 +127,11 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     @Override
     public final void run() {
         try {
-            run(channelId);
+            try {
+                run(channelId);
+            } catch (Throwable e) {
+                LOGGER.log(ERROR, "Unexpected throwable while handling connection", e);
+            }
         } finally {
             releaseConnectionLimit(handlingStarted);
             if (writer != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.webserver;
 
-import java.nio.charset.StandardCharsets;
-import java.nio.channels.SocketChannel;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Handler;
@@ -26,54 +25,38 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import io.helidon.common.buffers.DataReader;
-import io.helidon.common.concurrency.limits.Limit;
-import io.helidon.common.concurrency.limits.LimitAlgorithm;
-import io.helidon.common.tls.Tls;
-
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-class ConnectionHandlerTest {
+class ExecutorsFactoryTest {
 
     @Test
-    void testHttp10Prologue() {
-        DataReader reader = DataReader.create(() -> "GET / HTTP/1.0\r\n".getBytes(StandardCharsets.US_ASCII));
-        assertThat(ConnectionHandler.isHttp10Connection(reader), is(true));
+    void loomServerExecutorLogsUncaughtException() throws Exception {
+        assertExecutorLogsUncaughtException(ExecutorsFactory.newLoomServerVirtualThreadPerTaskExecutor());
     }
 
     @Test
-    void logsUnexpectedThrowableFromConnectionHandling() throws Exception {
-        AssertionError failure = new AssertionError("unexpected failure");
-        ListenerConfig listenerConfig = mock(ListenerConfig.class);
-        when(listenerConfig.enableProxyProtocol()).thenThrow(failure);
-        ListenerContext listenerContext = mock(ListenerContext.class);
-        when(listenerContext.config()).thenReturn(listenerConfig);
-        LimitAlgorithm.Token token = mock(LimitAlgorithm.Token.class);
-        ConnectionHandler handler = new ConnectionHandler(listenerContext,
-                                                          token,
-                                                          mock(Limit.class),
-                                                          ConnectionProviders.create(List.of()),
-                                                          mock(SocketChannel.class),
-                                                          "server",
-                                                          Router.empty(),
-                                                          mock(Tls.class),
-                                                          it -> { });
+    void sharedExecutorLogsUncaughtException() throws Exception {
+        assertExecutorLogsUncaughtException(ExecutorsFactory.newServerListenerSharedExecutor());
+    }
 
-        try (TestLogHandler logHandler = TestLogHandler.install()) {
-            handler.run();
+    private static void assertExecutorLogsUncaughtException(ExecutorService executor) throws Exception {
+        IllegalStateException failure = new IllegalStateException("test failure");
 
-            LogRecord record = logHandler.await();
-            assertThat(record.getMessage(), containsString("Unexpected throwable while handling connection"));
+        try (TestLogHandler handler = TestLogHandler.install(ExecutorsFactory.class);
+                executor) {
+            executor.execute(() -> {
+                throw failure;
+            });
+
+            LogRecord record = handler.await();
+
+            assertThat(record.getMessage(), containsString("Uncaught exception in WebServer executor thread"));
             assertThat(record.getThrown(), sameInstance(failure));
-            verify(token).ignore();
         }
     }
 
@@ -89,8 +72,8 @@ class ConnectionHandlerTest {
             setLevel(Level.ALL);
         }
 
-        static TestLogHandler install() {
-            Logger logger = Logger.getLogger(ConnectionHandler.class.getName());
+        static TestLogHandler install(Class<?> clazz) {
+            Logger logger = Logger.getLogger(clazz.getName());
             TestLogHandler handler = new TestLogHandler(logger);
             logger.setLevel(Level.ALL);
             logger.addHandler(handler);

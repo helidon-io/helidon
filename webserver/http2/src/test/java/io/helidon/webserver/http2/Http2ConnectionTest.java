@@ -16,11 +16,19 @@
 
 package io.helidon.webserver.http2;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketException;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -39,9 +47,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -127,6 +138,85 @@ class Http2ConnectionTest {
     }
 
     @Test
+    void streamRunnableLogsUnhandledThrowable() throws Exception {
+        IllegalStateException failure = new IllegalStateException("stream failure");
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        doThrow(failure).when(stream).run();
+        when(stream.streamId()).thenReturn(1);
+        when(stream.streamState()).thenReturn(Http2StreamState.CLOSED);
+        streams.put(new Http2Connection.StreamContext(1, 8192, stream));
+
+        try (TestLogHandler handler = TestLogHandler.install()) {
+            assertDoesNotThrow(() -> new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run());
+            streams.doMaintenance(0);
+            LogRecord record = handler.await();
+
+            assertAll(
+                    () -> assertThat(record.getMessage(), containsString("Unhandled exception on HTTP/2 stream thread")),
+                    () -> assertThat(record.getThrown(), sameInstance(failure)),
+                    () -> assertThat(streams.get(1), is(nullValue()))
+            );
+        }
+    }
+
+    @Test
+    void streamRunnableLogsUnhandledUncheckedIOException() throws Exception {
+        UncheckedIOException failure = new UncheckedIOException(new IOException("stream failure"));
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        doThrow(failure).when(stream).run();
+        when(stream.streamId()).thenReturn(1);
+        when(stream.streamState()).thenReturn(Http2StreamState.CLOSED);
+        streams.put(new Http2Connection.StreamContext(1, 8192, stream));
+
+        try (TestLogHandler handler = TestLogHandler.install()) {
+            assertDoesNotThrow(() -> new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run());
+            streams.doMaintenance(0);
+            LogRecord record = handler.await();
+
+            assertAll(
+                    () -> assertThat(record.getMessage(), containsString("Unhandled exception on HTTP/2 stream thread")),
+                    () -> assertThat(record.getThrown(), sameInstance(failure)),
+                    () -> assertThat(streams.get(1), is(nullValue()))
+            );
+        }
+    }
+
+    @Test
+    void streamRunnableLogsServerConnectionExceptionAsServerIoIssue() throws Exception {
+        ServerConnectionException failure = new ServerConnectionException("stream failure", new IOException("closed"));
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        doThrow(failure).when(stream).run();
+        when(stream.streamId()).thenReturn(1);
+        when(stream.streamState()).thenReturn(Http2StreamState.CLOSED);
+        streams.put(new Http2Connection.StreamContext(1, 8192, stream));
+
+        boolean previouslyInterrupted = Thread.interrupted();
+        try (TestLogHandler handler = TestLogHandler.install()) {
+            assertDoesNotThrow(() -> new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run());
+            boolean interrupted = Thread.currentThread().isInterrupted();
+            Thread.interrupted();
+            streams.doMaintenance(0);
+            LogRecord record = handler.await();
+
+            assertAll(
+                    () -> assertThat(interrupted, is(true)),
+                    () -> assertThat(record.getMessage(), containsString("server I/O issue on HTTP/2 stream thread")),
+                    () -> assertThat(record.getLevel(), is(Level.FINER)),
+                    () -> assertThat(record.getThrown(), sameInstance(failure)),
+                    () -> assertThat(streams.get(1), is(nullValue()))
+            );
+        } finally {
+            Thread.interrupted();
+            if (previouslyInterrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    @Test
     void closeConnectionWrapsUncheckedIOException() {
         DataWriter writer = mock(DataWriter.class);
         doThrow(new UncheckedIOException(new SocketException("Broken pipe")))
@@ -178,5 +268,48 @@ class Http2ConnectionTest {
         when(ctx.dataWriter()).thenReturn(writer);
         when(ctx.dataReader()).thenReturn(mock(DataReader.class));
         return ctx;
+    }
+
+    private static final class TestLogHandler extends Handler implements AutoCloseable {
+        private final Logger logger;
+        private final Level previousLevel;
+        private final CountDownLatch latch = new CountDownLatch(1);
+        private final AtomicReference<LogRecord> record = new AtomicReference<>();
+
+        private TestLogHandler(Logger logger) {
+            this.logger = logger;
+            this.previousLevel = logger.getLevel();
+            setLevel(Level.ALL);
+        }
+
+        static TestLogHandler install() {
+            Logger logger = Logger.getLogger(Http2Connection.class.getName());
+            TestLogHandler handler = new TestLogHandler(logger);
+            logger.setLevel(Level.ALL);
+            logger.addHandler(handler);
+            return handler;
+        }
+
+        @Override
+        public void publish(LogRecord record) {
+            if (this.record.compareAndSet(null, record)) {
+                latch.countDown();
+            }
+        }
+
+        @Override
+        public void flush() {
+        }
+
+        @Override
+        public void close() {
+            logger.removeHandler(this);
+            logger.setLevel(previousLevel);
+        }
+
+        private LogRecord await() throws InterruptedException {
+            assertThat(latch.await(5, TimeUnit.SECONDS), is(true));
+            return record.get();
+        }
     }
 }
