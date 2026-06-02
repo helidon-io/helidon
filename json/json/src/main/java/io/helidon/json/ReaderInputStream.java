@@ -176,10 +176,7 @@ class ReaderInputStream extends InputStream {
             charArray[0] = charArray[charLength - 1];
             offset = 1;
         }
-        int read;
-        do {
-            read = reader.read(charArray, offset, charArray.length - offset);
-        } while (read == 0);
+        int read = reader.read(charArray, offset, charArray.length - offset);
         if (read == -1) {
             eof = true;
             charLength = offset;
