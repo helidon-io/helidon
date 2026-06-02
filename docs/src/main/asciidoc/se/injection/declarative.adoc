@@ -155,13 +155,41 @@ Annotations on method parameters:
 
 - link:{http-javadoc-base-url}/io/helidon/http/Http.Entity.html[`io.helidon.http.Http.Entity`] - Request entity, a typed parameter is expected, will use HTTP media type modules to coerce into the correct type
 - link:{http-javadoc-base-url}/io/helidon/http/Http.HeaderParam.html[`io.helidon.http.Http.HeaderParam`] - Typed HTTP request header value
+- link:{http-javadoc-base-url}/io/helidon/http/Http.CookieParam.html[`io.helidon.http.Http.CookieParam`] - Typed HTTP request cookie value
 - link:{http-javadoc-base-url}/io/helidon/http/Http.QueryParam.html[`io.helidon.http.Http.QueryParam`] - Typed HTTP query value
+- link:{http-javadoc-base-url}/io/helidon/http/Http.FormParam.html[`io.helidon.http.Http.FormParam`] - Typed URL encoded form value from the request entity
 - link:{http-javadoc-base-url}/io/helidon/http/Http.PathParam.html[`io.helidon.http.Http.PathParam`] - Typed parameter from path template
+- link:{http-javadoc-base-url}/io/helidon/http/Http.RequestParams.html[`io.helidon.http.Http.RequestParams`] - Grouped request parameters in a record type
+
+`Http.FormParam` is backed by the request entity and should be used with
+`@Http.Consumes(MediaTypes.APPLICATION_FORM_URLENCODED_VALUE)`. It cannot be combined with `Http.Entity` on the same
+declarative method. Each endpoint method parameter may have at most one supported request parameter annotation.
+
+`Http.RequestParams` is supported only for record parameter types. This is a restriction on the parameter types supported
+by declarative code generation. Each record component must either be a supported typed parameter that does not require an
+annotation, such as `ServerRequest`, or have one of these component annotations: `Http.HeaderParam`, `Http.CookieParam`,
+`Http.QueryParam`, `Http.FormParam`, `Http.PathParam`, or `Http.Entity`. Components must not combine supported request
+parameter annotations. At most one `Http.Entity` component is supported, and `Http.Entity` cannot be combined with
+`Http.FormParam` components.
+
+The named value annotations, such as `Http.HeaderParam`, `Http.CookieParam`, `Http.QueryParam`, `Http.FormParam`, and
+`Http.PathParam`, support scalar values, `Optional<T>`, `List<T>`, and `Optional<List<T>>`. For server endpoints,
+`List<T>` is mandatory and the request fails if the named value is missing.
+`Optional<List<T>>` is optional and is empty when the named value is missing. If the named value is present but has no
+values, the injected list is empty. Cookies are an exception: cookies are not represented as `Parameters`, so a named
+cookie cannot be present with no values. Cookie parameter names are validated during declarative code generation.
+Server path parameters are obtained from the routed request path.
 
 [source,java]
 .Example of an HTTP Server Endpoint
 ----
 include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_2, indent=0]
+----
+
+[source,java]
+.Example of Grouped HTTP Server Parameters
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_19, indent=0]
 ----
 
 === Typed HTTP Client [[Dec-HTTP-Client]]
@@ -191,13 +219,47 @@ Annotations on method parameters:
 
 - link:{http-javadoc-base-url}/io/helidon/http/Http.Entity.html[`io.helidon.http.Http.Entity`] - Request entity, a typed parameter is expected, will use HTTP media type modules to write to the request
 - link:{http-javadoc-base-url}/io/helidon/http/Http.HeaderParam.html[`io.helidon.http.Http.HeaderParam`] - Typed HTTP header value to send
+- link:{http-javadoc-base-url}/io/helidon/http/Http.CookieParam.html[`io.helidon.http.Http.CookieParam`] - Typed HTTP cookie value to send
 - link:{http-javadoc-base-url}/io/helidon/http/Http.QueryParam.html[`io.helidon.http.Http.QueryParam`] - Typed HTTP query value to send
+- link:{http-javadoc-base-url}/io/helidon/http/Http.FormParam.html[`io.helidon.http.Http.FormParam`] - Typed URL encoded form value to send in the request entity
 - link:{http-javadoc-base-url}/io/helidon/http/Http.PathParam.html[`io.helidon.http.Http.PathParam`] - Typed parameter from path template to construct the request URI
+- link:{http-javadoc-base-url}/io/helidon/http/Http.RequestParams.html[`io.helidon.http.Http.RequestParams`] - Grouped request parameters in a record type
+
+`Http.FormParam` is backed by the request entity and should be used with
+`@Http.Consumes(MediaTypes.APPLICATION_FORM_URLENCODED_VALUE)`. It cannot be combined with `Http.Entity` on the same
+declarative method. Each client method parameter may have at most one supported request parameter annotation.
+
+`Http.RequestParams` is supported only for record parameter types. This is a restriction on the parameter types supported
+by declarative code generation. Each client record component must use one of these component annotations:
+`Http.HeaderParam`, `Http.CookieParam`, `Http.QueryParam`, `Http.FormParam`, `Http.PathParam`, or `Http.Entity`.
+Components must not combine supported request parameter annotations. At most one `Http.Entity` component is supported,
+and `Http.Entity` cannot be combined with `Http.FormParam` components.
+
+The `Http.HeaderParam`, `Http.CookieParam`, `Http.QueryParam`, and `Http.FormParam` annotations support scalar values,
+`Optional<T>`, `List<T>`, and `Optional<List<T>>`. Declarative clients send every value from `List<T>`, and send
+`Optional<List<T>>` only when the optional is present.
+Declarative client named-value parameters must not be `null`; use `Optional.empty()` to omit optional values. List values
+must not contain `null` elements. The same nullability rule applies to named-value components of `Http.RequestParams`
+records, and the request-params argument itself must not be `null`.
+Cookie parameter names are validated during declarative code generation. Declarative clients send cookie parameters as a
+single `Cookie` header and do not escape cookie values; each cookie parameter value must already be a valid cookie-octet
+value. Cookies are not represented as `Parameters`, so a named cookie cannot be present with no values. A mandatory
+client `List<T>` cookie parameter must contain at least one value.
+
+Declarative clients use `Http.PathParam` values as URI path text when constructing the request URI. They do not encode
+each value as a single path segment, so reserved path characters such as `/` keep their WebClient URI meaning. Path
+parameter values must not be `null`.
 
 [source,java]
 .Example of a Typed HTTP Client
 ----
 include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_3, indent=0]
+----
+
+[source,java]
+.Example of Grouped HTTP Client Parameters
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_20, indent=0]
 ----
 
 

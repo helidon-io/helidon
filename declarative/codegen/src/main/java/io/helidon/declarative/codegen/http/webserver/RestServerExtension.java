@@ -16,6 +16,7 @@
 
 package io.helidon.declarative.codegen.http.webserver;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -45,6 +46,7 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.declarative.codegen.DeclarativeTypes;
 import io.helidon.declarative.codegen.DeclarativeUtils;
+import io.helidon.declarative.codegen.http.HttpCodegenValidation;
 import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.RestExtensionBase;
 import io.helidon.declarative.codegen.http.webserver.spi.HttpParameterCodegenProvider;
@@ -64,11 +66,14 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.declarative.codegen.DeclarativeTypes.SINGLETON_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_ENTITY_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_FORM_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_HEADER_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_METHOD;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_METHOD_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_PATH_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_QUERY_PARAM_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_REQUEST_PARAMS_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_SUPPORT;
 import static io.helidon.declarative.codegen.http.webserver.WebServerCodegenTypes.REST_SERVER_COMPUTED_HEADER;
 import static io.helidon.declarative.codegen.http.webserver.WebServerCodegenTypes.REST_SERVER_COMPUTED_HEADERS;
 import static io.helidon.declarative.codegen.http.webserver.WebServerCodegenTypes.REST_SERVER_ENDPOINT;
@@ -84,16 +89,17 @@ Generates:
  */
 class RestServerExtension extends RestExtensionBase implements RegistryCodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(RestServerExtension.class);
+    private static final TypeName PARAMETERS = TypeName.create("io.helidon.common.parameters.Parameters");
     private static final String REQUEST_PARAM_NAME = "req";
     private static final String RESPONSE_PARAM_NAME = "res";
     private static final String METHOD_RESPONSE_NAME = "response";
-    private static final List<HttpParameterCodegenProvider> PARAM_PROVIDERS =
-            loadParamProviders(RestServerExtension.class.getClassLoader());
 
     private final RegistryCodegenContext ctx;
+    private final List<HttpParameterCodegenProvider> paramProviders;
 
     RestServerExtension(RegistryCodegenContext ctx) {
         this.ctx = ctx;
+        this.paramProviders = loadParamProviders(RestServerExtension.class.getClassLoader(), ctx);
     }
 
     @Override
@@ -111,16 +117,31 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
     }
 
     static List<HttpParameterCodegenProvider> loadParamProviders(ClassLoader classLoader) {
-        return HelidonServiceLoader.builder(ServiceLoader.load(HttpParameterCodegenProvider.class, classLoader))
+        return loadParamProviders(classLoader, null);
+    }
+
+    static List<HttpParameterCodegenProvider> loadParamProviders(ClassLoader classLoader,
+                                                                 RegistryCodegenContext ctx) {
+        var builder = HelidonServiceLoader.builder(ServiceLoader.load(HttpParameterCodegenProvider.class, classLoader))
                 .addService(new ParamProviderHttpEntity())
                 .addService(new ParamProviderHttpHeader())
+                .addService(new ParamProviderHttpCookie())
                 .addService(new ParamProviderHttpPathParam())
                 .addService(new ParamProviderHttpQuery())
+                .addService(new ParamProviderHttpForm())
                 .addService(new ParamProviderHttpReqRes())
                 .addService(new ParamProviderSecurityContext())
-                .addService(new ParamProviderContext())
-                .build()
-                .asList();
+                .addService(new ParamProviderContext());
+
+        List<HttpParameterCodegenProvider> providers = builder.build().asList();
+        if (ctx == null) {
+            return providers;
+        }
+
+        var result = new ArrayList<HttpParameterCodegenProvider>();
+        result.add(new ParamProviderHttpRequestParams(ctx, providers));
+        result.addAll(providers);
+        return List.copyOf(result);
     }
 
     private static String userVariableName(String userName) {
@@ -310,6 +331,12 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                                                                                        methodInfo,
                                                                                        parameterInfo,
                                                                                        index));
+        HttpCodegenValidation.validateMethodParameterAnnotationCount(
+                annotations,
+                "Parameter '" + parameterInfo.elementName() + "' of declarative server method "
+                        + typeInfo.typeName().fqName() + "." + methodInfo.elementName()
+                        + "() must have at most one supported request parameter annotation.",
+                parameterInfo.originatingElementValue());
         var parameter = RestMethodParameter.builder()
                 .annotations(annotations)
                 .name(parameterInfo.elementName())
@@ -382,7 +409,6 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
         addSocketMethods(classModel, endpoint);
         // private void routing(HttpRules rules)
         addRoutingMethod(fieldHandler, classModel, endpoint);
-
         int methodIndex = 0;
 
         Map<String, String> headerProducerFields = headerProducers(fieldHandler, endpoint);
@@ -465,6 +491,22 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                                     RestMethod restMethod,
                                     Map<String, String> headerProducers,
                                     int methodIndex) {
+        validateBodyParameters(restMethod);
+        if (methodUsesFormParams(restMethod)) {
+            method.addContent("var ")
+                    .addContent(ParamProviderHttpForm.FORM_PARAMS)
+                    .addContent(" = ")
+                    .addContent(HTTP_SUPPORT)
+                    .addContentLine(".lazyFormParams(() -> req.content()")
+                    .increaseContentPadding()
+                    .increaseContentPadding()
+                    .addContent(".asOptional(")
+                    .addContent(PARAMETERS)
+                    .addContentLine(".GENERIC_TYPE));")
+                    .decreaseContentPadding()
+                    .decreaseContentPadding();
+        }
+
         // parameters
         for (RestMethodParameter parameter : restMethod.parameters()) {
             String paramName = userVariableName(parameter.name());
@@ -574,7 +616,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                                     RestMethod restMethod,
                                     RestMethodParameter param,
                                     int methodIndex) {
-        for (HttpParameterCodegenProvider paramProvider : PARAM_PROVIDERS) {
+        for (HttpParameterCodegenProvider paramProvider : paramProviders) {
             try {
                 if (paramProvider.codegen(new ParamCodegenContextImpl(fieldHandler,
                                                                       param.annotations(),
@@ -595,7 +637,8 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                                                    + param.name() + "' that is " + (param.index() + 1) + " parameter of method "
                                                    + endpointType.fqName() + "." + restMethod.name()
                                                    + ", as the parameter handler ("
-                                                   + paramProvider.getClass().getName() + ") threw an exception.",
+                                                   + paramProvider.getClass().getName() + ") threw an exception: "
+                                                   + e.getMessage(),
                                            e);
             }
         }
@@ -632,6 +675,60 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                 addHttpRoute(fieldHandler, method, restMethod);
             }
         }
+    }
+
+    private void validateBodyParameters(RestMethod restMethod) {
+        BodyParameters bodyParameters = bodyParameters(restMethod);
+        if (bodyParameters.entityCount() > 1) {
+            throw new CodegenException("Only one @Http.Entity parameter is supported on declarative server method "
+                                               + restMethod.type().typeName().fqName() + "." + restMethod.name() + "().",
+                                       bodyParameters.firstOriginatingElement());
+        }
+        if (bodyParameters.entityCount() > 0 && bodyParameters.formCount() > 0) {
+            throw new CodegenException("@Http.Entity and @Http.FormParam cannot be combined on declarative server method "
+                                               + restMethod.type().typeName().fqName() + "." + restMethod.name() + "().",
+                                       bodyParameters.firstOriginatingElement());
+        }
+    }
+
+    private boolean methodUsesFormParams(RestMethod restMethod) {
+        return bodyParameters(restMethod).formCount() > 0;
+    }
+
+    private BodyParameters bodyParameters(RestMethod restMethod) {
+        int entityCount = 0;
+        int formCount = 0;
+        Object firstOriginatingElement = restMethod.method().originatingElementValue();
+
+        for (RestMethodParameter parameter : restMethod.parameters()) {
+            if (HttpCodegenValidation.hasAnnotation(parameter.annotations(), HTTP_ENTITY_ANNOTATION)) {
+                entityCount++;
+                firstOriginatingElement = parameter.parameter().originatingElementValue();
+            }
+            if (HttpCodegenValidation.hasAnnotation(parameter.annotations(), HTTP_FORM_PARAM_ANNOTATION)) {
+                formCount++;
+                firstOriginatingElement = parameter.parameter().originatingElementValue();
+            }
+            if (HttpCodegenValidation.hasAnnotation(parameter.annotations(), HTTP_REQUEST_PARAMS_ANNOTATION)) {
+                TypeInfo requestParamsType = HttpCodegenValidation.requestParamsRecordType(
+                        ctx::typeInfo,
+                        parameter.typeName(),
+                        parameter.parameter().originatingElementValue());
+                HttpCodegenValidation.validateRequestParamsBodyComponents(requestParamsType);
+                for (TypedElementInfo component : HttpCodegenValidation.requestParamsComponents(requestParamsType)) {
+                    if (HttpCodegenValidation.hasAnnotation(component.annotations(), HTTP_ENTITY_ANNOTATION)) {
+                        entityCount++;
+                        firstOriginatingElement = component.originatingElementValue();
+                    }
+                    if (HttpCodegenValidation.hasAnnotation(component.annotations(), HTTP_FORM_PARAM_ANNOTATION)) {
+                        formCount++;
+                        firstOriginatingElement = component.originatingElementValue();
+                    }
+                }
+            }
+        }
+
+        return new BodyParameters(entityCount, formCount, firstOriginatingElement);
     }
 
     private void addSimpleRoute(FieldHandler fieldHandler, Method.Builder routing, RestMethod restMethod) {
@@ -715,5 +812,10 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
         routing.addContentLine(".build());")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
+    }
+
+    private record BodyParameters(int entityCount,
+                                  int formCount,
+                                  Object firstOriginatingElement) {
     }
 }

@@ -134,10 +134,10 @@ class QueryParamOptionalListCodegenTest {
         }
 
         String generated = generatedContent.toString();
-        assertThat(generated, containsString(".contains(\"fieldNames\")"));
-        assertThat(generated, containsString("? Optional.of(req.query().all(\"fieldNames\")"));
+        assertThat(generated, containsString("HttpSupport.paramOptionalList(req.query(), \"fieldNames\")"));
         assertThat(generated, containsString(".filter(it -> !it.isEmpty())"));
         assertThat(generated, containsString(".collect(Collectors.toList()))"));
+        assertThat(generated, not(containsString(".contains(\"fieldNames\")")));
         assertThat(generated, not(containsString("values.isEmpty() ? Optional")));
         assertThat(generated, not(containsString("helidonDeclarative__")));
         assertThat(generated, not(containsString("Value.create(mappers, \"fieldNames\"")));
@@ -198,13 +198,13 @@ class QueryParamOptionalListCodegenTest {
         }
 
         String generated = generatedContent.toString();
-        assertThat(generated, containsString(".contains(\"ids\")"));
-        assertThat(generated, containsString("? Optional.of(req.query().all(\"ids\")"));
+        assertThat(generated, containsString("HttpSupport.paramOptionalList(req.query(), \"ids\")"));
         assertThat(generated, containsString(".filter(it -> !it.isEmpty())"));
         assertThat(generated,
                    containsString("mappers.map(it, GenericType.STRING, GTYPE, me -> new BadRequestException(\"Query parameter"
                                           + " ids has invalid value.\", me), \"uri\", \"query\")"));
         assertThat(generated, not(containsString("\"uri/query\"")));
+        assertThat(generated, not(containsString(".contains(\"ids\")")));
         assertThat(generated,
                    not(containsString("catch (MapperException e)")));
         assertThat(generated, not(containsString("values.isEmpty() ? Optional")));

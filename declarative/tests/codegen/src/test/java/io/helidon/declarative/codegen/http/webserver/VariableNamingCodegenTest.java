@@ -34,6 +34,7 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.http.Http;
+import io.helidon.http.HttpSupport;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
@@ -66,6 +67,7 @@ class VariableNamingCodegenTest {
             Http.class,
             HttpEntryPoint.class,
             HttpFeature.class,
+            HttpSupport.class,
             HttpRoute.class,
             HttpRouting.class,
             HttpRules.class,
@@ -135,9 +137,15 @@ class VariableNamingCodegenTest {
         String generated = generatedContent.toString();
         assertThat(generated, containsString("ServerRequest req"));
         assertThat(generated, containsString("ServerResponse res"));
-        assertThat(generated, containsString("var u_req = req.query().first(\"req\")"));
-        assertThat(generated, containsString("var u_res = req.query().first(\"res\")"));
-        assertThat(generated, containsString("var u_response = req.query().first(\"response\")"));
+        assertThat(generated,
+                   containsString("var u_req = HttpSupport.paramValue(req.query(), \"req\", "
+                                          + "\"Query parameter\")"));
+        assertThat(generated,
+                   containsString("var u_res = HttpSupport.paramValue(req.query(), \"res\", "
+                                          + "\"Query parameter\")"));
+        assertThat(generated,
+                   containsString("var u_response = HttpSupport.paramValue(req.query(), \"response\", "
+                                          + "\"Query parameter\")"));
         assertThat(generated, containsString("var response = this.endpoint.names("));
         assertThat(generated, containsString("u_req,"));
         assertThat(generated, containsString("u_res,"));

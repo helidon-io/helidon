@@ -16,25 +16,20 @@
 
 package io.helidon.declarative.codegen.http.webserver;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.apt.AptProcessor;
 import io.helidon.codegen.testing.TestCompiler;
-import io.helidon.common.Default;
 import io.helidon.common.Generated;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.Mappers;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.types.Annotation;
-import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.http.Http;
-import io.helidon.http.HttpSupport;
+import io.helidon.http.media.ReadableEntity;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
@@ -52,44 +47,40 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-class PathParamMappedCodegenTest {
-    private static final List<Class<?>> CLASSPATH = List.of(
-            Annotation.class,
-            Config.class,
-            Default.class,
-            Dependency.class,
-            Generated.class,
-            GenericType.class,
-            Handler.class,
-            Http.class,
-            HttpEntryPoint.class,
-            HttpFeature.class,
-            HttpSupport.class,
-            HttpRoute.class,
-            HttpRouting.class,
-            HttpRules.class,
-            Mappers.class,
-            Parameters.class,
-            Prototype.class,
-            RestServer.class,
-            ServerRequest.class,
-            ServerResponse.class,
-            Service.class,
-            ServiceDescriptor.class,
-            UriQuery.class
-    );
-
+class CookieParamCodegenTest {
     @Test
-    void generatedStringPathParamDoesNotUseFeatureMappers() throws IOException {
+    void invalidCookieParameterNameIsRejected() {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .addClasspath(CLASSPATH)
+                .procOnly()
+                .addClasspath(List.of(
+                        Annotation.class,
+                        Config.class,
+                        Dependency.class,
+                        Generated.class,
+                        GenericType.class,
+                        Handler.class,
+                        Http.class,
+                        HttpEntryPoint.class,
+                        HttpFeature.class,
+                        HttpRoute.class,
+                        HttpRouting.class,
+                        HttpRules.class,
+                        Mappers.class,
+                        Parameters.class,
+                        Prototype.class,
+                        ReadableEntity.class,
+                        RestServer.class,
+                        ServerRequest.class,
+                        ServerResponse.class,
+                        Service.class,
+                        ServiceDescriptor.class
+                ))
                 .addProcessor(AptProcessor::new)
-                .workDir(Path.of("target/test-compiler/http-path-string"))
-                .addSource("StringPathEndpoint.java", """
+                .workDir(Path.of("target/test-compiler/http-invalid-cookie-param-name"))
+                .addSource("CookieEndpoint.java", """
                         package com.example;
 
                         import io.helidon.http.Http;
@@ -99,11 +90,11 @@ class PathParamMappedCodegenTest {
                         @RestServer.Listener("@default")
                         @RestServer.Endpoint
                         @Service.Singleton
-                        @Http.Path("/string-path/{name}")
-                        class StringPathEndpoint {
+                        @Http.Path("/cookies")
+                        class CookieEndpoint {
                             @Http.GET
-                            String name(@Http.PathParam("name") String name) {
-                                return name;
+                            String invalid(@Http.CookieParam("bad;name") String value) {
+                                return value;
                             }
                         }
                         """)
@@ -120,24 +111,49 @@ class PathParamMappedCodegenTest {
                 .compile();
 
         String diagnostics = String.join("\n", result.diagnostics());
-        assertThat(diagnostics, result.success(), is(true));
-
-        String generated = generatedContent(result);
-        assertThat(generated,
-                   containsString("var u_name = HttpSupport.paramValue(req.path().pathParameters(), "
-                                          + "\"name\", \"Path parameter\")"));
-        assertThat(generated, not(containsString("helidonDeclarative__")));
-        assertThat(generated, not(containsString("Value.create(mappers, \"name\"")));
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("@Http.CookieParam value must be a valid cookie name."));
     }
 
     @Test
-    void generatedMappedPathParamUsesFeatureMappers() throws IOException {
+    void invalidRequestParamsCookieParameterNameIsRejected() {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .addClasspath(CLASSPATH)
+                .procOnly()
+                .addClasspath(List.of(
+                        Annotation.class,
+                        Config.class,
+                        Dependency.class,
+                        Generated.class,
+                        GenericType.class,
+                        Handler.class,
+                        Http.class,
+                        HttpEntryPoint.class,
+                        HttpFeature.class,
+                        HttpRoute.class,
+                        HttpRouting.class,
+                        HttpRules.class,
+                        Mappers.class,
+                        Parameters.class,
+                        Prototype.class,
+                        ReadableEntity.class,
+                        RestServer.class,
+                        ServerRequest.class,
+                        ServerResponse.class,
+                        Service.class,
+                        ServiceDescriptor.class
+                ))
                 .addProcessor(AptProcessor::new)
-                .workDir(Path.of("target/test-compiler/http-path-mapped"))
-                .addSource("MappedPathEndpoint.java", """
+                .workDir(Path.of("target/test-compiler/http-request-params-invalid-cookie-param-name"))
+                .addSource("CookieParams.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+
+                        record CookieParams(@Http.CookieParam("bad;name") String value) {
+                        }
+                        """)
+                .addSource("CookieEndpoint.java", """
                         package com.example;
 
                         import io.helidon.http.Http;
@@ -147,11 +163,11 @@ class PathParamMappedCodegenTest {
                         @RestServer.Listener("@default")
                         @RestServer.Endpoint
                         @Service.Singleton
-                        @Http.Path("/mapped-path/{id}")
-                        class MappedPathEndpoint {
+                        @Http.Path("/cookies")
+                        class CookieEndpoint {
                             @Http.GET
-                            String id(@Http.PathParam("id") Integer id) {
-                                return Integer.toString(id);
+                            String invalid(@Http.RequestParams CookieParams params) {
+                                return params.value();
                             }
                         }
                         """)
@@ -168,31 +184,7 @@ class PathParamMappedCodegenTest {
                 .compile();
 
         String diagnostics = String.join("\n", result.diagnostics());
-        assertThat(diagnostics, result.success(), is(true));
-
-        String generated = generatedContent(result);
-        assertThat(generated,
-                   containsString("mappers.map(HttpSupport.paramValue(req.path().pathParameters(), \"id\", "
-                                          + "\"Path parameter\"), GenericType.STRING, GTYPE, "
-                                          + "me -> new BadRequestException(\"Path parameter id has invalid value.\", "
-                                          + "me), "
-                                          + "\"http\", \"path\")"));
-        assertThat(generated, not(containsString("\"http/path\"")));
-        assertThat(generated, not(containsString("Value.create(")));
-        assertThat(generated, not(containsString("helidonDeclarative__")));
-    }
-
-    private String generatedContent(TestCompiler.Result result) throws IOException {
-        var generatedSources = Files.walk(result.sourceOutput())
-                .filter(it -> it.getFileName().toString().endsWith(".java"))
-                .toList();
-
-        StringBuilder generatedContent = new StringBuilder();
-        for (Path generatedSource : generatedSources) {
-            generatedContent.append(Files.readString(generatedSource, StandardCharsets.UTF_8));
-            generatedContent.append('\n');
-        }
-
-        return generatedContent.toString();
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("@Http.CookieParam value must be a valid cookie name."));
     }
 }
