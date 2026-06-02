@@ -55,7 +55,7 @@ Helidon's integration prepares the application `OpenTelemetry` instance accordin
 Helidon makes this instance available via Helidon declarative's `@Service.Inject` and programmatically with `Services.get(OpenTelemetry.class)`.
 Your code then uses the application `OpenTelemetry` instance--obtained in either of these ways--as the entry point to the OpenTelemetry API to work with metrics and spans.
 If some third-party OpenTelemetry instrumentation needs the JVM-wide `GlobalOpenTelemetry`, configure
-`telemetry.global-open-telemetry` so Helidon also publishes the same application instance to the OpenTelemetry global.
+`telemetry.global` so Helidon also publishes the same application instance to the OpenTelemetry global.
 
 You can also optionally have Helidon provide the tracing spans and metrics prescribed by the link:https://opentelemetry.io/docs/concepts/semantic-conventions/[OpenTelemetry semantic conventions] simply by adding a dependency.
 

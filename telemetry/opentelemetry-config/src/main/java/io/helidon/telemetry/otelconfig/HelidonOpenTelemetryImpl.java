@@ -19,6 +19,7 @@ package io.helidon.telemetry.otelconfig;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.logging.common.HelidonMdc;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.Span;
@@ -29,10 +30,20 @@ import io.opentelemetry.context.Context;
  */
 class HelidonOpenTelemetryImpl implements HelidonOpenTelemetry, RuntimeType.Api<OpenTelemetryConfig> {
 
+    private static final System.Logger LOGGER = System.getLogger(HelidonOpenTelemetryImpl.class.getName());
+
     private final OpenTelemetryConfig config;
 
     HelidonOpenTelemetryImpl(OpenTelemetryConfig config) {
         this.config = config;
+        if (prototype().enabled() && prototype().global()) {
+            try {
+                GlobalOpenTelemetry.set(prototype().openTelemetry());
+                configureMdc();
+            } catch (Exception e) {
+                LOGGER.log(System.Logger.Level.WARNING, "Failed to set global OpenTelemetry as requested by settings", e);
+            }
+        }
     }
 
     static void configureMdc() {

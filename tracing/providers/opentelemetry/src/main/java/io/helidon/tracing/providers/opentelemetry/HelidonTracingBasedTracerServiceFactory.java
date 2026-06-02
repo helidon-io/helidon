@@ -17,6 +17,9 @@
 package io.helidon.tracing.providers.opentelemetry;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
@@ -24,6 +27,8 @@ import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.telemetry.opentelemetry.ApplicationOpenTelemetry;
+import io.helidon.telemetry.opentelemetry.spi.OpenTelemetryOwnershipStrategy;
 import io.helidon.tracing.Tracer;
 
 import io.opentelemetry.api.OpenTelemetry;
@@ -50,11 +55,76 @@ class HelidonTracingBasedTracerServiceFactory implements Supplier<Tracer> {
 
     @Override
     public Tracer get() {
-        return HelidonOpenTelemetry.applicationTracer(registry, config, strategies.get(), openTelemetry.get());
+        List<OpenTelemetryOwnershipStrategy> strategyList = strategies.get();
+        OpenTelemetry canonicalOpenTelemetry = ApplicationOpenTelemetry.applicationOpenTelemetry(registry,
+                                                                                                config,
+                                                                                                strategyList,
+                                                                                                openTelemetry::get);
+        OpenTelemetryOwnershipStrategy strategy = selectedStrategy(config, strategyList).orElse(null);
+        Tracer tracer = applicationTracer(config, strategy, canonicalOpenTelemetry);
+        if (tracer.enabled()) {
+            OpenTelemetryTracerProvider.applicationOpenTelemetrySelected();
+        }
+        return tracer;
     }
 
-    @Service.PreDestroy
-    void preDestroy() {
-        HelidonOpenTelemetry.clearApplicationTelemetry(registry);
+    private static Tracer applicationTracer(Config rootConfig,
+                                            OpenTelemetryOwnershipStrategy strategy,
+                                            OpenTelemetry openTelemetry) {
+        if (tracingDisabled(rootConfig) || (strategy == null && telemetryDisabled(rootConfig))) {
+            return Tracer.noOp();
+        }
+
+        if (strategy instanceof OpenTelemetryTracerFactory tracerFactory) {
+            return tracerFactory.createTracer(rootConfig, openTelemetry);
+        }
+
+        String serviceName = serviceName(rootConfig, strategy);
+        return HelidonOpenTelemetry.create(openTelemetry, openTelemetry.getTracer(serviceName), Map.of());
+    }
+
+    private static Optional<OpenTelemetryOwnershipStrategy> selectedStrategy(Config rootConfig,
+                                                                             List<OpenTelemetryOwnershipStrategy> strategies) {
+        return strategies.stream()
+                .map(Objects::requireNonNull)
+                .filter(strategy -> strategy.active(rootConfig))
+                .findFirst();
+    }
+
+    private static boolean tracingDisabled(Config rootConfig) {
+        Config tracingConfig = rootConfig.get(OpenTelemetryTracerConfigBlueprint.TRACING_CONFIG_KEY);
+        return tracingConfig.exists()
+                && !tracingConfig.get("enabled").asBoolean().orElse(true);
+    }
+
+    private static boolean telemetryDisabled(Config rootConfig) {
+        Config telemetryConfig = rootConfig.get("telemetry");
+        return telemetryConfig.exists()
+                && !telemetryConfig.get("enabled").asBoolean().orElse(true);
+    }
+
+    private static String serviceName(Config rootConfig, OpenTelemetryOwnershipStrategy strategy) {
+        if (strategy != null) {
+            return strategy.serviceName(rootConfig);
+        }
+        Optional<String> telemetryServiceName = serviceNameIfConfigured(rootConfig.get("telemetry"));
+        if (telemetryServiceName.isPresent()) {
+            return telemetryServiceName.get();
+        }
+
+        Optional<String> tracingServiceName =
+                serviceNameIfConfigured(rootConfig.get(OpenTelemetryTracerConfigBlueprint.TRACING_CONFIG_KEY));
+        if (tracingServiceName.isPresent()) {
+            return tracingServiceName.get();
+        }
+
+        return HelidonOpenTelemetry.DEFAULT_SERVICE_NAME;
+    }
+
+    private static Optional<String> serviceNameIfConfigured(Config config) {
+        if (!config.exists()) {
+            return Optional.empty();
+        }
+        return config.get("service").asString().asOptional();
     }
 }

@@ -104,7 +104,7 @@ instances with `Services.set(...)` before any application or Helidon component r
 registry. Once a registry singleton is resolved, replacing it is not supported.
 
 Some OpenTelemetry instrumentation reads `GlobalOpenTelemetry` directly. For that interop case, configure
-`telemetry.global-open-telemetry: true` or `tracing.global-open-telemetry: true` so Helidon publishes the selected
+`telemetry.global: true` or `tracing.global: true` so Helidon publishes the selected
 application `OpenTelemetry` instance to the OpenTelemetry global during service-registry ownership startup. This must
 happen before any other code initializes `GlobalOpenTelemetry`, because OpenTelemetry allows the JVM-wide global to be
 assigned only once.

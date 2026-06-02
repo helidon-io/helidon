@@ -73,6 +73,9 @@ public interface HelidonOpenTelemetry extends RuntimeType.Api<OpenTelemetryConfi
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     static void global(OpenTelemetry openTelemetry, String serviceName, Map<String, String> tags) {
+        logger().log(System.Logger.Level.WARNING,
+                     "HelidonOpenTelemetry.global(...) is deprecated and no longer changes Helidon tracing state. "
+                             + "Use the Helidon service registry to configure the application OpenTelemetry instance.");
     }
 
     /**
@@ -80,4 +83,8 @@ public interface HelidonOpenTelemetry extends RuntimeType.Api<OpenTelemetryConfi
      * @return the OpenTelemetry instance
      */
     OpenTelemetry openTelemetry();
+
+    private static System.Logger logger() {
+        return System.getLogger(HelidonOpenTelemetry.class.getName());
+    }
 }

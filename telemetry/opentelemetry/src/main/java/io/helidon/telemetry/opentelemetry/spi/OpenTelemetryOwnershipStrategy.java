@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-package io.helidon.tracing.providers.opentelemetry;
+package io.helidon.telemetry.opentelemetry.spi;
 
-import java.util.Map;
 import java.util.Objects;
 
 import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
-import io.helidon.tracing.Tracer;
 
 import io.opentelemetry.api.OpenTelemetry;
 
 /**
- * Internal strategy for contributing an application-wide OpenTelemetry runtime candidate.
+ * Strategy for contributing an application-wide OpenTelemetry runtime candidate.
  */
-@Api.Internal
+@Api.Preview
 @Service.Contract
 public interface OpenTelemetryOwnershipStrategy {
 
@@ -58,31 +56,15 @@ public interface OpenTelemetryOwnershipStrategy {
     OpenTelemetry create(Config rootConfig);
 
     /**
-     * Whether the selected application-wide {@link OpenTelemetry} instance should also be published to
+     * Whether the selected application-wide {@link OpenTelemetry} instance should be published to
      * {@link io.opentelemetry.api.GlobalOpenTelemetry}.
      *
      * @param rootConfig root configuration
      * @return whether Helidon should publish the selected instance to the OpenTelemetry global
      */
-    default boolean globalOpenTelemetry(Config rootConfig) {
+    default boolean global(Config rootConfig) {
         Objects.requireNonNull(rootConfig);
         return false;
-    }
-
-    /**
-     * Creates the Helidon tracer backed by the canonical OpenTelemetry runtime.
-     *
-     * @param rootConfig root configuration
-     * @param openTelemetry canonical OpenTelemetry runtime
-     * @return Helidon tracer
-     */
-    default Tracer createTracer(Config rootConfig, OpenTelemetry openTelemetry) {
-        Objects.requireNonNull(rootConfig);
-        Objects.requireNonNull(openTelemetry);
-        String serviceName = serviceName(rootConfig);
-        return HelidonOpenTelemetry.create(openTelemetry,
-                                           openTelemetry.getTracer(serviceName),
-                                           Map.of());
     }
 
     /**

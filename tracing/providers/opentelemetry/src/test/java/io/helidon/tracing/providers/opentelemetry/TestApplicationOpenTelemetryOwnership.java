@@ -17,10 +17,8 @@
 package io.helidon.tracing.providers.opentelemetry;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.Weighted;
 import io.helidon.common.media.type.MediaTypes;
@@ -32,6 +30,7 @@ import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
+import io.helidon.telemetry.opentelemetry.spi.OpenTelemetryOwnershipStrategy;
 import io.helidon.testing.junit5.Testing;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
@@ -108,6 +107,7 @@ class TestApplicationOpenTelemetryOwnership {
                           service: telemetry-owner
                         tracing:
                           service: tracing-owner
+                          global: false
                         """,
                 MediaTypes.APPLICATION_YAML));
         Services.set(Config.class, config);
@@ -133,12 +133,11 @@ class TestApplicationOpenTelemetryOwnership {
     }
 
     @Test
-    void tracingConfigPublishesGlobalOpenTelemetryWhenRequested() {
+    void tracingConfigPublishesGlobalOpenTelemetryByDefault() {
         Config config = Config.just(ConfigSources.create(
                 """
                         tracing:
                           service: tracing-owner
-                          global-open-telemetry: true
                         """,
                 MediaTypes.APPLICATION_YAML));
         Services.set(Config.class, config);
@@ -189,46 +188,41 @@ class TestApplicationOpenTelemetryOwnership {
     }
 
     @Test
-    void tracingConfigGlobalFalseDoesNotOwnApplicationOpenTelemetry() {
-        String originalAutoConfigure = System.setProperty(OTEL_AUTO_CONFIGURE, "false");
+    void tracingConfigGlobalFalseOwnsWithoutPublishingGlobalOpenTelemetry() {
+        Config config = Config.just(ConfigSources.create(
+                """
+                        tracing:
+                          service: tracing-owner
+                          global: false
+                        """,
+                MediaTypes.APPLICATION_YAML));
+        Services.set(Config.class, config);
+
+        OpenTelemetry openTelemetry = Services.get(OpenTelemetry.class);
+        Tracer tracer = Services.get(Tracer.class);
+
+        assertFalse(GlobalOpenTelemetry.isSet(), "Tracing ownership should not assign the OpenTelemetry global");
+        assertThat("Tracer-backed OpenTelemetry",
+                   tracer.unwrap(OpenTelemetryTracer.class).prototype().openTelemetry(),
+                   sameInstance(openTelemetry));
+
+        Span span = tracer.spanBuilder("global-disabled-span").start();
         try {
-            Config config = Config.just(ConfigSources.create(
-                    """
-                            tracing:
-                              service: tracing-owner
-                              global: false
-                            """,
-                    MediaTypes.APPLICATION_YAML));
-            Services.set(Config.class, config);
-
-            OpenTelemetry openTelemetry = Services.get(OpenTelemetry.class);
-            Tracer tracer = Services.get(Tracer.class);
-
-            assertFalse(GlobalOpenTelemetry.isSet(), "Disabled tracing ownership should not assign the OpenTelemetry global");
-            assertThat("Tracer-backed OpenTelemetry",
-                       tracer.unwrap(OpenTelemetryTracer.class).prototype().openTelemetry(),
-                       sameInstance(openTelemetry));
-
-            Span span = tracer.spanBuilder("global-disabled-span").start();
-            try {
-                assertThat("Span ID", span.context().spanId(), containsString("00000000"));
-            } finally {
-                span.end();
-            }
+            assertThat("Span ID", span.context().spanId(), not(containsString("00000000")));
         } finally {
-            restoreAutoConfigure(originalAutoConfigure);
+            span.end();
         }
     }
 
     @Test
-    void tracingConfigGlobalFalseAdoptsAutoConfiguredGlobalOpenTelemetry() {
+    void tracingConfigRegisteredFalseAdoptsAutoConfiguredGlobalOpenTelemetry() {
         String originalAutoConfigure = System.setProperty(OTEL_AUTO_CONFIGURE, "true");
         try {
             Config config = Config.just(ConfigSources.create(
                     """
                             tracing:
                               service: tracing-owner
-                              global: false
+                              registered: false
                             """,
                     MediaTypes.APPLICATION_YAML));
             Services.set(Config.class, config);
@@ -254,13 +248,12 @@ class TestApplicationOpenTelemetryOwnership {
     }
 
     @Test
-    void tracingConfigGlobalOpenTelemetryFailsWhenGlobalAlreadyExists() {
+    void tracingConfigGlobalFailsWhenGlobalAlreadyExists() {
         GlobalOpenTelemetry.set(OpenTelemetry.noop());
         Config config = Config.just(ConfigSources.create(
                 """
                         tracing:
                           service: tracing-owner
-                          global-open-telemetry: true
                         """,
                 MediaTypes.APPLICATION_YAML));
         Services.set(Config.class, config);
@@ -396,7 +389,6 @@ class TestApplicationOpenTelemetryOwnership {
                 """
                         tracing:
                           service: tracing-owner
-                          global-open-telemetry: true
                         """,
                 MediaTypes.APPLICATION_YAML));
         Services.set(Config.class, config);
@@ -482,12 +474,14 @@ class TestApplicationOpenTelemetryOwnership {
                 """
                         tracing:
                           service: first-owner
+                          global: false
                         """,
                 MediaTypes.APPLICATION_YAML)));
         ServiceRegistryManager secondManager = registryManager(Config.just(ConfigSources.create(
                 """
                         tracing:
                           service: second-owner
+                          global: false
                         """,
                 MediaTypes.APPLICATION_YAML)));
         try {
@@ -518,116 +512,13 @@ class TestApplicationOpenTelemetryOwnership {
     }
 
     @Test
-    void applicationTelemetryCacheIsClearedWhenRegistryShutsDown() {
-        ServiceRegistryManager manager = registryManager(Config.just(ConfigSources.create(
-                """
-                        tracing:
-                          service: lifecycle-owner
-                        """,
-                MediaTypes.APPLICATION_YAML)));
-        ServiceRegistry registry = manager.registry();
-        try {
-            registry.get(OpenTelemetry.class);
-            assertTrue(HelidonOpenTelemetry.applicationTelemetryCached(registry),
-                       "Application telemetry should be cached for the active registry");
-        } finally {
-            manager.shutdown();
-        }
-
-        assertFalse(HelidonOpenTelemetry.applicationTelemetryCached(registry),
-                    "Application telemetry should be released when the registry shuts down");
-    }
-
-    @Test
-    void cachedApplicationOpenTelemetryDoesNotResolveRegistryOpenTelemetry() {
-        OpenTelemetry registryOpenTelemetry = new NamedOpenTelemetry();
-        ServiceRegistryManager manager = registryManager(Config.empty());
-        AtomicInteger registryOpenTelemetryLookups = new AtomicInteger();
-        try {
-            ServiceRegistry registry = manager.registry();
-
-            OpenTelemetry first = HelidonOpenTelemetry.applicationOpenTelemetry(registry,
-                                                                                Config.empty(),
-                                                                                List.of(),
-                                                                                () -> {
-                                                                                    registryOpenTelemetryLookups.incrementAndGet();
-                                                                                    return registryOpenTelemetry;
-                                                                                });
-            OpenTelemetry second = HelidonOpenTelemetry.applicationOpenTelemetry(registry,
-                                                                                 Config.empty(),
-                                                                                 List.of(),
-                                                                                 () -> {
-                                                                                     throw new AssertionError(
-                                                                                             "Cached OpenTelemetry should not"
-                                                                                                     + " resolve registry again");
-                                                                                 });
-
-            assertThat("Cached OpenTelemetry", second, sameInstance(first));
-            assertThat("Registry OpenTelemetry", first, sameInstance(registryOpenTelemetry));
-            assertThat("Registry OpenTelemetry lookups", registryOpenTelemetryLookups.get(), is(1));
-        } finally {
-            manager.shutdown();
-        }
-    }
-
-    @Test
-    void ownedApplicationOpenTelemetryIsClosedWhenRegistryShutsDown() {
-        CloseableOpenTelemetry openTelemetry = new CloseableOpenTelemetry();
-        FixedStrategy strategy = new FixedStrategy("owned-service", openTelemetry);
-        ServiceRegistryManager manager = strategyRegistryManager(strategy);
-        try {
-            assertThat("OpenTelemetry service", manager.registry().get(OpenTelemetry.class), sameInstance(openTelemetry));
-            assertFalse(openTelemetry.closed(), "OpenTelemetry should stay open while the registry is active");
-        } finally {
-            manager.shutdown();
-        }
-
-        assertTrue(openTelemetry.closed(), "Owned OpenTelemetry should close when the registry shuts down");
-    }
-
-    @Test
-    void ownedGlobalApplicationOpenTelemetryIsClosedWhenRegistryShutsDown() {
-        CloseableOpenTelemetry openTelemetry = new CloseableOpenTelemetry();
-        FixedStrategy strategy = new FixedStrategy("owned-global-service", openTelemetry, true);
-        ServiceRegistryManager manager = strategyRegistryManager(strategy);
-        try {
-            assertThat("OpenTelemetry service", manager.registry().get(OpenTelemetry.class), sameInstance(GlobalOpenTelemetry.get()));
-            assertFalse(openTelemetry.closed(), "OpenTelemetry should stay open while the registry is active");
-        } finally {
-            manager.shutdown();
-        }
-
-        assertTrue(openTelemetry.closed(), "Owned global OpenTelemetry should close when the registry shuts down");
-    }
-
-    @Test
-    void registryOpenTelemetryIsNotClosedWhenRegistryShutsDown() {
-        CloseableOpenTelemetry openTelemetry = new CloseableOpenTelemetry();
-        ServiceRegistryManager manager = ServiceRegistryManager.start(ServiceRegistryConfig.builder()
-                .putContractInstance(Config.class, Config.empty())
-                .putContractInstance(OpenTelemetry.class, openTelemetry)
-                .build());
-        try {
-            assertThat("OpenTelemetry service", manager.registry().get(OpenTelemetry.class), sameInstance(openTelemetry));
-        } finally {
-            manager.shutdown();
-        }
-
-        assertFalse(openTelemetry.closed(), "Registry-provided OpenTelemetry should remain caller-owned");
-    }
-
-    @Test
     void firstActiveStrategyOwnsWhenMultipleStrategiesAreActive() {
-        Config config = Config.empty();
-        OpenTelemetryOwnershipStrategy first = new FixedStrategy("first-service");
-        OpenTelemetryOwnershipStrategy second = new FixedStrategy("second-service");
         NamedOpenTelemetry openTelemetry = new NamedOpenTelemetry();
-        ServiceRegistryManager manager = registryManager(config);
+        OpenTelemetryOwnershipStrategy first = new FixedStrategy("first-service", openTelemetry);
+        OpenTelemetryOwnershipStrategy second = new FixedStrategy("second-service", new NamedOpenTelemetry());
+        ServiceRegistryManager manager = strategyRegistryManager(first, second);
         try {
-            Tracer tracer = HelidonOpenTelemetry.applicationTracer(manager.registry(),
-                                                                  config,
-                                                                  List.of(first, second),
-                                                                  openTelemetry);
+            Tracer tracer = manager.registry().get(Tracer.class);
 
             assertThat("Selected tracer delegate",
                        tracer.unwrap(io.opentelemetry.api.trace.Tracer.class),
@@ -643,14 +534,17 @@ class TestApplicationOpenTelemetryOwnership {
                                                      .build());
     }
 
-    private static ServiceRegistryManager strategyRegistryManager(OpenTelemetryOwnershipStrategy strategy) {
-        return ServiceRegistryManager.start(ServiceRegistryConfig.builder()
-                                                    .putContractInstance(Config.class, Config.empty())
-                                                    .addServiceDescriptor(ExistingInstanceDescriptor.<OpenTelemetryOwnershipStrategy>create(
-                                                            strategy,
-                                                            Set.of(OpenTelemetryOwnershipStrategy.class),
-                                                            Weighted.DEFAULT_WEIGHT + 100))
-                                                    .build());
+    private static ServiceRegistryManager strategyRegistryManager(OpenTelemetryOwnershipStrategy... strategies) {
+        ServiceRegistryConfig.Builder builder = ServiceRegistryConfig.builder()
+                .putContractInstance(Config.class, Config.empty());
+        double weight = Weighted.DEFAULT_WEIGHT + 100;
+        for (OpenTelemetryOwnershipStrategy strategy : strategies) {
+            builder.addServiceDescriptor(ExistingInstanceDescriptor.<OpenTelemetryOwnershipStrategy>create(
+                    strategy,
+                    Set.of(OpenTelemetryOwnershipStrategy.class),
+                    weight--));
+        }
+        return ServiceRegistryManager.start(builder.build());
     }
 
     private static void restoreAutoConfigure(String originalAutoConfigure) {
@@ -665,20 +559,14 @@ class TestApplicationOpenTelemetryOwnership {
     private static final class FixedStrategy implements OpenTelemetryOwnershipStrategy {
         private final String serviceName;
         private final OpenTelemetry openTelemetry;
-        private final boolean globalOpenTelemetry;
 
         private FixedStrategy(String serviceName) {
             this(serviceName, OpenTelemetry.noop());
         }
 
         private FixedStrategy(String serviceName, OpenTelemetry openTelemetry) {
-            this(serviceName, openTelemetry, false);
-        }
-
-        private FixedStrategy(String serviceName, OpenTelemetry openTelemetry, boolean globalOpenTelemetry) {
             this.serviceName = serviceName;
             this.openTelemetry = openTelemetry;
-            this.globalOpenTelemetry = globalOpenTelemetry;
         }
 
         @Override
@@ -694,11 +582,6 @@ class TestApplicationOpenTelemetryOwnership {
         @Override
         public OpenTelemetry create(Config rootConfig) {
             return openTelemetry;
-        }
-
-        @Override
-        public boolean globalOpenTelemetry(Config rootConfig) {
-            return globalOpenTelemetry;
         }
     }
 
@@ -726,19 +609,6 @@ class TestApplicationOpenTelemetryOwnership {
         @Override
         public ContextPropagators getPropagators() {
             return ContextPropagators.noop();
-        }
-    }
-
-    private static final class CloseableOpenTelemetry extends NamedOpenTelemetry implements AutoCloseable {
-        private boolean closed;
-
-        @Override
-        public void close() {
-            closed = true;
-        }
-
-        private boolean closed() {
-            return closed;
         }
     }
 

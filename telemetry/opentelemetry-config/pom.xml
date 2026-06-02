@@ -62,12 +62,8 @@
             <artifactId>helidon-logging-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.tracing</groupId>
-            <artifactId>helidon-tracing</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.tracing.providers</groupId>
-            <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+            <groupId>io.helidon.telemetry</groupId>
+            <artifactId>helidon-telemetry-opentelemetry</artifactId>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
@@ -150,6 +146,16 @@
         <dependency>
             <groupId>io.helidon.logging</groupId>
             <artifactId>helidon-logging-jul</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing.providers</groupId>
+            <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

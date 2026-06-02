@@ -255,10 +255,10 @@ public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tr
     T enabled(boolean enabled);
 
     /**
-     * Whether this tracer configuration should be treated as an application-wide ownership candidate when it is built
-     * from Helidon configuration. Direct builder use does not publish the tracer to the service registry.
+     * Whether the OpenTelemetry instance created by this tracer builder should be published to
+     * {@link io.opentelemetry.api.GlobalOpenTelemetry}.
      *
-     * @param global whether this configuration should be treated as an application-wide ownership candidate
+     * @param global whether to publish the OpenTelemetry instance as global
      * @return updated builder instance
      */
     @ConfiguredOption(key = "global", value = "true")

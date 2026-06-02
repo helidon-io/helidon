@@ -20,7 +20,7 @@ import java.util.Objects;
 
 import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
-import io.helidon.tracing.providers.opentelemetry.OpenTelemetryOwnershipStrategy;
+import io.helidon.telemetry.opentelemetry.spi.OpenTelemetryOwnershipStrategy;
 
 import io.opentelemetry.api.OpenTelemetry;
 
@@ -32,7 +32,7 @@ class OpenTelemetryConfigOwnershipStrategy implements OpenTelemetryOwnershipStra
         Config telemetryConfig = telemetryConfig(rootConfig);
         return telemetryConfig.exists()
                 && telemetryConfig.get("enabled").asBoolean().orElse(true)
-                && telemetryConfig.get("global").asBoolean().orElse(true);
+                && telemetryConfig.get("registered").asBoolean().orElse(true);
     }
 
     @Override
@@ -46,14 +46,15 @@ class OpenTelemetryConfigOwnershipStrategy implements OpenTelemetryOwnershipStra
     public OpenTelemetry create(Config rootConfig) {
         OpenTelemetryConfig config = OpenTelemetryConfig.builder()
                 .config(telemetryConfig(rootConfig))
+                .registered(false)
                 .global(false)
                 .buildPrototype();
         return HelidonOpenTelemetry.create(config).openTelemetry();
     }
 
     @Override
-    public boolean globalOpenTelemetry(Config rootConfig) {
-        return telemetryConfig(rootConfig).get("global-open-telemetry").asBoolean().orElse(false);
+    public boolean global(Config rootConfig) {
+        return telemetryConfig(rootConfig).get("global").asBoolean().orElse(true);
     }
 
     @Override

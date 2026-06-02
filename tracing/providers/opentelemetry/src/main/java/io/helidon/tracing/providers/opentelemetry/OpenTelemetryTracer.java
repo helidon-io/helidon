@@ -33,12 +33,14 @@ import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapSetter;
 
 class OpenTelemetryTracer implements RuntimeType.Api<OpenTelemetryTracerConfig>, Tracer {
 
+    private static final System.Logger LOGGER = System.getLogger(OpenTelemetryTracer.class.getName());
     private static final TextMapGetter<HeaderProvider> GETTER = new Getter();
     private static final TextMapSetter<HeaderConsumer> SETTER = new Setter();
 
@@ -52,6 +54,16 @@ class OpenTelemetryTracer implements RuntimeType.Api<OpenTelemetryTracerConfig>,
         this.config = config;
         spanListeners.addAll(AUTO_LOADED_SPAN_LISTENERS.get());
         spanListeners.addAll(config.spanListeners());
+
+        if (config.enabled() && config.registerGlobal()) {
+            try {
+                if (!GlobalOpenTelemetry.isSet()) {
+                    GlobalOpenTelemetry.set(config.openTelemetry());
+                }
+            } catch (Exception e) {
+                LOGGER.log(System.Logger.Level.WARNING, "Failed to set global OpenTelemetry as requested by tracing settings", e);
+            }
+        }
     }
 
     static OpenTelemetryTracer create(OpenTelemetryTracerConfig config) {

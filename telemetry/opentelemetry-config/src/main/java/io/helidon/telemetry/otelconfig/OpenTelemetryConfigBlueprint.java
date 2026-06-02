@@ -52,31 +52,26 @@ interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTele
     boolean enabled();
 
     /**
-     * Whether this configuration should contribute the application-wide {@link io.opentelemetry.api.OpenTelemetry}
-     * instance through Helidon's service registry ownership path.
-     * <p>
-     * This flag is honored when this configuration is resolved by the Helidon service registry. Direct builder use creates
-     * the configured instance only; it does not publish that instance to the service registry.
+     * Whether this configuration should contribute the application-wide {@link io.opentelemetry.api.OpenTelemetry} instance
+     * through Helidon's service registry ownership path.
      *
      * @return true if the configured instance should be application-wide when resolved by the service registry; false otherwise
      */
     @Option.Configured
     @Option.DefaultBoolean(true)
-    boolean global();
+    boolean registered();
 
     /**
-     * Whether the {@link io.opentelemetry.api.OpenTelemetry} instance created from this configuration should also be
-     * published as the OpenTelemetry global instance when it becomes the application-wide Helidon service and before any
-     * other code initializes {@link io.opentelemetry.api.GlobalOpenTelemetry}, because OpenTelemetry globals are JVM-wide
-     * and can be assigned only once.
-     * <p>
-     * This is disabled by default.
+     * Whether the {@link io.opentelemetry.api.OpenTelemetry} instance created from this configuration should be published
+     * as the OpenTelemetry global instance before any other code initializes
+     * {@link io.opentelemetry.api.GlobalOpenTelemetry}, because OpenTelemetry globals are JVM-wide and can be assigned only
+     * once.
      *
-     * @return true if the configured application-wide instance should be published to OpenTelemetry global; false otherwise
+     * @return true if the configured instance should be published to OpenTelemetry global; false otherwise
      */
-    @Option.Configured("global-open-telemetry")
-    @Option.DefaultBoolean(false)
-    boolean globalOpenTelemetry();
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean global();
 
     /**
      * OpenTelemetry {@link io.opentelemetry.context.propagation.TextMapPropagator} instances added explicitly by the app.

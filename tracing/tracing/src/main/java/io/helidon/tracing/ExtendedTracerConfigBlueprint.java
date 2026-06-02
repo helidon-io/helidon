@@ -117,10 +117,19 @@ interface ExtendedTracerConfigBlueprint {
     boolean enabled();
 
     /**
-     * Whether this tracer configuration should be treated as an application-wide ownership candidate when it is built
-     * from Helidon configuration. Direct builder use does not publish the tracer to the service registry.
+     * Whether this tracer configuration should be treated as an application-wide ownership candidate when it is resolved
+     * from the Helidon service registry.
      *
      * @return whether this configuration should be treated as an application-wide ownership candidate
+     */
+    @Option.Configured("registered")
+    @Option.DefaultBoolean(true)
+    boolean registered();
+
+    /**
+     * Whether the OpenTelemetry instance created from this configuration should be published as the OpenTelemetry global.
+     *
+     * @return whether to publish the configured OpenTelemetry instance as global
      */
     @Option.Configured("global")
     @Option.DefaultBoolean(true)

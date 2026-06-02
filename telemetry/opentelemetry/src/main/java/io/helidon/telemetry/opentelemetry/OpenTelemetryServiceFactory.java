@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.tracing.providers.opentelemetry;
+package io.helidon.telemetry.opentelemetry;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,22 +24,23 @@ import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.telemetry.opentelemetry.spi.OpenTelemetryOwnershipStrategy;
 
 import io.opentelemetry.api.OpenTelemetry;
 
 @Service.Singleton
 @Service.RunLevel(Service.RunLevel.STARTUP)
-class HelidonTracingBasedOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
-    private static final TypeName SERVICE_TYPE = TypeName.create(HelidonTracingBasedOpenTelemetryServiceFactory.class);
+class OpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
+    private static final TypeName SERVICE_TYPE = TypeName.create(OpenTelemetryServiceFactory.class);
 
     private final ServiceRegistry registry;
     private final Config config;
     private final Supplier<List<OpenTelemetryOwnershipStrategy>> strategies;
 
     @Service.Inject
-    HelidonTracingBasedOpenTelemetryServiceFactory(ServiceRegistry registry,
-                                                   Config config,
-                                                   Supplier<List<OpenTelemetryOwnershipStrategy>> strategies) {
+    OpenTelemetryServiceFactory(ServiceRegistry registry,
+                                Config config,
+                                Supplier<List<OpenTelemetryOwnershipStrategy>> strategies) {
         this.registry = registry;
         this.config = config;
         this.strategies = strategies;
@@ -47,10 +48,10 @@ class HelidonTracingBasedOpenTelemetryServiceFactory implements Supplier<OpenTel
 
     @Override
     public OpenTelemetry get() {
-        return HelidonOpenTelemetry.applicationOpenTelemetry(registry,
-                                                            config,
-                                                            strategies.get(),
-                                                            () -> registryOpenTelemetry().orElse(null));
+        return ApplicationOpenTelemetry.applicationOpenTelemetry(registry,
+                                                                config,
+                                                                strategies.get(),
+                                                                () -> registryOpenTelemetry().orElse(null));
     }
 
     private Optional<OpenTelemetry> registryOpenTelemetry() {
@@ -63,6 +64,6 @@ class HelidonTracingBasedOpenTelemetryServiceFactory implements Supplier<OpenTel
 
     @Service.PreDestroy
     void preDestroy() {
-        HelidonOpenTelemetry.clearApplicationTelemetry(registry);
+        ApplicationOpenTelemetry.clearApplicationTelemetry(registry);
     }
 }

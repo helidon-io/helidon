@@ -34,8 +34,8 @@ endif::se-flavor[]
 [NOTE]
 .Avoid specifying both `telemetry` and `tracing`
 If you provide settings under both `telemetry` and `tracing`, Helidon uses the `telemetry` settings. Specifying both does
-not confuse Helidon but it might confuse users. Set `global: false` under `tracing` to make explicit that the `tracing`
-section should not contribute the application-wide `OpenTelemetry` and `Tracer`.
+not confuse Helidon but it might confuse users. Set `registered: false` under `tracing` to make explicit that the
+`tracing` section should not contribute the application-wide `OpenTelemetry` and `Tracer`.
 
 
 // end::intro[]
@@ -82,17 +82,17 @@ tracing.tags.0.direction=north               # <4>
 ----
 endif::mp-flavor[]
 <1> Specifies the OpenTelemetry service name.
-<2> Indicates the configured tracer should contribute the application-wide `OpenTelemetry` and `Tracer` from the
-Helidon service registry (defaults to `true`). Set this to `false` only when another section, such as `telemetry`,
-owns the application-wide `OpenTelemetry`.
+<2> Indicates Helidon should publish the selected application `OpenTelemetry` instance to `GlobalOpenTelemetry`
+(defaults to `true`). Set this to `false` when application code or OpenTelemetry autoconfiguration controls the
+OpenTelemetry global.
 <3> Assigns an integer-valued tag `example` the value `1`.
 <4> Assigns a string-valued tag `direction` the value `north`.
 
-Set `tracing.global-open-telemetry` to `true` only if OpenTelemetry instrumentation in the application needs Helidon to
-publish the selected application `OpenTelemetry` instance to `GlobalOpenTelemetry`. OpenTelemetry globals are JVM-wide
-and can be assigned only once, so this must happen before any Java agent, OpenTelemetry autoconfiguration, or application
-code initializes `GlobalOpenTelemetry`. If an OpenTelemetry global already exists, leave `tracing.global-open-telemetry`
-set to `false` and configure Helidon to use the existing instance instead.
+Set `tracing.registered` to `false` only when the `tracing` section should not contribute the application-wide
+`OpenTelemetry` and `Tracer` from the Helidon service registry. OpenTelemetry globals are JVM-wide and can be assigned
+only once, so any `tracing.global: true` publication must happen before any Java agent, OpenTelemetry autoconfiguration,
+or application code initializes `GlobalOpenTelemetry`. If an OpenTelemetry global already exists, set `tracing.global`
+to `false` and configure Helidon to use the existing instance instead.
 
 
 // end::otel-configuration[]

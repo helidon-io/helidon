@@ -22,6 +22,7 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
+import io.helidon.telemetry.opentelemetry.spi.OpenTelemetryOwnershipStrategy;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 
@@ -29,7 +30,7 @@ import io.opentelemetry.api.OpenTelemetry;
 
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 80)
-class TracingOpenTelemetryOwnershipStrategy implements OpenTelemetryOwnershipStrategy {
+class TracingOpenTelemetryOwnershipStrategy implements OpenTelemetryOwnershipStrategy, OpenTelemetryTracerFactory {
 
     @Override
     public boolean active(Config rootConfig) {
@@ -37,7 +38,7 @@ class TracingOpenTelemetryOwnershipStrategy implements OpenTelemetryOwnershipStr
         return tracingConfig.exists()
                 && tracingConfig.get("service").asString().asOptional().isPresent()
                 && tracingConfig.get("enabled").asBoolean().orElse(true)
-                && tracingConfig.get("global").asBoolean().orElse(true);
+                && tracingConfig.get("registered").asBoolean().orElse(true);
     }
 
     @Override
@@ -57,8 +58,8 @@ class TracingOpenTelemetryOwnershipStrategy implements OpenTelemetryOwnershipStr
     }
 
     @Override
-    public boolean globalOpenTelemetry(Config rootConfig) {
-        return tracingConfig(rootConfig).get("global-open-telemetry").asBoolean().orElse(false);
+    public boolean global(Config rootConfig) {
+        return tracingConfig(rootConfig).get("global").asBoolean().orElse(true);
     }
 
     @Override
@@ -76,6 +77,7 @@ class TracingOpenTelemetryOwnershipStrategy implements OpenTelemetryOwnershipStr
     public void selected(Config rootConfig, OpenTelemetry openTelemetry) {
         OpenTelemetryOwnershipStrategy.super.selected(rootConfig, openTelemetry);
         // Initialize neutral tracing and MDC support while this OTel provider is known to be the selected application owner.
+        OpenTelemetryTracerProvider.applicationOpenTelemetrySelected();
         Span.current();
     }
 

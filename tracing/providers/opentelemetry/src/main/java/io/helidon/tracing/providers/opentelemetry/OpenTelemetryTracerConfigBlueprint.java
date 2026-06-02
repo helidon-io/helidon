@@ -52,20 +52,6 @@ interface OpenTelemetryTracerConfigBlueprint extends ExtendedTracerConfig, Proto
     List<TextMapPropagator> propagators();
 
     /**
-     * Whether the {@link io.opentelemetry.api.OpenTelemetry} instance created from this configuration should also be
-     * published as the OpenTelemetry global instance when it becomes the application-wide Helidon service and before any
-     * other code initializes {@link io.opentelemetry.api.GlobalOpenTelemetry}, because OpenTelemetry globals are JVM-wide
-     * and can be assigned only once.
-     * <p>
-     * This is disabled by default.
-     *
-     * @return true if the configured application-wide instance should be published to OpenTelemetry global; false otherwise
-     */
-    @Option.Configured("global-open-telemetry")
-    @Option.DefaultBoolean(false)
-    boolean globalOpenTelemetry();
-
-    /**
      * Type of OTLP exporter to use for pushing span data.
      *
      * @return OTLP exporter type

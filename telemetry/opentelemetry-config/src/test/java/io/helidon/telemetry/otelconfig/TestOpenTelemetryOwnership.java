@@ -70,7 +70,8 @@ class TestOpenTelemetryOwnership {
         assertThat("OpenTelemetry service", openTelemetry, notNullValue());
         assertThat("Tracer service", tracer, notNullValue());
         assertTracerUsesOpenTelemetry(openTelemetry, tracer, "telemetry-owner");
-        assertFalse(GlobalOpenTelemetry.isSet(), "Helidon telemetry should not assign the OpenTelemetry global");
+        assertTrue(GlobalOpenTelemetry.isSet(), "Helidon telemetry should assign the OpenTelemetry global by default");
+        assertThat("OpenTelemetry global", openTelemetry, sameInstance(GlobalOpenTelemetry.get()));
 
         Span span = tracer.spanBuilder("telemetry-owned-span").start();
         try {
@@ -81,12 +82,12 @@ class TestOpenTelemetryOwnership {
     }
 
     @Test
-    void telemetryConfigPublishesGlobalOpenTelemetryWhenRequested() {
+    void telemetryConfigGlobalFalseOwnsWithoutPublishingGlobalOpenTelemetry() {
         Config config = Config.just(ConfigSources.create(
                 """
                         telemetry:
                           service: telemetry-owner
-                          global-open-telemetry: true
+                          global: false
                         """,
                 MediaTypes.APPLICATION_YAML));
         Services.set(Config.class, config);
@@ -97,8 +98,7 @@ class TestOpenTelemetryOwnership {
         assertThat("OpenTelemetry service", openTelemetry, notNullValue());
         assertThat("Tracer service", tracer, notNullValue());
         assertTracerUsesOpenTelemetry(openTelemetry, tracer, "telemetry-owner");
-        assertTrue(GlobalOpenTelemetry.isSet(), "Helidon telemetry should assign the OpenTelemetry global when requested");
-        assertThat("OpenTelemetry service", openTelemetry, sameInstance(GlobalOpenTelemetry.get()));
+        assertFalse(GlobalOpenTelemetry.isSet(), "Helidon telemetry should not assign the OpenTelemetry global");
 
         Span span = tracer.spanBuilder("telemetry-global-span").start();
         try {
@@ -157,6 +157,7 @@ class TestOpenTelemetryOwnership {
                           enabled: false
                         tracing:
                           service: tracing-owner
+                          global: false
                         """,
                 MediaTypes.APPLICATION_YAML));
         Services.set(Config.class, config);
@@ -178,14 +179,15 @@ class TestOpenTelemetryOwnership {
     }
 
     @Test
-    void telemetryGlobalFalseAllowsTracingConfigToOwnApplicationTelemetry() {
+    void telemetryRegisteredFalseAllowsTracingConfigToOwnApplicationTelemetry() {
         Config config = Config.just(ConfigSources.create(
                 """
                         telemetry:
                           service: telemetry-owner
-                          global: false
+                          registered: false
                         tracing:
                           service: tracing-owner
+                          global: false
                         """,
                 MediaTypes.APPLICATION_YAML));
         Services.set(Config.class, config);
@@ -198,7 +200,7 @@ class TestOpenTelemetryOwnership {
         assertTracerUsesOpenTelemetry(openTelemetry, tracer, "tracing-owner");
         assertFalse(GlobalOpenTelemetry.isSet(), "Tracing ownership should not assign the OpenTelemetry global");
 
-        Span span = tracer.spanBuilder("telemetry-global-false-tracing-owned-span").start();
+        Span span = tracer.spanBuilder("telemetry-registered-false-tracing-owned-span").start();
         try {
             assertThat("Span ID", span.context().spanId(), not(containsString("00000000")));
         } finally {
@@ -253,7 +255,8 @@ class TestOpenTelemetryOwnership {
         assertThat("OpenTelemetry service", openTelemetry, notNullValue());
         assertThat("Tracer service", tracer, notNullValue());
         assertTracerUsesOpenTelemetry(openTelemetry, tracer, "telemetry-owner");
-        assertFalse(GlobalOpenTelemetry.isSet(), "Path-only tracing config should not assign the OpenTelemetry global");
+        assertTrue(GlobalOpenTelemetry.isSet(), "Telemetry ownership should assign the OpenTelemetry global by default");
+        assertThat("OpenTelemetry global", openTelemetry, sameInstance(GlobalOpenTelemetry.get()));
 
         Span span = tracer.spanBuilder("telemetry-owner-with-path-config").start();
         try {
@@ -264,14 +267,14 @@ class TestOpenTelemetryOwnership {
     }
 
     @Test
-    void telemetryConfigGlobalFalseDoesNotOwnApplicationOpenTelemetry() {
+    void telemetryConfigRegisteredFalseDoesNotOwnApplicationOpenTelemetry() {
         String originalAutoConfigure = System.setProperty(OTEL_AUTO_CONFIGURE, "false");
         try {
             Config config = Config.just(ConfigSources.create(
                     """
                             telemetry:
                               service: telemetry-owner
-                              global: false
+                              registered: false
                             """,
                     MediaTypes.APPLICATION_YAML));
             Services.set(Config.class, config);
@@ -284,7 +287,7 @@ class TestOpenTelemetryOwnership {
             assertFalse(GlobalOpenTelemetry.isSet(), "Disabled telemetry ownership should not assign the OpenTelemetry global");
             assertThat("OpenTelemetry service", openTelemetry, sameInstance(OpenTelemetry.noop()));
 
-            Span span = tracer.spanBuilder("telemetry-global-disabled-span").start();
+            Span span = tracer.spanBuilder("telemetry-registered-disabled-span").start();
             try {
                 assertThat("Span ID", span.context().spanId(), containsString("00000000"));
             } finally {
@@ -296,14 +299,14 @@ class TestOpenTelemetryOwnership {
     }
 
     @Test
-    void telemetryConfigGlobalFalseAdoptsAutoConfiguredGlobalOpenTelemetry() {
+    void telemetryConfigRegisteredFalseAdoptsAutoConfiguredGlobalOpenTelemetry() {
         String originalAutoConfigure = System.setProperty(OTEL_AUTO_CONFIGURE, "true");
         try {
             Config config = Config.just(ConfigSources.create(
                     """
                             telemetry:
                               service: telemetry-owner
-                              global: false
+                              registered: false
                             """,
                     MediaTypes.APPLICATION_YAML));
             Services.set(Config.class, config);
@@ -315,7 +318,7 @@ class TestOpenTelemetryOwnership {
             assertThat("Tracer service", tracer, notNullValue());
             assertTrue(GlobalOpenTelemetry.isSet(), "OpenTelemetry autoconfigure should assign the OpenTelemetry global");
 
-            Span span = tracer.spanBuilder("telemetry-global-disabled-autoconfigured-span").start();
+            Span span = tracer.spanBuilder("telemetry-registered-disabled-autoconfigured-span").start();
             try {
                 assertThat("Span ID", span.context().spanId(), not(containsString("00000000")));
             } finally {
@@ -327,13 +330,12 @@ class TestOpenTelemetryOwnership {
     }
 
     @Test
-    void telemetryConfigGlobalOpenTelemetryFailsWhenGlobalAlreadyExists() {
+    void telemetryConfigGlobalFailsWhenGlobalAlreadyExists() {
         GlobalOpenTelemetry.set(OpenTelemetry.noop());
         Config config = Config.just(ConfigSources.create(
                 """
                         telemetry:
                           service: telemetry-owner
-                          global-open-telemetry: true
                         """,
                 MediaTypes.APPLICATION_YAML));
         Services.set(Config.class, config);
@@ -360,7 +362,8 @@ class TestOpenTelemetryOwnership {
         assertThat("OpenTelemetry service", openTelemetry, notNullValue());
         assertThat("Tracer service", tracer, notNullValue());
         assertTracerUsesOpenTelemetry(openTelemetry, tracer, "telemetry-owner");
-        assertFalse(GlobalOpenTelemetry.isSet(), "Telemetry ownership should not assign the OpenTelemetry global");
+        assertTrue(GlobalOpenTelemetry.isSet(), "Telemetry ownership should assign the OpenTelemetry global by default");
+        assertThat("OpenTelemetry global", openTelemetry, sameInstance(GlobalOpenTelemetry.get()));
 
         Span span = tracer.spanBuilder("telemetry-precedence-span").start();
         try {

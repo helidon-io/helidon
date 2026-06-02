@@ -18,19 +18,13 @@ package io.helidon.tracing.providers.opentelemetry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.WeakHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
-import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Wrapper;
 
@@ -50,9 +44,6 @@ import static io.opentelemetry.context.Context.current;
 public final class HelidonOpenTelemetry {
     static final String DEFAULT_SERVICE_NAME = "helidon-service";
 
-    private static final String TELEMETRY_CONFIG_KEY = "telemetry";
-    private static final String TRACING_CONFIG_KEY = OpenTelemetryTracerConfigBlueprint.TRACING_CONFIG_KEY;
-
     /**
      * OpenTelemetry property for indicating if the Java agent is present.
      */
@@ -65,53 +56,13 @@ public final class HelidonOpenTelemetry {
 
     static final String UNSUPPORTED_OPERATION_MESSAGE = "Span listener attempted to invoke an illegal operation";
     static final String USE_EXISTING_OTEL = "io.helidon.telemetry.otel.use-existing-instance";
-    private static final String GLOBAL_OPEN_TELEMETRY_ALREADY_SET = "OpenTelemetry global is already initialized. "
-            + "Set the OpenTelemetry instance in the Helidon service registry and enable OpenTelemetry global publishing "
-            + "before any code initializes GlobalOpenTelemetry, or configure Helidon to use the existing OpenTelemetry global.";
-    private static final String OTEL_AUTO_CONFIGURE = "otel.java.global-autoconfigure.enabled";
-    private static final String OTEL_AUTO_CONFIGURE_ENV = "OTEL_JAVA_GLOBAL_AUTOCONFIGURE_ENABLED";
 
     private static final System.Logger LOGGER = System.getLogger(HelidonOpenTelemetry.class.getName());
     private static final LazyValue<List<SpanListener>> SPAN_LISTENERS =
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
-    private static final ReentrantLock APPLICATION_TELEMETRY_LOCK = new ReentrantLock();
-    private static final Map<ServiceRegistry, ApplicationTelemetry> APPLICATION_TELEMETRY =
-            new WeakHashMap<>();
 
 
     private HelidonOpenTelemetry() {
-    }
-
-    /**
-     * Selects and initializes the application-wide OpenTelemetry instance using Helidon configuration and ownership
-     * strategies.
-     *
-     * @param config root configuration
-     * @param strategies ownership strategies
-     * @return application-wide OpenTelemetry instance
-     */
-    static OpenTelemetry applicationOpenTelemetry(Config config, List<OpenTelemetryOwnershipStrategy> strategies) {
-        return selectApplicationTelemetry(config, strategies, null).openTelemetry();
-    }
-
-    static OpenTelemetry applicationOpenTelemetry(ServiceRegistry registry,
-                                                  Config config,
-                                                  List<OpenTelemetryOwnershipStrategy> strategies) {
-        return applicationTelemetry(registry, config, strategies, () -> null).openTelemetry();
-    }
-
-    static OpenTelemetry applicationOpenTelemetry(ServiceRegistry registry,
-                                                  Config config,
-                                                  List<OpenTelemetryOwnershipStrategy> strategies,
-                                                  OpenTelemetry registryOpenTelemetry) {
-        return applicationTelemetry(registry, config, strategies, () -> registryOpenTelemetry).openTelemetry();
-    }
-
-    static OpenTelemetry applicationOpenTelemetry(ServiceRegistry registry,
-                                                  Config config,
-                                                  List<OpenTelemetryOwnershipStrategy> strategies,
-                                                  Supplier<OpenTelemetry> registryOpenTelemetry) {
-        return applicationTelemetry(registry, config, strategies, registryOpenTelemetry).openTelemetry();
     }
 
     /**
@@ -358,279 +309,10 @@ public final class HelidonOpenTelemetry {
         }
     }
 
-    static io.helidon.tracing.Tracer applicationTracer(ServiceRegistry registry,
-                                                       Config config,
-                                                       List<OpenTelemetryOwnershipStrategy> strategies,
-                                                       OpenTelemetry openTelemetry) {
-        OpenTelemetry required = Objects.requireNonNull(openTelemetry);
-        return applicationTelemetry(registry, config, strategies, () -> required).tracer();
-    }
-
-    private static ApplicationTelemetry applicationTelemetry(ServiceRegistry registry,
-                                                            Config config,
-                                                            List<OpenTelemetryOwnershipStrategy> strategies,
-                                                            Supplier<OpenTelemetry> registryOpenTelemetry) {
-        Objects.requireNonNull(registry);
-        Objects.requireNonNull(config);
-        Objects.requireNonNull(strategies);
-        Objects.requireNonNull(registryOpenTelemetry);
-
-        APPLICATION_TELEMETRY_LOCK.lock();
-        try {
-            ApplicationTelemetry existing = APPLICATION_TELEMETRY.get(registry);
-            if (existing != null) {
-                return existing;
-            }
-        } finally {
-            APPLICATION_TELEMETRY_LOCK.unlock();
-        }
-
-        OpenTelemetry openTelemetry = registryOpenTelemetry.get();
-
-        APPLICATION_TELEMETRY_LOCK.lock();
-        try {
-            ApplicationTelemetry existing = APPLICATION_TELEMETRY.get(registry);
-            if (existing != null) {
-                return existing;
-            }
-
-            ApplicationTelemetry selected = selectApplicationTelemetry(config, strategies, openTelemetry);
-            APPLICATION_TELEMETRY.put(registry, selected);
-            return selected;
-        } finally {
-            APPLICATION_TELEMETRY_LOCK.unlock();
-        }
-    }
-
-    private static ApplicationTelemetry selectApplicationTelemetry(Config rootConfig,
-                                                                  List<OpenTelemetryOwnershipStrategy> strategies,
-                                                                  OpenTelemetry registryOpenTelemetry) {
-        List<OpenTelemetryOwnershipStrategy> activeStrategies = activeStrategies(rootConfig, strategies);
-        OpenTelemetryOwnershipStrategy selectedStrategy = activeStrategies.isEmpty() ? null : activeStrategies.getFirst();
-        String serviceName = serviceName(rootConfig, selectedStrategy);
-        boolean publishGlobalOpenTelemetry = selectedStrategy != null
-                && selectedStrategy.globalOpenTelemetry(rootConfig);
-
-        if (registryOpenTelemetry != null) {
-            if (publishGlobalOpenTelemetry) {
-                publishGlobalOpenTelemetry(registryOpenTelemetry);
-            }
-            return applicationTelemetry(rootConfig, selectedStrategy, registryOpenTelemetry, serviceName, null);
-        }
-
-        if (selectedStrategy == null && telemetryDisabled(rootConfig)) {
-            return applicationTelemetry(rootConfig, null, OpenTelemetry.noop(), serviceName, null);
-        }
-
-        if (AgentDetector.useExistingGlobalOpenTelemetry(rootConfig)
-                || (selectedStrategy == null && useNoOwnerGlobalOpenTelemetry())) {
-            return applicationTelemetry(rootConfig, selectedStrategy, GlobalOpenTelemetry.get(), serviceName, null);
-        }
-
-        if (selectedStrategy != null) {
-            if (publishGlobalOpenTelemetry) {
-                OpenTelemetrySelection selection = createAndPublishGlobalOpenTelemetrySelection(rootConfig, selectedStrategy);
-                return applicationTelemetry(rootConfig,
-                                            selectedStrategy,
-                                            selection.openTelemetry(),
-                                            serviceName,
-                                            selection.closeable());
-            }
-            OpenTelemetry openTelemetry = selectedStrategy.create(rootConfig);
-            return applicationTelemetry(rootConfig,
-                                        selectedStrategy,
-                                        openTelemetry,
-                                        serviceName,
-                                        closeable(openTelemetry));
-        }
-
-        OpenTelemetry openTelemetry = OpenTelemetry.noop();
-        return applicationTelemetry(rootConfig, null, openTelemetry, serviceName, null);
-    }
-
-    private static OpenTelemetrySelection createAndPublishGlobalOpenTelemetrySelection(Config rootConfig,
-                                                                                      OpenTelemetryOwnershipStrategy strategy) {
-        if (GlobalOpenTelemetry.isSet()) {
-            throw new IllegalStateException(GLOBAL_OPEN_TELEMETRY_ALREADY_SET);
-        }
-
-        AtomicReference<RuntimeException> creationFailure = new AtomicReference<>();
-        AtomicReference<OpenTelemetry> createdOpenTelemetry = new AtomicReference<>();
-        try {
-            GlobalOpenTelemetry.set(() -> {
-                try {
-                    OpenTelemetry openTelemetry = strategy.create(rootConfig);
-                    createdOpenTelemetry.set(openTelemetry);
-                    return openTelemetry;
-                } catch (RuntimeException e) {
-                    creationFailure.set(e);
-                    throw e;
-                }
-            });
-        } catch (IllegalStateException e) {
-            if (e == creationFailure.get()) {
-                throw e;
-            }
-            throw new IllegalStateException(GLOBAL_OPEN_TELEMETRY_ALREADY_SET, e);
-        }
-        return new OpenTelemetrySelection(GlobalOpenTelemetry.get(), closeable(createdOpenTelemetry.get()));
-    }
-
-    private static void publishGlobalOpenTelemetry(OpenTelemetry openTelemetry) {
-        if (GlobalOpenTelemetry.isSet()) {
-            throw new IllegalStateException(GLOBAL_OPEN_TELEMETRY_ALREADY_SET);
-        }
-
-        try {
-            GlobalOpenTelemetry.set(openTelemetry);
-        } catch (IllegalStateException e) {
-            throw new IllegalStateException(GLOBAL_OPEN_TELEMETRY_ALREADY_SET, e);
-        }
-    }
-
-    private static List<OpenTelemetryOwnershipStrategy> activeStrategies(Config rootConfig,
-                                                                         List<OpenTelemetryOwnershipStrategy> strategies) {
-        return strategies.stream()
-                .map(Objects::requireNonNull)
-                .filter(strategy -> strategy.active(rootConfig))
-                .toList();
-    }
-
-    private static ApplicationTelemetry applicationTelemetry(Config rootConfig,
-                                                            OpenTelemetryOwnershipStrategy strategy,
-                                                            OpenTelemetry openTelemetry,
-                                                            String serviceName,
-                                                            AutoCloseable closeable) {
-        io.helidon.tracing.Tracer tracer;
-        if (tracingDisabled(rootConfig) || (strategy == null && telemetryDisabled(rootConfig))) {
-            tracer = io.helidon.tracing.Tracer.noOp();
-        } else if (strategy == null) {
-            tracer = create(openTelemetry, openTelemetry.getTracer(serviceName), Map.of());
-        } else {
-            tracer = strategy.createTracer(rootConfig, openTelemetry);
-        }
-        if (tracer.enabled()) {
-            OpenTelemetryTracerProvider.applicationOpenTelemetrySelected();
-        }
-        if (strategy != null) {
-            strategy.selected(rootConfig, openTelemetry);
-        }
-        return new ApplicationTelemetry(openTelemetry, tracer, closeable);
-    }
-
-    private static AutoCloseable closeable(OpenTelemetry openTelemetry) {
-        return openTelemetry instanceof AutoCloseable closeable ? closeable : null;
-    }
-
-    static void clearApplicationTelemetry(ServiceRegistry registry) {
-        ApplicationTelemetry telemetry;
-        APPLICATION_TELEMETRY_LOCK.lock();
-        try {
-            telemetry = APPLICATION_TELEMETRY.remove(registry);
-        } finally {
-            APPLICATION_TELEMETRY_LOCK.unlock();
-        }
-        if (telemetry != null) {
-            telemetry.close();
-        }
-    }
-
-    static boolean applicationTelemetryCached(ServiceRegistry registry) {
-        APPLICATION_TELEMETRY_LOCK.lock();
-        try {
-            return APPLICATION_TELEMETRY.containsKey(registry);
-        } finally {
-            APPLICATION_TELEMETRY_LOCK.unlock();
-        }
-    }
-
-    private static boolean tracingDisabled(Config rootConfig) {
-        Config tracingConfig = rootConfig.get(TRACING_CONFIG_KEY);
-        return tracingConfig.exists()
-                && !tracingConfig.get("enabled").asBoolean().orElse(true);
-    }
-
-    private static boolean telemetryDisabled(Config rootConfig) {
-        Config telemetryConfig = rootConfig.get(TELEMETRY_CONFIG_KEY);
-        return telemetryConfig.exists()
-                && !telemetryConfig.get("enabled").asBoolean().orElse(true);
-    }
-
-    private static boolean useNoOwnerGlobalOpenTelemetry() {
-        return GlobalOpenTelemetry.isSet()
-                || autoConfigureGlobalOpenTelemetry();
-    }
-
     static boolean autoConfigureGlobalOpenTelemetry(String propertyValue, String envValue) {
         if (propertyValue != null) {
             return Boolean.parseBoolean(propertyValue);
         }
         return Boolean.parseBoolean(envValue);
-    }
-
-    private static boolean autoConfigureGlobalOpenTelemetry() {
-        return autoConfigureGlobalOpenTelemetry(System.getProperty(OTEL_AUTO_CONFIGURE),
-                                                System.getenv(OTEL_AUTO_CONFIGURE_ENV));
-    }
-
-    private static String serviceName(Config rootConfig, OpenTelemetryOwnershipStrategy strategy) {
-        if (strategy != null) {
-            return strategy.serviceName(rootConfig);
-        }
-        Optional<String> telemetryServiceName = serviceNameIfConfigured(rootConfig.get(TELEMETRY_CONFIG_KEY));
-        if (telemetryServiceName.isPresent()) {
-            return telemetryServiceName.get();
-        }
-
-        Optional<String> tracingServiceName = serviceNameIfConfigured(rootConfig.get(TRACING_CONFIG_KEY));
-        if (tracingServiceName.isPresent()) {
-            return tracingServiceName.get();
-        }
-
-        return DEFAULT_SERVICE_NAME;
-    }
-
-    private static Optional<String> serviceNameIfConfigured(Config config) {
-        if (!config.exists()) {
-            return Optional.empty();
-        }
-        return config.get("service").asString().asOptional();
-    }
-
-    private static final class ApplicationTelemetry {
-        private final OpenTelemetry openTelemetry;
-        private final io.helidon.tracing.Tracer tracer;
-        private final AutoCloseable closeable;
-
-        private ApplicationTelemetry(OpenTelemetry openTelemetry,
-                                     io.helidon.tracing.Tracer tracer,
-                                     AutoCloseable closeable) {
-            this.openTelemetry = openTelemetry;
-            this.tracer = tracer;
-            this.closeable = closeable;
-        }
-
-        private OpenTelemetry openTelemetry() {
-            return openTelemetry;
-        }
-
-        private io.helidon.tracing.Tracer tracer() {
-            return tracer;
-        }
-
-        private void close() {
-            if (closeable == null) {
-                return;
-            }
-
-            try {
-                closeable.close();
-            } catch (Exception e) {
-                LOGGER.log(System.Logger.Level.WARNING, "Failed to close application OpenTelemetry", e);
-            }
-        }
-    }
-
-    private record OpenTelemetrySelection(OpenTelemetry openTelemetry, AutoCloseable closeable) {
     }
 }

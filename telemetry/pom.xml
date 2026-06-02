@@ -30,6 +30,7 @@
     <name>Helidon Telemetry Project</name>
 
     <modules>
+        <module>opentelemetry</module>
         <module>opentelemetry-config</module>
         <module>testing</module>
     </modules>
