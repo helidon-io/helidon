@@ -17,7 +17,11 @@
 package io.helidon.declarative.tests.compatibility.app;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.declarative.tests.compatibility.v4.LegacyFeatureEndpoint;
@@ -26,6 +30,9 @@ import io.helidon.declarative.tests.compatibility.v4.LegacyScheduledTask;
 import io.helidon.declarative.tests.compatibility.v4.LegacyWsClientEndpoint;
 import io.helidon.declarative.tests.compatibility.v4.LegacyWsClientEndpointFactory;
 import io.helidon.declarative.tests.compatibility.v4.LegacyWsEndpoint;
+import io.helidon.faulttolerance.BulkheadException;
+import io.helidon.faulttolerance.CircuitBreakerOpenException;
+import io.helidon.faulttolerance.TimeoutException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
@@ -54,7 +61,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @SuppressWarnings({"helidon:api:incubating", "helidon:api:preview"})
@@ -130,10 +140,16 @@ class DeclarativeCompatibilityTest {
 
         assertThat(typedClient.fallback(), is("fallback"));
         assertThat(typedClient.retry(), is("retry:2"));
+        assertThat(typedClient.clientRetry(), is("client-retry:2"));
         HttpException exception = assertThrows(HttpException.class, typedClient::circuit);
         assertThat(exception.status(), is(Status.FORBIDDEN_403));
         assertThat(typedClient.timeout(Optional.empty()), is("timeout"));
-        assertThat(typedClient.bulkhead(), is("bulkhead"));
+        assertThat(typedClient.bulkhead(Optional.empty()), is("bulkhead"));
+
+        LegacyFeatureEndpoint endpoint = registry.get(LegacyFeatureEndpoint.class);
+        assertServerCircuitBreaker(endpoint);
+        assertServerTimeout(endpoint);
+        assertServerBulkhead(endpoint);
     }
 
     @Test
@@ -240,6 +256,49 @@ class DeclarativeCompatibilityTest {
                 .orElseThrow();
         BigDecimal value = metrics.numberValue(key).orElseThrow();
         assertThat(value.intValue(), is(expectedValue));
+    }
+
+    private static void assertServerCircuitBreaker(LegacyFeatureEndpoint endpoint) {
+        HttpException exception = assertThrows(HttpException.class, endpoint::circuit);
+        assertThat(exception.status(), is(Status.FORBIDDEN_403));
+        assertThrows(CircuitBreakerOpenException.class, endpoint::circuit);
+    }
+
+    private static void assertServerTimeout(LegacyFeatureEndpoint endpoint) {
+        long start = System.nanoTime();
+        assertThrows(TimeoutException.class, () -> endpoint.timeout(Optional.of(3000)));
+        assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start), lessThan(2500L));
+    }
+
+    private static void assertServerBulkhead(LegacyFeatureEndpoint endpoint) {
+        List<CompletableFuture<String>> calls = new ArrayList<>();
+        calls.add(CompletableFuture.supplyAsync(() -> endpoint.bulkhead(Optional.of(1500))));
+        for (int i = 0; i < 5; i++) {
+            calls.add(CompletableFuture.supplyAsync(() -> endpoint.bulkhead(Optional.empty())));
+        }
+
+        List<Throwable> failures = new ArrayList<>();
+        for (CompletableFuture<String> call : calls) {
+            Throwable failure = joinFailure(call);
+            if (failure != null) {
+                failures.add(failure);
+            }
+        }
+
+        assertThat(failures.size(), greaterThanOrEqualTo(1));
+        if (failures.stream()
+                .noneMatch(it -> it instanceof BulkheadException)) {
+            fail("Expected a bulkhead rejection, but failures were: " + failures);
+        }
+    }
+
+    private static Throwable joinFailure(CompletableFuture<String> call) {
+        try {
+            call.join();
+            return null;
+        } catch (CompletionException e) {
+            return e.getCause();
+        }
     }
 
 }

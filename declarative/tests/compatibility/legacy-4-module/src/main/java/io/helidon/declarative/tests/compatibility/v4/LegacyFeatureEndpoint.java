@@ -54,6 +54,8 @@ public class LegacyFeatureEndpoint implements LegacyHttpApi {
     private final String greeting;
     private final Supplier<ServerRequest> requestSupplier;
     private final AtomicInteger retryCalls = new AtomicInteger();
+    private final AtomicInteger clientRetryCalls = new AtomicInteger();
+    private final AtomicInteger circuitCalls = new AtomicInteger();
     private final AtomicInteger gaugeValue = new AtomicInteger();
 
     @Service.Inject
@@ -102,28 +104,46 @@ public class LegacyFeatureEndpoint implements LegacyHttpApi {
         return "retry:" + call;
     }
 
+    @Http.GET
+    @Http.Path("/client-ft/retry")
+    public String clientRetry() {
+        int call = clientRetryCalls.incrementAndGet();
+        if (call % 2 == 1) {
+            throw new HttpException("client retry " + call, Status.INTERNAL_SERVER_ERROR_500);
+        }
+        return "client-retry:" + call;
+    }
+
     @Override
     @Ft.CircuitBreaker(name = "legacy-circuit", volume = 2, errorRatio = 50)
     public String circuit() {
-        throw new HttpException("legacy circuit", Status.FORBIDDEN_403);
+        int call = circuitCalls.incrementAndGet();
+        if (call <= 2) {
+            throw new HttpException("legacy circuit", Status.FORBIDDEN_403);
+        }
+        return "circuit:" + call;
     }
 
     @Override
     @Ft.Timeout(time = "PT1S")
     public String timeout(Optional<Integer> sleepMillis) {
-        try {
-            Thread.sleep(sleepMillis.orElse(0));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return "interrupted";
-        }
+        sleep(sleepMillis);
         return "timeout";
     }
 
     @Override
     @Ft.Bulkhead(limit = 1, queueLength = 1)
-    public String bulkhead() {
+    public String bulkhead(Optional<Integer> sleepMillis) {
+        sleep(sleepMillis);
         return "bulkhead";
+    }
+
+    private void sleep(Optional<Integer> sleepMillis) {
+        try {
+            Thread.sleep(sleepMillis.orElse(0));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Http.GET
