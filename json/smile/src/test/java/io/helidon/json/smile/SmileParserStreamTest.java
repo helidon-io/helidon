@@ -16,7 +16,7 @@
 
 package io.helidon.json.smile;
 
-import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 import io.helidon.json.JsonParser;
 
@@ -26,6 +26,35 @@ import io.helidon.json.JsonParser;
 class SmileParserStreamTest extends SmileParserTestBase {
     @Override
     JsonParser createParser(byte[] smileData) {
-        return SmileParser.create(new ByteArrayInputStream(smileData), 5);
+        return SmileParser.create(new OneByteAtATimeInputStream(smileData), 5);
+    }
+
+    private static final class OneByteAtATimeInputStream extends InputStream {
+        private final byte[] bytes;
+        private int index;
+
+        private OneByteAtATimeInputStream(byte[] bytes) {
+            this.bytes = bytes;
+        }
+
+        @Override
+        public int read() {
+            if (index == bytes.length) {
+                return -1;
+            }
+            return bytes[index++] & 0xFF;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) {
+            if (len == 0) {
+                return 0;
+            }
+            if (index == bytes.length) {
+                return -1;
+            }
+            b[off] = bytes[index++];
+            return 1;
+        }
     }
 }
