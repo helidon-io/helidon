@@ -51,9 +51,11 @@ You have several options in approaching such a project.
 === Using the Helidon OpenTelemetry Integration
 You can use the xref:open-telemetry.adoc[Helidon OpenTelemetry integration] _and also_ use the OpenTelemetry API directly.
 
-Helidon's integration prepares the OpenTelemetry `GlobalOpenTelemetry` instance according to the `telemetry` section in your Helidon configuration.
-Helidon also makes this instance available via Helidon declarative's `@Service.Inject` and programmatically with `Services.get(OpenTelemetry.class)`.
-Your code then uses the global `OpenTelemetry` instance--obtained in any of these ways--as the entry point to the OpenTelemetry API to work with metrics and spans.
+Helidon's integration prepares the application `OpenTelemetry` instance according to the `telemetry` section in your Helidon configuration.
+Helidon makes this instance available via Helidon declarative's `@Service.Inject` and programmatically with `Services.get(OpenTelemetry.class)`.
+Your code then uses the application `OpenTelemetry` instance--obtained in either of these ways--as the entry point to the OpenTelemetry API to work with metrics and spans.
+If some third-party OpenTelemetry instrumentation needs the JVM-wide `GlobalOpenTelemetry`, configure
+`telemetry.global` so Helidon also publishes the same application instance to the OpenTelemetry global.
 
 You can also optionally have Helidon provide the tracing spans and metrics prescribed by the link:https://opentelemetry.io/docs/concepts/semantic-conventions/[OpenTelemetry semantic conventions] simply by adding a dependency.
 
@@ -62,7 +64,18 @@ If you must use the OpenTelemetry API from your code, Helidon recommends this op
 === Using OpenTelemetry AutoConfiguration
 The link:https://opentelemetry.io/docs/languages/java/configuration/[OpenTelemetry auto-configure feature] allows you to control many operational aspects of OpenTelemetry using environment variables, Java system properties, or--with a little extra code--config files rather than writing your own explicit Java code to prepare the runtime. Then your code can use the OpenTelemetry API as needed to manage tracing spans or metrics.
 
-This approach prepares the OpenTelemetry runtime using OpenTelemetry's autoconfiguration instead of Helidon's integration with OpenTelemetry, but from there the programmatic use of the OpenTelemetry API is essentially the same in those two options: obtain the global `OpenTelemetry` instance and then use it to create and update spans and metrics. In this option your code must use the `GlobalOpenTelemetry` type; Helidon cannot provide the global instance via injection or Helidon services look-up.
+This approach prepares the OpenTelemetry runtime using OpenTelemetry's autoconfiguration instead of Helidon's integration with OpenTelemetry, but from there the programmatic use of the OpenTelemetry API is essentially the same in those two options: obtain the `OpenTelemetry` instance and then use it to create and update spans and metrics.
+If the external setup has already installed `GlobalOpenTelemetry` before Helidon resolves `OpenTelemetry`, and no Helidon
+telemetry or tracing owner is active, service look-up adopts that global automatically.
+A Helidon owner is active when a `telemetry` or `tracing` configuration section is enabled and its `registered` setting is
+`true`.
+As a separate option, if no Helidon owner is active and the application enables OpenTelemetry global autoconfiguration with
+the `otel.java.global-autoconfigure.enabled=true` system property or the
+`OTEL_JAVA_GLOBAL_AUTOCONFIGURE_ENABLED=true` environment variable, Helidon service look-up triggers that
+autoconfiguration and uses the resulting `GlobalOpenTelemetry` instance. The system property takes precedence over the
+environment variable.
+When a Helidon owner is active, set `io.helidon.telemetry.otel.use-existing-instance` to `true` (or run with the OpenTelemetry Java agent, which Helidon detects) so Helidon uses the existing global even when the owner does not request OpenTelemetry global publication.
+For deterministic sharing without relying on the OpenTelemetry global, register the `OpenTelemetry` instance in the Helidon service registry before other code requests it.
 
 === Using Only the OpenTelemetry API
 You can use the link:https://github.com/open-telemetry/opentelemetry-java[OpenTelemetry API] exclusively (without auto-configure) to set up the OpenTelemetry runtime environment at start-up, then use the API to work with tracing spans or metrics.

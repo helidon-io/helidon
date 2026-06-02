@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.tracing.spi;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.tracing.Span;
@@ -34,19 +35,37 @@ public interface TracerProvider {
     TracerBuilder<?> createBuilder();
 
     /**
-     * Global tracer that is registered, or a NoOp tracer if none is registered.
+     * Legacy global tracer access.
+     * This method will be removed in a future major version, remove an {@link java.lang.Override} annotation from it to
+     * be "future proof".
      *
-     * @return current global tracer
+     * @return never returns
+     * @deprecated use {@link io.helidon.service.registry.Services#get(Class)} to obtain the application-wide
+     * {@link Tracer} from the service registry
+     * @throws java.lang.UnsupportedOperationException always
      */
-    Tracer global();
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default Tracer global() {
+        throw new UnsupportedOperationException("This method should not be called. Use Services.get(Tracer.class) instead.");
+    }
 
     /**
-     * Register a global tracer instance. This method should not fail except for the case that tracer is null
-     * - if the tracer cannot be registered, silently ignore it.
-     * @param tracer tracer to register as global
-     * @throws java.lang.NullPointerException in case the tracer is null
+     * Legacy global tracer assignment.
+     * <p>
+     * Helidon 27 uses the service registry for application-wide tracer instances. This method is retained only for
+     * compatibility with provider implementations compiled against earlier versions. It is expected to be a no-op and
+     * will be removed in a future version.
+     *
+     * @param tracer ignored
+     * @throws NullPointerException if tracer is null
+     * @deprecated use {@link io.helidon.service.registry.Services#set(Class, Object[])} to register a {@link Tracer} in
+     * the service registry before tracing is requested
      */
-    void global(Tracer tracer);
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default void global(Tracer tracer) {
+        Objects.requireNonNull(tracer);
+        // no-op for compatibility
+    }
 
     /**
      * Provide current span.

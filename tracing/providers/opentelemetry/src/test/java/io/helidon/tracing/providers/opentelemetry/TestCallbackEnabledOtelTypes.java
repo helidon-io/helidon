@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.SpanListener;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,13 +46,19 @@ class TestCallbackEnabledOtelTypes {
     @BeforeAll
     static void setup() {
         listener = new MyListener();
-        helidonTracer = io.helidon.tracing.Tracer.global();
+        helidonTracer = Services.get(io.helidon.tracing.Tracer.class);
         helidonTracer.register(listener);
     }
 
     @BeforeEach
     void clearListener() {
+        GlobalOpenTelemetry.resetForTest();
         listener.clear();
+    }
+
+    @AfterEach
+    void resetGlobalOpenTelemetry() {
+        GlobalOpenTelemetry.resetForTest();
     }
 
     @Test
@@ -104,8 +113,11 @@ class TestCallbackEnabledOtelTypes {
     @Test
     void testNotificationsVStartingWithOtelTracer() {
 
-        var nativeOtelTracer = GlobalOpenTelemetry.getTracer("new-otel-tracer");
+        var nativeOtelTracer = OpenTelemetry.noop().getTracer("new-otel-tracer");
         var wrappedOtelTracer = HelidonOpenTelemetry.callbackEnabledFrom(nativeOtelTracer);
+        assertThat("Callback-enabled wrapping should not initialize the OpenTelemetry global",
+                   GlobalOpenTelemetry.isSet(),
+                   equalTo(false));
 
         // Explicitly register the listener with the new Helidon tracer that's inside the callback-enabled OTel tracer.
         var internalHelidonTracer = wrappedOtelTracer.unwrap(io.helidon.tracing.Tracer.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,7 +105,7 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
      * @param spanContext span of current security request (e.g. authentication, authorization or outbound, or any parent if
      *                    these are not traced)
      * @return updated builder instance
-     * @see io.helidon.tracing.Tracer#global()
+     * @see io.helidon.service.registry.Services#get(Class)
      * @see io.helidon.tracing.Tracer#spanBuilder(String)
      */
     public T tracingSpan(SpanContext spanContext) {

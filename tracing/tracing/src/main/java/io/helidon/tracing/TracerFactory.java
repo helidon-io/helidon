@@ -40,6 +40,6 @@ class TracerFactory implements Supplier<Tracer> {
             return TracerBuilder.create(tConfig).build();
         }
 
-        return Tracer.global();
+        return Tracer.noOp();
     }
 }

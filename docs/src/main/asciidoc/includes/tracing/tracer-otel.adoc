@@ -24,7 +24,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 // tag::intro[]
 Helidon supports configuration of OpenTelemetry and OpenTelemetry tracing in two primary ways: using tracing or using telemetry.
 ifdef::se-flavor[]
-This page describes support for controlling OpenTelemetry tracing using the `tracing` config section and link:{javadoc-base-url}/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/OpenTelemetryTracerConfig.html[`OpenTelemetryConfig` builder]. Users typically adopt this approach to ease migration from older tracing configuration to OpenTelemetry.
+This page describes support for controlling OpenTelemetry tracing using the `tracing` config section and link:{javadoc-base-url}/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/OpenTelemetryTracerConfig.html[`OpenTelemetryTracerConfig` builder]. Users typically adopt this approach to ease migration from older tracing configuration to OpenTelemetry.
 
 That said, Helidon's support for OpenTelemetry using _tracing_ does not afford as much control as do the Helidon _telemetry_ settings. For example, using OpenTelemetry `tracing` config you can choose either the OTLP gRPC span exporter or the OTLP HTTP one; additional span exporters are available only using the `telemetry` settings.
 
@@ -33,7 +33,9 @@ The xref:{rootdir}/{flavor-lc}/telemetry/open-telemetry.adoc[telemetry doc page]
 endif::se-flavor[]
 [NOTE]
 .Avoid specifying both `telemetry` and `tracing`
-If you provide settings under both `telemetry` and `tracing`, Helidon uses the `telemetry` settings. Specifying both does not confuse Helidon but it might confuse users.
+If you provide settings under both `telemetry` and `tracing`, Helidon uses the `telemetry` settings. Specifying both does
+not confuse Helidon but it might confuse users. Set `registered: false` under `tracing` to make explicit that the
+`tracing` section should not contribute the application-wide `OpenTelemetry` and `Tracer`.
 
 
 // end::intro[]
@@ -62,7 +64,7 @@ ifdef::se-flavor[]
 ----
 tracing:
   service: helidon-otel-tracing-example # <1>
-  global: false      # <2>
+  global: true       # <2>
   int-tags:
     example: 1       # <3>
   tags:
@@ -74,15 +76,23 @@ ifdef::mp-flavor[]
 .Example Helidon configuration for OpenTelemetry tracing
 ----
 tracing.service=helidon-otel-tracing-example # <1>
-tracing.global=false                         # <2>
+tracing.global=true                          # <2>
 tracing.int-tags.0.example=1                 # <3>
 tracing.tags.0.direction=north               # <4>
 ----
 endif::mp-flavor[]
 <1> Specifies the OpenTelemetry service name.
-<2> Indicates the configured tracer _should not_ be made the global tracer (defaults to `true`).
+<2> Indicates Helidon should publish the selected application `OpenTelemetry` instance to `GlobalOpenTelemetry`
+(defaults to `true`). Set this to `false` when application code or OpenTelemetry autoconfiguration controls the
+OpenTelemetry global.
 <3> Assigns an integer-valued tag `example` the value `1`.
 <4> Assigns a string-valued tag `direction` the value `north`.
+
+Set `tracing.registered` to `false` only when the `tracing` section should not contribute the application-wide
+`OpenTelemetry` and `Tracer` from the Helidon service registry. OpenTelemetry globals are JVM-wide and can be assigned
+only once, so any `tracing.global: true` publication must happen before any Java agent, OpenTelemetry autoconfiguration,
+or application code initializes `GlobalOpenTelemetry`. If an OpenTelemetry global already exists, Helidon leaves it
+unchanged and uses the existing global as the application `OpenTelemetry` instance in the service registry.
 
 
 // end::otel-configuration[]

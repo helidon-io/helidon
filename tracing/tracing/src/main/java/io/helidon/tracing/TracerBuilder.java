@@ -255,9 +255,10 @@ public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tr
     T enabled(boolean enabled);
 
     /**
-     * When enabled, the created instance is also registered as a global tracer.
+     * Whether the OpenTelemetry instance created by this tracer builder should be published to
+     * {@code GlobalOpenTelemetry}.
      *
-     * @param global whether to register this tracer as a global tracer once built
+     * @param global whether to publish the OpenTelemetry instance as global
      * @return updated builder instance
      */
     @ConfiguredOption(key = "global", value = "true")

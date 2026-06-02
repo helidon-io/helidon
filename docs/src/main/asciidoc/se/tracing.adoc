@@ -92,6 +92,24 @@ Helidon provides such an implementation for:
 
 - OpenTelemetry tracers configured from Helidon tracing settings
 
+=== Migrating from Global Tracer APIs
+Helidon 27 removes the deprecated static APIs for assigning or retrieving the Helidon global tracer.
+The OpenTelemetry helper methods which assigned a Helidon global tracer, such as `HelidonOpenTelemetry.global(...)`
+and `OpenTelemetryTracerProvider.globalTracer(...)`, are also removed.
+Application code should obtain the application `Tracer` from the Helidon service registry, using either
+declarative injection or `Services.get(Tracer.class)`.
+
+If an application prepares its own tracing runtime, register the manually prepared `OpenTelemetry` and `Tracer`
+instances with `Services.set(...)` before any application or Helidon component requests either contract from the service
+registry. Once a registry singleton is resolved, replacing it is not supported.
+
+Some OpenTelemetry instrumentation reads `GlobalOpenTelemetry` directly. For that interop case, configure
+`telemetry.global: true` or `tracing.global: true` so Helidon publishes the selected
+application `OpenTelemetry` instance to the OpenTelemetry global during service-registry ownership startup. This must
+happen before any other code initializes `GlobalOpenTelemetry`, because OpenTelemetry allows the JVM-wide global to be
+assigned only once. If an OpenTelemetry global already exists, Helidon leaves it unchanged and uses the existing global
+as the application `OpenTelemetry` instance in the service registry.
+
 === Setup WebServer
 
 [source,java]

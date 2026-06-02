@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.testing.junit5.InMemoryLoggingHandler;
 import io.helidon.logging.jul.HelidonFormatter;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
@@ -52,7 +53,7 @@ class TestMdc {
         HelidonFormatter helidonFormatter = new HelidonFormatter();
         try (InMemoryLoggingHandler loggingHandler = InMemoryLoggingHandler.create(logger)) {
             loggingHandler.setFormatter(helidonFormatter);
-            Span span = Tracer.global().spanBuilder("logging-test-span").start();
+            Span span = Services.get(Tracer.class).spanBuilder("logging-test-span").start();
             String expectedTraceId = span.context().traceId();
             String formattedMessage;
             try (Scope ignored = span.activate()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package io.helidon.tracing.providers.opentelemetry;
 
 
+import io.helidon.service.registry.Services;
+
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
@@ -29,7 +31,7 @@ class TestUnwrap {
 
     @Test
     void testTracer() {
-        var tracer = io.helidon.tracing.Tracer.global();
+        var tracer = Services.get(io.helidon.tracing.Tracer.class);
         assertThat("Tracer unwrapped",
                    tracer.unwrap(Tracer.class),
                    instanceOf(Tracer.class));
@@ -45,7 +47,7 @@ class TestUnwrap {
 
     @Test
     void testSpanAndSpanBuilder() {
-        var tracer = io.helidon.tracing.Tracer.global();
+        var tracer = Services.get(io.helidon.tracing.Tracer.class);
         var spanBuilder = tracer.spanBuilder("test1");
         assertThat("Span builder unwrapped",
                    spanBuilder.unwrap(SpanBuilder.class),

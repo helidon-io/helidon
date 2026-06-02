@@ -74,6 +74,7 @@ class TestMdc {
             var helidonOtel = HelidonOpenTelemetry.create(OpenTelemetryConfig.builder()
                                                                   .service("log-test-service")
                                                                   .buildPrototype());
+            HelidonOpenTelemetryImpl.configureMdc();
 
             assertThat("Log with Otel support but no current context", logMessage("No context"),
                        allOf(containsString("trace=none"),
@@ -81,7 +82,7 @@ class TestMdc {
                              containsString("baggage=none")));
 
 
-            var tracer = GlobalOpenTelemetry.getTracer("test");
+            var tracer = helidonOtel.openTelemetry().getTracer("test");
             var tracerSpan = tracer.spanBuilder("test").startSpan();
 
             var traceId = tracerSpan.getSpanContext().getTraceId();

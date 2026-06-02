@@ -18,11 +18,9 @@ package io.helidon.tracing;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.logging.common.HelidonMdc;
-import io.helidon.service.registry.Services;
 import io.helidon.tracing.spi.TracerProvider;
 
 /**
@@ -31,7 +29,6 @@ import io.helidon.tracing.spi.TracerProvider;
 final class TracerProviderHelper {
     private static final System.Logger LOGGER = System.getLogger(TracerProviderHelper.class.getName());
     private static final TracerProvider TRACER_PROVIDER;
-    private static final AtomicBoolean GLOBAL_REGISTRY = new AtomicBoolean(false);
 
     static {
         TracerProvider provider = null;
@@ -79,37 +76,6 @@ final class TracerProviderHelper {
         completed and, therefore, before TRACER_PROVIDER is assigned.
          */
         return (TRACER_PROVIDER == null) ? Optional.empty() : TRACER_PROVIDER.currentSpan();
-    }
-
-    static Tracer global() {
-        if (TRACER_PROVIDER == null) {
-            throw new IllegalStateException("Use before initialization has completed");
-        }
-        if (GLOBAL_REGISTRY.get()) {
-            try {
-                return Services.get(Tracer.class);
-            } catch (RuntimeException e) {
-                GLOBAL_REGISTRY.set(false);
-                LOGGER.log(System.Logger.Level.TRACE,
-                           "Global tracer is not available from the current service registry, falling back to provider tracer",
-                           e);
-            }
-        }
-        return TRACER_PROVIDER.global();
-    }
-
-    static void global(Tracer tracer) {
-        if (TRACER_PROVIDER == null) {
-            throw new IllegalStateException("Use before initialization has completed");
-        }
-        TRACER_PROVIDER.global(tracer);
-        try {
-            Services.set(Tracer.class, tracer);
-            GLOBAL_REGISTRY.set(true);
-        } catch (Exception e) {
-            GLOBAL_REGISTRY.set(false);
-            LOGGER.log(System.Logger.Level.TRACE, "Tracer instance already set in service registry", e);
-        }
     }
 
     static TracerBuilder<?> findTracerBuilder() {

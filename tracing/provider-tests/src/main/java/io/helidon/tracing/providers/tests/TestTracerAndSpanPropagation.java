@@ -25,6 +25,7 @@ import java.util.concurrent.TimeoutException;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.testing.junit5.OptionalMatcher;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
@@ -57,7 +58,7 @@ class TestTracerAndSpanPropagation {
         final var tracer = buildTracer();
         LOGGER.log(System.Logger.Level.INFO, "Tracer {0}", tracer);
         assertThat("Tracer is enabled", tracer.enabled(), is(true));
-        assertThat("Tracer in use is the global tracer", tracer, sameInstance(Tracer.global()));
+        assertThat("Tracer in use is the application tracer", tracer, sameInstance(Services.get(Tracer.class)));
         final var rootSpan = tracer.spanBuilder(getClass().getSimpleName()).start();
         LOGGER.log(System.Logger.Level.INFO, "traceId: {0}", rootSpan.context().traceId());
         try (var _ = rootSpan.activate()) {
@@ -96,10 +97,10 @@ class TestTracerAndSpanPropagation {
     }
 
     private Tracer buildTracer() {
-        return Tracer.global();
+        return Services.get(Tracer.class);
     }
 
-    record ChildAction(Tracer globalTracer, Span rootSpan) implements Runnable {
+    record ChildAction(Tracer applicationTracer, Span rootSpan) implements Runnable {
 
         @Override
         public void run() {
@@ -108,8 +109,8 @@ class TestTracerAndSpanPropagation {
             final var threadName = String.valueOf(thread);
             LOGGER.log(System.Logger.Level.INFO, "Running {0}", threadName);
 
-            final var tracer = Objects.requireNonNull(Tracer.global(), "global NOT in ChildAction");
-            assertThat("tracer NOT preserved in ChildAction", tracer, is(sameInstance(globalTracer)));
+            final var tracer = Objects.requireNonNull(Services.get(Tracer.class), "tracer NOT in ChildAction");
+            assertThat("tracer NOT preserved in ChildAction", tracer, is(sameInstance(applicationTracer)));
             assertThat("Current span from test NOT present in ChildAction",
                        Span.current().map(Span::context).map(SpanContext::spanId),
                        OptionalMatcher.optionalValue(is(rootSpan.context().spanId())));

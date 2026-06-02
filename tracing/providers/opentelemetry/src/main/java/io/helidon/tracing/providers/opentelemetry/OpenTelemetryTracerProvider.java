@@ -17,101 +17,26 @@ package io.helidon.tracing.providers.opentelemetry;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.Api;
-import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.common.context.Context;
-import io.helidon.common.context.Contexts;
-import io.helidon.service.registry.Services;
 import io.helidon.tracing.Span;
-import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.spi.TracerProvider;
-
-import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.api.OpenTelemetry;
 
 /**
  * Service loader provider implementation for {@link io.helidon.tracing.spi.TracerProvider}.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 50)
 public class OpenTelemetryTracerProvider implements TracerProvider {
-    private static final System.Logger LOGGER = System.getLogger(OpenTelemetryTracerProvider.class.getName());
-    private static final AtomicReference<Tracer> CONFIGURED_TRACER = new AtomicReference<>();
-    private static final AtomicBoolean GLOBAL_SET = new AtomicBoolean();
-    private static final LazyValue<Tracer> GLOBAL_TRACER;
-
-    static {
-        GLOBAL_TRACER = LazyValue.create(() -> {
-            // try to get from configured global tracer
-            Tracer tracer = CONFIGURED_TRACER.get();
-            if (tracer != null) {
-                return tracer;
-            }
-            Context global = Contexts.globalContext();
-            return global.get(OpenTelemetryTracer.class)
-                    .map(Tracer.class::cast)
-                    .orElseGet(() -> {
-                        /*
-                        To preserve backward compatibility with the global(Tracer) method on this class while also working with
-                        OpenTelemetry config via Helidon config, try to initialize OTel using our configured support.
-                         */
-                        Optional<OpenTelemetry> fromService = Services.first(OpenTelemetry.class);
-                        if (fromService.isPresent()) {
-                            /*
-                            If we are here then CONFIGURED_TRACER was not set earlier but the call to Services.first was able
-                            to initialize OpenTelemetry. Part of that logic is to set CONFIGURED_TRACER. So here we just
-                            return what is now (or certainly should be) a non-empty CONFIGURED_TRACER.
-                             */
-                            var recentTracer = CONFIGURED_TRACER.get();
-                            if (recentTracer != null) {
-                                LOGGER.log(System.Logger.Level.TRACE, "Global tracer has been set via telemetry configuration");
-                                return recentTracer;
-                            }
-                            LOGGER.log(System.Logger.Level.TRACE,
-                                       "OpenTelemetry was initialized via the service registry but the global tracer was "
-                                               + "unexpectedly not set.");
-                        }
-                        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                            LOGGER.log(System.Logger.Level.TRACE, "Global tracer is not registered. Register it through "
-                                    + "Tracer.global(HelidonOpenTelemetry.create(ot, tracer). Using global open telemetry");
-                        }
-                        OpenTelemetry ot = GlobalOpenTelemetry.get();
-                        return OpenTelemetryTracer.builder()
-                                .openTelemetry(ot)
-                                .delegate(ot.getTracer("helidon-service"))
-                                .build();
-                    });
-        });
-    }
+    private static final AtomicBoolean APPLICATION_OPEN_TELEMETRY_SELECTED = new AtomicBoolean();
 
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
     @Api.Internal
     public OpenTelemetryTracerProvider() {
-    }
-
-    /**
-     * Register global tracer.
-     *
-     * @param tracer global tracer
-     */
-    public static void globalTracer(Tracer tracer) {
-        GLOBAL_SET.set(true);
-        CONFIGURED_TRACER.set(tracer);
-    }
-
-    /**
-     * Registered global tracer, or tracer from global open telemetry.
-     *
-     * @return tracer
-     */
-    public static Tracer globalTracer() {
-        return GLOBAL_TRACER.get();
     }
 
     /**
@@ -145,28 +70,20 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
     }
 
     @Override
-    public Tracer global() {
-        return globalTracer();
-    }
-
-    @Override
-    public void global(Tracer tracer) {
-        if (tracer instanceof OpenTelemetryTracer ott) {
-            globalTracer(ott);
-            return;
-        }
-        throw new IllegalArgumentException("Tracer must be an instance of Helidon OpenTelemetry tracer. "
-                                                   + "Please use HelidonOpenTelemetry to create such instance");
-    }
-
-    @Override
     public Optional<Span> currentSpan() {
         return activeSpan();
     }
 
     @Override
     public boolean available() {
-        return GLOBAL_SET.get();
+        return APPLICATION_OPEN_TELEMETRY_SELECTED.get();
     }
 
+    static void applicationOpenTelemetrySelected() {
+        APPLICATION_OPEN_TELEMETRY_SELECTED.set(true);
+    }
+
+    static void resetForTest() {
+        APPLICATION_OPEN_TELEMETRY_SELECTED.set(false);
+    }
 }

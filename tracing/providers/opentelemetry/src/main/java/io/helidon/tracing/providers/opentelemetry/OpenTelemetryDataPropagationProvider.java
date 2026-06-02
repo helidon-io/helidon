@@ -16,8 +16,10 @@
 package io.helidon.tracing.providers.opentelemetry;
 
 import io.helidon.common.Api;
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.context.spi.DataPropagationProvider;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
@@ -31,6 +33,8 @@ public class OpenTelemetryDataPropagationProvider
 
     private static final System.Logger LOGGER = System.getLogger(OpenTelemetryDataPropagationProvider.class.getName());
 
+    private final LazyValue<Tracer> applicationTracer = LazyValue.create(() -> Services.get(Tracer.class));
+
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
@@ -41,8 +45,10 @@ public class OpenTelemetryDataPropagationProvider
     @Override
     public OpenTelemetryContext data() {
         // Use a tracer from the current context--because there is no notion in OTel of a "current" tracer--or from the
-        // global tracer.
-        Tracer tracer = Contexts.context().flatMap(ctx -> ctx.get(Tracer.class)).orElseGet(Tracer::global);
+        // application-wide tracer.
+        Tracer tracer = Contexts.context()
+                .flatMap(ctx -> ctx.get(Tracer.class))
+                .orElseGet(applicationTracer);
 
         // Get the current span only from OTel's notion of the current span. We do not care what span might be set in the
         // current context, because after that context was constructed user code could have closed the current span or set

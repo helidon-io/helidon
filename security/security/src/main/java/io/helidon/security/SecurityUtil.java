@@ -29,6 +29,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.security.spi.AuditProvider;
 import io.helidon.security.spi.SecurityProvider;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Tracer;
 
 /**
@@ -50,7 +51,7 @@ final class SecurityUtil {
 
     static Tracer getTracer(boolean tracingEnabled, Tracer builderTracer) {
         if (tracingEnabled) {
-            return (builderTracer == null) ? Tracer.global() : builderTracer;
+            return (builderTracer == null) ? Services.get(Tracer.class) : builderTracer;
         } else {
             return Tracer.noOp();
         }

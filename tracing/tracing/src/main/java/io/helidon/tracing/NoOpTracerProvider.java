@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,21 +19,10 @@ import java.util.Optional;
 
 class NoOpTracerProvider implements io.helidon.tracing.spi.TracerProvider {
     private static final NoOpBuilder BUILDER = NoOpBuilder.create();
-    private static final Tracer TRACER = BUILDER.build();
 
     @Override
     public TracerBuilder<?> createBuilder() {
         return BUILDER;
-    }
-
-    @Override
-    public Tracer global() {
-        return TRACER;
-    }
-
-    @Override
-    public void global(Tracer tracer) {
-        // ignored
     }
 
     @Override

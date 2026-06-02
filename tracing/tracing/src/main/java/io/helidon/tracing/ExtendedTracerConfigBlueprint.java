@@ -117,9 +117,21 @@ interface ExtendedTracerConfigBlueprint {
     boolean enabled();
 
     /**
-     * Whether to create and register a tracer as the global tracer.
+     * Whether this tracer configuration should be treated as an application-wide ownership candidate when it is resolved
+     * from the Helidon service registry.
      *
-     * @return whether to register the configured tracer as global
+     * @return whether this configuration should be treated as an application-wide ownership candidate
+     */
+    @Option.Configured("registered")
+    @Option.DefaultBoolean(true)
+    boolean registered();
+
+    /**
+     * Whether the OpenTelemetry instance created from this configuration should be published as the OpenTelemetry global;
+     * if an OpenTelemetry global already exists, Helidon leaves it unchanged and uses the existing global as the
+     * application OpenTelemetry instance.
+     *
+     * @return whether to publish the configured OpenTelemetry instance as global
      */
     @Option.Configured("global")
     @Option.DefaultBoolean(true)

@@ -39,9 +39,13 @@
             <artifactId>helidon-common-context</artifactId>
         </dependency>
         <dependency>
-        <groupId>io.helidon.config</groupId>
-        <artifactId>helidon-config</artifactId>
-    </dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing</artifactId>
