@@ -154,12 +154,14 @@ final class JsonParserStream extends JsonParserBase {
                 }
 
                 // 3. Read from the stream until we have enough bytes or EOF.
-                int lastRead = inputStream.read(buffer, kept, buffer.length - kept);
-                if (lastRead == -1) {
-                    finished = true;
-                    throw createException("Unexpected end of the binary JSON found");
+                while (currentIndex + amount >= bufferLength) {
+                    int lastRead = inputStream.read(buffer, bufferLength, buffer.length - bufferLength);
+                    if (lastRead == -1) {
+                        finished = true;
+                        throw createException("Unexpected end of the binary JSON found");
+                    }
+                    bufferLength += lastRead;
                 }
-                bufferLength = kept + lastRead;
             } catch (IOException e) {
                 throw new JsonException("Failed to read more Smile data from stream", e);
             }
