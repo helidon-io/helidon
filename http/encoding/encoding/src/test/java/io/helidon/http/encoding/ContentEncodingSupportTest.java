@@ -350,6 +350,26 @@ class ContentEncodingSupportTest {
     }
 
     @Test
+    void testRuntimeEncoderRejectsRejectedEmittedCoding() {
+        ContentEncoder gzipEncoder = new ContentEncoder() {
+            @Override
+            public OutputStream apply(OutputStream network) {
+                return network;
+            }
+
+            @Override
+            public void headers(WritableHeaders<?> headers) {
+                headers.set(HeaderNames.CONTENT_ENCODING, "gzip");
+            }
+        };
+        ContentEncodingContext context = ContentEncodingContext.builder()
+                .addContentEncoding(new TestEncoding(gzipEncoder, Set.of("gzip", "x-gzip"), true, false, "gzip"))
+                .build();
+
+        assertNotAcceptable(context, "x-gzip, gzip;q=0, identity;q=0");
+    }
+
+    @Test
     void testRuntimeEncoderWildcardUsedWhenIdentityRejected() {
         ContentEncoder gzipEncoder = gzipEncoder();
         ContentEncodingContext context = context(gzipEncoder);

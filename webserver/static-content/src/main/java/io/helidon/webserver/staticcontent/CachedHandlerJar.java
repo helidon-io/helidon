@@ -151,8 +151,9 @@ class CachedHandlerJar implements CachedHandler {
         }
 
         // etag etc.
+        String etag = null;
         if (lastModified != null) {
-            String etag = representation.etag(String.valueOf(lastModified.toEpochMilli()), contentLengthValue);
+            etag = representation.etag(String.valueOf(lastModified.toEpochMilli()), contentLengthValue);
             try {
                 boolean ifNoneMatchPresent = processEtag(etag, representation.weakEtag(), request.headers(), response.headers());
                 processModifyHeaders(lastModified,
@@ -173,7 +174,7 @@ class CachedHandlerJar implements CachedHandler {
             try {
                 if (path != null && Files.exists(path)) {
                     Long knownContentLength = contentLengthValue >= 0 ? contentLengthValue : null;
-                    FileBasedContentHandler.send(request, response, path, representation, knownContentLength);
+                    FileBasedContentHandler.send(request, response, path, representation, knownContentLength, etag, lastModified);
                     return true;
                 }
             } catch (IOException | ForbiddenException e) {

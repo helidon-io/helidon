@@ -100,13 +100,14 @@ record CachedHandlerPath(Path path,
         Long contentLength = null;
 
         // etag etc.
+        String etag = null;
         if (lastModified != null) {
             long etagContentLength = -1;
             if (representation.etagRequiresContentLength()) {
                 contentLength = FileBasedContentHandler.contentLength(path);
                 etagContentLength = contentLength;
             }
-            String etag = representation.etag(String.valueOf(lastModified.toEpochMilli()), etagContentLength);
+            etag = representation.etag(String.valueOf(lastModified.toEpochMilli()), etagContentLength);
             try {
                 boolean ifNoneMatchPresent = processEtag(etag, representation.weakEtag(), request.headers(), response.headers());
                 processModifyHeaders(lastModified,
@@ -124,7 +125,7 @@ record CachedHandlerPath(Path path,
         response.headers().contentType(mediaType);
 
         if (method == Method.GET) {
-            FileBasedContentHandler.send(request, response, path, representation, contentLength);
+            FileBasedContentHandler.send(request, response, path, representation, contentLength, etag, lastModified);
         } else {
             representation.apply(response);
             if (!representation.runtimeEncoded()) {

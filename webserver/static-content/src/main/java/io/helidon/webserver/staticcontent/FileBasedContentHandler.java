@@ -89,7 +89,9 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                      ServerResponse response,
                      Path path,
                      ResponseRepresentation representation,
-                     Long knownContentLength) throws IOException {
+                     Long knownContentLength,
+                     String etag,
+                     Instant lastModified) throws IOException {
         if (representation.runtimeEncoded()) {
             sendRuntimeEncoded(response, path, representation);
             return;
@@ -103,7 +105,10 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                 ranges = ByteRangeRequest.parse(request,
                                                 response,
                                                 headers.get(HeaderNames.RANGE).values(),
-                                                contentLength);
+                                                contentLength,
+                                                etag,
+                                                representation.weakEtag(),
+                                                lastModified);
             } catch (HttpException e) {
                 representation.apply(e);
                 throw e;

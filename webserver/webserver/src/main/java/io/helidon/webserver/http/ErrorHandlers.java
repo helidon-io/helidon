@@ -222,6 +222,7 @@ public final class ErrorHandlers {
                     "Cannot send response of a simple handler, status and headers already written", e);
         }
         try {
+            response.automaticContentEncoding(false);
             it.handle(request, response, e);
             response.commit();
             if (!response.isSent()) {
