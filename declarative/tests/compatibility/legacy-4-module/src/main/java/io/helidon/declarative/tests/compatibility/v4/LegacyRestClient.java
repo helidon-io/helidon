@@ -49,6 +49,11 @@ public interface LegacyRestClient {
     String retry();
 
     @Http.GET
+    @Http.Path("/client-ft/retry")
+    @Ft.Retry(calls = 2, delay = "PT0.01S", overallTimeout = "PT1S")
+    String clientRetry();
+
+    @Http.GET
     @Http.Path("/ft/circuit")
     @Ft.CircuitBreaker(name = "legacy-circuit", volume = 2, errorRatio = 50)
     String circuit();
@@ -61,7 +66,7 @@ public interface LegacyRestClient {
     @Http.GET
     @Http.Path("/ft/bulkhead")
     @Ft.Bulkhead(limit = 1, queueLength = 1)
-    String bulkhead();
+    String bulkhead(@Http.QueryParam("sleepMillis") Optional<Integer> sleepMillis);
 
     @Http.GET
     @Http.Path("/client-header")

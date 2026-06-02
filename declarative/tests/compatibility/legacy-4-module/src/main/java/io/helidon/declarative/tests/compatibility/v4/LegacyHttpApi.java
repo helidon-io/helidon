@@ -64,5 +64,5 @@ public interface LegacyHttpApi {
 
     @Http.GET
     @Http.Path("/ft/bulkhead")
-    String bulkhead();
+    String bulkhead(@Http.QueryParam("sleepMillis") Optional<Integer> sleepMillis);
 }
