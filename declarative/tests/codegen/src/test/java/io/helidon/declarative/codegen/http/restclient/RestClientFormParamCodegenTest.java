@@ -142,6 +142,101 @@ class RestClientFormParamCodegenTest {
     }
 
     @Test
+    void methodUnannotatedParameterWithFormParameterIsRejected() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(List.of(
+                        Generated.class,
+                        TypeName.class,
+                        Config.class,
+                        Http.class,
+                        Service.class,
+                        RestClient.class,
+                        WebClient.class
+                ))
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/rest-client-form-unannotated-parameter"))
+                .addSource("InvalidClient.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.webclient.api.RestClient;
+
+                        @RestClient.Endpoint("http://localhost:8080")
+                        interface InvalidClient {
+                            @Http.POST
+                            String invalid(String body,
+                                           @Http.FormParam("field") String field);
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics,
+                   containsString("Parameter 'body' of declarative client method com.example.InvalidClient.invalid() "
+                                          + "must be annotated with a supported request parameter annotation."));
+    }
+
+    @Test
+    void methodUnannotatedParameterIsRejected() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(List.of(
+                        Generated.class,
+                        TypeName.class,
+                        Config.class,
+                        Http.class,
+                        Service.class,
+                        RestClient.class,
+                        WebClient.class
+                ))
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/rest-client-unannotated-parameter"))
+                .addSource("InvalidClient.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.webclient.api.RestClient;
+
+                        @RestClient.Endpoint("http://localhost:8080")
+                        interface InvalidClient {
+                            @Http.POST
+                            String invalid(String body);
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics,
+                   containsString("Parameter 'body' of declarative client method com.example.InvalidClient.invalid() "
+                                          + "must be annotated with a supported request parameter annotation."));
+    }
+
+    @Test
     void methodMultipleEntityParametersAreRejected() {
         var result = TestCompiler.builder()
                 .currentRelease()

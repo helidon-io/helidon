@@ -73,6 +73,18 @@ public final class HttpCodegenValidation {
     }
 
     /**
+     * Whether annotations contain a supported endpoint method parameter annotation.
+     *
+     * @param annotations annotations to inspect
+     * @return whether any supported endpoint method parameter annotation is present
+     */
+    public static boolean hasMethodParameterAnnotation(Collection<Annotation> annotations) {
+        return annotations.stream()
+                .map(Annotation::typeName)
+                .anyMatch(METHOD_PARAMETER_ANNOTATIONS::contains);
+    }
+
+    /**
      * Validate that a request parameter record component contains at most one supported request parameter annotation.
      *
      * @param annotations annotations to inspect

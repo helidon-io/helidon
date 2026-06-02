@@ -348,6 +348,8 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
                                              Method.Builder it,
                                              RestMethod method,
                                              Map<String, String> headerProducers) {
+        validateMethodParameters(method);
+
         method.parameters()
                 .forEach(param -> it.addParameter(newParam -> newParam
                         .name(param.name())
@@ -606,6 +608,17 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
             it.addContentLine("return declarative__response.entity();");
         } else {
             it.addContentLine("}");
+        }
+    }
+
+    private void validateMethodParameters(RestMethod method) {
+        for (RestMethodParameter parameter : method.parameters()) {
+            if (!HttpCodegenValidation.hasMethodParameterAnnotation(parameter.annotations())) {
+                throw new CodegenException("Parameter '" + parameter.name() + "' of declarative client method "
+                                                   + method.type().typeName().fqName() + "." + method.name()
+                                                   + "() must be annotated with a supported request parameter annotation.",
+                                           parameter.parameter().originatingElementValue());
+            }
         }
     }
 
