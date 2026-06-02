@@ -118,7 +118,8 @@ example using `Services.get(OpenTelemetry.class)` and `Services.get(Tracer.class
 Some third-party OpenTelemetry instrumentation uses `GlobalOpenTelemetry` directly. For that interop case, keep `global`
 set to `true` so Helidon publishes the selected application `OpenTelemetry` instance to the OpenTelemetry global. This
 must happen before any other code initializes `GlobalOpenTelemetry`; OpenTelemetry allows the global to be assigned only
-once.
+once. If an OpenTelemetry global already exists, Helidon leaves it unchanged and uses the existing global as the
+application `OpenTelemetry` instance in the service registry.
 
 The `global` setting applies when Helidon's OpenTelemetry ownership path creates or adopts the application instance. If
 application code manually registers both `OpenTelemetry` and `Tracer` using `Services.set(...)`, then Helidon's
@@ -244,7 +245,8 @@ Notes:
 * Setting `registered` to `true` makes the configured owner active and has the effect described in the
   <<effects-of-setting-global, section>> about application instances in the Helidon service registry.
 * Setting `global` to `true` publishes that application instance to `GlobalOpenTelemetry` for OpenTelemetry
-  instrumentation that reads the JVM-wide OpenTelemetry global.
+  instrumentation that reads the JVM-wide OpenTelemetry global. If the global already exists, Helidon leaves it
+  unchanged and uses the existing global as the application `OpenTelemetry` instance.
 
 [[common-config]]
 === Common Configuration Across Signals

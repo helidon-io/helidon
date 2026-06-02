@@ -74,7 +74,7 @@ the `otel.java.global-autoconfigure.enabled=true` system property or the
 `OTEL_JAVA_GLOBAL_AUTOCONFIGURE_ENABLED=true` environment variable, Helidon service look-up triggers that
 autoconfiguration and uses the resulting `GlobalOpenTelemetry` instance. The system property takes precedence over the
 environment variable.
-When a Helidon owner is active, set `io.helidon.telemetry.otel.use-existing-instance` to `true` (or run with the OpenTelemetry Java agent, which Helidon detects) so Helidon uses the existing global instead of creating and publishing its own instance.
+When a Helidon owner is active, set `io.helidon.telemetry.otel.use-existing-instance` to `true` (or run with the OpenTelemetry Java agent, which Helidon detects) so Helidon uses the existing global even when the owner does not request OpenTelemetry global publication.
 For deterministic sharing without relying on the OpenTelemetry global, register the `OpenTelemetry` instance in the Helidon service registry before other code requests it.
 
 === Using Only the OpenTelemetry API

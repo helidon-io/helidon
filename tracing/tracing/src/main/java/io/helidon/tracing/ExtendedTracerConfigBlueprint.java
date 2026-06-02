@@ -127,7 +127,9 @@ interface ExtendedTracerConfigBlueprint {
     boolean registered();
 
     /**
-     * Whether the OpenTelemetry instance created from this configuration should be published as the OpenTelemetry global.
+     * Whether the OpenTelemetry instance created from this configuration should be published as the OpenTelemetry global;
+     * if an OpenTelemetry global already exists, Helidon leaves it unchanged and uses the existing global as the
+     * application OpenTelemetry instance.
      *
      * @return whether to publish the configured OpenTelemetry instance as global
      */

@@ -107,7 +107,8 @@ Some OpenTelemetry instrumentation reads `GlobalOpenTelemetry` directly. For tha
 `telemetry.global: true` or `tracing.global: true` so Helidon publishes the selected
 application `OpenTelemetry` instance to the OpenTelemetry global during service-registry ownership startup. This must
 happen before any other code initializes `GlobalOpenTelemetry`, because OpenTelemetry allows the JVM-wide global to be
-assigned only once.
+assigned only once. If an OpenTelemetry global already exists, Helidon leaves it unchanged and uses the existing global
+as the application `OpenTelemetry` instance in the service registry.
 
 === Setup WebServer
 

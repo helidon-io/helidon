@@ -65,7 +65,8 @@ interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTele
      * Whether the {@link io.opentelemetry.api.OpenTelemetry} instance created from this configuration should be published
      * as the OpenTelemetry global instance before any other code initializes
      * {@link io.opentelemetry.api.GlobalOpenTelemetry}, because OpenTelemetry globals are JVM-wide and can be assigned only
-     * once.
+     * once; if an OpenTelemetry global already exists, Helidon leaves it unchanged and uses the existing global as the
+     * application OpenTelemetry instance.
      *
      * @return true if the configured instance should be published to OpenTelemetry global; false otherwise
      */

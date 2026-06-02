@@ -35,6 +35,9 @@ import io.opentelemetry.api.OpenTelemetry;
 
 import static io.opentelemetry.context.Context.current;
 
+/**
+ * Shared OpenTelemetry selection used by Helidon telemetry integrations.
+ */
 @Api.Preview
 public final class ApplicationOpenTelemetry {
     static final String OTEL_AGENT_PRESENT_PROPERTY = "otel.agent.present";
@@ -42,9 +45,8 @@ public final class ApplicationOpenTelemetry {
     static final String USE_EXISTING_OTEL = "io.helidon.telemetry.otel.use-existing-instance";
 
     private static final String TELEMETRY_CONFIG_KEY = "telemetry";
-    private static final String GLOBAL_OPEN_TELEMETRY_ALREADY_SET = "OpenTelemetry global is already initialized. "
-            + "Set the OpenTelemetry instance in the Helidon service registry and enable OpenTelemetry global publishing "
-            + "before any code initializes GlobalOpenTelemetry, or configure Helidon to use the existing OpenTelemetry global.";
+    private static final String GLOBAL_OPEN_TELEMETRY_ALREADY_SET = "OpenTelemetry global is already initialized; "
+            + "Helidon will use the existing global OpenTelemetry instance.";
     private static final String OTEL_AUTO_CONFIGURE = "otel.java.global-autoconfigure.enabled";
     private static final String OTEL_AUTO_CONFIGURE_ENV = "OTEL_JAVA_GLOBAL_AUTOCONFIGURE_ENABLED";
 
@@ -56,10 +58,26 @@ public final class ApplicationOpenTelemetry {
     private ApplicationOpenTelemetry() {
     }
 
+    /**
+     * Selects the OpenTelemetry instance for the current application using the configured ownership strategies.
+     *
+     * @param config root configuration
+     * @param strategies available ownership strategies
+     * @return selected OpenTelemetry instance
+     */
     public static OpenTelemetry applicationOpenTelemetry(Config config, List<OpenTelemetryOwnershipStrategy> strategies) {
         return selectApplicationTelemetry(config, strategies, null).openTelemetry();
     }
 
+    /**
+     * Selects the OpenTelemetry instance for the current application and caches the selection for the service registry.
+     *
+     * @param registry service registry
+     * @param config root configuration
+     * @param strategies available ownership strategies
+     * @param registryOpenTelemetry supplier for an existing registry-provided OpenTelemetry instance
+     * @return selected OpenTelemetry instance
+     */
     public static OpenTelemetry applicationOpenTelemetry(ServiceRegistry registry,
                                                          Config config,
                                                          List<OpenTelemetryOwnershipStrategy> strategies,
@@ -96,6 +114,11 @@ public final class ApplicationOpenTelemetry {
         }
     }
 
+    /**
+     * Clears and closes any OpenTelemetry selection cached for the service registry.
+     *
+     * @param registry service registry
+     */
     public static void clearApplicationTelemetry(ServiceRegistry registry) {
         ApplicationTelemetry telemetry;
         APPLICATION_TELEMETRY_LOCK.lock();
@@ -109,6 +132,12 @@ public final class ApplicationOpenTelemetry {
         }
     }
 
+    /**
+     * Reports whether an OpenTelemetry selection is cached for the service registry.
+     *
+     * @param registry service registry
+     * @return whether the registry has a cached selection
+     */
     public static boolean applicationTelemetryCached(ServiceRegistry registry) {
         APPLICATION_TELEMETRY_LOCK.lock();
         try {
@@ -135,7 +164,10 @@ public final class ApplicationOpenTelemetry {
 
         if (registryOpenTelemetry != null) {
             if (publishGlobalOpenTelemetry) {
-                publishGlobalOpenTelemetry(registryOpenTelemetry);
+                OpenTelemetry existingGlobalOpenTelemetry = publishGlobalOpenTelemetryIfUnset(registryOpenTelemetry);
+                if (existingGlobalOpenTelemetry != null) {
+                    return applicationTelemetry(rootConfig, selectedStrategy, existingGlobalOpenTelemetry, null);
+                }
             }
             return applicationTelemetry(rootConfig, selectedStrategy, registryOpenTelemetry, null);
         }
@@ -151,7 +183,8 @@ public final class ApplicationOpenTelemetry {
 
         if (selectedStrategy != null) {
             if (publishGlobalOpenTelemetry) {
-                OpenTelemetrySelection selection = createAndPublishGlobalOpenTelemetrySelection(rootConfig, selectedStrategy);
+                OpenTelemetrySelection selection = createAndPublishGlobalOpenTelemetrySelection(rootConfig,
+                                                                                                selectedStrategy);
                 return applicationTelemetry(rootConfig, selectedStrategy, selection.openTelemetry(), selection.closeable());
             }
             OpenTelemetry openTelemetry = selectedStrategy.create(rootConfig);
@@ -164,7 +197,7 @@ public final class ApplicationOpenTelemetry {
     private static OpenTelemetrySelection createAndPublishGlobalOpenTelemetrySelection(Config rootConfig,
                                                                                       OpenTelemetryOwnershipStrategy strategy) {
         if (GlobalOpenTelemetry.isSet()) {
-            throw new IllegalStateException(GLOBAL_OPEN_TELEMETRY_ALREADY_SET);
+            return existingGlobalOpenTelemetrySelection();
         }
 
         AtomicReference<RuntimeException> creationFailure = new AtomicReference<>();
@@ -184,21 +217,48 @@ public final class ApplicationOpenTelemetry {
             if (e == creationFailure.get()) {
                 throw e;
             }
-            throw new IllegalStateException(GLOBAL_OPEN_TELEMETRY_ALREADY_SET, e);
+            return existingGlobalOpenTelemetrySelection(e);
         }
         return new OpenTelemetrySelection(GlobalOpenTelemetry.get(), closeable(createdOpenTelemetry.get()));
     }
 
-    private static void publishGlobalOpenTelemetry(OpenTelemetry openTelemetry) {
+    private static OpenTelemetry publishGlobalOpenTelemetryIfUnset(OpenTelemetry openTelemetry) {
         if (GlobalOpenTelemetry.isSet()) {
-            throw new IllegalStateException(GLOBAL_OPEN_TELEMETRY_ALREADY_SET);
+            logGlobalAlreadySet(openTelemetry);
+            return GlobalOpenTelemetry.get();
         }
 
         try {
             GlobalOpenTelemetry.set(openTelemetry);
         } catch (IllegalStateException e) {
-            throw new IllegalStateException(GLOBAL_OPEN_TELEMETRY_ALREADY_SET, e);
+            logGlobalAlreadySet(openTelemetry, e);
+            return GlobalOpenTelemetry.get();
         }
+        return null;
+    }
+
+    private static OpenTelemetrySelection existingGlobalOpenTelemetrySelection() {
+        LOGGER.log(System.Logger.Level.WARNING, GLOBAL_OPEN_TELEMETRY_ALREADY_SET);
+        return new OpenTelemetrySelection(GlobalOpenTelemetry.get(), null);
+    }
+
+    private static OpenTelemetrySelection existingGlobalOpenTelemetrySelection(Throwable cause) {
+        LOGGER.log(System.Logger.Level.WARNING, GLOBAL_OPEN_TELEMETRY_ALREADY_SET, cause);
+        return new OpenTelemetrySelection(GlobalOpenTelemetry.get(), null);
+    }
+
+    private static void logGlobalAlreadySet(OpenTelemetry openTelemetry) {
+        if (GlobalOpenTelemetry.isSet() && GlobalOpenTelemetry.get() == openTelemetry) {
+            return;
+        }
+        LOGGER.log(System.Logger.Level.WARNING, GLOBAL_OPEN_TELEMETRY_ALREADY_SET);
+    }
+
+    private static void logGlobalAlreadySet(OpenTelemetry openTelemetry, Throwable cause) {
+        if (GlobalOpenTelemetry.isSet() && GlobalOpenTelemetry.get() == openTelemetry) {
+            return;
+        }
+        LOGGER.log(System.Logger.Level.WARNING, GLOBAL_OPEN_TELEMETRY_ALREADY_SET, cause);
     }
 
     private static List<OpenTelemetryOwnershipStrategy> activeStrategies(Config rootConfig,

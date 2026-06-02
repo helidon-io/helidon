@@ -135,6 +135,28 @@ class TestApplicationOpenTelemetry {
     }
 
     @Test
+    void ownedGlobalApplicationOpenTelemetryAdoptsExistingGlobalOpenTelemetry() {
+        OpenTelemetry globalOpenTelemetry = new NamedOpenTelemetry();
+        GlobalOpenTelemetry.set(globalOpenTelemetry);
+        CloseableOpenTelemetry openTelemetry = new CloseableOpenTelemetry();
+        FixedStrategy strategy = new FixedStrategy("owned-global-service", openTelemetry, true);
+        ServiceRegistryManager manager = strategyRegistryManager(strategy);
+        try {
+            assertThat("OpenTelemetry service",
+                       manager.registry().get(OpenTelemetry.class).getTracerProvider().get("global"),
+                       sameInstance(globalOpenTelemetry.getTracerProvider().get("global")));
+            assertThat("OpenTelemetry global",
+                       GlobalOpenTelemetry.get().getTracerProvider().get("global"),
+                       sameInstance(globalOpenTelemetry.getTracerProvider().get("global")));
+            assertFalse(openTelemetry.closed(), "Unselected OpenTelemetry should not be closed while the registry is active");
+        } finally {
+            manager.shutdown();
+        }
+
+        assertFalse(openTelemetry.closed(), "Unselected OpenTelemetry should not be closed when the registry shuts down");
+    }
+
+    @Test
     void registryOpenTelemetryIsNotClosedWhenRegistryShutsDown() {
         CloseableOpenTelemetry openTelemetry = new CloseableOpenTelemetry();
         ServiceRegistryManager manager = ServiceRegistryManager.start(ServiceRegistryConfig.builder()

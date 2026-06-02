@@ -50,7 +50,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Testing.Test(perMethod = true)
@@ -248,8 +247,9 @@ class TestApplicationOpenTelemetryOwnership {
     }
 
     @Test
-    void tracingConfigGlobalFailsWhenGlobalAlreadyExists() {
-        GlobalOpenTelemetry.set(OpenTelemetry.noop());
+    void tracingConfigGlobalAdoptsExistingGlobalOpenTelemetry() {
+        OpenTelemetry globalOpenTelemetry = new NamedOpenTelemetry();
+        GlobalOpenTelemetry.set(globalOpenTelemetry);
         Config config = Config.just(ConfigSources.create(
                 """
                         tracing:
@@ -258,8 +258,18 @@ class TestApplicationOpenTelemetryOwnership {
                 MediaTypes.APPLICATION_YAML));
         Services.set(Config.class, config);
 
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> Services.get(OpenTelemetry.class));
-        assertThat(e.getMessage(), containsString("OpenTelemetry global is already initialized"));
+        OpenTelemetry openTelemetry = Services.get(OpenTelemetry.class);
+        Tracer tracer = Services.get(Tracer.class);
+
+        assertThat("OpenTelemetry service",
+                   openTelemetry.getTracerProvider().get("global"),
+                   sameInstance(globalOpenTelemetry.getTracerProvider().get("global")));
+        assertThat("OpenTelemetry global",
+                   GlobalOpenTelemetry.get().getTracerProvider().get("global"),
+                   sameInstance(globalOpenTelemetry.getTracerProvider().get("global")));
+        assertThat("Tracer-backed OpenTelemetry",
+                   tracer.unwrap(OpenTelemetryTracer.class).prototype().openTelemetry(),
+                   sameInstance(openTelemetry));
     }
 
     @Test

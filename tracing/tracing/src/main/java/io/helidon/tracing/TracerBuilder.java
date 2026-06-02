@@ -256,7 +256,7 @@ public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tr
 
     /**
      * Whether the OpenTelemetry instance created by this tracer builder should be published to
-     * {@link io.opentelemetry.api.GlobalOpenTelemetry}.
+     * {@code GlobalOpenTelemetry}.
      *
      * @param global whether to publish the OpenTelemetry instance as global
      * @return updated builder instance

@@ -16,6 +16,9 @@
 
 package io.helidon.telemetry.otelconfig;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -26,6 +29,7 @@ import io.helidon.tracing.Tracer;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +41,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Testing.Test(perMethod = true)
@@ -330,8 +333,9 @@ class TestOpenTelemetryOwnership {
     }
 
     @Test
-    void telemetryConfigGlobalFailsWhenGlobalAlreadyExists() {
-        GlobalOpenTelemetry.set(OpenTelemetry.noop());
+    void telemetryConfigGlobalAdoptsExistingGlobalOpenTelemetry() {
+        OpenTelemetry globalOpenTelemetry = new NamedOpenTelemetry();
+        GlobalOpenTelemetry.set(globalOpenTelemetry);
         Config config = Config.just(ConfigSources.create(
                 """
                         telemetry:
@@ -340,8 +344,16 @@ class TestOpenTelemetryOwnership {
                 MediaTypes.APPLICATION_YAML));
         Services.set(Config.class, config);
 
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> Services.get(OpenTelemetry.class));
-        assertThat(e.getMessage(), containsString("OpenTelemetry global is already initialized"));
+        OpenTelemetry openTelemetry = Services.get(OpenTelemetry.class);
+        Tracer tracer = Services.get(Tracer.class);
+
+        assertThat("OpenTelemetry service",
+                   openTelemetry.getTracerProvider().get("global"),
+                   sameInstance(globalOpenTelemetry.getTracerProvider().get("global")));
+        assertThat("OpenTelemetry global",
+                   GlobalOpenTelemetry.get().getTracerProvider().get("global"),
+                   sameInstance(globalOpenTelemetry.getTracerProvider().get("global")));
+        assertTracerUsesOpenTelemetry(openTelemetry, tracer, "telemetry-owner");
     }
 
     @Test
@@ -386,5 +398,45 @@ class TestOpenTelemetryOwnership {
             System.setProperty(OTEL_AUTO_CONFIGURE, originalAutoConfigure);
         }
         GlobalOpenTelemetry.resetForTest();
+    }
+
+    private static class NamedOpenTelemetry implements OpenTelemetry {
+        private final Map<String, io.opentelemetry.api.trace.Tracer> tracers = new HashMap<>();
+        private final io.opentelemetry.api.trace.TracerProvider tracerProvider =
+                new io.opentelemetry.api.trace.TracerProvider() {
+                    @Override
+                    public io.opentelemetry.api.trace.Tracer get(String instrumentationScopeName) {
+                        return tracers.computeIfAbsent(instrumentationScopeName, NamedTracer::new);
+                    }
+
+                    @Override
+                    public io.opentelemetry.api.trace.Tracer get(String instrumentationScopeName,
+                                                                 String instrumentationScopeVersion) {
+                        return get(instrumentationScopeName);
+                    }
+                };
+
+        @Override
+        public io.opentelemetry.api.trace.TracerProvider getTracerProvider() {
+            return tracerProvider;
+        }
+
+        @Override
+        public ContextPropagators getPropagators() {
+            return ContextPropagators.noop();
+        }
+    }
+
+    private static final class NamedTracer implements io.opentelemetry.api.trace.Tracer {
+        private final String name;
+
+        private NamedTracer(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public io.opentelemetry.api.trace.SpanBuilder spanBuilder(String spanName) {
+            throw new UnsupportedOperationException(name + " test tracer does not create spans");
+        }
     }
 }
