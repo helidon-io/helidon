@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,11 @@
 
 package io.helidon.service.tests.interception;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import io.helidon.service.registry.Service;
 
-import io.helidon.service.registry.Interception;
-
-/**
- * Modify call.
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@Interception.Intercepted
-@Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD})
-@Inherited
-@interface Modify {
+@Service.Singleton
+class FieldInjectedDependency {
+    String message() {
+        return "field injected";
+    }
 }
