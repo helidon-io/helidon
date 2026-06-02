@@ -363,4 +363,30 @@ class JsonValueParserTest {
         assertThat(result.intValue("key11").orElseThrow(), is(12));
     }
 
+    @Test
+    public void testJsonValueParserKeepsOuterTokensWhenNestedObjectGrowsStack() {
+        StringBuilder json = new StringBuilder("{\"a\":{");
+        for (int i = 0; i < 120; i++) {
+            if (i > 0) {
+                json.append(',');
+            }
+            json.append("\"k").append(i).append("\":").append(i);
+        }
+        json.append("},\"z\":999}");
+
+        JsonValue value = JsonParser.create(json.toString()).readJsonValue();
+        JsonParser parser = JsonParser.create(value);
+
+        while (parser.hasNext()) {
+            parser.nextToken();
+        }
+    }
+
+    @Test
+    public void testJsonValueParserNextTokenForZeroNumber() {
+        JsonParser parser = JsonParser.create(JsonArray.create(List.of(JsonNumber.create(0))));
+
+        assertThat(parser.nextToken(), is((byte) '0'));
+    }
+
 }

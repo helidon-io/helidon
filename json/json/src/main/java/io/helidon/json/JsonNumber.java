@@ -87,6 +87,9 @@ public final class JsonNumber extends JsonValue {
         if (val < 0) {
             return '-';
         }
+        if (val == 0) {
+            return '0';
+        }
         // For positive numbers, calculate first digit using log10
         // Note: this is an approximation and may not be accurate for all cases
         int digits = (int) Math.log10(val);

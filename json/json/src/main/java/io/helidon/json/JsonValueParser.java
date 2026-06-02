@@ -121,7 +121,7 @@ class JsonValueParser implements JsonParser {
         if (required > values.length) {
             int newLength = Math.max(values.length * 2, required);
             JsonValue[] newValues = new JsonValue[newLength];
-            System.arraycopy(values, 0, newValues, 0, Math.max(0, index));
+            System.arraycopy(values, 0, newValues, 0, Math.max(0, index + 1));
             values = newValues;
         }
     }
