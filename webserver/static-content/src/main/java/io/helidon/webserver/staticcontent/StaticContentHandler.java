@@ -536,16 +536,17 @@ abstract class StaticContentHandler implements HttpService {
         if (q != 0) {
             return q;
         }
+        if (first.quality().wildcard() != second.quality().wildcard()) {
+            return first.quality().wildcard() ? 1 : -1;
+        }
         boolean firstImplicitIdentity = implicitIdentity(first);
         boolean secondImplicitIdentity = implicitIdentity(second);
         if (firstImplicitIdentity != secondImplicitIdentity) {
             return firstImplicitIdentity ? 1 : -1;
         }
-        if ((first.type() == CandidateType.IDENTITY) != (second.type() == CandidateType.IDENTITY)) {
-            return first.type() == CandidateType.IDENTITY ? 1 : -1;
-        }
-        if (first.quality().wildcard() != second.quality().wildcard()) {
-            return first.quality().wildcard() ? 1 : -1;
+        int clientOrder = Integer.compare(first.quality().order(), second.quality().order());
+        if (clientOrder != 0) {
+            return clientOrder;
         }
         int type = Integer.compare(first.type().priority(), second.type().priority());
         if (type != 0) {
@@ -641,7 +642,7 @@ abstract class StaticContentHandler implements HttpService {
         cacheInMemory(resource, inMemoryResource);
     }
 
-    private static String unquoteETag(String etag) {
+    static String unquoteETag(String etag) {
         if (etag == null || etag.isEmpty()) {
             return etag;
         }
@@ -654,7 +655,7 @@ abstract class StaticContentHandler implements HttpService {
         return etag;
     }
 
-    private static boolean isWeakETag(String etag) {
+    static boolean isWeakETag(String etag) {
         return etag != null && (etag.startsWith("W/") || etag.startsWith("w/"));
     }
 

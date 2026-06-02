@@ -28,7 +28,6 @@ import java.util.function.BiConsumer;
 
 import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
-import io.helidon.http.ForbiddenException;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -151,8 +150,9 @@ class CachedHandlerJar implements CachedHandler {
         }
 
         // etag etc.
+        String etag = null;
         if (lastModified != null) {
-            String etag = representation.etag(String.valueOf(lastModified.toEpochMilli()), contentLengthValue);
+            etag = representation.etag(String.valueOf(lastModified.toEpochMilli()), contentLengthValue);
             try {
                 boolean ifNoneMatchPresent = processEtag(etag, representation.weakEtag(), request.headers(), response.headers());
                 processModifyHeaders(lastModified,
@@ -173,11 +173,16 @@ class CachedHandlerJar implements CachedHandler {
             try {
                 if (path != null && Files.exists(path)) {
                     try (var channel = Files.newByteChannel(path)) {
-                        FileBasedContentHandler.send(request, response, channel, representation);
+                        FileBasedContentHandler.send(request,
+                                                     response,
+                                                     channel,
+                                                     representation,
+                                                     etag,
+                                                     lastModified);
                     }
                     return true;
                 }
-            } catch (IOException | ForbiddenException e) {
+            } catch (IOException e) {
                 if (LOGGER.isLoggable(Level.TRACE)) {
                     LOGGER.log(Level.TRACE, "Failed to send jar entry from extracted path: " + path
                                        + ", will send directly from jar",

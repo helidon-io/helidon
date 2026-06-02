@@ -332,9 +332,9 @@ class StaticContentHandlerTest {
     }
 
     @Test
-    void preCompressedExplicitIdentityTieUsesRuntimeEncoding() throws IOException, URISyntaxException {
+    void preCompressedExplicitIdentityTieUsesHeaderOrder() throws IOException, URISyntaxException {
         assertRuntimeEncodingSelected("gzip, identity");
-        assertRuntimeEncodingSelected("identity, gzip");
+        assertIdentitySelected("identity, gzip");
     }
 
     @Test
@@ -576,41 +576,13 @@ class StaticContentHandlerTest {
     }
 
     @Test
-    void preCompressedSidecarUsesServerOrderWhenQualityTies() throws IOException, URISyntaxException {
-        TestContentHandler handler = TestContentHandler.create(true);
-        CachedHandler identityHandler = inMemoryHandler("Nested content");
-        CachedHandler brHandler = inMemoryHandler("Brotli content")
-                .withRepresentation(ResponseRepresentation.encoded("br"));
-        CachedHandler gzipHandler = inMemoryHandler("Gzip content")
-                .withRepresentation(ResponseRepresentation.encoded("gzip"));
-        ServerRequest request = mockRequestWithHeaders("gzip, br, identity;q=0", null, ContentEncodingContext.create());
-        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
-        ServerResponse response = mock(ServerResponse.class);
-        AtomicReference<byte[]> sent = new AtomicReference<>();
-
-        when(response.headers()).thenReturn(responseHeaders);
-        Mockito.doAnswer(inv -> {
-            sent.set(inv.getArgument(0));
-            return null;
-        }).when(response).send(any(byte[].class));
-
-        CachedHandler selected = handler.selectHandler(
-                identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> switch (coding) {
-                                                           case "br" -> Optional.of(brHandler);
-                                                           case "gzip" -> Optional.of(gzipHandler);
-                                                           default -> Optional.empty();
-                                                       });
-
-        selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
-
-        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
-        assertThat(new String(sent.get(), StandardCharsets.UTF_8), is("Brotli content"));
+    void preCompressedSidecarUsesHeaderOrderWhenQualityTies() throws IOException, URISyntaxException {
+        assertSidecarSelected("gzip, br, identity;q=0", "gzip", "Gzip content");
+        assertSidecarSelected("br, gzip, identity;q=0", "br", "Brotli content");
     }
 
     @Test
-    void preCompressedRuntimeEncodingUsesProviderOrderWhenQualityTies() throws IOException, URISyntaxException {
+    void preCompressedRuntimeEncodingUsesHeaderOrderWhenQualityTies() throws IOException, URISyntaxException {
         TestContentHandler handler = TestContentHandler.create(true);
         CachedHandler identityHandler = inMemoryHandler("Nested content");
         ServerRequest request = mockRequestWithHeaders("gzip, br, identity;q=0",
@@ -632,8 +604,8 @@ class StaticContentHandlerTest {
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
-        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
-        assertThat(sent.toString(StandardCharsets.UTF_8), is("br-runtime:Nested content"));
+        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+        assertThat(sent.toString(StandardCharsets.UTF_8), is("gzip-runtime:Nested content"));
     }
 
     @Test
@@ -1291,6 +1263,66 @@ class StaticContentHandlerTest {
         assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
         assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
         assertThat(sent.toString(StandardCharsets.UTF_8), is("runtime:Nested content"));
+    }
+
+    private void assertIdentitySelected(String acceptEncoding) throws IOException, URISyntaxException {
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = inMemoryHandler("Nested content");
+        ServerRequest request = mockRequestWithHeaders(acceptEncoding, null, runtimeContentEncodingContext());
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse response = mock(ServerResponse.class);
+        AtomicReference<byte[]> sent = new AtomicReference<>();
+
+        when(response.headers()).thenReturn(responseHeaders);
+        Mockito.doAnswer(inv -> {
+            sent.set(inv.getArgument(0));
+            return null;
+        }).when(response).send(any(byte[].class));
+
+        CachedHandler selected = handler.selectHandler(
+                identityHandler,
+                                                       request,
+                                                       (coding, suffix) -> Optional.empty());
+
+        selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
+
+        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
+        assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+        assertThat(new String(sent.get(), StandardCharsets.UTF_8), is("Nested content"));
+    }
+
+    private void assertSidecarSelected(String acceptEncoding, String contentEncoding, String body)
+            throws IOException, URISyntaxException {
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = inMemoryHandler("Nested content");
+        CachedHandler brHandler = inMemoryHandler("Brotli content")
+                .withRepresentation(ResponseRepresentation.encoded("br"));
+        CachedHandler gzipHandler = inMemoryHandler("Gzip content")
+                .withRepresentation(ResponseRepresentation.encoded("gzip"));
+        ServerRequest request = mockRequestWithHeaders(acceptEncoding, null, ContentEncodingContext.create());
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse response = mock(ServerResponse.class);
+        AtomicReference<byte[]> sent = new AtomicReference<>();
+
+        when(response.headers()).thenReturn(responseHeaders);
+        Mockito.doAnswer(inv -> {
+            sent.set(inv.getArgument(0));
+            return null;
+        }).when(response).send(any(byte[].class));
+
+        CachedHandler selected = handler.selectHandler(
+                identityHandler,
+                                                       request,
+                                                       (coding, suffix) -> switch (coding) {
+                                                           case "br" -> Optional.of(brHandler);
+                                                           case "gzip" -> Optional.of(gzipHandler);
+                                                           default -> Optional.empty();
+                                                       });
+
+        selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
+
+        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, contentEncoding));
+        assertThat(new String(sent.get(), StandardCharsets.UTF_8), is(body));
     }
 
     private static void assertHttpException(Runnable runnable, Status status) {

@@ -86,8 +86,9 @@ record CachedHandlerInMemory(MediaType mediaType,
                           ServerResponse response,
                           String requestedResource) throws IOException {
         // etag etc.
+        String etag = null;
         if (lastModified != null) {
-            String etag = representation.etag(String.valueOf(lastModified.toEpochMilli()), contentLength);
+            etag = representation.etag(String.valueOf(lastModified.toEpochMilli()), contentLength);
             try {
                 boolean ifNoneMatchPresent = processEtag(etag, representation.weakEtag(), request.headers(), response.headers());
                 processModifyHeaders(lastModified,
@@ -109,7 +110,7 @@ record CachedHandlerInMemory(MediaType mediaType,
                 representation.apply(response);
                 sendRuntimeEncoded(response);
             } else {
-                send(request, response);
+                send(request, response, etag);
             }
         } else {
             representation.apply(response);
@@ -139,7 +140,7 @@ record CachedHandlerInMemory(MediaType mediaType,
         return sidecarCache;
     }
 
-    private void send(ServerRequest request, ServerResponse response) {
+    private void send(ServerRequest request, ServerResponse response, String etag) {
         ServerRequestHeaders headers = request.headers();
 
         if (headers.contains(HeaderNames.RANGE)) {
@@ -148,7 +149,10 @@ record CachedHandlerInMemory(MediaType mediaType,
                 List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
                                                                        response,
                                                                        headers.get(HeaderNames.RANGE).values(),
-                                                                       contentLength);
+                                                                       contentLength,
+                                                                       etag,
+                                                                       representation.weakEtag(),
+                                                                       lastModified);
                 if (ranges.size() == 1) {
                     // single response
                     ByteRangeRequest range = ranges.getFirst();

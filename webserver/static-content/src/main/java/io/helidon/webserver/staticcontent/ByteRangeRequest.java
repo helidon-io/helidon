@@ -16,12 +16,15 @@
 
 package io.helidon.webserver.staticcontent;
 
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.http.BadRequestException;
+import io.helidon.http.DateTime;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
@@ -33,6 +36,20 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
     private static final Pattern RANGE_PATTERN = Pattern.compile("(\\d+)?-(\\d+)?(?:, )?");
 
     static List<ByteRangeRequest> parse(ServerRequest req, ServerResponse res, String headerValues, long fileLength) {
+        return parse(req, res, headerValues, fileLength, null, false, null);
+    }
+
+    static List<ByteRangeRequest> parse(ServerRequest req,
+                                        ServerResponse res,
+                                        String headerValues,
+                                        long fileLength,
+                                        String etag,
+                                        boolean weakEtag,
+                                        Instant lastModified) {
+        if (!ifRangeMatches(req, etag, weakEtag, lastModified)) {
+            return List.of();
+        }
+
         Matcher matcher = RANGE_PATTERN.matcher(headerValues);
 
         List<ByteRangeRequest> parts = new ArrayList<>();
@@ -67,6 +84,31 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
         }
 
         return parts;
+    }
+
+    private static boolean ifRangeMatches(ServerRequest req, String etag, boolean weakEtag, Instant lastModified) {
+        if (!req.headers().contains(HeaderNames.IF_RANGE)) {
+            return true;
+        }
+
+        String ifRange = req.headers().get(HeaderNames.IF_RANGE).get().trim();
+        if (ifRange.startsWith("\"") || StaticContentHandler.isWeakETag(ifRange)) {
+            return !weakEtag
+                    && etag != null
+                    && !StaticContentHandler.isWeakETag(ifRange)
+                    && StaticContentHandler.unquoteETag(ifRange).equals(StaticContentHandler.unquoteETag(etag));
+        }
+
+        if (lastModified == null) {
+            return false;
+        }
+
+        try {
+            Instant ifRangeDate = DateTime.parse(ifRange).toInstant();
+            return !lastModified.isAfter(ifRangeDate);
+        } catch (DateTimeParseException e) {
+            return false;
+        }
     }
 
     void setContentRange(ServerResponse response) {

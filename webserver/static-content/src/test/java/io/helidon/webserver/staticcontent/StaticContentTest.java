@@ -286,6 +286,53 @@ class StaticContentTest {
     }
 
     @Test
+    void testFileSystemPreCompressedIfRangeUsesSelectedRepresentationEtag() {
+        String identityEtag;
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            identityEtag = response.headers().get(HeaderNames.ETAG).get();
+        }
+
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "br")
+                .header(HeaderNames.RANGE, "bytes=2-5")
+                .header(HeaderNames.IF_RANGE, identityEtag)
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_RANGE));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+            assertThat(response.as(String.class), is("Brotli content"));
+        }
+    }
+
+    @Test
+    void testFileSystemPreCompressedIfRangeAllowsMatchingSelectedRepresentationEtag() {
+        String brotliEtag;
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "br")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            brotliEtag = response.headers().get(HeaderNames.ETAG).get();
+        }
+
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "br")
+                .header(HeaderNames.RANGE, "bytes=2-5")
+                .header(HeaderNames.IF_RANGE, brotliEtag)
+                .request()) {
+
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 2-5/14"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+            assertThat(response.as(String.class), is("otli"));
+        }
+    }
+
+    @Test
     void testFileSystemPreCompressedDisabled() {
         try (Http1ClientResponse response = testClient.get("/path-disabled/resource.txt")
                 .header(HeaderNames.ACCEPT_ENCODING, "br")

@@ -81,6 +81,10 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         return fileName.toString();
     }
 
+    static void processContentLength(long contentLength, ServerResponseHeaders headers) {
+        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength));
+    }
+
     static byte[] readAllBytes(Path path, boolean followLinks, Path secureRoot) throws IOException {
         try (SeekableByteChannel channel = newByteChannel(path, followLinks, secureRoot);
                 InputStream in = Channels.newInputStream(channel)) {
@@ -88,14 +92,12 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         }
     }
 
-    static void processContentLength(long contentLength, ServerResponseHeaders headers) {
-        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength));
-    }
-
     static void send(ServerRequest request,
                      ServerResponse response,
                      SeekableByteChannel channel,
-                     ResponseRepresentation representation) throws IOException {
+                     ResponseRepresentation representation,
+                     String etag,
+                     Instant lastModified) throws IOException {
         if (representation.runtimeEncoded()) {
             sendRuntimeEncoded(response, channel, representation);
             return;
@@ -109,7 +111,10 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                 ranges = ByteRangeRequest.parse(request,
                                                 response,
                                                 headers.get(HeaderNames.RANGE).values(),
-                                                contentLength);
+                                                contentLength,
+                                                etag,
+                                                representation.weakEtag(),
+                                                lastModified);
             } catch (HttpException e) {
                 representation.apply(e);
                 throw e;
@@ -138,7 +143,6 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                 }
             } else {
                 // multipart response not yet supported, send all
-                // send the full file
                 representation.apply(response);
                 processContentLength(contentLength, response.headers());
                 channel.position(0);
@@ -148,7 +152,6 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                 }
             }
         } else {
-            // send the full file
             representation.apply(response);
             processContentLength(contentLength, response.headers());
             channel.position(0);

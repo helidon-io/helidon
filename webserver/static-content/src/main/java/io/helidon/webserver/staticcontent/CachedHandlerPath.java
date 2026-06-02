@@ -192,9 +192,10 @@ record CachedHandlerPath(Path path,
         }
 
         try (SeekableByteChannel openChannel = channel) {
+            String etag = null;
             if (lastModified != null) {
                 long etagContentLength = representation.etagRequiresContentLength() ? openChannel.size() : -1;
-                String etag = representation.etag(String.valueOf(lastModified.toEpochMilli()), etagContentLength);
+                etag = representation.etag(String.valueOf(lastModified.toEpochMilli()), etagContentLength);
                 try {
                     boolean ifNoneMatchPresent = processEtag(etag,
                                                             representation.weakEtag(),
@@ -218,7 +219,9 @@ record CachedHandlerPath(Path path,
                 FileBasedContentHandler.send(request,
                                              response,
                                              openChannel,
-                                             representation);
+                                             representation,
+                                             etag,
+                                             lastModified);
             } else {
                 representation.apply(response);
                 if (!representation.runtimeEncoded()) {
