@@ -28,8 +28,10 @@ import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.graphql.server.GraphQlConstants;
 import io.helidon.graphql.server.InvocationHandler;
+import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.SecureHandler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -57,12 +59,14 @@ public class GraphQlService implements HttpService {
     private final String schemaUri;
     private final InvocationHandler invocationHandler;
     private final ExecutorService executor;
+    private final boolean permitAll;
 
     private GraphQlService(Builder builder) {
         this.context = builder.context;
         this.schemaUri = builder.schemaUri;
         this.invocationHandler = builder.handler;
         this.executor = builder.executor.get();
+        this.permitAll = builder.permitAll;
     }
 
     /**
@@ -90,10 +94,17 @@ public class GraphQlService implements HttpService {
     @Override
     public void routing(HttpRules rules) {
         // schema
-        rules.get(context + schemaUri, this::graphQlSchema);
+        rules.get(context + schemaUri, protect(this::graphQlSchema));
         // get and post endpoint for graphQL
-        rules.get(context, this::graphQlGet)
-                .post(context, this::graphQlPost);
+        rules.get(context, protect(this::graphQlGet))
+                .post(context, protect(this::graphQlPost));
+    }
+
+    private Handler protect(Handler handler) {
+        if (permitAll) {
+            return handler;
+        }
+        return SecureHandler.authenticate().wrap(handler);
     }
 
     // handle POST request for GraphQL endpoint
@@ -162,6 +173,7 @@ public class GraphQlService implements HttpService {
         private String schemaUri = GraphQlConstants.GRAPHQL_SCHEMA_URI;
         private Supplier<? extends ExecutorService> executor;
         private InvocationHandler handler;
+        private boolean permitAll;
 
         private Builder() {
         }
@@ -204,6 +216,11 @@ public class GraphQlService implements HttpService {
          *     <td>URI that serves the schema (under web context)</td>
          * </tr>
          * <tr>
+         *     <td>permit-all</td>
+         *     <td>{@code false}</td>
+         *     <td>Whether to permit access without authentication.</td>
+         * </tr>
+         * <tr>
          *     <td>executor-service</td>
          *     <td>default server thread pool configuration</td>
          *     <td>see {@link io.helidon.common.configurable.ServerThreadPoolSupplier#builder()}</td>
@@ -216,6 +233,7 @@ public class GraphQlService implements HttpService {
         public Builder config(Config config) {
             config.get("web-context").asString().ifPresent(this::webContext);
             config.get("schema-uri").asString().ifPresent(this::schemaUri);
+            config.get("permit-all").asBoolean().ifPresent(this::permitAll);
 
             if (executor == null) {
                 executor = ServerThreadPoolSupplier.builder()
@@ -277,6 +295,18 @@ public class GraphQlService implements HttpService {
                 this.schemaUri = "/" + uri;
             }
 
+            return this;
+        }
+
+        /**
+         * Whether to permit access without authentication.
+         * This applies to GET and POST requests to the GraphQL endpoint and to the schema endpoint.
+         *
+         * @param permitAll whether requests are permitted without authentication
+         * @return updated builder instance
+         */
+        public Builder permitAll(boolean permitAll) {
+            this.permitAll = permitAll;
             return this;
         }
 

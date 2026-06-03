@@ -82,6 +82,7 @@ class GraphQlSnippets {
                 .routing(r -> r.register(GraphQlService.builder()
                                          .config(graphQlConfig)
                                          .invocationHandler(invocationHandler)
+                                         .permitAll(true)
                                          .build()))
                 .build();
         // end::snippet_1[]
