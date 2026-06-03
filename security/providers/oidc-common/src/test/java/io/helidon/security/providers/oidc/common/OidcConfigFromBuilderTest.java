@@ -62,6 +62,7 @@ import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_TOKEN
 import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.COOKIE;
 import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.PARAM;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -279,6 +280,49 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
             // reset the value
             cookieEncryptionPasswordValue[0] = null;
         }
+    }
+
+    @Test
+    void testTokenCookieEncryptedByDefault() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .cookieEncryptionPassword(COOKIE_ENCRYPTION_PASSWORD.toCharArray())
+                .build();
+        OidcCookieHandler cookieHandler = config.tokenCookieHandler();
+        String cookieValue = cookieHandler.createCookie(COOKIE_VALUE).build().value();
+        String cookieHeader = cookieHandler.cookieName() + "=" + cookieValue;
+
+        assertAll("token cookie encrypted by default",
+                  () -> assertThat("Encrypted cookie should not expose the token value",
+                                   cookieValue,
+                                   not(COOKIE_VALUE)),
+                  () -> assertThat(cookieHandler.findCookie(Map.of("Cookie", List.of(cookieHeader))),
+                                   is(Optional.of(COOKIE_VALUE))));
+    }
+
+    @Test
+    void testTokenCookieEncryptionCanBeDisabled() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .cookieEncryptionPassword(COOKIE_ENCRYPTION_PASSWORD.toCharArray())
+                .cookieEncryptionEnabled(false)
+                .build();
+        OidcCookieHandler cookieHandler = config.tokenCookieHandler();
+        String cookieValue = cookieHandler.createCookie(COOKIE_VALUE).build().value();
+        String cookieHeader = cookieHandler.cookieName() + "=" + cookieValue;
+
+        assertAll("token cookie encryption opt-out",
+                  () -> assertThat("Unencrypted cookie should preserve existing opt-out behavior",
+                                   cookieValue,
+                                   is(COOKIE_VALUE)),
+                  () -> assertThat(cookieHandler.findCookie(Map.of("Cookie", List.of(cookieHeader))),
+                                   is(Optional.of(COOKIE_VALUE))));
     }
 
     @Test

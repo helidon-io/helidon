@@ -260,8 +260,8 @@ import io.helidon.webclient.tracing.WebClientTracing;
  * </tr>
  * <tr>
  *     <td>{@code cookie-encryption-enabled}</td>
- *     <td>Depends on other configuration</td>
- *     <td>Whether cookies should be encrypted. Will be enabled if logout is enabled.</td>
+ *     <td>{@code true}</td>
+ *     <td>Whether the access token cookie should be encrypted.</td>
  * </tr>
  * <tr>
  *     <td>{@code cookie-encryption-password}</td>
@@ -987,6 +987,7 @@ public final class OidcConfig extends TenantConfigImpl {
                 .encryptionEnabled(true)
                 .cookieName(DEFAULT_TENANT_COOKIE_NAME);
         private final OidcCookieHandler.Builder tokenCookieBuilder = OidcCookieHandler.builder()
+                .encryptionEnabled(true)
                 .cookieName(DEFAULT_COOKIE_NAME);
         private final OidcCookieHandler.Builder idTokenCookieBuilder = OidcCookieHandler.builder()
                 .encryptionEnabled(true)
@@ -1495,13 +1496,13 @@ public final class OidcConfig extends TenantConfigImpl {
 
         /**
          * Whether to encrypt token cookie created by this microservice.
-         * Defaults to {@code false}.
+         * Defaults to {@code true}.
          *
-         * @param cookieEncryptionEnabled whether cookie should be encrypted {@code true}, or as obtained from
-         *                                OIDC server {@code false}
+         * @param cookieEncryptionEnabled whether cookie should be encrypted {@code true}, or left unencrypted
+         *                                {@code false}
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "false")
+        @ConfiguredOption(value = "true")
         public Builder cookieEncryptionEnabled(boolean cookieEncryptionEnabled) {
             this.tokenCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
             return this;
