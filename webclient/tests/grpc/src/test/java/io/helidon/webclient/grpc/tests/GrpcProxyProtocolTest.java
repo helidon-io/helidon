@@ -33,6 +33,8 @@ import javax.net.ssl.SSLParameters;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
+import io.grpc.CallOptions;
+import io.grpc.stub.ClientCalls;
 import io.grpc.stub.StreamObserver;
 
 import io.helidon.common.configurable.Resource;
@@ -310,6 +312,35 @@ public class GrpcProxyProtocolTest {
             var response = service.upper(Strings.StringMessage.newBuilder()
                                                  .setText("hello")
                                                  .build());
+
+            assertThat(response.getText(), is("HELLO"));
+        } finally {
+            server.stop();
+        }
+    }
+
+    @Test
+    public void testTlsOverTcpHostHeaderSniUsesGrpcAuthority() {
+        var server = WebServer.builder()
+            .tls(serverTls())
+            .bindAddress(new InetSocketAddress(Inet4Address.getLoopbackAddress(), 0))
+            .addRouting(GrpcRouting.builder()
+                .unary(Strings.getDescriptor(), "StringService", "Upper", GrpcProxyProtocolTest::upper))
+            .build();
+        server.start();
+
+        try {
+            GrpcClient grpcClient = GrpcClient.create(b -> b
+                .config(Config.create().get("grpc-client"))
+                .tls(clientTls())
+                .sni(sni -> sni.mode(SniMode.HOST_HEADER))
+                .baseUri(URI.create("https://127.0.0.1:" + server.port())));
+            var response = ClientCalls.blockingUnaryCall(grpcClient.channel(),
+                                                         StringServiceGrpc.getUpperMethod(),
+                                                         CallOptions.DEFAULT.withAuthority(LOGICAL_AUTHORITY),
+                                                         Strings.StringMessage.newBuilder()
+                                                                 .setText("hello")
+                                                                 .build());
 
             assertThat(response.getText(), is("HELLO"));
         } finally {

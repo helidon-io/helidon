@@ -162,7 +162,8 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
         // obtain HTTP2 connection
         ClientUri clientUri = nextClientUri();
-        ClientConnection clientConnection = clientConnection(clientUri);
+        String authority = authority(clientUri);
+        ClientConnection clientConnection = clientConnection(clientUri, authority);
         socket = clientConnection.helidonSocket();
         connection = Http2ClientConnection.create((Http2ClientImpl) grpcClient.http2Client(),
                                                   clientConnection, true);
@@ -202,7 +203,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         startStreamingThreads();
 
         // send HEADERS frame
-        WritableHeaders<?> headers = setupHeaders(metadata, clientUri.authority(), methodDescriptor.getFullMethodName());
+        WritableHeaders<?> headers = setupHeaders(metadata, authority, methodDescriptor.getFullMethodName());
         clientStream.writeHeaders(Http2Headers.create(headers), false);
     }
 
@@ -295,7 +296,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         return grpcClient;
     }
 
-    ClientConnection clientConnection(ClientUri clientUri) {
+    ClientConnection clientConnection(ClientUri clientUri, String authority) {
         WebClient webClient = grpcClient.webClient();
         GrpcClientConfig clientConfig = grpcClient.prototype();
         SniConfig sni = clientConfig.sni().orElse(null);
@@ -316,7 +317,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                                                                      clientConfig.dnsResolver(),
                                                                      clientConfig.dnsAddressLookup(),
                                                                      udsAddress,
-                                                                     emptyHeaders());
+                                                                     authorityHeaders(authority));
             }
             return UnixDomainSocketClientConnection.create(
                 webClient,
@@ -343,7 +344,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                     DefaultDnsResolver.create(),
                     DnsAddressLookup.defaultLookup(),
                     Proxy.noProxy(),
-                    emptyHeaders());
+                    authorityHeaders(authority));
         }
         return TcpClientConnection.create(webClient,
                                           connectionKey,
@@ -353,8 +354,18 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                                           }).connect();
     }
 
-    private static ClientRequestHeaders emptyHeaders() {
-        return ClientRequestHeaders.create(WritableHeaders.create());
+    private String authority(ClientUri clientUri) {
+        String authority = callOptions.getAuthority();
+        if (authority != null) {
+            return authority;
+        }
+        return clientUri.authority();
+    }
+
+    private static ClientRequestHeaders authorityHeaders(String authority) {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.set(HeaderValues.create(HeaderNames.HOST, authority));
+        return ClientRequestHeaders.create(headers);
     }
 
     boolean isRemoteOpen() {
