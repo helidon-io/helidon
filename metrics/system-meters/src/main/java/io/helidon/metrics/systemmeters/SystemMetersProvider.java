@@ -265,21 +265,11 @@ public class SystemMetersProvider implements MetersProvider {
                           GarbageCollectorMXBean::getCollectionCount,
                           Tag.create("name", poolName));
             // Express the GC time in seconds.
-            // @Deprecated(forRemoval = true) - Starting in Helidon 5 always register a gauge instead of checking which
-            // type of meter to register.
-            if (isGcTimeGauge()) {
-                registerGauge(result,
-                              metadata(GC_TIME),
-                              gcBean,
-                              bean -> (long) (bean.getCollectionTime() / 1000.0D),
-                              Tag.create("name", poolName));
-            } else {
-                registerFunctionalCounter(result,
-                                          metadata(GC_TIME),
-                                          gcBean,
-                                          bean -> (long) (bean.getCollectionTime() / 1000.0D),
-                                          Tag.create("name", poolName));
-            }
+            registerGauge(result,
+                          metadata(GC_TIME),
+                          gcBean,
+                          bean -> (long) (bean.getCollectionTime() / 1000.0D),
+                          Tag.create("name", poolName));
         }
         return result;
     }
@@ -306,12 +296,6 @@ public class SystemMetersProvider implements MetersProvider {
                            .description(metadata.description)
                            .baseUnit(metadata.baseUnit)
                            .tags(Arrays.asList(tags)));
-    }
-
-    @Deprecated(since = "4.1", forRemoval = true)
-    private boolean isGcTimeGauge() {
-        // Compare using the string so we can avoid exposing the temporary, deprecated enum as public in the config type.
-        return metricsFactory.metricsConfig().gcTimeType().name().equals("GAUGE");
     }
 
     private static class Metadata {
