@@ -946,12 +946,13 @@ cached in memory still count against the configured memory cache capacity.
 
 When listener content encoding is configured, static content can dynamically encode the logical resource when that
 runtime candidate is the best acceptable representation. Wildcard values can select runtime encoders.
-Pre-compressed sidecars win ties over runtime encoders, and non-identity candidates at the same quality win over
-`identity`; identity wins only with a higher quality or when no acceptable sidecar or runtime encoder is available. If
-two sidecars have the same quality, Helidon uses the `pre-compressed-encodings` order; the default order prefers `br`
-before `gzip`. If no acceptable sidecar or runtime encoder exists and the client rejects `identity`, Helidon responds
-with `406 Not Acceptable`. Dynamically encoded static responses ignore byte ranges, omit `Content-Length`, and use weak
-entity tags.
+For equal-quality concrete codings, Helidon follows the client `Accept-Encoding` header order. If the header order does
+not decide the result, Helidon prefers sidecars over runtime encoders and then uses the configured
+`pre-compressed-encodings` order for sidecars; the default order prefers `br` before `gzip`. Explicit `identity` follows
+the same client-order rule for equal-quality ties, while implicit `identity` is used only when no acceptable sidecar or
+runtime encoder is available. If no acceptable sidecar or runtime encoder exists and the client rejects `identity`,
+Helidon responds with `406 Not Acceptable`. Dynamically encoded static responses ignore byte ranges, omit
+`Content-Length`, and use weak entity tags.
 Malformed `Accept-Encoding` values, such as invalid coding tokens, unsupported parameters, or invalid `q` values, are
 rejected with `400 Bad Request`.
 
@@ -1194,9 +1195,12 @@ if data is transferred over low-bandwidth network links.
 
 A client advertises the compression encodings it supports at request time, and the
 WebServer responds by selecting an encoding it supports and setting it in a header,
-effectively _negotiating_ the content encoding of the response. If none of the
-advertised encodings is supported by the WebServer, the response is returned
-uncompressed.
+effectively _negotiating_ the content encoding of the response. Equal-quality concrete
+encodings follow the client `Accept-Encoding` header order, while wildcard matches use
+the configured provider order. Encoded responses include `Vary: Accept-Encoding`. If none
+of the advertised encodings is supported by the WebServer, the response is returned
+uncompressed unless the client rejects `identity`, in which case WebServer responds with
+`406 Not Acceptable`.
 
 Handlers can encode the response and set the appropriate header to preempt encoding by the
 WebServer. For instance, if a Handler sets the `Content-Encoding: gzip` header then the
