@@ -22,6 +22,7 @@ import java.net.URI;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -166,8 +167,8 @@ public final class JwtUtil {
                     try {
                         return URL_DECODER.decode(base64);
                     } catch (Exception e) {
-                        throw new JwtException("Failed to decode base64 from json for: " + description + ", value: \""
-                                                       + base64 + '"', e);
+                        throw new JwtException("Claim \"" + key + "\" is not a base64-url encoded value for: " + description,
+                                               e);
                     }
                 });
     }
@@ -471,28 +472,48 @@ public final class JwtUtil {
 
     static Optional<ZoneId> toTimeZone(JsonObject json, String name) {
         return getString(json, name)
-                .map(ZoneId::of);
+                .map(value -> {
+                    try {
+                        return ZoneId.of(value);
+                    } catch (DateTimeException e) {
+                        throw invalidClaim(name, "time zone");
+                    }
+                });
     }
 
     static Optional<LocalDate> toDate(JsonObject json, String name) {
         return getString(json, name)
                 .map(it -> {
-                    if (it.length() == 4) {
-                        return LocalDate.parse(it, YEAR_FORMAT);
-                    } else {
-                        return LocalDate.parse(it, DATE_FORMAT);
+                    try {
+                        if (it.length() == 4) {
+                            return LocalDate.parse(it, YEAR_FORMAT);
+                        } else {
+                            return LocalDate.parse(it, DATE_FORMAT);
+                        }
+                    } catch (DateTimeException e) {
+                        throw invalidClaim(name, "date");
                     }
                 });
     }
 
     static Optional<URI> toUri(JsonObject json, String name) {
         return getString(json, name)
-                .map(URI::create);
+                .map(value -> {
+                    try {
+                        return URI.create(value);
+                    } catch (IllegalArgumentException e) {
+                        throw invalidClaim(name, "URI");
+                    }
+                });
     }
 
     static Optional<Locale> toLocale(JsonObject json, String name) {
         return getString(json, name)
                 .map(JwtUtil::toLocale);
+    }
+
+    private static JwtException invalidClaim(String name, String expectedType) {
+        return new JwtException("Claim \"" + name + "\" is not a valid " + expectedType);
     }
 
     static Optional<Boolean> toBoolean(JsonObject json, String name) {

@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
@@ -111,7 +111,7 @@ public class JwtHeaders extends JwtClaims {
 
         int firstDot = token.indexOf('.');
         if (firstDot < 0) {
-            throw new JwtException("Not a JWT token: " + token);
+            throw new JwtException("Not a JWT token");
         }
         String headerBase64 = token.substring(0, firstDot);
         JwtHeaders jwtHeader = parseBase64(headerBase64, collector);
@@ -120,7 +120,7 @@ public class JwtHeaders extends JwtClaims {
     }
 
     static JwtHeaders parseBase64(String base64, Errors.Collector collector) {
-        String headerJsonString = decode(base64, collector, "JWT header");
+        String headerJsonString = decode(base64, collector, JwtTokenPart.JWT_HEADER);
 
         // if failed, do not continue
         if (collector.hasFatal()) {
@@ -129,7 +129,7 @@ public class JwtHeaders extends JwtClaims {
 
         // this is either a signed JWT or encrypted JWT, first section is always
         // base64 encoded header
-        JsonObject headerJson = parseJson(headerJsonString, collector, base64, "JWT header");
+        JsonObject headerJson = parseJson(headerJsonString, collector, JwtTokenPart.JWT_HEADER);
 
         // if failed, do not continue
         if (collector.hasFatal()) {
@@ -517,16 +517,16 @@ public class JwtHeaders extends JwtClaims {
             }
         }
 
-        private static List<String> jsonToStringList(JsonValue jsonValue) {
+        private static List<String> jsonToStringList(String claim, JsonValue jsonValue) {
             if (jsonValue instanceof JsonString) {
                 return List.of(jsonValue.asString().value());
             }
             if (jsonValue instanceof JsonArray) {
                 return jsonValue.asArray().values().stream()
-                        .map(KnownField::jsonToString)
+                        .map(value -> KnownField.jsonToString(claim, value))
                         .collect(Collectors.toList());
             }
-            throw new JwtException("Json value should have been a String or an array of Strings, but is " + jsonValue);
+            throw new JwtException("Header claim \"" + claim + "\" should have been a String or an array of Strings");
         }
 
         private static <T> void addKnownField(Map<String, KnownField<?>> map, KnownField<T> field) {
@@ -551,12 +551,12 @@ public class JwtHeaders extends JwtClaims {
         private final String name;
         private final GenericType<T> type;
         private final BiConsumer<JwtHeaders.Builder, T> valueConsumer;
-        private final Function<JsonValue, T> fromJson;
+        private final BiFunction<String, JsonValue, T> fromJson;
 
         private KnownField(String name,
                            GenericType<T> type,
                            BiConsumer<Builder, T> valueConsumer,
-                           Function<JsonValue, T> fromJson) {
+                           BiFunction<String, JsonValue, T> fromJson) {
             this.name = name;
             this.type = type;
             this.valueConsumer = valueConsumer;
@@ -567,11 +567,11 @@ public class JwtHeaders extends JwtClaims {
             return new KnownField<>(name, GenericType.STRING, valueConsumer, KnownField::jsonToString);
         }
 
-        private static String jsonToString(JsonValue jsonValue) {
+        private static String jsonToString(String claim, JsonValue jsonValue) {
             if (jsonValue instanceof JsonString) {
                 return jsonValue.asString().value();
             }
-            throw new JwtException("Json value should have been a String, but is " + jsonValue);
+            throw new JwtException("Header claim \"" + claim + "\" should have been a String");
         }
 
         BiConsumer<Builder, T> valueConsumer() {
@@ -583,7 +583,7 @@ public class JwtHeaders extends JwtClaims {
         }
 
         void set(Builder builder, JsonValue value) {
-            valueConsumer.accept(builder, fromJson.apply(value));
+            valueConsumer.accept(builder, fromJson.apply(name, value));
         }
 
         public boolean supports(Object value) {

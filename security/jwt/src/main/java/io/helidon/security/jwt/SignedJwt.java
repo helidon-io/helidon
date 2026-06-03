@@ -159,7 +159,7 @@ public final class SignedJwt {
             JwtHeaders headers = JwtHeaders.parseBase64(headerBase64, collector);
             return parse(tokenContent, collector, headers, headerBase64, payloadBase64, signatureBase64);
         } else {
-            throw new JwtException("Not a JWT token: " + tokenContent);
+            throw new JwtException("Not a JWT token");
         }
     }
 
@@ -192,7 +192,7 @@ public final class SignedJwt {
 
             return parse(tokenContent, Errors.collector(), headers, headerBase64, payloadBase64, signatureBase64);
         } else {
-            throw new JwtException("Not a JWT token: " + tokenContent);
+            throw new JwtException("Not a JWT token");
         }
     }
 
@@ -202,14 +202,14 @@ public final class SignedJwt {
                                    String headerBase64,
                                    String payloadBase64,
                                    String signatureBase64) {
-        String payloadJsonString = decode(payloadBase64, collector, "JWT payload");
-        byte[] signatureBytes = decodeBytes(signatureBase64, collector, "JWT signature");
+        String payloadJsonString = decode(payloadBase64, collector, JwtTokenPart.JWT_PAYLOAD);
+        byte[] signatureBytes = decodeBytes(signatureBase64, collector, JwtTokenPart.JWT_SIGNATURE);
 
         // if failed, do not continue
         collector.collect().checkValid();
 
         String signedContent = headerBase64 + '.' + payloadBase64;
-        JsonObject contentJson = parseJson(payloadJsonString, collector, payloadBase64, "JWT payload");
+        JsonObject contentJson = parseJson(payloadJsonString, collector, JwtTokenPart.JWT_PAYLOAD);
 
         collector.collect().checkValid();
 
@@ -221,11 +221,11 @@ public final class SignedJwt {
                 signatureBytes);
     }
 
-    private static JsonObject parseJson(String jsonString, Errors.Collector collector, String base64, String description) {
+    private static JsonObject parseJson(String jsonString, Errors.Collector collector, JwtTokenPart tokenPart) {
         try {
             return JsonParser.create(new StringReader(jsonString)).readJsonObject();
         } catch (Exception e) {
-            collector.fatal(base64, description + " is not a valid JSON object (value is base64 encoded)");
+            collector.fatal(tokenPart, tokenPart.text() + " is not a valid JSON object (value is base64 encoded)");
             return null;
         }
     }
@@ -238,20 +238,20 @@ public final class SignedJwt {
         return URL_ENCODER.encodeToString(bytes);
     }
 
-    private static String decode(String base64, Errors.Collector collector, String description) {
+    private static String decode(String base64, Errors.Collector collector, JwtTokenPart tokenPart) {
         try {
             return new String(URL_DECODER.decode(base64), StandardCharsets.UTF_8);
         } catch (Exception e) {
-            collector.fatal(base64, description + " is not a base64 encoded string.");
+            collector.fatal(tokenPart, tokenPart.text() + " is not a base64 encoded string.");
             return null;
         }
     }
 
-    private static byte[] decodeBytes(String base64, Errors.Collector collector, String description) {
+    private static byte[] decodeBytes(String base64, Errors.Collector collector, JwtTokenPart tokenPart) {
         try {
             return URL_DECODER.decode(base64);
         } catch (Exception e) {
-            collector.fatal(base64, description + " is not a base64 encoded string.");
+            collector.fatal(tokenPart, tokenPart.text() + " is not a base64 encoded string.");
             return null;
         }
     }

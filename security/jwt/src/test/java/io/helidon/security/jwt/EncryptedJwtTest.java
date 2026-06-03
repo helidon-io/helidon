@@ -179,6 +179,77 @@ public class EncryptedJwtTest {
     }
 
     @Test
+    void testInvalidJweFormatDoesNotRevealToken() {
+        String token = "opaque-secret-access-token";
+
+        JwtException exception = assertThrows(JwtException.class, () -> EncryptedJwt.parseToken(token));
+        assertThat(exception.getMessage(), is("Not a JWE token"));
+        assertThat(exception.getMessage(), not(containsString(token)));
+
+        JwtHeaders headers = JwtHeaders.builder()
+                .algorithm(SupportedAlgorithm.RSA_OAEP.toString())
+                .encryption(SupportedEncryption.A256GCM.toString())
+                .build();
+        exception = assertThrows(JwtException.class, () -> EncryptedJwt.parseToken(headers, token));
+        assertThat(exception.getMessage(), is("Not a JWE token"));
+        assertThat(exception.getMessage(), not(containsString(token)));
+    }
+
+    @Test
+    void testInvalidJweSegmentsDoNotRevealTokenParts() {
+        String validHeader = base64Url(JwtHeaders.builder()
+                                             .algorithm(SupportedAlgorithm.RSA_OAEP.toString())
+                                             .encryption(SupportedEncryption.A256GCM.toString())
+                                             .build()
+                                             .headerJsonObject()
+                                             .toString());
+        String validPart = "AA";
+        String header = "secret+jweHeader";
+        String encryptedKey = "secret+jweEncryptedKey";
+        String iv = "secret+jweIv";
+        String payload = "secret+jwePayload";
+        String authTag = "secret+jweAuthTag";
+        String headerToken = header + "." + validPart + "." + validPart + "." + validPart + "." + validPart;
+
+        Errors.ErrorMessagesException exception =
+                assertThrows(Errors.ErrorMessagesException.class, () -> EncryptedJwt.parseToken(headerToken));
+        assertRedactedError(exception, JwtTokenPart.JWT_HEADER, headerToken, header);
+
+        String encryptedKeyToken = validHeader + "." + encryptedKey + "." + validPart + "." + validPart + "." + validPart;
+        exception = assertThrows(Errors.ErrorMessagesException.class, () -> EncryptedJwt.parseToken(encryptedKeyToken));
+        assertRedactedError(exception, JwtTokenPart.JWE_ENCRYPTED_KEY, encryptedKeyToken, encryptedKey);
+
+        JwtHeaders headers = JwtHeaders.builder()
+                .algorithm(SupportedAlgorithm.RSA_OAEP.toString())
+                .encryption(SupportedEncryption.A256GCM.toString())
+                .build();
+        exception = assertThrows(Errors.ErrorMessagesException.class,
+                                 () -> EncryptedJwt.parseToken(headers, encryptedKeyToken));
+        assertRedactedError(exception, JwtTokenPart.JWE_ENCRYPTED_KEY, encryptedKeyToken, encryptedKey);
+
+        String ivToken = validHeader + "." + validPart + "." + iv + "." + validPart + "." + validPart;
+        exception = assertThrows(Errors.ErrorMessagesException.class, () -> EncryptedJwt.parseToken(ivToken));
+        assertRedactedError(exception, JwtTokenPart.JWE_INITIALIZATION_VECTOR, ivToken, iv);
+
+        exception = assertThrows(Errors.ErrorMessagesException.class, () -> EncryptedJwt.parseToken(headers, ivToken));
+        assertRedactedError(exception, JwtTokenPart.JWE_INITIALIZATION_VECTOR, ivToken, iv);
+
+        String payloadToken = validHeader + "." + validPart + "." + validPart + "." + payload + "." + validPart;
+        exception = assertThrows(Errors.ErrorMessagesException.class, () -> EncryptedJwt.parseToken(payloadToken));
+        assertRedactedError(exception, JwtTokenPart.JWE_PAYLOAD, payloadToken, payload);
+
+        exception = assertThrows(Errors.ErrorMessagesException.class, () -> EncryptedJwt.parseToken(headers, payloadToken));
+        assertRedactedError(exception, JwtTokenPart.JWE_PAYLOAD, payloadToken, payload);
+
+        String authTagToken = validHeader + "." + validPart + "." + validPart + "." + validPart + "." + authTag;
+        exception = assertThrows(Errors.ErrorMessagesException.class, () -> EncryptedJwt.parseToken(authTagToken));
+        assertRedactedError(exception, JwtTokenPart.JWE_AUTHENTICATION_TAG, authTagToken, authTag);
+
+        exception = assertThrows(Errors.ErrorMessagesException.class, () -> EncryptedJwt.parseToken(headers, authTagToken));
+        assertRedactedError(exception, JwtTokenPart.JWE_AUTHENTICATION_TAG, authTagToken, authTag);
+    }
+
+    @Test
     void testNimbusToHelidon() throws ParseException, JOSEException {
         JwkRSA jwk = (JwkRSA) jwkKeys.forKeyId("RS_512").orElseThrow();
         RSAPublicKey publicKey = (RSAPublicKey) jwk.publicKey();
@@ -212,6 +283,25 @@ public class EncryptedJwtTest {
 
         assertThat(JsonParser.create(signedJWT.getPayload().toString()).readJsonObject(),
                    is(signedJwt.getJwt().payloadJsonObject()));
+    }
+
+    private static void assertDoesNotContain(String message, String... values) {
+        for (String value : values) {
+            assertThat(message, not(containsString(value)));
+        }
+    }
+
+    private static void assertRedactedError(Errors.ErrorMessagesException exception,
+                                            JwtTokenPart tokenPart,
+                                            String... values) {
+        assertThat(exception.getMessage(), containsString(tokenPart.text()));
+        assertThat(exception.getMessages().size(), is(1));
+        assertThat(exception.getMessages().get(0).getSource(), is(tokenPart));
+        assertDoesNotContain(exception.getMessage(), values);
+    }
+
+    private static String base64Url(String value) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(value.getBytes(StandardCharsets.UTF_8));
     }
 
 }

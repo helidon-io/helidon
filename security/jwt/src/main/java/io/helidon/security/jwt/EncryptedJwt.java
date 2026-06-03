@@ -163,7 +163,7 @@ public final class EncryptedJwt {
             JwtHeaders header = JwtHeaders.parseBase64(headerBase64, collector);
             return parse(token, collector, header, encryptedKeyBase64, ivBase64, payloadBase64, authTagBase64);
         } else {
-            throw new JwtException("Not a JWE token: " + token);
+            throw new JwtException("Not a JWE token");
         }
     }
 
@@ -197,7 +197,7 @@ public final class EncryptedJwt {
 
             return parse(token, collector, header, encryptedKeyBase64, ivBase64, payloadBase64, authTagBase64);
         } else {
-            throw new JwtException("Not a JWE token: " + token);
+            throw new JwtException("Not a JWE token");
         }
     }
 
@@ -233,10 +233,10 @@ public final class EncryptedJwt {
                                       String ivBase64,
                                       String payloadBase64,
                                       String authTagBase64) {
-        byte[] encryptedKey = decodeBytes(encryptedKeyBase64, collector, "JWE encrypted key");
-        byte[] iv = decodeBytes(ivBase64, collector, "JWE initialization vector");
-        byte[] encryptedPayload = decodeBytes(payloadBase64, collector, "JWE payload");
-        byte[] authTag = decodeBytes(authTagBase64, collector, "JWE authentication tag");
+        byte[] encryptedKey = decodeBytes(encryptedKeyBase64, collector, JwtTokenPart.JWE_ENCRYPTED_KEY);
+        byte[] iv = decodeBytes(ivBase64, collector, JwtTokenPart.JWE_INITIALIZATION_VECTOR);
+        byte[] encryptedPayload = decodeBytes(payloadBase64, collector, JwtTokenPart.JWE_PAYLOAD);
+        byte[] authTag = decodeBytes(authTagBase64, collector, JwtTokenPart.JWE_AUTHENTICATION_TAG);
 
         // if failed, do not continue
         collector.collect().checkValid();
@@ -280,11 +280,11 @@ public final class EncryptedJwt {
         return URL_ENCODER.encodeToString(bytes);
     }
 
-    private static byte[] decodeBytes(String base64, Errors.Collector collector, String description) {
+    private static byte[] decodeBytes(String base64, Errors.Collector collector, JwtTokenPart tokenPart) {
         try {
             return URL_DECODER.decode(base64);
         } catch (Exception e) {
-            collector.fatal(base64, description + " is not a base64 encoded string.");
+            collector.fatal(tokenPart, tokenPart.text() + " is not a base64 encoded string.");
             return null;
         }
     }

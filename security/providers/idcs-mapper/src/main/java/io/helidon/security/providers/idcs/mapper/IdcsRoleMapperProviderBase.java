@@ -505,15 +505,26 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
 
             try (HttpClientResponse response = request.submit(params)) {
                 if (response.status().family() == Status.Family.SUCCESSFUL) {
+                    String accessToken;
                     try {
                         JsonObject jsonObject = response.as(JsonObject.class);
-                        String accessToken = jsonObject.stringValue(ACCESS_TOKEN_KEY).orElseThrow();
-                        LOGGER.log(Level.TRACE, () -> "Access token: " + accessToken);
+                        accessToken = jsonObject.stringValue(ACCESS_TOKEN_KEY).orElseThrow();
+                        LOGGER.log(Level.TRACE, () -> "IDCS application access token obtained; received token had "
+                                + accessToken.length() + " characters");
+                    } catch (Exception e) {
+                        LOGGER.log(Level.WARNING, "Failed to obtain access token for application to read "
+                                + "groups from IDCS. Failed with exception:  Failed to read JSON from response",
+                                   e);
+                        return new AppTokenData();
+                    }
+
+                    try {
                         SignedJwt signedJwt = SignedJwt.parseToken(accessToken);
                         return new AppTokenData(accessToken, signedJwt.getJwt());
                     } catch (Exception e) {
                         LOGGER.log(Level.WARNING, "Failed to obtain access token for application to read "
-                                + "groups from IDCS. Failed with exception:  Failed to read JSON from response",
+                                + "groups from IDCS. Access token is not a valid JWT; "
+                                + "received token had " + accessToken.length() + " characters",
                                    e);
                     }
                 } else {
