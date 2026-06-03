@@ -59,6 +59,7 @@ import io.helidon.http.encoding.ContentEncoding;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -295,10 +296,7 @@ class StaticContentHandlerTest {
         when(response.headers()).thenReturn(responseHeaders);
         when(response.outputStream()).thenReturn(sent);
 
-        CachedHandler selected = handler.selectHandler(
-                identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+        CachedHandler selected = handler.selectHandler(identityHandler, request, (coding, suffix) -> Optional.empty());
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
@@ -306,6 +304,55 @@ class StaticContentHandlerTest {
         assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_RANGE));
         assertThat(sent.toString(StandardCharsets.UTF_8), is("runtime:Nested content"));
         verify(response, never()).status(Status.PARTIAL_CONTENT_206);
+    }
+
+    @Test
+    void preCompressedDisabledRangeDisablesAutomaticEncoding() throws IOException, URISyntaxException {
+        TestContentHandler handler = new TestContentHandler(FileSystemHandlerConfig.builder()
+                                                                 .location(Paths.get("."))
+                                                                 .preCompressedEnabled(false)
+                                                                 .build(),
+                                                             true);
+        CachedHandler identityHandler = inMemoryHandler("Nested content");
+        ServerRequest request = mockRequestWithHeaders("gzip", "bytes=0-3", runtimeContentEncodingContext());
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        RoutingResponse response = mock(RoutingResponse.class);
+        AtomicReference<byte[]> sent = new AtomicReference<>();
+
+        when(response.headers()).thenReturn(responseHeaders);
+        Mockito.doAnswer(inv -> {
+            sent.set(inv.getArgument(0));
+            return null;
+        }).when(response).send(any(byte[].class));
+
+        CachedHandler selected = handler.selectHandler(identityHandler, request, (coding, suffix) -> Optional.empty());
+
+        selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
+
+        verify(response).automaticContentEncoding(false);
+        verify(response).status(Status.PARTIAL_CONTENT_206);
+        verify(response).header(HeaderValues.create(HeaderNames.CONTENT_RANGE, true, false, "bytes 0-3/14"));
+        verify(response).contentLength(4);
+        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
+        assertThat(new String(sent.get(), StandardCharsets.UTF_8), is("Nest"));
+    }
+
+    @Test
+    void preCompressedDisabledRangeRejectsRejectedIdentity() throws IOException, URISyntaxException {
+        TestContentHandler handler = new TestContentHandler(FileSystemHandlerConfig.builder()
+                                                                 .location(Paths.get("."))
+                                                                 .preCompressedEnabled(false)
+                                                                 .build(),
+                                                             true);
+        CachedHandler identityHandler = inMemoryHandler("Nested content");
+        ServerRequest request = mockRequestWithHeaders("identity;q=0", "bytes=0-3", runtimeContentEncodingContext());
+
+        HttpException actual = assertThrows(HttpException.class,
+                                            () -> handler.selectHandler(identityHandler,
+                                                                       request,
+                                                                       (coding, suffix) -> Optional.empty()));
+
+        assertThat(actual.status(), is(Status.NOT_ACCEPTABLE_406));
     }
 
     @Test

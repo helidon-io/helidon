@@ -300,6 +300,20 @@ class StaticContentTest {
     }
 
     @Test
+    void testFileSystemPreCompressedDisabledRangeDoesNotRuntimeEncode() {
+        try (Http1ClientResponse response = testClient.get("/path-disabled/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .header(HeaderNames.RANGE, "bytes=0-3")
+                .request()) {
+
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 0-3/7"));
+            assertThat(response.as(String.class), is("Cont"));
+        }
+    }
+
+    @Test
     void testFileSystemPreCompressedRejectsQZero() {
         try (Http1ClientResponse response = testClient.get("/path/resource.txt")
                 .header(HeaderNames.ACCEPT_ENCODING, "br;q=0")
