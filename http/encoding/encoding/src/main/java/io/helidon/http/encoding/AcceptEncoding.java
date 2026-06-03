@@ -235,8 +235,11 @@ public final class AcceptEncoding {
 
     /**
      * Select the best runtime encoding from the available codings.
+     * <p>
+     * Equal-quality concrete codings use the client header order, with the provided coding order as a fallback for
+     * wildcard and otherwise equivalent matches.
      *
-     * @param codings available concrete codings in server preference order
+     * @param codings available concrete codings in fallback order
      * @return best coding, identity, or empty if none is acceptable
      */
     public Optional<CodingQuality> best(List<String> codings) {
@@ -255,10 +258,7 @@ public final class AcceptEncoding {
 
         String bestCoding = null;
         Entry bestEntry = null;
-        int bestQ = INVALID_Q;
-        int bestOrder = IMPLICIT_IDENTITY_ORDER;
-        int bestServerOrder = Integer.MAX_VALUE;
-        boolean bestWildcard = false;
+        BestCandidate bestCandidate = null;
         boolean identityLosesEqualQuality = false;
         for (int i = 0; i < codings.size(); i++) {
             String coding = normalize(codings.get(i));
@@ -299,33 +299,34 @@ public final class AcceptEncoding {
                     && identityOrder > order) {
                 identityLosesEqualQuality = true;
             }
-            if (bestCoding == null || betterBestCoding(q, wildcardMatch, i, bestQ, bestWildcard, bestServerOrder)) {
+            BestCandidate candidate = new BestCandidate(q, wildcardMatch, order, i);
+            if (bestCoding == null || betterBestCoding(candidate, bestCandidate)) {
                 bestCoding = coding;
                 bestEntry = entry;
-                bestQ = q;
-                bestOrder = order;
-                bestServerOrder = i;
-                bestWildcard = wildcardMatch;
+                bestCandidate = candidate;
             }
         }
 
         if (!identityAccepted) {
             return bestCoding == null
                     ? Optional.empty()
-                    : Optional.of(codingQuality(bestCoding, bestEntry, bestQ, bestOrder, bestWildcard));
+                    : Optional.of(codingQuality(bestCoding, bestEntry, bestCandidate.q(),
+                                               bestCandidate.order(), bestCandidate.wildcard()));
         }
         if (bestCoding == null) {
             return Optional.of(identityQuality(identity));
         }
 
-        int q = Integer.compare(bestQ, identityQ);
+        int q = Integer.compare(bestCandidate.q(), identityQ);
         if (q > 0) {
-            return Optional.of(codingQuality(bestCoding, bestEntry, bestQ, bestOrder, bestWildcard));
+            return Optional.of(codingQuality(bestCoding, bestEntry, bestCandidate.q(),
+                                           bestCandidate.order(), bestCandidate.wildcard()));
         }
         if (q < 0 || (identityOrder != IMPLICIT_IDENTITY_ORDER && !identityLosesEqualQuality)) {
             return Optional.of(identityQuality(identity));
         }
-        return Optional.of(codingQuality(bestCoding, bestEntry, bestQ, bestOrder, bestWildcard));
+        return Optional.of(codingQuality(bestCoding, bestEntry, bestCandidate.q(),
+                                       bestCandidate.order(), bestCandidate.wildcard()));
     }
 
     private static Entry parse(String value, int start, int end, int order) {
@@ -391,15 +392,17 @@ public final class AcceptEncoding {
         return Integer.compare(first.order(), second.order());
     }
 
-    private static boolean betterBestCoding(int q, boolean wildcard, int serverOrder,
-                                            int currentQ, boolean currentWildcard, int currentServerOrder) {
-        if (q != currentQ) {
-            return q > currentQ;
+    private static boolean betterBestCoding(BestCandidate candidate, BestCandidate current) {
+        if (candidate.q() != current.q()) {
+            return candidate.q() > current.q();
         }
-        if (wildcard != currentWildcard) {
-            return !wildcard;
+        if (candidate.wildcard() != current.wildcard()) {
+            return !candidate.wildcard();
         }
-        return serverOrder < currentServerOrder;
+        if (candidate.order() != current.order()) {
+            return candidate.order() < current.order();
+        }
+        return candidate.serverOrder() < current.serverOrder();
     }
 
     private static int compareQuality(CodingQuality first, CodingQuality second) {
@@ -662,6 +665,9 @@ public final class AcceptEncoding {
         public int hashCode() {
             return codingQualityHashCode(this);
         }
+    }
+
+    private record BestCandidate(int q, boolean wildcard, int order, int serverOrder) {
     }
 
     private record Entry(String coding, int q, int order) {

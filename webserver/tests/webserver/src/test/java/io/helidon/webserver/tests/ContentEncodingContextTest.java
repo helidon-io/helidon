@@ -18,6 +18,7 @@ package io.helidon.webserver.tests;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -85,6 +86,13 @@ class ContentEncodingContextTest {
                         throw new IllegalStateException("Response stream reset failed");
                     }
                     res.send("hello webserver");
+                })
+                .get("/stream", (req, res) -> {
+                    try (OutputStream out = res.outputStream()) {
+                        out.write("hello webserver".getBytes(StandardCharsets.UTF_8));
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
                 });
     }
 
@@ -97,6 +105,34 @@ class ContentEncodingContextTest {
     }
 
     @Test
+    void testAutomaticContentEncodingAddsVaryAcceptEncoding() {
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .uri("/hello")
+                .header(HeaderNames.ACCEPT_ENCODING, "test")
+                .request()) {
+
+            assertThat(response.status(), equalTo(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "test"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+            assertThat(response.entity().as(String.class), equalTo("encoded:hello webserver"));
+        }
+    }
+
+    @Test
+    void testAutomaticContentEncodingAddsVaryAcceptEncodingForOutputStream() {
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .uri("/stream")
+                .header(HeaderNames.ACCEPT_ENCODING, "test")
+                .request()) {
+
+            assertThat(response.status(), equalTo(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "test"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+            assertThat(response.entity().as(String.class), equalTo("encoded:hello webserver"));
+        }
+    }
+
+    @Test
     void testResetRestoresAutomaticContentEncoding() {
         try (Http1ClientResponse response = client.method(Method.GET)
                 .uri("/reset")
@@ -105,6 +141,7 @@ class ContentEncodingContextTest {
 
             assertThat(response.status(), equalTo(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "test"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
             assertThat(response.entity().as(String.class), equalTo("encoded:hello webserver"));
         }
     }
@@ -118,6 +155,7 @@ class ContentEncodingContextTest {
 
             assertThat(response.status(), equalTo(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "test"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
             assertThat(response.entity().as(String.class), equalTo("encoded:hello webserver"));
         }
     }
