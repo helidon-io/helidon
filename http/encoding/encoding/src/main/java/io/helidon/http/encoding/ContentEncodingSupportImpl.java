@@ -145,15 +145,19 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
             return ContentEncoder.NO_OP;
         }
 
-        Set<String> selectableEncodingIds = new LinkedHashSet<>(contentEncodingIds);
+        Map<String, EncodingCandidate> candidates = new LinkedHashMap<>();
+        Set<String> probedCodings = new LinkedHashSet<>();
+        for (String coding : contentEncodingIds) {
+            addEncodingCandidate(candidates, probedCodings, coding);
+        }
         for (AcceptEncoding.CodingQuality quality : acceptEncoding.acceptedCodings(false)) {
             String coding = quality.coding();
             if (contentEncodingSupported(coding)) {
-                selectableEncodingIds.add(coding);
+                addEncodingCandidate(candidates, probedCodings, coding);
             }
         }
 
-        Optional<AcceptEncoding.CodingQuality> selected = acceptEncoding.best(List.copyOf(selectableEncodingIds));
+        Optional<AcceptEncoding.CodingQuality> selected = acceptEncoding.best(List.copyOf(candidates.keySet()));
         if (selected.isEmpty()) {
             throw new HttpException("No acceptable response content encoding", Status.NOT_ACCEPTABLE_406, true);
         }
@@ -162,12 +166,7 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
             return ContentEncoder.NO_OP;
         }
 
-        ContentEncoder encoder = encoders.get(selectedCoding);
-        String emittedCoding = responseCoding(selectedCoding, encoder);
-        if (!emittedCoding.equals(selectedCoding) && acceptEncoding.match(emittedCoding, true).isEmpty()) {
-            throw new HttpException("No acceptable response content encoding", Status.NOT_ACCEPTABLE_406, true);
-        }
-        return encoder;
+        return candidates.get(selectedCoding).encoder();
     }
 
     @Override
@@ -198,6 +197,24 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
             return headers.get(HeaderNames.CONTENT_ENCODING).get().toLowerCase(Locale.ROOT);
         }
         return coding;
+    }
+
+    private void addEncodingCandidate(Map<String, EncodingCandidate> candidates,
+                                      Set<String> probedCodings,
+                                      String coding) {
+        String normalized = coding.toLowerCase(Locale.ROOT);
+        if (!probedCodings.add(normalized)) {
+            return;
+        }
+        ContentEncoder encoder = encoders.get(normalized);
+        if (encoder == null) {
+            return;
+        }
+        String emittedCoding = responseCoding(normalized, encoder);
+        candidates.putIfAbsent(emittedCoding, new EncodingCandidate(encoder));
+    }
+
+    private record EncodingCandidate(ContentEncoder encoder) {
     }
 
 }

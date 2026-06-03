@@ -27,7 +27,11 @@ import io.helidon.config.NamedService;
  */
 public interface ContentEncoding extends NamedService {
     /**
-     * Identification(s) of this scheme as used in {@code Accept-Encoding} and {@code Content-Encoding} headers.
+     * Identification(s) of this scheme.
+     * <p>
+     * Helidon accepts these identifiers in request {@code Accept-Encoding} headers. Automatic response encoding
+     * negotiation uses the {@code Content-Encoding} value written by {@link ContentEncoder#headers} when the encoder
+     * emits a concrete coding that differs from the accepted identifier.
      *
      * @return identifications, such as {@code deflate}, {@code gzip}
      */
