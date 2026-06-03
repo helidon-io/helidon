@@ -325,6 +325,16 @@ abstract class StaticContentHandler implements HttpService {
                                 ServerRequest request,
                                 SidecarResolver sidecarResolver) throws IOException, URISyntaxException {
         if (!preCompressedEnabled) {
+            if (request.headers().contains(HeaderNames.RANGE)) {
+                AcceptEncoding acceptEncoding = AcceptEncoding.create(request.headers());
+                if (!acceptEncoding.valid()) {
+                    throw new BadRequestException("Invalid Accept-Encoding header");
+                }
+                if (acceptEncoding.identity().isEmpty()) {
+                    throw new HttpException("No acceptable response content encoding", Status.NOT_ACCEPTABLE_406, true);
+                }
+                return identityHandler.withRepresentation(ResponseRepresentation.identity(acceptEncoding.present()));
+            }
             return identityHandler;
         }
 

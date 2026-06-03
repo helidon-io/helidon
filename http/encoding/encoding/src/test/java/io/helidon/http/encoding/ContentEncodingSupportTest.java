@@ -359,22 +359,23 @@ class ContentEncodingSupportTest {
 
     @Test
     void testRuntimeEncoderRejectsRejectedEmittedCoding() {
-        ContentEncoder gzipEncoder = new ContentEncoder() {
-            @Override
-            public OutputStream apply(OutputStream network) {
-                return network;
-            }
-
-            @Override
-            public void headers(WritableHeaders<?> headers) {
-                headers.set(HeaderNames.CONTENT_ENCODING, "gzip");
-            }
-        };
+        ContentEncoder gzipEncoder = gzipHeaderEncoder();
         ContentEncodingContext context = ContentEncodingContext.builder()
                 .addContentEncoding(new TestEncoding(gzipEncoder, Set.of("gzip", "x-gzip"), true, false, "gzip"))
                 .build();
 
         assertNotAcceptable(context, "x-gzip, gzip;q=0, identity;q=0");
+    }
+
+    @Test
+    void testRuntimeEncoderUsesBestEmittedCoding() {
+        ContentEncoder gzipEncoder = gzipHeaderEncoder();
+        ContentEncodingContext context = ContentEncodingContext.builder()
+                .addContentEncoding(new TestEncoding(gzipEncoder, Set.of("gzip", "x-gzip"), true, false, "gzip"))
+                .build();
+
+        assertThat(context.encoder(headers("x-gzip, identity;q=0.75, gzip;q=0.5")),
+                   sameInstance(ContentEncoder.NO_OP));
     }
 
     @Test
@@ -409,6 +410,20 @@ class ContentEncodingSupportTest {
             @Override
             public OutputStream apply(OutputStream network) {
                 return network;
+            }
+        };
+    }
+
+    private static ContentEncoder gzipHeaderEncoder() {
+        return new ContentEncoder() {
+            @Override
+            public OutputStream apply(OutputStream network) {
+                return network;
+            }
+
+            @Override
+            public void headers(WritableHeaders<?> headers) {
+                headers.set(HeaderNames.CONTENT_ENCODING, "gzip");
             }
         };
     }
