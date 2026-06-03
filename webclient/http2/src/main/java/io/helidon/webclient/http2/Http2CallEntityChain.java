@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,12 @@ class Http2CallEntityChain extends Http2CallChainBase {
                          CompletableFuture<WebClientServiceRequest> whenSent,
                          CompletableFuture<WebClientServiceResponse> whenComplete,
                          Object entity) {
-        super(http2Client, request, whenComplete, it -> it.submit(entity));
+        super(http2Client,
+              request,
+              whenComplete,
+              new Http1FallbackHandler(whenSent,
+                                       http1Request -> http1Request.submit(entity),
+                                       bodyless(entity)));
         this.whenSent = whenSent;
         this.entity = entity;
     }
@@ -90,5 +95,10 @@ class Http2CallEntityChain extends Http2CallChainBase {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         writer.write(genericType, entity, bos, headers);
         return bos.toByteArray();
+    }
+
+    private static boolean bodyless(Object entity) {
+        return entity == BufferData.EMPTY_BYTES
+                || entity instanceof byte[] bytes && bytes.length == 0;
     }
 }

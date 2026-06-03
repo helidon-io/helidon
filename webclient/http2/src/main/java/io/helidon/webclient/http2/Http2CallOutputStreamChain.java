@@ -55,7 +55,9 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         super(http2Client,
               http2ClientRequest,
               whenComplete,
-              req -> req.outputStream(streamHandler));
+              new Http1FallbackHandler(whenSent,
+                                       http1Request -> http1Request.outputStream(streamHandler),
+                                       false));
 
         this.whenSent = whenSent;
         this.streamHandler = streamHandler;

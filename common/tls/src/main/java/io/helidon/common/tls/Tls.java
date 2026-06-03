@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
@@ -37,6 +38,7 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 /**
@@ -196,13 +198,45 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
      * @return a new socket ready for TLS communication
      */
     public SSLSocket createSocket(List<String> alpnProtocols, Socket socket, InetSocketAddress address) {
+        return createSocketInternal(alpnProtocols, socket, address.getHostName(), address.getPort(), null);
+    }
+
+    /**
+     * Create a SSLSocket for the chosen protocol and the given socket.
+     *
+     * @param alpnProtocols       protocol(s) to use (order is significant)
+     * @param socket              existing socket
+     * @param tlsPeerHost         TLS peer host for SNI and endpoint identification
+     * @param tlsPeerPort         TLS peer port for endpoint identification
+     * @param serverNamesOverride server names to use for this socket
+     * @return a new socket ready for TLS communication
+     */
+    @Api.Internal
+    public SSLSocket createSocket(List<String> alpnProtocols,
+                                  Socket socket,
+                                  String tlsPeerHost,
+                                  int tlsPeerPort,
+                                  List<SNIServerName> serverNamesOverride) {
+        Objects.requireNonNull(tlsPeerHost, "tlsPeerHost");
+        Objects.requireNonNull(serverNamesOverride, "serverNamesOverride");
+        return createSocketInternal(alpnProtocols, socket, tlsPeerHost, tlsPeerPort, serverNamesOverride);
+    }
+
+    private SSLSocket createSocketInternal(List<String> alpnProtocols,
+                                           Socket socket,
+                                           String tlsPeerHost,
+                                           int tlsPeerPort,
+                                           List<SNIServerName> serverNamesOverride) {
         checkEnabled();
         try {
             SSLSocket sslSocket = (SSLSocket) sslSocketFactory
-                    .createSocket(socket, address.getHostName(), address.getPort(), true);
+                    .createSocket(socket, tlsPeerHost, tlsPeerPort, true);
 
             SSLParameters parameters = copySslParameters(sslParameters);
             parameters.setApplicationProtocols(alpnProtocols.toArray(new String[0]));
+            if (serverNamesOverride != null) {
+                parameters.setServerNames(serverNamesOverride);
+            }
 
             sslSocket.setSSLParameters(parameters);
             return sslSocket;

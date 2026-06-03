@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -283,12 +283,13 @@ include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_12, indent=0]
 == Configuration
 
 TLS can be configured externally, just like it is done when using the
-WebClient to access an HTTP endpoint. For more information, see
-https://helidon.io/docs/v4/se/webclient#_configuring_the_webclient[Configuring the WebClient].
+WebClient to access an HTTP endpoint. Common WebClient options, including
+SNI, also apply to gRPC clients. For more information, see
+xref:{rootdir}/se/webclient.adoc#_configuring_the_webclient[Configuring the WebClient]
+and xref:{rootdir}/se/webclient.adoc#_configuring_tls_sni[Configuring TLS SNI].
 
 There are a few configuration options (see table below) that are specific to a `GrpcClient` and
 can be configured using a `GrpcClientProtocolConfig` instance. See
 https://github.com/helidon-io/helidon-examples/blob/dev-4.x/examples/webserver/grpc-random/src/test/java/io/helidon/examples/webserver/grpc/random/RandomServiceTest.java[RandomServiceTest] for an example.
 
 include::{rootdir}/config/io_helidon_webclient_grpc_GrpcClientProtocolConfig.adoc[leveloffset=+1,tag=config]
-

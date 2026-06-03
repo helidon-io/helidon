@@ -191,6 +191,7 @@ class LoomClient implements WebClient {
                        String authority, // myserver:80
                        String transportKey, // optional explicit transport address, such as a UDS path (may be null)
                        Tls tlsConfig, // TLS configuration (may be disabled, never null)
+                       SniSupport.State sni,
                        Proxy proxy) { // proxy, never null
     }
 }
