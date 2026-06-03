@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
     private static final Pattern RANGE_PATTERN = Pattern.compile("(\\d+)?-(\\d+)?(?:, )?");
 
     static List<ByteRangeRequest> parse(ServerRequest req, ServerResponse res, String headerValues, long fileLength) {
-        return parse(req, res, headerValues, fileLength, null, false, null);
+        return parseRanges(req, res, headerValues, fileLength);
     }
 
     static List<ByteRangeRequest> parse(ServerRequest req,
@@ -50,6 +50,13 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
             return List.of();
         }
 
+        return parseRanges(req, res, headerValues, fileLength);
+    }
+
+    private static List<ByteRangeRequest> parseRanges(ServerRequest req,
+                                                      ServerResponse res,
+                                                      String headerValues,
+                                                      long fileLength) {
         Matcher matcher = RANGE_PATTERN.matcher(headerValues);
 
         List<ByteRangeRequest> parts = new ArrayList<>();

@@ -271,6 +271,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
             }
             entity = baos.toByteArray();
             encoder.headers(headers());
+            mergeVaryAcceptEncoding();
         }
         return entity;
     }
@@ -287,10 +288,28 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
                 && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
             encoder.headers(headers());
+            mergeVaryAcceptEncoding();
 
             return encoder.apply(outputStream);
         }
         return outputStream;
+    }
+
+    private void mergeVaryAcceptEncoding() {
+        if (!requestHeaders.contains(HeaderNames.ACCEPT_ENCODING)) {
+            return;
+        }
+        if (headers().contains(HeaderNames.VARY)) {
+            for (String value : headers().get(HeaderNames.VARY).allValues()) {
+                String[] values = value.split(",");
+                for (String vary : values) {
+                    if (HeaderNames.ACCEPT_ENCODING_NAME.equalsIgnoreCase(vary.trim())) {
+                        return;
+                    }
+                }
+            }
+        }
+        headers().add(HeaderValues.create(HeaderNames.VARY, true, false, HeaderNames.ACCEPT_ENCODING_NAME));
     }
 
     /**

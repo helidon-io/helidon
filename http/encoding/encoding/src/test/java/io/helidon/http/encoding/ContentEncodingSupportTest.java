@@ -63,7 +63,7 @@ class ContentEncodingSupportTest {
         assertQuality(acceptEncoding.match("gzip", false).orElseThrow(), "gzip", 1D, false);
         assertQuality(acceptEncoding.match("compress", false).orElseThrow(), "compress", 1D, false);
         assertQuality(acceptEncoding.match("br", false).orElseThrow(), "br", 1D, false);
-        assertThat(acceptEncoding.best(List.of("br", "compress", "gzip")).orElseThrow().coding(), is("br"));
+        assertThat(acceptEncoding.best(List.of("br", "compress", "gzip")).orElseThrow().coding(), is("gzip"));
     }
 
     @Test
@@ -181,10 +181,10 @@ class ContentEncodingSupportTest {
     }
 
     @Test
-    void testBestUsesServerOrderWhenIdentityIsBetweenConcreteCodings() {
+    void testBestUsesHeaderOrderWhenIdentityIsBetweenConcreteCodings() {
         AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("gzip, identity, br"));
 
-        assertThat(acceptEncoding.best(List.of("br", "gzip")).orElseThrow().coding(), is("br"));
+        assertThat(acceptEncoding.best(List.of("br", "gzip")).orElseThrow().coding(), is("gzip"));
     }
 
     @Test
@@ -199,6 +199,13 @@ class ContentEncodingSupportTest {
         AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("*;q=0.5, identity;q=0"));
 
         assertQuality(acceptEncoding.best(List.of("br")).orElseThrow(), "br", 0.5D, true);
+    }
+
+    @Test
+    void testBestWildcardUsesFallbackOrder() {
+        AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("*;q=0.5, identity;q=0"));
+
+        assertQuality(acceptEncoding.best(List.of("br", "gzip")).orElseThrow(), "br", 0.5D, true);
     }
 
     @Test
@@ -307,7 +314,7 @@ class ContentEncodingSupportTest {
     }
 
     @Test
-    void testRuntimeEncoderUsesProviderOrderForEqualQualityCodings() {
+    void testRuntimeEncoderUsesHeaderOrderForEqualQualityCodings() {
         ContentEncoder brEncoder = gzipEncoder();
         ContentEncoder gzipEncoder = gzipEncoder();
         ContentEncodingContext context = ContentEncodingContext.builder()
@@ -315,7 +322,8 @@ class ContentEncodingSupportTest {
                 .addContentEncoding(new TestEncoding(gzipEncoder, Set.of("gzip"), true, false, "gzip"))
                 .build();
 
-        assertThat(context.encoder(headers("gzip, br")), sameInstance(brEncoder));
+        assertThat(context.encoder(headers("gzip, br")), sameInstance(gzipEncoder));
+        assertThat(context.encoder(headers("br, gzip")), sameInstance(brEncoder));
     }
 
     @Test
