@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.http.Method;
+import io.helidon.jersey.webserver.JaxRsService;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 import io.helidon.json.JsonValue;
@@ -39,6 +40,14 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.testing.junit5.Socket;
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter;
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.MediaType;
+import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasArray;
@@ -115,7 +124,10 @@ class TestOpenTelemetrySemanticConventions {
                 .config(config.get("server"))
                 .routing(r -> r.get("/greet/{name}",
                                     (req, resp) ->
-                                            resp.send("Hello, " + req.path().segments().get(1).value() + "!")))
+                                            resp.send("Hello, " + req.path().segments().get(1).value() + "!"))
+                        .register("/jaxrs",
+                                  JaxRsService.create(Config.empty(),
+                                                      ResourceConfig.forApplication(new JaxRsApplication()))))
                 .routing("private", r -> r.any("/greet",
                                                (req, resp) -> {
                                                    switch (req.prologue().method().text()) {
@@ -137,6 +149,9 @@ class TestOpenTelemetrySemanticConventions {
                 Http1ClientResponse privateResponse = privateClient.get("/greet")
                         .accept(MediaTypes.TEXT_PLAIN)
                         .request();
+                Http1ClientResponse jaxRsResponse = defaultClient.get("/jaxrs/greet/Jane")
+                        .accept(MediaTypes.TEXT_PLAIN)
+                        .request();
                 Http1ClientResponse adminResponse = adminClient.get("/observe/metrics")
                         .accept(MediaTypes.APPLICATION_JSON)
                         .request();
@@ -151,6 +166,7 @@ class TestOpenTelemetrySemanticConventions {
 
             assertThat("Greet endpoint", defaultResponse.status().code(), is(200));
             assertThat("Private endpoint", privateResponse.status().code(), is(200));
+            assertThat("JAX-RS endpoint", jaxRsResponse.status().code(), is(200));
             assertThat("Admin endpoint", adminResponse.status().code(), is(200));
             assertThat("Metrics endpoint via default socket", metricsOnDefaultResponse.status().code(), is(404));
             assertThat("Private endpoint HEAD", greetOptionsResponse.status().code(), is(200));
@@ -271,6 +287,7 @@ class TestOpenTelemetrySemanticConventions {
 
             assertThat("Routes seen", routesSeen, allOf(hasItem("/greet"),
                                                         hasItem("/greet/{name}"),
+                                                        hasItem("/app/greet/{name}"),
                                                         not(hasItem("/observe/metrics"))));
 
             Set<String> unexpectedlyUntimedSockets = new HashSet<>(Set.of("@default", "private"));
@@ -281,5 +298,22 @@ class TestOpenTelemetrySemanticConventions {
             throw new RuntimeException(e);
         }
 
+    }
+
+    @ApplicationPath("/app")
+    public static class JaxRsApplication extends Application {
+        @Override
+        public Set<Class<?>> getClasses() {
+            return Set.of(JaxRsEndpoint.class);
+        }
+    }
+
+    @Path("/greet/{name}")
+    public static class JaxRsEndpoint {
+        @GET
+        @Produces(MediaType.TEXT_PLAIN)
+        public String greet(@PathParam("name") String name) {
+            return "Hello, " + name + "!";
+        }
     }
 }

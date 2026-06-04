@@ -24,6 +24,8 @@ import java.lang.reflect.Type;
 import java.net.URI;
 import java.security.Principal;
 import java.util.Collections;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,6 +55,7 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.Response;
@@ -65,7 +68,9 @@ import org.glassfish.jersey.server.ApplicationHandler;
 import org.glassfish.jersey.server.ContainerException;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
+import org.glassfish.jersey.server.ExtendedUriInfo;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.model.Resource;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
@@ -80,6 +85,7 @@ public class JaxRsService implements HttpService {
     static final String IGNORE_EXCEPTION_RESPONSE = "jersey.config.client.ignoreExceptionResponse";
     static final String DISABLE_DATASOURCE_PROVIDER = "jersey.config.server.disableDataSourceProvider";
 
+    private static final String HELIDON_REQUEST_ROUTE = "helidon.request.route";
     private static final System.Logger LOGGER = System.getLogger(JaxRsService.class.getName());
     private static final Type REQUEST_TYPE = (new GenericType<Ref<ServerRequest>>() { }).getType();
     private static final Type RESPONSE_TYPE = (new GenericType<Ref<ServerResponse>>() { }).getType();
@@ -318,7 +324,11 @@ public class JaxRsService implements HttpService {
             kpiMetricsContext.ifPresent(KeyPerformanceIndicatorSupport.DeferrableRequestContext::requestProcessingStarted);
             appHandler.handle(requestContext);
             writer.await();
-            if (res.status() == Status.NOT_FOUND_404 && requestContext.getUriInfo().getMatchedResourceMethod() == null) {
+            boolean matchedResourceMethod = requestContext.getUriInfo().getMatchedResourceMethod() != null;
+            if (matchedResourceMethod) {
+                registerRoute(ctx, requestContext);
+            }
+            if (res.status() == Status.NOT_FOUND_404 && !matchedResourceMethod) {
                 // Jersey will not throw an exception, it will complete the request - but we must
                 // continue looking for the next route
                 // this is a tricky piece of code - the next can only be called if reset was successful
@@ -341,6 +351,45 @@ public class JaxRsService implements HttpService {
         } catch (Exception e) {
             throw new InternalServerException("Internal exception in JAX-RS processing", e);
         }
+    }
+
+    private void registerRoute(Context ctx, ContainerRequest requestContext) {
+        String route = route((ExtendedUriInfo) requestContext.getUriInfo());
+        if (!route.isBlank()) {
+            ctx.register(HELIDON_REQUEST_ROUTE, route);
+        }
+    }
+
+    private String route(ExtendedUriInfo extendedUriInfo) {
+        Deque<String> derivedPath = new LinkedList<>();
+
+        Resource resource = extendedUriInfo.getMatchedModelResource();
+        while (resource != null) {
+            String resourcePath = resource.getPath();
+            if (resourcePath != null && !resourcePath.equals("/") && !resourcePath.isBlank()) {
+                derivedPath.push(resourcePath);
+                if (!resourcePath.startsWith("/")) {
+                    derivedPath.push("/");
+                }
+            }
+            resource = resource.getParent();
+        }
+
+        derivedPath.push(applicationPath());
+        return String.join("", derivedPath);
+    }
+
+    private String applicationPath() {
+        ApplicationPath applicationPath = getRealClass(application.getClass()).getAnnotation(ApplicationPath.class);
+        return (applicationPath == null || applicationPath.value().equals("/")) ? "" : applicationPath.value();
+    }
+
+    private static Class<?> getRealClass(Class<?> object) {
+        Class<?> result = object;
+        while (result.isSynthetic()) {
+            result = result.getSuperclass();
+        }
+        return result;
     }
 
     private static class HelidonJerseyContainer implements Container {
