@@ -62,7 +62,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
             Object value = entry.getValue();
             Activator<?> fixedService;
 
-            fixedService = Activators.create(provider, value);
+            fixedService = Activators.createActive(provider, value);
 
             activators.put(key, fixedService);
         }
