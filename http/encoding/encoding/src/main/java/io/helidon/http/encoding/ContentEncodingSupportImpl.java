@@ -16,6 +16,7 @@
 
 package io.helidon.http.encoding;
 
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -81,6 +82,12 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
         for (ContentEncoding contentEncoding : contentEncodings) {
             if (contentEncoding.supportsEncoding()) {
                 responseCoding(contentEncoding).ifPresent(result::add);
+                contentEncoding.ids()
+                        .stream()
+                        .map(id -> id.toLowerCase(Locale.ROOT))
+                        .filter(id -> !AcceptEncoding.IDENTITY.equals(id))
+                        .sorted()
+                        .forEach(result::add);
             }
         }
         return List.copyOf(result);
@@ -166,7 +173,7 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
             return ContentEncoder.NO_OP;
         }
 
-        return candidates.get(selectedCoding).encoder();
+        return candidates.get(selectedCoding).contentEncoder();
     }
 
     @Override
@@ -211,10 +218,29 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
             return;
         }
         String emittedCoding = responseCoding(normalized, encoder);
-        candidates.putIfAbsent(emittedCoding, new EncodingCandidate(encoder));
+        candidates.putIfAbsent(normalized, new EncodingCandidate(encoder, normalized, emittedCoding));
+        candidates.putIfAbsent(emittedCoding, new EncodingCandidate(encoder, emittedCoding, emittedCoding));
     }
 
-    private record EncodingCandidate(ContentEncoder encoder) {
+    private record EncodingCandidate(ContentEncoder delegate, String responseCoding, String emittedCoding) {
+        ContentEncoder contentEncoder() {
+            if (responseCoding.equals(emittedCoding)) {
+                return delegate;
+            }
+
+            return new ContentEncoder() {
+                @Override
+                public OutputStream apply(OutputStream network) {
+                    return delegate.apply(network);
+                }
+
+                @Override
+                public void headers(WritableHeaders<?> headers) {
+                    delegate.headers(headers);
+                    headers.set(HeaderNames.CONTENT_ENCODING, responseCoding);
+                }
+            };
+        }
     }
 
 }

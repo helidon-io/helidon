@@ -102,7 +102,7 @@ public interface ContentEncodingContext extends RuntimeType.Api<ContentEncodingC
     boolean contentEncodingSupported(String encodingId);
 
     /**
-     * Content encoding ids that can be applied to response bodies by configured providers, in server preference order.
+     * Content encoding ids accepted by configured providers and applicable to response bodies, in server preference order.
      * The implicit {@code identity} content coding is not included.
      *
      * @return available response content encoding provider ids
