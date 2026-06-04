@@ -347,6 +347,42 @@ class DeclarativeOpenApiTest {
                    is(messageRequestRef(document)));
         assertThat(object(object(document, "components"), "schemas"), not(hasKey("InternalPayload")));
 
+        Map<String, Object> requestParams = operation(document, "/greetings/request-params/{id}", "put");
+        Map<String, Object> requestParamsId = parameter(requestParams, "id", "path");
+        assertThat(requestParamsId.get("required"), is(true));
+        assertThat(object(requestParamsId, "schema").get("type"), is("string"));
+        Map<String, Object> requestParamsSearch = parameter(requestParams, "search", "query");
+        assertThat(requestParamsSearch.get("description"), is("Request params search"));
+        assertThat(object(requestParamsSearch, "schema").get("type"), is("string"));
+        Map<String, Object> requestParamsTrace = parameter(requestParams, "X-Trace", "header");
+        assertThat(object(requestParamsTrace, "schema").get("type"), is("string"));
+        Map<String, Object> requestParamsBody = object(requestParams, "requestBody");
+        assertThat(requestParamsBody.get("description"), is("Request params body"));
+        assertThat(ref(content(requestParamsBody, MediaTypes.APPLICATION_JSON_VALUE)), is(messageRequestRef(document)));
+
+        Map<String, Object> formCookie = operation(document, "/greetings/form-cookie", "post");
+        Map<String, Object> session = parameter(formCookie, "session", "cookie");
+        assertThat(session.get("description"), is("Session cookie"));
+        assertThat(session.get("required"), is(true));
+        assertThat(object(session, "schema").get("type"), is("string"));
+        Map<String, Object> tracking = parameter(formCookie, "tracking", "cookie");
+        assertThat(tracking.get("required"), is(false));
+        assertThat(object(tracking, "schema").get("type"), is("string"));
+        Map<String, Object> formBody = object(formCookie, "requestBody");
+        assertThat(formBody.get("description"), is("Greeting form"));
+        assertThat(formBody.get("required"), is(true));
+        Map<String, Object> formContent = mediaTypeObject(formBody, MediaTypes.APPLICATION_FORM_URLENCODED_VALUE);
+        Map<String, Object> formSchema = object(formContent, "schema");
+        assertThat(formSchema.get("type"), is("object"));
+        Map<String, Object> formProperties = object(formSchema, "properties");
+        assertThat(object(formProperties, "prefix").get("type"), is("string"));
+        assertThat(object(formProperties, "name").get("type"), is("string"));
+        assertThat(object(object(formProperties, "tag"), "items").get("type"), is("string"));
+        assertThat(list(formSchema, "required"), contains("prefix", "name"));
+        Map<String, Object> formExample = object(example(formContent, "form-example"), "value");
+        assertThat(formExample.get("prefix"), is("Hello"));
+        assertThat(formExample.get("name"), is("Ada"));
+
         Map<String, Object> optional = operation(document, "/greetings/optional/{name}", "get");
         assertThat(optional.get("operationId"), is("greetingGetMaybeFind"));
         Map<String, Object> optionalFound = response(optional, "200");
@@ -380,6 +416,8 @@ class DeclarativeOpenApiTest {
         Map<String, Object> name = object(object(request, "properties"), "name");
         assertThat(name.get("type"), is("string"));
         assertThat(name.get("description"), is("Recipient name"));
+        assertThat(schemas, not(hasKey("GreetingRequestParams")));
+        assertThat(schemas, not(hasKey("GreetingFormParams")));
     }
 
     @Test
