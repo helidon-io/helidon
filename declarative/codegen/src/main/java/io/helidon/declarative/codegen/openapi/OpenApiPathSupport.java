@@ -17,6 +17,7 @@
 package io.helidon.declarative.codegen.openapi;
 
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -34,7 +35,10 @@ final class OpenApiPathSupport {
     private OpenApiPathSupport() {
     }
 
-    static String openApiPath(ServerEndpoint endpoint, RestMethod method, Optional<Annotation> operation) {
+    static String openApiPath(ServerEndpoint endpoint,
+                              RestMethod method,
+                              Optional<Annotation> operation,
+                              List<RestMethodParameter> pathParameters) {
         String endpointPath = endpoint.path().orElse("");
         String methodPath = method.path().orElse("");
         String joined = joinPath(endpointPath, methodPath);
@@ -43,7 +47,7 @@ final class OpenApiPathSupport {
                 .filter(not(String::isBlank))
                 .map(override -> validateOpenApiPathOverride(method, override))
                 .orElseGet(() -> normalizeOpenApiPath(method, path));
-        validatePathParameters(method, pathTemplate);
+        validatePathParameters(method, pathTemplate, pathParameters);
         return pathTemplate.path();
     }
 
@@ -82,8 +86,10 @@ final class OpenApiPathSupport {
         return new PathTemplate(result.toString(), pathParameters);
     }
 
-    private static void validatePathParameters(RestMethod method, PathTemplate pathTemplate) {
-        Set<String> routeParameters = pathParameterNames(method);
+    private static void validatePathParameters(RestMethod method,
+                                               PathTemplate pathTemplate,
+                                               List<RestMethodParameter> pathParameters) {
+        Set<String> routeParameters = pathParameterNames(pathParameters);
         if (routeParameters.equals(pathTemplate.pathParameters())) {
             return;
         }
@@ -95,9 +101,9 @@ final class OpenApiPathSupport {
                                                  + ", OpenAPI path parameters: " + pathTemplate.pathParameters());
     }
 
-    private static Set<String> pathParameterNames(RestMethod method) {
+    private static Set<String> pathParameterNames(List<RestMethodParameter> pathParameters) {
         Set<String> result = new LinkedHashSet<>();
-        for (RestMethodParameter parameter : method.pathParameters()) {
+        for (RestMethodParameter parameter : pathParameters) {
             result.add(pathParameterName(parameter));
         }
         return result;
