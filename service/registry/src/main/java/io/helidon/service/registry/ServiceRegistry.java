@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -186,6 +186,68 @@ public interface ServiceRegistry {
      *                                                              resolution to instance failed
      */
     <T> Optional<T> first(TypeName contract);
+
+    /**
+     * Get the first active service instance matching the contract.
+     * <p>
+     * The default implementation may trigger activation.
+     *
+     * @param contract contract to find
+     * @param <T>      type of the contract
+     * @return first active instance, or an empty optional
+     */
+    default <T> Optional<T> firstActive(Class<T> contract) {
+        return firstActive(TypeName.create(contract));
+    }
+
+    /**
+     * Get the first active service instance matching the contract with the expectation that there may not be a match
+     * available.
+     * <p>
+     * The default implementation may trigger activation.
+     *
+     * @param contract   contract to look-up
+     * @param qualifiers qualifiers to find
+     * @param <T>        type of the contract
+     * @return the best active service instance matching the contract, or an empty {@link java.util.Optional} if none match
+     */
+    default <T> Optional<T> firstActive(Class<T> contract, Qualifier... qualifiers) {
+        return firstActive(Lookup.builder()
+                                   .addContract(contract)
+                                   .qualifiers(Set.of(qualifiers))
+                                   .build());
+    }
+
+    /**
+     * Get the first active service instance matching the contract.
+     * <p>
+     * The default implementation delegates to {@link #firstActive(Lookup)} and may trigger activation.
+     *
+     * @param contract contract to find
+     * @param <T>      type of the contract
+     * @return first active instance, or an empty optional
+     */
+    default <T> Optional<T> firstActive(TypeName contract) {
+        return firstActive(Lookup.create(contract));
+    }
+
+    /**
+     * Get the first active service instance matching the contract with the expectation that there may not be a match
+     * available.
+     * <p>
+     * The default implementation may trigger activation.
+     *
+     * @param contract   contract to look-up
+     * @param qualifiers qualifiers to find
+     * @param <T>        type of the contract
+     * @return the best active service instance matching the contract, or an empty {@link java.util.Optional} if none match
+     */
+    default <T> Optional<T> firstActive(TypeName contract, Qualifier... qualifiers) {
+        return firstActive(Lookup.builder()
+                                   .addContract(contract)
+                                   .qualifiers(Set.of(qualifiers))
+                                   .build());
+    }
 
     /**
      * Get the first named service instance matching the contract with the expectation that there may not be a match available.
@@ -496,6 +558,20 @@ public interface ServiceRegistry {
      *         if the result may contain an unknown instance
      */
     <T> Optional<T> first(Lookup lookup);
+
+    /**
+     * Get the first active service instance matching the lookup with the expectation that there may not be a match available.
+     * <p>
+     * The default implementation delegates to {@link #first(Lookup)} and may trigger activation.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return the best active service instance matching the lookup, or an empty {@link java.util.Optional} if none match
+     */
+    default <T> Optional<T> firstActive(Lookup lookup) {
+        return first(lookup);
+    }
 
     /**
      * Get all service instances matching the lookup with the expectation that there may not be a match available.
