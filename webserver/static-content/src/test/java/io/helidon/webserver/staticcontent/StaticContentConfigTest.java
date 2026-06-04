@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,6 +144,55 @@ class StaticContentConfigTest {
 
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "image/my-icon"));
+        }
+    }
+
+    @Test
+    void testFileSystemPreCompressedDisabledByFeature() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testFileSystemPreCompressedHandlerOverrideInheritsSuffixMap() {
+        try (Http1ClientResponse response = testClient.get("/path-enabled/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+            assertThat(response.as(String.class), is("Custom gzip content"));
+        }
+    }
+
+    @Test
+    void testFileSystemPreCompressedHandlerOverrideWithEmptySuffixMap() {
+        try (Http1ClientResponse response = testClient.get("/path-empty-encodings/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testFileSystemPreCompressedHandlerOverrideWithCustomSuffixMap() {
+        try (Http1ClientResponse response = testClient.get("/path-custom-encodings/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+            assertThat(response.as(String.class), is("Gzip content"));
         }
     }
 

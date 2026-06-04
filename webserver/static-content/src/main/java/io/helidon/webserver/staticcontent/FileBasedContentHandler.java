@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,10 @@ import java.util.Optional;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.ForbiddenException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpException;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
@@ -50,6 +52,12 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         this.customMediaTypes = config.contentTypes();
     }
 
+    FileBasedContentHandler(BaseHandlerConfig config, boolean preCompressedCrossOriginSourcingEnabled) {
+        super(config, preCompressedCrossOriginSourcingEnabled);
+
+        this.customMediaTypes = config.contentTypes();
+    }
+
     static String fileName(Path path) {
         Path fileName = path.getFileName();
 
@@ -60,61 +68,139 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         return fileName.toString();
     }
 
-    static void processContentLength(Path path, ServerResponseHeaders headers) {
-        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength(path)));
+    static void processContentLength(long contentLength, ServerResponseHeaders headers) {
+        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength));
     }
 
     static long contentLength(Path path) {
         try {
             return Files.size(path);
         } catch (IOException e) {
+            throwForbiddenIfUnavailable(path, e);
             throw new UncheckedIOException(e);
         }
     }
 
-    static void send(ServerRequest request, ServerResponse response, Path path) throws IOException {
+    static long contentLength(Path path, Long knownContentLength) {
+        return knownContentLength == null ? contentLength(path) : knownContentLength;
+    }
+
+    static void send(ServerRequest request,
+                     ServerResponse response,
+                     Path path,
+                     ResponseRepresentation representation,
+                     Long knownContentLength,
+                     String etag,
+                     Instant lastModified) throws IOException {
+        if (representation.runtimeEncoded()) {
+            sendRuntimeEncoded(response, path, representation);
+            return;
+        }
+
         ServerRequestHeaders headers = request.headers();
         if (headers.contains(HeaderNames.RANGE)) {
-            long contentLength = contentLength(path);
-            List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
-                                                                   response,
-                                                                   headers.get(HeaderNames.RANGE).values(),
-                                                                   contentLength);
+            long contentLength = contentLength(path, knownContentLength);
+            List<ByteRangeRequest> ranges;
+            try {
+                ranges = ByteRangeRequest.parse(request,
+                                                response,
+                                                headers.get(HeaderNames.RANGE).values(),
+                                                contentLength,
+                                                etag,
+                                                representation.weakEtag(),
+                                                lastModified);
+            } catch (HttpException e) {
+                representation.apply(e);
+                throw e;
+            }
             if (ranges.size() == 1) {
                 // single response
                 ByteRangeRequest range = ranges.getFirst();
-                range.setContentRange(response);
 
                 // only send a part of the file
-                try (OutputStream out = response.outputStream(); SeekableByteChannel channel = Files.newByteChannel(path)) {
-                    WritableByteChannel outChannel = Channels.newChannel(out);
-                    channel.position(range.offset());
-                    long toRead = range.length();
-                    ByteBuffer buffer = ByteBuffer.allocate((int) Math.min(toRead, 1000));
-                    while (toRead != 0) {
-                        int read = channel.read(buffer);
-                        int toWrite = (int) Math.min(toRead, read);
-                        buffer.flip();
-                        buffer.limit(toWrite);
-                        outChannel.write(buffer);
-                        buffer.flip();
-                        toRead -= toWrite;
+                try (SeekableByteChannel channel = newByteChannel(path)) {
+                    representation.apply(response);
+                    range.setContentRange(response);
+                    try (OutputStream out = response.outputStream()) {
+                        WritableByteChannel outChannel = Channels.newChannel(out);
+                        channel.position(range.offset());
+                        long toRead = range.length();
+                        ByteBuffer buffer = ByteBuffer.allocate((int) Math.min(toRead, 1000));
+                        while (toRead != 0) {
+                            int read = channel.read(buffer);
+                            int toWrite = (int) Math.min(toRead, read);
+                            buffer.flip();
+                            buffer.limit(toWrite);
+                            outChannel.write(buffer);
+                            buffer.flip();
+                            toRead -= toWrite;
+                        }
                     }
                 }
             } else {
                 // multipart response not yet supported, send all
-                processContentLength(path, response.headers());
                 // send the full file
-                try (InputStream in = Files.newInputStream(path); OutputStream out = response.outputStream()) {
-                    in.transferTo(out);
+                try (InputStream in = newInputStream(path)) {
+                    representation.apply(response);
+                    processContentLength(contentLength, response.headers());
+                    try (OutputStream out = response.outputStream()) {
+                        in.transferTo(out);
+                    }
                 }
             }
         } else {
-            processContentLength(path, response.headers());
             // send the full file
-            try (InputStream in = Files.newInputStream(path); OutputStream out = response.outputStream()) {
+            long contentLength = contentLength(path, knownContentLength);
+            try (InputStream in = newInputStream(path)) {
+                representation.apply(response);
+                processContentLength(contentLength, response.headers());
+                try (OutputStream out = response.outputStream()) {
+                    in.transferTo(out);
+                }
+            }
+        }
+    }
+
+    private static void sendRuntimeEncoded(ServerResponse response,
+                                           Path path,
+                                           ResponseRepresentation representation) throws IOException {
+        try (InputStream in = newInputStream(path)) {
+            representation.apply(response);
+            try (OutputStream out = representation.outputStream(response.outputStream())) {
                 in.transferTo(out);
             }
+        }
+    }
+
+    private static InputStream newInputStream(Path path) throws IOException {
+        try {
+            return Files.newInputStream(path);
+        } catch (IOException e) {
+            throwForbiddenIfUnavailable(path, e);
+            throw e;
+        }
+    }
+
+    private static SeekableByteChannel newByteChannel(Path path) throws IOException {
+        try {
+            return Files.newByteChannel(path);
+        } catch (IOException e) {
+            throwForbiddenIfUnavailable(path, e);
+            throw e;
+        }
+    }
+
+    private static void throwForbiddenIfUnavailable(Path path, IOException cause) {
+        if (!available(path)) {
+            throw new ForbiddenException("File is not accessible", cause);
+        }
+    }
+
+    static boolean available(Path path) {
+        try {
+            return Files.exists(path) && Files.isRegularFile(path) && Files.isReadable(path) && !Files.isHidden(path);
+        } catch (IOException e) {
+            return false;
         }
     }
 
@@ -130,12 +216,13 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         return Optional.ofNullable(customMediaTypes.get(fileSuffix));
     }
 
-    Optional<CachedHandler> fileHandler(Path path) {
+    Optional<CachedHandler> fileHandler(Path path, String logicalFileName, ResponseRepresentation representation) {
         // we know the file exists and is a file
         return Optional.of(new CachedHandlerPath(path,
-                                                 detectType(fileName(path)),
+                                                 detectType(logicalFileName),
                                                  FileBasedContentHandler::lastModified,
-                                                 ServerResponseHeaders::lastModified));
+                                                 ServerResponseHeaders::lastModified,
+                                                 representation));
     }
 
     MediaType detectType(String fileName) {

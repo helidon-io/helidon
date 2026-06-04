@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http;
 
+import io.helidon.common.Api;
 import io.helidon.http.HttpPrologue;
 
 /**
@@ -55,6 +56,18 @@ public interface RoutingResponse extends ServerResponse {
      * @return whether has entity
      */
     boolean hasEntity();
+
+    /**
+     * Configure whether the WebServer response layer may automatically encode the response entity using the listener
+     * content encoding context. This does not remove or rewrite any explicitly configured {@code Content-Encoding} header.
+     *
+     * @param enabled whether automatic response content encoding is enabled
+     * @return this instance
+     */
+    @Api.Incubating
+    default RoutingResponse automaticContentEncoding(boolean enabled) {
+        return this;
+    }
 
     /**
      * Return true if the underlying response buffers and headers can be reset and a new response can be sent.

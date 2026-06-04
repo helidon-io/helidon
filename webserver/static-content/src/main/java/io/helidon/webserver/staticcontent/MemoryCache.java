@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -33,14 +32,16 @@ import io.helidon.builder.api.RuntimeType;
  * resource is requested.
  */
 public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
+    private static final long NO_RESERVATION = -1;
+
     private final MemoryCacheConfig config;
     private final long maxSize;
     // cache is Map<instance of handler -> Map<resource path -> CachedHandlerInMemory>>
     private final Map<StaticContentHandler, Map<String, CachedHandlerInMemory>> cache = new IdentityHashMap<>();
+    private final Map<CachedHandlerInMemory, Integer> handlerReferences = new IdentityHashMap<>();
     private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
 
-    private final ReentrantLock sizeLock = new ReentrantLock();
-    private long currentSize;
+    private volatile long currentSize;
 
     private MemoryCache(MemoryCacheConfig config) {
         this.config = config;
@@ -101,7 +102,14 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
     void clear(StaticContentHandler staticContentHandler) {
         try {
             cacheLock.writeLock().lock();
-            cache.remove(staticContentHandler);
+            Map<String, CachedHandlerInMemory> removed = cache.remove(staticContentHandler);
+            if (removed != null) {
+                long released = 0;
+                for (CachedHandlerInMemory cached : removed.values()) {
+                    released += removeReference(cached);
+                }
+                currentSize -= released;
+            }
         } finally {
             cacheLock.writeLock().unlock();
         }
@@ -122,23 +130,55 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
                                           String resource,
                                           int size,
                                           Supplier<CachedHandlerInMemory> handlerSupplier) {
+        long reservation = reserve(size);
+        if (reservation == NO_RESERVATION) {
+            return Optional.empty();
+        }
+
+        CachedHandlerInMemory cachedHandlerInMemory;
         try {
-            sizeLock.lock();
-            if (maxSize == 0 || currentSize + size > maxSize) {
-                // either we are not enabled, or the size would be bigger than maximal size
-                return Optional.empty();
-            }
-            // increase current size
-            currentSize += size;
-        } finally {
-            sizeLock.unlock();
+            cachedHandlerInMemory = handlerSupplier.get();
+        } catch (RuntimeException | Error e) {
+            releaseReservation(reservation);
+            throw e;
         }
         try {
             cacheLock.writeLock().lock();
-            CachedHandlerInMemory cachedHandlerInMemory = handlerSupplier.get();
-            cache.computeIfAbsent(handler, k -> new HashMap<>())
-                    .put(resource, cachedHandlerInMemory);
+            Map<String, CachedHandlerInMemory> resourceCache = cache.computeIfAbsent(handler, k -> new HashMap<>());
+            CachedHandlerInMemory previous = resourceCache.get(resource);
+            long updatedSize = currentSize - reservation + sizeDelta(previous, cachedHandlerInMemory);
+            if (updatedSize > maxSize) {
+                currentSize -= reservation;
+                return Optional.empty();
+            }
+            resourceCache.put(resource, cachedHandlerInMemory);
+            updateReferences(previous, cachedHandlerInMemory, updatedSize);
             return Optional.of(cachedHandlerInMemory);
+        } finally {
+            cacheLock.writeLock().unlock();
+        }
+    }
+
+    private long reserve(int size) {
+        if (maxSize == 0 || size < 0) {
+            return NO_RESERVATION;
+        }
+        try {
+            cacheLock.writeLock().lock();
+            if (currentSize + size > maxSize) {
+                return NO_RESERVATION;
+            }
+            currentSize += size;
+            return size;
+        } finally {
+            cacheLock.writeLock().unlock();
+        }
+    }
+
+    private void releaseReservation(long reservation) {
+        try {
+            cacheLock.writeLock().lock();
+            currentSize -= reservation;
         } finally {
             cacheLock.writeLock().unlock();
         }
@@ -147,18 +187,10 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
     // hard add to cache, even if disabled (for explicitly configured resources to cache in memory)
     void cache(StaticContentHandler handler, String resource, CachedHandlerInMemory inMemoryHandler) {
         try {
-            sizeLock.lock();
-            if (maxSize != 0) {
-                // only increase current size if enabled, otherwise it does not matter
-                currentSize += inMemoryHandler.contentLength();
-            }
-        } finally {
-            sizeLock.unlock();
-        }
-        try {
             cacheLock.writeLock().lock();
-            cache.computeIfAbsent(handler, k -> new HashMap<>())
+            CachedHandlerInMemory previous = cache.computeIfAbsent(handler, k -> new HashMap<>())
                     .put(resource, inMemoryHandler);
+            updateReferences(previous, inMemoryHandler, currentSize + sizeDelta(previous, inMemoryHandler));
         } finally {
             cacheLock.writeLock().unlock();
         }
@@ -175,5 +207,48 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
         } finally {
             cacheLock.readLock().unlock();
         }
+    }
+
+    private long sizeDelta(CachedHandlerInMemory previous, CachedHandlerInMemory next) {
+        if (previous == next) {
+            return 0;
+        }
+
+        long result = 0;
+        if (previous != null && handlerReferences.getOrDefault(previous, 0) == 1) {
+            result -= previous.contentLength();
+        }
+        if (handlerReferences.getOrDefault(next, 0) == 0) {
+            result += next.contentLength();
+        }
+        return result;
+    }
+
+    private void updateReferences(CachedHandlerInMemory previous, CachedHandlerInMemory next, long updatedSize) {
+        if (previous != next) {
+            removeReference(previous);
+            addReference(next);
+        }
+        currentSize = updatedSize;
+    }
+
+    private void addReference(CachedHandlerInMemory handler) {
+        handlerReferences.merge(handler, 1, Integer::sum);
+    }
+
+    private long removeReference(CachedHandlerInMemory handler) {
+        if (handler == null) {
+            return 0;
+        }
+        Integer count = handlerReferences.get(handler);
+        if (count == null) {
+            return 0;
+        }
+        if (count == 1) {
+            handlerReferences.remove(handler);
+            return handler.contentLength();
+        }
+        handlerReferences.put(handler, count - 1);
+        return 0;
     }
 }

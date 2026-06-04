@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
@@ -29,6 +28,7 @@ import java.util.function.BiConsumer;
 
 import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.http.ForbiddenException;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -53,19 +53,29 @@ class CachedHandlerJar implements CachedHandler {
     private final BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader;
     private final Path path;
     private final URL url;
+    private final long contentLengthValue;
+    private final ResponseRepresentation representation;
+    private final SidecarCache sidecarCache;
 
     private CachedHandlerJar(MediaType mediaType,
                              URL url,
                              long contentLength,
                              Instant lastModified,
                              BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
-                             Path path) {
+                             Path path,
+                             ResponseRepresentation representation,
+                             SidecarCache sidecarCache) {
         this.mediaType = mediaType;
         this.url = url;
-        this.contentLength = HeaderValues.create(HeaderNames.CONTENT_LENGTH, true, false, contentLength);
+        this.contentLength = contentLength >= 0
+                ? HeaderValues.create(HeaderNames.CONTENT_LENGTH, true, false, contentLength)
+                : null;
         this.lastModified = lastModified;
         this.setLastModifiedHeader = setLastModifiedHeader;
         this.path = path;
+        this.contentLengthValue = contentLength;
+        this.representation = representation;
+        this.sidecarCache = sidecarCache;
     }
 
     static CachedHandlerJar create(TemporaryStorage tmpStorage,
@@ -73,24 +83,60 @@ class CachedHandlerJar implements CachedHandler {
                                    Instant lastModified,
                                    MediaType mediaType,
                                    long contentLength) {
+        return create(tmpStorage, fileUrl, lastModified, mediaType, contentLength, ResponseRepresentation.plain());
+    }
+
+    static CachedHandlerJar create(TemporaryStorage tmpStorage,
+                                   URL fileUrl,
+                                   Instant lastModified,
+                                   MediaType mediaType,
+                                   long contentLength,
+                                   ResponseRepresentation representation) {
 
         BiConsumer<ServerResponseHeaders, Instant> headerHandler = headerHandler(lastModified);
+        SidecarCache sidecarCache = SidecarCache.create();
 
         var createdTmpFile = tmpStorage.createFile();
         if (createdTmpFile.isPresent()) {
             // extract entry
             Path tmpFile = createdTmpFile.get();
-            try (InputStream is = fileUrl.openStream()) {
+            boolean extracted = false;
+            long extractedContentLength = contentLength;
+            try (InputStream is = ResourceConnections.openStream(fileUrl)) {
                 Files.copy(is, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+                long tmpFileContentLength = Files.size(tmpFile);
+                extracted = contentLength < 0 || tmpFileContentLength == contentLength;
+                extractedContentLength = tmpFileContentLength;
             } catch (IOException e) {
                 // silently consume the exception, as the tmp file may have been removed, we may throw when reading the file
                 LOGGER.log(Level.TRACE, "Failed to create temporary extracted file for " + fileUrl, e);
             }
-            return new CachedHandlerJar(mediaType, fileUrl, contentLength, lastModified, headerHandler, tmpFile);
+            if (extracted) {
+                return new CachedHandlerJar(mediaType,
+                                            fileUrl,
+                                            extractedContentLength,
+                                            lastModified,
+                                            headerHandler,
+                                            tmpFile,
+                                            representation,
+                                            sidecarCache);
+            }
+            try {
+                Files.deleteIfExists(tmpFile);
+            } catch (IOException e) {
+                LOGGER.log(Level.TRACE, "Failed to delete incomplete temporary extracted file for " + fileUrl, e);
+            }
         } else {
             // use the entry always
-            return new CachedHandlerJar(mediaType, fileUrl, contentLength, lastModified, headerHandler, null);
         }
+        return new CachedHandlerJar(mediaType,
+                                    fileUrl,
+                                    contentLength,
+                                    lastModified,
+                                    headerHandler,
+                                    null,
+                                    representation,
+                                    sidecarCache);
     }
 
     @Override
@@ -105,9 +151,21 @@ class CachedHandlerJar implements CachedHandler {
         }
 
         // etag etc.
+        String etag = null;
         if (lastModified != null) {
-            processEtag(String.valueOf(lastModified.toEpochMilli()), request.headers(), response.headers());
-            processModifyHeaders(lastModified, request.headers(), response.headers(), setLastModifiedHeader);
+            etag = representation.etag(String.valueOf(lastModified.toEpochMilli()), contentLengthValue);
+            try {
+                boolean ifNoneMatchPresent = processEtag(etag, representation.weakEtag(), request.headers(), response.headers());
+                processModifyHeaders(lastModified,
+                                     request.headers(),
+                                     response.headers(),
+                                     setLastModifiedHeader,
+                                     !ifNoneMatchPresent);
+            } catch (io.helidon.http.HttpException e) {
+                representation.apply(e);
+                e.header(representation.etagHeader(etag));
+                throw e;
+            }
         }
 
         response.headers().contentType(mediaType);
@@ -115,26 +173,50 @@ class CachedHandlerJar implements CachedHandler {
         if (method == Method.GET) {
             try {
                 if (path != null && Files.exists(path)) {
-                    FileBasedContentHandler.send(request, response, path);
+                    Long knownContentLength = contentLengthValue >= 0 ? contentLengthValue : null;
+                    FileBasedContentHandler.send(request, response, path, representation, knownContentLength, etag, lastModified);
                     return true;
                 }
-            } catch (IOException e) {
+            } catch (IOException | ForbiddenException e) {
                 if (LOGGER.isLoggable(Level.TRACE)) {
                     LOGGER.log(Level.TRACE, "Failed to send jar entry from extracted path: " + path
                                        + ", will send directly from jar",
                                e);
                 }
             }
-            try (var in = url.openStream(); var out = response.outputStream()) {
-                // no support for ranges when using jar stream
-                in.transferTo(out);
+            try (var in = ResourceConnections.openStream(url)) {
+                representation.apply(response);
+                try (var out = representation.outputStream(response.outputStream())) {
+                    // no support for ranges when using jar stream
+                    in.transferTo(out);
+                }
             }
         } else {
-            response.headers().set(contentLength);
+            representation.apply(response);
+            if (!representation.runtimeEncoded() && contentLength != null) {
+                response.headers().set(contentLength);
+            }
             response.send();
         }
 
         return true;
+    }
+
+    @Override
+    public CachedHandler withRepresentation(ResponseRepresentation representation) {
+        return new CachedHandlerJar(mediaType,
+                                    url,
+                                    contentLengthValue,
+                                    lastModified,
+                                    setLastModifiedHeader,
+                                    path,
+                                    representation,
+                                    sidecarCache);
+    }
+
+    @Override
+    public SidecarCache sidecarCache() {
+        return sidecarCache;
     }
 
     private static BiConsumer<ServerResponseHeaders, Instant> headerHandler(Instant lastModified) {
