@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
+import io.helidon.service.registry.Activators.BaseActivator;
 import io.helidon.service.registry.Service.QualifiedInstance;
 
 /*
@@ -30,7 +31,8 @@ Manager of a single service. There is one instance per service provider (and per
  */
 class ServiceManager<T> {
     private final ServiceProvider<T> provider;
-    private final boolean explicitInstance;
+    private final boolean skipBindingPlan;
+    private final boolean fixedInstance;
     private final Supplier<Activator<T>> activatorSupplier;
     private final CoreServiceRegistry registry;
     private final Supplier<Scope> scopeSupplier;
@@ -38,12 +40,22 @@ class ServiceManager<T> {
     ServiceManager(CoreServiceRegistry registry,
                    Supplier<Scope> scopeSupplier,
                    ServiceProvider<T> provider,
-                   boolean explicitInstance,
+                   boolean skipBindingPlan,
+                   Supplier<Activator<T>> activatorSupplier) {
+        this(registry, scopeSupplier, provider, skipBindingPlan, skipBindingPlan, activatorSupplier);
+    }
+
+    ServiceManager(CoreServiceRegistry registry,
+                   Supplier<Scope> scopeSupplier,
+                   ServiceProvider<T> provider,
+                   boolean skipBindingPlan,
+                   boolean fixedInstance,
                    Supplier<Activator<T>> activatorSupplier) {
         this.registry = registry;
         this.scopeSupplier = scopeSupplier;
         this.provider = provider;
-        this.explicitInstance = explicitInstance;
+        this.skipBindingPlan = skipBindingPlan;
+        this.fixedInstance = fixedInstance;
         this.activatorSupplier = activatorSupplier;
     }
 
@@ -53,8 +65,8 @@ class ServiceManager<T> {
     }
 
     void ensureBindingPlan() {
-        if (explicitInstance) {
-            // we do not need injection plan, if service was provided as an instance
+        if (skipBindingPlan) {
+            // late-bound instances and descriptors are not part of the build-time binding plan
             return;
         }
         registry.bindings()
@@ -69,14 +81,39 @@ class ServiceManager<T> {
     }
 
     Optional<List<ServiceInstance<T>>> activeInstances(Lookup lookup) {
-        Optional<Activator<T>> existingActivator = existingActivator();
-        if (existingActivator.isEmpty()) {
+        Activator<T> serviceActivator;
+        if (fixedInstance) {
+            serviceActivator = activatorSupplier.get();
+        } else {
+            Optional<Activator<T>> existingActivator = existingActivator();
+            if (existingActivator.isEmpty()) {
+                return Optional.empty();
+            }
+            serviceActivator = existingActivator.get();
+        }
+
+        if (serviceActivator.phase() != ActivationPhase.ACTIVE) {
+            if (fixedInstance) {
+                return explicitInstances(serviceActivator, lookup);
+            }
             return Optional.empty();
         }
 
-        Activator<T> serviceActivator = existingActivator.get();
-        if (serviceActivator.phase() != ActivationPhase.ACTIVE) {
-            return Optional.empty();
+        return serviceActivator
+                .instances(lookup)
+                .map(it -> it.stream()
+                        .map(instance -> registryInstance(lookup, instance))
+                        .toList());
+    }
+
+    @SuppressWarnings("unchecked")
+    private Optional<List<ServiceInstance<T>>> explicitInstances(Activator<T> serviceActivator, Lookup lookup) {
+        if (serviceActivator instanceof BaseActivator<?> baseActivator) {
+            return ((BaseActivator<T>) baseActivator)
+                    .targetInstances(lookup)
+                    .map(it -> it.stream()
+                            .map(instance -> registryInstance(lookup, instance))
+                            .toList());
         }
 
         return serviceActivator

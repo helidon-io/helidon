@@ -19,6 +19,7 @@ package io.helidon.service.test.registry;
 import java.util.List;
 import java.util.function.Supplier;
 
+import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
@@ -130,8 +131,49 @@ public class RegistryTest {
             FirstActiveService explicit = new FirstActiveService();
             Services.set(FirstActiveService.class, explicit);
 
+            assertThat(serviceRegistry.firstActive(FirstActiveService.class).orElseThrow(), sameInstance(explicit));
             assertThat(serviceRegistry.get(FirstActiveService.class), sameInstance(explicit));
             assertThat(FirstActiveService.instances, is(1));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    public void testRegistryFirstActiveReturnsSetInstance() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        ServiceRegistry serviceRegistry = manager.registry();
+        FirstActiveService.instances = 0;
+        FirstActiveContract explicit = new FirstActiveContract() {
+        };
+
+        Services.registry(serviceRegistry);
+        try {
+            Services.set(FirstActiveContract.class, explicit);
+
+            assertThat(serviceRegistry.firstActive(FirstActiveContract.class).orElseThrow(), sameInstance(explicit));
+            assertThat(FirstActiveService.instances, is(0));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    public void testRegistryFirstActiveReturnsQualifiedSetInstance() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        ServiceRegistry serviceRegistry = manager.registry();
+        FirstActiveContract explicit = new FirstActiveContract() {
+        };
+        Qualifier qualifier = Qualifier.createNamed("explicit");
+        Qualifier otherQualifier = Qualifier.createNamed("other");
+
+        Services.registry(serviceRegistry);
+        try {
+            Services.setQualified(FirstActiveContract.class, explicit, qualifier);
+
+            assertThat(serviceRegistry.firstActive(FirstActiveContract.class, otherQualifier).isEmpty(), is(true));
+            assertThat(serviceRegistry.firstActive(FirstActiveContract.class, qualifier).orElseThrow(),
+                       sameInstance(explicit));
         } finally {
             manager.shutdown();
         }
