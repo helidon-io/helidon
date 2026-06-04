@@ -63,7 +63,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
     // Helidon
     static final String SOCKET_NAME = "socket.name";
     static final String TIMER_NAME = "http.server.request.duration";
-    private static final String HELIDON_REQUEST_ROUTE = "helidon.request.route";
+    static final String HELIDON_REQUEST_ROUTE = "helidon.request.route";
     /*
     Bucket boundaries as recommended by the OpenTelemetry spec.
     https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#metric-httpserverrequestduration

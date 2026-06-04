@@ -27,7 +27,6 @@ import java.util.stream.Stream;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.http.Method;
-import io.helidon.jersey.webserver.JaxRsService;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 import io.helidon.json.JsonValue;
@@ -40,20 +39,13 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.testing.junit5.Socket;
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter;
-import jakarta.ws.rs.ApplicationPath;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.Application;
-import jakarta.ws.rs.core.MediaType;
-import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasArray;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasAttributes;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasDouble;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasString;
+import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.HELIDON_REQUEST_ROUTE;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.HTTP_ROUTE;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME;
@@ -125,9 +117,14 @@ class TestOpenTelemetrySemanticConventions {
                 .routing(r -> r.get("/greet/{name}",
                                     (req, resp) ->
                                             resp.send("Hello, " + req.path().segments().get(1).value() + "!"))
-                        .register("/jaxrs",
-                                  JaxRsService.create(Config.empty(),
-                                                      ResourceConfig.forApplication(new JaxRsApplication()))))
+                        .get("/useContext",
+                             /*
+                             Mimics what the JaxRsServer does in adding the route to the request context.
+                              */
+                             (req, resp) -> {
+                                 req.context().register(HELIDON_REQUEST_ROUTE, "/useContextRoute");
+                                 resp.send("Hello, World!");
+                             }))
                 .routing("private", r -> r.any("/greet",
                                                (req, resp) -> {
                                                    switch (req.prologue().method().text()) {
@@ -149,9 +146,6 @@ class TestOpenTelemetrySemanticConventions {
                 Http1ClientResponse privateResponse = privateClient.get("/greet")
                         .accept(MediaTypes.TEXT_PLAIN)
                         .request();
-                Http1ClientResponse jaxRsResponse = defaultClient.get("/jaxrs/greet/Jane")
-                        .accept(MediaTypes.TEXT_PLAIN)
-                        .request();
                 Http1ClientResponse adminResponse = adminClient.get("/observe/metrics")
                         .accept(MediaTypes.APPLICATION_JSON)
                         .request();
@@ -161,15 +155,18 @@ class TestOpenTelemetrySemanticConventions {
                 Http1ClientResponse greetOptionsResponse = privateClient.options("/greet")
                         .accept(MediaTypes.TEXT_PLAIN)
                         .request();
+                Http1ClientResponse useContextResponse = defaultClient.get("/useContext")
+                        .accept(MediaTypes.TEXT_PLAIN)
+                        .request();
                 TestLogHandler testLogHandler = TestLogHandler.create(
                         Logger.getLogger(OtlpJsonLoggingMetricExporter.class.getName()))) {
 
             assertThat("Greet endpoint", defaultResponse.status().code(), is(200));
             assertThat("Private endpoint", privateResponse.status().code(), is(200));
-            assertThat("JAX-RS endpoint", jaxRsResponse.status().code(), is(200));
             assertThat("Admin endpoint", adminResponse.status().code(), is(200));
             assertThat("Metrics endpoint via default socket", metricsOnDefaultResponse.status().code(), is(404));
             assertThat("Private endpoint HEAD", greetOptionsResponse.status().code(), is(200));
+            assertThat("Use context endpoint", useContextResponse.status().code(), is(200));
 
             List<String> socketNamesInTimers = new ArrayList<>();
 
@@ -287,8 +284,9 @@ class TestOpenTelemetrySemanticConventions {
 
             assertThat("Routes seen", routesSeen, allOf(hasItem("/greet"),
                                                         hasItem("/greet/{name}"),
-                                                        hasItem("/app/greet/{name}"),
-                                                        not(hasItem("/observe/metrics"))));
+                                                        not(hasItem("/observe/metrics")),
+                                                        not(hasItem("/useContext")),
+                                                        hasItem("/useContextRoute")));
 
             Set<String> unexpectedlyUntimedSockets = new HashSet<>(Set.of("@default", "private"));
             socketNamesInTimers.forEach(unexpectedlyUntimedSockets::remove);
@@ -298,22 +296,5 @@ class TestOpenTelemetrySemanticConventions {
             throw new RuntimeException(e);
         }
 
-    }
-
-    @ApplicationPath("/app")
-    public static class JaxRsApplication extends Application {
-        @Override
-        public Set<Class<?>> getClasses() {
-            return Set.of(JaxRsEndpoint.class);
-        }
-    }
-
-    @Path("/greet/{name}")
-    public static class JaxRsEndpoint {
-        @GET
-        @Produces(MediaType.TEXT_PLAIN)
-        public String greet(@PathParam("name") String name) {
-            return "Hello, " + name + "!";
-        }
     }
 }
