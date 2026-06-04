@@ -114,7 +114,7 @@ class OpenApiFeatureTest {
                                     .build())
                 .addFeature(OpenApiFeature.builder()
                                     .servicesDiscoverServices(false)
-                                    .staticFile("src/test/resources/exact-static.yaml")
+                                    .staticFile("exact-static.yaml")
                                     .webContext("/openapi-exact-static")
                                     .name("openapi-exact-static")
                                     .build());
