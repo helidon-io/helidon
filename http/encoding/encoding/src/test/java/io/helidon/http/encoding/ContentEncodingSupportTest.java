@@ -275,12 +275,12 @@ class ContentEncodingSupportTest {
     }
 
     @Test
-    void testContentEncodingIdsUseCanonicalProviderType() {
+    void testContentEncodingIdsUseCanonicalProviderTypeBeforeAliases() {
         ContentEncodingContext context = ContentEncodingContext.builder()
                 .addContentEncoding(new TestEncoding(gzipEncoder(), Set.of("gzip", "x-gzip"), true, false, "gzip"))
                 .build();
 
-        assertThat(context.contentEncodingIds(), is(List.of("gzip")));
+        assertThat(context.contentEncodingIds(), is(List.of("gzip", "x-gzip")));
     }
 
     @Test
@@ -327,12 +327,12 @@ class ContentEncodingSupportTest {
     }
 
     @Test
-    void testRuntimeEncoderWildcardDoesNotOverrideSpecificRejection() {
+    void testRuntimeEncoderWildcardCanUseAliasWhenCanonicalCodingIsRejected() {
         ContentEncodingContext context = ContentEncodingContext.builder()
-                .addContentEncoding(new TestEncoding(gzipEncoder(), Set.of("gzip", "x-gzip"), true, false, "gzip"))
+                .addContentEncoding(new TestEncoding(gzipHeaderEncoder(), Set.of("gzip", "x-gzip"), true, false, "gzip"))
                 .build();
 
-        assertThat(context.encoder(headers("gzip;q=0, *")), sameInstance(ContentEncoder.NO_OP));
+        assertContentEncoding(context.encoder(headers("gzip;q=0, *")), "x-gzip");
     }
 
     @Test
@@ -349,33 +349,32 @@ class ContentEncodingSupportTest {
 
     @Test
     void testRuntimeEncoderSupportsExplicitAlias() {
-        ContentEncoder gzipEncoder = gzipEncoder();
-        ContentEncodingContext context = ContentEncodingContext.builder()
-                .addContentEncoding(new TestEncoding(gzipEncoder, Set.of("gzip", "x-gzip"), true, false, "gzip"))
-                .build();
-
-        assertThat(context.encoder(headers("x-gzip")), sameInstance(gzipEncoder));
-    }
-
-    @Test
-    void testRuntimeEncoderRejectsRejectedEmittedCoding() {
         ContentEncoder gzipEncoder = gzipHeaderEncoder();
         ContentEncodingContext context = ContentEncodingContext.builder()
                 .addContentEncoding(new TestEncoding(gzipEncoder, Set.of("gzip", "x-gzip"), true, false, "gzip"))
                 .build();
 
-        assertNotAcceptable(context, "x-gzip, gzip;q=0, identity;q=0");
+        assertContentEncoding(context.encoder(headers("x-gzip, identity;q=0")), "x-gzip");
     }
 
     @Test
-    void testRuntimeEncoderUsesBestEmittedCoding() {
+    void testRuntimeEncoderUsesAcceptedAliasWhenEmittedCodingIsRejected() {
         ContentEncoder gzipEncoder = gzipHeaderEncoder();
         ContentEncodingContext context = ContentEncodingContext.builder()
                 .addContentEncoding(new TestEncoding(gzipEncoder, Set.of("gzip", "x-gzip"), true, false, "gzip"))
                 .build();
 
-        assertThat(context.encoder(headers("x-gzip, identity;q=0.75, gzip;q=0.5")),
-                   sameInstance(ContentEncoder.NO_OP));
+        assertContentEncoding(context.encoder(headers("x-gzip, gzip;q=0, identity;q=0")), "x-gzip");
+    }
+
+    @Test
+    void testRuntimeEncoderUsesAcceptedAliasQuality() {
+        ContentEncoder gzipEncoder = gzipHeaderEncoder();
+        ContentEncodingContext context = ContentEncodingContext.builder()
+                .addContentEncoding(new TestEncoding(gzipEncoder, Set.of("gzip", "x-gzip"), true, false, "gzip"))
+                .build();
+
+        assertContentEncoding(context.encoder(headers("x-gzip, identity;q=0.75, gzip;q=0.5")), "x-gzip");
     }
 
     @Test
@@ -438,6 +437,14 @@ class ContentEncodingSupportTest {
         assertThat(actual.coding(), is(coding));
         assertThat(actual.q(), is(q));
         assertThat(actual.wildcard(), is(wildcard));
+    }
+
+    private static void assertContentEncoding(ContentEncoder encoder, String contentEncoding) {
+        WritableHeaders<?> headers = WritableHeaders.create();
+
+        encoder.headers(headers);
+
+        assertThat(headers.get(HeaderNames.CONTENT_ENCODING).get(), is(contentEncoding));
     }
 
     private static void assertInvalidAcceptEncoding(String headerValue) {

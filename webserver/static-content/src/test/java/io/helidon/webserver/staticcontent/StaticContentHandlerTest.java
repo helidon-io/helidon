@@ -438,6 +438,44 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void preCompressedSidecarUsesAcceptedAliasWhenCanonicalCodingIsRejected() throws IOException, URISyntaxException {
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = inMemoryHandler("Nested content");
+        CachedHandler sidecarHandler = inMemoryHandler("Gzip content")
+                .withRepresentation(ResponseRepresentation.encoded("gzip"));
+        ContentEncodingContext contentEncodingContext = runtimeContentEncodingContext(
+                new TestEncoding("gzip", "runtime:", Set.of("gzip", "x-gzip")));
+        ServerRequest request = mockRequestWithHeaders("x-gzip, gzip;q=0, identity;q=0", null, contentEncodingContext);
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse response = mock(ServerResponse.class);
+        AtomicReference<byte[]> sent = new AtomicReference<>();
+        AtomicReference<String> resolvedCoding = new AtomicReference<>();
+
+        when(response.headers()).thenReturn(responseHeaders);
+        Mockito.doAnswer(inv -> {
+            sent.set(inv.getArgument(0));
+            return null;
+        }).when(response).send(any(byte[].class));
+
+        CachedHandler selected = handler.selectHandler(
+                identityHandler,
+                request,
+                (coding, suffix) -> {
+                    resolvedCoding.set(coding);
+                    assertThat(suffix, is("gz"));
+                    return Optional.of(sidecarHandler);
+                });
+
+        selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
+
+        assertThat(resolvedCoding.get(), is("gzip"));
+        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "x-gzip"));
+        assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+        assertThat(new String(sent.get(), StandardCharsets.UTF_8), is("Gzip content"));
+        verify(response, never()).status(Status.NOT_ACCEPTABLE_406);
+    }
+
+    @Test
     void preCompressedSidecarRechecksIdentityAvailabilityWhenHandled() throws IOException, URISyntaxException {
         Path identity = tempDir.resolve("resource.txt");
         Path sidecar = tempDir.resolve("resource.txt.gz");
@@ -720,7 +758,7 @@ class StaticContentHandlerTest {
     }
 
     @Test
-    void preCompressedRuntimeEncodingUsesEmittedContentEncoding() throws IOException, URISyntaxException {
+    void preCompressedRuntimeEncodingUsesSelectedContentEncoding() throws IOException, URISyntaxException {
         TestContentHandler handler = TestContentHandler.create(true);
         CachedHandler identityHandler = inMemoryHandler("Nested content");
         ContentEncoder runtimeEncoder = new TestEncoding("gzip", "context-runtime:").encoder();
@@ -744,12 +782,12 @@ class StaticContentHandlerTest {
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
-        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "x-gzip"));
         assertThat(sent.toString(StandardCharsets.UTF_8), is("context-runtime:Nested content"));
     }
 
     @Test
-    void preCompressedRuntimeEncodingRejectsRejectedEmittedCoding() throws IOException, URISyntaxException {
+    void preCompressedRuntimeEncodingUsesAcceptedAliasWhenCanonicalCodingIsRejected() throws IOException, URISyntaxException {
         TestContentHandler handler = TestContentHandler.create(true);
         CachedHandler identityHandler = inMemoryHandler("Nested content");
         ContentEncoder runtimeEncoder = new TestEncoding("gzip", "context-runtime:").encoder();
@@ -757,14 +795,16 @@ class StaticContentHandlerTest {
         ServerRequest request = mockRequestWithHeaders("x-gzip, gzip;q=0, identity;q=0", null, contentEncodingContext);
         ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
         ServerResponse response = mock(ServerResponse.class);
+        ByteArrayOutputStream sent = new ByteArrayOutputStream();
 
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
         when(contentEncodingContext.contentEncodingSupported("gzip")).thenReturn(true);
         when(contentEncodingContext.contentEncodingSupported("x-gzip")).thenReturn(true);
-        when(contentEncodingContext.contentEncodingIds()).thenReturn(List.of("gzip"));
+        when(contentEncodingContext.contentEncodingIds()).thenReturn(List.of("gzip", "x-gzip"));
         when(contentEncodingContext.encoder("gzip")).thenReturn(runtimeEncoder);
         when(contentEncodingContext.encoder("x-gzip")).thenReturn(runtimeEncoder);
         when(response.headers()).thenReturn(responseHeaders);
+        when(response.outputStream()).thenReturn(sent);
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
@@ -773,13 +813,13 @@ class StaticContentHandlerTest {
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
-        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
-        verify(response).status(Status.NOT_ACCEPTABLE_406);
-        verify(response).send();
+        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "x-gzip"));
+        assertThat(sent.toString(StandardCharsets.UTF_8), is("context-runtime:Nested content"));
+        verify(response, never()).status(Status.NOT_ACCEPTABLE_406);
     }
 
     @Test
-    void preCompressedRuntimeEncodingWildcardDoesNotBypassCanonicalRejection() throws IOException, URISyntaxException {
+    void preCompressedRuntimeEncodingWildcardUsesAliasWhenCanonicalCodingIsRejected() throws IOException, URISyntaxException {
         TestContentHandler handler = TestContentHandler.create(true);
         CachedHandler identityHandler = inMemoryHandler("Nested content");
         ContentEncoder runtimeEncoder = new TestEncoding("gzip", "context-runtime:").encoder();
@@ -787,12 +827,14 @@ class StaticContentHandlerTest {
         ServerRequest request = mockRequestWithHeaders("gzip;q=0, *, identity;q=0", null, contentEncodingContext);
         ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
         ServerResponse response = mock(ServerResponse.class);
+        ByteArrayOutputStream sent = new ByteArrayOutputStream();
 
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
         when(contentEncodingContext.contentEncodingSupported("x-gzip")).thenReturn(true);
         when(contentEncodingContext.contentEncodingIds()).thenReturn(List.of("x-gzip"));
         when(contentEncodingContext.encoder("x-gzip")).thenReturn(runtimeEncoder);
         when(response.headers()).thenReturn(responseHeaders);
+        when(response.outputStream()).thenReturn(sent);
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
@@ -801,9 +843,9 @@ class StaticContentHandlerTest {
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
-        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
-        verify(response).status(Status.NOT_ACCEPTABLE_406);
-        verify(response).send();
+        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "x-gzip"));
+        assertThat(sent.toString(StandardCharsets.UTF_8), is("context-runtime:Nested content"));
+        verify(response, never()).status(Status.NOT_ACCEPTABLE_406);
     }
 
     @Test
@@ -1554,14 +1596,18 @@ class StaticContentHandlerTest {
         }
     }
 
-    private record TestEncoding(String id, String prefix) implements ContentEncoding {
+    private record TestEncoding(String id, String prefix, Set<String> ids) implements ContentEncoding {
         TestEncoding() {
             this("gzip", "runtime:");
         }
 
+        TestEncoding(String id, String prefix) {
+            this(id, prefix, Set.of(id));
+        }
+
         @Override
         public Set<String> ids() {
-            return Set.of(id);
+            return ids;
         }
 
         @Override
