@@ -14,18 +14,26 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Features;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Helidon OpenAPI 3.2 document version support.
  */
+@Features.Name("OpenAPI 3.2")
+@Features.Description("OpenAPI 3.2 document version support")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"OpenAPI", "3.2"})
 module io.helidon.openapi.v32 {
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
-    requires io.helidon.builder.api;
+    requires transitive io.helidon.builder.api;
     requires io.helidon.common;
-    requires io.helidon.common.media.type;
-    requires io.helidon.config;
+    requires transitive io.helidon.common.media.type;
+    requires transitive io.helidon.config;
     requires io.helidon.json;
-    requires io.helidon.openapi;
+    requires transitive io.helidon.openapi;
     requires io.helidon.service.registry;
 
     requires org.yaml.snakeyaml;

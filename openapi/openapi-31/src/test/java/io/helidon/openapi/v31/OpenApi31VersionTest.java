@@ -30,6 +30,9 @@ import io.helidon.json.JsonNull;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonString;
 import io.helidon.openapi.OpenApiDocument;
+import io.helidon.openapi.OpenApiDocumentContext;
+import io.helidon.openapi.OpenApiGeneratedMode;
+import io.helidon.openapi.spi.OpenApiVersion;
 import io.helidon.openapi.spi.OpenApiVersionProvider;
 
 import org.junit.jupiter.api.Test;
@@ -68,7 +71,8 @@ class OpenApi31VersionTest {
                                                                     .build()))
                 .build();
 
-        Map<String, Object> rendered = parse(OpenApi31Version.create().render(null, document));
+        OpenApi31Version version = OpenApi31Version.create();
+        Map<String, Object> rendered = parse(version.render(context(version), document));
 
         assertThat(rendered.get("openapi"), is("3.1.1"));
         assertThat(rendered.get("jsonSchemaDialect"), is("https://json-schema.org/draft/2020-12/schema"));
@@ -87,10 +91,11 @@ class OpenApi31VersionTest {
 
     @Test
     void parsesJsonSchemaVocabularyIntoCanonicalDocument() {
-        OpenApiDocument document = OpenApi31Version.create()
-                .parse(null, static31(), MediaTypes.APPLICATION_OPENAPI_YAML);
+        OpenApi31Version version = OpenApi31Version.create();
+        OpenApiDocumentContext context = context(version);
+        OpenApiDocument document = version.parse(context, static31(), MediaTypes.APPLICATION_OPENAPI_YAML);
 
-        Map<String, Object> rendered = parse(OpenApi31Version.create().render(null, document));
+        Map<String, Object> rendered = parse(version.render(context, document));
 
         assertThat(rendered.get("openapi"), is("3.1.1"));
         assertThat(rendered.get("jsonSchemaDialect"), is("https://spec.openapis.org/oas/3.1/dialect/base"));
@@ -106,7 +111,7 @@ class OpenApi31VersionTest {
         OpenApi31Version version = OpenApi31Version.create();
 
         assertThrows(IllegalStateException.class,
-                     () -> version.parse(null,
+                     () -> version.parse(context(version),
                                          """
                                          openapi: 3.0.3
                                          info:
@@ -114,6 +119,20 @@ class OpenApi31VersionTest {
                                            version: 1.0.0
                                          """,
                                          MediaTypes.APPLICATION_OPENAPI_YAML));
+    }
+
+    @Test
+    void rejectsNullArguments() {
+        OpenApi31Version version = OpenApi31Version.create();
+        OpenApiDocumentContext context = context(version);
+        OpenApiDocument document = OpenApiDocument.builder().build();
+
+        assertThrows(NullPointerException.class, () -> OpenApi31Version.create((OpenApi31VersionConfig) null));
+        assertThrows(NullPointerException.class, () -> version.parse(null, "", MediaTypes.APPLICATION_OPENAPI_YAML));
+        assertThrows(NullPointerException.class, () -> version.parse(context, null, MediaTypes.APPLICATION_OPENAPI_YAML));
+        assertThrows(NullPointerException.class, () -> version.parse(context, "", null));
+        assertThrows(NullPointerException.class, () -> version.render(null, document));
+        assertThrows(NullPointerException.class, () -> version.render(context, null));
     }
 
     @Test
@@ -144,6 +163,32 @@ class OpenApi31VersionTest {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> map(Map<?, ?> map, String name) {
         return (Map<String, Object>) map.get(name);
+    }
+
+    private static OpenApiDocumentContext context(OpenApiVersion version) {
+        return new TestOpenApiDocumentContext(version);
+    }
+
+    private record TestOpenApiDocumentContext(OpenApiVersion openApiVersion) implements OpenApiDocumentContext {
+        @Override
+        public String featureName() {
+            return "openapi";
+        }
+
+        @Override
+        public String webContext() {
+            return "/openapi";
+        }
+
+        @Override
+        public String listener() {
+            return "default";
+        }
+
+        @Override
+        public OpenApiGeneratedMode generatedMode() {
+            return OpenApiGeneratedMode.STATIC_ONLY;
+        }
     }
 
     private static String static31() {

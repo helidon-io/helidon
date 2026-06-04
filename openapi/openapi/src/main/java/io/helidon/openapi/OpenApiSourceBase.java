@@ -17,7 +17,11 @@
 package io.helidon.openapi;
 
 import io.helidon.common.Api;
+import io.helidon.json.JsonException;
 import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
+import io.helidon.json.JsonString;
+import io.helidon.json.JsonValue;
 import io.helidon.json.schema.spi.JsonSchemaProvider;
 import io.helidon.openapi.spi.OpenApiDocumentSource;
 
@@ -26,6 +30,7 @@ import io.helidon.openapi.spi.OpenApiDocumentSource;
  */
 @Api.Internal
 public abstract class OpenApiSourceBase implements OpenApiDocumentSource {
+    static final String SCHEMA_REF_PREFIX = "#/components/schemas/";
 
     /**
      * Constructor with no side effects.
@@ -43,7 +48,7 @@ public abstract class OpenApiSourceBase implements OpenApiDocumentSource {
     @Api.Internal
     protected static JsonObject schemaRef(String name) {
         return JsonObject.builder()
-                .set("$ref", "#/components/schemas/" + name)
+                .set("$ref", SCHEMA_REF_PREFIX + name)
                 .build();
     }
 
@@ -72,6 +77,29 @@ public abstract class OpenApiSourceBase implements OpenApiDocumentSource {
                 .set("type", "array")
                 .set("items", items)
                 .build();
+    }
+
+    /**
+     * Create an OpenAPI example value from annotation text.
+     *
+     * @param value annotation value
+     * @return parsed JSON value, or a JSON string if the value is not JSON
+     */
+    @Api.Internal
+    protected static JsonValue exampleValue(String value) {
+        String stripped = value.strip();
+        if (!stripped.isEmpty()) {
+            try {
+                JsonParser parser = JsonParser.create(stripped);
+                JsonValue result = parser.readJsonValue();
+                if (!parser.hasNext()) {
+                    return result;
+                }
+            } catch (JsonException ignored) {
+                // Annotation values are strings by default; JSON parsing is an opt-in convenience.
+            }
+        }
+        return JsonString.create(value);
     }
 
     /**

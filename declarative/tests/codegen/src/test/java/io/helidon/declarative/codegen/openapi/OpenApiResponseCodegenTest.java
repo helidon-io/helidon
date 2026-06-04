@@ -54,6 +54,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class OpenApiResponseCodegenTest {
@@ -135,8 +136,62 @@ class OpenApiResponseCodegenTest {
         assertThat(diagnostics, result.success(), is(true));
 
         String generated = generatedSource(result);
-        assertThat(generated, containsString(".response(\"200\", response -> response.description(\"Greeting found\")"));
+        assertThat(generated, containsString(".response(\"200\", response -> response.description("
+                                                     + "io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"Greeting found\"))"));
         assertThat(generated, containsString(".response(\"404\", response -> response.description(\"Not Found\"))"));
+    }
+
+    @Test
+    void explicitResponseWithoutContentDoesNotInferMethodReturnContent() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-explicit-bodyless-response"))
+                .addSource("BodylessOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/bodyless")
+                        class BodylessOpenApiEndpoint {
+                            @Http.GET
+                            @OpenApi.Response(status = 204, description = "Deleted")
+                            String delete() {
+                                return "deleted";
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".response(\"204\", response -> response.description("
+                                                     + "io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"Deleted\"))"));
+        assertThat(generated, is(not(containsString(".content("))));
+        assertThat(generated, is(not(containsString("JsonSchemaProvider"))));
     }
 
     @Test
@@ -184,6 +239,65 @@ class OpenApiResponseCodegenTest {
         assertCompilationFails(result,
                                "@OpenApi.Response on com.example.InvalidOpenApiEndpoint.get",
                                "cannot define response status 200 more than once");
+    }
+
+    @Test
+    void responseCannotDeclareLowStatus() {
+        var result = compileInvalidResponseStatus(99);
+
+        assertCompilationFails(result,
+                               "@OpenApi.Response on com.example.InvalidOpenApiEndpoint.get",
+                               "must define an HTTP response status from 100 to 599: 99");
+    }
+
+    @Test
+    void responseCannotDeclareHighStatus() {
+        var result = compileInvalidResponseStatus(600);
+
+        assertCompilationFails(result,
+                               "@OpenApi.Response on com.example.InvalidOpenApiEndpoint.get",
+                               "must define an HTTP response status from 100 to 599: 600");
+    }
+
+    private static TestCompiler.Result compileInvalidResponseStatus(int status) {
+        return TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-invalid-response-status-" + status))
+                .addSource("InvalidOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/invalid")
+                        class InvalidOpenApiEndpoint {
+                            @Http.GET
+                            @OpenApi.Response(status = %d, description = "Invalid")
+                            String get() {
+                                return "ok";
+                            }
+                        }
+                        """.formatted(status))
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
     }
 
     private static String generatedSource(TestCompiler.Result result) throws IOException {

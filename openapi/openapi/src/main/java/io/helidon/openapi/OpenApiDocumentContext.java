@@ -16,8 +16,6 @@
 
 package io.helidon.openapi;
 
-import java.util.Objects;
-
 import io.helidon.common.Api;
 import io.helidon.openapi.spi.OpenApiVersion;
 
@@ -25,67 +23,39 @@ import io.helidon.openapi.spi.OpenApiVersion;
  * Context for generated OpenAPI document composition.
  */
 @Api.Preview
-public final class OpenApiDocumentContext {
-    private final String featureName;
-    private final String webContext;
-    private final String listener;
-    private final OpenApiGeneratedMode generatedMode;
-    private final OpenApiVersion openApiVersion;
-
-    OpenApiDocumentContext(String featureName,
-                           String webContext,
-                           String listener,
-                           OpenApiGeneratedMode generatedMode,
-                           OpenApiVersion openApiVersion) {
-        this.featureName = featureName;
-        this.webContext = webContext;
-        this.listener = listener;
-        this.generatedMode = generatedMode;
-        this.openApiVersion = Objects.requireNonNull(openApiVersion);
-    }
-
+public interface OpenApiDocumentContext {
     /**
      * OpenAPI feature instance name.
      *
      * @return feature name
      */
-    public String featureName() {
-        return featureName;
-    }
+    String featureName();
 
     /**
      * OpenAPI endpoint web context.
      *
      * @return web context
      */
-    public String webContext() {
-        return webContext;
-    }
+    String webContext();
 
     /**
      * Listener this document is served from.
      *
      * @return listener name
      */
-    public String listener() {
-        return listener;
-    }
+    String listener();
 
     /**
      * Generated document mode.
      *
      * @return generated mode
      */
-    public OpenApiGeneratedMode generatedMode() {
-        return generatedMode;
-    }
+    OpenApiGeneratedMode generatedMode();
 
     /**
      * Selected OpenAPI version implementation.
      *
      * @return OpenAPI version implementation
      */
-    public OpenApiVersion openApiVersion() {
-        return openApiVersion;
-    }
+    OpenApiVersion openApiVersion();
 }

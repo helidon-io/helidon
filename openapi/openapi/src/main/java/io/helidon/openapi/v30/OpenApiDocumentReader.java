@@ -185,16 +185,26 @@ public final class OpenApiDocumentReader {
         object(source, "callbacks", callbacks -> callbacks.keysAsStrings()
                 .forEach(name -> object(callbacks, name, callback -> builder.callback(name, pathItem(callback)))));
         bool(source, "deprecated", builder::deprecated);
-        array(source, "security", security -> security.values()
-                .forEach(requirement -> object(requirement, value -> builder.securityRequirement(securityRequirement(value)))));
+        array(source, "security", security -> {
+            if (security.values().isEmpty()) {
+                builder.security(List.of());
+                return;
+            }
+            security.values()
+                    .forEach(requirement -> object(requirement,
+                                                   value -> builder.securityRequirement(securityRequirement(value))));
+        });
         array(source, "servers", servers -> servers.values()
                 .forEach(server -> object(server, value -> builder.server(server(value)))));
+        extensions(source, builder::extension);
         return builder.build();
     }
 
     private static OpenApiDocument.Parameter parameter(JsonObject source) {
         if (string(source, "$ref").isPresent()) {
-            return OpenApiDocument.Parameter.reference(string(source, "$ref").orElseThrow());
+            OpenApiDocument.ParameterBuilder builder = OpenApiDocument.Parameter.builder();
+            reference(source, builder::ref, builder::summary, builder::description);
+            return builder.build();
         }
         OpenApiDocument.ParameterBuilder builder = OpenApiDocument.Parameter.builder();
         string(source, "name", builder::name);
@@ -218,13 +228,22 @@ public final class OpenApiDocumentReader {
 
     private static OpenApiDocument.Header header(JsonObject source) {
         if (string(source, "$ref").isPresent()) {
-            return OpenApiDocument.Header.reference(string(source, "$ref").orElseThrow());
+            OpenApiDocument.HeaderBuilder builder = OpenApiDocument.Header.builder();
+            reference(source, builder::ref, builder::summary, builder::description);
+            return builder.build();
         }
         OpenApiDocument.HeaderBuilder builder = OpenApiDocument.Header.builder();
         string(source, "description", builder::description);
         bool(source, "required", builder::required);
         bool(source, "deprecated", builder::deprecated);
+        bool(source, "allowEmptyValue", builder::allowEmptyValue);
+        string(source, "style", builder::style);
+        bool(source, "explode", builder::explode);
+        bool(source, "allowReserved", builder::allowReserved);
         value(source, "schema", builder::schema);
+        value(source, "example", builder::example);
+        object(source, "examples", examples -> examples.keysAsStrings()
+                .forEach(name -> object(examples, name, example -> builder.example(name, example(example)))));
         object(source, "content", content -> content.keysAsStrings()
                 .forEach(mediaType -> object(content, mediaType,
                                              value -> builder.content(mediaType, mediaType(value)))));
@@ -233,7 +252,9 @@ public final class OpenApiDocumentReader {
 
     private static OpenApiDocument.RequestBody requestBody(JsonObject source) {
         if (string(source, "$ref").isPresent()) {
-            return OpenApiDocument.RequestBody.reference(string(source, "$ref").orElseThrow());
+            OpenApiDocument.RequestBodyBuilder builder = OpenApiDocument.RequestBody.builder();
+            reference(source, builder::ref, builder::summary, builder::description);
+            return builder.build();
         }
         OpenApiDocument.RequestBodyBuilder builder = OpenApiDocument.RequestBody.builder();
         string(source, "description", builder::description);
@@ -246,7 +267,9 @@ public final class OpenApiDocumentReader {
 
     private static OpenApiDocument.Response response(JsonObject source) {
         if (string(source, "$ref").isPresent()) {
-            return OpenApiDocument.Response.reference(string(source, "$ref").orElseThrow());
+            OpenApiDocument.ResponseBuilder builder = OpenApiDocument.Response.builder();
+            reference(source, builder::ref, builder::summary, builder::description);
+            return builder.build();
         }
         OpenApiDocument.ResponseBuilder builder = OpenApiDocument.Response.builder();
         string(source, "description", builder::description);
@@ -262,6 +285,11 @@ public final class OpenApiDocumentReader {
     }
 
     private static OpenApiDocument.MediaTypeObject mediaType(JsonObject source) {
+        if (string(source, "$ref").isPresent()) {
+            OpenApiDocument.MediaTypeObjectBuilder builder = OpenApiDocument.MediaTypeObject.builder();
+            reference(source, builder::ref, builder::summary, builder::description);
+            return builder.build();
+        }
         OpenApiDocument.MediaTypeObjectBuilder builder = OpenApiDocument.MediaTypeObject.builder();
         value(source, "schema", builder::schema);
         value(source, "itemSchema", builder::itemSchema);
@@ -292,7 +320,9 @@ public final class OpenApiDocumentReader {
 
     private static OpenApiDocument.Example example(JsonObject source) {
         if (string(source, "$ref").isPresent()) {
-            return OpenApiDocument.Example.reference(string(source, "$ref").orElseThrow());
+            OpenApiDocument.ExampleBuilder builder = OpenApiDocument.Example.builder();
+            reference(source, builder::ref, builder::summary, builder::description);
+            return builder.build();
         }
         OpenApiDocument.ExampleBuilder builder = OpenApiDocument.Example.builder();
         string(source, "summary", builder::summary);
@@ -306,7 +336,9 @@ public final class OpenApiDocumentReader {
 
     private static OpenApiDocument.Link link(JsonObject source) {
         if (string(source, "$ref").isPresent()) {
-            return OpenApiDocument.Link.reference(string(source, "$ref").orElseThrow());
+            OpenApiDocument.LinkBuilder builder = OpenApiDocument.Link.builder();
+            reference(source, builder::ref, builder::summary, builder::description);
+            return builder.build();
         }
         OpenApiDocument.LinkBuilder builder = OpenApiDocument.Link.builder();
         string(source, "operationRef", builder::operationRef);
@@ -347,7 +379,9 @@ public final class OpenApiDocumentReader {
 
     private static OpenApiDocument.SecurityScheme securityScheme(JsonObject source) {
         if (string(source, "$ref").isPresent()) {
-            return OpenApiDocument.SecurityScheme.reference(string(source, "$ref").orElseThrow());
+            OpenApiDocument.SecuritySchemeBuilder builder = OpenApiDocument.SecurityScheme.builder();
+            reference(source, builder::ref, builder::summary, builder::description);
+            return builder.build();
         }
         OpenApiDocument.SecuritySchemeBuilder builder = OpenApiDocument.SecurityScheme.builder();
         string(source, "type", builder::type);
@@ -368,6 +402,15 @@ public final class OpenApiDocumentReader {
         source.keysAsStrings()
                 .forEach(name -> array(source, name, scopes -> builder.scheme(name, stringValues(scopes))));
         return builder.build();
+    }
+
+    private static void reference(JsonObject source,
+                                  Consumer<String> ref,
+                                  Consumer<String> summary,
+                                  Consumer<String> description) {
+        string(source, "$ref", ref);
+        string(source, "summary", summary);
+        string(source, "description", description);
     }
 
     private static void extensions(JsonObject source, BiConsumer<String, JsonValue> consumer) {

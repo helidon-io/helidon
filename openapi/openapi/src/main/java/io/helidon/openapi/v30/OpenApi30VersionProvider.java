@@ -16,6 +16,8 @@
 
 package io.helidon.openapi.v30;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.config.Config;
@@ -44,8 +46,8 @@ public class OpenApi30VersionProvider implements OpenApiVersionProvider {
     @Override
     public OpenApiVersion create(Config config, String name) {
         return OpenApi30VersionConfig.builder()
-                .config(config)
-                .name(name)
+                .config(Objects.requireNonNull(config))
+                .name(Objects.requireNonNull(name))
                 .build();
     }
 }

@@ -23,16 +23,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.json.JsonArray;
-import io.helidon.json.JsonBoolean;
-import io.helidon.json.JsonNull;
-import io.helidon.json.JsonNumber;
-import io.helidon.json.JsonObject;
-import io.helidon.json.JsonString;
-import io.helidon.json.JsonValue;
 import io.helidon.openapi.OpenApiDocument;
 
+import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.allowed;
+import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.copy;
+import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.copyAllowed;
+import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.copyField;
+import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.copyFieldValue;
+import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.jsonObject;
+import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.object;
+import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.objectList;
+import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.objectMap;
+
 final class OpenApi30DocumentMapper {
+    private static final Set<String> REFERENCE_FIELDS = Set.of("$ref");
+
     private static final Set<String> DOCUMENT_FIELDS = Set.of("openapi",
                                                               "info",
                                                               "servers",
@@ -47,6 +52,11 @@ final class OpenApi30DocumentMapper {
                                                           "contact",
                                                           "license",
                                                           "version");
+    private static final Set<String> CONTACT_FIELDS = Set.of("name",
+                                                             "url",
+                                                             "email");
+    private static final Set<String> LICENSE_FIELDS = Set.of("name",
+                                                             "url");
     private static final Set<String> SERVER_FIELDS = Set.of("url",
                                                             "description",
                                                             "variables");
@@ -143,6 +153,10 @@ final class OpenApi30DocumentMapper {
                                                                      "bearerFormat",
                                                                      "flows",
                                                                      "openIdConnectUrl");
+    private static final Set<String> SECURITY_SCHEME_TYPES = Set.of("apiKey",
+                                                                    "http",
+                                                                    "oauth2",
+                                                                    "openIdConnect");
     private static final Set<String> OAUTH_FLOWS_FIELDS = Set.of("implicit",
                                                                  "password",
                                                                  "clientCredentials",
@@ -239,14 +253,25 @@ final class OpenApi30DocumentMapper {
             case "components" -> object(value, object -> result.put(key, components(object, mode)));
             case "tags" -> result.put(key, tagList(value));
             case "externalDocs" -> object(value, object -> result.put(key, copyAllowed(object, EXTERNAL_DOCS_FIELDS)));
-            default -> result.put(key, copy(value));
+            default -> copyField(result, key, source);
             }
         });
         return result;
     }
 
     private static Map<String, Object> info(Map<String, ?> source) {
-        return copyAllowed(source, INFO_FIELDS);
+        Map<String, Object> result = new LinkedHashMap<>();
+        source.forEach((key, value) -> {
+            if (!allowed(key, INFO_FIELDS)) {
+                return;
+            }
+            switch (key) {
+            case "contact" -> object(value, object -> result.put(key, copyAllowed(object, CONTACT_FIELDS)));
+            case "license" -> object(value, object -> result.put(key, copyAllowed(object, LICENSE_FIELDS)));
+            default -> copyField(result, key, source);
+            }
+        });
+        return result;
     }
 
     private static List<Object> serverList(Object value) {
@@ -262,7 +287,7 @@ final class OpenApi30DocumentMapper {
             if ("variables".equals(key)) {
                 object(value, object -> result.put(key, serverVariables(object)));
             } else {
-                result.put(key, copy(value));
+                copyField(result, key, source);
             }
         });
         return result;
@@ -285,7 +310,7 @@ final class OpenApi30DocumentMapper {
                 if ("externalDocs".equals(key)) {
                     object(item, object -> result.put(key, copyAllowed(object, EXTERNAL_DOCS_FIELDS)));
                 } else {
-                    result.put(key, copy(item));
+                    copyField(result, key, tag);
                 }
             });
             return result;
@@ -311,7 +336,7 @@ final class OpenApi30DocumentMapper {
             switch (key) {
             case "servers" -> result.put(key, serverList(value));
             case "parameters" -> result.put(key, parameters(value, mode));
-            default -> result.put(key, copy(value));
+            default -> copyField(result, key, source);
             }
         });
         return result;
@@ -330,7 +355,7 @@ final class OpenApi30DocumentMapper {
             case "callbacks" -> object(value, object -> result.put(key, callbacks(object, mode)));
             case "servers" -> result.put(key, serverList(value));
             case "externalDocs" -> object(value, object -> result.put(key, copyAllowed(object, EXTERNAL_DOCS_FIELDS)));
-            default -> result.put(key, copy(value));
+            default -> copyField(result, key, source);
             }
         });
         return result;
@@ -356,6 +381,9 @@ final class OpenApi30DocumentMapper {
         if (!source.containsKey("$ref") && !PARAMETER_LOCATIONS.contains(String.valueOf(source.get("in")))) {
             return Map.of();
         }
+        if (source.containsKey("$ref")) {
+            return reference(source);
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         source.forEach((key, value) -> {
             if (!allowed(key, PARAMETER_FIELDS)) {
@@ -365,13 +393,16 @@ final class OpenApi30DocumentMapper {
             case "schema" -> result.put(key, schema(value, mode));
             case "content" -> object(value, object -> result.put(key, content(object, mode)));
             case "examples" -> result.put(key, examples(value));
-            default -> result.put(key, copy(value));
+            default -> copyField(result, key, source);
             }
         });
         return result;
     }
 
     private static Map<String, Object> requestBody(Map<String, ?> source, SchemaMode mode) {
+        if (source.containsKey("$ref")) {
+            return reference(source);
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         source.forEach((key, value) -> {
             if (!allowed(key, REQUEST_BODY_FIELDS)) {
@@ -380,7 +411,7 @@ final class OpenApi30DocumentMapper {
             if ("content".equals(key)) {
                 object(value, object -> result.put(key, content(object, mode)));
             } else {
-                result.put(key, copy(value));
+                copyField(result, key, source);
             }
         });
         return result;
@@ -393,6 +424,9 @@ final class OpenApi30DocumentMapper {
     }
 
     private static Map<String, Object> response(Map<String, ?> source, SchemaMode mode) {
+        if (source.containsKey("$ref")) {
+            return reference(source);
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         source.forEach((key, value) -> {
             if (!allowed(key, RESPONSE_FIELDS)) {
@@ -402,7 +436,7 @@ final class OpenApi30DocumentMapper {
             case "headers" -> object(value, object -> result.put(key, headers(object, mode)));
             case "content" -> object(value, object -> result.put(key, content(object, mode)));
             case "links" -> object(value, object -> result.put(key, links(object)));
-            default -> result.put(key, copy(value));
+            default -> copyField(result, key, source);
             }
         });
         return result;
@@ -415,6 +449,9 @@ final class OpenApi30DocumentMapper {
     }
 
     private static Map<String, Object> header(Map<String, ?> source, SchemaMode mode) {
+        if (source.containsKey("$ref")) {
+            return reference(source);
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         source.forEach((key, value) -> {
             if (!allowed(key, HEADER_FIELDS)) {
@@ -424,7 +461,7 @@ final class OpenApi30DocumentMapper {
             case "schema" -> result.put(key, schema(value, mode));
             case "content" -> object(value, object -> result.put(key, content(object, mode)));
             case "examples" -> result.put(key, examples(value));
-            default -> result.put(key, copy(value));
+            default -> copyField(result, key, source);
             }
         });
         return result;
@@ -437,6 +474,9 @@ final class OpenApi30DocumentMapper {
     }
 
     private static Map<String, Object> mediaType(Map<String, ?> source, SchemaMode mode) {
+        if (source.containsKey("$ref")) {
+            throw unsupported("media type reference", String.valueOf(source.get("$ref")), "mediaType");
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         source.forEach((key, value) -> {
             if (!allowed(key, MEDIA_TYPE_FIELDS)) {
@@ -445,10 +485,16 @@ final class OpenApi30DocumentMapper {
             switch (key) {
             case "schema" -> result.put(key, schema(value, mode));
             case "examples" -> result.put(key, examples(value));
-            case "encoding" -> object(value, object -> result.put(key, encoding(object, mode)));
-            default -> result.put(key, copy(value));
+            case "encoding" -> object(value, object -> result.put(key, encodings(object, mode)));
+            default -> copyField(result, key, source);
             }
         });
+        return result;
+    }
+
+    private static Map<String, Object> encodings(Map<String, ?> source, SchemaMode mode) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        source.forEach((key, value) -> object(value, object -> result.put(key, encoding(object, mode))));
         return result;
     }
 
@@ -461,7 +507,7 @@ final class OpenApi30DocumentMapper {
             if ("headers".equals(key)) {
                 object(value, object -> result.put(key, headers(object, mode)));
             } else {
-                result.put(key, copy(value));
+                copyField(result, key, source);
             }
         });
         return result;
@@ -483,7 +529,7 @@ final class OpenApi30DocumentMapper {
             case "securitySchemes" -> object(value, object -> result.put(key, securitySchemes(object)));
             case "links" -> object(value, object -> result.put(key, links(object)));
             case "callbacks" -> object(value, object -> result.put(key, callbacks(object, mode)));
-            default -> result.put(key, copy(value));
+            default -> copyField(result, key, source);
             }
         });
         return result;
@@ -514,38 +560,71 @@ final class OpenApi30DocumentMapper {
 
     private static Map<String, Object> securitySchemes(Map<String, ?> source) {
         Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value, object -> result.put(key, securityScheme(object))));
+        source.forEach((key, value) -> object(value, object -> result.put(key, securityScheme(key, object))));
         return result;
     }
 
-    private static Map<String, Object> securityScheme(Map<String, ?> source) {
+    private static Map<String, Object> securityScheme(String name, Map<String, ?> source) {
+        if (source.containsKey("$ref")) {
+            return reference(source);
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         source.forEach((key, value) -> {
             if (!allowed(key, SECURITY_SCHEME_FIELDS)) {
                 return;
             }
-            if ("flows".equals(key)) {
-                object(value, object -> result.put(key, oauthFlows(object)));
-            } else {
-                result.put(key, copy(value));
+            switch (key) {
+            case "type" -> {
+                String type = String.valueOf(value);
+                if (!SECURITY_SCHEME_TYPES.contains(type)) {
+                    throw unsupported("security scheme type", type, securitySchemePath(name));
+                }
+                copyField(result, key, source);
+            }
+            case "flows" -> object(value,
+                                    object -> result.put(key,
+                                                         oauthFlows(securitySchemePath(name) + ".flows", object)));
+            default -> copyField(result, key, source);
             }
         });
         return result;
     }
 
-    private static Map<String, Object> oauthFlows(Map<String, ?> source) {
+    private static Map<String, Object> oauthFlows(String path, Map<String, ?> source) {
         Map<String, Object> result = new LinkedHashMap<>();
         source.forEach((key, value) -> {
-            if (allowed(key, OAUTH_FLOWS_FIELDS)) {
-                object(value, object -> result.put(key, copyAllowed(object, OAUTH_FLOW_FIELDS)));
+            if (!allowed(key, OAUTH_FLOWS_FIELDS)) {
+                throw unsupported("OAuth flow", key, path);
             }
+            object(value, object -> result.put(key, copyAllowed(object, OAUTH_FLOW_FIELDS)));
         });
         return result;
+    }
+
+    private static IllegalStateException unsupported(String kind, String value, String path) {
+        return new IllegalStateException("Unsupported OpenAPI 3.0 "
+                                                 + kind
+                                                 + " '"
+                                                 + value
+                                                 + "' at "
+                                                 + path);
+    }
+
+    private static String securitySchemePath(String name) {
+        return "components.securitySchemes." + name;
+    }
+
+    private static Map<String, Object> reference(Map<String, ?> source) {
+        return copyAllowed(source, REFERENCE_FIELDS);
     }
 
     private static Map<String, Object> links(Map<String, ?> source) {
         Map<String, Object> result = new LinkedHashMap<>();
         source.forEach((key, value) -> object(value, object -> {
+            if (object.containsKey("$ref")) {
+                result.put(key, reference(object));
+                return;
+            }
             Map<String, Object> link = new LinkedHashMap<>();
             object.forEach((linkKey, linkValue) -> {
                 if (!allowed(linkKey, LINK_FIELDS)) {
@@ -554,7 +633,7 @@ final class OpenApi30DocumentMapper {
                 if ("server".equals(linkKey)) {
                     object(linkValue, server -> link.put(linkKey, server(server)));
                 } else {
-                    link.put(linkKey, copy(linkValue));
+                    copyField(link, linkKey, object);
                 }
             });
             result.put(key, link);
@@ -573,8 +652,13 @@ final class OpenApi30DocumentMapper {
             return Map.of();
         }
         Map<String, Object> result = new LinkedHashMap<>();
-        map.forEach((key, item) -> object(item,
-                                          object -> result.put(String.valueOf(key), copyAllowed(object, EXAMPLE_FIELDS))));
+        map.forEach((key, item) -> object(item, object -> {
+            if (object.containsKey("$ref")) {
+                result.put(String.valueOf(key), reference(object));
+            } else {
+                result.put(String.valueOf(key), copyAllowed(object, EXAMPLE_FIELDS));
+            }
+        }));
         return result;
     }
 
@@ -610,7 +694,7 @@ final class OpenApi30DocumentMapper {
             }
             if ("const".equals(key)) {
                 if (mode == SchemaMode.OPENAPI30 && !source.containsKey("enum")) {
-                    enumValue = singleValueList(copy(item));
+                    enumValue = singleValueList(copyFieldValue(key, source));
                     hasEnum = true;
                 }
                 continue;
@@ -619,12 +703,16 @@ final class OpenApi30DocumentMapper {
                 continue;
             }
             switch (key) {
+            case "maximum" -> bound(result, source, key, "exclusiveMaximum", item, mode);
+            case "minimum" -> bound(result, source, key, "exclusiveMinimum", item, mode);
+            case "exclusiveMaximum" -> exclusiveBound(result, source, "maximum", key, item, mode);
+            case "exclusiveMinimum" -> exclusiveBound(result, source, "minimum", key, item, mode);
             case "allOf", "oneOf", "anyOf" -> result.put(key, schemaList(item, mode));
             case "not", "items" -> result.put(key, schema(item, mode));
             case "properties" -> object(item, object -> result.put(key, schemaMap(object, mode)));
             case "additionalProperties" -> result.put(key, additionalProperties(item, mode));
             case "externalDocs" -> object(item, object -> result.put(key, copyAllowed(object, EXTERNAL_DOCS_FIELDS)));
-            default -> result.put(key, copy(item));
+            default -> copyField(result, key, source);
             }
         }
         if (hasEnum) {
@@ -634,12 +722,78 @@ final class OpenApi30DocumentMapper {
             if (mode == SchemaMode.CANONICAL) {
                 addNullType(result);
                 addNullEnum(result);
-            } else {
+            } else if (result.containsKey("oneOf")) {
+                addNullOneOf(result);
+            } else if (!result.containsKey("oneOf")) {
                 removeNullEnum(result);
                 result.put("nullable", true);
             }
         }
         return result;
+    }
+
+    private static void bound(Map<String, Object> target,
+                              Map<String, Object> source,
+                              String boundName,
+                              String exclusiveBoundName,
+                              Object value,
+                              SchemaMode mode) {
+        if (mode == SchemaMode.CANONICAL && Boolean.TRUE.equals(source.get(exclusiveBoundName))) {
+            return;
+        }
+        Object exclusiveBound = source.get(exclusiveBoundName);
+        if (mode == SchemaMode.OPENAPI30 && exclusiveBound instanceof Number exclusiveNumber) {
+            if (!(value instanceof Number inclusiveNumber)
+                    || exclusiveBoundWins(boundName, inclusiveNumber, exclusiveNumber)) {
+                return;
+            }
+            target.remove(exclusiveBoundName);
+        }
+        target.put(boundName, copy(value));
+    }
+
+    private static void exclusiveBound(Map<String, Object> target,
+                                       Map<String, Object> source,
+                                       String boundName,
+                                       String exclusiveBoundName,
+                                       Object value,
+                                       SchemaMode mode) {
+        if (mode == SchemaMode.OPENAPI30 && value instanceof Number) {
+            Object inclusiveBound = source.get(boundName);
+            if (inclusiveBound instanceof Number inclusiveNumber
+                    && !exclusiveBoundWins(boundName, inclusiveNumber, (Number) value)) {
+                target.put(boundName, copy(inclusiveBound));
+                target.remove(exclusiveBoundName);
+                return;
+            }
+            target.put(boundName, copy(value));
+            target.put(exclusiveBoundName, true);
+        } else if (mode == SchemaMode.CANONICAL && value instanceof Boolean exclusive) {
+            if (exclusive) {
+                Object bound = source.get(boundName);
+                if (bound != null) {
+                    target.put(exclusiveBoundName, copy(bound));
+                }
+            }
+        } else {
+            target.put(exclusiveBoundName, copy(value));
+        }
+    }
+
+    private static boolean exclusiveBoundWins(String boundName, Number inclusiveBound, Number exclusiveBound) {
+        int compare = decimal(inclusiveBound).compareTo(decimal(exclusiveBound));
+        return switch (boundName) {
+        case "maximum" -> compare >= 0;
+        case "minimum" -> compare <= 0;
+        default -> true;
+        };
+    }
+
+    private static BigDecimal decimal(Number number) {
+        if (number instanceof BigDecimal bigDecimal) {
+            return bigDecimal;
+        }
+        return new BigDecimal(number.toString());
     }
 
     private static Object additionalProperties(Object value, SchemaMode mode) {
@@ -673,7 +827,7 @@ final class OpenApi30DocumentMapper {
     private static TypeMapping openApi30Type(Object value) {
         if (!(value instanceof List<?> list)) {
             if ("null".equals(value)) {
-                return new TypeMapping(null, null, true);
+                return new TypeMapping(nullOnlySchema(), null, false);
             }
             return new TypeMapping(copy(value), null, false);
         }
@@ -687,14 +841,17 @@ final class OpenApi30DocumentMapper {
             }
         }
         if (types.isEmpty()) {
-            return new TypeMapping(null, null, nullable);
+            return nullable ? new TypeMapping(nullOnlySchema(), null, false) : new TypeMapping(null, null, false);
         }
         if (types.size() == 1) {
             return new TypeMapping(types.getFirst(), null, nullable);
         }
         List<Object> oneOf = new ArrayList<>();
         types.forEach(type -> oneOf.add(Map.of("type", type)));
-        return new TypeMapping(null, oneOf, nullable);
+        if (nullable) {
+            oneOf.add(nullOnlySchema());
+        }
+        return new TypeMapping(null, oneOf, false);
     }
 
     private static Object enumValue(Object value, SchemaMode mode, boolean nullable) {
@@ -755,119 +912,31 @@ final class OpenApi30DocumentMapper {
         schema.put("enum", result);
     }
 
+    private static void addNullOneOf(Map<String, Object> schema) {
+        Object value = schema.get("oneOf");
+        if (!(value instanceof List<?> list)) {
+            return;
+        }
+        Map<String, Object> nullOnlySchema = nullOnlySchema();
+        if (list.contains(nullOnlySchema)) {
+            return;
+        }
+        List<Object> result = new ArrayList<>(list);
+        result.add(nullOnlySchema);
+        schema.put("oneOf", result);
+    }
+
     private static List<Object> singleValueList(Object value) {
         List<Object> result = new ArrayList<>();
         result.add(value);
         return result;
     }
 
-    private static JsonObject jsonObject(Map<String, Object> source) {
-        JsonObject.Builder builder = JsonObject.builder();
-        source.forEach((key, value) -> builder.set(key, jsonValue(value)));
-        return builder.build();
-    }
-
-    private static JsonValue jsonValue(Object value) {
-        if (value instanceof JsonValue jsonValue) {
-            return jsonValue;
-        }
-        if (value instanceof Map<?, ?> map) {
-            return jsonObject(objectMap(map));
-        }
-        if (value instanceof List<?> list) {
-            return JsonArray.create(list.stream()
-                                            .map(OpenApi30DocumentMapper::jsonValue)
-                                            .toList());
-        }
-        if (value instanceof String string) {
-            return JsonString.create(string);
-        }
-        if (value instanceof Boolean bool) {
-            return JsonBoolean.create(bool);
-        }
-        if (value instanceof BigDecimal number) {
-            return JsonNumber.create(number);
-        }
-        if (value instanceof Number number) {
-            return JsonNumber.create(BigDecimal.valueOf(number.doubleValue()));
-        }
-        if (value == null) {
-            return JsonNull.instance();
-        }
-        return JsonString.create(String.valueOf(value));
-    }
-
-    private static Map<String, Object> copyAllowed(Map<String, ?> source, Set<String> allowedFields) {
+    private static Map<String, Object> nullOnlySchema() {
         Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (allowed(key, allowedFields)) {
-                result.put(key, copy(value));
-            }
-        });
-        return result;
-    }
-
-    private static boolean allowed(String key, Set<String> allowedFields) {
-        return allowedFields.contains(key) || key.startsWith("x-");
-    }
-
-    private static Object copy(Object value) {
-        if (value instanceof Map<?, ?> map) {
-            Map<String, Object> result = new LinkedHashMap<>();
-            map.forEach((key, item) -> result.put(String.valueOf(key), copy(item)));
-            return result;
-        }
-        if (value instanceof List<?> list) {
-            List<Object> result = new ArrayList<>();
-            list.forEach(item -> result.add(copy(item)));
-            return result;
-        }
-        return value;
-    }
-
-    private static Map<String, Object> objectMap(Map<?, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> result.put(String.valueOf(key), value));
-        return result;
-    }
-
-    private static Map<String, Object> objectMap(JsonObject object) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        object.keysAsStrings()
-                .forEach(key -> object.value(key)
-                        .ifPresent(value -> result.put(key, value(value))));
-        return result;
-    }
-
-    private static Object value(JsonValue value) {
-        return switch (value.type()) {
-        case OBJECT -> objectMap(value.asObject());
-        case ARRAY -> value.asArray()
-                .values()
-                .stream()
-                .map(OpenApi30DocumentMapper::value)
-                .toList();
-        case STRING -> value.asString().value();
-        case NUMBER -> value.asNumber().bigDecimalValue();
-        case BOOLEAN -> value.asBoolean().value();
-        case NULL -> null;
-        case UNKNOWN -> value.toString();
-        };
-    }
-
-    private static void object(Object value, java.util.function.Consumer<Map<String, Object>> consumer) {
-        if (value instanceof Map<?, ?> map) {
-            consumer.accept(objectMap(map));
-        }
-    }
-
-    private static List<Object> objectList(Object value,
-                                           java.util.function.Function<Map<String, Object>, Map<String, Object>> mapper) {
-        if (!(value instanceof List<?> list)) {
-            return List.of();
-        }
-        List<Object> result = new ArrayList<>();
-        list.forEach(item -> object(item, object -> result.add(mapper.apply(object))));
+        result.put("type", "object");
+        result.put("nullable", true);
+        result.put("enum", singleValueList(null));
         return result;
     }
 
@@ -896,7 +965,9 @@ final class OpenApi30DocumentMapper {
 
     private record TypeMapping(Object type, List<Object> oneOf, boolean nullable) {
         void put(Map<String, Object> target) {
-            if (type != null) {
+            if (type instanceof Map<?, ?> map) {
+                map.forEach((key, value) -> target.put(String.valueOf(key), value));
+            } else if (type != null) {
                 target.put("type", type);
             }
             if (oneOf != null) {

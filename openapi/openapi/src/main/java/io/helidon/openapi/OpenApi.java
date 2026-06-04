@@ -76,6 +76,11 @@ public final class OpenApi {
 
     /**
      * Parameter serialization style.
+     * <p>
+     * Declarative OpenAPI generation supports {@link #SIMPLE} style for path and header parameters, and {@link #FORM},
+     * {@link #SPACE_DELIMITED}, or {@link #PIPE_DELIMITED} style for query parameters. Delimited query styles require
+     * list-valued parameters and cannot use {@link Explode#TRUE}. Header parameters cannot use {@link Explode#TRUE}.
+     * {@link #DEEP_OBJECT}, {@link #MATRIX}, and {@link #LABEL} are not supported by declarative HTTP parameter binding.
      */
     public enum Style {
         /**
@@ -120,7 +125,10 @@ public final class OpenApi {
     }
 
     /**
-     * Marker for a type that contributes document-level OpenAPI metadata.
+     * Marker for a type that contributes document-level OpenAPI metadata and enables generated OpenAPI data for
+     * declarative endpoints.
+     * <p>
+     * A type annotated with {@code @OpenApi.Document} must also be annotated with {@link Info @OpenApi.Info}.
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
@@ -128,6 +136,8 @@ public final class OpenApi {
     public @interface Document {
         /**
          * Document identity URI.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
          *
          * @return document identity URI
          */
@@ -135,6 +145,8 @@ public final class OpenApi {
 
         /**
          * JSON Schema dialect URI.
+         * <p>
+         * Rendered only for OpenAPI 3.1 and later output.
          *
          * @return JSON Schema dialect URI
          */
@@ -143,6 +155,8 @@ public final class OpenApi {
 
     /**
      * OpenAPI Info Object metadata.
+     * <p>
+     * Use only on {@link Document @OpenApi.Document} metadata types.
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
@@ -171,6 +185,8 @@ public final class OpenApi {
 
         /**
          * API summary.
+         * <p>
+         * Rendered only for OpenAPI 3.1 and later output.
          *
          * @return summary
          */
@@ -186,6 +202,8 @@ public final class OpenApi {
 
     /**
      * OpenAPI Contact Object metadata.
+     * <p>
+     * Use only on {@link Document @OpenApi.Document} metadata types.
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
@@ -215,6 +233,8 @@ public final class OpenApi {
 
     /**
      * OpenAPI License Object metadata.
+     * <p>
+     * Use only on {@link Document @OpenApi.Document} metadata types.
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
@@ -236,6 +256,8 @@ public final class OpenApi {
 
         /**
          * SPDX license identifier.
+         * <p>
+         * Rendered only for OpenAPI 3.1 and later output.
          *
          * @return license identifier
          */
@@ -244,6 +266,9 @@ public final class OpenApi {
 
     /**
      * OpenAPI Server Object metadata.
+     * <p>
+     * Type-level usage applies only to {@link Document @OpenApi.Document} metadata types. Method-level usage applies to
+     * generated operations.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
@@ -266,6 +291,8 @@ public final class OpenApi {
 
         /**
          * Server name.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
          *
          * @return name
          */
@@ -289,6 +316,9 @@ public final class OpenApi {
 
     /**
      * OpenAPI Tag Object metadata.
+     * <p>
+     * Use only on {@link Document @OpenApi.Document} metadata types to declare top-level tags. Use
+     * {@link Operation#tags()} to tag generated operations.
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
@@ -311,6 +341,8 @@ public final class OpenApi {
 
         /**
          * Tag summary.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
          *
          * @return summary
          */
@@ -318,6 +350,8 @@ public final class OpenApi {
 
         /**
          * Parent tag name.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
          *
          * @return parent tag name
          */
@@ -325,6 +359,8 @@ public final class OpenApi {
 
         /**
          * Tag kind.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
          *
          * @return tag kind
          */
@@ -348,6 +384,9 @@ public final class OpenApi {
 
     /**
      * OpenAPI External Documentation Object metadata.
+     * <p>
+     * Type-level usage applies only to {@link Document @OpenApi.Document} metadata types. Method-level usage applies to
+     * generated operations.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
@@ -390,6 +429,19 @@ public final class OpenApi {
         String operationId() default "";
 
         /**
+         * Complete OpenAPI path template for this operation. This is useful when the Helidon route template cannot be
+         * represented directly as an OpenAPI path. The value is not relative to the declarative HTTP path annotation.
+         * <p>
+         * Path overrides must start with {@code /} and must declare the same path parameters as the generated route.
+         * Use simple OpenAPI path parameters such as {@code {id}}. Regex constraints, optional path segments, wildcards,
+         * escaped path characters, greedy parameters, and path parameter names containing path or template metacharacters
+         * are not supported.
+         *
+         * @return OpenAPI path template
+         */
+        String path() default "";
+
+        /**
          * Operation description.
          *
          * @return description
@@ -422,6 +474,19 @@ public final class OpenApi {
 
     /**
      * OpenAPI Parameter Object metadata.
+     * <p>
+     * On a method parameter, this annotation decorates the generated parameter from the declarative HTTP binding; it
+     * cannot change the bound parameter {@link #name()} or {@link #in()} location. On a method, this annotation must
+     * declare non-blank {@link #name()} and {@link #in()} values which match an existing generated path, query, or header
+     * parameter.
+     * <p>
+     * Path parameters are always required and cannot be made optional. Query and header parameters which are required by
+     * the Java signature or HTTP binding cannot be made optional. {@link #allowReserved()} can be used only for query
+     * parameters. If {@link #content()} is configured, {@link #style()} and {@link #explode()} must not be configured.
+     * <p>
+     * Generated OpenAPI omits declarative header parameters named {@code Accept}, {@code Content-Type}, or
+     * {@code Authorization}. Use media type metadata, request body metadata, or security metadata to describe those
+     * concerns.
      */
     @Target({ElementType.METHOD, ElementType.PARAMETER})
     @Retention(RetentionPolicy.CLASS)
@@ -437,6 +502,9 @@ public final class OpenApi {
 
         /**
          * Parameter name. Defaults to the HTTP binding name on parameter-target usage.
+         * <p>
+         * Method-target usage requires a non-blank value matching a generated parameter. Parameter-target usage cannot
+         * override the generated parameter name.
          *
          * @return name
          */
@@ -444,6 +512,10 @@ public final class OpenApi {
 
         /**
          * Parameter location. Defaults to the HTTP binding location on parameter-target usage.
+         * <p>
+         * Method-target usage requires a non-blank value matching a generated parameter location. Supported generated
+         * locations are {@code path}, {@code query}, and {@code header}. Parameter-target usage cannot override the
+         * generated parameter location.
          *
          * @return location
          */
@@ -451,6 +523,8 @@ public final class OpenApi {
 
         /**
          * Requiredness override.
+         * <p>
+         * Path parameters are always required. Required query and header parameters cannot be made optional.
          *
          * @return requiredness
          */
@@ -458,6 +532,9 @@ public final class OpenApi {
 
         /**
          * Parameter example.
+         * <p>
+         * Mutually exclusive with {@link #examples()}. Can be used with generated schema parameters or explicit
+         * {@link #content()}.
          *
          * @return example
          */
@@ -465,6 +542,9 @@ public final class OpenApi {
 
         /**
          * Parameter examples.
+         * <p>
+         * Mutually exclusive with {@link #example()}. Can be used with generated schema parameters or explicit
+         * {@link #content()}.
          *
          * @return examples
          */
@@ -472,6 +552,9 @@ public final class OpenApi {
 
         /**
          * Parameter content entries.
+         * <p>
+         * At most one entry is supported. When configured, generated schema, {@link #style()}, and {@link #explode()}
+         * are omitted. Parameter {@link #example()} or {@link #examples()} can still be configured.
          *
          * @return content
          */
@@ -479,6 +562,9 @@ public final class OpenApi {
 
         /**
          * Parameter style.
+         * <p>
+         * Must remain unspecified when {@link #content()} is configured. See {@link Style} for supported styles by
+         * parameter location.
          *
          * @return style
          */
@@ -486,6 +572,10 @@ public final class OpenApi {
 
         /**
          * Parameter explode override.
+         * <p>
+         * Must remain unspecified when {@link #content()} is configured. Header parameters cannot use
+         * {@link Explode#TRUE}. Query parameters cannot use {@link Explode#TRUE} with {@link Style#SPACE_DELIMITED} or
+         * {@link Style#PIPE_DELIMITED}.
          *
          * @return explode
          */
@@ -493,6 +583,8 @@ public final class OpenApi {
 
         /**
          * Whether reserved characters are allowed unencoded.
+         * <p>
+         * Supported only for query parameters.
          *
          * @return allow reserved flag
          */
@@ -523,6 +615,10 @@ public final class OpenApi {
 
     /**
      * OpenAPI Request Body Object metadata.
+     * <p>
+     * Use only on a method with a declarative HTTP entity parameter. Requiredness is inferred from that parameter:
+     * {@code Optional} entity parameters are optional and other entity parameters are required. Configure
+     * {@link #required()} to override the inferred value.
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.CLASS)
@@ -552,6 +648,9 @@ public final class OpenApi {
 
     /**
      * OpenAPI Response Object metadata.
+     * <p>
+     * When a method declares one or more explicit responses, generated OpenAPI response content is taken only from
+     * {@link #content()}; return-type response content is not inferred for those explicit responses.
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.CLASS)
@@ -559,7 +658,7 @@ public final class OpenApi {
     @Documented
     public @interface Response {
         /**
-         * HTTP status code.
+         * HTTP status code in the range {@code 100..599}. A method can declare at most one response for each status.
          *
          * @return status code
          */
@@ -574,6 +673,8 @@ public final class OpenApi {
 
         /**
          * Response summary.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
          *
          * @return summary
          */
@@ -603,6 +704,9 @@ public final class OpenApi {
     public @interface Header {
         /**
          * Header name.
+         * <p>
+         * Response header names cannot be {@code Content-Type} and cannot repeat case-insensitively within one response.
+         * Use {@link Content} to describe response media types.
          *
          * @return header name
          */
@@ -682,6 +786,8 @@ public final class OpenApi {
 
         /**
          * Item schema class for OpenAPI 3.2 sequential media types.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
          *
          * @return item schema class
          */
@@ -725,6 +831,9 @@ public final class OpenApi {
 
         /**
          * Example value.
+         * <p>
+         * Declarative OpenAPI generation parses valid JSON as a structured OpenAPI value and emits non-JSON text as a
+         * string.
          *
          * @return value
          */
@@ -732,6 +841,11 @@ public final class OpenApi {
 
         /**
          * OpenAPI 3.2 data value.
+         * <p>
+         * Declarative OpenAPI generation parses valid JSON as a structured OpenAPI value and emits non-JSON text as a
+         * string.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
          *
          * @return data value
          */
@@ -739,6 +853,10 @@ public final class OpenApi {
 
         /**
          * OpenAPI 3.2 serialized value.
+         * <p>
+         * Declarative OpenAPI generation emits this value as a string and does not parse it as JSON.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
          *
          * @return serialized value
          */
@@ -754,6 +872,9 @@ public final class OpenApi {
 
     /**
      * OpenAPI Specification Extension metadata.
+     * <p>
+     * Type-level usage applies only to {@link Document @OpenApi.Document} metadata types. Method-level usage applies to
+     * generated operations.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
@@ -761,7 +882,7 @@ public final class OpenApi {
     @Documented
     public @interface Extension {
         /**
-         * Extension name.
+         * Extension name. Must start with {@code x-}.
          *
          * @return name
          */
@@ -792,6 +913,14 @@ public final class OpenApi {
 
     /**
      * OpenAPI Security Scheme Object metadata.
+     * <p>
+     * Supported {@link #type()} values are {@code apiKey}, {@code http}, {@code mutualTLS}, {@code oauth2}, and
+     * {@code openIdConnect}. The {@code apiKey} type requires {@link #apiKeyName()} and {@link #in()} with {@code query},
+     * {@code header}, or {@code cookie}. The {@code http} type requires {@link #scheme()}. The {@code mutualTLS} type has
+     * no additional required fields. The {@code oauth2} type requires {@link #flows()} with at least one configured flow.
+     * The {@code openIdConnect} type requires {@link #openIdConnectUrl()}.
+     * <p>
+     * Use only on {@link Document @OpenApi.Document} metadata types.
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
@@ -806,7 +935,8 @@ public final class OpenApi {
         String name();
 
         /**
-         * Scheme type.
+         * Scheme type. Supported values are {@code apiKey}, {@code http}, {@code mutualTLS}, {@code oauth2}, and
+         * {@code openIdConnect}.
          *
          * @return type
          */
@@ -820,14 +950,14 @@ public final class OpenApi {
         String description() default "";
 
         /**
-         * API key parameter name.
+         * API key parameter name. Required when {@link #type()} is {@code apiKey}.
          *
          * @return API key parameter name
          */
         String apiKeyName() default "";
 
         /**
-         * HTTP authorization scheme.
+         * HTTP authorization scheme. Required when {@link #type()} is {@code http}.
          *
          * @return scheme
          */
@@ -841,21 +971,22 @@ public final class OpenApi {
         String bearerFormat() default "";
 
         /**
-         * API key location.
+         * API key location. Required when {@link #type()} is {@code apiKey}; supported values are {@code query},
+         * {@code header}, and {@code cookie}.
          *
          * @return location
          */
         String in() default "";
 
         /**
-         * OAuth flows.
+         * OAuth flows. Required when {@link #type()} is {@code oauth2}; at least one flow must be configured.
          *
          * @return OAuth flows
          */
         OAuthFlows flows() default @OAuthFlows;
 
         /**
-         * OpenID Connect discovery URL.
+         * OpenID Connect discovery URL. Required when {@link #type()} is {@code openIdConnect}.
          *
          * @return OpenID Connect discovery URL
          */
@@ -863,6 +994,8 @@ public final class OpenApi {
 
         /**
          * OpenAPI 3.2 OAuth 2 metadata URL.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
          *
          * @return OAuth 2 metadata URL
          */
@@ -870,6 +1003,8 @@ public final class OpenApi {
 
         /**
          * Whether the security scheme is deprecated.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
          *
          * @return deprecated flag
          */
@@ -913,6 +1048,8 @@ public final class OpenApi {
 
         /**
          * OpenAPI 3.2 OAuth device authorization flow.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
          *
          * @return device authorization flow
          */
@@ -921,6 +1058,11 @@ public final class OpenApi {
 
     /**
      * OpenAPI OAuth Flow Object metadata.
+     * <p>
+     * The {@code implicit} flow requires {@link #authorizationUrl()}. The {@code password} and
+     * {@code clientCredentials} flows require {@link #tokenUrl()}. The {@code authorizationCode} flow requires
+     * {@link #authorizationUrl()} and {@link #tokenUrl()}. The {@code deviceAuthorization} flow requires
+     * {@link #deviceAuthorizationUrl()} and {@link #tokenUrl()}.
      */
     @Target({})
     @Retention(RetentionPolicy.CLASS)
@@ -935,6 +1077,8 @@ public final class OpenApi {
 
         /**
          * OpenAPI 3.2 device authorization URL.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
          *
          * @return device authorization URL
          */
@@ -1001,6 +1145,15 @@ public final class OpenApi {
 
     /**
      * OpenAPI Security Requirement Object metadata.
+     * <p>
+     * On {@link Document @OpenApi.Document} metadata types, type-level requirements emit top-level document security
+     * requirements. On endpoint types, type-level requirements apply to generated operations for the endpoint.
+     * Method-level requirements replace inherited endpoint requirements for that operation. A requirement with one or
+     * more {@link #value()} entries adds one OpenAPI security requirement object containing those scheme names and
+     * optional {@link #scopes()}.
+     * <p>
+     * An empty individual requirement emits an empty OpenAPI security requirement object. To clear inherited endpoint
+     * security for an operation, use an empty {@link SecurityRequirements} container instead.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
@@ -1009,6 +1162,9 @@ public final class OpenApi {
     public @interface SecurityRequirement {
         /**
          * Required scheme names.
+         * <p>
+         * Leaving this empty emits an empty OpenAPI security requirement object. Use an empty
+         * {@link SecurityRequirements} container to declare an operation with no security requirements.
          *
          * @return scheme names
          */
@@ -1024,6 +1180,10 @@ public final class OpenApi {
 
     /**
      * Container for repeated {@link SecurityRequirement}.
+     * <p>
+     * An empty container on a method clears inherited endpoint security and emits {@code security: []} for the generated
+     * operation. An empty container on an endpoint clears endpoint-level security for operations which do not declare
+     * method-level security requirements.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)

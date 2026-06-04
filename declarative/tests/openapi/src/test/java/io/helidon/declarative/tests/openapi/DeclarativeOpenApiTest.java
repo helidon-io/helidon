@@ -16,30 +16,25 @@
 
 package io.helidon.declarative.tests.openapi;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.http.Status;
-import io.helidon.openapi.OpenApiDocument;
 import io.helidon.openapi.spi.OpenApiDocumentSource;
-import io.helidon.openapi.spi.OpenApiVersion;
-import io.helidon.openapi.v30.OpenApi30Version;
-import io.helidon.openapi.v31.OpenApi31Version;
-import io.helidon.openapi.v32.OpenApi32Version;
 import io.helidon.service.registry.Services;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.Socket;
 
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -51,6 +46,13 @@ import static org.hamcrest.Matchers.not;
 @ServerTest
 @SuppressWarnings("helidon:api:preview")
 class DeclarativeOpenApiTest {
+    private static final String CONFIGURED_GREETING_FIND_OPERATION_ID = "configuredGreetingFind";
+    private static final String SCHEMA_REF_PREFIX = "#/components/schemas/";
+    private static final String MESSAGE_SCHEMA_DESCRIPTION = "Message response entity";
+    private static final String MESSAGE_REQUEST_SCHEMA_DESCRIPTION = "Message request entity";
+    private static final String OTHER_MESSAGE_SCHEMA_DESCRIPTION = "Other package message entity";
+    private static final String EXTERNAL_MESSAGE_SCHEMA_DESCRIPTION = "External package message entity";
+
     private final Http1Client client;
     private final Http1Client adminClient;
 
@@ -63,17 +65,18 @@ class DeclarativeOpenApiTest {
     void generatedDocumentUsesEndpointNamesForTagsAndOperationIds() {
         Map<String, Object> document = document();
 
-        assertThat(document.get("openapi"), is("3.0.3"));
+        assertThat(document.get("openapi"), is(expectedOpenApiVersion()));
         assertThat(object(document, "info").get("title"), is("Declarative OpenAPI Test"));
         assertThat(object(document, "info").get("version"), is("1.0.0"));
 
         Map<String, Object> greetingFind = operation(document, "/greetings/{name}", "get");
-        assertThat(greetingFind.get("operationId"), is("greetingGetFind"));
+        assertThat(greetingFind.get("operationId"), is(CONFIGURED_GREETING_FIND_OPERATION_ID));
         assertThat(list(greetingFind, "tags"), contains("greeting"));
 
         Map<String, Object> farewellFind = operation(document, "/farewells/{name}", "get");
         assertThat(farewellFind.get("operationId"), is("farewellGetFind"));
         assertThat(list(farewellFind, "tags"), contains("farewell"));
+        assertThat(list(farewellFind, "security"), is(List.of()));
 
         Map<String, Object> greetingCreate = operation(document, "/greetings", "post");
         assertThat(greetingCreate.get("operationId"), is("greetingPostCreate"));
@@ -115,13 +118,21 @@ class DeclarativeOpenApiTest {
 
         Map<String, Object> license = object(info, "license");
         assertThat(license.get("name"), is("Apache License 2.0"));
-        assertThat(license.get("identifier"), is("Apache-2.0"));
+        if (supportsLicenseIdentifier()) {
+            assertThat(license.get("identifier"), is("Apache-2.0"));
+        } else {
+            assertThat(license, not(hasKey("identifier")));
+        }
         assertThat(license.get("url"), is("https://www.apache.org/licenses/LICENSE-2.0"));
 
         Map<String, Object> externalDocs = object(document, "externalDocs");
         assertThat(externalDocs.get("url"), is("https://helidon.io/docs"));
         assertThat(externalDocs.get("description"), is("Helidon documentation"));
         assertThat(document.get("x-test-document"), is("declarative-openapi"));
+
+        Map<String, Object> server = object(list(document, "servers").getFirst());
+        assertThat(server.get("url"), is("https://openapi.example.test"));
+        assertThat(server.get("description"), is("Test server"));
 
         Map<String, Object> securitySchemes = object(object(document, "components"), "securitySchemes");
         Map<String, Object> bearerAuth = object(securitySchemes, "bearerAuth");
@@ -147,7 +158,9 @@ class DeclarativeOpenApiTest {
         Map<String, Object> operation = operation(document, "/greetings/{name}", "get");
 
         assertThat(list(operation, "tags"), contains("greeting"));
-        assertThat(operation, not(hasKey("security")));
+        List<Object> security = list(operation, "security");
+        assertThat(security.size(), is(1));
+        assertThat(list(object(security.getFirst()), "bearerAuth"), is(List.of()));
 
         Map<String, Object> name = parameter(operation, "name", "path");
         assertThat(name.get("required"), is(true));
@@ -158,19 +171,20 @@ class DeclarativeOpenApiTest {
         assertThat(object(language, "schema").get("type"), is("string"));
 
         Map<String, Object> include = parameter(operation, "include", "query");
-        assertThat(include.get("required"), is(true));
+        assertThat(include.get("required"), is(false));
         assertThat(include.get("style"), is("form"));
         assertThat(include.get("explode"), is(true));
         assertThat(object(object(include, "schema"), "items").get("type"), is("string"));
 
         Map<String, Object> response = response(operation, "200");
         assertThat(response.get("description"), is("OK"));
-        assertThat(ref(content(response, MediaTypes.APPLICATION_JSON_VALUE)), is("#/components/schemas/Message"));
+        assertThat(ref(content(response, MediaTypes.APPLICATION_JSON_VALUE)), is(messageRef(document)));
     }
 
     @Test
     void generatedDocumentUsesExplicitAnnotationsWhenPresent() {
-        Map<String, Object> operation = operation(document(), "/greetings/documented/{name}", "get");
+        Map<String, Object> document = document();
+        Map<String, Object> operation = operation(document, "/greetings/documented/{name}", "get");
 
         assertThat(operation.get("summary"), is("Find a greeting"));
         assertThat(operation.get("description"), is("Returns a documented greeting."));
@@ -184,22 +198,24 @@ class DeclarativeOpenApiTest {
 
         Map<String, Object> response = response(operation, "200");
         assertThat(response.get("description"), is("Greeting found"));
-        assertThat(ref(content(response, MediaTypes.APPLICATION_JSON_VALUE)), is("#/components/schemas/Message"));
+        assertThat(ref(content(response, MediaTypes.APPLICATION_JSON_VALUE)), is(messageRef(document)));
     }
 
     @Test
     void generatedDocumentIncludesRichResponseMetadata() {
-        Map<String, Object> operation = operation(document(), "/greetings/responses", "get");
+        Map<String, Object> document = document();
+        Map<String, Object> operation = operation(document, "/greetings/responses", "get");
 
         Map<String, Object> response = response(operation, "202");
         assertThat(response.get("description"), is("Accepted greeting"));
-        assertThat(ref(content(response, "application/vnd.greeting+json")), is("#/components/schemas/Message"));
+        assertThat(ref(content(response, "application/vnd.greeting+json")), is(messageRef(document)));
         Map<String, Object> responseExample = example(mediaTypeObject(response, "application/vnd.greeting+json"),
                                                       "accepted-response");
         assertThat(responseExample.get("summary"), is("Accepted example"));
-        assertThat(responseExample.get("value"), is("{\"message\":\"Accepted\"}"));
+        assertThat(object(responseExample, "value").get("message"), is("Accepted"));
 
         Map<String, Object> headers = object(response, "headers");
+        assertThat(headers, not(hasKey("Content-Type")));
         Map<String, Object> staticHeader = object(headers, "X-Static");
         assertThat(staticHeader.get("required"), is(true));
         Map<String, Object> staticHeaderSchema = object(staticHeader, "schema");
@@ -219,12 +235,15 @@ class DeclarativeOpenApiTest {
 
     @Test
     void generatedDocumentMergesExplicitParameterMetadata() {
-        Map<String, Object> operation = operation(document(), "/greetings/parameters/{id}", "get");
+        Map<String, Object> document = document();
+        Map<String, Object> operation = operation(document, "/greetings/parameters/{id}", "get");
 
         Map<String, Object> id = parameter(operation, "id", "path");
         assertThat(id.get("required"), is(true));
         assertThat(id.get("description"), is("Greeting identifier"));
-        assertThat(id.get("example"), is("42"));
+        Object idExample = id.get("example");
+        assertThat(idExample, instanceOf(Number.class));
+        assertThat(((Number) idExample).doubleValue(), is(42.0));
 
         Map<String, Object> search = parameter(operation, "search", "query");
         assertThat(search.get("required"), is(false));
@@ -233,12 +252,13 @@ class DeclarativeOpenApiTest {
         assertThat(search.get("explode"), is(false));
         assertThat(search.get("allowReserved"), is(true));
         assertThat(search.get("deprecated"), is(true));
-        assertThat(search.get("example"), is("hello/world"));
+        assertThat(search.containsKey("example"), is(false));
         Map<String, Object> searchExample = example(search, "search-example");
         assertThat(searchExample.get("summary"), is("Search example"));
         assertThat(searchExample.get("value"), is("hi"));
 
         Map<String, Object> filter = parameter(operation, "filter", "query");
+        assertThat(filter.get("required"), is(false));
         assertThat(filter.get("style"), is("pipeDelimited"));
         assertThat(filter.get("explode"), is(false));
         assertThat(object(object(filter, "schema"), "items").get("type"), is("string"));
@@ -246,9 +266,12 @@ class DeclarativeOpenApiTest {
         Map<String, Object> packed = parameter(operation, "packed", "query");
         assertThat(packed.get("description"), is("Packed JSON filter"));
         assertThat(packed, not(hasKey("schema")));
-        assertThat(ref(content(packed, MediaTypes.APPLICATION_JSON_VALUE)), is("#/components/schemas/MessageRequest"));
-        assertThat(example(mediaTypeObject(packed, MediaTypes.APPLICATION_JSON_VALUE), "packed-example").get("value"),
-                   is("{\"prefix\":\"Hello\",\"name\":\"Ada\"}"));
+        assertThat(ref(content(packed, MediaTypes.APPLICATION_JSON_VALUE)), is(messageRequestRef(document)));
+        Map<String, Object> packedExample = object(example(mediaTypeObject(packed, MediaTypes.APPLICATION_JSON_VALUE),
+                                                           "packed-example"),
+                                                   "value");
+        assertThat(packedExample.get("prefix"), is("Hello"));
+        assertThat(packedExample.get("name"), is("Ada"));
 
         Map<String, Object> trace = parameter(operation, "X-Trace", "header");
         assertThat(trace.get("required"), is(false));
@@ -279,6 +302,7 @@ class DeclarativeOpenApiTest {
         assertThat(operation.get("x-test-operation"), is("documented-greeting"));
 
         List<Object> security = list(operation, "security");
+        assertThat(security.size(), is(2));
         Map<String, Object> allRequired = object(security.getFirst());
         assertThat(list(allRequired, "bearerAuth"), is(List.of()));
         assertThat(list(allRequired, "oauth2"), is(List.of()));
@@ -301,23 +325,33 @@ class DeclarativeOpenApiTest {
         Map<String, Object> createBody = object(create, "requestBody");
         assertThat(createBody.get("description"), is("Greeting payload"));
         assertThat(createBody.get("required"), is(true));
-        assertThat(ref(content(createBody, MediaTypes.APPLICATION_JSON_VALUE)), is("#/components/schemas/MessageRequest"));
-        assertThat(example(mediaTypeObject(createBody, MediaTypes.APPLICATION_JSON_VALUE), "create-request").get("value"),
-                   is("{\"prefix\":\"Hello\",\"name\":\"Ada\"}"));
+        assertThat(ref(content(createBody, MediaTypes.APPLICATION_JSON_VALUE)), is(messageRequestRef(document)));
+        Map<String, Object> createExample = object(example(mediaTypeObject(createBody, MediaTypes.APPLICATION_JSON_VALUE),
+                                                           "create-request"),
+                                                   "value");
+        assertThat(createExample.get("prefix"), is("Hello"));
+        assertThat(createExample.get("name"), is("Ada"));
         assertThat(response(create, "201").get("description"), is("Created"));
         assertThat(ref(content(response(create, "201"), MediaTypes.APPLICATION_JSON_VALUE)),
-                   is("#/components/schemas/Message"));
+                   is(messageRef(document)));
 
         Map<String, Object> inferredBody = object(operation(document, "/greetings/inferred-body", "put"), "requestBody");
         assertThat(inferredBody.get("description"), is("Inferred greeting payload"));
         assertThat(inferredBody.get("required"), is(false));
-        assertThat(ref(content(inferredBody, MediaTypes.APPLICATION_JSON_VALUE)), is("#/components/schemas/MessageRequest"));
+        assertThat(ref(content(inferredBody, MediaTypes.APPLICATION_JSON_VALUE)), is(messageRequestRef(document)));
+
+        Map<String, Object> explicitBody = object(operation(document, "/greetings/explicit-request-schema", "post"),
+                                                  "requestBody");
+        assertThat(explicitBody.get("description"), is("Explicit request schema"));
+        assertThat(ref(content(explicitBody, MediaTypes.APPLICATION_JSON_VALUE)),
+                   is(messageRequestRef(document)));
+        assertThat(object(object(document, "components"), "schemas"), not(hasKey("InternalPayload")));
 
         Map<String, Object> optional = operation(document, "/greetings/optional/{name}", "get");
         assertThat(optional.get("operationId"), is("greetingGetMaybeFind"));
         Map<String, Object> optionalFound = response(optional, "200");
         assertThat(optionalFound.get("description"), is("OK"));
-        assertThat(ref(content(optionalFound, MediaTypes.APPLICATION_JSON_VALUE)), is("#/components/schemas/Message"));
+        assertThat(ref(content(optionalFound, MediaTypes.APPLICATION_JSON_VALUE)), is(messageRef(document)));
         Map<String, Object> optionalMissing = response(optional, "404");
         assertThat(optionalMissing.get("description"), is("Not Found"));
         assertThat(optionalMissing, not(hasKey("content")));
@@ -325,19 +359,20 @@ class DeclarativeOpenApiTest {
 
     @Test
     void generatedDocumentUsesJsonSchemaComponentsForEntityTypes() {
-        Map<String, Object> schemas = object(object(document(), "components"), "schemas");
+        Map<String, Object> document = document();
+        Map<String, Object> schemas = schemas(document);
 
-        Map<String, Object> message = object(schemas, "Message");
+        Map<String, Object> message = object(schemas, messageSchema(document));
         assertThat(message.get("type"), is("object"));
-        assertThat(message.get("description"), is("Message response entity"));
+        assertThat(message.get("description"), is(MESSAGE_SCHEMA_DESCRIPTION));
         assertThat(list(message, "required"), contains("message"));
         Map<String, Object> messageText = object(object(message, "properties"), "message");
         assertThat(messageText.get("type"), is("string"));
         assertThat(messageText.get("description"), is("Message text"));
 
-        Map<String, Object> request = object(schemas, "MessageRequest");
+        Map<String, Object> request = object(schemas, messageRequestSchema(document));
         assertThat(request.get("type"), is("object"));
-        assertThat(request.get("description"), is("Message request entity"));
+        assertThat(request.get("description"), is(MESSAGE_REQUEST_SCHEMA_DESCRIPTION));
         assertThat(list(request, "required"), contains("prefix", "name"));
         Map<String, Object> prefix = object(object(request, "properties"), "prefix");
         assertThat(prefix.get("type"), is("string"));
@@ -350,30 +385,55 @@ class DeclarativeOpenApiTest {
     @Test
     void generatedDocumentDisambiguatesCollidingSchemaNames() {
         Map<String, Object> document = document();
-        Map<String, Object> schemas = object(object(document, "components"), "schemas");
+        Map<String, Object> schemas = schemas(document);
+        String messageSchema = messageSchema(document);
+        String otherMessageSchema = schemaWithDescription(document, OTHER_MESSAGE_SCHEMA_DESCRIPTION);
 
-        String localMessage = "io_helidon_declarative_tests_openapi_Message";
-        String otherMessage = "io_helidon_declarative_tests_openapi_other_Message";
-        assertThat(schemas, hasKey(localMessage));
-        assertThat(schemas, hasKey(otherMessage));
-        assertThat(object(schemas, otherMessage).get("description"), is("Other package message entity"));
+        assertThat(schemas, hasKey(messageSchema));
+        assertThat(schemas, hasKey(otherMessageSchema));
+        assertThat(otherMessageSchema, not(is(messageSchema)));
 
         Map<String, Object> create = operation(document, "/collisions", "post");
         assertThat(ref(content(object(create, "requestBody"), MediaTypes.APPLICATION_JSON_VALUE)),
-                   is("#/components/schemas/" + otherMessage));
+                   is(schemaRef(otherMessageSchema)));
         assertThat(ref(content(response(create, "200"), MediaTypes.APPLICATION_JSON_VALUE)),
-                   is("#/components/schemas/" + localMessage));
+                   is(schemaRef(messageSchema)));
     }
 
     @Test
-    void generatedDocumentAndEndpointSourcesHaveDistinctNames() {
+    void generatedDocumentDisambiguatesSchemaNamesAcrossEndpointSources() {
+        Map<String, Object> document = document();
+        Map<String, Object> schemas = schemas(document);
+        String messageSchema = messageSchema(document);
+        String externalMessageSchema = schemaWithDescription(document, EXTERNAL_MESSAGE_SCHEMA_DESCRIPTION);
+
+        assertThat(schemas, hasKey(messageSchema));
+        assertThat(schemas, hasKey(externalMessageSchema));
+        assertThat(externalMessageSchema, not(is(messageSchema)));
+
+        Map<String, Object> get = operation(document, "/external-message", "get");
+        assertThat(ref(content(response(get, "200"), MediaTypes.APPLICATION_JSON_VALUE)),
+                   is(schemaRef(externalMessageSchema)));
+    }
+
+    @Test
+    void generatedDocumentDoesNotExposeJavaPackageNamesInSchemaNamesOrRefs() {
+        Map<String, Object> document = document();
+        schemas(document).keySet()
+                .forEach(name -> assertThat(name, not(containsString("io.helidon"))));
+        assertSchemaRefsDoNotExposeJavaPackageNames(document);
+    }
+
+    @Test
+    void generatedDocumentAndEndpointSourcesAreDiscovered() {
         List<String> sourceNames = Services.all(OpenApiDocumentSource.class)
                 .stream()
                 .map(source -> source.getClass().getSimpleName())
                 .toList();
 
         assertThat(sourceNames,
-                   hasItems("CollisionEndpoint__OpenApiDocumentSource",
+                   hasItems("Main__OpenApiDocumentSource",
+                            "AlternateDocument__OpenApiDocumentSource",
                             "CollisionEndpoint__OpenApiEndpointSource"));
     }
 
@@ -383,11 +443,26 @@ class DeclarativeOpenApiTest {
     }
 
     @Test
+    void generatedDocumentNormalizesHelidonPathTemplatesAndUsesOperationPathOverride() {
+        Map<String, Object> document = document();
+        Map<String, Object> paths = object(document, "paths");
+
+        Map<String, Object> constrained = operation(document, "/greetings/constrained/{id}", "get");
+        assertThat(parameter(constrained, "id", "path").get("required"), is(true));
+        assertThat(paths, not(hasKey("/greetings/constrained/{id:[0-9]+}")));
+
+        Map<String, Object> override = operation(document, "/greetings/override/{id}", "get");
+        assertThat(parameter(override, "id", "path").get("required"), is(true));
+        assertThat(paths, not(hasKey("/greetings/override[/{id}]")));
+    }
+
+    @Test
     void staticDocumentIsMergedWithGeneratedDocument() {
         Map<String, Object> document = document();
 
         assertThat(operation(document, "/static/status", "get").get("operationId"), is("staticGetStatus"));
-        assertThat(operation(document, "/greetings/{name}", "get").get("operationId"), is("greetingGetFind"));
+        assertThat(operation(document, "/greetings/{name}", "get").get("operationId"),
+                   is(CONFIGURED_GREETING_FIND_OPERATION_ID));
     }
 
     @Test
@@ -404,60 +479,18 @@ class DeclarativeOpenApiTest {
         assertThat(object(adminDocument, "paths"), not(hasKey("/collisions")));
     }
 
-    @Test
-    void generatedDocumentRendersThroughSupportedOpenApiVersions() {
-        assertGeneratedVersion(generatedDocument(OpenApi30Version.create()), "3.0.3");
-        assertGeneratedVersion(generatedDocument(OpenApi31Version.create()), "3.1.1");
-        assertGeneratedVersion(generatedDocument(OpenApi32Version.create()), "3.2.0");
+    String expectedOpenApiVersion() {
+        return "3.0.3";
     }
 
-    @Test
-    void staticAndGeneratedDocumentRendersThroughSupportedOpenApiVersions() {
-        assertMergedVersion(mergedDocument(OpenApi30Version.create()), "3.0.3");
-        assertMergedVersion(mergedDocument(OpenApi31Version.create()), "3.1.1");
-        assertMergedVersion(mergedDocument(OpenApi32Version.create()), "3.2.0");
+    boolean supportsLicenseIdentifier() {
+        return false;
     }
 
-    private static void assertGeneratedVersion(Map<String, Object> document, String version) {
-        assertThat(document.get("openapi"), is(version));
-        assertThat(object(document, "paths"), not(hasKey("/static/status")));
-        assertThat(operation(document, "/greetings/{name}", "get").get("operationId"), is("greetingGetFind"));
-        assertThat(ref(content(response(operation(document, "/greetings/{name}", "get"), "200"),
-                               MediaTypes.APPLICATION_JSON_VALUE)),
-                   is("#/components/schemas/Message"));
-        assertThat(object(object(document, "components"), "schemas"), hasKey("MessageRequest"));
-    }
-
-    private static void assertMergedVersion(Map<String, Object> document, String version) {
-        assertThat(document.get("openapi"), is(version));
-        assertThat(operation(document, "/static/status", "get").get("operationId"), is("staticGetStatus"));
-        assertThat(operation(document, "/greetings/{name}", "get").get("operationId"), is("greetingGetFind"));
-        assertThat(object(object(document, "components"), "schemas"), hasKey("Message"));
-    }
-
-    private static Map<String, Object> generatedDocument(OpenApiVersion version) {
-        OpenApiDocument document = generatedDocument();
-        return parse(version.render(null, document));
-    }
-
-    private static Map<String, Object> mergedDocument(OpenApiVersion version) {
-        OpenApiVersion staticVersion = OpenApi30Version.create();
-        OpenApiDocument staticDocument = staticVersion.parse(null, resource("static-openapi.yaml"),
-                                                             MediaTypes.APPLICATION_OPENAPI_YAML);
-        OpenApiDocument generatedDocument = generatedDocument();
-        OpenApiDocument mergedDocument = OpenApiDocument.builder()
-                .merge(staticDocument)
-                .merge(generatedDocument)
-                .build();
-        return parse(version.render(null, mergedDocument));
-    }
-
-    private static OpenApiDocument generatedDocument() {
-        OpenApiDocument.Builder builder = OpenApiDocument.builder();
-        for (OpenApiDocumentSource source : Services.all(OpenApiDocumentSource.class)) {
-            source.describe(null, builder);
-        }
-        return builder.build();
+    static void configureServer(WebServerConfig.Builder builder, String configResource) {
+        Config config = Config.just(ConfigSources.classpath(configResource));
+        builder.clearFeatures()
+                .config(config.get("server"));
     }
 
     private Map<String, Object> document() {
@@ -478,14 +511,50 @@ class DeclarativeOpenApiTest {
         return object(new Yaml().load(yaml));
     }
 
-    private static String resource(String resourceName) {
-        try (InputStream is = DeclarativeOpenApiTest.class.getResourceAsStream("/" + resourceName)) {
-            if (is == null) {
-                throw new IllegalArgumentException("Resource not found: " + resourceName);
+    private static Map<String, Object> schemas(Map<String, Object> document) {
+        return object(object(document, "components"), "schemas");
+    }
+
+    private static String messageSchema(Map<String, Object> document) {
+        return schemaWithDescription(document, MESSAGE_SCHEMA_DESCRIPTION);
+    }
+
+    private static String messageRequestSchema(Map<String, Object> document) {
+        return schemaWithDescription(document, MESSAGE_REQUEST_SCHEMA_DESCRIPTION);
+    }
+
+    private static String messageRef(Map<String, Object> document) {
+        return schemaRef(messageSchema(document));
+    }
+
+    private static String messageRequestRef(Map<String, Object> document) {
+        return schemaRef(messageRequestSchema(document));
+    }
+
+    private static String schemaRef(String name) {
+        return SCHEMA_REF_PREFIX + name;
+    }
+
+    private static String schemaWithDescription(Map<String, Object> document, String description) {
+        List<String> names = schemas(document)
+                .entrySet()
+                .stream()
+                .filter(entry -> description.equals(object(entry.getValue()).get("description")))
+                .map(Map.Entry::getKey)
+                .toList();
+        assertThat("schema count for " + description, names.size(), is(1));
+        return names.getFirst();
+    }
+
+    private static void assertSchemaRefsDoNotExposeJavaPackageNames(Object value) {
+        if (value instanceof Map<?, ?> map) {
+            Object ref = map.get("$ref");
+            if (ref instanceof String refValue && refValue.startsWith(SCHEMA_REF_PREFIX)) {
+                assertThat(refValue, not(containsString("io.helidon")));
             }
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            map.values().forEach(DeclarativeOpenApiTest::assertSchemaRefsDoNotExposeJavaPackageNames);
+        } else if (value instanceof List<?> list) {
+            list.forEach(DeclarativeOpenApiTest::assertSchemaRefsDoNotExposeJavaPackageNames);
         }
     }
 

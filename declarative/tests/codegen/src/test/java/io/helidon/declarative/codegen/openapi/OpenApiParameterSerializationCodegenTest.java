@@ -16,6 +16,8 @@
 
 package io.helidon.declarative.codegen.openapi;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -783,6 +785,59 @@ class OpenApiParameterSerializationCodegenTest {
     }
 
     @Test
+    void generatedParameterUsesValidatedStaticNameAndLocation() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-query-static-name-location"))
+                .addSource("ValidOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/valid")
+                        class ValidOpenApiEndpoint {
+                            @Http.GET
+                            @OpenApi.Parameter(name = "${openapi.param:value}",
+                                               in = "${openapi.in:query}",
+                                               examples = @OpenApi.Example(
+                                                       name = "${openapi.example:sample}",
+                                                       value = "one"))
+                            String get(@Http.QueryParam("value") String value) {
+                                return value;
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".parameter(parameter -> parameter.name(\"value\")"));
+        assertThat(generated, containsString(".in(\"query\")"));
+        assertThat(generated, containsString(".example(\"sample\", "));
+    }
+
+    @Test
     void queryParameterCanUseContent() {
         var result = TestCompiler.builder()
                 .currentRelease()
@@ -881,5 +936,17 @@ class OpenApiParameterSerializationCodegenTest {
         for (String diagnosticPart : diagnosticParts) {
             assertThat(diagnostics, containsString(diagnosticPart));
         }
+    }
+
+    private static String generatedSource(TestCompiler.Result result) throws IOException {
+        StringBuilder generatedContent = new StringBuilder();
+        var generatedSources = Files.walk(result.sourceOutput())
+                .filter(it -> it.getFileName().toString().endsWith(".java"))
+                .toList();
+        for (Path generatedSource : generatedSources) {
+            generatedContent.append(Files.readString(generatedSource));
+            generatedContent.append('\n');
+        }
+        return generatedContent.toString();
     }
 }

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Usage, Usage>>
 - <<API, API>>
 - <<Configuration, Configuration>>
+- <<OpenAPI-Document-Versions, OpenAPI Document Versions>>
 - <<Examples, Examples>>
 
 == Overview
@@ -73,6 +74,78 @@ include::{incdir}/openapi.adoc[tag=furnish-openapi-info]
 
 include::{incdir}/openapi.adoc[tag=usage-access-endpoint]
 
+=== Static and Generated Documents
+
+By default, `OpenApiFeature` uses `STATIC_FIRST` generated document mode: a static file is used when present, otherwise
+Helidon serves generated OpenAPI data. Configure `generated.mode` to change this behavior.
+
+.Generated OpenAPI document mode
+[source,yaml]
+----
+server:
+  features:
+    openapi:
+      static-file: "openapi.yaml"
+      generated:
+        mode: "MERGE"
+----
+
+Supported values are:
+
+* `STATIC_FIRST` - Use a static document when present, otherwise use generated document sources.
+* `STATIC_ONLY` - Use only a static document and ignore generated document sources.
+* `MERGE` - Strictly merge generated document sources into a static document. Static and generated content must be
+non-conflicting; composition fails if both sides define incompatible document values, the same path operation, or
+duplicate `operationId` values. Helidon parses the static document and renders the merged document through the
+configured `document` provider, even for a listener where no generated source contributes.
+* `GENERATED_ONLY` - Use only generated document sources, even when a static document is present.
+
+When more than one generated document metadata source is visible, select the sources to use with
+`generated.document-sources`. Sources generated from `@OpenApi.Document` are named by the annotated type, using its
+dotted canonical type name. Custom `OpenApiDocumentSource` services must be qualified with `@Service.Named` to be
+selected by name. Unqualified sources always participate when they support the document context and cannot be filtered
+with `generated.document-sources`.
+
+.Select generated document metadata sources
+[source,yaml]
+----
+server:
+  features:
+    openapi:
+      generated:
+        document-sources:
+          - "com.example.openapi.ApplicationOpenApi"
+----
+
+If a generated operation id needs to be stable or disambiguated, configure it with `generated.operation-ids`. Each key is
+the fully qualified endpoint class name, `#`, method name, and fully qualified parameter types separated by `,`. The value
+is the operation id to use in the served document.
+
+.Configure generated operation ids
+[source,yaml]
+----
+server:
+  features:
+    openapi:
+      generated:
+        operation-ids:
+          "com.example.GreetingEndpoint#greet(java.lang.String)": "greet"
+----
+
+Generated annotation text values are treated literally by default. Enable `generated.resolve-config-expressions` when
+your OpenAPI annotations intentionally use Helidon config expressions in user-visible document text, such as document
+descriptions or server URLs.
+
+.Resolve generated annotation config expressions
+[source,yaml]
+----
+server:
+  features:
+    openapi:
+      generated:
+        resolve-config-expressions: true
+----
+
 == API
 
 Helidon {flavor-uc} provides an API for creating and setting up the REST endpoint which serves OpenAPI documents to clients
@@ -87,6 +160,73 @@ Helidon SE OpenAPI configuration supports the settings described below in the `s
 
 include::{rootdir}/config/io_helidon_openapi_OpenApiFeature.adoc[leveloffset=+1,tag=config]
 
+
+[[OpenAPI-Document-Versions]]
+== OpenAPI Document Versions
+
+The base `helidon-openapi` module provides OpenAPI 3.0 support. To render OpenAPI 3.1 or 3.2 documents, add the
+corresponding module.
+
+When the `document` provider is not configured, Helidon selects the highest available OpenAPI document version provider
+discovered at runtime. With only `helidon-openapi`, generated output uses OpenAPI 3.0.3. If `helidon-openapi-31` is
+available, generated output uses OpenAPI 3.1.1. If `helidon-openapi-32` is available, generated output uses OpenAPI 3.2.0.
+Configure the `document` provider when your application must pin the generated OpenAPI document version independently of
+which OpenAPI version modules are present.
+
+The configured `document` provider is used when Helidon renders generated or merged OpenAPI documents. In `MERGE` mode,
+Helidon parses the static document and renders the result with the configured provider, so the served document version
+can differ from the static file's declared `openapi` version.
+When `STATIC_ONLY` serves a static document, or `STATIC_FIRST` finds a static document, Helidon serves that configured
+static resource as-is and does not rewrite it to the configured `document` version.
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.openapi</groupId>
+    <artifactId>helidon-openapi-31</artifactId>
+</dependency>
+----
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.openapi</groupId>
+    <artifactId>helidon-openapi-32</artifactId>
+</dependency>
+----
+
+.Configure OpenAPI 3.0 output
+[source,yaml]
+----
+server:
+  features:
+    openapi:
+      document:
+        "3.0":
+          version: "3.0.3"
+----
+
+.Configure OpenAPI 3.1 output
+[source,yaml]
+----
+server:
+  features:
+    openapi:
+      document:
+        "3.1":
+          version: "3.1.1"
+----
+
+.Configure OpenAPI 3.2 output
+[source,yaml]
+----
+server:
+  features:
+    openapi:
+      document:
+        "3.2":
+          version: "3.2.0"
+----
 
 
 == Examples

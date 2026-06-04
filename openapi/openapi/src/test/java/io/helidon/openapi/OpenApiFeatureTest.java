@@ -32,6 +32,8 @@ import io.helidon.common.Builder;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
+import io.helidon.common.types.ResolvedType;
+import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.http.HeaderNames;
@@ -42,9 +44,17 @@ import io.helidon.json.JsonNull;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonString;
 import io.helidon.openapi.spi.OpenApiDocumentSource;
+import io.helidon.openapi.spi.OpenApiManagerProvider;
 import io.helidon.openapi.spi.OpenApiVersion;
 import io.helidon.openapi.spi.OpenApiVersionProvider;
 import io.helidon.openapi.v30.OpenApi30Version;
+import io.helidon.openapi.v30.OpenApi30VersionConfig;
+import io.helidon.openapi.v30.OpenApi30VersionProvider;
+import io.helidon.service.registry.DependencyContext;
+import io.helidon.service.registry.InterceptionMetadata;
+import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.ServiceDescriptor;
+import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
@@ -65,6 +75,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.yaml.snakeyaml.Yaml;
 
 import static io.helidon.common.testing.junit5.MapMatcher.mapEqualTo;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -223,6 +234,152 @@ class OpenApiFeatureTest {
     }
 
     @Test
+    void serviceConstructorLetsProviderHandleListOpenApiConfig() {
+        Config config = Config.just(ConfigSources.create("""
+                server:
+                  features:
+                    - type: openapi
+                      web-context: /admin-openapi
+                openapi:
+                  web-context: /from-top-level
+                """, MediaTypes.APPLICATION_YAML));
+        OpenApiFeature feature = new OpenApiFeature(config, List::of);
+
+        assertThat(feature.prototype().isEnabled(), is(false));
+        assertThat(feature.prototype().name(), is("openapi-service-registry"));
+    }
+
+    @Test
+    void disabledFeatureDoesNotLoadStaticContentOrInitializeSources(@TempDir Path tempDir) throws IOException {
+        Path staticDirectory = tempDir.resolve("openapi-dir");
+        Files.createDirectory(staticDirectory);
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .isEnabled(false)
+                .staticFile(staticDirectory.toString())
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .buildPrototype();
+        OpenApiFeature feature = new OpenApiFeature(config,
+                                                    () -> {
+                                                        throw new AssertionError("Disabled OpenAPI feature must not"
+                                                                                         + " discover document sources.");
+                                                    },
+                                                    () -> {
+                                                        throw new AssertionError("Disabled OpenAPI feature must not"
+                                                                                         + " discover version providers.");
+                                                    });
+
+        feature.setup(new TestFeatureContext("admin"));
+        feature.initialize();
+
+        assertThat(feature.prototype().isEnabled(), is(false));
+        assertThat(feature.contentOpenApiVersionLoaded(), is(false));
+    }
+
+    @Test
+    void disabledServiceRegistryStandbyDoesNotDiscoverProviders() {
+        Config config = Config.just(ConfigSources.create(Map.of("server.features.admin-openapi.type", "openapi")));
+        ServiceRegistryManager registryManager = failingVersionProviderRegistry();
+        try {
+            OpenApiFeature feature = new OpenApiFeature(registryManager.registry(),
+                                                        config,
+                                                        () -> {
+                                                            throw new AssertionError("Disabled OpenAPI feature must not"
+                                                                                             + " discover version providers.");
+                                                        });
+
+            feature.setup(new TestFeatureContext("admin"));
+            feature.initialize();
+
+            assertThat(feature.prototype().isEnabled(), is(false));
+            assertThat(feature.prototype().name(), is("openapi-service-registry"));
+        } finally {
+            registryManager.shutdown();
+        }
+    }
+
+    @Test
+    void disabledCanonicalFeatureDoesNotDiscoverProviders() {
+        Config config = Config.just(ConfigSources.create(Map.of("server.features.openapi.enabled", "false")));
+        ServiceRegistryManager registryManager = failingVersionProviderRegistry();
+        try {
+            OpenApiFeature feature = new OpenApiFeature(registryManager.registry(),
+                                                        config,
+                                                        () -> {
+                                                            throw new AssertionError("Disabled OpenAPI feature must not"
+                                                                                             + " discover version providers.");
+                                                        });
+
+            feature.setup(new TestFeatureContext("admin"));
+            feature.initialize();
+
+            assertThat(feature.prototype().isEnabled(), is(false));
+            assertThat(feature.prototype().openApiVersion().isEmpty(), is(true));
+        } finally {
+            registryManager.shutdown();
+        }
+    }
+
+    @Test
+    void disabledProviderCreatedFeatureDoesNotDiscoverProviders(@TempDir Path tempDir) throws IOException {
+        Path staticDirectory = tempDir.resolve("openapi-dir");
+        Files.createDirectory(staticDirectory);
+        Config config = Config.just(ConfigSources.create(Map.of("enabled", "false",
+                                                               "static-file", staticDirectory.toString())));
+        OpenApiFeature feature = new OpenApiFeatureProvider().create(config, "openapi");
+
+        feature.setup(new TestFeatureContext("admin"));
+        feature.initialize();
+
+        assertThat(feature.prototype().isEnabled(), is(false));
+        assertThat(feature.prototype().openApiVersion().isEmpty(), is(true));
+    }
+
+    @Test
+    void disabledCreateFromConfigDoesNotDiscoverProviders(@TempDir Path tempDir) throws IOException {
+        Path staticDirectory = tempDir.resolve("openapi-dir");
+        Files.createDirectory(staticDirectory);
+        Config config = Config.just(ConfigSources.create(Map.of("openapi.enabled", "false",
+                                                               "openapi.static-file", staticDirectory.toString())));
+        OpenApiFeature feature = OpenApiFeature.create(config.get("openapi"));
+
+        feature.setup(new TestFeatureContext("admin"));
+        feature.initialize();
+
+        assertThat(feature.prototype().isEnabled(), is(false));
+        assertThat(feature.prototype().openApiVersion().isEmpty(), is(true));
+    }
+
+    @Test
+    void disabledCreateFromConsumerDoesNotDiscoverProviders(@TempDir Path tempDir) throws IOException {
+        Path staticDirectory = tempDir.resolve("openapi-dir");
+        Files.createDirectory(staticDirectory);
+        OpenApiFeature feature = OpenApiFeature.create(builder -> builder.isEnabled(false)
+                .staticFile(staticDirectory.toString()));
+
+        feature.setup(new TestFeatureContext("admin"));
+        feature.initialize();
+
+        assertThat(feature.prototype().isEnabled(), is(false));
+        assertThat(feature.prototype().openApiVersion().isEmpty(), is(true));
+    }
+
+    @Test
+    void disabledBuilderDoesNotDiscoverProviders(@TempDir Path tempDir) throws IOException {
+        Path staticDirectory = tempDir.resolve("openapi-dir");
+        Files.createDirectory(staticDirectory);
+        OpenApiFeature feature = OpenApiFeature.builder()
+                .isEnabled(false)
+                .staticFile(staticDirectory.toString())
+                .build();
+
+        feature.setup(new TestFeatureContext("admin"));
+        feature.initialize();
+
+        assertThat(feature.prototype().isEnabled(), is(false));
+        assertThat(feature.prototype().openApiVersion().isEmpty(), is(true));
+    }
+
+    @Test
     void serviceConstructorDiscoversOpenApiVersionFromRegistry() {
         ServiceRegistryManager manager = ServiceRegistryManager.create();
         try {
@@ -235,7 +392,50 @@ class OpenApiFeatureTest {
     }
 
     @Test
-    void staticDocumentUsesParserForDeclaredVersion(@TempDir Path tempDir) throws IOException {
+    void injectedConstructorUsesConfiguredGeneratedDocumentSourceSelection() {
+        RecordingOpenApiManager openApiManager = new RecordingOpenApiManager();
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "server.features.openapi.generated.mode", "GENERATED_ONLY",
+                "server.features.openapi.generated.document-sources.0", SelectedOpenApi.class.getCanonicalName(),
+                "server.features.openapi.manager.test.enabled", "true")));
+        ServiceRegistryManager registryManager = documentSourceRegistry(openApiManager);
+        try {
+            OpenApiFeature feature = new OpenApiFeature(registryManager.registry(), config, List::of);
+
+            feature.initialize();
+
+            Map<String, Object> document = parse(openApiManager.content());
+            assertThat(map(document, "info").get("title"), is("Selected API"));
+            assertThat(map(document, "paths").containsKey("/generated"), is(true));
+        } finally {
+            registryManager.shutdown();
+        }
+    }
+
+    @Test
+    void missingConfiguredGeneratedDocumentSourceFailsWithoutFallback() {
+        RecordingOpenApiManager openApiManager = new RecordingOpenApiManager();
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .generatedDocumentSources(List.of("missing.Source"))
+                .openApiVersion(OpenApi30Version.create())
+                .manager(openApiManager)
+                .buildPrototype();
+        ServiceRegistryManager registryManager = documentSourceRegistry();
+        try {
+            OpenApiFeature feature = new OpenApiFeature(registryManager.registry(), config);
+
+            IllegalStateException ex = assertThrows(IllegalStateException.class, feature::initialize);
+            assertThat(ex.getMessage(), containsString("Configured OpenAPI document source missing.Source was not found"));
+            assertThat(openApiManager.contents(), is(List.of()));
+        } finally {
+            registryManager.shutdown();
+        }
+    }
+
+    @Test
+    void mergeStaticDocumentUsesParserForDeclaredVersion(@TempDir Path tempDir) throws IOException {
         RecordingOpenApiManager manager = new RecordingOpenApiManager();
         OpenApiVersion renderVersion = new TestOpenApiVersion("3.0", "3.0.3", true);
         OpenApiVersion staticVersion = new TestOpenApiVersion("3.1", "3.1.0", false);
@@ -244,17 +444,227 @@ class OpenApiFeatureTest {
         OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
                 .servicesDiscoverServices(false)
                 .staticFile(staticFile.toString())
-                .generatedMode(OpenApiGeneratedMode.STATIC_ONLY)
+                .generatedMode(OpenApiGeneratedMode.MERGE)
                 .openApiVersion(renderVersion)
                 .manager(manager)
                 .buildPrototype();
         OpenApiFeature feature = new OpenApiFeature(config,
-                                                    List::of,
+                                                    () -> List.of(generatedPathSource()),
+                                                    () -> List.of(provider("3.1", staticVersion)));
+
+        assertThat(feature.contentOpenApiVersionLoaded(), is(false));
+        feature.initialize();
+
+        assertThat(feature.contentOpenApiVersionLoaded(), is(true));
+        assertThat(parse(manager.content()).get("openapi"), is("3.0.3"));
+    }
+
+    @Test
+    void mergeYamlStaticDocumentUsesRootOpenApiVersion(@TempDir Path tempDir) throws IOException {
+        mergeStaticDocumentUsesRootVersion(tempDir.resolve("nested-openapi.yaml"), """
+                x-nested:
+                  openapi: 9.9.9
+                openapi: 3.1.0
+                info:
+                  title: Static API
+                  version: 1.0.0
+                """);
+    }
+
+    @Test
+    void mergeYamlStaticDocumentUsesQuotedRootOpenApiVersion(@TempDir Path tempDir) throws IOException {
+        mergeStaticDocumentUsesRootVersion(tempDir.resolve("quoted-openapi.yaml"), """
+                x-nested:
+                  openapi: 9.9.9
+                "openapi": "3.1.0"
+                info:
+                  title: Static API
+                  version: 1.0.0
+                """);
+    }
+
+    @Test
+    void mergeYamlStaticDocumentUsesFlowRootOpenApiVersion(@TempDir Path tempDir) throws IOException {
+        mergeStaticDocumentUsesRootVersion(tempDir.resolve("flow-openapi.yaml"), """
+                {x-nested: {openapi: 9.9.9}, openapi: 3.1.0, info: {title: Static API, version: 1.0.0}}
+                """);
+    }
+
+    @Test
+    void mergeJsonStaticDocumentUsesRootOpenApiVersion(@TempDir Path tempDir) throws IOException {
+        mergeStaticDocumentUsesRootVersion(tempDir.resolve("nested-openapi.json"), """
+                {"x-nested":{"openapi":"9.9.9"},"openapi":"3.1.0","info":{"title":"Static API","version":"1.0.0"}}
+                """);
+    }
+
+    @Test
+    void mergeJsonStaticDocumentUsesEscapedRootOpenApiVersion(@TempDir Path tempDir) throws IOException {
+        mergeStaticDocumentUsesRootVersion(tempDir.resolve("escaped-openapi.json"), """
+                {"x-nested":{"openapi":"9.9.9"},"\\u006fpenapi":"3\\u002e1\\u002e0","info":{"title":"Static API","version":"1.0.0"}}
+                """);
+    }
+
+    @Test
+    void mergeStaticDocumentCachesParsedStaticDocument(@TempDir Path tempDir) throws IOException {
+        RecordingOpenApiManager manager = new RecordingOpenApiManager();
+        OpenApiVersion renderVersion = new TestOpenApiVersion("3.0", "3.0.3", true);
+        CountingOpenApiVersion staticVersion = new CountingOpenApiVersion("3.1", "3.1.0");
+        Path staticFile = tempDir.resolve("static-3.1.yaml");
+        Files.writeString(staticFile, OPENAPI_31_DOCUMENT);
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .staticFile(staticFile.toString())
+                .generatedMode(OpenApiGeneratedMode.MERGE)
+                .openApiVersion(renderVersion)
+                .manager(manager)
+                .buildPrototype();
+        OpenApiFeature feature = new OpenApiFeature(config,
+                                                    () -> List.of(generatedPathSource()),
+                                                    () -> List.of(provider("3.1", staticVersion)));
+
+        assertThat(feature.contentOpenApiVersionLoaded(), is(false));
+        feature.setup(new TestFeatureContext("admin"));
+        feature.initialize();
+
+        assertThat(feature.contentOpenApiVersionLoaded(), is(true));
+        assertThat(staticVersion.parseCount(), is(2));
+        assertThat(manager.contents().size(), is(2));
+
+        feature.initialize();
+
+        assertThat(staticVersion.parseCount(), is(2));
+        assertThat(manager.contents().size(), is(2));
+    }
+
+    @Test
+    void initializeBeforeSetupWarmsModelsCreatedDuringSetup(@TempDir Path tempDir) throws IOException {
+        RecordingOpenApiManager manager = new RecordingOpenApiManager();
+        OpenApiVersion renderVersion = new TestOpenApiVersion("3.0", "3.0.3", true);
+        CountingOpenApiVersion staticVersion = new CountingOpenApiVersion("3.1", "3.1.0");
+        Path staticFile = tempDir.resolve("static-3.1.yaml");
+        Files.writeString(staticFile, OPENAPI_31_DOCUMENT);
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .staticFile(staticFile.toString())
+                .generatedMode(OpenApiGeneratedMode.MERGE)
+                .openApiVersion(renderVersion)
+                .manager(manager)
+                .buildPrototype();
+        OpenApiFeature feature = new OpenApiFeature(config,
+                                                    () -> List.of(generatedPathSource()),
                                                     () -> List.of(provider("3.1", staticVersion)));
 
         feature.initialize();
 
-        assertThat(parse(manager.content()).get("openapi"), is("3.0.3"));
+        assertThat(staticVersion.parseCount(), is(1));
+        assertThat(manager.contents().size(), is(1));
+
+        feature.setup(new TestFeatureContext("admin"));
+
+        assertThat(staticVersion.parseCount(), is(2));
+        assertThat(manager.contents().size(), is(2));
+
+        feature.initialize();
+
+        assertThat(staticVersion.parseCount(), is(2));
+        assertThat(manager.contents().size(), is(2));
+    }
+
+    @Test
+    void mergeStaticDocumentParsesStaticDocumentWithListenerContext(@TempDir Path tempDir) throws IOException {
+        RecordingOpenApiManager manager = new RecordingOpenApiManager();
+        OpenApiVersion renderVersion = new TestOpenApiVersion("3.0", "3.0.3", true);
+        ListenerOpenApiVersion staticVersion = new ListenerOpenApiVersion("3.1", "3.1.0");
+        Path staticFile = tempDir.resolve("static-3.1.yaml");
+        Files.writeString(staticFile, OPENAPI_31_DOCUMENT);
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .staticFile(staticFile.toString())
+                .generatedMode(OpenApiGeneratedMode.MERGE)
+                .openApiVersion(renderVersion)
+                .manager(manager)
+                .buildPrototype();
+        OpenApiFeature feature = new OpenApiFeature(config,
+                                                    () -> List.of(generatedPathSource()),
+                                                    () -> List.of(provider("3.1", staticVersion)));
+
+        feature.setup(new TestFeatureContext("admin"));
+        feature.initialize();
+
+        List<String> titles = manager.contents()
+                .stream()
+                .map(OpenApiFeatureTest::parse)
+                .map(document -> map(document, "info"))
+                .map(info -> (String) info.get("title"))
+                .toList();
+        assertThat(titles.contains(WebServer.DEFAULT_SOCKET_NAME), is(true));
+        assertThat(titles.contains("admin"), is(true));
+    }
+
+    @Test
+    void mergeStaticDocumentUsesRootVersionWhenListenerHasNoGeneratedSource(@TempDir Path tempDir) throws IOException {
+        RecordingOpenApiManager manager = new RecordingOpenApiManager();
+        OpenApiVersion renderVersion = new TestOpenApiVersion("3.0", "3.0.3", true);
+        OpenApiVersion staticVersion = new TestOpenApiVersion("3.1", "3.1.0", false);
+        Path staticFile = tempDir.resolve("static-3.1.yaml");
+        Files.writeString(staticFile, OPENAPI_31_DOCUMENT);
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .staticFile(staticFile.toString())
+                .generatedMode(OpenApiGeneratedMode.MERGE)
+                .openApiVersion(renderVersion)
+                .manager(manager)
+                .buildPrototype();
+        OpenApiFeature feature = new OpenApiFeature(config,
+                                                    () -> List.of(generatedSource("private", "/private")),
+                                                    () -> List.of(provider("3.1", staticVersion)));
+
+        feature.setup(new TestFeatureContext("admin"));
+        feature.initialize();
+
+        List<String> versions = manager.contents()
+                .stream()
+                .map(OpenApiFeatureTest::parse)
+                .map(document -> (String) document.get("openapi"))
+                .toList();
+        assertThat(versions, is(List.of("3.0.3", "3.0.3")));
+    }
+
+    @Test
+    void generatedOnlyIgnoresStaticDocumentVersion(@TempDir Path tempDir) throws IOException {
+        RecordingOpenApiManager manager = new RecordingOpenApiManager();
+        Path staticFile = tempDir.resolve("missing-version.yaml");
+        Files.writeString(staticFile, """
+                info:
+                  title: Broken Static API
+                  version: 1.0.0
+                """);
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .staticFile(staticFile.toString())
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .openApiVersion(OpenApi30Version.create())
+                .manager(manager)
+                .buildPrototype();
+        OpenApiFeature feature = new OpenApiFeature(config, () -> List.of(generatedSource()), List::of);
+
+        assertThat(feature.contentOpenApiVersionLoaded(), is(false));
+        feature.initialize();
+
+        assertThat(feature.contentOpenApiVersionLoaded(), is(false));
+        Map<String, Object> document = parse(manager.content());
+        assertThat(map(document, "info").get("title"), is("Generated API"));
+        assertThat(map(document, "paths").containsKey("/generated"), is(true));
+    }
+
+    @Test
+    void staticOnlyServesStaticDocumentAsIs(@TempDir Path tempDir) throws IOException {
+        staticModeServesStaticDocumentAsIs(tempDir, OpenApiGeneratedMode.STATIC_ONLY);
+    }
+
+    @Test
+    void staticFirstServesStaticDocumentAsIs(@TempDir Path tempDir) throws IOException {
+        staticModeServesStaticDocumentAsIs(tempDir, OpenApiGeneratedMode.STATIC_FIRST);
     }
 
     @Test
@@ -273,6 +683,184 @@ class OpenApiFeatureTest {
         Map<String, Object> document = parse(manager.content());
         assertThat(map(document, "info").get("title"), is("Generated API"));
         assertThat(map(document, "paths").containsKey("/generated"), is(true));
+    }
+
+    private static void staticModeServesStaticDocumentAsIs(Path tempDir, OpenApiGeneratedMode mode) throws IOException {
+        RecordingOpenApiManager manager = new RecordingOpenApiManager();
+        OpenApiVersion renderVersion = new TestOpenApiVersion("3.0", "3.0.3", true);
+        Path staticFile = tempDir.resolve("static-3.1.yaml");
+        Files.writeString(staticFile, OPENAPI_31_DOCUMENT);
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .staticFile(staticFile.toString())
+                .generatedMode(mode)
+                .openApiVersion(renderVersion)
+                .manager(manager)
+                .buildPrototype();
+        OpenApiFeature feature = new OpenApiFeature(config,
+                                                    () -> List.of(generatedSource()),
+                                                    () -> List.of(provider("3.1",
+                                                                           new TestOpenApiVersion("3.1", "3.1.0", true))));
+
+        assertThat(feature.contentOpenApiVersionLoaded(), is(false));
+        feature.initialize();
+
+        assertThat(feature.contentOpenApiVersionLoaded(), is(false));
+        assertThat(manager.content(), is(OPENAPI_31_DOCUMENT));
+    }
+
+    @Test
+    void generatedOperationIdsCanBeConfigured() {
+        RecordingOpenApiManager manager = new RecordingOpenApiManager();
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .generatedOperationIds(Map.of("com.example.GeneratedEndpoint#get()", "configuredGet"))
+                .openApiVersion(OpenApi30Version.create())
+                .manager(manager)
+                .buildPrototype();
+        OpenApiDocumentSource source = (context, document) -> document.info("Generated API", "1.0.0")
+                .path("/generated",
+                      path -> path.operation(
+                              "GET",
+                              operation -> operation.operationId(OpenApiDocumentContextSupport.operationId(
+                                      context,
+                                      "com.example.GeneratedEndpoint#get()",
+                                      "generatedGet"))
+                                      .response("200", "Generated response.")));
+        OpenApiFeature feature = new OpenApiFeature(config, () -> List.of(source), List::of);
+
+        feature.initialize();
+
+        Map<String, Object> document = parse(manager.content());
+        assertThat(map(map(map(document, "paths"), "/generated"), "get").get("operationId"), is("configuredGet"));
+    }
+
+    @Test
+    void generatedDocumentContextLeavesConfigExpressionsLiteralByDefault() {
+        RecordingOpenApiManager manager = new RecordingOpenApiManager();
+        Config sourceConfig = Config.just(ConfigSources.create(Map.of("openapi.title", "Configured API",
+                                                                     "openapi.host", "api.example.com")));
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .openApiVersion(OpenApi30Version.create())
+                .manager(manager)
+                .buildPrototype();
+        OpenApiDocumentSource source = (context, document) -> document
+                .info(OpenApiDocumentContextSupport.resolveExpression(context, "${openapi.title:Generated API}"),
+                      "1.0.0")
+                .server(server -> server.url(OpenApiDocumentContextSupport.resolveExpression(
+                        context,
+                        "https://${openapi.host:localhost}")));
+        OpenApiFeature feature = new OpenApiFeature(sourceConfig, config, () -> List.of(source), List::of);
+
+        feature.initialize();
+
+        Map<String, Object> document = parse(manager.content());
+        assertThat(map(document, "info").get("title"), is("${openapi.title:Generated API}"));
+        assertThat(map(list(document, "servers").getFirst()).get("url"), is("https://${openapi.host:localhost}"));
+    }
+
+    @Test
+    void generatedDocumentContextResolvesConfigExpressions() {
+        RecordingOpenApiManager manager = new RecordingOpenApiManager();
+        Config sourceConfig = Config.just(ConfigSources.create(Map.of("openapi.title", "Configured API",
+                                                                     "openapi.host", "api.example.com")));
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .generatedResolveConfigExpressions(true)
+                .openApiVersion(OpenApi30Version.create())
+                .manager(manager)
+                .buildPrototype();
+        OpenApiDocumentSource source = (context, document) -> document
+                .info(OpenApiDocumentContextSupport.resolveExpression(context, "${openapi.title:Generated API}"),
+                      "1.0.0")
+                .server(server -> server.url(OpenApiDocumentContextSupport.resolveExpression(
+                        context,
+                        "https://${openapi.host:localhost}")));
+        OpenApiFeature feature = new OpenApiFeature(sourceConfig, config, () -> List.of(source), List::of);
+
+        feature.initialize();
+
+        Map<String, Object> document = parse(manager.content());
+        assertThat(map(document, "info").get("title"), is("Configured API"));
+        assertThat(map(list(document, "servers").getFirst()).get("url"), is("https://api.example.com"));
+    }
+
+    @Test
+    void runtimeBuilderUsesSuppliedRegistryAndSourceConfigForGeneratedDocumentSources() {
+        RecordingOpenApiManager openApiManager = new RecordingOpenApiManager();
+        Config sourceConfig = Config.just(ConfigSources.create(Map.of(
+                "openapi.title", "Configured Builder API",
+                "server.features.openapi.generated.mode", "GENERATED_ONLY",
+                "server.features.openapi.generated.resolve-config-expressions", "true",
+                "server.features.openapi.generated.document-sources.0", ConfigExpressionOpenApi.class.getCanonicalName())));
+        ServiceRegistryManager registryManager = documentSourceRegistry();
+        try {
+            OpenApiFeature feature = OpenApiFeature.builder()
+                    .serviceRegistry(registryManager.registry())
+                    .config(sourceConfig.get("server.features.openapi"))
+                    .servicesDiscoverServices(false)
+                    .openApiVersion(OpenApi30Version.create())
+                    .manager(openApiManager)
+                    .build();
+
+            feature.initialize();
+
+            Map<String, Object> document = parse(openApiManager.content());
+            assertThat(map(document, "info").get("title"), is("Configured Builder API"));
+            assertThat(map(document, "paths").containsKey("/generated"), is(true));
+        } finally {
+            registryManager.shutdown();
+        }
+    }
+
+    @Test
+    void configuredGeneratedDocumentSourceUsesDottedNamedByTypeName() {
+        RecordingOpenApiManager openApiManager = new RecordingOpenApiManager();
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .generatedDocumentSources(List.of(SelectedOpenApi.class.getCanonicalName()))
+                .openApiVersion(OpenApi30Version.create())
+                .manager(openApiManager)
+                .buildPrototype();
+        ServiceRegistryManager registryManager = documentSourceRegistry();
+        try {
+            OpenApiFeature feature = new OpenApiFeature(registryManager.registry(), config);
+
+            feature.initialize();
+
+            Map<String, Object> document = parse(openApiManager.content());
+            assertThat(map(document, "info").get("title"), is("Selected API"));
+            assertThat(map(document, "paths").containsKey("/generated"), is(true));
+        } finally {
+            registryManager.shutdown();
+        }
+    }
+
+    @Test
+    void multipleNamedGeneratedDocumentSourcesRequireConfiguration() {
+        RecordingOpenApiManager openApiManager = new RecordingOpenApiManager();
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .openApiVersion(OpenApi30Version.create())
+                .manager(openApiManager)
+                .buildPrototype();
+        ServiceRegistryManager registryManager = documentSourceRegistry();
+        try {
+            OpenApiFeature feature = new OpenApiFeature(registryManager.registry(), config);
+
+            IllegalStateException ex = assertThrows(IllegalStateException.class, feature::initialize);
+            assertThat(ex.getMessage(), containsString("generated.document-sources"));
+            assertThat(ex.getMessage(), containsString(SelectedOpenApi.class.getCanonicalName()));
+            assertThat(ex.getMessage(), containsString(OtherOpenApi.class.getCanonicalName()));
+        } finally {
+            registryManager.shutdown();
+        }
     }
 
     @Test
@@ -324,6 +912,36 @@ class OpenApiFeatureTest {
     }
 
     @Test
+    void openApi30VersionRejectsNullArguments() {
+        OpenApi30Version version = OpenApi30Version.create();
+        OpenApiDocumentContext context = context(version);
+        OpenApiDocument document = OpenApiDocument.builder().build();
+
+        assertThrows(NullPointerException.class, () -> OpenApi30Version.create((OpenApi30VersionConfig) null));
+        assertThrows(NullPointerException.class, () -> version.parse(null, "", MediaTypes.APPLICATION_OPENAPI_YAML));
+        assertThrows(NullPointerException.class, () -> version.parse(context, null, MediaTypes.APPLICATION_OPENAPI_YAML));
+        assertThrows(NullPointerException.class, () -> version.parse(context, "", null));
+        assertThrows(NullPointerException.class, () -> version.render(null, document));
+        assertThrows(NullPointerException.class, () -> version.render(context, null));
+    }
+
+    @Test
+    void openApiDocumentSourceRejectsNullContext() {
+        OpenApiDocumentSource source = (context, document) -> {
+        };
+
+        assertThrows(NullPointerException.class, () -> source.supports(null));
+    }
+
+    @Test
+    void openApiProvidersRejectNullConfigAndName() {
+        assertThrows(NullPointerException.class, () -> new OpenApiFeatureProvider().create(null, "openapi"));
+        assertThrows(NullPointerException.class, () -> new OpenApiFeatureProvider().create(Config.empty(), null));
+        assertThrows(NullPointerException.class, () -> new OpenApi30VersionProvider().create(null, "3.0"));
+        assertThrows(NullPointerException.class, () -> new OpenApi30VersionProvider().create(Config.empty(), null));
+    }
+
+    @Test
     void openApi30RendererDropsOrTranslatesNewerVersionFields() {
         OpenApiDocumentContext context = context(OpenApi30Version.create());
         OpenApiDocument document = newerVersionDocument();
@@ -337,6 +955,7 @@ class OpenApiFeatureTest {
 
         Map<?, ?> info = map(rendered, "info");
         assertThat(info.containsKey("summary"), is(false));
+        assertThat(map(info, "license").containsKey("identifier"), is(false));
 
         Map<?, ?> server = (Map<?, ?>) ((List<?>) rendered.get("servers")).getFirst();
         assertThat(server.containsKey("name"), is(false));
@@ -354,6 +973,22 @@ class OpenApiFeatureTest {
         assertThat(status.get("type"), is("string"));
         assertThat(status.get("nullable"), is(true));
         assertThat(((List<?>) status.get("enum")).contains(null), is(false));
+
+        Map<String, Object> union = schemaProperty(rendered, "StaticItem", "union");
+        assertThat(union.containsKey("type"), is(false));
+        assertThat(union.containsKey("nullable"), is(false));
+        List<Object> oneOf = list(union, "oneOf");
+        assertThat(oneOf.size(), is(3));
+        assertThat(map(oneOf.get(0)).get("type"), is("string"));
+        assertThat(map(oneOf.get(1)).get("type"), is("integer"));
+        assertThat(map(oneOf.get(2)).get("nullable"), is(true));
+        assertThat(list(map(oneOf.get(2)), "enum"), is(singleValueList(null)));
+
+        Map<String, Object> bounded = schemaProperty(rendered, "StaticItem", "bounded");
+        assertThat(((Number) bounded.get("maximum")).doubleValue(), is(10.0));
+        assertThat(bounded.get("exclusiveMaximum"), is(true));
+        assertThat(((Number) bounded.get("minimum")).doubleValue(), is(1.0));
+        assertThat(bounded.get("exclusiveMinimum"), is(true));
 
         Map<String, Object> payload = schemaProperty(rendered, "StaticItem", "payload");
         assertThat(payload, is(Map.of()));
@@ -375,6 +1010,9 @@ class OpenApiFeatureTest {
                 .openapi("3.2.0")
                 .info(info -> info.title("Static 3.2 API")
                         .version("3.2.0")
+                        .license(license -> license.name("Apache License 2.0")
+                                .identifier("Apache-2.0")
+                                .url("https://www.apache.org/licenses/LICENSE-2.0"))
                         .summary("Static fixture with OpenAPI 3.2-only fields."))
                 .server(server -> server.url("https://api.example.test")
                         .name("primary"))
@@ -393,6 +1031,15 @@ class OpenApiFeatureTest {
                                         .set("type", "object")
                                         .set("properties", properties -> properties
                                                 .set("status", statusSchema())
+                                                .set("union", JsonObject.builder()
+                                                        .setValues("type", List.of(JsonString.create("string"),
+                                                                                   JsonString.create("integer"),
+                                                                                   JsonString.create("null")))
+                                                        .build())
+                                                .set("bounded", JsonObject.builder()
+                                                        .set("exclusiveMaximum", 10)
+                                                        .set("exclusiveMinimum", 1)
+                                                        .build())
                                                 .set("payload", JsonBoolean.TRUE)
                                                 .set("mode", JsonObject.builder()
                                                         .set("const", "modern")
@@ -412,11 +1059,11 @@ class OpenApiFeatureTest {
     }
 
     private static OpenApiDocumentContext context(OpenApiVersion version) {
-        return new OpenApiDocumentContext("openapi",
-                                          "/openapi",
-                                          "default",
-                                          OpenApiGeneratedMode.STATIC_ONLY,
-                                          version);
+        return new OpenApiDocumentContextImpl("openapi",
+                                              "/openapi",
+                                              "default",
+                                              OpenApiGeneratedMode.STATIC_ONLY,
+                                              version);
     }
 
     private static Map<String, Object> schemaProperty(OpenApiDocument document, String schemaName, String propertyName) {
@@ -432,6 +1079,22 @@ class OpenApiFeatureTest {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> map(Map<?, ?> map, String name) {
         return (Map<String, Object>) map.get(name);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> map(Object object) {
+        return (Map<String, Object>) object;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Object> list(Map<?, ?> map, String name) {
+        return (List<Object>) map.get(name);
+    }
+
+    private static List<Object> singleValueList(Object value) {
+        List<Object> result = new ArrayList<>();
+        result.add(value);
+        return result;
     }
 
     private static String resource(String path) {
@@ -466,8 +1129,16 @@ class OpenApiFeatureTest {
         return (context, document) -> document.info("Generated API", "1.0.0")
                 .path("/generated",
                       path -> path.operation("GET",
-                                             operation -> operation.operationId("generatedGet")
-                                                     .response("200", "Generated response.")));
+                                                     operation -> operation.operationId("generatedGet")
+                                                             .response("200", "Generated response.")));
+    }
+
+    private static OpenApiDocumentSource generatedPathSource() {
+        return (context, document) -> document.path("/generated",
+                                                    path -> path.operation("GET",
+                                                                           operation -> operation.operationId("generatedGet")
+                                                                                   .response("200",
+                                                                                             "Generated response.")));
     }
 
     private static OpenApiDocumentSource generatedSource(String listener, String path) {
@@ -489,12 +1160,134 @@ class OpenApiFeatureTest {
         };
     }
 
+    private static ServiceRegistryManager documentSourceRegistry() {
+        return documentSourceRegistry(null);
+    }
+
+    private static ServiceRegistryManager documentSourceRegistry(RecordingOpenApiManager manager) {
+        ServiceRegistryConfig.Builder builder = ServiceRegistryConfig.builder()
+                .discoverServices(false)
+                .discoverServicesFromServiceLoader(false)
+                .addServiceDescriptor(testDescriptor(
+                        OpenApiVersionProvider.class,
+                        "OpenApi30VersionProvider",
+                        new OpenApi30VersionProvider()))
+                .addServiceDescriptor(documentSourceDescriptor(
+                        "SelectedDocument",
+                        SelectedOpenApi.class.getCanonicalName(),
+                        (context, document) -> document.info("Selected API", "1.0.0")))
+                .addServiceDescriptor(documentSourceDescriptor(
+                        "OtherDocument",
+                        OtherOpenApi.class.getCanonicalName(),
+                        (context, document) -> document.info("Other API", "1.0.0")))
+                .addServiceDescriptor(documentSourceDescriptor(
+                        "ConfiguredDocument",
+                        ConfigExpressionOpenApi.class.getCanonicalName(),
+                        (context, document) -> document.info(OpenApiDocumentContextSupport.resolveExpression(
+                                context,
+                                "${openapi.title:Fallback API}"), "1.0.0")))
+                .addServiceDescriptor(documentSourceDescriptor(
+                        "Endpoint",
+                        null,
+                        (context, document) -> document.path(
+                                "/generated",
+                                path -> path.operation("GET",
+                                                       operation -> operation
+                                                               .operationId("get")
+                                                               .response("200", "OK")))));
+        if (manager != null) {
+            builder.addServiceDescriptor(testDescriptor(
+                    OpenApiManagerProvider.class,
+                    "RecordingOpenApiManagerProvider",
+                    managerProvider(manager)));
+        }
+        return ServiceRegistryManager.create(builder.build());
+    }
+
+    private static ServiceRegistryManager failingVersionProviderRegistry() {
+        ServiceRegistryConfig config = ServiceRegistryConfig.builder()
+                .discoverServices(false)
+                .discoverServicesFromServiceLoader(false)
+                .addServiceDescriptor(testDescriptor(
+                        OpenApiVersionProvider.class,
+                        "FailingOpenApiVersionProvider",
+                        new FailingOpenApiVersionProvider()))
+                .build();
+        return ServiceRegistryManager.create(config);
+    }
+
+    private static ServiceDescriptor<OpenApiDocumentSource> documentSourceDescriptor(String type,
+                                                                                     String name,
+                                                                                     OpenApiDocumentSource source) {
+        return new TestServiceDescriptor<>(OpenApiDocumentSource.class, type, source, name);
+    }
+
+    private static <T> ServiceDescriptor<T> testDescriptor(Class<T> contractType, String type, T instance) {
+        return new TestServiceDescriptor<>(contractType, type, instance, null);
+    }
+
+    private static OpenApiManagerProvider managerProvider(RecordingOpenApiManager manager) {
+        return new OpenApiManagerProvider() {
+            @Override
+            public String configKey() {
+                return manager.type();
+            }
+
+            @Override
+            public OpenApiManager<?> create(Config config, String name) {
+                return manager;
+            }
+        };
+    }
+
+    private static final class SelectedOpenApi {
+    }
+
+    private static final class OtherOpenApi {
+    }
+
+    private static final class ConfigExpressionOpenApi {
+    }
+
+    private static final class FailingOpenApiVersionProvider implements OpenApiVersionProvider {
+        @Override
+        public String configKey() {
+            return "failing";
+        }
+
+        @Override
+        public OpenApiVersion create(Config config, String name) {
+            throw new AssertionError("Disabled OpenAPI feature must not create version providers.");
+        }
+    }
+
     private static final String OPENAPI_31_DOCUMENT = """
             openapi: 3.1.0
             info:
               title: Static API
               version: 1.0.0
             """;
+
+    private static void mergeStaticDocumentUsesRootVersion(Path staticFile, String content) throws IOException {
+        RecordingOpenApiManager manager = new RecordingOpenApiManager();
+        OpenApiVersion renderVersion = new TestOpenApiVersion("3.0", "3.0.3", true);
+        OpenApiVersion staticVersion = new TestOpenApiVersion("3.1", "3.1.0", false);
+        Files.writeString(staticFile, content);
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .staticFile(staticFile.toString())
+                .generatedMode(OpenApiGeneratedMode.MERGE)
+                .openApiVersion(renderVersion)
+                .manager(manager)
+                .buildPrototype();
+        OpenApiFeature feature = new OpenApiFeature(config,
+                                                    () -> List.of(generatedPathSource()),
+                                                    () -> List.of(provider("3.1", staticVersion)));
+
+        feature.initialize();
+
+        assertThat(parse(manager.content()).get("openapi"), is("3.0.3"));
+    }
 
     private record TestOpenApiVersion(String type, String version, boolean failParse) implements OpenApiVersion {
         @Override
@@ -515,6 +1308,88 @@ class OpenApiFeatureTest {
 
         @Override
         public String name() {
+            return type;
+        }
+    }
+
+    private static final class CountingOpenApiVersion implements OpenApiVersion {
+        private final String type;
+        private final String version;
+        private int parseCount;
+
+        private CountingOpenApiVersion(String type, String version) {
+            this.type = type;
+            this.version = version;
+        }
+
+        @Override
+        public String version() {
+            return version;
+        }
+
+        @Override
+        public OpenApiDocument parse(OpenApiDocumentContext context, String content, MediaType mediaType) {
+            parseCount++;
+            return OpenApiDocument.builder()
+                    .openapi(version)
+                    .info("Static API", "1.0.0")
+                    .build();
+        }
+
+        @Override
+        public String render(OpenApiDocumentContext context, OpenApiDocument document) {
+            return OpenApi30Version.create().render(context, document);
+        }
+
+        @Override
+        public String name() {
+            return type;
+        }
+
+        @Override
+        public String type() {
+            return type;
+        }
+
+        int parseCount() {
+            return parseCount;
+        }
+    }
+
+    private static final class ListenerOpenApiVersion implements OpenApiVersion {
+        private final String type;
+        private final String version;
+
+        private ListenerOpenApiVersion(String type, String version) {
+            this.type = type;
+            this.version = version;
+        }
+
+        @Override
+        public String version() {
+            return version;
+        }
+
+        @Override
+        public OpenApiDocument parse(OpenApiDocumentContext context, String content, MediaType mediaType) {
+            return OpenApiDocument.builder()
+                    .openapi(version)
+                    .info(context.listener(), "1.0.0")
+                    .build();
+        }
+
+        @Override
+        public String render(OpenApiDocumentContext context, OpenApiDocument document) {
+            return OpenApi30Version.create().render(context, document);
+        }
+
+        @Override
+        public String name() {
+            return type;
+        }
+
+        @Override
+        public String type() {
             return type;
         }
     }
@@ -549,6 +1424,49 @@ class OpenApiFeatureTest {
 
         List<String> contents() {
             return contents;
+        }
+    }
+
+    private static final class TestServiceDescriptor<T> implements ServiceDescriptor<T> {
+        private final ResolvedType contract;
+        private final TypeName serviceType;
+        private final TypeName descriptorType;
+        private final Set<Qualifier> qualifiers;
+        private final T instance;
+
+        private TestServiceDescriptor(Class<T> contractType, String type, T instance, String name) {
+            this.contract = ResolvedType.create(contractType);
+            this.serviceType = TypeName.create("io.helidon.openapi.OpenApiFeatureTest." + type);
+            this.descriptorType = TypeName.create("io.helidon.openapi.OpenApiFeatureTest."
+                                                          + type
+                                                          + "__ServiceDescriptor");
+            this.qualifiers = name == null ? Set.of() : Set.of(Qualifier.createNamed(name));
+            this.instance = instance;
+        }
+
+        @Override
+        public Object instantiate(DependencyContext ctx, InterceptionMetadata metadata) {
+            return instance;
+        }
+
+        @Override
+        public TypeName serviceType() {
+            return serviceType;
+        }
+
+        @Override
+        public TypeName descriptorType() {
+            return descriptorType;
+        }
+
+        @Override
+        public Set<ResolvedType> contracts() {
+            return Set.of(contract);
+        }
+
+        @Override
+        public Set<Qualifier> qualifiers() {
+            return qualifiers;
         }
     }
 
