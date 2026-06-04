@@ -31,8 +31,8 @@ module io.helidon.openapi {
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.common.media.type;
-    requires io.helidon.json.schema;
-    requires io.helidon.service.registry;
+    requires transitive io.helidon.json.schema;
+    requires transitive io.helidon.service.registry;
     requires io.helidon.webserver;
 
     requires org.yaml.snakeyaml;

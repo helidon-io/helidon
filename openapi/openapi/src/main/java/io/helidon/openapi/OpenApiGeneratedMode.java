@@ -34,7 +34,10 @@ public enum OpenApiGeneratedMode {
     STATIC_ONLY,
 
     /**
-     * Merge generated document sources into a static document.
+     * Strictly merge generated document sources into a static document.
+     * <p>
+     * Static and generated content must be non-conflicting; composition fails if both sides define incompatible document
+     * values, the same path operation, or duplicate {@code operationId} values.
      */
     MERGE,
 

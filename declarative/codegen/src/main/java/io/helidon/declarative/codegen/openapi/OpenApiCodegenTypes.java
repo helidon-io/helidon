@@ -49,6 +49,8 @@ final class OpenApiCodegenTypes {
     static final TypeName OPENAPI_SOURCE_BASE = TypeName.create("io.helidon.openapi.OpenApiSourceBase");
     static final TypeName OPENAPI_DOCUMENT_SOURCE = TypeName.create("io.helidon.openapi.spi.OpenApiDocumentSource");
     static final TypeName OPENAPI_DOCUMENT_CONTEXT = TypeName.create("io.helidon.openapi.OpenApiDocumentContext");
+    static final TypeName OPENAPI_DOCUMENT_CONTEXT_SUPPORT =
+            TypeName.create("io.helidon.openapi.OpenApiDocumentContextSupport");
     static final TypeName OPENAPI_DOCUMENT_BUILDER = TypeName.create("io.helidon.openapi.OpenApiDocument.Builder");
     static final TypeName OPENAPI_DOCUMENT_INFO = TypeName.create("io.helidon.openapi.OpenApiDocument.Info");
     static final TypeName OPENAPI_DOCUMENT_SERVER = TypeName.create("io.helidon.openapi.OpenApiDocument.Server");

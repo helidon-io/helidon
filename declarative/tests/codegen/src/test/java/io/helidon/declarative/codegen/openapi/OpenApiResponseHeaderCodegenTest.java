@@ -16,6 +16,9 @@
 
 package io.helidon.declarative.codegen.openapi;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -134,7 +137,7 @@ class OpenApiResponseHeaderCodegenTest {
     }
 
     @Test
-    void responseHeaderCanUseSingleContentEntry() {
+    void responseHeaderCanUseSingleContentEntry() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .procOnly()
@@ -159,8 +162,8 @@ class OpenApiResponseHeaderCodegenTest {
                             @OpenApi.Response(status = 200,
                                               description = "OK",
                                               headers = @OpenApi.Header(
-                                                      name = "X-Value",
-                                                      content = @OpenApi.Content("application/json")))
+                                                      name = "${openapi.header:X-Value}",
+                                                      content = @OpenApi.Content("${openapi.content:application/json}")))
                             String get() {
                                 return "ok";
                             }
@@ -180,6 +183,112 @@ class OpenApiResponseHeaderCodegenTest {
 
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(true));
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".header(\"X-Value\", header -> header"));
+        assertThat(generated, containsString(".content(\"application/json\", content -> content.schema(schema(\"string\")))"));
+    }
+
+    @Test
+    void responseHeaderCannotUseContentTypeName() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-response-header-content-type"))
+                .addSource("InvalidOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/invalid")
+                        class InvalidOpenApiEndpoint {
+                            @Http.GET
+                            @OpenApi.Response(status = 200,
+                                              description = "OK",
+                                              headers = @OpenApi.Header(name = "${openapi.header:Content-Type}"))
+                            String get() {
+                                return "ok";
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertCompilationFails(result,
+                               "@OpenApi.Response on com.example.InvalidOpenApiEndpoint.get",
+                               "cannot define response header Content-Type",
+                               "use @OpenApi.Content to define response media types");
+    }
+
+    @Test
+    void responseHeaderCannotDuplicateInferredHeaderName() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-response-header-duplicates-inferred"))
+                .addSource("InvalidOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/invalid")
+                        class InvalidOpenApiEndpoint {
+                            @Http.GET
+                            @RestServer.Header(name = "X-Trace", value = "static")
+                            @RestServer.ComputedHeader(name = "X-Computed", function = "computed")
+                            @OpenApi.Response(status = 200,
+                                              description = "OK",
+                                              headers = {
+                                                      @OpenApi.Header(name = "x-trace"),
+                                                      @OpenApi.Header(name = "x-computed")
+                                              })
+                            String get() {
+                                return "ok";
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertCompilationFails(result,
+                               "@OpenApi.Response on com.example.InvalidOpenApiEndpoint.get",
+                               "cannot define response header x-trace more than once",
+                               "including inferred Helidon response headers");
     }
 
     private static void assertCompilationFails(TestCompiler.Result result, String... diagnosticParts) {
@@ -188,5 +297,17 @@ class OpenApiResponseHeaderCodegenTest {
         for (String diagnosticPart : diagnosticParts) {
             assertThat(diagnostics, containsString(diagnosticPart));
         }
+    }
+
+    private static String generatedSource(TestCompiler.Result result) throws IOException {
+        StringBuilder generatedContent = new StringBuilder();
+        var generatedSources = Files.walk(result.sourceOutput())
+                .filter(it -> it.getFileName().toString().endsWith(".java"))
+                .toList();
+        for (Path generatedSource : generatedSources) {
+            generatedContent.append(Files.readString(generatedSource, StandardCharsets.UTF_8));
+            generatedContent.append('\n');
+        }
+        return generatedContent.toString();
     }
 }

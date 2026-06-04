@@ -14,16 +14,26 @@
 # limitations under the License.
 #
 
+test:
+  openapi:
+    server-url: "https://openapi.example.test"
+
 server:
   port: 0
   sockets:
     - name: "admin"
       port: 0
   features:
-    openapi:
+    declarative-openapi:
+      type: "openapi"
       web-context: "/openapi"
       static-file: "static-openapi.yaml"
       document:
         - type: "3.0"
       generated:
         mode: "MERGE"
+        resolve-config-expressions: true
+        document-sources:
+          - "io.helidon.declarative.tests.openapi.Main"
+        operation-ids:
+          "io.helidon.declarative.tests.openapi.GreetingEndpoint#find(java.lang.String,java.util.Optional,java.util.List)": "configuredGreetingFind"
