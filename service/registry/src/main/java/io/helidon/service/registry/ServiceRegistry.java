@@ -190,7 +190,9 @@ public interface ServiceRegistry {
     /**
      * Get the first active service instance matching the contract.
      * <p>
-     * The default implementation may trigger activation.
+     * Implementations that support active lookup should return only instances that are already active and should not
+     * create new instances for {@link Service.PerLookup} services, as per-lookup services do not have an active reusable
+     * instance. The default implementation may trigger activation.
      *
      * @param contract contract to find
      * @param <T>      type of the contract
@@ -204,7 +206,9 @@ public interface ServiceRegistry {
      * Get the first active service instance matching the contract with the expectation that there may not be a match
      * available.
      * <p>
-     * The default implementation may trigger activation.
+     * Implementations that support active lookup should return only instances that are already active and should not
+     * create new instances for {@link Service.PerLookup} services, as per-lookup services do not have an active reusable
+     * instance. The default implementation may trigger activation.
      *
      * @param contract   contract to look-up
      * @param qualifiers qualifiers to find
@@ -221,7 +225,9 @@ public interface ServiceRegistry {
     /**
      * Get the first active service instance matching the contract.
      * <p>
-     * The default implementation delegates to {@link #firstActive(Lookup)} and may trigger activation.
+     * Implementations that support active lookup should return only instances that are already active and should not
+     * create new instances for {@link Service.PerLookup} services, as per-lookup services do not have an active reusable
+     * instance. The default implementation delegates to {@link #firstActive(Lookup)} and may trigger activation.
      *
      * @param contract contract to find
      * @param <T>      type of the contract
@@ -235,7 +241,9 @@ public interface ServiceRegistry {
      * Get the first active service instance matching the contract with the expectation that there may not be a match
      * available.
      * <p>
-     * The default implementation may trigger activation.
+     * Implementations that support active lookup should return only instances that are already active and should not
+     * create new instances for {@link Service.PerLookup} services, as per-lookup services do not have an active reusable
+     * instance. The default implementation may trigger activation.
      *
      * @param contract   contract to look-up
      * @param qualifiers qualifiers to find
@@ -562,7 +570,9 @@ public interface ServiceRegistry {
     /**
      * Get the first active service instance matching the lookup with the expectation that there may not be a match available.
      * <p>
-     * The default implementation delegates to {@link #first(Lookup)} and may trigger activation.
+     * Implementations that support active lookup should return only instances that are already active and should not
+     * create new instances for {@link Service.PerLookup} services, as per-lookup services do not have an active reusable
+     * instance. The default implementation delegates to {@link #first(Lookup)} and may trigger activation.
      *
      * @param lookup lookup criteria to find matching services
      * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure

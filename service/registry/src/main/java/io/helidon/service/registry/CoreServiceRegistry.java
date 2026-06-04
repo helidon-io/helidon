@@ -154,7 +154,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                     (ServiceDescriptor<Object>) descriptor);
 
             if (instance != null) {
-                Activator<Object> activator = Activators.create(provider, instance);
+                Activator<Object> activator = Activators.createActive(provider, instance);
                 servicesByDescriptor.put(descriptor,
                                          new ServiceManager<>(this,
                                                               scopeSupplier(descriptor),
@@ -639,7 +639,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
             VirtualDescriptor vt = new VirtualDescriptor(contract.type(), Weighted.DEFAULT_WEIGHT, instance, qualifiers);
 
             ServiceProvider<Object> provider = new ServiceProvider<>(this, vt);
-            Activator<Object> activator = Activators.create(provider, instance);
+            Activator<Object> activator = Activators.createActive(provider, instance);
 
             servicesByDescriptor.put(vt, new ServiceManager<>(this,
                                                               scopeSupplier(vt),
@@ -655,7 +655,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
             ServiceProvider<Object> provider = new ServiceProvider<>(this,
                                                                      (ServiceDescriptor<Object>) serviceInfo);
 
-            Activator<Object> activator = Activators.create(provider, instance);
+            Activator<Object> activator = Activators.createActive(provider, instance);
             servicesByDescriptor.put(serviceInfo, new ServiceManager<>(this,
                                                                        scopeSupplier(serviceInfo),
                                                                        provider,
@@ -691,7 +691,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                 throw new ServiceRegistryException("Attempting to set a service provider with wrong number of instances. "
                                                            + "A service provider must have exactly one instance.");
             }
-            Activator<Object> activator = Activators.create(provider, instances[0]);
+            Activator<Object> activator = Activators.createActive(provider, instances[0]);
             servicesByDescriptor.put(serviceInfo, new ServiceManager<>(this,
                                                                        scopeSupplier(serviceInfo),
                                                                        provider,
@@ -824,7 +824,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         VirtualDescriptor vt = new VirtualDescriptor(contractType.type(), currentWeight, instance, qualifiers);
         ServiceProvider<Object> provider = new ServiceProvider<>(this,
                                                                  vt);
-        Activator<Object> activator = Activators.create(provider, instance);
+        Activator<Object> activator = Activators.createActive(provider, instance);
 
         servicesByDescriptor.put(vt, new ServiceManager<>(this,
                                                           scopeSupplier(vt),

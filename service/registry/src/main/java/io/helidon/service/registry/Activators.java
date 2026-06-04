@@ -53,6 +53,10 @@ import static java.util.function.Predicate.not;
  */
 @SuppressWarnings("checkstyle:VisibilityModifier") // as long as all are inner classes, this is OK
 final class Activators {
+    private static final ActivationRequest ACTIVE_REQUEST = ActivationRequest.builder()
+            .targetPhase(ActivationPhase.ACTIVE)
+            .build();
+
     private Activators() {
     }
 
@@ -70,6 +74,12 @@ final class Activators {
             case INJECTION_POINT -> new Activators.FixedIpFactoryActivator<>(provider, (InjectionPointFactory<T>) instance);
             case QUALIFIED -> new Activators.FixedQualifiedFactoryActivator<>(provider, (QualifiedFactory<T, ?>) instance);
         };
+    }
+
+    static <T> Activator<T> createActive(ServiceProvider<T> provider, T instance) {
+        Activator<T> activator = create(provider, instance);
+        activator.activate(ACTIVE_REQUEST);
+        return activator;
     }
 
     static <T> Supplier<Activator<T>> create(CoreServiceRegistry registry, ServiceProvider<T> provider) {

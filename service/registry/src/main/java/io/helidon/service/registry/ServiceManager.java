@@ -23,7 +23,6 @@ import java.util.function.Supplier;
 
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
-import io.helidon.service.registry.Activators.BaseActivator;
 import io.helidon.service.registry.Service.QualifiedInstance;
 
 /*
@@ -81,6 +80,10 @@ class ServiceManager<T> {
     }
 
     Optional<List<ServiceInstance<T>>> activeInstances(Lookup lookup) {
+        if (!fixedInstance && Service.PerLookup.TYPE.equals(provider.descriptor().scope())) {
+            return Optional.empty();
+        }
+
         Activator<T> serviceActivator;
         if (fixedInstance) {
             serviceActivator = activatorSupplier.get();
@@ -93,27 +96,7 @@ class ServiceManager<T> {
         }
 
         if (serviceActivator.phase() != ActivationPhase.ACTIVE) {
-            if (fixedInstance) {
-                return explicitInstances(serviceActivator, lookup);
-            }
             return Optional.empty();
-        }
-
-        return serviceActivator
-                .instances(lookup)
-                .map(it -> it.stream()
-                        .map(instance -> registryInstance(lookup, instance))
-                        .toList());
-    }
-
-    @SuppressWarnings("unchecked")
-    private Optional<List<ServiceInstance<T>>> explicitInstances(Activator<T> serviceActivator, Lookup lookup) {
-        if (serviceActivator instanceof BaseActivator<?> baseActivator) {
-            return ((BaseActivator<T>) baseActivator)
-                    .targetInstances(lookup)
-                    .map(it -> it.stream()
-                            .map(instance -> registryInstance(lookup, instance))
-                            .toList());
         }
 
         return serviceActivator

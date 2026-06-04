@@ -180,6 +180,53 @@ public class RegistryTest {
     }
 
     @Test
+    public void testRegistryFirstActiveDoesNotReturnDestroyedSetInstance() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        ServiceRegistry serviceRegistry = manager.registry();
+        FirstActiveContract explicit = new FirstActiveContract() {
+        };
+        boolean shutDown = false;
+
+        Services.registry(serviceRegistry);
+        try {
+            Services.set(FirstActiveContract.class, explicit);
+
+            assertThat(serviceRegistry.firstActive(FirstActiveContract.class).orElseThrow(), sameInstance(explicit));
+            assertThat(serviceRegistry.get(FirstActiveContract.class), sameInstance(explicit));
+
+            manager.shutdown();
+            shutDown = true;
+
+            assertThat(serviceRegistry.firstActive(FirstActiveContract.class).isEmpty(), is(true));
+        } finally {
+            if (!shutDown) {
+                manager.shutdown();
+            }
+        }
+    }
+
+    @Test
+    public void testRegistryFirstActiveDoesNotCreatePerLookupInstance() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        ServiceRegistry serviceRegistry = manager.registry();
+        ServiceSupplier.reset();
+
+        try {
+            assertThat(serviceRegistry.firstActive(SuppliedContract.class).isEmpty(), is(true));
+            assertThat(ServiceSupplier.instances(), is(0));
+
+            Supplier<SuppliedContract> supplier = serviceRegistry.supply(SuppliedContract.class);
+            SuppliedContract first = supplier.get();
+            assertThat(first.message(), is("Supplied:1"));
+
+            assertThat(serviceRegistry.firstActive(SuppliedContract.class).isEmpty(), is(true));
+            assertThat(ServiceSupplier.instances(), is(1));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
     public void testRegistryAll() {
         List<MyContract> myContracts = registry.all(MyContract.class);
         assertThat(myContracts, hasSize(2));
@@ -193,6 +240,7 @@ public class RegistryTest {
 
     @Test
     public void testSupplier() {
+        ServiceSupplier.reset();
         Supplier<SuppliedContract> supplier = registry.supply(SuppliedContract.class);
 
         SuppliedContract first = supplier.get();
