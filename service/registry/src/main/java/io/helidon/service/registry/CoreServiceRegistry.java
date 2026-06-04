@@ -495,6 +495,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                                                                       scopeSupplier(descriptor),
                                                                       provider,
                                                                       true,
+                                                                      false,
                                                                       activator));
 
             for (ResolvedType contract : contracts) {
